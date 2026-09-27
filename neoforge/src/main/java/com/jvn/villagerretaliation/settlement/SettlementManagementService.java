@@ -55,6 +55,30 @@ public final class SettlementManagementService {
     }
 
     public static void action(ServerPlayer player, SettlementManagementActionPayload payload) {
+        if (payload.command() instanceof SettlementManagementActionPayload.OrderStructure
+                || payload.command() instanceof SettlementManagementActionPayload.PreviewStructure) {
+            boolean previewOnly = payload.command() instanceof SettlementManagementActionPayload.PreviewStructure
+                    || payload.command() instanceof SettlementManagementActionPayload.OrderStructure order && !order.confirm();
+            var requestType = SettlementManagementActionPayload.TYPE.id();
+            if (previewOnly) requestType = ResourceLocation.fromNamespaceAndPath(requestType.getNamespace(), requestType.getPath() + "/preview");
+            if (!ServerboundRequestLimiter.tryAcquire(player, requestType, 5L)) {
+                PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), false,
+                        "Please wait a moment before trying again.", net.minecraft.world.item.ItemStack.EMPTY,
+                        payload.command() instanceof SettlementManagementActionPayload.OrderStructure order ? order.requestId() : 0));
+                return;
+            }
+            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town())).orElse(null);
+            if (payload.command() instanceof SettlementManagementActionPayload.OrderStructure order) {
+                String reason = SettlementBlueprintService.order(player, town, order.structure(), order.anchor(), order.rotation(), order.confirm());
+                PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), reason.isEmpty(),
+                        reason, net.minecraft.world.item.ItemStack.EMPTY, order.requestId()));
+            } else if (payload.command() instanceof SettlementManagementActionPayload.PreviewStructure preview) {
+                var stack = SettlementBlueprintService.preview(player, town, preview.structure());
+                PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), !stack.isEmpty(),
+                        stack.isEmpty() ? "This structure is unavailable or construction is locked." : "", stack));
+            }
+            return;
+        }
         boolean applied = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
                 && execute(player, payload);
         PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), applied));
@@ -78,6 +102,8 @@ public final class SettlementManagementService {
                     : SettlementHousingService.release(player, town, home.resident(), home.bed());
             case SettlementManagementActionPayload.Advance ignored -> SettlementProgressionService.advance(player, id);
             case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
+            case SettlementManagementActionPayload.PreviewStructure preview -> !SettlementBlueprintService.preview(player, town, preview.structure()).isEmpty();
+            case SettlementManagementActionPayload.OrderStructure order -> SettlementBlueprintService.order(player, town, order.structure(), order.anchor(), order.rotation(), order.confirm()).isEmpty();
             case SettlementManagementActionPayload.DraftBlueprint draft -> SettlementBlueprintService.draft(player, town, draft.structure());
             case SettlementManagementActionPayload.PlaceBlueprint place -> SettlementBlueprintService.place(player, town, place.blueprint(), place.anchor(), place.rotation());
             case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
@@ -164,7 +190,9 @@ public final class SettlementManagementService {
                         project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.status(),
                         project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
                         project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),
-                        project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())))));
+                        project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())),
+                        town.queuePosition(project.id()), project.builder() == null ? "" : display(VillagerSocialGraphSavedData.get(level)
+                                .knownName(project.builder()).orElse(project.builder().toString())))));
                 case APPLICANTS -> {
                     for (var applicant : town.applicants().values()) {
                         ResourceLocation profession = ResourceLocation.tryParse(applicant.entity().getCompound("VillagerData").getString("profession"));
@@ -189,7 +217,7 @@ public final class SettlementManagementService {
         }
         String needle = request.query().strip().toLowerCase(Locale.ROOT);
         var matching = entries.stream().filter(entry -> searchable(entry).toLowerCase(Locale.ROOT).contains(needle));
-        var filtered = (request.page() == Page.HISTORY ? matching
+        var filtered = (request.page() == Page.HISTORY || request.page() == Page.PROJECTS ? matching
                 : matching.sorted(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(Entry::id))).toList();
         int size = SettlementManagementRequestPayload.PAGE_SIZE;
         int index = Math.min(request.index(), Math.max(0, (filtered.size() - 1) / size));

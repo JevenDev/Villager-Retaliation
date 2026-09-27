@@ -32,7 +32,7 @@ final class SettlementBackgroundConstruction {
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var project = town.activeProject(worker.id());
         var area = town.areas().get(worker.area());
-        if (project == null || area == null || !area.enabled() || !project.area().equals(worker.area()) || !project.within(area)) {
+        if (project == null || area == null || !area.enabled() || !project.area().equals(worker.area()) || !project.within(project.surveyArea(area))) {
             worker.status("no_construction_project");
             return;
         }
@@ -43,7 +43,7 @@ final class SettlementBackgroundConstruction {
             return;
         }
         var site = project.site();
-        if (site == null || !site.matches(area)) {
+        if (site == null || !site.matches(project.surveyArea(area))) {
             worker.status("construction_needs_observation");
             return;
         }
@@ -74,7 +74,7 @@ final class SettlementBackgroundConstruction {
         var before = state.copy();
         var inventory = HiredJobInventory.getJobInventory(owner);
         var depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved)
-                .filter(depot -> BuilderWorker.builderMaterialStorageFilter(plan, project.origin()).test(depot.position())).toList();
+                .filter(depot -> project.automatic() || BuilderWorker.builderMaterialStorageFilter(plan, project.origin()).test(depot.position())).toList();
         var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
         var view = new SettlementConstructionView(level, site);
         try {
@@ -109,6 +109,19 @@ final class SettlementBackgroundConstruction {
                 var obstruction = obstruction(site, view, plan, project);
                 BlockPos target = obstruction == null ? group.materialPart().worldPos() : obstruction;
                 BlockPos start = state.contains(POSITION) ? BlockPos.of(state.getLong(POSITION)) : worker.position();
+                if (project.automatic() && !site.area().contains(start)) {
+                    var entryPosition = SettlementConstructionRoutes.entry(site, project, start);
+                    if (entryPosition == null) {
+                        blocked(worker, "construction_needs_observation", "site_unloaded");
+                        return;
+                    }
+                    if (!budget.spend(16.0D * Math.sqrt(start.distSqr(entryPosition)))) {
+                        worker.status("traveling_to_construction");
+                        return;
+                    }
+                    start = entryPosition;
+                    state.putLong(POSITION, start.asLong());
+                }
                 var route = SettlementConstructionRoutes.route(site, project, plan, start, target, owner, obstruction != null);
                 if (route.isEmpty()) {
                     blocked(worker, "construction_unreachable", "path_blocked");

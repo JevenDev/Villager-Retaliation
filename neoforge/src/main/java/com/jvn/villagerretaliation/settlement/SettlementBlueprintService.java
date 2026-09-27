@@ -15,6 +15,63 @@ public final class SettlementBlueprintService {
     private SettlementBlueprintService() {
     }
 
+    public static ItemStack preview(ServerPlayer player, SettlementRecord town, ResourceLocation structure) {
+        if (!canPlan(player, town)) return ItemStack.EMPTY;
+        var entry = BuilderStructureCatalog.byId(player.server, structure).orElse(null);
+        var plan = entry == null ? null : BuilderStructureScanner.scan(player.serverLevel(), entry, Rotation.NONE).orElse(null);
+        if (plan == null) return ItemStack.EMPTY;
+        return ConstructionBlueprintItem.create(player.serverLevel(), null, plan, origin(plan, town.center()),
+                UUID.randomUUID(), 0, 0, "", 0L);
+    }
+
+    public static String order(ServerPlayer player, SettlementRecord town, ResourceLocation structure, BlockPos anchor, Rotation rotation) {
+        return order(player, town, structure, anchor, rotation, true);
+    }
+
+    public static String order(ServerPlayer player, SettlementRecord town, ResourceLocation structure, BlockPos anchor, Rotation rotation, boolean confirm) {
+        if (player == null || town == null || !player.isAlive() || player.isSpectator()
+                || !town.dimension().equals(player.level().dimension().location())
+                || !town.permits(player.getUUID(), SettlementPermission.BUILD)) return "Build permission is required.";
+        if (town.stage().projects() == 0) return "Advance the settlement to Hamlet to unlock construction.";
+        var entry = BuilderStructureCatalog.byId(player.server, structure).orElse(null);
+        var plan = entry == null || rotation == null ? null : BuilderStructureScanner.scan(player.serverLevel(), entry, rotation).orElse(null);
+        if (plan == null) return "This structure is unavailable or exceeds the construction size limit.";
+        var origin = origin(plan, anchor);
+        if (!within(player, town, plan, origin)) return "Move the entire footprint inside the village and world bounds.";
+        var min = plan.worldMin(origin);
+        var max = plan.worldMax(origin);
+        long width = (long) max.getX() - min.getX() + 9;
+        long height = (long) max.getY() - min.getY() + 6;
+        long depth = (long) max.getZ() - min.getZ() + 9;
+        if (width > 128 || height > 64 || depth > 128 || width * height * depth > SettlementArea.MAX_VOLUME)
+            return "This structure is too large for a construction site.";
+        var level = player.serverLevel();
+        for (int x = min.getX() >> 4; x <= max.getX() >> 4; x++) {
+            for (int z = min.getZ() >> 4; z <= max.getZ() >> 4; z++) {
+                if (level.getChunkSource().getChunkNow(x, z) == null) return "Load every chunk under the footprint before ordering.";
+            }
+        }
+        for (var block : plan.blocks()) {
+            var pos = plan.worldPos(origin, block);
+            var state = block.state();
+            if (state.getBlock() instanceof net.minecraft.world.level.block.GameMasterBlock
+                    || state.getDestroySpeed(level, pos) < 0 || state.is(net.minecraft.world.level.block.Blocks.SPAWNER)
+                    || state.is(net.minecraft.world.level.block.Blocks.LAVA))
+                return "The structure contains a block that village builders cannot safely place.";
+            var check = com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner.canReserveAt(level, null, pos, state);
+            if (!check.valid()) return "Clear the placement conflict at " + pos.toShortString() + " or choose another site.";
+        }
+        var project = SettlementProject.queued(town, plan, origin, level.getGameTime());
+        if (SettlementSavedData.get(level).settlements().stream().filter(other -> other.dimension().equals(town.dimension()))
+                .flatMap(other -> other.projects().values().stream()).anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project)))
+            return "This footprint overlaps another construction order. Move it or cancel that order.";
+        if (!confirm) return "";
+        if (!town.queueProject(player.getUUID(), project)) return "The construction queue is full. Cancel an order before adding another.";
+        SettlementConstructionSiteService.observeProject(level, town, project, null);
+        SettlementConstructionQueue.dispatch(level, town);
+        return "";
+    }
+
     public static boolean draft(ServerPlayer player, SettlementRecord town, ResourceLocation structure) {
         if (!canPlan(player, town)) {
             return false;

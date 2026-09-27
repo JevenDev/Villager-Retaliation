@@ -57,6 +57,20 @@ final class SettlementConstructionRoutes {
         return List.of();
     }
 
+    static BlockPos entry(SettlementConstructionSite site, SettlementProject project, BlockPos start) {
+        BlockPos nearest = null;
+        double distance = Double.POSITIVE_INFINITY;
+        for (var pos : BlockPos.betweenClosed(site.area().min(), site.area().max())) {
+            if (pos.getX() >= project.min().getX() && pos.getX() <= project.max().getX()
+                    && pos.getZ() >= project.min().getZ() && pos.getZ() <= project.max().getZ()) continue;
+            if (pos.distSqr(start) < distance && safe(site, pos)) {
+                nearest = pos.immutable();
+                distance = pos.distSqr(start);
+            }
+        }
+        return nearest;
+    }
+
     static boolean safe(SettlementConstructionSite site, BlockPos pos) {
         return site.area().contains(pos) && MiningSafety.isSafePathPosition(site, site::observed, pos);
     }

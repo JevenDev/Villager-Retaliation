@@ -40,6 +40,18 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             }
             case Advance ignored -> buffer.writeEnum(Kind.ADVANCE);
             case View ignored -> buffer.writeEnum(Kind.VIEW);
+            case PreviewStructure preview -> {
+                buffer.writeEnum(Kind.PREVIEW_STRUCTURE);
+                buffer.writeResourceLocation(preview.structure());
+            }
+            case OrderStructure order -> {
+                buffer.writeEnum(Kind.ORDER_STRUCTURE);
+                buffer.writeResourceLocation(order.structure());
+                buffer.writeBlockPos(order.anchor());
+                buffer.writeEnum(order.rotation());
+                buffer.writeVarInt(order.requestId());
+                buffer.writeBoolean(order.confirm());
+            }
             case DraftBlueprint draft -> {
                 buffer.writeEnum(Kind.DRAFT_BLUEPRINT);
                 buffer.writeResourceLocation(draft.structure());
@@ -170,6 +182,8 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case BREW -> new Brew(buffer.readUUID(), buffer.readUUID(), readBrewingOrder(buffer));
             case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
+            case PREVIEW_STRUCTURE -> new PreviewStructure(buffer.readResourceLocation());
+            case ORDER_STRUCTURE -> new OrderStructure(buffer.readResourceLocation(), buffer.readBlockPos(), buffer.readEnum(net.minecraft.world.level.block.Rotation.class), buffer.readVarInt(), buffer.readBoolean());
             case DRAFT_BLUEPRINT -> new DraftBlueprint(buffer.readResourceLocation());
             case PLACE_BLUEPRINT -> new PlaceBlueprint(buffer.readUUID(), buffer.readBlockPos(), buffer.readEnum(net.minecraft.world.level.block.Rotation.class));
             case START_PROJECT -> new StartProject(buffer.readUUID(), buffer.readUUID());
@@ -284,11 +298,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, PREVIEW_STRUCTURE, ORDER_STRUCTURE
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, PreviewStructure, OrderStructure {
     }
 
     public record Home(UUID resident, net.minecraft.core.BlockPos bed, boolean assign) implements Command {
@@ -310,6 +324,24 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
     }
 
     public record View() implements Command {
+    }
+
+    public record PreviewStructure(net.minecraft.resources.ResourceLocation structure) implements Command {
+        public PreviewStructure { Objects.requireNonNull(structure); }
+    }
+
+    public record OrderStructure(net.minecraft.resources.ResourceLocation structure, net.minecraft.core.BlockPos anchor,
+                                 net.minecraft.world.level.block.Rotation rotation, int requestId, boolean confirm) implements Command {
+        public OrderStructure(net.minecraft.resources.ResourceLocation structure, net.minecraft.core.BlockPos anchor, net.minecraft.world.level.block.Rotation rotation) {
+            this(structure, anchor, rotation, 0, true);
+        }
+
+        public OrderStructure {
+            Objects.requireNonNull(structure);
+            Objects.requireNonNull(anchor);
+            Objects.requireNonNull(rotation);
+            anchor = anchor.immutable();
+        }
     }
 
     public record DraftBlueprint(net.minecraft.resources.ResourceLocation structure) implements Command {

@@ -136,8 +136,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeUtf(order.result(), 64);
                 }
                 case Project project -> {
-                    buffer.writeUUID(project.area());
-                    buffer.writeUUID(project.builder());
+                    writeOptionalId(buffer, project.area());
+                    writeOptionalId(buffer, project.builder());
                     buffer.writeBlockPos(project.origin());
                     buffer.writeEnum(project.status());
                     buffer.writeVarInt(project.placed());
@@ -146,6 +146,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeUtf(project.materials(), 512);
                     buffer.writeEnum(project.phase());
                     buffer.writeUtf(project.missingMaterials(), 512);
+                    buffer.writeVarInt(project.queuePosition());
+                    buffer.writeUtf(project.builderName(), 128);
                 }
                 case Bed bed -> {
                     buffer.writeBlockPos(bed.position());
@@ -220,9 +222,9 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case BEDS -> new Bed(id, name, buffer.readBlockPos(), readOptionalId(buffer), buffer.readUtf(128), buffer.readBoolean());
                 case DELEGATES -> new Delegate(id, name, readPermissions(buffer));
                 case HISTORY -> new History(id, name, buffer.readVarLong(), buffer.readEnum(SettlementEvent.Type.class));
-                case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
+                case PROJECTS -> new Project(id, name, readOptionalId(buffer), readOptionalId(buffer), buffer.readBlockPos(),
                         buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
-                        buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512));
+                        buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512), buffer.readVarInt(), buffer.readUtf(128));
                 case SUMMARY -> throw new IllegalArgumentException("Settlement summary cannot contain rows");
             });
         }
@@ -407,10 +409,17 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
 
     public record Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, SettlementProject.Status status,
                           int placed, int total, String blocker, String materials,
-                          com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials) implements Entry {
+                          com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials, int queuePosition, String builderName) implements Entry {
+        public Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, SettlementProject.Status status,
+                       int placed, int total, String blocker, String materials,
+                       com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials) {
+            this(id, name, area, builder, origin, status, placed, total, blocker, materials, phase, missingMaterials, 0, "");
+        }
+
         public Project {
-            if (id == null || area == null || builder == null || origin == null || status == null || name == null || name.length() > 128
+            if (id == null || origin == null || status == null || name == null || name.length() > 128
                     || placed < 0 || total <= 0 || placed > total || blocker == null || blocker.length() > 128
+                    || queuePosition < 0 || builderName == null || builderName.length() > 128
                     || materials == null || materials.length() > 512 || phase == null || missingMaterials == null || missingMaterials.length() > 512) {
                 throw new IllegalArgumentException("Invalid construction project snapshot");
             }

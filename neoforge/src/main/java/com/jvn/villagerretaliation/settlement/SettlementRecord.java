@@ -532,6 +532,28 @@ public final class SettlementRecord {
         return this.projects.values().stream().filter(project -> project.active() && project.builder().equals(builder)).findFirst().orElse(null);
     }
 
+    public int queuePosition(UUID id) {
+        int position = 0;
+        for (var project : this.projects.values()) {
+            if (!project.unfinished() || project.active()) continue;
+            position++;
+            if (project.id().equals(id)) return position;
+        }
+        return 0;
+    }
+
+    boolean queueProject(UUID actor, SettlementProject project) {
+        if (!permits(actor, SettlementPermission.BUILD) || this.stage.projects() == 0 || !project.automatic()
+                || project.status() != SettlementProject.Status.QUEUED || !project.town().equals(this.id.value())
+                || !SettlementGuardOrder.within(this, project.min()) || !SettlementGuardOrder.within(this, project.max())
+                || this.projects.containsKey(project.id())
+                || this.projects.values().stream().filter(SettlementProject::unfinished).count() >= 128
+                || this.projects.values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) return false;
+        this.projects.put(project.id(), project);
+        changed();
+        return true;
+    }
+
     boolean startProject(UUID actor, SettlementProject project) {
         if (!permits(actor, SettlementPermission.BUILD) || !project.active() || !project.town().equals(this.id.value())
                 || this.projects.containsKey(project.id()) || !project.within(this.areas.get(project.area()))
@@ -555,7 +577,10 @@ public final class SettlementRecord {
     private void cancelProjects(UUID builder) {
         var project = activeProject(builder);
         if (project != null) {
-            finishProject(project.id(), SettlementProject.Status.CANCELLED);
+            if (project.automatic()) {
+                project.pause("builder_unavailable");
+                changed();
+            } else finishProject(project.id(), SettlementProject.Status.CANCELLED);
         }
     }
 
@@ -723,7 +748,7 @@ public final class SettlementRecord {
                         && this.duties.containsValue(area.id())
                 || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area.id())
                         && (area.type() == SettlementAreaType.HOME || !area.contains(depot.position())))
-                || this.projects.values().stream().anyMatch(project -> project.active() && project.area().equals(area.id()) && !project.within(area))
+                || this.projects.values().stream().anyMatch(project -> project.active() && !project.automatic() && project.area().equals(area.id()) && !project.within(area))
                 || this.areas.values().stream().anyMatch(existing ->
                         !existing.id().equals(area.id()) && existing.conflictsWith(area))) {
             return false;
@@ -746,7 +771,7 @@ public final class SettlementRecord {
             return false;
         }
         this.projects.values().stream().filter(project -> project.active() && project.area().equals(area))
-                .forEach(project -> finishProject(project.id(), SettlementProject.Status.CANCELLED));
+                .toList().forEach(project -> cancelProjects(project.builder()));
         this.duties.entrySet().stream().filter(duty -> duty.getValue().equals(area)).map(Map.Entry::getKey).forEach(this::cancelBrewing);
         this.duties.values().removeIf(area::equals);
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
@@ -1168,7 +1193,7 @@ public final class SettlementRecord {
         for (Tag raw : tag.getList("Projects", Tag.TAG_COMPOUND)) {
             var project = SettlementProject.load((CompoundTag) raw);
             if (!project.town().equals(record.id.value())
-                    || project.active() && (!project.within(record.areas.get(project.area()))
+                    || project.active() && (!project.within(project.surveyArea(record.areas.get(project.area())))
                             || !project.area().equals(record.duties.get(project.builder())) || record.activeProject(project.builder()) != null)
                     || project.reservesFootprint() && record.projects.values().stream()
                             .anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))

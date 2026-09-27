@@ -17,42 +17,50 @@ final class SettlementConstructionSiteService {
     static void observeArea(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
         if (area.type() != SettlementAreaType.CONSTRUCTION) return;
         for (var project : town.projects().values()) {
-            if (!project.active() || !project.area().equals(area.id())) continue;
+            if (!project.active() || project.automatic() || !project.area().equals(area.id())) continue;
             project.observeSite(area);
-            var site = project.site();
-            if (!site.matches(area)) continue;
-            refresh(level, site);
-            var origins = new ArrayList<BlockPos>();
-            for (int y = site.min().getY() >> 4; y <= site.max().getY() >> 4; y++) {
-                for (int x = site.min().getX() >> 4; x <= site.max().getX() >> 4; x++) {
-                    for (int z = site.min().getZ() >> 4; z <= site.max().getZ() >> 4; z++) {
-                        if (supplied == null || supplied.getPos().x == x && supplied.getPos().z == z) origins.add(new BlockPos(x << 4, y << 4, z << 4));
-                    }
+            if (!project.site().matches(area)) continue;
+            observeProject(level, town, project, supplied);
+        }
+    }
+
+    static void observeProject(ServerLevel level, SettlementRecord town, SettlementProject project, LevelChunk supplied) {
+        var site = project.site();
+        refresh(level, site);
+        var origins = new ArrayList<BlockPos>();
+        for (int y = site.min().getY() >> 4; y <= site.max().getY() >> 4; y++) {
+            for (int x = site.min().getX() >> 4; x <= site.max().getX() >> 4; x++) {
+                for (int z = site.min().getZ() >> 4; z <= site.max().getZ() >> 4; z++) {
+                    if (supplied == null || supplied.getPos().x == x && supplied.getPos().z == z) origins.add(new BlockPos(x << 4, y << 4, z << 4));
                 }
             }
-            if (origins.isEmpty()) continue;
-            int start = Math.floorMod(CURSORS.getOrDefault(site, 0), origins.size());
-            int visited = 0;
-            int captured = 0;
-            while (visited < origins.size() && (supplied != null || captured < 2)) {
-                var origin = origins.get((start + visited++) % origins.size());
-                var chunk = supplied != null ? supplied : level.getChunkSource().getChunkNow(origin.getX() >> 4, origin.getZ() >> 4);
-                if (chunk == null || origin.getY() < level.getMinBuildHeight() || origin.getY() >= level.getMaxBuildHeight()) continue;
-                var min = new BlockPos(Math.max(origin.getX(), site.min().getX()), Math.max(origin.getY(), site.min().getY()), Math.max(origin.getZ(), site.min().getZ()));
-                var max = new BlockPos(Math.min(origin.getX() + 15, site.max().getX()), Math.min(origin.getY() + 15, site.max().getY()), Math.min(origin.getZ() + 15, site.max().getZ()));
-                site.record(SettlementTerrainSection.capture("ConstructionSurvey", project.id(), min, max, chunk));
-                captured++;
-            }
-            CURSORS.put(site, (start + visited) % origins.size());
-            if (captured > 0) town.changed();
         }
+        if (origins.isEmpty()) return;
+        int start = Math.floorMod(CURSORS.getOrDefault(site, 0), origins.size());
+        int visited = 0;
+        int captured = 0;
+        while (visited < origins.size() && (supplied != null || captured < 2)) {
+            var origin = origins.get((start + visited++) % origins.size());
+            var chunk = supplied != null ? supplied : level.getChunkSource().getChunkNow(origin.getX() >> 4, origin.getZ() >> 4);
+            if (chunk == null || origin.getY() < level.getMinBuildHeight() || origin.getY() >= level.getMaxBuildHeight()) continue;
+            var min = new BlockPos(Math.max(origin.getX(), site.min().getX()), Math.max(origin.getY(), site.min().getY()), Math.max(origin.getZ(), site.min().getZ()));
+            var max = new BlockPos(Math.min(origin.getX() + 15, site.max().getX()), Math.min(origin.getY() + 15, site.max().getY()), Math.min(origin.getZ() + 15, site.max().getZ()));
+            site.record(SettlementTerrainSection.capture("ConstructionSurvey", project.id(), min, max, chunk));
+            captured++;
+        }
+        CURSORS.put(site, (start + visited) % origins.size());
+        if (captured > 0) town.changed();
     }
 
     static void update(ServerLevel level, SettlementRecord town) {
         for (var project : town.projects().values()) {
             if (project.site() == null) continue;
             refresh(level, project.site());
-            if (!project.active() && !project.site().pending()) project.clearSite();
+            if (project.automatic() && project.unfinished()) observeProject(level, town, project, null);
+            if (!project.unfinished() && !project.site().pending()) {
+                if (project.automatic()) project.site().clearObservations();
+                else project.clearSite();
+            }
             town.changed();
         }
     }

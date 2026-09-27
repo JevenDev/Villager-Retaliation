@@ -118,8 +118,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         BlockPos origin = BuilderTaskState.origin(context.state());
-        HiredWorkArea area = SettlementWorkforceService.duty(villager)
-                .map(duty -> HiredWorkArea.fromBounds(duty.area().min(), duty.area().max(), true)).orElse(null);
+        HiredWorkArea area = SettlementConstructionService.workArea(villager, context.state());
         if (!SettlementConstructionService.prepare(villager, context.state())) {
             if (SettlementConstructionService.allows(villager, context.state(), plan.get())) {
                 var positions = placementCollisionPositions(level, plan.get(), origin);
@@ -467,7 +466,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.builder.waiting_materials", replacements);
         }
 
-        Predicate<BlockPos> storageFilter = builderMaterialStorageFilter(plan, origin);
+        Predicate<BlockPos> storageFilter = SettlementConstructionService.materialStorageFilter(villager, context.state(), plan, origin);
         List<BlockPos> storages = AssignedStorageService.assignedNonPaymentStoragePositions(level, villager, storageFilter);
         if (storages.isEmpty()) {
             stopAfterBuilderStorageAction(villager);
@@ -620,7 +619,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         BuilderTaskState.setMissingMaterials(context.state(), missingSummary.summary());
         List<BuilderStructureScanner.MaterialRequirement> storageMissing = missing;
         Predicate<ItemStack> storageMaterialFilter = stack -> matchesAnyMaterial(storageMissing, stack);
-        Predicate<BlockPos> storagePositionFilter = builderMaterialStorageFilter(plan, origin);
+        Predicate<BlockPos> storagePositionFilter = SettlementConstructionService.materialStorageFilter(villager, context.state(), plan, origin);
         BlockPos storage = AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
                 level,
                 villager,

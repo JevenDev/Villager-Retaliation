@@ -15,6 +15,13 @@ public final class SettlementBackgroundService {
         SettlementMineReactions.tick(server);
         SettlementTerrainDrops.tick(server);
         long now = server.overworld().getGameTime();
+        if (now % 20L == 0L) {
+            for (var level : server.getAllLevels()) {
+                for (var town : SettlementSavedData.get(level).settlements()) {
+                    if (town.dimension().equals(level.dimension().location())) SettlementConstructionQueue.dispatch(level, town);
+                }
+            }
+        }
         if (now % 200L != 0L) {
             return;
         }

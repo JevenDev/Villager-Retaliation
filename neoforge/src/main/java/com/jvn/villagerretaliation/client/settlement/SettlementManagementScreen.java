@@ -144,6 +144,13 @@ public final class SettlementManagementScreen extends Screen {
                 && this.snapshot.header().leader().equals(this.minecraft.player.getUUID());
     }
 
+    void openWorldView() {
+        if (!SettlementViewClient.resume(this)) {
+            this.viewRequested = true;
+            submit(new SettlementManagementActionPayload.View());
+        }
+    }
+
     boolean expectingView() {
         return this.viewRequested && this.submitting;
     }
@@ -329,8 +336,9 @@ public final class SettlementManagementScreen extends Screen {
                 action(0, "new_project", permits(SettlementPermission.BUILD) && heldBlueprint() != null
                         && this.snapshot.header() != null && this.snapshot.header().projectLimit() > 0);
                 action(1, "cancel_project", permits(SettlementPermission.BUILD)
-                        && selected instanceof SettlementManagementPayload.Project project && project.status() == SettlementProject.Status.ACTIVE);
-                action(2, "project_builder", selected != null);
+                        && selected instanceof SettlementManagementPayload.Project project && project.status() != SettlementProject.Status.COMPLETED
+                        && project.status() != SettlementProject.Status.CANCELLED);
+                action(2, "project_builder", selected instanceof SettlementManagementPayload.Project project && project.builder() != null);
                 action(3, "draft_blueprint", permits(SettlementPermission.BUILD)
                         && this.snapshot.header() != null && this.snapshot.header().projectLimit() > 0);
             }
@@ -436,7 +444,7 @@ public final class SettlementManagementScreen extends Screen {
                     }
                 } else if (action == 1 && selected != null) {
                     confirm("cancel_project", selected, () -> submit(new SettlementManagementActionPayload.CancelProject(selected.id())));
-                } else if (selected instanceof SettlementManagementPayload.Project project) {
+                } else if (selected instanceof SettlementManagementPayload.Project project && project.builder() != null) {
                     navigate(Page.RESIDENTS, 0, project.builder().toString());
                 }
             }
@@ -727,6 +735,8 @@ public final class SettlementManagementScreen extends Screen {
                     depot.targets().forEach(target -> lines.add(text("target_row", target.name(), target.count())));
                 } else if (this.entry instanceof SettlementManagementPayload.Project project) {
                     lines.add(text("project_site", project.origin().toShortString()));
+                    if (project.queuePosition() > 0) lines.add(Component.literal("Queue position: " + project.queuePosition()));
+                    lines.add(Component.literal("Builder: " + (project.builder() == null ? "Unassigned" : project.builderName())));
                     lines.add(text("project_materials", project.materials()));
                     if (project.status() == SettlementProject.Status.ACTIVE || !project.blocker().isBlank()) {
                         if (!project.missingMaterials().isBlank()) {

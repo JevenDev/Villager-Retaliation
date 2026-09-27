@@ -47,6 +47,13 @@ final class SettlementConstructionSite implements BlockGetter {
         return Collections.unmodifiableMap(this.placements);
     }
 
+    void clearObservations() {
+        if (!pending()) {
+            this.sections.clear();
+            this.planned.clear();
+        }
+    }
+
     boolean pending() {
         return !this.placements.isEmpty();
     }
