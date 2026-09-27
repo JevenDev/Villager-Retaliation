@@ -93,6 +93,18 @@ public final class BuilderWorker extends AbstractBlockWorker {
             HiredWorkerBrain.clearFailure(context);
             HiredStorageNavigationGoal.clearStorageTarget(context);
             clearBuildSiteIntermediateNavigation(context);
+            var clearance = SettlementConstructionService.pendingClearance(villager);
+            if (clearance != null) {
+                var area = HiredWorkArea.fromBounds(clearance.area().min(), clearance.area().max(), true);
+                if (moveAwayFromPlacements(level, villager, area, clearance.center(), villager.blockPosition(),
+                        clearance.positions(), BUILD_APPROACH_RADIUS)) {
+                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, clearance.center());
+                    return WorkResult.progressed("interaction.work.builder.moving_to_site", Map.of(
+                            "target", HiredWorkerBrain.formatPos(clearance.center()), "structure", clearance.label()));
+                }
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, villager.blockPosition());
+                return WorkResult.idle("interaction.work.builder.pending_world");
+            }
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             return WorkResult.idle("interaction.work.builder.choose_structure");
         }

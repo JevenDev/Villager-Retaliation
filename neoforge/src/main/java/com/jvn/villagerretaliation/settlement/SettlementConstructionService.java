@@ -10,13 +10,17 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCata
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 
 public final class SettlementConstructionService {
     private SettlementConstructionService() {
@@ -85,6 +89,32 @@ public final class SettlementConstructionService {
         }
         ConstructionBlueprintItem.expireMatchingBlueprints(player.serverLevel(), projectId);
         return true;
+    }
+
+    public static PendingClearance pendingClearance(Villager builder) {
+        if (!(builder.level() instanceof ServerLevel level) || SettlementWorkforceService.hasPersonalCommitment(builder)) return null;
+        var town = SettlementWorkforceService.home(level, builder).orElse(null);
+        if (town == null) return null;
+        var positions = new ArrayList<BlockPos>();
+        var body = builder.getBoundingBox().inflate(-0.02D);
+        SettlementProject blocked = null;
+        for (var project : town.projects().values()) {
+            if (project.active() || !project.builder().equals(builder.getUUID()) || project.site() == null || !project.site().pending()) continue;
+            for (var placement : project.site().placements().values()) {
+                for (var part : placement.parts()) {
+                    var pos = part.position();
+                    var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+                    if (chunk == null || placement.applied(chunk, project.id(), pos)
+                            || part.after().getCollisionShape(chunk, pos).isEmpty()) continue;
+                    positions.add(pos);
+                    if (blocked == null && body.intersects(new AABB(pos))) blocked = project;
+                }
+            }
+        }
+        return blocked == null ? null : new PendingClearance(blocked.site().area(), blocked.origin(), blocked.label(), List.copyOf(positions));
+    }
+
+    public record PendingClearance(SettlementArea area, BlockPos center, String label, List<BlockPos> positions) {
     }
 
     public static boolean prepare(Villager builder, CompoundTag state) {
