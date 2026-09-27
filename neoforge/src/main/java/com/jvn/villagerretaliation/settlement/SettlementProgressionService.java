@@ -20,6 +20,7 @@ public final class SettlementProgressionService {
         town.support().observe(now, status.missing().isEmpty(),
                 status.population() > 0 && (status.housing() < status.population() || status.foodDays() < 0.25D));
         town.changed();
+        if (!town.manualManagement() && assess(level, town).ready()) advance(town, now);
     }
 
     public static Status assess(ServerLevel level, SettlementRecord town) {
@@ -83,10 +84,14 @@ public final class SettlementProgressionService {
             }
             return false;
         }
+        advance(town, player.serverLevel().getGameTime());
+        return true;
+    }
+
+    private static void advance(SettlementRecord town, long now) {
         town.support().resetAdvancement();
         town.advance();
-        town.recordEvent(player.serverLevel().getGameTime(), SettlementEvent.Type.STAGE_ADVANCED, town.stage().name());
-        return true;
+        town.recordEvent(now, SettlementEvent.Type.STAGE_ADVANCED, town.stage().name());
     }
 
     private static boolean staffed(SettlementRecord town, SettlementAreaType type, Set<UUID> adults) {

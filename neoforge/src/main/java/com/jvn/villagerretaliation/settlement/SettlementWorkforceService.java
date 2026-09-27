@@ -52,14 +52,23 @@ public final class SettlementWorkforceService {
     public static boolean assign(ServerLevel level, ServerPlayer player, VillageAllegianceId townId,
                                  Villager villager, UUID areaId) {
         SettlementRecord town = SettlementSavedData.get(level).get(townId).orElse(null);
-        if (town == null || player == null || villager == null || !player.isAlive() || player.isSpectator()
-                || player.level() != level || villager.level() != level || !villager.isAlive() || villager.isBaby()
+        if (town == null || player == null || !player.isAlive() || player.isSpectator()
+                || player.level() != level || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return false;
+        if (!assign(level, town, villager, areaId)) return false;
+        town.rememberManualDuty(villager.getUUID());
+        return true;
+    }
+
+    static boolean assignAutonomously(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
+        return !town.manualManagement() && villager != null && !town.manuallyStaffed(villager.getUUID())
+                && !town.duties().containsKey(villager.getUUID()) && assign(level, town, villager, areaId);
+    }
+
+    private static boolean assign(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
+        if (villager == null || villager.level() != level || !villager.isAlive() || villager.isBaby()
                 || !town.dimension().equals(level.dimension().location())
-                || !town.permits(player.getUUID(), SettlementPermission.STAFF)
-                || !VillageAllegianceApi.canonicalPrimary(level, villager).filter(townId::equals).isPresent()
-                || hasPersonalCommitment(villager)) {
-            return false;
-        }
+                || !VillageAllegianceApi.canonicalPrimary(level, villager).filter(town.id()::equals).isPresent()
+                || hasPersonalCommitment(villager)) return false;
         SettlementArea area = town.areas().get(areaId);
         if (area == null || area.type().role() == null
                 || !HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())
@@ -99,6 +108,7 @@ public final class SettlementWorkforceService {
         var worker = town.workers().get(resident);
         if (villager != null && worker != null) worker.restore(villager);
         if (!town.removeDuty(resident)) return false;
+        town.rememberManualDuty(resident);
         if (villager != null) {
             reconcile(level, villager);
             var care = town.residents().get(resident);

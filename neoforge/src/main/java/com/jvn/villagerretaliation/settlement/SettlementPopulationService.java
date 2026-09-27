@@ -32,6 +32,10 @@ public final class SettlementPopulationService {
         }
         SettlementArrivalService.update(level, town);
         for (SettlementApplicant applicant : List.copyOf(town.applicants().values())) {
+            if (!town.manualManagement() && applicant.approvedBy().isEmpty() && canGrow(level, town)) {
+                applicant = applicant.approve(town.leader());
+                town.putApplicant(applicant);
+            }
             if (applicant.approvedBy().isPresent()) {
                 arrive(level, town, applicant);
             } else if (now - applicant.createdAt() >= 7L * 24_000L) {
@@ -42,7 +46,12 @@ public final class SettlementPopulationService {
         SettlementFamilyService.update(level, town, now);
         if (now >= town.nextApplicantAt() && canGrow(level, town)
                 && town.applicants().size() < SettlementRecord.MAX_APPLICANTS) {
-            propose(level, town);
+            var applicant = propose(level, town).orElse(null);
+            if (!town.manualManagement() && applicant != null) {
+                applicant = applicant.approve(town.leader());
+                town.putApplicant(applicant);
+                arrive(level, town, applicant);
+            }
             town.scheduleApplicant(now + 24_000L);
         }
     }

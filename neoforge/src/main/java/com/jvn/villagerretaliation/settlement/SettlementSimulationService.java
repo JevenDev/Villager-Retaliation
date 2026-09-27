@@ -22,6 +22,8 @@ public final class SettlementSimulationService {
     private int limit = -1;
     private int cursor;
     private long completedCycles;
+    private List<Runnable> arrivals = List.of();
+    private int arrivalCursor;
 
     SettlementSimulationService() {
     }
@@ -48,6 +50,9 @@ public final class SettlementSimulationService {
         long currentDay = Math.floorDiv(now, 24_000L);
         int cap = Math.clamp(VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.get(), 0, 10000);
         if (now >= this.refreshAt || currentDay != this.day || cap != this.limit) refresh(server, now, currentDay, cap);
+        for (int index = 0; index < Math.min(4, this.arrivals.size()); index++) {
+            this.arrivals.get(Math.floorMod(this.arrivalCursor++, this.arrivals.size())).run();
+        }
         if (this.scheduled.isEmpty()) return;
         long started = System.nanoTime();
         int idle = 0;
@@ -65,7 +70,18 @@ public final class SettlementSimulationService {
     }
 
     private void refresh(MinecraftServer server, long now, long currentDay, int cap) {
-        var selected = select(SettlementSavedData.get(server.overworld()).settlements(), currentDay, cap);
+        var towns = SettlementSavedData.get(server.overworld()).settlements();
+        var reconciliation = new ArrayList<Runnable>();
+        for (var town : towns) {
+            if (town.arrivals().isEmpty()) continue;
+            var level = server.getLevel(ResourceKey.create(Registries.DIMENSION, town.dimension()));
+            if (level != null) {
+                for (var id : town.arrivals().keySet()) reconciliation.add(() -> SettlementArrivalService.materialize(level, town, id));
+            }
+        }
+        this.arrivals = List.copyOf(reconciliation);
+        this.arrivalCursor = 0;
+        var selected = select(towns, currentDay, cap);
         var retained = new java.util.HashSet<VillageAllegianceId>();
         int offset = 0;
         for (var town : selected) {
@@ -110,6 +126,7 @@ public final class SettlementSimulationService {
                 SettlementCareService.schedule(this.level, this.town, cycleAt, jobs);
                 jobs.add(() -> SettlementDepartureService.process(this.level, this.town, cycleAt));
                 SettlementBackgroundService.schedule(this.level, this.town, cycleAt, jobs);
+                jobs.add(() -> SettlementAutonomyService.update(this.level, this.town));
                 jobs.add(() -> SettlementProgressionService.update(this.level, this.town, cycleAt));
                 jobs.add(() -> SettlementPopulationService.update(this.level, this.town, cycleAt));
                 jobs.add(() -> SettlementTradeService.process(this.level, this.town, cycleAt));

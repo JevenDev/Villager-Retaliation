@@ -244,6 +244,7 @@ public final class SettlementManagementScreen extends Screen {
         if (header == null) {
             return;
         }
+        this.rows.add(null, text(header.manualManagement() ? "manual_management" : "autonomous_management"), text("management_hint"));
         this.rows.add(null, text("population", header.population(), header.housing()), text("housing_hint"));
         this.rows.add(null, text("food", decimal(header.foodDays())), text("food_hint"));
         this.rows.add(null, text("stage", enumText("stage", header.stage())), text("bounds", header.radius()));
@@ -339,6 +340,7 @@ public final class SettlementManagementScreen extends Screen {
                 action(0, "advance", leader() && this.snapshot.header() != null && this.snapshot.header().ready());
                 action(1, "treasury", permits(SettlementPermission.TREASURY));
                 action(2, "budget", permits(SettlementPermission.TREASURY));
+                action(3, this.snapshot.header() != null && this.snapshot.header().manualManagement() ? "enable_autonomy" : "manage_manually", leader());
             }
             case RESIDENTS -> {
                 action(0, "assign", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
@@ -448,6 +450,8 @@ public final class SettlementManagementScreen extends Screen {
             case SUMMARY -> {
                 if (action == 0) {
                     submit(new SettlementManagementActionPayload.Advance());
+                } else if (action == 3) {
+                    submit(new SettlementManagementActionPayload.Management(!this.snapshot.header().manualManagement()));
                 } else {
                     edit(action == 1 ? SettlementEditScreen.Mode.TREASURY : SettlementEditScreen.Mode.BUDGET, null);
                 }

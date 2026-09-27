@@ -76,6 +76,7 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.Home home -> home.assign()
                     ? SettlementHousingService.assign(player, town, home.resident(), home.bed())
                     : SettlementHousingService.release(player, town, home.resident(), home.bed());
+            case SettlementManagementActionPayload.Management management -> town.setManualManagement(player.getUUID(), management.manual());
             case SettlementManagementActionPayload.Advance ignored -> SettlementProgressionService.advance(player, id);
             case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
             case SettlementManagementActionPayload.DraftBlueprint draft -> SettlementBlueprintService.draft(player, town, draft.structure());
@@ -152,7 +153,7 @@ public final class SettlementManagementService {
                     SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
                     status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
                     status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
-                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent());
+                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), town.manualManagement());
             switch (request.page()) {
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
