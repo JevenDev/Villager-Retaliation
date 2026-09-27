@@ -13,7 +13,13 @@ import com.jvn.villagerretaliation.settlement.SettlementManagementService;
 import com.jvn.villagerretaliation.settlement.SettlementSavedData;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
+import com.jvn.villagerretaliation.settlement.SettlementViewWindow;
 import com.mojang.logging.LogUtils;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -24,6 +30,7 @@ import net.minecraft.Util;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,12 +46,16 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderLivingEvent;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = VillagerRetaliation.MOD_ID, value = Dist.CLIENT)
@@ -61,6 +72,10 @@ public final class SettlementViewClientSmoke {
     private static double originalX;
     private static float originalHeight;
     private static Vec3 body;
+    private static Entity zoomResident;
+    private static Vec3 zoomCamera;
+    private static BlockEntity zoomBed;
+    private static boolean maxZoomResidentRendered;
 
     private SettlementViewClientSmoke() {
     }
@@ -98,6 +113,32 @@ public final class SettlementViewClientSmoke {
             phase = 2;
         } else if (phase == 2 && minecraft.screen instanceof SettlementManagementScreen screen) {
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            ticks = 0;
+            phase = 60;
+        } else if (phase == 60 && minecraft.screen instanceof SettlementViewScreen screen && visibleResident(minecraft) != null) {
+            if (++ticks == 1) {
+                originalHeight = screen.viewHeight();
+                screen.mouseScrolled(40, 80, 0, -100);
+            }
+            if (ticks < 30) return;
+            require(screen.viewHeight() == SettlementViewWindow.MAX_HEIGHT, "the rendering check reaches maximum town zoom");
+            require(maxZoomResidentRendered, "the real resident model renders beyond vanilla distance at maximum zoom");
+            zoomResident = visibleResident(minecraft);
+            zoomCamera = minecraft.gameRenderer.getMainCamera().getPosition();
+            require(!minecraft.getEntityRenderDispatcher().shouldRender(zoomResident,
+                            new Frustum(new Matrix4f(), new Matrix4f()), zoomCamera.x, zoomCamera.y, zoomCamera.z),
+                    "maximum zoom retains frustum culling");
+            var outside = EntityType.VILLAGER.create(minecraft.level);
+            outside.setPos(fixture.center().offset(1_000, 0, 1_000).getBottomCenter());
+            require(!minecraft.getEntityRenderDispatcher().shouldRender(outside, visibleFrustum(),
+                            zoomCamera.x, zoomCamera.y, zoomCamera.z),
+                    "villagers outside the authorized viewing window retain distance culling");
+            zoomBed = minecraft.level.getBlockEntity(fixture.center().offset(-6, 0, 0));
+            require(zoomBed != null && !minecraft.getBlockEntityRenderDispatcher().getRenderer(zoomBed).shouldRender(zoomBed, zoomCamera),
+                    "the remote bed exceeds its ordinary rendering distance");
+            require(renderBedVertices(zoomBed) > 0, "the native bed renderer emits geometry at maximum town zoom");
+            capture("maximum-zoom-resident");
+            screen.mouseScrolled(40, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
             ticks = 0;
             phase = 3;
         } else if (phase == 3 && minecraft.screen instanceof SettlementViewScreen screen && visibleResident(minecraft) != null) {
@@ -193,10 +234,14 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 5 && minecraft.screen == null) {
             serverCheck.join();
             require(minecraft.getCameraEntity() == minecraft.player, "damage restores the player's camera");
+            require(!minecraft.getEntityRenderDispatcher().shouldRender(zoomResident, visibleFrustum(),
+                            zoomCamera.x, zoomCamera.y, zoomCamera.z),
+                    "leaving the town view restores ordinary resident distance culling");
             require(minecraft.options.getCameraType() == CameraType.THIRD_PERSON_BACK, "damage restores the previous perspective");
             require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) == null,
                     "leaving releases the remote client chunks");
             if (++ticks >= 20) {
+                require(renderBedVertices(zoomBed) == 0, "leaving the town view restores ordinary bed distance culling");
                 UUID player = minecraft.player.getUUID();
                 minecraft.getSingleplayerServer().submit(() -> {
                     ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
@@ -638,6 +683,35 @@ public final class SettlementViewClientSmoke {
         SettlementCareService.onUnloaded(resident);
         SettlementManagementService.open(player, id);
         return new Fixture(id, resident.getUUID(), center);
+    }
+
+    @SubscribeEvent
+    public static void onResidentRendered(RenderLivingEvent.Post<?, ?> event) {
+        if (System.getProperty(OUTPUT) == null || phase != 60 || fixture == null
+                || !event.getEntity().getUUID().equals(fixture.resident())) return;
+        var minecraft = Minecraft.getInstance();
+        var camera = minecraft.gameRenderer.getMainCamera().getPosition();
+        if (minecraft.screen instanceof SettlementViewScreen screen && screen.viewHeight() == SettlementViewWindow.MAX_HEIGHT
+                && !event.getEntity().shouldRender(camera.x, camera.y, camera.z)) maxZoomResidentRendered = true;
+    }
+
+    private static int renderBedVertices(BlockEntity bed) {
+        try (var memory = new ByteBufferBuilder(4_096)) {
+            var buffer = new BufferBuilder(memory, VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
+            Minecraft.getInstance().getBlockEntityRenderDispatcher().render(bed, 0.0F, new PoseStack(), type -> buffer);
+            try (var mesh = buffer.build()) {
+                return mesh == null ? 0 : mesh.drawState().vertexCount();
+            }
+        }
+    }
+
+    private static Frustum visibleFrustum() {
+        return new Frustum(new Matrix4f(), new Matrix4f()) {
+            @Override
+            public boolean isVisible(AABB bounds) {
+                return true;
+            }
+        };
     }
 
     private static void clickWorld(SettlementViewScreen screen, Vec3 position) {

@@ -130,6 +130,10 @@ public final class SettlementViewScreen extends Screen {
         return this.viewHeight;
     }
 
+    boolean contains(BlockPos position) {
+        return this.window.contains(position);
+    }
+
     void acceptWindow(SettlementViewStatePayload payload) {
         if (payload.requestId() < this.acceptedRequestId) {
             return;

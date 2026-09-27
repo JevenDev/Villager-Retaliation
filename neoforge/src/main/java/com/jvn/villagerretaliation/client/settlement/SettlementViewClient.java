@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.network.SettlementViewStatePayload;
 import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Marker;
@@ -112,6 +114,11 @@ public final class SettlementViewClient {
         if (active != null) {
             end(active);
         }
+    }
+
+    public static boolean contains(Level level, BlockPos position) {
+        return active != null && camera != null && camera.level() == level
+                && Minecraft.getInstance().getCameraEntity() == camera && active.contains(position);
     }
 
     public static boolean ownsCamera(Camera current) {

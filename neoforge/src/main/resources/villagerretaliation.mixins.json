@@ -84,6 +84,8 @@
     "client.RecipeBookComponentAccessor",
     "client.ScreenInvoker",
     "client.SettlementClientChunkMixin",
+    "client.SettlementEntityRendererMixin",
+    "client.SettlementBlockEntityRendererMixin",
     "client.SettlementLevelRendererMixin",
     "client.SlotAccessor",
     "client.MerchantScreenMixin",
