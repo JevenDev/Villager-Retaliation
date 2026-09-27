@@ -13,6 +13,8 @@ final class SettlementAnimalBirth {
     private final UUID experienceId;
     private final int experience;
     private boolean childApplied;
+    private boolean experienceQueued;
+    private long createdAt = -1L;
 
     private SettlementAnimalBirth(UUID id, BlockPos position, CompoundTag entity, UUID experienceId, int experience) {
         if (id == null || position == null || experienceId == null || id.equals(experienceId)
@@ -30,7 +32,9 @@ final class SettlementAnimalBirth {
     static SettlementAnimalBirth create(AgeableMob child, int experience) {
         var entity = child.saveWithoutId(new CompoundTag());
         entity.putString("id", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(child.getType()).toString());
-        return new SettlementAnimalBirth(child.getUUID(), child.blockPosition(), entity, UUID.randomUUID(), experience);
+        var birth = new SettlementAnimalBirth(child.getUUID(), child.blockPosition(), entity, UUID.randomUUID(), experience);
+        birth.createdAt = child.level().getGameTime();
+        return birth;
     }
 
     UUID id() {
@@ -53,6 +57,18 @@ final class SettlementAnimalBirth {
         return this.experience;
     }
 
+    long createdAt(long now) {
+        return this.createdAt < 0L ? now : this.createdAt;
+    }
+
+    boolean experienceQueued() {
+        return this.experienceQueued;
+    }
+
+    void queueExperience() {
+        this.experienceQueued = true;
+    }
+
     boolean childApplied() {
         return this.childApplied;
     }
@@ -69,6 +85,8 @@ final class SettlementAnimalBirth {
         tag.putUUID("ExperienceId", this.experienceId);
         tag.putInt("Experience", this.experience);
         tag.putBoolean("ChildApplied", this.childApplied);
+        tag.putBoolean("ExperienceQueued", this.experienceQueued);
+        tag.putLong("CreatedAt", this.createdAt);
         return tag;
     }
 
@@ -79,6 +97,8 @@ final class SettlementAnimalBirth {
         var birth = new SettlementAnimalBirth(tag.getUUID("Id"), BlockPos.of(tag.getLong("Position")),
                 tag.getCompound("Entity"), tag.getUUID("ExperienceId"), tag.getInt("Experience"));
         birth.childApplied = tag.getBoolean("ChildApplied");
+        birth.experienceQueued = tag.getBoolean("ExperienceQueued");
+        birth.createdAt = tag.contains("CreatedAt", Tag.TAG_LONG) ? tag.getLong("CreatedAt") : -1L;
         return birth;
     }
 }

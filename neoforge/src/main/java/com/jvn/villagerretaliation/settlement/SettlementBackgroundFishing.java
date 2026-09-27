@@ -91,6 +91,7 @@ public final class SettlementBackgroundFishing {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier, long now) {
+        migrateExperience(level, town, worker);
         var state = worker.settings();
         if (level.getEntity(worker.id()) instanceof Villager villager) {
             var liveState = HiredWorkStateStore.state(villager);
@@ -196,14 +197,10 @@ public final class SettlementBackgroundFishing {
             inventory.setChanged();
         }
         if (mending && result.experience() > 0) {
-            var xp = new CompoundTag();
-            xp.putInt("Value", result.experience());
-            xp.putLong("Expires", level.getGameTime() + 6_000L);
-            var experience = state.getList(EXPERIENCE, Tag.TAG_COMPOUND);
-            experience.add(xp);
-            state.put(EXPERIENCE, experience);
+            var position = owner.position().add(0.0D, 0.5D, 0.5D);
+            var experience = VillagerWorkExperience.create(level, owner, position, result.experience());
+            SettlementGroundExperienceService.submit(level, town, experience, level.getGameTime());
         }
-        mend(level, owner, state);
         for (EquipmentSlot slot : EquipmentSlot.values()) HiredJobInventory.synchronizeEquipmentDurability(owner, slot);
         worker.inventorySnapshot(inventory.captureSnapshot());
         var pending = new CompoundTag();
@@ -305,32 +302,29 @@ public final class SettlementBackgroundFishing {
         return true;
     }
 
-    static void returnExperience(ServerLevel level, Villager villager, SettlementWorkerState worker) {
-        var state = HiredWorkStateStore.state(villager);
+    static void migrateExperience(ServerLevel level, SettlementRecord town, SettlementWorkerState worker) {
+        var state = worker.settings();
         var experience = state.getList(EXPERIENCE, Tag.TAG_COMPOUND);
-        if (experience.isEmpty() || level.getEntity(villager.getUUID()) != villager
-                || !level.isPositionEntityTicking(villager.blockPosition())) return;
-        for (Tag raw : experience) {
-            var xp = (CompoundTag) raw;
-            if (xp.getLong("Expires") > level.getGameTime()) {
-                VillagerWorkExperience.spawn(level, villager, villager.position().add(0.0D, 0.5D, 0.0D), xp.getInt("Value"));
-            }
+        if (experience.isEmpty()) return;
+        for (int index = 0; index < experience.size(); index++) {
+            var xp = experience.getCompound(index);
+            int value = xp.getInt("Value");
+            long remaining = xp.getLong("Expires") - level.getGameTime();
+            if (value <= 0 || remaining <= 0L) continue;
+            String identity = "SettlementFishingExperience:" + worker.id() + ":" + xp.getLong("Expires") + ":" + index;
+            var id = xp.hasUUID("Id") ? xp.getUUID("Id")
+                    : java.util.UUID.nameUUIDFromBytes(identity.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            var orb = VillagerWorkExperience.create(level, worker.id(), worker.position().getBottomCenter().add(0.0D, 0.5D, 0.5D), value);
+            orb.setUUID(id);
+            ((com.jvn.villagerretaliation.mixin.ExperienceOrbAccessor) orb).villagerretaliation$setAge((int) Math.clamp(6_000L - remaining, 0L, 6_000L));
+            SettlementGroundExperienceService.submit(level, town, orb, level.getGameTime());
         }
         state.remove(EXPERIENCE);
-        worker.settings().remove(EXPERIENCE);
-        SettlementWorkforceService.home(level, villager).ifPresent(SettlementRecord::changed);
-    }
-
-    private static void mend(ServerLevel level, Villager owner, CompoundTag state) {
-        var experience = state.getList(EXPERIENCE, Tag.TAG_COMPOUND);
-        experience.removeIf(raw -> {
-            var xp = (CompoundTag) raw;
-            return xp.getLong("Expires") <= level.getGameTime()
-                    || VillagerEquipmentMending.repairWithXp(owner, xp.getInt("Value"))
-                    || VillagerEquipmentMending.hasMendingEquipment(owner);
-        });
-        if (experience.isEmpty()) state.remove(EXPERIENCE);
-        else state.put(EXPERIENCE, experience);
+        var entity = level.getEntity(worker.id());
+        var villager = entity instanceof Villager nativeVillager ? nativeVillager : null;
+        worker.settingsChanged(villager);
+        if (villager != null) HiredWorkStateStore.state(villager).remove(EXPERIENCE);
+        town.changed();
     }
 
     private static boolean isRod(ItemStack stack) {

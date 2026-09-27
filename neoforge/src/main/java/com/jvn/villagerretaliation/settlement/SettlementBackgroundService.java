@@ -37,6 +37,7 @@ public final class SettlementBackgroundService {
         SettlementEntityDeathService.update(level, town, now);
         SettlementLivestockService.update(level, town, now);
         SettlementGroundItemService.update(level, town, now);
+        for (var worker : town.workers().values()) SettlementBackgroundFishing.migrateExperience(level, town, worker);
         SettlementGroundExperienceService.update(level, town, now);
         SettlementConstructionSiteService.update(level, town);
         for (SettlementDepot depot : town.depots().values()) {
@@ -117,7 +118,7 @@ public final class SettlementBackgroundService {
             }
             if (worker != null) {
                 SettlementBackgroundFishing.finishReturnedCatch(level, villager);
-                SettlementBackgroundFishing.returnExperience(level, villager, worker);
+                SettlementBackgroundFishing.migrateExperience(level, town, worker);
             }
             SettlementWorkforceService.duty(villager).ifPresent(duty ->
                     SettlementWorkerConfigurationService.apply(villager, town, duty.area()));

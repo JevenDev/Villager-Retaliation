@@ -157,7 +157,14 @@ public final class SettlementFishingWorkGameTests {
             fixture.worker().updateInventory(level.registryAccess(), items);
             ready(helper, fixture, 1, 0, -1L);
             SettlementBackgroundService.update(level, fixture.town(), 200L);
-            helper.assertTrue(rod(helper, fixture).getDamageValue() < 20, "native repair effects consume catch XP after rod wear");
+            helper.assertValueEqual(rod(helper, fixture).getDamageValue(), 21, "catching wears the rod before physical Mending contact");
+            var origin = SettlementTerrainSection.sectionOrigin(fixture.spot().approach());
+            fixture.town().recordNavigation(SettlementNavigationSection.capture(origin.below(16), fixture.chunk()));
+            fixture.town().recordNavigation(SettlementNavigationSection.capture(origin, fixture.chunk()));
+            var firstReward = fixture.town().groundExperience().values().iterator().next();
+            SettlementGroundExperienceService.update(level, fixture.town(), firstReward.checkedAt() + 200L);
+            helper.assertTrue(rod(helper, fixture).getDamageValue() < 20, "native repair effects consume catch XP after actual contact");
+            helper.assertTrue(firstReward.removed(), "the first finite reward is consumed once");
             items = fixture.worker().items(level.registryAccess());
             items.get(HiredJobInventory.MAINHAND_SLOT).setDamageValue(rod.getMaxDamage() - 1);
             fixture.worker().updateInventory(level.registryAccess(), items);
@@ -165,11 +172,13 @@ public final class SettlementFishingWorkGameTests {
             ready(helper, fixture, 1, 0, -1L);
             SettlementBackgroundService.update(level, fixture.town(), 400L);
             helper.assertTrue(rod(helper, fixture).isEmpty(), "the final durability point breaks before Mending can repair");
-            helper.assertValueEqual(fixture.worker().settings().getList("SettlementFishingExperience", Tag.TAG_COMPOUND).size(), 1,
-                    "XP without any remaining Mending equipment waits for a native return");
-            var saved = SettlementWorkerState.load(fixture.worker().save());
-            helper.assertValueEqual(saved.settings().getList("SettlementFishingExperience", Tag.TAG_COMPOUND).size(), 1,
-                    "unconsumed owned XP survives saving");
+            var pending = fixture.town().groundExperience().values().stream().filter(experience -> !experience.removed()).toList();
+            helper.assertValueEqual(pending.size(), 1, "the broken rod leaves one finite reward in the shared experience ledger");
+            var saved = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+            helper.assertTrue(saved.groundExperience().get(pending.getFirst().id()).pendingSpawn(),
+                    "unconsumed owned XP retains its identity across saving");
+            helper.assertFalse(fixture.worker().settings().contains("SettlementFishingExperience"),
+                    "the former immediate-repair queue cannot retain a second copy");
             helper.assertFalse(level.hasChunkAt(fixture.spot().water()), "rod breakage and Mending cannot load fishing terrain");
         });
     }

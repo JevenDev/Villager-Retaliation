@@ -20,6 +20,7 @@ final class SettlementGroundExperience {
     private long checkedAt;
     private long version;
     private boolean removed;
+    private boolean pendingSpawn;
 
     private SettlementGroundExperience(CompoundTag entity, long checkedAt, long version, boolean removed) {
         var pos = entity.getList("Pos", Tag.TAG_DOUBLE);
@@ -39,6 +40,17 @@ final class SettlementGroundExperience {
     static SettlementGroundExperience capture(ExperienceOrb orb, long now) {
         SettlementExperienceSimulation.remember(orb);
         return new SettlementGroundExperience(orb.saveWithoutId(new CompoundTag()), now, version(orb), false);
+    }
+
+    static SettlementGroundExperience pending(ExperienceOrb orb, long now) {
+        var state = capture(orb, now);
+        state.pendingSpawn = true;
+        state.version++;
+        return state;
+    }
+
+    boolean pendingSpawn() {
+        return this.pendingSpawn;
     }
 
     UUID id() {
@@ -106,12 +118,13 @@ final class SettlementGroundExperience {
             return;
         }
         this.version = Math.max(this.version, version(orb));
-        if (!this.entity.equals(observed)) {
+        if (this.pendingSpawn || !this.entity.equals(observed)) {
             this.version++;
             orb.getPersistentData().putLong(VERSION_TAG, this.version);
             observed = orb.saveWithoutId(new CompoundTag());
         }
         this.entity = observed;
+        this.pendingSpawn = false;
         this.checkedAt = now;
         this.removed = false;
     }
@@ -125,6 +138,16 @@ final class SettlementGroundExperience {
         this.entity = orb.saveWithoutId(new CompoundTag());
         this.removed = orb.isRemoved();
         if (this.removed && this.entity.getInt("Count") <= 0) this.entity.putInt("Count", 1);
+        this.version++;
+    }
+
+    void age(long now) {
+        if (this.removed || now <= this.checkedAt) return;
+        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
+        this.checkedAt = now;
+        int age = Math.min(6000, this.entity.getShort("Age") + elapsed);
+        this.entity.putShort("Age", (short) age);
+        this.removed = age >= 6000;
         this.version++;
     }
 
@@ -163,6 +186,7 @@ final class SettlementGroundExperience {
         tag.putLong("CheckedAt", this.checkedAt);
         tag.putLong("Version", this.version);
         tag.putBoolean("Removed", this.removed);
+        tag.putBoolean("PendingSpawn", this.pendingSpawn);
         tag.putLong("NativePosition", this.nativePosition.asLong());
         tag.putLongArray("NativeChunks", this.nativeChunks.stream().mapToLong(Long::longValue).toArray());
         tag.putLongArray("AcknowledgedChunks", this.acknowledgedChunks.stream().mapToLong(Long::longValue).toArray());
@@ -176,6 +200,7 @@ final class SettlementGroundExperience {
             state.nativeChunks.clear();
             state.nativePosition(BlockPos.of(tag.getLong("NativePosition")));
         }
+        state.pendingSpawn = tag.getBoolean("PendingSpawn");
         for (long chunk : tag.getLongArray("NativeChunks")) state.nativeChunks.add(chunk);
         for (long chunk : tag.getLongArray("AcknowledgedChunks")) state.acknowledge(chunk);
         return state;

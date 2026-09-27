@@ -37,23 +37,39 @@ final class SettlementAnimalBirthService {
     static void update(ServerLevel level, SettlementRecord town) {
         var births = new ArrayList<>(town.animalBirths().values());
         if (births.isEmpty()) return;
+        for (var birth : births) queueExperience(level, town, birth);
         int cursor = Math.floorMod(CURSORS.getOrDefault(town, 0), births.size());
         int count = Math.min(16, births.size());
         for (int index = 0; index < count; index++) materialize(level, town, births.get((cursor + index) % births.size()));
         CURSORS.put(town, (cursor + count) % births.size());
     }
 
+    static void queueExperience(ServerLevel level, SettlementRecord town, SettlementAnimalBirth birth) {
+        if (birth.experienceQueued()) return;
+        var chunk = level.getChunkSource().getChunkNow(birth.position().getX() >> 4, birth.position().getZ() >> 4);
+        boolean delivered = chunk != null && SettlementChunkReceipts.version(chunk, receiptKey(town, birth), birth.id()) >= 2L;
+        if (!delivered && birth.experience() > 0) {
+            var location = birth.position().getCenter();
+            var orb = new ExperienceOrb(level, location.x, location.y, location.z, birth.experience());
+            orb.setUUID(birth.experienceId());
+            SettlementGroundExperienceService.submit(level, town, orb, birth.createdAt(level.getGameTime()));
+        }
+        birth.queueExperience();
+        town.changed();
+    }
+
     static boolean materialize(ServerLevel level, SettlementRecord town, SettlementAnimalBirth birth) {
         if (!town.dimension().equals(level.dimension().location())) return false;
         var pos = new ChunkPos(birth.position());
         var chunk = level.getChunkSource().getChunkNow(pos.x, pos.z);
-        if (chunk == null || !level.areEntitiesLoaded(pos.toLong())) return false;
         String key = receiptKey(town, birth);
-        long version = SettlementChunkReceipts.version(chunk, key, birth.id());
+        long version = chunk == null ? 0L : SettlementChunkReceipts.version(chunk, key, birth.id());
         if (version >= 2L) {
             town.removeAnimalBirth(birth.id());
             return true;
         }
+        queueExperience(level, town, birth);
+        if (chunk == null || !level.areEntitiesLoaded(pos.toLong())) return false;
         if (version >= 1L) birth.applyChild();
         if (!birth.childApplied()) {
             var existing = existing(level, birth.id());
@@ -68,12 +84,10 @@ final class SettlementAnimalBirthService {
             SettlementChunkReceipts.applied(chunk, key, birth.id(), 1L);
             town.changed();
         }
-        if (birth.experience() > 0 && existing(level, birth.experienceId()) == null) {
-            var location = birth.position().getCenter();
-            var orb = new ExperienceOrb(level, location.x, location.y, location.z, birth.experience());
-            orb.setUUID(birth.experienceId());
-            if (!level.addFreshEntity(orb)) return false;
-        }
+        var experience = town.groundExperience().get(birth.experienceId());
+        if (experience != null) SettlementGroundExperienceService.materialize(level, town, experience);
+        experience = town.groundExperience().get(birth.experienceId());
+        if (experience != null && experience.pendingSpawn() && !experience.removed()) return false;
         SettlementChunkReceipts.applied(chunk, key, birth.id(), 2L);
         town.removeAnimalBirth(birth.id());
         return true;

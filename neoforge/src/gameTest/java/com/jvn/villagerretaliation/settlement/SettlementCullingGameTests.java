@@ -213,13 +213,16 @@ public final class SettlementCullingGameTests {
         supply(helper, fixture, HiredJobInventory.MAINHAND_SLOT, sword);
         cows(helper, fixture, 3);
         cull(helper, fixture);
-        var death = fixture.town().entityDeaths().values().iterator().next();
-        helper.assertFalse(death.experience().isEmpty(), "the native villager kill creates owned Mending experience");
+        var experience = fixture.town().groundExperience().values().iterator().next();
+        helper.assertTrue(experience.pendingSpawn(), "the native villager kill creates a persistent owned reward");
+        SettlementExperienceTestTerrain.flat(fixture.town());
         int before = fixture.worker().items(helper.getLevel().registryAccess()).get(HiredJobInventory.MAINHAND_SLOT).getDamageValue();
-        work(helper, fixture, 1);
+        double progress = fixture.worker().progress();
+        SettlementGroundExperienceService.update(helper.getLevel(), fixture.town(), experience.checkedAt() + 200L);
         int repaired = fixture.worker().items(helper.getLevel().registryAccess()).get(HiredJobInventory.MAINHAND_SLOT).getDamageValue();
         helper.assertTrue(repaired < before, "actual awarded experience repairs the equipped job weapon");
-        helper.assertTrue(death.experience().isEmpty(), "repair consumes the finite experience");
+        helper.assertTrue(experience.removed(), "physical contact consumes the finite experience");
+        helper.assertValueEqual(fixture.worker().progress(), progress, "passive pickup does not charge production progress");
         work(helper, fixture, 8);
         helper.assertValueEqual(fixture.worker().items(helper.getLevel().registryAccess()).get(HiredJobInventory.MAINHAND_SLOT).getDamageValue(),
                 repaired, "later work cannot repeat the same experience repair");
@@ -327,8 +330,15 @@ public final class SettlementCullingGameTests {
         cows(helper, fixture, 3);
         cull(helper, fixture);
         var death = fixture.town().entityDeaths().values().iterator().next();
-        var experience = death.experience().values().iterator().next();
+        var experience = fixture.town().groundExperience().values().iterator().next();
         var saved = death.save();
+        var legacy = new net.minecraft.nbt.CompoundTag();
+        legacy.put("Entity", experience.context(helper.getLevel()).saveWithoutId(new net.minecraft.nbt.CompoundTag()));
+        legacy.putInt("Steps", -1);
+        legacy.putLong("CheckedAt", experience.checkedAt());
+        var rewards = new net.minecraft.nbt.ListTag();
+        rewards.add(legacy);
+        saved.put("Experience", rewards);
         var level = helper.getLevel();
         var position = new net.minecraft.world.level.ChunkPos(experience.position());
         level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, position, 2, position);
@@ -338,7 +348,11 @@ public final class SettlementCullingGameTests {
                     "the actual experience chunk becomes active");
         }).thenExecute(() -> {
             try {
+                for (var floor : BlockPos.betweenClosed(experience.position().offset(-4, -1, -4), experience.position().offset(4, -1, 4))) {
+                    level.setBlockAndUpdate(floor, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+                }
                 SettlementEntityDeathService.update(level, fixture.town(), level.getGameTime());
+                SettlementGroundExperienceService.update(level, fixture.town(), level.getGameTime());
                 var orb = level.getEntity(experience.id());
                 helper.assertTrue(orb instanceof net.minecraft.world.entity.ExperienceOrb, "pending experience becomes an actual native orb");
                 helper.assertTrue(fixture.town().groundExperience().containsKey(experience.id()), "delivered death experience enters native transition tracking");
@@ -365,14 +379,14 @@ public final class SettlementCullingGameTests {
         cows(helper, fixture, 3);
         cull(helper, fixture);
         var death = fixture.town().entityDeaths().values().iterator().next();
-        var experience = death.experience().values().iterator().next();
+        var experience = fixture.town().groundExperience().values().iterator().next();
         long future = helper.getLevel().getGameTime() + 48_000L;
-        SettlementEntityDeathService.update(helper.getLevel(), fixture.town(), future);
+        SettlementGroundExperienceService.update(helper.getLevel(), fixture.town(), future);
         helper.assertValueEqual((int) experience.save().getCompound("Entity").getShort("Age"), 200, "a clock gap ages experience for one bounded interval");
-        SettlementEntityDeathService.update(helper.getLevel(), fixture.town(), future);
+        SettlementGroundExperienceService.update(helper.getLevel(), fixture.town(), future);
         helper.assertValueEqual((int) experience.save().getCompound("Entity").getShort("Age"), 200, "the same interval cannot age experience twice");
-        for (int step = 1; step <= 29; step++) SettlementEntityDeathService.update(helper.getLevel(), fixture.town(), future + step * 200L);
-        helper.assertTrue(death.experience().isEmpty(), "uncollected native experience expires after its running lifespan");
+        for (int step = 1; step <= 29; step++) SettlementGroundExperienceService.update(helper.getLevel(), fixture.town(), future + step * 200L);
+        helper.assertTrue(experience.removed(), "uncollected native experience expires after its running lifespan");
         helper.assertFalse(death.applied(), "experience expiry does not erase the pending animal deletion");
         helper.succeed();
     }
@@ -469,7 +483,7 @@ public final class SettlementCullingGameTests {
             helper.assertFalse(fixture.town().entityDeaths().containsKey(target.getUUID()), "experience from the attempt does not authorize deleting the revived body");
             helper.assertValueEqual(fixture.town().itemDrops().values().stream().mapToInt(drop -> drop.item(helper.getLevel().registryAccess()).getCount()).sum(),
                     3, "already approved native loot is preserved even when the target revives");
-            helper.assertTrue(fixture.town().entityDeaths().values().stream().anyMatch(death -> !death.experience().isEmpty()),
+            helper.assertTrue(fixture.town().groundExperience().values().stream().anyMatch(experience -> !experience.removed()),
                     "native experience produced before the revival remains finite and pending");
         } finally {
             NeoForge.EVENT_BUS.unregister(revive);

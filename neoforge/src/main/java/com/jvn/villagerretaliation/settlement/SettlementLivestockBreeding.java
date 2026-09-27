@@ -81,7 +81,9 @@ final class SettlementLivestockBreeding {
             }
             if (town.animalBirths().containsKey(child.getUUID()) || town.livestock().containsKey(child.getUUID())) continue;
             int experience = level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT) ? first.animal().getRandom().nextInt(7) + 1 : 0;
-            town.recordAnimalBirth(SettlementAnimalBirth.create(child, experience));
+            var birth = SettlementAnimalBirth.create(child, experience);
+            town.recordAnimalBirth(birth);
+            SettlementAnimalBirthService.queueExperience(level, town, birth);
             if (child instanceof Animal animal && SettlementAnimalBirthService.existing(level, child.getUUID()) == null) {
                 var state = SettlementLivestock.capture(animal, first.state().area(), now);
                 state.inheritAccess(first.state());

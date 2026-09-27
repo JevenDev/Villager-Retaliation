@@ -194,6 +194,15 @@ public final class SettlementWorkerState {
         this.version++;
     }
 
+    void settingsChanged(Villager villager) {
+        long previous = this.version;
+        this.version++;
+        if (villager != null && villager.getPersistentData().getLong(VERSION_TAG) == previous) {
+            this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
+            villager.getPersistentData().putLong(VERSION_TAG, this.version);
+        }
+    }
+
     void inventorySnapshot(CompoundTag snapshot) {
         this.inventory = snapshot.copy();
     }

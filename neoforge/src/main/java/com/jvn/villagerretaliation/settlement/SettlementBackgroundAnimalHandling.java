@@ -37,7 +37,6 @@ final class SettlementBackgroundAnimalHandling {
         var inventory = HiredJobInventory.getJobInventory(owner);
         var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
         try {
-            if (SettlementEntityDeathService.collectExperience(level, town, worker, owner, budget)) return;
             if (SettlementItemDropService.collect(level, town, worker, owner, inventory, budget,
                     stack -> stack.is(Items.EGG) || AnimalBreedingWorker.isAnimalDrop(stack))) return;
             if (SettlementBackgroundCulling.tick(level, town, worker, owner, inventory, depots, budget)) return;

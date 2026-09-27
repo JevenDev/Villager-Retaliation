@@ -78,7 +78,8 @@ final class SettlementBackgroundCulling {
                 town.recordItemDrop(drop);
             }
             if (killed || !capture.experience().isEmpty()) {
-                town.recordEntityDeath(SettlementEntityDeath.create(animal, nativePosition, worker, route, capture.experience(), level.getGameTime(), killed));
+                town.recordEntityDeath(SettlementEntityDeath.create(animal, nativePosition, worker, capture.experience(), level.getGameTime(), killed));
+                SettlementEntityDeathService.update(level, town, level.getGameTime());
             }
             if (!killed) {
                 target.state().interacted(animal);
@@ -96,7 +97,6 @@ final class SettlementBackgroundCulling {
             worker.practice(level, HiredWorkPractice.animal("cull", 0.8D, target.state().type().hashCode()));
             worker.status("culled_animal");
             town.changed();
-            SettlementEntityDeathService.update(level, town, level.getGameTime());
             SettlementItemDropService.update(level, town, level.getGameTime());
             return true;
         }

@@ -71,6 +71,8 @@ final class SettlementExperienceSimulation {
             for (int tick = 0; tick < Math.clamp(elapsed, 0, 200) && orb.isAlive(); tick++) {
                 orb.tickCount++;
                 if (mend(orb)) continue;
+                orb.checkBelowWorld();
+                if (!orb.isAlive()) break;
                 var position = orb.position();
                 var velocity = orb.getDeltaMovement();
                 boolean onGround = orb.onGround();

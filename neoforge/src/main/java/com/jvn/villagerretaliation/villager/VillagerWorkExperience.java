@@ -18,9 +18,18 @@ public final class VillagerWorkExperience {
             return;
         }
 
-        ExperienceOrb orb = new ExperienceOrb(level, position.x, position.y, position.z, value);
-        orb.getPersistentData().putUUID(OWNER_TAG, owner.getUUID());
-        level.addFreshEntity(orb);
+        level.addFreshEntity(create(level, owner, position, value));
+    }
+
+    public static ExperienceOrb create(Level level, Villager owner, Vec3 position, int value) {
+        return create(level, owner.getUUID(), position, value);
+    }
+
+    public static ExperienceOrb create(Level level, java.util.UUID owner, Vec3 position, int value) {
+        if (value <= 0) throw new IllegalArgumentException("Work experience must have a positive value");
+        var orb = new ExperienceOrb(level, position.x, position.y, position.z, value);
+        orb.getPersistentData().putUUID(OWNER_TAG, owner);
+        return orb;
     }
 
     public static boolean belongsTo(ExperienceOrb orb, Villager villager) {

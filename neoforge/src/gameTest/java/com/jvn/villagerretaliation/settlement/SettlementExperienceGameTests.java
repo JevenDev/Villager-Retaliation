@@ -547,6 +547,9 @@ public final class SettlementExperienceGameTests {
     public static void canceledNativeBirthExperienceCanRetryWithoutAPhantomRemoval(GameTestHelper helper) {
         var fixture = fixture(helper, true);
         var level = helper.getLevel();
+        for (var floor : BlockPos.betweenClosed(fixture.town().center().offset(-4, -1, -4), fixture.town().center().offset(4, -1, 4))) {
+            level.setBlockAndUpdate(floor, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+        }
         var child = EntityType.COW.create(level);
         child.setPos(fixture.town().center().getBottomCenter());
         child.setAge(-24_000);
@@ -559,7 +562,8 @@ public final class SettlementExperienceGameTests {
         try {
             helper.assertFalse(SettlementAnimalBirthService.materialize(level, fixture.town(), birth), "a later native event rejects the initial experience spawn");
             helper.assertTrue(birth.childApplied(), "the already accepted child remains delivered");
-            helper.assertFalse(fixture.town().groundExperience().containsKey(birth.experienceId()), "a rejected native orb does not enter the experience ledger");
+            helper.assertTrue(fixture.town().groundExperience().get(birth.experienceId()).pendingSpawn(),
+                    "a rejected native orb remains explicitly unspawned and retryable");
             SettlementGroundExperienceService.update(level, fixture.town(), level.getGameTime() + 200L);
         } finally {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(cancel);

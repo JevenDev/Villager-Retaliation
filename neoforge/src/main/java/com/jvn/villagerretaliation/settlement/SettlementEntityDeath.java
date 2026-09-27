@@ -34,15 +34,13 @@ final class SettlementEntityDeath {
         this.workerStart = workerStart.immutable();
     }
 
-    static SettlementEntityDeath create(LivingEntity entity, BlockPos nativePosition, SettlementWorkerState worker, int steps,
+    static SettlementEntityDeath create(LivingEntity entity, BlockPos nativePosition, SettlementWorkerState worker,
                                         List<ExperienceOrb> orbs, long now, boolean killed) {
         var death = new SettlementEntityDeath(killed ? entity.getUUID() : UUID.randomUUID(), BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()),
                 nativePosition, worker.area(), worker.id(), worker.position());
         death.applied = !killed;
         for (var orb : orbs) {
-            int route = orb.blockPosition().equals(entity.blockPosition()) ? steps : -1;
-            if (route == 0 && worker.position().getBottomCenter().distanceToSqr(orb.position()) > 2.25D) route = -1;
-            var experience = new Experience(orb.saveWithoutId(new CompoundTag()), route, now);
+            var experience = new Experience(orb.saveWithoutId(new CompoundTag()), -1, now);
             if (death.experience.putIfAbsent(orb.getUUID(), experience) != null) throw new IllegalArgumentException("Death experience duplicates an identity");
         }
         return death;
@@ -78,11 +76,6 @@ final class SettlementEntityDeath {
 
     void removeExperience(UUID id) {
         this.experience.remove(id);
-    }
-
-    int steps(SettlementWorkerState worker, Experience experience) {
-        return this.worker.equals(worker.id()) && this.area.equals(worker.area()) && this.workerStart.equals(worker.position())
-                ? experience.steps : -1;
     }
 
     CompoundTag save() {
@@ -122,7 +115,7 @@ final class SettlementEntityDeath {
     static final class Experience {
         private final CompoundTag entity;
         private final int steps;
-        private long checkedAt;
+        private final long checkedAt;
 
         private Experience(CompoundTag entity, int steps, long checkedAt) {
             var pos = entity.getList("Pos", Tag.TAG_DOUBLE);
@@ -151,24 +144,8 @@ final class SettlementEntityDeath {
             return orb;
         }
 
-        boolean advance(long now) {
-            int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-            this.checkedAt = now;
-            int age = Math.min(6000, this.entity.getShort("Age") + elapsed);
-            this.entity.putShort("Age", (short) age);
-            return age < 6000;
-        }
-
-        int value() {
-            return this.entity.getShort("Value");
-        }
-
-        void consume() {
-            this.entity.putInt("Count", this.entity.getInt("Count") - 1);
-        }
-
-        boolean empty() {
-            return this.entity.getInt("Count") <= 0;
+        long checkedAt() {
+            return this.checkedAt;
         }
 
         CompoundTag save() {

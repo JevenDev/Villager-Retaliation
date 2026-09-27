@@ -20,6 +20,56 @@ public final class SettlementGroundExperienceService {
     private SettlementGroundExperienceService() {
     }
 
+    static void submit(ServerLevel level, SettlementRecord town, ExperienceOrb orb, long checkedAt) {
+        if (orb.level() != level || !town.dimension().equals(level.dimension().location()) || orb.getValue() <= 0) {
+            throw new IllegalArgumentException("Pending experience belongs to a different level or has no value");
+        }
+        for (var existing : SettlementSavedData.get(level).settlements()) {
+            if (existing != town && existing.groundExperience().containsKey(orb.getUUID())) return;
+        }
+        var state = town.groundExperience().get(orb.getUUID());
+        if (state == null) {
+            var chunk = chunk(level, orb.blockPosition());
+            var receipt = chunk == null ? new net.minecraft.nbt.CompoundTag()
+                    : SettlementChunkReceipts.groundExperience(chunk, false).getCompound(orb.getUUID().toString());
+            state = receipt.isEmpty() ? SettlementGroundExperience.pending(orb, checkedAt) : SettlementGroundExperience.load(receipt);
+            if (!state.id().equals(orb.getUUID())) throw new IllegalStateException("Pending experience receipt identity differs");
+            town.recordGroundExperience(state);
+        }
+        state = synchronize(level, town, state);
+        writeReceipts(level, state);
+        materialize(level, town, state);
+        town.changed();
+    }
+
+    static void materialize(ServerLevel level, SettlementRecord town, SettlementGroundExperience state) {
+        if (state.removed()) {
+            remove(level, town, state);
+            return;
+        }
+        if (!state.pendingSpawn()) return;
+        var entity = SettlementAnimalBirthService.existing(level, state.id());
+        if (entity instanceof ExperienceOrb existing && existing.level() == level) {
+            observe(level, town, existing);
+            return;
+        }
+        if (entity != null) return;
+        if (level.getGameTime() > state.checkedAt()) {
+            state.advance(level, new SettlementExperienceSimulation(level, town), level.getGameTime());
+            town.changed();
+        }
+        if (state.removed()) {
+            remove(level, town, state);
+            return;
+        }
+        writeReceipts(level, state);
+        var position = state.position();
+        if (level.isOutsideBuildHeight(position) || !level.getWorldBorder().isWithinBounds(position)
+                || !level.areEntitiesLoaded(ChunkPos.asLong(position)) || chunk(level, position) == null) return;
+        var orb = state.context(level);
+        if (level.addFreshEntity(orb)) observe(level, town, orb);
+    }
+
     static void observeArea(ServerLevel level, SettlementRecord town, SettlementArea area) {
         var bounds = new AABB(area.min().getX(), area.min().getY(), area.min().getZ(),
                 area.max().getX() + 1.0D, area.max().getY() + 1.0D, area.max().getZ() + 1.0D);
@@ -76,6 +126,7 @@ public final class SettlementGroundExperienceService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
+        if (town.groundExperience().isEmpty()) return;
         var simulation = new SettlementExperienceSimulation(level, town);
         for (var original : List.copyOf(town.groundExperience().values())) {
             var state = synchronize(level, town, original);
@@ -101,14 +152,22 @@ public final class SettlementGroundExperienceService {
                     writeReceipts(level, state);
                 }
             } else if (entity != null) {
-                town.removeGroundExperience(state.id());
-            } else if (level.areEntitiesLoaded(ChunkPos.asLong(state.nativePosition()))) {
+                if (!state.pendingSpawn()) town.removeGroundExperience(state.id());
+                else {
+                    state.age(now);
+                    if (state.removed()) remove(level, town, state);
+                    else writeReceipts(level, state);
+                }
+            } else if (!state.pendingSpawn() && level.areEntitiesLoaded(ChunkPos.asLong(state.nativePosition()))) {
                 state.remove();
                 remove(level, town, state);
             } else {
                 state.advance(level, simulation, now);
                 if (state.removed()) remove(level, town, state);
-                else writeReceipts(level, state);
+                else {
+                    writeReceipts(level, state);
+                    materialize(level, town, state);
+                }
             }
             town.changed();
         }
