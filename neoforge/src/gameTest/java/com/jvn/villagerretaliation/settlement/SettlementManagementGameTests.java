@@ -140,6 +140,89 @@ public final class SettlementManagementGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
+    public static void residentWorkShowsLiveBlockersWithoutStaleFailures(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var area = area(fixture.town(), SettlementAreaType.FARM, 0);
+        fixture.town().putArea(fixture.leader().getUUID(), area);
+        var level = helper.getLevel();
+        var resident = EntityType.VILLAGER.create(level);
+        resident.setNoAi(true);
+        resident.setVillagerData(resident.getVillagerData().setProfession(VillagerProfession.FARMER));
+        resident.setPos(helper.absolutePos(new BlockPos(2, 2, 2)).getBottomCenter());
+        level.addFreshEntity(resident);
+        try {
+            VillageAllegianceApi.assignKnown(level, resident, fixture.town().id(), AllegianceAssignmentSource.ADMIN);
+            helper.assertTrue(act(fixture.leader(), fixture.town(), new SettlementManagementActionPayload.Assign(resident.getUUID(), area.id())),
+                    "the farmer takes a civic assignment");
+            var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(resident);
+            state.putString("WorkerTaskState", "paused_missing_tool");
+            state.putString("WorkerFailureReason", "missing_hoe");
+            state.putString("Status", "interaction.work.farming.missing_hoe");
+            var blocked = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
+            helper.assertValueEqual(blocked.status(), "workforce.missing_tools", "live failures replace the generic working label");
+            helper.assertTrue(blocked.diagnostic().contains("hoe"), "the row explains the needed equipment");
+            var worker = fixture.town().workers().get(resident.getUUID());
+            worker.observe(level, resident, new SettlementWorkforceService.Duty(fixture.town(), area), level.getGameTime());
+            helper.assertTrue(SettlementProgressionService.assess(level, fixture.town()).missing()
+                    .contains(SettlementProgressionService.Requirement.FOOD_PRODUCTION), "missing equipment prevents a nonfunctional farm from counting toward advancement");
+            state.putString("WorkerTaskState", "awaiting_instruction");
+            state.putString("Status", "interaction.work.status.sleeping");
+            var sleeping = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
+            helper.assertValueEqual(sleeping.status(), "resting", "rest takes precedence over a retained failure");
+            helper.assertTrue(sleeping.diagnostic().isEmpty(), "rest does not repeat a stale equipment warning");
+            worker.observe(level, resident, new SettlementWorkforceService.Duty(fixture.town(), area), level.getGameTime());
+            helper.assertFalse(worker.supportsService(), "rest does not erase an unresolved service setup problem");
+            helper.assertFalse(SettlementWorkerState.load(worker.save()).supportsService(), "service readiness survives save loading");
+            state.putString("WorkerTaskState", "returning_to_work_area");
+            state.putString("Status", "interaction.work.status.returning_bounds");
+            var walking = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
+            helper.assertValueEqual(walking.status(), "workforce.pathing", "ordinary travel is shown as travel");
+            helper.assertTrue(walking.diagnostic().isEmpty(), "old tool failures are hidden while travel succeeds");
+            worker.observe(level, resident, new SettlementWorkforceService.Duty(fixture.town(), area), level.getGameTime());
+            helper.assertTrue(worker.supportsService(), "resumed work restores service availability");
+            worker.status("no_filter");
+            worker.status("resting");
+            helper.assertFalse(worker.supportsService(), "background rest also retains unresolved setup problems");
+            worker.status("missing_materials");
+            helper.assertTrue(worker.supportsService(), "a supply gap does not disable an otherwise configured service");
+            worker.status("storage_full");
+            helper.assertTrue(worker.supportsService(), "a filled stockpile does not disable a service");
+            var legacy = worker.save();
+            legacy.remove("ServiceBlocked");
+            helper.assertTrue(SettlementWorkerState.load(legacy).supportsService(), "older worker records remain compatible");
+            state.putString("WorkerTaskState", "waiting_for_materials");
+            state.putString("Status", "interaction.work.hauling.no_demand");
+            var idle = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
+            helper.assertValueEqual(idle.status(), "no_demand", "an idle delivery schedule is not reported as blocked");
+            helper.assertTrue(idle.diagnostic().isEmpty(), "idle service has no stale warning");
+        } finally {
+            resident.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
+    public static void workPreviewsDistinguishIngredientsAndBlockedWorkstations(GameTestHelper helper) {
+        var resident = EntityType.VILLAGER.create(helper.getLevel());
+        var session = com.jvn.villagerretaliation.interaction.HiredWorkSession.create(helper.getLevel(), resident,
+                com.jvn.villagerretaliation.interaction.HiredVillagerRole.COOK);
+        var state = session.state();
+        state.putString("WorkerTaskState", "waiting_for_materials");
+        state.putString("WorkerFailureReason", "missing_cooking_crafting_materials");
+        var ingredients = com.jvn.villagerretaliation.interaction.ClipboardWorkforceService.workPreview(session,
+                com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(state, helper.getLevel().getGameTime()));
+        helper.assertValueEqual(ingredients.status(), com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus.MISSING_MATERIALS,
+                "recipe ingredients have a distinct blocker");
+        helper.assertTrue(ingredients.diagnostic().contains("recipe ingredients"), "the existing cooking explanation is reused");
+        state.putString("WorkerTaskState", "failed_cooldown");
+        state.putString("WorkerFailureReason", "cooking_crafting_table_unreachable");
+        var workstation = com.jvn.villagerretaliation.interaction.ClipboardWorkforceService.workPreview(session,
+                com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(state, helper.getLevel().getGameTime()));
+        helper.assertTrue(workstation.diagnostic().contains("cannot path to the crafting table"), "unreachable workstations explain the actual obstruction");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
     public static void staffingActionsRejectForeignResidentsAndRequireLeaderRelease(GameTestHelper helper) {
         Fixture fixture = fixture(helper);
         var staff = player(helper, "TownStaff");
@@ -227,7 +310,8 @@ public final class SettlementManagementGameTests {
         var entries = List.<SettlementManagementPayload.Entry>of(
                 new SettlementManagementPayload.Town(id, "Town", SettlementStage.CITY, 175, position),
                 new SettlementManagementPayload.Resident(id, "Ada", ResourceLocation.withDefaultNamespace("farmer"), false,
-                        Presence.UNLOADED, position, id, 13, 17.5F, "resting", List.of(HiredVillagerRole.FARMING)),
+                        Presence.UNLOADED, position, id, 13, 17.5F, "workforce.missing_tools", List.of(HiredVillagerRole.FARMING), null, null, null,
+                        "Farmer needs a hoe before field work can continue."),
                 new SettlementManagementPayload.Area(id, "Field", SettlementAreaType.FARM, position, position.above(), 7, true, 0, 1, 2),
                 new SettlementManagementPayload.Depot(id, "Depot", id, position, SettlementDepotPurpose.FOOD, 6, 3, 130,
                         List.of(new SettlementManagementPayload.StockTarget("Bread", 64))),

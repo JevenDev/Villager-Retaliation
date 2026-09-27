@@ -107,6 +107,7 @@ public final class SettlementProgressionService {
                 || survey != null && !survey.workstations().isEmpty();
         return area.enabled() && equipped && town.duties().entrySet().stream()
                 .anyMatch(duty -> duty.getValue().equals(area.id()) && adults.contains(duty.getKey())
+                        && (!town.workers().containsKey(duty.getKey()) || town.workers().get(duty.getKey()).supportsService())
                         && (!town.workerSettings().containsKey(duty.getKey()) || town.workerSettings().get(duty.getKey()).enabled()));
     }
 

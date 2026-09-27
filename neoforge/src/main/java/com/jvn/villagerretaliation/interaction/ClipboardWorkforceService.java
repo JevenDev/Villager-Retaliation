@@ -528,6 +528,35 @@ public final class ClipboardWorkforceService {
         };
     }
 
+    public static WorkPreview workPreview(HiredWorkSession session, HiredWorkerBrain.Snapshot brain) {
+        var role = session.role();
+        var state = session.state();
+        boolean storageUnreachable = isMaterialStorageUnreachable(role, brain);
+        boolean materialFull = isMaterialInventoryFull(role, brain);
+        boolean siteUnreachable = isBuilderBuildSiteUnreachable(role, brain, state);
+        boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE && !storageUnreachable;
+        boolean missingMaterials = isMissingMaterials(role, brain, state, noStorage, storageUnreachable);
+        boolean inventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY
+                && !materialFull && !storageUnreachable && session.inventory().isCapacityBlockedForFailure(brain.failureReason());
+        var status = status(role, brain.taskState(), brain.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL,
+                inventoryFull, noStorage, brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA,
+                isNoTargetState(brain), false, false, brain.taskState() == HiredWorkerTaskState.PAUSED_MISSING_TOOL,
+                missingMaterials, storageUnreachable, materialFull, siteUnreachable, isWaitingForCrops(role, brain));
+        boolean canBeBlocked = switch (brain.taskState()) {
+            case IDLE, AWAITING_INSTRUCTION, WAITING_FOR_MATERIALS, FAILED_COOLDOWN, NO_WORK_AREA,
+                    PAUSED_MISSING_TOOL, PAUSED_FULL_INVENTORY, PAUSED_NO_STORAGE, PAUSED_STORAGE_FULL -> true;
+            case SELECTING_TARGET -> brain.status().contains(".no_") || brain.status().contains(".missing_")
+                    || brain.status().contains("unreachable");
+            default -> false;
+        };
+        String diagnostic = canBeBlocked ? workerDiagnostic(role, brain, session.context(), state,
+                inventoryFull, noStorage, missingMaterials, storageUnreachable, materialFull, siteUnreachable) : "";
+        return new WorkPreview(status, limitDiagnostic(diagnostic));
+    }
+
+    public record WorkPreview(WorkerStatus status, String diagnostic) {
+    }
+
     private static boolean isBuilderBuildSiteUnreachable(
             HiredVillagerRole role,
             HiredWorkerBrain.Snapshot brain,

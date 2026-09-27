@@ -217,6 +217,12 @@ public final class SettlementViewClientSmoke {
             require(minecraft.getCameraEntity() instanceof Marker, "linked panels retain the remote camera");
             require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) != null,
                     "linked panels retain the remote chunks");
+            require(!((com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident) screen.snapshot().entries().getFirst()).status().equals("active"),
+                    "linked management receives the live worker status");
+            require(screen.snapshot().query().equals(fixture.resident().toString()) && screen.children().stream()
+                    .filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).anyMatch(box -> box.getValue().equals("Tamsin")),
+                    "exact resident filtering shows the resident name instead of its internal identity");
             capture("linked-management");
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             phase = 13;

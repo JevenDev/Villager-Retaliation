@@ -2576,6 +2576,8 @@
   "villagerretaliation.gui.settlement.work.fetching_bucket": "Collecting bucket",
   "villagerretaliation.gui.settlement.work.fetched_bucket": "Collected bucket",
   "villagerretaliation.gui.settlement.work.active": "Working",
+  "villagerretaliation.gui.settlement.work.needs_attention": "Needs attention",
+  "villagerretaliation.gui.settlement.work.profession_required": "Profession does not match the job",
   "villagerretaliation.gui.settlement.work.paused": "Work paused",
   "villagerretaliation.gui.settlement.work.idle": "Idle",
   "villagerretaliation.gui.settlement.work.resting": "Resting",

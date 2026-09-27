@@ -2,7 +2,12 @@ package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
+import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
+import com.jvn.villagerretaliation.interaction.HiredWorkSession;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
@@ -210,19 +215,46 @@ public final class SettlementManagementService {
             Presence presence = villager == null ? Presence.UNLOADED
                     : Math.abs((long) position.getX() - town.center().getX()) <= radius
                         && Math.abs((long) position.getZ() - town.center().getZ()) <= radius ? Presence.HERE : Presence.AWAY;
+            var work = residentWork(level, town, member.id(), villager, worker);
             entries.add(new SettlementManagementPayload.Resident(member.id(),
                     display(villager == null ? social.knownName(member.id()).orElse("") : VillagerPresetNameRegistry.resolveDisplayName(villager).getString()),
                     profession, villager == null ? !member.adult() : villager.isBaby(), presence, position, town.duties().get(member.id()),
                     villager != null ? VillagerRecoveryService.captureRecoveryState(villager).food() : care == null ? -1 : care.food(),
                     villager != null ? villager.getHealth() : care == null ? -1.0F : care.health(),
-                    town.arrivals().containsKey(member.id()) ? "awaiting_arrival"
-                            : !town.duties().containsKey(member.id()) ? "unassigned"
-                            : town.workerSettings().containsKey(member.id()) && !town.workerSettings().get(member.id()).enabled() ? "paused"
-                            : worker == null ? "active" : worker.status(),
+                    work.status(),
                     villager == null ? care == null ? List.of() : care.availableRoles(level) : HiredVillagerRoles.availableRoles(level, villager),
                     town.guardOrders().get(member.id()), SettlementWorkerConfigurationService.snapshot(level, town, member.id()),
-                    SettlementBrewingService.snapshot(level, town, member.id())));
+                    SettlementBrewingService.snapshot(level, town, member.id()), work.diagnostic()));
         }
+    }
+
+    private static ResidentWork residentWork(ServerLevel level, SettlementRecord town, UUID id,
+                                             Villager villager, SettlementWorkerState worker) {
+        if (town.arrivals().containsKey(id)) return new ResidentWork("awaiting_arrival", "");
+        if (!town.duties().containsKey(id)) return new ResidentWork("unassigned", "");
+        var settings = town.workerSettings().get(id);
+        if (settings != null && !settings.enabled()) return new ResidentWork("paused", "");
+        if (villager == null || worker != null && worker.unsafe()) return new ResidentWork(worker == null ? "idle" : worker.status(), "");
+        var session = HiredWorkSession.active(level, villager);
+        var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
+        if (villager.isSleeping() || brain.status().equals("interaction.work.status.sleeping")
+                || brain.status().equals("interaction.work.status.tired")) return new ResidentWork("resting", "");
+        if (brain.status().equals("interaction.work.status.returning_bounds")) return new ResidentWork("workforce.pathing", "");
+        if (brain.status().equals("interaction.work.hauling.no_demand")) return new ResidentWork("no_demand", "");
+        if (brain.status().equals("interaction.work.builder.choose_structure")) return new ResidentWork("no_construction_project", "");
+        if (brain.status().endsWith(".no_filter")) return new ResidentWork("no_filter", "");
+        if (brain.status().endsWith(".no_crafting_table") || brain.status().equals("interaction.work.craftsman.no_table")) return new ResidentWork("no_crafting_table", "");
+        if (brain.status().equals("interaction.work.cooking.no_station")) return new ResidentWork("no_furnace", "");
+        if (brain.failureReason().endsWith("_profession_required")) return new ResidentWork("profession_required", "");
+        var preview = ClipboardWorkforceService.workPreview(session, brain);
+        String status = !preview.diagnostic().isBlank() && (brain.taskState() == HiredWorkerTaskState.SELECTING_TARGET
+                || preview.status() == WorkerStatus.WAITING
+                || preview.status() == WorkerStatus.UNKNOWN)
+                ? "needs_attention" : "workforce." + preview.status().name().toLowerCase(Locale.ROOT);
+        return new ResidentWork(status, preview.diagnostic());
+    }
+
+    private record ResidentWork(String status, String diagnostic) {
     }
 
     private static void beds(ServerLevel level, SettlementRecord town, List<Entry> entries) {

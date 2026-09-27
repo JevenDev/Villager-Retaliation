@@ -107,6 +107,7 @@ public final class SettlementManagementScreen extends Screen {
         if (changedAccess) {
             rebuildWidgets();
         } else {
+            updateSearch();
             populateRows();
             updateActions();
         }
@@ -188,15 +189,10 @@ public final class SettlementManagementScreen extends Screen {
         this.search = new EditBox(this.font, this.contentLeft, this.top + 30, this.contentWidth, 20, text("search"));
         this.search.setMaxLength(64);
         this.search.setHint(text("search"));
-        this.search.setValue(this.query);
+        updateSearch();
         this.search.visible = this.desiredPage != Page.SUMMARY;
         this.search.active = this.search.visible;
-        this.search.setResponder(value -> {
-            this.query = value;
-            this.desiredIndex = 0;
-            this.refreshAt = Util.getMillis() + 350L;
-            updateActions();
-        });
+        this.search.setResponder(this::searchChanged);
         addRenderableWidget(this.search);
         this.rows = addRenderableWidget(new Rows(this.contentLeft, this.top + 56, this.contentWidth, Math.max(36, this.panelHeight - 112)));
         int bottom = this.top + this.panelHeight;
@@ -263,6 +259,23 @@ public final class SettlementManagementScreen extends Screen {
         }
         this.rows.add(null, text("treasury_balance", header.balance().mixedFraction()), text("treasury_limits",
                 header.reserve().mixedFraction(), header.spent().mixedFraction(), header.budget().mixedFraction()));
+    }
+
+    private void updateSearch() {
+        String value = this.snapshot.entries().stream().filter(entry -> entry.id().toString().equals(this.query))
+                .map(entry -> name(entry).getString()).findFirst().orElse(this.query);
+        if (!this.search.getValue().equals(value)) {
+            this.search.setResponder(null);
+            this.search.setValue(value);
+            this.search.setResponder(this::searchChanged);
+        }
+    }
+
+    private void searchChanged(String value) {
+        this.query = value;
+        this.desiredIndex = 0;
+        this.refreshAt = Util.getMillis() + 350L;
+        updateActions();
     }
 
     private void navigate(Page page, int index, String query) {
@@ -604,7 +617,9 @@ public final class SettlementManagementScreen extends Screen {
             case SettlementManagementPayload.Town town -> text("town_row", enumText("stage", town.stage()), town.population());
             case SettlementManagementPayload.Resident resident -> text("resident_row",
                     resident.baby() ? text("child") : profession(resident.profession()),
-                    enumText("presence", resident.presence()), Component.translatableWithFallback("villagerretaliation.gui.settlement.work." + resident.status(), text("work.idle").getString()));
+                    enumText("presence", resident.presence()), Component.translatableWithFallback(resident.status().startsWith("workforce.")
+                            ? "villagerretaliation.gui.clipboard_workforce.status." + resident.status().substring("workforce.".length())
+                            : "villagerretaliation.gui.settlement.work." + resident.status(), text("work.idle").getString()));
             case SettlementManagementPayload.Bed bed -> text("bed_row", bed.position().toShortString(),
                     bed.resident() != null ? text("bed_owner", bed.residentName().isBlank() ? text("unnamed_resident") : Component.literal(bed.residentName()))
                             : text(bed.available() ? "bed_available" : "bed_unavailable"));
@@ -705,6 +720,7 @@ public final class SettlementManagementScreen extends Screen {
             if (hovered) {
                 List<Component> lines = new ArrayList<>(List.of(this.primary, this.secondary));
                 if (this.entry instanceof SettlementManagementPayload.Resident resident) {
+                    if (!resident.diagnostic().isBlank()) lines.add(Component.literal(resident.diagnostic()));
                     lines.add(text("resident_care", resident.food() < 0 ? "?" : resident.food(),
                             resident.health() < 0 ? "?" : decimal(resident.health())));
                 } else if (this.entry instanceof SettlementManagementPayload.Depot depot) {

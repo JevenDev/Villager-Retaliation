@@ -97,6 +97,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         SettlementManagementActionPayload.writeWorkerSettings(buffer, resident.settings());
                     }
                     SettlementManagementActionPayload.writeBrewingOrder(buffer, resident.brewingOrder());
+                    buffer.writeUtf(resident.diagnostic(), 180);
                 }
                 case Area area -> {
                     buffer.writeEnum(area.kind());
@@ -194,7 +195,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     yield new Resident(id, name, profession, baby, presence, position, area, food, health, status, available,
                             SettlementManagementActionPayload.readGuardOrder(buffer),
                             buffer.readBoolean() ? SettlementManagementActionPayload.readWorkerSettings(buffer) : null,
-                            SettlementManagementActionPayload.readBrewingOrder(buffer));
+                            SettlementManagementActionPayload.readBrewingOrder(buffer), buffer.readUtf(180));
                 }
                 case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
                         buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
@@ -353,7 +354,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
 
     public record Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
                            BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
-                           SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder) implements Entry {
+                           SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder, String diagnostic) implements Entry {
         public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
                         BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles) {
             this(id, name, profession, baby, presence, position, area, food, health, status, roles, null, null);
@@ -371,7 +372,14 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             this(id, name, profession, baby, presence, position, area, food, health, status, roles, guardOrder, settings, null);
         }
 
+        public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
+                        BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
+                        SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder) {
+            this(id, name, profession, baby, presence, position, area, food, health, status, roles, guardOrder, settings, brewingOrder, "");
+        }
+
         public Resident {
+            if (diagnostic == null || diagnostic.length() > 180) throw new IllegalArgumentException("Invalid resident work diagnostic");
             roles = List.copyOf(roles);
         }
     }
