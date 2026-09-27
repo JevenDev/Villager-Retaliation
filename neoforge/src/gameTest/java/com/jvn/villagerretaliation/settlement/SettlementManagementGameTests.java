@@ -140,6 +140,42 @@ public final class SettlementManagementGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
+    public static void unloadedResidentDiagnosticsExplainBlockersAndHideOrdinaryWaiting(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var area = area(fixture.town(), SettlementAreaType.FARM, 0);
+        fixture.town().putArea(fixture.leader().getUUID(), area);
+        var resident = EntityType.VILLAGER.create(helper.getLevel());
+        resident.setPos(area.center().getCenter());
+        VillageAllegianceApi.assignKnown(helper.getLevel(), resident, fixture.town().id(), AllegianceAssignmentSource.ADMIN);
+        fixture.town().assignDuty(resident.getUUID(), area.id());
+        SettlementWorkforceService.reconcile(helper.getLevel(), resident);
+        SettlementBackgroundService.onUnloaded(resident);
+        var worker = fixture.town().workers().get(resident.getUUID());
+        for (String status : java.util.List.of("missing_hoe", "missing_rod", "missing_axe", "missing_pickaxe",
+                "missing_materials", "no_filter", "no_crafting_table", "no_furnace", "no_brewing_stand",
+                "choose_brewing_order", "storage_full", "supply_full", "output_full", "no_safe_mining_route",
+                "mine_conflict", "construction_needs_observation", "hunting_storage_unreachable",
+                "missing_breeding_food", "awaiting_worker_observation", "missing_ladders", "missing_backing",
+                "fill_supply_full", "mining_support_unreachable", "hazard_unreachable", "excavation_blocked",
+                "tree_needs_native_growth", "sapling_blocked")) {
+            worker.status(status);
+            var row = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
+            helper.assertValueEqual(row.presence(), Presence.UNLOADED, "the resident has no loaded entity");
+            helper.assertValueEqual(row.status(), status, "the existing status remains available");
+            helper.assertFalse(row.diagnostic().isBlank(), "the unloaded blocker explains a corrective action: " + status);
+        }
+        for (String status : java.util.List.of("resting", "active", "idle", "no_demand", "no_construction_project",
+                "waiting_for_crops", "waiting_for_bite", "waiting_for_furnace", "waiting_for_brewing_stand",
+                "waiting_for_ore", "waiting_for_trees", "no_animal_products", "no_observed_hunting_target",
+                "crafted", "delivered", "caught_fish", "built_block", "equipped_hoe", "unknown_future_status")) {
+            worker.status(status);
+            var row = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
+            helper.assertTrue(row.diagnostic().isEmpty(), "ordinary waiting and successful work have no stale warning: " + status);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
     public static void residentWorkShowsLiveBlockersWithoutStaleFailures(GameTestHelper helper) {
         var fixture = fixture(helper);
         var area = area(fixture.town(), SettlementAreaType.FARM, 0);

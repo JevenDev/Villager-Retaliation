@@ -234,7 +234,10 @@ public final class SettlementManagementService {
         if (!town.duties().containsKey(id)) return new ResidentWork("unassigned", "");
         var settings = town.workerSettings().get(id);
         if (settings != null && !settings.enabled()) return new ResidentWork("paused", "");
-        if (villager == null || worker != null && worker.unsafe()) return new ResidentWork(worker == null ? "idle" : worker.status(), "");
+        if (villager == null || !level.isPositionEntityTicking(villager.blockPosition()) || worker != null && worker.unsafe()) {
+            String status = worker == null ? "idle" : worker.status();
+            return new ResidentWork(status, SettlementWorkerDiagnostics.describe(status));
+        }
         var session = HiredWorkSession.active(level, villager);
         var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
         if (villager.isSleeping() || brain.status().equals("interaction.work.status.sleeping")
