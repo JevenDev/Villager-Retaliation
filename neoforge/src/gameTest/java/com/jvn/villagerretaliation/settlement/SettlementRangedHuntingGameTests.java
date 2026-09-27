@@ -721,6 +721,246 @@ public final class SettlementRangedHuntingGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void anUnknownDestinationReceiptRetiresAnOlderBackgroundShot(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, fixture.owner().position().add(0.0D, 4.0D, 0.0D), Vec3.ZERO);
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        var older = state.save();
+        var source = state.position();
+        var destination = helper.absolutePos(new BlockPos(3, 4, 3)).getCenter();
+        arrow.setPos(destination);
+        state.advance(arrow, now);
+        fixture.town().recordProjectile(state);
+        SettlementProjectileService.update(level, fixture.town(), now);
+        var actual = level.getEntity(arrow.getUUID());
+        helper.assertTrue(actual != null, "the original shot entered its loaded destination");
+        actual.discard();
+        fixture.town().removeProjectile(state.id());
+        var stale = SettlementProjectile.load(older);
+        fixture.town().recordProjectile(stale);
+        helper.assertFalse(stale.nativeChunks().contains(net.minecraft.world.level.ChunkPos.asLong(BlockPos.containing(destination))),
+                "the older settlement snapshot has never seen the destination chunk");
+        SettlementProjectileService.update(level, fixture.town(), now);
+        var reconciled = fixture.town().projectiles().get(state.id());
+        helper.assertTrue(reconciled == null || reconciled.removed(), "a newer destination removal retires the stale background shot");
+        helper.assertTrue(level.getEntity(state.id()) == null, "the spent arrow cannot return through background catch-up");
+        helper.assertFalse(level.hasChunkAt(source), "finding the destination receipt never forces the source chunk");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void anUnknownDestinationRemovalRejectsAnOlderReturningNativeBody(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, fixture.owner().position().add(0.0D, 4.0D, 0.0D), Vec3.ZERO);
+        var nativeSave = arrow.saveWithoutId(new CompoundTag());
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        var older = state.save();
+        arrow.setPos(helper.absolutePos(new BlockPos(3, 4, 3)).getCenter());
+        state.advance(arrow, now);
+        fixture.town().recordProjectile(state);
+        SettlementProjectileService.update(level, fixture.town(), now);
+        var actual = level.getEntity(state.id());
+        helper.assertTrue(actual != null, "the newer native destination accepted the original shot");
+        actual.discard();
+        fixture.town().removeProjectile(state.id());
+        fixture.town().recordProjectile(SettlementProjectile.load(older));
+        var returning = EntityType.ARROW.create(level);
+        returning.load(nativeSave);
+        helper.assertFalse(level.addFreshEntity(returning), "a loaded destination tombstone rejects the old source body before native admission");
+        helper.assertTrue(returning.isRemoved(), "the returning stale body receives the recorded removal");
+        helper.assertTrue(level.getEntity(state.id()) == null, "no native duplicate survives the old source load");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void aNewerPendingDestinationSupersedesAnOlderSourceSnapshot(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, fixture.owner().position().add(0.0D, 4.0D, 0.0D), Vec3.ZERO);
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        var older = state.save();
+        var destination = helper.absolutePos(new BlockPos(3, 4, 3)).getCenter();
+        arrow.setPos(destination);
+        state.advance(arrow, now);
+        fixture.town().recordProjectile(state);
+        Consumer<EntityJoinLevelEvent> listener = event -> {
+            if (event.getEntity().getUUID().equals(state.id())) event.setCanceled(true);
+        };
+        NeoForge.EVENT_BUS.addListener(listener);
+        try {
+            SettlementProjectileService.update(level, fixture.town(), now);
+            helper.assertTrue(state.pendingSpawn(), "the rejected destination has a persisted pending receipt");
+            fixture.town().removeProjectile(state.id());
+            fixture.town().recordProjectile(SettlementProjectile.load(older));
+            SettlementProjectileService.update(level, fixture.town(), now);
+            var recovered = fixture.town().projectiles().get(state.id());
+            helper.assertValueEqual(recovered.context(level).position(), destination, "the newer pending receipt restores the destination missing from the old snapshot");
+            helper.assertTrue(recovered.pendingSpawn() && !recovered.removed(), "receipt discovery preserves the waiting native handoff");
+        } finally {
+            NeoForge.EVENT_BUS.unregister(listener);
+        }
+        try {
+            SettlementProjectileService.update(level, fixture.town(), now);
+            var actual = level.getEntity(state.id());
+            helper.assertTrue(actual != null && actual.position().equals(destination), "the recovered pending shot enters native storage once");
+            SettlementProjectileService.update(level, fixture.town(), now);
+            helper.assertTrue(level.getEntity(state.id()) == actual, "receipt discovery and retry retain one native identity");
+        } finally {
+            var actual = level.getEntity(state.id());
+            if (actual != null) actual.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void projectileReceiptIndexTracksChunkIdentityAndDimension(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var position = helper.absolutePos(new BlockPos(3, 4, 3));
+        var chunk = level.getChunkSource().getChunkNow(position.getX() >> 4, position.getZ() >> 4);
+        var id = UUID.randomUUID();
+        var entries = SettlementChunkReceipts.projectiles(chunk, true);
+        entries.put(id.toString(), new CompoundTag());
+        try {
+            SettlementProjectileReceipts.onChunkLoad(new net.neoforged.neoforge.event.level.ChunkEvent.Load(chunk, false));
+            SettlementProjectileReceipts.onChunkLoad(new net.neoforged.neoforge.event.level.ChunkEvent.Load(chunk, false));
+            helper.assertValueEqual(SettlementProjectileReceipts.locations(level, id).size(), 1, "repeated load notifications register one receipt location");
+            var foreign = level.getServer().getLevel(net.minecraft.world.level.Level.NETHER);
+            helper.assertTrue(SettlementProjectileReceipts.locations(foreign, id).isEmpty(), "receipt locations do not cross dimension boundaries");
+            var oldChunk = new net.minecraft.world.level.chunk.LevelChunk(level, chunk.getPos());
+            SettlementProjectileReceipts.onChunkUnload(new net.neoforged.neoforge.event.level.ChunkEvent.Unload(oldChunk));
+            helper.assertTrue(SettlementProjectileReceipts.locations(level, id).contains(chunk.getPos().toLong()),
+                    "an older chunk object cannot unregister its replacement");
+            SettlementProjectileReceipts.onChunkUnload(new net.neoforged.neoforge.event.level.ChunkEvent.Unload(chunk));
+            helper.assertTrue(SettlementProjectileReceipts.locations(level, id).isEmpty(), "unloading the indexed chunk releases its receipt locations");
+        } finally {
+            entries.remove(id.toString());
+            SettlementProjectileReceipts.onChunkLoad(new net.neoforged.neoforge.event.level.ChunkEvent.Load(chunk, false));
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 600, batch = "settlement_projectile_receipt_chunks")
+    public static void nativeChunkReloadRebuildsReceiptsMissingFromAnOlderSettlementSave(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        var source = fixture.town().center().above(4);
+        var destination = new net.minecraft.world.level.ChunkPos(source.offset(64, 0, 0));
+        var arrow = arrow(helper, fixture, source.getCenter(), Vec3.ZERO);
+        arrow.setNoGravity(true);
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), level.getGameTime() + 2000L);
+        fixture.town().recordProjectile(state);
+        var destinationPosition = new Vec3(destination.getMinBlockX() + 8.5D, 84.0D, destination.getMinBlockZ() + 8.5D);
+        var newer = SettlementProjectile.load(state.save());
+        arrow.setPos(destinationPosition);
+        newer.advance(arrow, state.checkedAt());
+        newer.prepareSpawn();
+        newer.remove();
+        level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, destination, 0, destination);
+        level.getChunk(destination.x, destination.z);
+        helper.startSequence().thenWaitUntil(() -> {
+            helper.assertTrue(level.areEntitiesLoaded(destination.toLong()), "the destination chunk is available for its native save");
+        }).thenExecute(() -> {
+            var chunk = level.getChunkSource().getChunkNow(destination.x, destination.z);
+            SettlementChunkReceipts.projectiles(chunk, true).put(state.id().toString(), newer.save());
+            chunk.setUnsaved(true);
+            helper.assertTrue(SettlementProjectileReceipts.locations(level, state.id()).isEmpty(), "the disk fixture predates in-memory receipt indexing");
+            level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, destination, 0, destination);
+        }).thenWaitUntil(() -> {
+            helper.assertFalse(level.hasChunkAt(BlockPos.containing(destinationPosition)) || level.areEntitiesLoaded(destination.toLong()),
+                    "the newer destination receipt is written into a genuinely unloaded native chunk");
+        }).thenExecute(() -> {
+            helper.assertTrue(SettlementProjectileReceipts.locations(level, state.id()).isEmpty(), "unloaded chunks do not remain in the live index");
+            helper.assertFalse(fixture.town().projectiles().get(state.id()).removed(), "the old settlement snapshot still lacks the hidden destination removal");
+            level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, destination, 0, destination);
+            level.getChunk(destination.x, destination.z);
+        }).thenWaitUntil(() -> {
+            helper.assertTrue(level.areEntitiesLoaded(destination.toLong()), "native destination loading has completed");
+        }).thenExecute(() -> {
+            try {
+                helper.assertTrue(SettlementProjectileReceipts.locations(level, state.id()).contains(destination.toLong()),
+                        "real chunk loading rebuilds the index from persisted receipt metadata");
+                SettlementProjectileService.update(level, fixture.town(), level.getGameTime());
+                var reconciled = fixture.town().projectiles().get(state.id());
+                helper.assertTrue(reconciled == null || reconciled.removed(), "the reloaded destination tombstone supersedes the older settlement snapshot");
+                helper.assertTrue(level.getEntity(state.id()) == null, "receipt recovery cannot respawn the spent shot");
+                helper.assertFalse(level.hasChunkAt(source), "recovering the receipt does not force the old source world");
+            } finally {
+                level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, destination, 0, destination);
+            }
+        }).thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void aDestinationTombstoneProtectsAnAlreadyRetiredProjectileRecord(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, fixture.owner().position().add(0.0D, 4.0D, 0.0D), Vec3.ZERO);
+        var nativeSave = arrow.saveWithoutId(new CompoundTag());
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        arrow.setPos(helper.absolutePos(new BlockPos(3, 4, 3)).getCenter());
+        state.advance(arrow, now);
+        fixture.town().recordProjectile(state);
+        SettlementProjectileService.update(level, fixture.town(), now);
+        var actual = level.getEntity(state.id());
+        helper.assertTrue(actual != null, "the destination held the real native shot");
+        actual.discard();
+        fixture.town().removeProjectile(state.id());
+        var returning = EntityType.ARROW.create(level);
+        returning.load(nativeSave);
+        helper.assertFalse(level.addFreshEntity(returning), "receipt discovery suppresses an old source body even after its settlement record is retired");
+        helper.assertTrue(returning.isRemoved() && level.getEntity(state.id()) == null, "the retired shot has no surviving native body");
+        helper.assertFalse(fixture.town().projectiles().containsKey(state.id()), "reading a removal receipt cannot recreate settlement ownership");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void aRecoveredRemovalPersistsInTheReturningSourceChunk(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var position = helper.absolutePos(new BlockPos(3, 4, 3)).getCenter();
+        var sourcePosition = new net.minecraft.world.level.ChunkPos(BlockPos.containing(position));
+        var source = level.getChunkSource().getChunkNow(sourcePosition.x, sourcePosition.z);
+        var destination = level.getChunkSource().getChunkNow(sourcePosition.x + 1, sourcePosition.z);
+        helper.assertTrue(source != null && destination != null, "the fixture has two separate loaded native chunks");
+        var arrow = arrow(helper, fixture, position, Vec3.ZERO);
+        SettlementProjectileService.launched(fixture.town(), fixture.worker(), arrow, now);
+        SettlementProjectileService.update(level, fixture.town(), now);
+        var actual = (Arrow) level.getEntity(arrow.getUUID());
+        helper.assertTrue(actual != null, "the source originally accepted the native shot");
+        var nativeSave = actual.saveWithoutId(new CompoundTag());
+        var oldReceipt = SettlementChunkReceipts.projectiles(source, false).getCompound(arrow.getUUID().toString()).copy();
+        actual.setPos(new Vec3(destination.getPos().getMinBlockX() + 8.5D, position.y, position.z));
+        SettlementProjectileService.onChanged(actual);
+        actual.discard();
+        helper.assertFalse(fixture.town().projectiles().containsKey(arrow.getUUID()), "all known native chunks acknowledged the retired shot");
+        SettlementChunkReceipts.projectiles(source, true).put(arrow.getUUID().toString(), oldReceipt);
+        source.setUnsaved(true);
+        var returning = EntityType.ARROW.create(level);
+        returning.load(nativeSave);
+        helper.assertFalse(level.addFreshEntity(returning), "the newer destination removal rejects an older native source save");
+        var recovered = SettlementChunkReceipts.projectiles(source, false).getCompound(arrow.getUUID().toString());
+        helper.assertTrue(recovered.getBoolean("Removed") && recovered.getLong("Version") > oldReceipt.getLong("Version"),
+                "the discovered removal is persisted into the returning source chunk");
+        SettlementProjectileReceipts.onChunkUnload(new net.neoforged.neoforge.event.level.ChunkEvent.Unload(destination));
+        try {
+            var repeated = EntityType.ARROW.create(level);
+            repeated.load(nativeSave);
+            helper.assertFalse(level.addFreshEntity(repeated), "the repaired source receipt protects later returns without the destination index");
+            helper.assertTrue(level.getEntity(arrow.getUUID()) == null, "repairing the source cannot revive the spent arrow");
+        } finally {
+            SettlementProjectileReceipts.onChunkLoad(new net.neoforged.neoforge.event.level.ChunkEvent.Load(destination, false));
+        }
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper, Item weapon, int ammunition) {
         var level = helper.getLevel();
         var center = helper.absolutePos(new BlockPos(2, 2, 2)).offset(17_000_000, 0, 17_000_000).atY(80);

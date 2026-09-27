@@ -59,21 +59,28 @@ public final class SettlementProjectileService {
         var state = town == null ? null : town.projectiles().get(projectile.getUUID());
         var existing = state == null ? null : existing(level, state);
         if (existing != null && existing != projectile || state != null && existing == null && known(level, state)) return false;
-        var chunk = level.getChunkSource().getChunkNow(projectile.blockPosition().getX() >> 4, projectile.blockPosition().getZ() >> 4);
-        if (chunk != null) {
-            var tag = SettlementChunkReceipts.projectiles(chunk, false).getCompound(projectile.getUUID().toString());
-            if (!tag.isEmpty()) restore(SettlementProjectile.load(tag), projectile);
+        var latest = latestReceipt(level, projectile.getUUID(), state, projectile.blockPosition());
+        if (latest == null) return !projectile.isRemoved();
+        if (town == null) {
+            if (latest.removed() && SettlementProjectile.version(projectile) <= latest.version()) {
+                latest.anchor(projectile.blockPosition());
+                receipts(level, latest);
+            }
+            restore(latest, projectile);
+            return !projectile.isRemoved();
         }
-        if (town != null) {
-            state = synchronize(level, town, state);
-            if (SettlementProjectile.version(projectile) > state.version()) state.observe(projectile, level.getGameTime());
-            state.anchor(projectile.blockPosition());
-            if (existing == null && !state.removed()) state.prepareSpawn();
-            receipts(level, state);
-            restore(state, projectile);
-            receipts(level, state);
-            town.changed();
+        if (latest != state) {
+            town.removeProjectile(projectile.getUUID());
+            town.recordProjectile(latest);
         }
+        state = latest;
+        if (SettlementProjectile.version(projectile) > state.version()) state.observe(projectile, level.getGameTime());
+        state.anchor(projectile.blockPosition());
+        if (existing == null && !state.removed()) state.prepareSpawn();
+        receipts(level, state);
+        restore(state, projectile);
+        receipts(level, state);
+        town.changed();
         return !projectile.isRemoved();
     }
 
@@ -250,21 +257,30 @@ public final class SettlementProjectileService {
     }
 
     private static SettlementProjectile synchronize(ServerLevel level, SettlementRecord town, SettlementProjectile state) {
-        var latest = state;
-        for (long anchor : state.nativeChunks()) {
-            var chunk = level.getChunkSource().getChunkNow(ChunkPos.getX(anchor), ChunkPos.getZ(anchor));
-            if (chunk == null) continue;
-            var tag = SettlementChunkReceipts.projectiles(chunk, false).getCompound(state.id().toString());
-            if (tag.isEmpty() || tag.getLong("Version") < latest.version()
-                    || tag.getLong("Version") == latest.version() && !tag.getBoolean("Removed")) continue;
-            var receipt = SettlementProjectile.load(tag);
-            if (!receipt.id().equals(state.id())) throw new IllegalStateException("Projectile receipt identity differs");
-            receipt.retainAnchors(latest);
-            latest = receipt;
-        }
+        var latest = latestReceipt(level, state.id(), state, null);
         if (latest != state) {
             town.removeProjectile(state.id());
             town.recordProjectile(latest);
+        }
+        return latest;
+    }
+
+    private static SettlementProjectile latestReceipt(ServerLevel level, java.util.UUID id, SettlementProjectile state, BlockPos nativePosition) {
+        var latest = state;
+        var locations = new java.util.LinkedHashSet<Long>();
+        if (state != null) locations.addAll(state.nativeChunks());
+        if (nativePosition != null) locations.add(ChunkPos.asLong(nativePosition));
+        locations.addAll(SettlementProjectileReceipts.locations(level, id));
+        for (long anchor : locations) {
+            var chunk = level.getChunkSource().getChunkNow(ChunkPos.getX(anchor), ChunkPos.getZ(anchor));
+            if (chunk == null) continue;
+            var tag = SettlementChunkReceipts.projectiles(chunk, false).getCompound(id.toString());
+            if (tag.isEmpty() || latest != null && (tag.getLong("Version") < latest.version()
+                    || tag.getLong("Version") == latest.version() && !tag.getBoolean("Removed"))) continue;
+            var receipt = SettlementProjectile.load(tag);
+            if (!receipt.id().equals(id)) throw new IllegalStateException("Projectile receipt identity differs");
+            if (latest != null) receipt.retainAnchors(latest);
+            latest = receipt;
         }
         return latest;
     }
@@ -278,6 +294,7 @@ public final class SettlementProjectileService {
             if (entries.getCompound(key).getLong("Version") > state.version()) continue;
             state.acknowledge(anchor);
             entries.put(key, state.save());
+            SettlementProjectileReceipts.record(chunk, state.id());
             chunk.setUnsaved(true);
         }
     }
