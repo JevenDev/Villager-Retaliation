@@ -1629,6 +1629,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         this.options.add(DialogueOption.enabled(translate("recruit.hire_selected_role", this.pendingHireRole.label()), NO_ACTION));
+        addPassiveOption("recruit.hire_releases_civic_duty");
         addOption("recruit.hire_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY));
         addOption("recruit.hire_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_THREE_DAYS));
         addOption("recruit.hire_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_FIVE_DAYS));

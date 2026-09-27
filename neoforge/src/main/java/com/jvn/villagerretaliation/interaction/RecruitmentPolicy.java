@@ -13,10 +13,20 @@ public final class RecruitmentPolicy {
     }
 
     public static Decision mayHire(ServerLevel level, Villager villager, ServerPlayer player) {
+        return mayHire(level, villager, player, false);
+    }
+
+    public static Decision mayAcceptPaidContract(ServerLevel level, Villager villager, ServerPlayer player) {
+        return mayHire(level, villager, player, true);
+    }
+
+    private static Decision mayHire(ServerLevel level, Villager villager, ServerPlayer player, boolean transferCivicDuty) {
         Decision inputs = validInputs(level, villager, player);
         if (!inputs.allowed()) return inputs;
         if (villager.isBaby()) return Decision.denied(DenialReason.BABY);
-        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)) {
+        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)
+                && !(transferCivicDuty && com.jvn.villagerretaliation.settlement.SettlementWorkforceService
+                        .canTransferToPersonalHire(level, villager, player))) {
             return Decision.denied(DenialReason.SETTLEMENT_DUTY);
         }
         if (!hasTrust(level, villager, player, VillagerReputationLevel.NEUTRAL)) {

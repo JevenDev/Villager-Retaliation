@@ -154,6 +154,14 @@ public final class SettlementWorkforceService {
         return time >= 2_000L && time < 9_000L;
     }
 
+    public static boolean canTransferToPersonalHire(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (player == null || villager == null || !player.isAlive() || player.isSpectator()
+                || player.level() != level || villager.level() != level || !villager.isAlive() || villager.isBaby()
+                || level.getEntity(villager.getUUID()) != villager || hasPersonalCommitment(villager)) return false;
+        return duty(villager).filter(duty -> duty.town().leader().equals(player.getUUID())
+                && duty.town().activeProject(villager.getUUID()) == null).isPresent();
+    }
+
     public static boolean blocksPersonalRecruitment(ServerLevel level, Villager villager) {
         if (VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.CIVIC
                 || home(level, villager).map(town -> town.duties().containsKey(villager.getUUID())).orElse(false)) {

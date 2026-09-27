@@ -38,6 +38,10 @@ public final class HiredContractRequestHandler {
             Villager villager,
             int days,
             HiredVillagerRole selectedRole) {
+        if (!RecruitmentPolicy.mayAcceptPaidContract(level, villager, player).allowed()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
+            return;
+        }
         if (HiredVillagerContractService.isHiredBy(level, villager, player)) {
             VillagerInteractionService.sendHiredContractNotice(player, level, villager);
             return;
@@ -88,7 +92,7 @@ public final class HiredContractRequestHandler {
         TransactionResult transaction = transact(
                 player,
                 cost,
-                () -> HiredVillagerContractService.startHireContract(
+                () -> HiredVillagerContractService.startPaidHireContract(
                         level, villager, player, days, cost, hireRole));
         if (transaction == TransactionResult.PAYMENT_FAILED) {
             VillagerInteractionService.sendVillagerNotice(

@@ -794,6 +794,33 @@ public final class SettlementBackgroundConstructionGameTests {
                 .filter(stack -> stack.is(item)).mapToInt(ItemStack::getCount).sum();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_construction")
+    public static void activeProjectPreventsLeaderPaidHire(GameTestHelper helper) {
+        fixture(helper, false, Map.of(BlockPos.ZERO, Blocks.STONE.defaultBlockState()), fixture -> {
+            var level = helper.getLevel();
+            var builder = fixture.builder();
+            builder.setPos(helper.absolutePos(new BlockPos(2, 2, 2)).getCenter());
+            helper.assertTrue(level.addFreshEntity(builder), "the civic builder is loaded for hiring");
+            var leader = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
+                    new com.mojang.authlib.GameProfile(fixture.town().leader(), "ProjectLeader"));
+            leader.setPos(builder.position());
+            leader.getInventory().setItem(0, new ItemStack(Items.EMERALD, 64));
+            var role = com.jvn.villagerretaliation.interaction.HiredVillagerRoles.defaultRole(level, builder);
+            helper.assertTrue(role != null, "the builder has an otherwise suitable paid role");
+            helper.assertFalse(com.jvn.villagerretaliation.interaction.RecruitmentPolicy.mayAcceptPaidContract(level, builder, leader).allowed(),
+                    "an active settlement project blocks a paid transfer");
+            com.jvn.villagerretaliation.interaction.HiredContractRequestHandler.handle(leader, level, builder,
+                    com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY, role);
+            helper.assertTrue(fixture.project().active(), "the rejected contract cannot cancel the project");
+            helper.assertValueEqual(fixture.town().duties().get(builder.getUUID()), fixture.area().id(),
+                    "the builder retains civic duty");
+            helper.assertFalse(com.jvn.villagerretaliation.interaction.HiredVillagerContractService.hasContract(builder),
+                    "the builder has no personal contract");
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(leader), 64,
+                    "the project rejection takes no payment");
+        });
+    }
+
     static void fixture(GameTestHelper helper, boolean loaded, Map<BlockPos, BlockState> blocks, Consumer<Fixture> check) {
         var base = helper.absolutePos(new BlockPos(2, 2, 2));
         fixture(helper, loaded ? base : base.offset(8_000_000, 0, 8_000_000).atY(80), blocks, true, check);

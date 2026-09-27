@@ -399,6 +399,17 @@ public final class HiredVillagerContractService {
         return startHireContract(level, villager, player, days, emeraldsPaid, HiredVillagerRoles.defaultRole(level, villager));
     }
 
+    public static boolean startPaidHireContract(
+            ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid, HiredVillagerRole role) {
+        if (!RecruitmentPolicy.mayAcceptPaidContract(level, villager, player).allowed()
+                || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null
+                || com.jvn.villagerretaliation.party.PartyVillagerContractService.hasPartyEntityReference(villager)
+                || hasForeignJobInventoryOverflow(level, villager, player)) return false;
+        HiredVillagerIndex.reconcileLoadedFor(player);
+        if (HiredVillagerIndex.targetsFor(player).size() >= HiredVillagerIndex.MAX_ASSIGNMENTS_PER_PLAYER) return false;
+        return startHireContract(level, villager, player, days, emeraldsPaid, role, true);
+    }
+
     public static boolean startHireContract(
             ServerLevel level,
             Villager villager,
@@ -406,10 +417,18 @@ public final class HiredVillagerContractService {
             int days,
             int emeraldsPaid,
             HiredVillagerRole role) {
+        return startHireContract(level, villager, player, days, emeraldsPaid, role, false);
+    }
+
+    private static boolean startHireContract(
+            ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid,
+            HiredVillagerRole role, boolean transferCivicDuty) {
         if (level == null || villager == null || villager.isBaby() || player == null) {
             return false;
         }
-        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)
+        boolean releaseDuty = transferCivicDuty && com.jvn.villagerretaliation.settlement.SettlementWorkforceService
+                .canTransferToPersonalHire(level, villager, player);
+        if ((!releaseDuty && com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager))
                 || VillagerQuestHiringRestrictionService.blocksHiring(level, villager, player)) {
             return false;
         }
@@ -428,6 +447,11 @@ public final class HiredVillagerContractService {
         HireContract contract = HireContract.regular(
                 player.getUUID(), startGameTime, safeDays,
                 Math.max(1, emeraldsPaid / safeDays), emeraldsPaid, safeRole);
+        if (releaseDuty) {
+            var duty = com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).orElseThrow();
+            if (!com.jvn.villagerretaliation.settlement.SettlementWorkforceService
+                    .release(level, player, duty.town().id(), villager.getUUID())) return false;
+        }
         HireContractLifecycle.begin(level, villager, contract);
         return true;
     }

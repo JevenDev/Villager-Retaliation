@@ -1436,6 +1436,7 @@
   "villagerretaliation.gui.recruit.hire_one_day": "1 Day",
   "villagerretaliation.gui.recruit.hire_selected_role": "Hiring for: %s",
   "villagerretaliation.gui.recruit.hire_services_intro": "Choose work first. You can change jobs later.",
+  "villagerretaliation.gui.recruit.hire_releases_civic_duty": "Accepting a paid contract releases any current civic duty.",
   "villagerretaliation.gui.recruit.hire_seven_days": "7 Days",
   "villagerretaliation.gui.recruit.hire_thirty_days": "30 Days",
   "villagerretaliation.gui.recruit.hire_three_days": "3 Days",

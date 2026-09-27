@@ -237,7 +237,7 @@ public final class VillagerInteractionScreenOpener {
                 partyVillagerPartyMember,
                 partyRecruitAvailable,
                 !hiredAnyPlayer
-                        && VillagerRecruitmentService.canRecruit(level, villager, player)
+                        && RecruitmentPolicy.mayAcceptPaidContract(level, villager, player).allowed()
                         && !VillagerQuestHiringRestrictionService.blocksHiring(level, villager, player),
                 com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.featureAvailable(),
                 com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.hasAssignment(level, villager.getUUID()),
