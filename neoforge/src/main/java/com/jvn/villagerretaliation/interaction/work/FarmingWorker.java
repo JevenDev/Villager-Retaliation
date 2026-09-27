@@ -91,10 +91,14 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         var pending = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
-        if (pending.storageTargetPos() != null && context.hasOutputToDeposit()
+        boolean delivering = pending.storageTargetPos() != null
                 && (pending.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
                 || pending.taskState() == HiredWorkerTaskState.DEPOSITING
-                || pending.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL)) {
+                || pending.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL);
+        boolean harvestBatch = context.autoDepositOutputs()
+                && com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()
+                && context.inventory().hasOutput(stack -> stack.getCount() >= stack.getMaxStackSize());
+        if (context.hasOutputToDeposit() && (delivering || harvestBatch)) {
             DepositResult deposit = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
             if (deposit == DepositResult.MOVING || deposit == DepositResult.DEPOSITED) {
                 return WorkResult.progressed("interaction.work.farming.no_target_depositing");

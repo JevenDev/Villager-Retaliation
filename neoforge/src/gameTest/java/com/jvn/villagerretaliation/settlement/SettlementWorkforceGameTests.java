@@ -445,6 +445,47 @@ public final class SettlementWorkforceGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicFarmerDeliversFullStacksDuringOngoingHarvest(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var villager = fixture.villager();
+        var pos = villager.blockPosition().east();
+        var original = level.getBlockState(pos);
+        long dayTime = level.getDayTime();
+        try {
+            level.setDayTime(6_000L);
+            var storage = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Harvest",
+                    pos.below(), pos.above(), 5, true);
+            helper.assertTrue(SettlementBuildingService.register(fixture.leader(), fixture.town().id(), storage),
+                    "the farmer has a designated output depot");
+            level.setBlockAndUpdate(pos, com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+            helper.assertTrue(SettlementDepotService.register(fixture.leader(), pos), "the physical depot registers");
+            assign(helper, fixture);
+            var session = HiredWorkSession.active(level, villager);
+            session.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+            session.inventory().insertOutput(new ItemStack(Items.WHEAT, 8));
+            session.state().putLong("NextFarmingFieldScanGameTime", level.getGameTime() + 1_000L);
+            var farmer = new com.jvn.villagerretaliation.interaction.work.FarmingWorker();
+            farmer.tick(level, villager, null, session.context());
+            helper.assertValueEqual(session.inventory().countItem(Items.WHEAT), 8,
+                    "a partial harvest does not cause a separate trip for every crop");
+            session.inventory().insertOutput(new ItemStack(Items.WHEAT, 56));
+            helper.assertTrue(session.inventory().hasOutputSpace(), "the harvest batch is delivered before inventory capacity is exhausted");
+            farmer.tick(level, villager, null, session.context());
+            var depot = ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(pos)).inventory();
+            helper.assertValueEqual(depot.count(stack -> stack.is(Items.WHEAT)), 64,
+                    "a full harvest stack reaches the depot while the field remains on cooldown");
+            helper.assertValueEqual(session.inventory().countItem(Items.WHEAT), 0,
+                    "the delivery conserves the original harvest");
+        } finally {
+            villager.discard();
+            level.setBlockAndUpdate(pos, original);
+            level.setDayTime(dayTime);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
     public static void civicCookCollectsIngredientsOutsideKitchenBounds(GameTestHelper helper) {
         var fixture = fixture(helper);
         var level = helper.getLevel();
