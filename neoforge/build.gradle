@@ -37,6 +37,7 @@ sourceSets.main.resources {
 def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
 def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
 def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
+def settlementCityAcceptanceDirectory = layout.buildDirectory.dir("settlement-city-acceptance/${System.currentTimeMillis()}")
 
 neoForge {
     version = rootProject.neo_version
@@ -65,6 +66,14 @@ neoForge {
             gameDirectory.set(settlementTownProfileDirectory)
             systemProperty 'villagerretaliation.settlementTownProfile', settlementTownProfileDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementTownProfile', '--width', '1280', '--height', '720'
+        }
+
+        settlementCityAcceptance {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(settlementCityAcceptanceDirectory)
+            systemProperty 'villagerretaliation.settlementCityAcceptance', settlementCityAcceptanceDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'SettlementCityAcceptance', '--width', '1280', '--height', '720'
         }
 
         server {
@@ -143,6 +152,28 @@ tasks.named('runSettlementTownProfile') {
         def result = new File(settlementTownProfileDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Settlement town profile completed')) {
             throw new GradleException("Settlement town profiling did not finish. Inspect ${settlementTownProfileDirectory.get().asFile}")
+        }
+    }
+}
+
+tasks.named('runSettlementCityAcceptance') {
+    dependsOn tasks.named('runGameTestServer')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) {
+            throw new GradleException('Settlement City acceptance requires the generated GameTest world metadata.')
+        }
+        copy {
+            from metadata
+            into new File(settlementCityAcceptanceDirectory.get().asFile, 'saves/SettlementCityAcceptance')
+        }
+        new File(settlementCityAcceptanceDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\n'
+    }
+    doLast {
+        def result = new File(settlementCityAcceptanceDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Settlement City acceptance passed')) {
+            throw new GradleException("Settlement City acceptance did not finish. Inspect ${settlementCityAcceptanceDirectory.get().asFile}")
         }
     }
 }
