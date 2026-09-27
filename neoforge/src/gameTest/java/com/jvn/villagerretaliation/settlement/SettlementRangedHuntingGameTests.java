@@ -402,6 +402,325 @@ public final class SettlementRangedHuntingGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void anUnloadedNativeShotCanEnterItsLoadedDestination(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, fixture.owner().position().add(0.0D, 4.0D, 0.0D), new Vec3(0.5D, 0.0D, 0.0D));
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        state.observe(arrow, now);
+        var source = arrow.blockPosition();
+        var staleBody = arrow.saveWithoutId(new CompoundTag());
+        var destination = helper.absolutePos(new BlockPos(3, 4, 3)).getCenter();
+        arrow.setPos(destination);
+        state.advance(arrow, now);
+        fixture.town().recordProjectile(state);
+        try {
+            SettlementProjectileService.update(level, fixture.town(), now);
+            var actual = level.getEntity(arrow.getUUID());
+            helper.assertTrue(actual instanceof Arrow, "an already native shot returns at its loaded virtual destination");
+            helper.assertValueEqual(actual.position(), destination, "native re-entry uses the simulated position");
+            helper.assertFalse(level.hasChunkAt(source), "re-entry never loads the old source chunk");
+            helper.assertFalse(state.pendingSpawn(), "the accepted native body completes the handoff");
+            long version = state.version();
+            var old = EntityType.ARROW.create(level);
+            old.load(staleBody);
+            helper.assertFalse(level.addFreshEntity(old), "the old source body cannot create a second native identity");
+            helper.assertTrue(level.getEntity(arrow.getUUID()) == actual, "the accepted destination body remains authoritative");
+            helper.assertValueEqual(state.version(), version, "a rejected stale source body cannot rewrite the settlement record");
+            helper.assertValueEqual(state.nativePosition(), actual.blockPosition(), "the stale source cannot move the current native anchor");
+        } finally {
+            var actual = level.getEntity(arrow.getUUID());
+            if (actual != null) actual.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void rejectedNativeReentryRemainsPendingAcrossSave(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, fixture.owner().position().add(0.0D, 4.0D, 0.0D), Vec3.ZERO);
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        state.observe(arrow, now);
+        arrow.setPos(helper.absolutePos(new BlockPos(3, 4, 3)).getCenter());
+        state.advance(arrow, now);
+        fixture.town().recordProjectile(state);
+        var attempts = new AtomicInteger();
+        Consumer<EntityJoinLevelEvent> listener = event -> {
+            if (event.getEntity().getUUID().equals(arrow.getUUID())) {
+                attempts.incrementAndGet();
+                event.setCanceled(true);
+            }
+        };
+        NeoForge.EVENT_BUS.addListener(listener);
+        try {
+            SettlementProjectileService.update(level, fixture.town(), now);
+            helper.assertTrue(state.pendingSpawn(), "a rejected re-entry retains explicit pending ownership");
+            helper.assertTrue(level.getEntity(arrow.getUUID()) == null, "a vetoed handoff has no native body");
+            var saved = SettlementProjectile.load(state.save());
+            fixture.town().removeProjectile(state.id());
+            fixture.town().recordProjectile(saved);
+            SettlementProjectileService.update(level, fixture.town(), now);
+            helper.assertFalse(saved.removed(), "loaded empty destination storage cannot retire a vetoed pending handoff");
+            helper.assertTrue(saved.pendingSpawn(), "pending ownership survives serialization and a repeated veto");
+        } finally {
+            NeoForge.EVENT_BUS.unregister(listener);
+        }
+        try {
+            SettlementProjectileService.update(level, fixture.town(), now);
+            var actual = level.getEntity(arrow.getUUID());
+            helper.assertTrue(actual instanceof Arrow, "the same pending shot can enter after the veto is lifted");
+            helper.assertFalse(fixture.town().projectiles().get(arrow.getUUID()).pendingSpawn(), "the accepted handoff clears pending ownership");
+            helper.assertTrue(attempts.get() >= 2, "both rejected handoffs reached the native spawn event");
+        } finally {
+            var actual = level.getEntity(arrow.getUUID());
+            if (actual != null) actual.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 200, batch = "settlement_projectile_hidden")
+    public static void hiddenNativeStorageKeepsItsSingleProjectileBody(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        var chunk = new net.minecraft.world.level.ChunkPos(fixture.town().center());
+        level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, chunk, 0, chunk);
+        level.getChunk(chunk.x, chunk.z);
+        helper.startSequence().thenWaitUntil(() -> {
+            helper.assertTrue(level.areEntitiesLoaded(chunk.toLong()), "the native source storage is ready");
+        }).thenExecute(() -> {
+            var manager = ((com.jvn.villagerretaliation.mixin.ServerLevelEntityManagerAccessor) level).villagerretaliation$entityManager();
+            var position = new BlockPos(chunk.getMinBlockX() + 8, 84, chunk.getMinBlockZ() + 8).getCenter();
+            var arrow = arrow(helper, fixture, position, new Vec3(0.25D, 0.0D, 0.0D));
+            arrow.setNoGravity(true);
+            try {
+                helper.assertTrue(level.addFreshEntity(arrow), "the native arrow enters its source chunk");
+                manager.updateChunkStatus(chunk, net.minecraft.world.level.entity.Visibility.HIDDEN);
+                helper.assertTrue(level.getEntity(arrow.getUUID()) == null, "the hidden body is absent from the visible entity lookup");
+                helper.assertTrue(manager.isLoaded(arrow.getUUID()), "the native entity manager still owns the hidden body");
+                long now = fixture.town().projectiles().get(arrow.getUUID()).checkedAt() + 1L;
+                SettlementProjectileService.update(level, fixture.town(), now);
+                var state = fixture.town().projectiles().get(arrow.getUUID());
+                helper.assertTrue(state != null && !state.removed(), "a hidden body is not mistaken for a missing or dead projectile");
+                helper.assertTrue(arrow.position().distanceTo(position.add(0.25D, 0.0D, 0.0D)) < 0.00001D,
+                        "the recorded flight updates the existing hidden native body");
+                var older = state.save();
+                var receipts = SettlementChunkReceipts.projectiles(level.getChunk(chunk.x, chunk.z), true);
+                var olderReceipt = receipts.getCompound(arrow.getUUID().toString()).copy();
+                var latestPosition = position.add(1.0D, 0.0D, 0.0D);
+                arrow.setPos(latestPosition);
+                SettlementProjectileService.onChanged(arrow);
+                fixture.town().removeProjectile(state.id());
+                state = SettlementProjectile.load(older);
+                fixture.town().recordProjectile(state);
+                receipts.put(arrow.getUUID().toString(), olderReceipt);
+                SettlementProjectileService.update(level, fixture.town(), now + 1L);
+                helper.assertValueEqual(arrow.position(), latestPosition, "an older settlement and chunk receipt cannot rewind a newer hidden native body");
+                helper.assertValueEqual(state.context(level).position(), latestPosition, "the newer native version becomes the recorded flight without repeating an interval");
+                manager.updateChunkStatus(chunk, net.minecraft.world.level.entity.Visibility.TRACKED);
+                helper.assertTrue(level.getEntity(arrow.getUUID()) == arrow, "visibility restores the same native body without spawning a replacement");
+            } finally {
+                manager.updateChunkStatus(chunk, net.minecraft.world.level.entity.Visibility.TRACKED);
+                arrow.discard();
+                level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, chunk, 0, chunk);
+            }
+        }).thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 600, batch = "settlement_projectile_chunks")
+    public static void aRealUnloadedArrowReentersTheNextChunkAndRejectsItsOldSourceBody(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        var source = new net.minecraft.world.level.ChunkPos(fixture.town().center());
+        var destination = new net.minecraft.world.level.ChunkPos(source.x + 1, source.z);
+        var position = new Vec3(source.getMinBlockX() + 14.5D, 84.0D, source.getMinBlockZ() + 8.5D);
+        var arrow = arrow(helper, fixture, position, new Vec3(1.0D, 0.0D, 0.0D));
+        arrow.setNoGravity(true);
+        level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, source, 0, source);
+        level.getChunk(source.x, source.z);
+        helper.startSequence().thenWaitUntil(() -> {
+            helper.assertTrue(level.areEntitiesLoaded(source.toLong()), "the native source chunk is ready");
+        }).thenExecute(() -> {
+            helper.assertFalse(level.isPositionEntityTicking(arrow.blockPosition()), "source viewing does not tick the shot");
+            helper.assertTrue(level.addFreshEntity(arrow), "the original arrow is accepted into real native storage");
+            fixture.town().projectiles().get(arrow.getUUID()).checked(level.getGameTime() + 2000L);
+            level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, source, 0, source);
+        }).thenWaitUntil(() -> {
+            var state = fixture.town().projectiles().get(arrow.getUUID());
+            if (state != null) state.checked(level.getGameTime() + 2000L);
+            helper.assertFalse(level.areEntitiesLoaded(source.toLong()) || level.hasChunkAt(BlockPos.containing(position)),
+                    "the original arrow is saved into unloaded native entity storage");
+        }).thenExecute(() -> {
+            helper.assertValueEqual(arrow.getRemovalReason(), Entity.RemovalReason.UNLOADED_TO_CHUNK, "the original body genuinely unloaded");
+            level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, destination, 0, destination);
+            level.getChunk(destination.x, destination.z);
+        }).thenWaitUntil(() -> {
+            helper.assertTrue(level.areEntitiesLoaded(destination.toLong()), "only the flight destination has native storage available");
+        }).thenExecute(() -> {
+            var state = fixture.town().projectiles().get(arrow.getUUID());
+            helper.assertFalse(state.pendingSpawn(), "the saved shot originally belonged to a native entity");
+            SettlementProjectileService.update(level, fixture.town(), state.checkedAt() + 4L);
+            var actual = level.getEntity(arrow.getUUID());
+            helper.assertTrue(actual instanceof Arrow, "physical background flight hands the old native shot to its next loaded chunk");
+            helper.assertValueEqual(actual.chunkPosition(), destination, "the returned arrow follows its actual flight across the boundary");
+            helper.assertTrue(actual != arrow, "the unloaded object is replaced by one accepted destination body");
+            helper.assertFalse(level.hasChunkAt(BlockPos.containing(position)), "destination handoff does not force the source chunk");
+            state.checked(level.getGameTime() + 2000L);
+            actual.setDeltaMovement(Vec3.ZERO);
+            SettlementProjectileService.onChanged((Arrow) actual);
+            state.checked(level.getGameTime() + 2000L);
+            level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, source, 0, source);
+            level.getChunk(source.x, source.z);
+        }).thenWaitUntil(() -> {
+            helper.assertTrue(level.areEntitiesLoaded(source.toLong()), "the old source entity file has been read again");
+        }).thenExecute(() -> {
+            try {
+                var actual = level.getEntity(arrow.getUUID());
+                helper.assertTrue(actual instanceof Arrow && actual.chunkPosition().equals(destination),
+                        "loading the stale source cannot replace the destination projectile");
+                var manager = ((com.jvn.villagerretaliation.mixin.ServerLevelEntityManagerAccessor) level).villagerretaliation$entityManager();
+                var storage = ((com.jvn.villagerretaliation.mixin.PersistentEntitySectionManagerAccessor) manager).villagerretaliation$sectionStorage();
+                long bodies = java.util.stream.LongStream.of(source.toLong(), destination.toLong()).boxed()
+                        .flatMap(key -> storage.getExistingSectionsInChunk(key)).flatMap(section -> section.getEntities())
+                        .filter(entity -> entity.getUUID().equals(arrow.getUUID())).count();
+                helper.assertValueEqual(bodies, 1L, "both real native entity chunks contain exactly one accepted identity");
+            } finally {
+                var actual = level.getEntity(arrow.getUUID());
+                if (actual != null) actual.discard();
+                level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, source, 0, source);
+                level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, destination, 0, destination);
+            }
+        }).thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void anAcceptedReturningShotDoesNotNeedItsShooterLoaded(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, helper.absolutePos(new BlockPos(3, 4, 3)).getCenter(), Vec3.ZERO);
+        var nativeSave = arrow.saveWithoutId(new CompoundTag());
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        state.observe(arrow, now);
+        state.prepareSpawn();
+        fixture.town().recordProjectile(state);
+        var returning = EntityType.ARROW.create(level);
+        returning.load(nativeSave);
+        helper.assertTrue(returning.getOwner() == null, "the native shooter identity is currently unavailable");
+        try {
+            helper.assertTrue(level.addFreshEntity(returning), "native storage accepts the returning shot");
+            helper.assertFalse(state.pendingSpawn(), "accepted native storage acknowledges the shot without a loaded shooter");
+            helper.assertValueEqual(SettlementProjectile.version(returning), state.version(), "the accepted native and settlement versions agree");
+        } finally {
+            returning.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void aLateVetoOfAReturningBodyKeepsItsReconciledFlight(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, fixture.owner().position().add(0.0D, 4.0D, 0.0D), Vec3.ZERO);
+        var nativeSave = arrow.saveWithoutId(new CompoundTag());
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        state.observe(arrow, now);
+        var destination = helper.absolutePos(new BlockPos(3, 4, 3)).getCenter();
+        arrow.setPos(destination);
+        state.advance(arrow, now);
+        fixture.town().recordProjectile(state);
+        Consumer<EntityJoinLevelEvent> listener = event -> {
+            if (event.getEntity().getUUID().equals(arrow.getUUID())) event.setCanceled(true);
+        };
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST, listener);
+        try {
+            var returning = EntityType.ARROW.create(level);
+            returning.load(nativeSave);
+            helper.assertFalse(level.addFreshEntity(returning), "a later event listener rejects the returning native body");
+            helper.assertTrue(state.pendingSpawn(), "reconciliation retains pending ownership until native storage accepts the body");
+            helper.assertValueEqual(state.position(), BlockPos.containing(destination), "the late veto preserves the simulated destination");
+        } finally {
+            NeoForge.EVENT_BUS.unregister(listener);
+        }
+        try {
+            SettlementProjectileService.update(level, fixture.town(), now);
+            var actual = level.getEntity(arrow.getUUID());
+            helper.assertTrue(actual instanceof Arrow && actual.position().equals(destination), "the same reconciled flight survives the late veto");
+        } finally {
+            var actual = level.getEntity(arrow.getUUID());
+            if (actual != null) actual.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void workerCatchupCannotReviveAnAbsentNativeShot(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var arrow = arrow(helper, fixture, helper.absolutePos(new BlockPos(3, 4, 3)).getCenter(), Vec3.ZERO);
+        var state = SettlementProjectile.launched(arrow, fixture.worker(), now);
+        state.observe(arrow, now);
+        fixture.town().recordProjectile(state);
+        helper.assertTrue(level.areEntitiesLoaded(arrow.chunkPosition().toLong()), "native storage has completed loading without the saved shot");
+        SettlementProjectileService.advanceOwned(level, fixture.town(), fixture.worker(), fixture.owner(), fixture.target(), now + 1L);
+        helper.assertFalse(fixture.town().projectiles().containsKey(arrow.getUUID()), "worker catch-up retires an acknowledged absent native identity");
+        helper.assertTrue(level.getEntity(arrow.getUUID()) == null, "the worker cannot respawn an already removed native shot");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void nativeTickingTakesOverWithoutReplayingBackgroundFlight(GameTestHelper helper) {
+        var fixture = fixture(helper, Items.BOW, 2);
+        var level = helper.getLevel();
+        long now = level.getGameTime();
+        var position = helper.absolutePos(new BlockPos(3, 4, 3)).getCenter();
+        var velocity = new Vec3(0.25D, 0.0D, 0.0D);
+        var arrow = arrow(helper, fixture, position, velocity);
+        SettlementProjectileService.launched(fixture.town(), fixture.worker(), arrow, Math.max(0L, now - 200L));
+        helper.assertTrue(level.isPositionEntityTicking(arrow.blockPosition()), "native ticking is ready at the handoff position");
+        try {
+            SettlementProjectileService.advanceOwned(level, fixture.town(), fixture.worker(), fixture.owner(), fixture.target(), now);
+            var actual = (Arrow) level.getEntity(arrow.getUUID());
+            helper.assertTrue(actual != null, "worker catch-up hands the pending arrow to native storage");
+            helper.assertValueEqual(actual.position(), position, "native surroundings stop historical background movement before handoff");
+            helper.assertValueEqual(actual.getDeltaMovement(), velocity, "handoff preserves the physical velocity");
+            level.tickNonPassenger(actual);
+            helper.assertValueEqual(actual.position(), position.add(velocity), "native ticking advances the shot for exactly one frame");
+            SettlementProjectileService.update(level, fixture.town(), now);
+            helper.assertValueEqual(actual.position(), position.add(velocity), "background reconciliation cannot repeat the native flight interval");
+        } finally {
+            var actual = level.getEntity(arrow.getUUID());
+            if (actual != null) actual.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_ranged_hunting")
+    public static void ordinaryProjectileDimensionTransferKeepsNativeAdmissionRules(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var destination = level.getServer().getLevel(net.minecraft.world.level.Level.NETHER);
+        helper.assertTrue(destination != null, "the native destination dimension exists");
+        var original = EntityType.ARROW.create(level);
+        original.setPos(helper.absolutePos(new BlockPos(3, 4, 3)).getCenter());
+        helper.assertTrue(level.addFreshEntity(original), "the ordinary source arrow is present");
+        try {
+            var transferred = EntityType.ARROW.create(destination);
+            transferred.setUUID(original.getUUID());
+            transferred.setPos(original.position());
+            helper.assertTrue(SettlementProjectileService.onActive(transferred),
+                    "settlement reconciliation does not reject an ordinary cross-dimension copy while its source still exists");
+            helper.assertTrue(level.getEntity(original.getUUID()) == original, "checking the ordinary transfer does not change its source body");
+        } finally {
+            original.discard();
+        }
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper, Item weapon, int ammunition) {
         var level = helper.getLevel();
         var center = helper.absolutePos(new BlockPos(2, 2, 2)).offset(17_000_000, 0, 17_000_000).atY(80);

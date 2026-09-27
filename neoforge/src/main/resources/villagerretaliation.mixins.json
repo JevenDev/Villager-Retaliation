@@ -8,6 +8,8 @@
     "ProjectileObservedTerrainMixin",
     "ArrowObservedTerrainMixin",
     "SettlementProjectileSpawnMixin",
+    "ServerLevelEntityManagerAccessor",
+    "PersistentEntitySectionManagerAccessor",
     "AcquireSettlementHomeMixin",
     "AbstractContainerMenuDuelMixin",
     "AbstractContainerMenuAccessor",

@@ -103,6 +103,7 @@ final class SettlementProjectile {
         this.checkedAt = now;
         this.pendingSpawn = false;
         this.removed = false;
+        this.acknowledgedChunks.clear();
     }
 
     void advance(Projectile projectile, long now) {
@@ -111,6 +112,14 @@ final class SettlementProjectile {
         this.checkedAt = now;
         this.removed = projectile.isRemoved();
         this.version++;
+    }
+
+    void prepareSpawn() {
+        if (!this.pendingSpawn) {
+            this.pendingSpawn = true;
+            this.version++;
+        }
+        anchor(position());
     }
 
     void checked(long now) {

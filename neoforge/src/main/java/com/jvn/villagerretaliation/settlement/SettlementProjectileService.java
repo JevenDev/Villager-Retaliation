@@ -24,8 +24,12 @@ public final class SettlementProjectileService {
     }
 
     public static void onAdded(Projectile projectile) {
-        if (!(projectile.level() instanceof ServerLevel level) || SettlementProjectileCapture.capturing(projectile)
-                || !(projectile.getOwner() instanceof Villager owner)) return;
+        if (!(projectile.level() instanceof ServerLevel level) || SettlementProjectileCapture.capturing(projectile)) return;
+        if (owner(level, projectile) != null) {
+            onChanged(projectile);
+            return;
+        }
+        if (!(projectile.getOwner() instanceof Villager owner)) return;
         var town = SettlementWorkforceService.home(level, owner).orElse(null);
         if (town == null || !town.dimension().equals(level.dimension().location())) return;
         var worker = town.workers().get(owner.getUUID());
@@ -40,7 +44,7 @@ public final class SettlementProjectileService {
         var town = owner(level, projectile);
         if (town == null) return;
         var state = synchronize(level, town, town.projectiles().get(projectile.getUUID()));
-        if (state.removed()) {
+        if (state.removed() && SettlementProjectile.version(projectile) <= state.version()) {
             restore(state, projectile);
             return;
         }
@@ -51,15 +55,20 @@ public final class SettlementProjectileService {
 
     public static boolean onActive(Projectile projectile) {
         if (!(projectile.level() instanceof ServerLevel level) || RESTORING.get() == projectile) return !projectile.isRemoved();
+        var town = owner(level, projectile);
+        var state = town == null ? null : town.projectiles().get(projectile.getUUID());
+        var existing = state == null ? null : existing(level, state);
+        if (existing != null && existing != projectile || state != null && existing == null && known(level, state)) return false;
         var chunk = level.getChunkSource().getChunkNow(projectile.blockPosition().getX() >> 4, projectile.blockPosition().getZ() >> 4);
         if (chunk != null) {
             var tag = SettlementChunkReceipts.projectiles(chunk, false).getCompound(projectile.getUUID().toString());
             if (!tag.isEmpty()) restore(SettlementProjectile.load(tag), projectile);
         }
-        var town = owner(level, projectile);
         if (town != null) {
-            var state = synchronize(level, town, town.projectiles().get(projectile.getUUID()));
+            state = synchronize(level, town, state);
+            if (SettlementProjectile.version(projectile) > state.version()) state.observe(projectile, level.getGameTime());
             state.anchor(projectile.blockPosition());
+            if (existing == null && !state.removed()) state.prepareSpawn();
             receipts(level, state);
             restore(state, projectile);
             receipts(level, state);
@@ -92,24 +101,8 @@ public final class SettlementProjectileService {
     static void update(ServerLevel level, SettlementRecord town, long now) {
         for (var original : List.copyOf(town.projectiles().values())) {
             var state = synchronize(level, town, original);
-            var actual = SettlementAnimalBirthService.existing(level, state.id());
-            if (state.removed()) {
-                if (actual instanceof Projectile projectile) restore(state, projectile);
-                remove(level, town, state);
-                continue;
-            }
-            if (actual instanceof Projectile projectile && projectile.level() == level) {
-                restore(state, projectile);
-                if (level.isPositionEntityTicking(projectile.blockPosition())) {
-                    state.observe(projectile, now);
-                    receipts(level, state);
-                    continue;
-                }
-            } else if (actual != null || !state.pendingSpawn() && level.areEntitiesLoaded(ChunkPos.asLong(state.nativePosition()))) {
-                state.remove();
-                remove(level, town, state);
-                continue;
-            }
+            var actual = existing(level, state);
+            if (!prepareBackground(level, town, state, actual, now)) continue;
             var owner = state.shooter(level, town);
             if (owner != null) advance(level, town, state, owner, null, now);
             if (actual instanceof Projectile projectile) restore(state, projectile);
@@ -122,11 +115,44 @@ public final class SettlementProjectileService {
         for (var original : List.copyOf(town.projectiles().values())) {
             if (!original.owner().equals(worker.id())) continue;
             var state = synchronize(level, town, original);
-            var actual = SettlementAnimalBirthService.existing(level, state.id());
-            if (actual instanceof Projectile projectile && level.isPositionEntityTicking(projectile.blockPosition())) continue;
+            var actual = existing(level, state);
+            if (!prepareBackground(level, town, state, actual, now)) continue;
             advance(level, town, state, owner, target, now);
             if (actual instanceof Projectile projectile && projectile.level() == level) restore(state, projectile);
+            materialize(level, town, state);
         }
+    }
+
+    private static boolean prepareBackground(ServerLevel level, SettlementRecord town, SettlementProjectile state, Entity actual, long now) {
+        if (actual instanceof Projectile projectile && projectile.level() == level && SettlementProjectile.version(projectile) > state.version()) {
+            state.observe(projectile, Math.max(now, state.checkedAt()));
+            receipts(level, state);
+            town.changed();
+        }
+        if (state.removed()) {
+            if (actual instanceof Projectile projectile) restore(state, projectile);
+            remove(level, town, state);
+            return false;
+        }
+        if (actual instanceof Projectile projectile && projectile.level() == level) {
+            restore(state, projectile);
+            if (level.isPositionEntityTicking(projectile.blockPosition())) {
+                if (now > state.checkedAt()) {
+                    state.observe(projectile, now);
+                    receipts(level, state);
+                    town.changed();
+                }
+                return false;
+            }
+            return true;
+        }
+        if (actual == null && known(level, state)) return false;
+        if (actual != null || !state.pendingSpawn() && level.areEntitiesLoaded(ChunkPos.asLong(state.nativePosition()))) {
+            state.remove();
+            remove(level, town, state);
+            return false;
+        }
+        return true;
     }
 
     private static void advance(ServerLevel level, SettlementRecord town, SettlementProjectile state, Villager owner,
@@ -142,6 +168,7 @@ public final class SettlementProjectileService {
         long start = Math.max(state.checkedAt() + 1L, Math.max(0L, now - 199L));
         try {
             for (long at = start; at <= now && !projectile.isRemoved(); at++) {
+                if (level.isPositionEntityTicking(projectile.blockPosition())) break;
                 if (!simulation.step(projectile, at)) {
                     var worker = town.workers().get(state.owner());
                     if (worker != null) worker.status("hunting_projectile_needs_world");
@@ -164,20 +191,44 @@ public final class SettlementProjectileService {
             remove(level, town, state);
             return;
         }
-        if (!state.pendingSpawn() || SettlementAnimalBirthService.existing(level, state.id()) != null) return;
+        if (known(level, state)) return;
         var pos = state.position();
         if (level.isOutsideBuildHeight(pos) || !level.getWorldBorder().isWithinBounds(pos)
                 || !level.areEntitiesLoaded(ChunkPos.asLong(pos))
                 || level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4) == null) return;
         var projectile = state.context(level);
         if (projectile == null) return;
-        state.anchor(pos);
+        state.prepareSpawn();
         receipts(level, state);
         if (level.addFreshEntity(projectile)) {
             state.observe(projectile, level.getGameTime());
             receipts(level, state);
             town.changed();
         }
+    }
+
+    private static Entity existing(ServerLevel level, SettlementProjectile state) {
+        var visible = SettlementAnimalBirthService.existing(level, state.id());
+        if (visible != null) return visible;
+        for (var dimension : level.getServer().getAllLevels()) {
+            var manager = ((com.jvn.villagerretaliation.mixin.ServerLevelEntityManagerAccessor) dimension).villagerretaliation$entityManager();
+            if (!manager.isLoaded(state.id())) continue;
+            var sections = ((com.jvn.villagerretaliation.mixin.PersistentEntitySectionManagerAccessor) manager).villagerretaliation$sectionStorage();
+            for (long anchor : state.nativeChunks()) {
+                var entity = sections.getExistingSectionsInChunk(anchor).flatMap(section -> section.getEntities())
+                        .filter(candidate -> candidate.getUUID().equals(state.id())).findFirst().orElse(null);
+                if (entity != null) return entity;
+            }
+        }
+        return null;
+    }
+
+    private static boolean known(ServerLevel level, SettlementProjectile state) {
+        for (var dimension : level.getServer().getAllLevels()) {
+            if (((com.jvn.villagerretaliation.mixin.ServerLevelEntityManagerAccessor) dimension)
+                    .villagerretaliation$entityManager().isLoaded(state.id())) return true;
+        }
+        return false;
     }
 
     private static SettlementRecord owner(ServerLevel level, Projectile projectile) {
