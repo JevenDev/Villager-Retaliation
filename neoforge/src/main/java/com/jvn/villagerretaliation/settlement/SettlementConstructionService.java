@@ -1,7 +1,10 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
@@ -27,16 +30,14 @@ public final class SettlementConstructionService {
     }
 
     public static boolean start(ServerPlayer player, SettlementRecord town, UUID resident, UUID blueprintId) {
-        if (!canBuild(player, town) || town.stage().projects() == 0
-                || !(player.serverLevel().getEntity(resident) instanceof Villager builder)
-                || !builder.isAlive() || builder.isBaby() || SettlementWorkforceService.hasPersonalCommitment(builder)) {
-            return false;
-        }
-        var duty = SettlementWorkforceService.duty(builder).orElse(null);
-        if (duty == null || duty.town() != town || duty.area().type() != SettlementAreaType.CONSTRUCTION) {
-            return false;
-        }
+        if (!canBuild(player, town) || town.stage().projects() == 0 || resident == null) return false;
         var level = player.serverLevel();
+        var builder = resolveBuilder(level, town, resident);
+        if (builder == null || !builder.isAlive() || builder.isBaby() || SettlementWorkforceService.hasPersonalCommitment(builder)
+                || !VillageAllegianceApi.canonicalPrimary(level, builder).filter(town.id()::equals).isPresent()
+                || !HiredVillagerRoles.availableRoles(level, builder).contains(HiredVillagerRole.BUILDER)) return false;
+        var area = town.areas().get(town.duties().get(resident));
+        if (area == null || area.type() != SettlementAreaType.CONSTRUCTION) return false;
         SettlementConstructionSiteService.update(level, town);
         ItemStack blueprint = heldBlueprint(player, blueprintId);
         var preview = ConstructionBlueprintItem.previewData(blueprint).orElse(null);
@@ -50,14 +51,16 @@ public final class SettlementConstructionService {
         if (plan == null) {
             return false;
         }
-        var project = SettlementProject.create(town, duty.area().id(), resident, plan, preview.origin(), blueprintId, level.getGameTime());
-        if (!project.within(duty.area()) || level.isOutsideBuildHeight(project.min()) || level.isOutsideBuildHeight(project.max())
+        var project = SettlementProject.create(town, area.id(), resident, plan, preview.origin(), blueprintId, level.getGameTime());
+        if (!project.within(area) || level.isOutsideBuildHeight(project.min()) || level.isOutsideBuildHeight(project.max())
                 || !level.getWorldBorder().isWithinBounds(project.min()) || !level.getWorldBorder().isWithinBounds(project.max())
                 || !BuilderSitePlanner.validateSite(level, player, builder,
-                        HiredWorkArea.fromBounds(duty.area().min(), duty.area().max(), true), plan, preview.origin()).valid()) {
+                        HiredWorkArea.fromBounds(area.min(), area.max(), true), plan, preview.origin()).valid()) {
             return false;
         }
         SettlementBackgroundService.onActive(builder);
+        var duty = SettlementWorkforceService.duty(builder).orElse(null);
+        if (duty == null || duty.town() != town || !duty.area().id().equals(area.id())) return false;
         var state = HiredWorkStateStore.state(builder);
         if (BuilderTaskState.hasTask(state) || !town.startProject(player.getUUID(), project)) {
             return false;
@@ -71,7 +74,24 @@ public final class SettlementConstructionService {
         ConstructionBlueprintItem.markStarted(blueprint, builder, 0, level.getGameTime());
         HiredWorkSession.invalidate(builder);
         SettlementBackgroundService.onUnloaded(builder);
+        var care = town.residents().get(resident);
+        if (level.getEntity(resident) != builder && care != null) {
+            care.remember(builder);
+            town.changed();
+        }
         return true;
+    }
+
+    private static Villager resolveBuilder(ServerLevel level, SettlementRecord town, UUID resident) {
+        if (town.departures().containsKey(resident)
+                || !VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
+                        .map(record -> record.residents().containsKey(resident)).orElse(false)) return null;
+        for (var dimension : level.getServer().getAllLevels()) {
+            var entity = dimension.getEntity(resident);
+            if (entity != null) return entity instanceof Villager villager && villager.level() == level ? villager : null;
+        }
+        var care = town.residents().get(resident);
+        return care != null && care.availableForWork() ? care.context(level) : null;
     }
 
     public static boolean cancel(ServerPlayer player, SettlementRecord town, UUID projectId) {

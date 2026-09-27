@@ -289,7 +289,7 @@ public final class SettlementManagementScreen extends Screen {
             action(0, "commission", permits(SettlementPermission.BUILD) && selected instanceof SettlementManagementPayload.Resident resident
                     && !resident.baby() && resident.settings() != null
                     && resident.settings().role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER
-                    && resident.presence() != com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.UNLOADED);
+                    && resident.roles().contains(com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER));
             return;
         }
         switch (this.desiredPage) {

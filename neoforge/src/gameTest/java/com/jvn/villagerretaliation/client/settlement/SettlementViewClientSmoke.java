@@ -320,12 +320,18 @@ public final class SettlementViewClientSmoke {
             phase = 17;
         } else if (phase == 17 && minecraft.screen instanceof SettlementManagementScreen screen) {
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, projectFixture.builder().toString());
+            ticks = 0;
             phase = 18;
         } else if (phase == 18 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS
                 && screen.snapshot().entries().size() == 1 && screen.snapshot().entries().getFirst().id().equals(projectFixture.builder())) {
-            selectFirstRow(screen);
-            require(button(screen, "villagerretaliation.gui.settlement.commission").active, "the remote assigned builder remains available");
+            if (++ticks == 1) selectFirstRow(screen);
+            require(screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident resident
+                    && resident.presence() == com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.UNLOADED,
+                    "the selected construction worker has no loaded entity");
+            require(button(screen, "villagerretaliation.gui.settlement.commission").active, "the unloaded assigned builder remains available");
+            if (ticks < 5) return;
+            capture("unloaded-builder");
             button(screen, "villagerretaliation.gui.settlement.commission").onPress();
             ticks = 0;
             phase = 19;
@@ -494,7 +500,7 @@ public final class SettlementViewClientSmoke {
         builder.setCustomName(Component.literal("Rowan"));
         builder.setVillagerData(builder.getVillagerData().setProfession(VillagerProfession.MASON));
         VillageAllegianceApi.assignKnown(level, builder, fixture.town(), AllegianceAssignmentSource.EXPLICIT_API);
-        require(level.addFreshEntity(builder), "the civic builder is loaded");
+        require(level.getEntity(builder.getUUID()) == null, "the civic builder remains unloaded");
         require(SettlementWorkforceService.assign(level, player, fixture.town(), builder, area.id()), "the builder is assigned to construction");
         SettlementCareService.onUnloaded(builder);
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PAPER));
