@@ -176,6 +176,7 @@ public final class SettlementWorkerState {
         if (!duty.area().id().equals(this.area) || duty.area().type().role() != this.role) {
             huntingTarget(null);
             this.serviceBlocked = false;
+            this.progress = 0.0D;
         }
         var engagement = SettlementHuntingTargetService.observeEngagement(level, duty, villager);
         this.huntingEngaged = engagement != null;
@@ -205,7 +206,6 @@ public final class SettlementWorkerState {
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
         this.brewingVersion = Math.max(this.brewingVersion, SettlementBrewingService.version(villager));
         this.checkedAt = now;
-        this.progress = 0.0D;
         this.unsafe = villager.getTarget() != null && engagement == null
                 || villager.getLastHurtByMob() != null && !villager.getLastHurtByMob().getUUID().equals(engagement)
                 || villager.isOnFire() || villager.isInLava()
