@@ -410,6 +410,7 @@ public final class SettlementRecord {
         if (this.entityDeaths.putIfAbsent(death.id(), death) != null) {
             throw new IllegalArgumentException("Entity deaths duplicate an identity");
         }
+        SettlementEntityDeathService.recorded(death.id());
         changed();
     }
 

@@ -6,6 +6,8 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,12 +19,16 @@ public final class SettlementEntityDeathService {
     private SettlementEntityDeathService() {
     }
 
+    static void recorded(UUID id) {
+        OWNERS.keySet().removeIf(entity -> entity.getUUID().equals(id));
+    }
+
     static void update(ServerLevel level, SettlementRecord town, long now) {
         for (var death : List.copyOf(town.entityDeaths().values())) {
             if (!death.applied()) {
                 var existing = SettlementAnimalBirthService.existing(level, death.id());
-                if (existing instanceof LivingEntity living && living.level() == level && matches(death, living)) {
-                    apply(level, town, death, living);
+                if (existing instanceof LivingEntity living && living.level() instanceof ServerLevel current && matches(death, living)) {
+                    apply(current, town, death, living);
                 } else if (existing == null && level.areEntitiesLoaded(ChunkPos.asLong(death.position()))) {
                     if (receipt(level, death.position(), deathKey(death.type(), death.id()), death.id(), true)) death.apply();
                 }
@@ -63,7 +69,7 @@ public final class SettlementEntityDeathService {
             if (cached == null || cached.entityDeaths().containsKey(entity.getUUID())) return cached;
         }
         for (var town : SettlementSavedData.get(level).settlements()) {
-            if (town.dimension().equals(level.dimension().location()) && town.entityDeaths().containsKey(entity.getUUID())) {
+            if (town.entityDeaths().containsKey(entity.getUUID())) {
                 OWNERS.put(entity, town);
                 return town;
             }
@@ -77,8 +83,9 @@ public final class SettlementEntityDeathService {
     }
 
     private static void apply(ServerLevel level, SettlementRecord town, SettlementEntityDeath death, LivingEntity entity) {
-        receipt(level, entity.blockPosition(), deathKey(death.type(), death.id()), death.id(), true);
-        if (receipt(level, death.position(), deathKey(death.type(), death.id()), death.id(), true)) death.apply();
+        boolean current = receipt(level, entity.blockPosition(), deathKey(death.type(), death.id()), death.id(), true);
+        var origin = level.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, town.dimension()));
+        if (origin != null && receipt(origin, death.position(), deathKey(death.type(), death.id()), death.id(), true) && current) death.apply();
         if (entity.isAlive()) entity.discard();
         town.removeLivestock(death.id());
         finish(town, death);
