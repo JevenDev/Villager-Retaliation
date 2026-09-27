@@ -31,8 +31,8 @@ final class SettlementBackgroundFarming {
             return;
         }
         var area = town.areas().get(worker.area());
-        var plots = town.fields().values().stream().filter(plot -> plot.area().equals(worker.area())
-                        && area != null && (area.contains(plot.position()) || area.contains(plot.position().above())))
+        var plots = town.fields().values().stream().filter(plot -> area != null && area.enabled()
+                        && area.type() == SettlementAreaType.FARM && SettlementFieldService.serves(area, plot))
                 .sorted(Comparator.comparingInt(SettlementBackgroundFarming::priority)
                         .thenComparingDouble(plot -> plot.position().distSqr(worker.position()))).toList();
         for (var plot : plots) {

@@ -332,6 +332,105 @@ public final class SettlementPastureGameTests {
         });
     }
 
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_pasture")
+    public static void repeatedSharedSurveysKeepPlotIdentityGrowthAndReceipts(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var farm = sharedFarm(helper, fixture);
+            var saved = fixture.plot().save();
+            saved.putDouble("Growth", 0.375D);
+            var plot = SettlementFieldPlot.load(saved);
+            fixture.town().recordField(plot);
+            SettlementFieldService.observeArea(level, fixture.town(), farm, fixture.chunk());
+            SettlementFieldService.observeArea(level, fixture.town(), fixture.area(), fixture.chunk());
+            helper.assertTrue(fixture.town().fields().get(plot.position()) == plot, "neither designation replaces the physical plot");
+            helper.assertValueEqual(plot.save().getDouble("Growth"), 0.375D, "repeated surveys preserve unfinished grass growth");
+            helper.assertValueEqual(fixture.town().fields().size(), 1, "shared observations retain one field record");
+            plot.change(Blocks.DIRT.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            var pending = plot.save();
+            SettlementFieldService.observeArea(level, fixture.town(), farm, fixture.chunk());
+            helper.assertFalse(plot.pending(), "another designation can deliver the pending terrain change");
+            helper.assertTrue(fixture.chunk().getBlockState(plot.position()).is(Blocks.DIRT), "the recorded consumption reaches native terrain");
+            setBlock(fixture.chunk(), plot.position(), Blocks.GRASS_BLOCK.defaultBlockState());
+            SettlementFieldService.observeArea(level, fixture.town(), fixture.area(), fixture.chunk());
+            helper.assertTrue(SettlementFieldPlot.load(pending).reconcile(fixture.chunk()), "the old receipt remains recognized");
+            helper.assertTrue(fixture.chunk().getBlockState(plot.position()).is(Blocks.GRASS_BLOCK),
+                    "old grazing cannot consume grass that later regrew in the native world");
+            helper.assertValueEqual(plot.save().getUUID("Id"), saved.getUUID("Id"), "the same receipt identity spans both uses");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_pasture")
+    public static void penKeepsFarmObservedGroundAndSurveyEvidenceAfterTheFarmIsRemoved(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var farm = sharedFarm(helper, fixture);
+            var saved = fixture.plot().save();
+            saved.putUUID("Area", farm.id());
+            fixture.town().recordField(SettlementFieldPlot.load(saved));
+            helper.assertTrue(fixture.town().removeArea(fixture.town().leader(), farm.id()), "the observation's original farm can be removed");
+            var town = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+            SettlementFieldService.update(level, town, 200L);
+            var plot = town.fields().get(fixture.plot().position());
+            helper.assertTrue(plot != null && !plot.pending(), "the remaining pen retains the idle physical observation");
+            var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, null, town);
+            helper.assertTrue(blocks.observed(plot.position()) && blocks.getBlockState(plot.position()).is(Blocks.GRASS_BLOCK),
+                    "building surveys still see the ground covered by the current pen");
+            for (int now = 200; now <= 2_200; now += 200) SettlementLivestockService.update(level, town, now);
+            helper.assertTrue(plot.soil().is(Blocks.DIRT), "grazing can consume a plot with a retired farm origin");
+            helper.assertFalse(((Sheep) town.livestock().get(fixture.animal().id()).context(level)).isSheared(),
+                    "the sheep receives the single grass meal after reload");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_pasture")
+    public static void grassSpreadsAcrossMixedPlotOriginsAndSurvivesPenRemoval(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var farm = sharedFarm(helper, fixture);
+            var source = fixture.plot();
+            var target = plot(helper, fixture, source.position().east(), Blocks.DIRT.defaultBlockState(),
+                    Blocks.AIR.defaultBlockState(), 15);
+            var saved = target.save();
+            saved.putUUID("Area", farm.id());
+            target = SettlementFieldPlot.load(saved);
+            fixture.town().recordField(target);
+            spread(helper, fixture, source, 100);
+            helper.assertTrue(target.soil().is(Blocks.GRASS_BLOCK), "one current area joins differently observed grass and dirt");
+            target.change(Blocks.DIRT.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            helper.assertTrue(fixture.town().removeArea(fixture.town().leader(), fixture.area().id()), "the original pen can retire independently");
+            spread(helper, fixture, source, 100);
+            helper.assertTrue(target.soil().is(Blocks.GRASS_BLOCK), "the current farm continues the same natural grass simulation");
+            helper.assertValueEqual(fixture.town().fields().size(), 2, "regrowth does not create another record for either surface");
+            helper.assertFalse(helper.getLevel().hasChunkAt(source.position()), "shared grass spreading never loads its chunk");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_pasture")
+    public static void anEnabledFarmCannotOverridePenGrazingBoundariesOrDisablement(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            sharedFarm(helper, fixture);
+            var pen = fixture.area();
+            fixture.town().putArea(fixture.town().leader(), new SettlementArea(pen.id(), pen.type(), pen.name(),
+                    pen.min(), pen.max(), pen.priority(), false));
+            run(helper, fixture, 200, 2_400);
+            helper.assertTrue(sheep(helper, fixture).isSheared(), "a farm does not authorize grazing in a disabled pen");
+            fixture.town().putArea(fixture.town().leader(), new SettlementArea(pen.id(), pen.type(), pen.name(),
+                    pen.min().east(8), pen.max().east(8), pen.priority(), true));
+            SettlementPasture.graze(helper.getLevel(), fixture.town(), fixture.animal(), 2_400);
+            helper.assertTrue(sheep(helper, fixture).isSheared() && fixture.plot().soil().is(Blocks.GRASS_BLOCK),
+                    "the remaining farm cannot authorize a sheep outside its moved pen");
+        });
+    }
+
+    private static SettlementArea sharedFarm(GameTestHelper helper, Fixture fixture) {
+        var pen = fixture.area();
+        var farm = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Shared farm",
+                pen.min(), pen.max(), 5, true);
+        helper.assertTrue(fixture.town().putArea(fixture.town().leader(), farm), "a farm can share an existing pen");
+        return farm;
+    }
+
     private static void spread(GameTestHelper helper, Fixture fixture, SettlementFieldPlot source, int ticks) {
         var random = RandomSource.create(1731L);
         for (int step = 0; step < ticks; step++) SettlementPasture.advance(helper.getLevel(), fixture.town(), source, 1.0D, random);

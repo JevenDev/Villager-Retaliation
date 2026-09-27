@@ -242,7 +242,8 @@ public final class SettlementFieldPlot {
     void advance(ServerLevel level, SettlementRecord town, long now) {
         int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
         this.checkedAt = now;
-        if (elapsed == 0 || this.conflict || !this.environmentKnown) {
+        if (elapsed == 0 || this.conflict || !this.environmentKnown
+                || town.areas().values().stream().noneMatch(area -> area.enabled() && SettlementFieldService.serves(area, this))) {
             return;
         }
         // use the expected random ticks per block, bounded to running server time
@@ -250,8 +251,7 @@ public final class SettlementFieldPlot {
         if (randomTicks <= 0.0D) {
             return;
         }
-        var area = town.areas().get(this.area);
-        if (area != null && area.type() == SettlementAreaType.ANIMAL_PEN) {
+        if (this.soil.is(Blocks.GRASS_BLOCK) && !this.crop.is(Blocks.COCOA)) {
             SettlementPasture.advance(level, town, this, randomTicks, level.random);
             return;
         }
@@ -330,12 +330,12 @@ public final class SettlementFieldPlot {
     }
 
     private List<Direction> fruitDirections(ServerLevel level, SettlementRecord town) {
-        var area = town.areas().get(this.area);
-        if (area == null) return List.of();
         List<Direction> result = new ArrayList<>();
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             var fruit = town.fields().get(this.position.relative(direction));
-            if (fruit != null && fruit.area.equals(this.area) && (area.contains(fruit.position) || area.contains(fruit.position.above()))
+            if (fruit != null && town.areas().values().stream().anyMatch(area -> area.enabled()
+                    && area.type() == SettlementAreaType.FARM && SettlementFieldService.serves(area, this)
+                    && SettlementFieldService.serves(area, fruit))
                     && SettlementFieldService.available(level, fruit) && fruit.crop.isAir()
                     && (fruit.soil.is(Blocks.FARMLAND) || fruit.soil.is(BlockTags.DIRT))) result.add(direction);
         }

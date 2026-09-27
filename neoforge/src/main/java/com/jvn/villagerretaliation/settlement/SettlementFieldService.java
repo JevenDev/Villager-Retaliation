@@ -42,7 +42,7 @@ public final class SettlementFieldService {
     }
 
     static void observeArea(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
-        if (area.type() != SettlementAreaType.FARM && area.type() != SettlementAreaType.ANIMAL_PEN) {
+        if (!area.type().usesFields()) {
             return;
         }
         for (int chunkX = Math.floorDiv(area.min().getX(), 16); chunkX <= Math.floorDiv(area.max().getX(), 16); chunkX++) {
@@ -76,7 +76,7 @@ public final class SettlementFieldService {
                                     continue;
                                 }
                                 var plot = town.fields().get(position);
-                                if (plot == null || !plot.pending() && !plot.area().equals(area.id())) {
+                                if (plot == null) {
                                     town.recordField(SettlementFieldPlot.capture(level, area.id(), position, chunk, level.getGameTime()));
                                 } else if (plot.reconcile(chunk)) {
                                     if (level.getChunkSource().isPositionTicking(chunk.getPos().toLong())) {
@@ -97,7 +97,7 @@ public final class SettlementFieldService {
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
         for (var plot : List.copyOf(town.fields().values())) {
-            var area = town.areas().get(plot.area());
+            var areas = town.areas().values().stream().filter(area -> serves(area, plot)).toList();
             var chunk = loaded(level, plot.position());
             if (chunk != null && !plot.reconcile(chunk)) {
                 if (!plot.pending()) {
@@ -109,17 +109,16 @@ public final class SettlementFieldService {
             if (chunk != null) {
                 plot.refresh(chunk);
             }
-            if (!plot.pending() && !(area != null && area.type() == SettlementAreaType.ANIMAL_PEN
-                    ? SettlementFieldPlot.supportedPasture(plot.soil(), plot.crop()) : SettlementFieldPlot.supportedSite(plot.soil(), plot.crop()))) {
+            if (!plot.pending() && !SettlementFieldPlot.supportedPasture(plot.soil(), plot.crop())
+                    && !SettlementFieldPlot.supportedSite(plot.soil(), plot.crop())) {
                 town.removeField(plot.position());
-            } else if (area == null || area.type() != SettlementAreaType.FARM && area.type() != SettlementAreaType.ANIMAL_PEN
-                    || !area.contains(plot.position()) && !area.contains(plot.position().above())) {
+            } else if (areas.isEmpty()) {
                 if (!plot.pending()) {
                     town.removeField(plot.position());
                 } else {
                     plot.pause(now);
                 }
-            } else if (!area.enabled()) {
+            } else if (areas.stream().noneMatch(SettlementArea::enabled)) {
                 plot.pause(now);
             } else if (chunk != null && level.getChunkSource().isPositionTicking(chunk.getPos().toLong())) {
                 plot.observe(level, chunk, now);
@@ -132,6 +131,11 @@ public final class SettlementFieldService {
         if (!town.fields().isEmpty()) {
             town.changed();
         }
+    }
+
+    static boolean serves(SettlementArea area, SettlementFieldPlot plot) {
+        return area != null && area.type().usesFields()
+                && (area.contains(plot.position()) || area.contains(plot.position().above()));
     }
 
     static boolean available(ServerLevel level, SettlementFieldPlot plot) {

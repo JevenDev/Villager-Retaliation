@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.settlement;
 
-import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -20,20 +19,19 @@ import net.neoforged.neoforge.event.EventHooks;
 final class SettlementPasture implements BlockGetter {
     private final ServerLevel level;
     private final SettlementRecord town;
-    private final UUID area;
 
-    private SettlementPasture(ServerLevel level, SettlementRecord town, UUID area) {
+    private SettlementPasture(ServerLevel level, SettlementRecord town) {
         this.level = level;
         this.town = town;
-        this.area = area;
     }
 
     static void advance(ServerLevel level, SettlementRecord town, SettlementFieldPlot source, double elapsed, RandomSource random) {
-        var area = town.areas().get(source.area());
-        if (area == null || !area.enabled() || area.type() != SettlementAreaType.ANIMAL_PEN) return;
+        var areas = town.areas().values().stream()
+                .filter(area -> area.enabled() && SettlementFieldService.serves(area, source)).toList();
+        if (areas.isEmpty()) return;
         int ticks = source.grassTicks(elapsed);
         if (ticks == 0) return;
-        var pasture = new SettlementPasture(level, town, source.area());
+        var pasture = new SettlementPasture(level, town);
         for (int tick = 0; tick < ticks && source.soil().is(Blocks.GRASS_BLOCK); tick++) {
             if (!pasture.canBeGrass(source, false)) {
                 source.change(Blocks.DIRT.defaultBlockState(), source.crop());
@@ -44,8 +42,8 @@ final class SettlementPasture implements BlockGetter {
                 BlockPos position = source.position().offset(random.nextInt(3) - 1,
                         random.nextInt(5) - 3, random.nextInt(3) - 1);
                 var target = town.fields().get(position);
-                if (target == null || !target.area().equals(source.area())
-                        || !area.contains(position) && !area.contains(position.above()) || !SettlementFieldService.available(level, target)
+                if (target == null || areas.stream().noneMatch(area -> SettlementFieldService.serves(area, target))
+                        || !SettlementFieldService.available(level, target)
                         || !target.soil().is(Blocks.DIRT) || !pasture.canBeGrass(target, true)) continue;
                 target.change(Blocks.GRASS_BLOCK.defaultBlockState().setValue(SnowyDirtBlock.SNOWY, target.crop().is(Blocks.SNOW)),
                         target.crop());
@@ -63,13 +61,13 @@ final class SettlementPasture implements BlockGetter {
             return;
         }
         var plot = town.fields().get(state.position().below());
-        if (!edible(level, plot, state)) {
+        if (!edible(level, plot, area)) {
             state.resetGrazing();
             return;
         }
         int ticks = state.grazingTicks(elapsed, sheep.isBaby());
         for (int tick = 0; tick < ticks; tick++) {
-            if (!edible(level, plot, state)) {
+            if (!edible(level, plot, area)) {
                 state.resetGrazing();
                 break;
             }
@@ -82,8 +80,8 @@ final class SettlementPasture implements BlockGetter {
         }
     }
 
-    private static boolean edible(ServerLevel level, SettlementFieldPlot plot, SettlementLivestock animal) {
-        return plot != null && plot.area().equals(animal.area()) && SettlementFieldService.available(level, plot)
+    private static boolean edible(ServerLevel level, SettlementFieldPlot plot, SettlementArea area) {
+        return plot != null && SettlementFieldService.serves(area, plot) && SettlementFieldService.available(level, plot)
                 && (plot.crop().is(Blocks.SHORT_GRASS) || plot.soil().is(Blocks.GRASS_BLOCK));
     }
 
@@ -99,9 +97,9 @@ final class SettlementPasture implements BlockGetter {
     @Override
     public BlockState getBlockState(BlockPos position) {
         var plot = this.town.fields().get(position);
-        if (plot != null && plot.area().equals(this.area) && !plot.conflict()) return plot.soil();
+        if (plot != null && !plot.conflict()) return plot.soil();
         plot = this.town.fields().get(position.below());
-        if (plot != null && plot.area().equals(this.area) && !plot.conflict()) return plot.crop();
+        if (plot != null && !plot.conflict()) return plot.crop();
         return Blocks.BARRIER.defaultBlockState();
     }
 

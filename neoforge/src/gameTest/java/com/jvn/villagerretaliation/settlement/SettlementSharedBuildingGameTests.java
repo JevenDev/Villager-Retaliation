@@ -101,10 +101,11 @@ public final class SettlementSharedBuildingGameTests {
         register(helper, fixture, SettlementAreaType.FARM, 5);
         register(helper, fixture, SettlementAreaType.HOME, 5);
         register(helper, fixture, SettlementAreaType.DEPOT, 5);
-        for (var type : List.of(SettlementAreaType.ANIMAL_PEN, SettlementAreaType.FORESTRY,
+        register(helper, fixture, SettlementAreaType.ANIMAL_PEN, 5);
+        for (var type : List.of(SettlementAreaType.FARM, SettlementAreaType.ANIMAL_PEN, SettlementAreaType.FORESTRY,
                 SettlementAreaType.MINE, SettlementAreaType.CONSTRUCTION)) {
             helper.assertFalse(SettlementBuildingService.register(fixture.leader(), fixture.town().id(), area(fixture, type, 5)),
-                    "a second terrain ledger cannot own the farm's resources: " + type);
+                    "duplicate designations and separate terrain ledgers cannot claim the shared field: " + type);
         }
         helper.succeed();
     }

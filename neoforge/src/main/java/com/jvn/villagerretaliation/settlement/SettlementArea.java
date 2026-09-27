@@ -45,7 +45,8 @@ public record SettlementArea(
     }
 
     boolean conflictsWith(SettlementArea other) {
-        return intersects(other) && (type == other.type || type.changesTerrain() && other.type.changesTerrain());
+        return intersects(other) && (type == other.type
+                || type.changesTerrain() && other.type.changesTerrain() && !(type.usesFields() && other.type.usesFields()));
     }
 
     public boolean within(BlockPos center, int radius) {

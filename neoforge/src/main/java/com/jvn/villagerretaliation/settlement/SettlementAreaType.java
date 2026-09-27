@@ -29,6 +29,10 @@ public enum SettlementAreaType {
         return this.role;
     }
 
+    boolean usesFields() {
+        return this == FARM || this == ANIMAL_PEN;
+    }
+
     boolean changesTerrain() {
         return this == FARM || this == ANIMAL_PEN || this == FORESTRY || this == MINE || this == CONSTRUCTION;
     }

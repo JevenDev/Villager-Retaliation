@@ -692,6 +692,182 @@ public final class SettlementFarmingGameTests {
         return plot;
     }
 
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void farmerHarvestsAPenObservedPlotAfterItsOriginalDesignationIsRemoved(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var pen = sharedPen(helper, fixture);
+            var saved = fixture.plot().save();
+            saved.putUUID("Area", pen.id());
+            var plot = SettlementFieldPlot.load(saved);
+            fixture.town().recordField(plot);
+            helper.assertTrue(fixture.town().removeArea(fixture.town().leader(), pen.id()), "the original pen can be removed");
+            var town = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+            var worker = town.workers().get(fixture.worker().id());
+            worker.settings().putBoolean("AutoDepositOutputs", false);
+            SettlementFieldService.update(level, town, 200L);
+            SettlementBackgroundFarming.tick(level, town, worker, 200, 1.0D);
+            helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.WHEAT))
+                    .mapToInt(ItemStack::getCount).sum(), 1, "the current farm receives the single real harvest");
+            var remaining = town.fields().get(plot.position());
+            helper.assertTrue(remaining != null && !remaining.harvestable(), "one physical plot keeps the replanted crop");
+            helper.assertValueEqual(remaining.save().getUUID("Id"), saved.getUUID("Id"), "reassignment preserves the plot receipt identity");
+            SettlementBackgroundFarming.tick(level, town, worker, 200, 1.0D);
+            helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.WHEAT))
+                    .mapToInt(ItemStack::getCount).sum(), 1, "the old pen observation cannot supply a second harvest");
+            helper.assertFalse(level.hasChunkAt(plot.position()), "the shared field remains unloaded");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void sharedFieldGrowthUsesOneClockThroughSaveAndRepeatedUpdates(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            fixture.plot().change(fixture.plot().soil(), Blocks.WHEAT.defaultBlockState());
+            var pen = sharedPen(helper, fixture);
+            var saved = fixture.town().save(level.registryAccess());
+            var shared = SettlementRecord.load(saved, level.registryAccess(), () -> {});
+            var single = SettlementRecord.load(saved, level.registryAccess(), () -> {});
+            single.removeArea(single.leader(), pen.id());
+            SettlementFieldService.update(level, shared, 200L);
+            SettlementFieldService.update(level, single, 200L);
+            var plot = shared.fields().get(fixture.plot().position());
+            helper.assertValueEqual(plot.save(), single.fields().get(plot.position()).save(),
+                    "overlapping designations do not multiply crop growth or soil drying");
+            var checkpoint = plot.save();
+            SettlementFieldService.update(level, shared, 200L);
+            helper.assertValueEqual(plot.save(), checkpoint, "a repeated checkpoint cannot replay shared growth");
+            var restored = SettlementRecord.load(shared.save(level.registryAccess()), level.registryAccess(), () -> {});
+            SettlementFieldService.update(level, restored, 400L);
+            SettlementFieldService.update(level, single, 400L);
+            helper.assertValueEqual(restored.fields().get(plot.position()).save(), single.fields().get(plot.position()).save(),
+                    "saving retains the single fractional growth clock");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void sharedPenCannotAuthorizeADisabledOrMovedFarm(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            sharedPen(helper, fixture);
+            var area = fixture.area();
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            fixture.town().putArea(fixture.town().leader(), new SettlementArea(area.id(), area.type(), area.name(),
+                    area.min(), area.max(), area.priority(), false));
+            SettlementBackgroundFarming.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(fixture.plot().harvestable(), "an enabled pen cannot enable a disabled farmer");
+            fixture.town().putArea(fixture.town().leader(), new SettlementArea(area.id(), area.type(), area.name(),
+                    area.min().south(3), area.max().south(3), area.priority(), true));
+            SettlementFieldService.update(level, fixture.town(), 200L);
+            SettlementBackgroundFarming.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(fixture.town().fields().get(fixture.plot().position()) == fixture.plot(),
+                    "the current pen retains the observed ground outside the moved farm");
+            helper.assertTrue(fixture.plot().harvestable() && carried(helper, fixture, Items.WHEAT) == 0,
+                    "old farm provenance cannot authorize harvesting beyond its current bounds");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void fruitGrowsAndIsHarvestedAcrossDifferentPlotOrigins(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var center = fixture.plot().position();
+            fixture.town().putArea(fixture.town().leader(), new SettlementArea(fixture.area().id(), SettlementAreaType.FARM,
+                    "Shared fruit", center, center.east().above(), 5, true));
+            var pen = sharedPen(helper, fixture);
+            var stem = extendedPlot(helper, fixture, center, fixture.plot().soil(),
+                    Blocks.PUMPKIN_STEM.defaultBlockState().setValue(net.minecraft.world.level.block.StemBlock.AGE, 7),
+                    Blocks.AIR.defaultBlockState());
+            var fruit = extendedPlot(helper, fixture, center.east(), Blocks.DIRT.defaultBlockState(),
+                    Blocks.AIR.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            var saved = fruit.save();
+            saved.putUUID("Area", pen.id());
+            fruit = SettlementFieldPlot.load(saved);
+            fixture.town().recordField(fruit);
+            fastGrowth(helper, () -> stem.advance(level, fixture.town(), 200L));
+            helper.assertTrue(fruit.crop().is(Blocks.PUMPKIN) && stem.crop().is(Blocks.ATTACHED_PUMPKIN_STEM),
+                    "the current farm joins the stem and its pen-observed fruit site");
+            var oldStem = stem.save();
+            var oldFruit = fruit.save();
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            SettlementBackgroundFarming.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(carried(helper, fixture, Items.PUMPKIN), 1, "the shared fruit yields one real pumpkin");
+            helper.assertTrue(stem.crop().is(Blocks.PUMPKIN_STEM) && fruit.crop().isAir(), "harvesting detaches the same shared stem");
+            helper.assertTrue(stem.reconcile(fixture.chunk()) && fruit.reconcile(fixture.chunk()), "both physical changes reconcile");
+            helper.assertTrue(SettlementFieldPlot.load(oldStem).reconcile(fixture.chunk())
+                    && SettlementFieldPlot.load(oldFruit).reconcile(fixture.chunk()), "old growth receipts are retired");
+            helper.assertTrue(fixture.chunk().getBlockState(center.east().above()).isAir(),
+                    "a stale pen observation cannot resurrect the harvested fruit");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void grazingAndFarmingConsumeTheSameGroundAcrossNativeReturn(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var pen = sharedPen(helper, fixture);
+            var plot = extendedPlot(helper, fixture, fixture.plot().position(), Blocks.GRASS_BLOCK.defaultBlockState(),
+                    Blocks.AIR.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            var sheep = EntityType.SHEEP.create(level);
+            sheep.setPos(plot.position().above().getBottomCenter());
+            sheep.setSheared(true);
+            var animal = SettlementLivestock.capture(sheep, pen.id(), 0L);
+            fixture.town().recordLivestock(animal);
+            for (int now = 200; now <= 2_200; now += 200) SettlementLivestockService.update(level, fixture.town(), now);
+            helper.assertTrue(plot.soil().is(Blocks.DIRT), "grazing consumes the farm-observed grass");
+            helper.assertFalse(((net.minecraft.world.entity.animal.Sheep) animal.context(level)).isSheared(),
+                    "the finite grass meal restores one fleece");
+            var grazed = plot.save();
+            fixture.worker().settings().putBoolean(HiredFarmingOptions.TILL_SOIL_TAG, true);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            var items = fixture.worker().items(level.registryAccess());
+            items.set(fixture.worker().supplySlots().getFirst(), new ItemStack(Items.WHEAT_SEEDS));
+            fixture.worker().updateInventory(level.registryAccess(), items);
+            SettlementBackgroundFarming.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(plot.soil().is(Blocks.FARMLAND), "the farmer tills the dirt left by that sheep");
+            SettlementBackgroundFarming.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(plot.crop().is(Blocks.WHEAT), "one real seed is planted on the shared ground");
+            helper.assertValueEqual(carried(helper, fixture, Items.WHEAT_SEEDS), 0, "the planted seed leaves the supply inventory");
+            animal.shear();
+            for (int now = 2_400; now <= 4_800; now += 200) SettlementLivestockService.update(level, fixture.town(), now);
+            helper.assertTrue(((net.minecraft.world.entity.animal.Sheep) animal.context(level)).isSheared(),
+                    "the tilled crop cannot also provide pasture output");
+            var restored = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+            helper.assertTrue(restored.fields().get(plot.position()).reconcile(fixture.chunk()), "the combined terrain history reaches the native chunk");
+            helper.assertTrue(SettlementFieldPlot.load(grazed).reconcile(fixture.chunk()), "the older grazing receipt recognizes the later planting");
+            helper.assertTrue(fixture.chunk().getBlockState(plot.position()).is(Blocks.FARMLAND)
+                    && fixture.chunk().getBlockState(plot.position().above()).is(Blocks.WHEAT),
+                    "replaying grazing cannot erase the paid farming work");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void sharedGrassGroundPreservesSupportedCocoaGrowth(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var center = fixture.plot().position();
+            sharedPen(helper, fixture);
+            setBlock(fixture.chunk(), center.above().east(), Blocks.JUNGLE_LOG.defaultBlockState());
+            var cocoa = Blocks.COCOA.defaultBlockState().setValue(net.minecraft.world.level.block.CocoaBlock.FACING,
+                    net.minecraft.core.Direction.EAST);
+            var plot = extendedPlot(helper, fixture, center, Blocks.GRASS_BLOCK.defaultBlockState(), cocoa,
+                    Blocks.AIR.defaultBlockState());
+            fastGrowth(helper, () -> plot.advance(helper.getLevel(), fixture.town(), 200L));
+            helper.assertTrue(plot.harvestable(), "grass below supported cocoa cannot divert its crop growth into pasture growth");
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            SettlementBackgroundFarming.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(carried(helper, fixture, Items.COCOA_BEANS), 3, "the shared crop keeps its native mature yield");
+        });
+    }
+
+    private static SettlementArea sharedPen(GameTestHelper helper, Fixture fixture) {
+        var farm = fixture.town().areas().get(fixture.area().id());
+        var pen = new SettlementArea(UUID.randomUUID(), SettlementAreaType.ANIMAL_PEN, "Shared pen",
+                farm.min(), farm.max(), 5, true);
+        helper.assertTrue(fixture.town().putArea(fixture.town().leader(), pen), "farm and pen can share physical ground");
+        return pen;
+    }
+
     private static BlockState pitcher(int age) {
         return Blocks.PITCHER_CROP.defaultBlockState().setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, age);
     }
