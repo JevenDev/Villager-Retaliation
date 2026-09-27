@@ -167,7 +167,7 @@ public record DialogueLine(
 
     public boolean hasEligibleTextVariant(DialogueContext context) {
         return this.textVariants.stream().anyMatch(variant -> variant.matches(context)
-                && variant.weight() > 0
+                && variant.weight() > 0 && variant.chance() > 0.0D
                 && DialogueUsageService.available(context, variant.id(), variant.usage()));
     }
 
@@ -184,6 +184,10 @@ public record DialogueLine(
             }
         }
         return false;
+    }
+
+    public boolean hasFreshVariant(DialogueContext context, List<String> recentDialogueIds) {
+        return DialogueTextVariant.hasFresh(this.textVariants, context, recentDialogueIds);
     }
 
     public boolean hasFreshVariant(List<String> recentDialogueIds) {

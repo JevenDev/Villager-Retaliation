@@ -38,6 +38,12 @@ public record DialogueTextVariant(
         return this.conditions.isEmpty() || DialogueCondition.matchesAll(context, this.conditions);
     }
 
+    public static boolean hasFresh(List<DialogueTextVariant> variants, DialogueContext context, List<String> recentIds) {
+        return variants.stream().anyMatch(variant -> variant.weight() > 0 && variant.chance() > 0.0D
+                && variant.matches(context) && DialogueUsageService.available(context, variant.id(), variant.usage())
+                && (!variant.usage().antiRepeat() || !recentIds.contains(variant.id())));
+    }
+
     public static List<DialogueTextVariant> legacy(
             String ownerId,
             List<String> lines,

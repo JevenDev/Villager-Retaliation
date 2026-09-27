@@ -39,10 +39,10 @@ public final class VillageEventMemory {
     private static final long WEATHER_EVENT_DEDUPE_TICKS = 200L;
     private static final long NOISY_EVENT_DEDUPE_TICKS = 40L;
     private static final long RECENT_QUERY_CACHE_TICKS = 20L;
-    private static final int MAX_EVENTS_PER_BUCKET = 80;
+    static final int MAX_EVENTS_PER_BUCKET = 80;
     private static final int MAX_RECENT_QUERY_CACHE_ENTRIES = 512;
     private static final double DEDUPE_RADIUS_SQR = 48.0D * 48.0D;
-    private static final Map<ResourceKey<Level>, Long> NEXT_PRUNE_TICKS = new HashMap<>();
+    private static final Map<ServerLevel, Long> NEXT_PRUNE_TICKS = new java.util.WeakHashMap<>();
     private static final Map<RecentQueryKey, CachedRecentEvents> RECENT_QUERY_CACHE =
             new LinkedHashMap<>(64, 0.75F, true);
 
@@ -486,8 +486,8 @@ public final class VillageEventMemory {
 
     private static void pruneIfReady(ServerLevel level, VillageEventMemorySavedData data) {
         long gameTime = level.getGameTime();
-        long nextPrune = NEXT_PRUNE_TICKS.getOrDefault(level.dimension(), 0L);
-        if (gameTime < nextPrune) {
+        long nextPrune = NEXT_PRUNE_TICKS.getOrDefault(level, 0L);
+        if (gameTime < nextPrune && nextPrune - gameTime <= EVENT_PRUNE_INTERVAL_TICKS) {
             return;
         }
         boolean removed = false;
@@ -498,7 +498,7 @@ public final class VillageEventMemory {
             removed |= pruneNow(events, gameTime);
         }
         data.removeEmptyBuckets();
-        NEXT_PRUNE_TICKS.put(level.dimension(), gameTime + EVENT_PRUNE_INTERVAL_TICKS);
+        NEXT_PRUNE_TICKS.put(level, gameTime + EVENT_PRUNE_INTERVAL_TICKS);
         if (removed) {
             data.markChanged();
             invalidateRecentCache();
@@ -506,10 +506,9 @@ public final class VillageEventMemory {
     }
 
     private static boolean pruneNow(ArrayDeque<MemoryEvent> events, long gameTime) {
-        boolean removed = false;
         long oldestAllowed = gameTime - EVENT_TTL_TICKS;
-        while (!events.isEmpty()
-                && (events.peekFirst().gameTime() < oldestAllowed || events.size() > MAX_EVENTS_PER_BUCKET)) {
+        boolean removed = events.removeIf(event -> event.gameTime() < oldestAllowed);
+        while (events.size() > MAX_EVENTS_PER_BUCKET) {
             events.removeFirst();
             removed = true;
         }
@@ -901,19 +900,19 @@ public final class VillageEventMemory {
     public record KilledVillagerMemory(String villagerName) {
     }
 
-    private record RecentQueryKey(ResourceKey<Level> dimension, MemoryScope scope, UUID id) {
+    private record RecentQueryKey(ServerLevel level, MemoryScope scope, UUID id) {
         private static RecentQueryKey villager(ServerLevel level, UUID id) {
-            return new RecentQueryKey(level.dimension(), MemoryScope.VILLAGER, id);
+            return new RecentQueryKey(level, MemoryScope.VILLAGER, id);
         }
 
         private static RecentQueryKey village(ServerLevel level, VillageAllegianceId id) {
-            return new RecentQueryKey(level.dimension(), MemoryScope.VILLAGE, id.value());
+            return new RecentQueryKey(level, MemoryScope.VILLAGE, id.value());
         }
     }
 
     private record CachedRecentEvents(List<MemoryEvent> events, long expiresGameTime) {
         private boolean isValid(long gameTime) {
-            return gameTime < this.expiresGameTime;
+            return gameTime < this.expiresGameTime && this.expiresGameTime - gameTime <= RECENT_QUERY_CACHE_TICKS;
         }
     }
 }

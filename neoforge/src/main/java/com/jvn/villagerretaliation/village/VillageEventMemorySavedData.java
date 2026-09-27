@@ -80,6 +80,8 @@ public class VillageEventMemorySavedData extends SavedData {
         if (version >= CURRENT_FORMAT_VERSION) {
             readVillageEntries(tag.getList(TAG_VILLAGE_ENTRIES, Tag.TAG_COMPOUND), data);
             readVillagerEntries(tag.getList(TAG_VILLAGER_ENTRIES, Tag.TAG_COMPOUND), data);
+            data.eventsByVillage.values().forEach(VillageEventMemorySavedData::normalize);
+            data.eventsByVillager.values().forEach(VillageEventMemorySavedData::normalize);
             return data;
         }
 
@@ -90,6 +92,12 @@ public class VillageEventMemorySavedData extends SavedData {
         }
         data.legacyMigrationPending = !data.legacyEvents.isEmpty();
         return data;
+    }
+
+    private static void normalize(ArrayDeque<VillageEventMemory.MemoryEvent> events) {
+        var ordered = events.stream().sorted(java.util.Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime)).toList();
+        events.clear();
+        ordered.stream().skip(Math.max(0, ordered.size() - VillageEventMemory.MAX_EVENTS_PER_BUCKET)).forEach(events::addLast);
     }
 
     private static void readVillageEntries(ListTag entries, VillageEventMemorySavedData data) {
@@ -199,6 +207,8 @@ public class VillageEventMemorySavedData extends SavedData {
                     .flatMap(registry::canonical)
                     .ifPresent(id -> this.eventsByVillage.computeIfAbsent(id, ignored -> new ArrayDeque<>()).addLast(event));
         }
+        this.eventsByVillage.values().forEach(VillageEventMemorySavedData::normalize);
+        this.eventsByVillager.values().forEach(VillageEventMemorySavedData::normalize);
         this.legacyEvents.clear();
         this.legacyMigrationPending = false;
         setDirty();

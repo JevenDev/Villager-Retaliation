@@ -344,6 +344,24 @@ public final class VillageEventMemoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void oversizedOutOfOrderPersonalSavesKeepNewestOwnedMemories(GameTestHelper helper) {
+        var data = new VillageEventMemorySavedData();
+        var owner = UUID.randomUUID();
+        for (int index = 99; index >= 0; index--) {
+            data.villagerEventsForWrite(owner).add(new VillageEventMemory.MemoryEvent(null,
+                    VillagerRetaliation.id("saved_memory_" + index), index, helper.getLevel().dimension(), BlockPos.ZERO,
+                    owner, null, null, null, null, null, null));
+        }
+        var restored = VillageEventMemorySavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()),
+                helper.getLevel().registryAccess());
+        helper.assertValueEqual(restored.villagerEvents(owner).size(), 80, "loading enforces the per-resident memory bound");
+        helper.assertValueEqual(restored.villagerEvents(owner).getFirst().gameTime(), 20L, "oldest excess memories are removed regardless of save order");
+        helper.assertValueEqual(restored.villagerEvents(owner).getLast().gameTime(), 99L, "newest personal memory remains durable");
+        helper.assertTrue(restored.villagerEvents(UUID.randomUUID()) == null, "memory ownership is retained across reload");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void legacyMemoryMigrationKeepsPersonalAndDropsUnresolvedCommunal(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         BlockPos villagePos = helper.absolutePos(new BlockPos(2, 2, 2));

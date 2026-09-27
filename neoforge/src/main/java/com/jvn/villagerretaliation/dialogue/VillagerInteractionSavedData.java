@@ -247,6 +247,7 @@ public class VillagerInteractionSavedData extends SavedData {
                             readOptionalLong(usageTag, TAG_GAME_TIME)));
                 }
             }
+            entry.trimDialogueMemory();
             ListTag requestTypeTimes = entryTag.getList(TAG_LAST_REQUEST_TYPE_REPUTATION, Tag.TAG_COMPOUND);
             for (Tag rawRequestTypeTime : requestTypeTimes) {
                 if (!(rawRequestTypeTime instanceof CompoundTag requestTypeTag)) {
@@ -1719,7 +1720,7 @@ public class VillagerInteractionSavedData extends SavedData {
 
         public void rememberDialogueId(DialogueRequestType requestType, String dialogueId, long gameTime, long day, long resetTicks) {
             if (this.consecutiveRequestType == requestType) {
-                this.consecutiveRequestCount++;
+                this.consecutiveRequestCount = (int) Math.min(Integer.MAX_VALUE, (long) this.consecutiveRequestCount + 1L);
             } else {
                 this.consecutiveRequestType = requestType;
                 this.consecutiveRequestCount = 1;
@@ -1735,9 +1736,7 @@ public class VillagerInteractionSavedData extends SavedData {
                 rememberDialogueUsage(dialogueId.substring(0, variantSeparator), gameTime);
             }
             this.lastDialogueByRequestType.put(requestType, gameTime);
-            while (this.recentDialogueIds.size() > MAX_RECENT_LINES) {
-                this.recentDialogueIds.removeFirst();
-            }
+            trimDialogueMemory();
         }
 
         private void rememberDialogueUsage(String dialogueId, long gameTime) {
@@ -1746,11 +1745,14 @@ public class VillagerInteractionSavedData extends SavedData {
             }
             DialogueUsage previous = this.dialogueUsage.remove(dialogueId);
             this.dialogueUsage.put(dialogueId, new DialogueUsage(
-                    previous == null ? 1 : Math.min(Integer.MAX_VALUE, previous.count() + 1),
+                    previous == null ? 1 : (int) Math.min(Integer.MAX_VALUE, (long) previous.count() + 1L),
                     gameTime));
-            while (this.dialogueUsage.size() > MAX_DIALOGUE_USAGE) {
-                this.dialogueUsage.remove(this.dialogueUsage.keySet().iterator().next());
-            }
+            trimDialogueMemory();
+        }
+
+        private void trimDialogueMemory() {
+            while (this.recentDialogueIds.size() > MAX_RECENT_LINES) this.recentDialogueIds.removeFirst();
+            while (this.dialogueUsage.size() > MAX_DIALOGUE_USAGE) this.dialogueUsage.remove(this.dialogueUsage.keySet().iterator().next());
         }
 
         public void reduceRepeatedDialogueUseCounts(int amount, long gameTime, long day, long resetTicks) {

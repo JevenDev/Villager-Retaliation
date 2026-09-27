@@ -56,7 +56,7 @@ public final class DialogueUsageSavedData extends SavedData {
         }
         Key key = new Key(scope, dialogueId);
         Usage previous = this.entries.remove(key);
-        this.entries.put(key, new Usage(previous == null ? 1 : previous.count() + 1, gameTime));
+        this.entries.put(key, new Usage(previous == null ? 1 : (int) Math.min(Integer.MAX_VALUE, (long) previous.count() + 1L), gameTime));
         trim();
         setDirty();
     }
