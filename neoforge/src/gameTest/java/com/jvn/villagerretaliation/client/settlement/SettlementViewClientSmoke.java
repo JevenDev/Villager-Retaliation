@@ -70,7 +70,13 @@ public final class SettlementViewClientSmoke {
     private static int phase;
     private static int ticks;
     private static double originalX;
+    private static double originalZ;
     private static float originalHeight;
+    private static int panDirection;
+    private static final int[] PAN_KEYS = {GLFW.GLFW_KEY_W, GLFW.GLFW_KEY_D, GLFW.GLFW_KEY_S, GLFW.GLFW_KEY_A,
+            GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_LEFT};
+    private static final int[] PAN_X = {-1, -1, 1, 1, -1, -1, 1, 1};
+    private static final int[] PAN_Z = {1, -1, -1, 1, 1, -1, -1, 1};
     private static Vec3 body;
     private static Entity zoomResident;
     private static Vec3 zoomCamera;
@@ -120,8 +126,10 @@ public final class SettlementViewClientSmoke {
                 originalHeight = screen.viewHeight();
                 screen.mouseScrolled(40, 80, 0, -100);
             }
-            if (ticks < 30) return;
+            if (ticks < 120 && (!maxZoomResidentRendered || !screen.terrainLoaded())) return;
             require(screen.viewHeight() == SettlementViewWindow.MAX_HEIGHT, "the rendering check reaches maximum town zoom");
+            require(Math.abs(screen.cameraHeight() - screen.viewHeight()) < 0.1D, "the camera eases into maximum zoom");
+            require(screen.terrainLoaded(), "the maximum zoom capture includes the streamed terrain");
             require(maxZoomResidentRendered, "the real resident model renders beyond vanilla distance at maximum zoom");
             zoomResident = visibleResident(minecraft);
             zoomCamera = minecraft.gameRenderer.getMainCamera().getPosition();
@@ -138,6 +146,17 @@ public final class SettlementViewClientSmoke {
                     "the remote bed exceeds its ordinary rendering distance");
             require(renderBedVertices(zoomBed) > 0, "the native bed renderer emits geometry at maximum town zoom");
             capture("maximum-zoom-resident");
+            screen.mouseScrolled(40, 80, 0, 100);
+            ticks = 0;
+            phase = 62;
+        } else if (phase == 62 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30
+                && (screen.terrainLoaded() || ticks >= 120)) {
+            require(screen.viewHeight() == SettlementViewWindow.MIN_HEIGHT, "the view reaches minimum zoom");
+            require(Math.abs(screen.cameraHeight() - screen.viewHeight()) < 0.1D, "the camera eases into minimum zoom");
+            require(screen.terrainLoaded(), "the minimum zoom capture includes the streamed terrain");
+            require(Math.abs(minecraft.gameRenderer.getMainCamera().getXRot() - SettlementViewScreen.PITCH) < 3.0F,
+                    "the centered settlement camera has an isometric-style tilt");
+            capture("minimum-zoom");
             screen.mouseScrolled(40, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
             ticks = 0;
             phase = 3;
@@ -165,10 +184,30 @@ public final class SettlementViewClientSmoke {
             clickWorld(screen, table);
             require(screen.getNarrationMessage().getString().equals(firstArea), "selection cycles back through the shared designations");
             originalX = screen.focusX();
+            originalZ = screen.focusZ();
             originalHeight = screen.viewHeight();
-            screen.keyPressed(GLFW.GLFW_KEY_W, 0, 0);
+            panDirection = 0;
+            screen.keyPressed(PAN_KEYS[panDirection], 0, 0);
             ticks = 0;
-            phase = 4;
+            phase = 61;
+        } else if (phase == 61 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 8) {
+            screen.keyReleased(PAN_KEYS[panDirection], 0, 0);
+            require((screen.focusX() - originalX) * PAN_X[panDirection] > 0.05D,
+                    "keyboard panning moves in the expected horizontal screen direction for key " + PAN_KEYS[panDirection]);
+            require((screen.focusZ() - originalZ) * PAN_Z[panDirection] > 0.05D,
+                    "keyboard panning moves in the expected vertical screen direction for key " + PAN_KEYS[panDirection]);
+            button(screen, "villagerretaliation.gui.settlement_view.center").onPress();
+            if (++panDirection < PAN_KEYS.length) {
+                originalX = screen.focusX();
+                originalZ = screen.focusZ();
+                screen.keyPressed(PAN_KEYS[panDirection], 0, 0);
+                ticks = 0;
+            } else {
+                originalX = screen.focusX();
+                screen.keyPressed(GLFW.GLFW_KEY_W, 0, 0);
+                ticks = 0;
+                phase = 4;
+            }
         } else if (phase == 4 && minecraft.screen instanceof SettlementViewScreen screen) {
             if (++ticks == 8) {
                 capture("shared-workplace");
