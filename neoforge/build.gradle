@@ -38,6 +38,7 @@ def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('
 def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
 def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
 def settlementCityAcceptanceDirectory = layout.buildDirectory.dir("settlement-city-acceptance/${System.currentTimeMillis()}")
+def settlementMultiplayerDirectory = layout.buildDirectory.dir("settlement-multiplayer/${System.currentTimeMillis()}")
 
 neoForge {
     version = rootProject.neo_version
@@ -74,6 +75,25 @@ neoForge {
             gameDirectory.set(settlementCityAcceptanceDirectory)
             systemProperty 'villagerretaliation.settlementCityAcceptance', settlementCityAcceptanceDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementCityAcceptance', '--width', '1280', '--height', '720'
+        }
+
+        settlementMultiplayerHost {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(settlementMultiplayerDirectory.map { it.dir('host') })
+            systemProperty 'villagerretaliation.settlementMultiplayer', settlementMultiplayerDirectory.get().asFile.absolutePath
+            systemProperty 'villagerretaliation.settlementMultiplayer.role', 'host'
+            systemProperty 'villagerretaliation.settlementMultiplayer.args', layout.buildDirectory.dir('moddev').get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'SettlementMultiplayer', '--username', 'SettlementHost', '--width', '1280', '--height', '720'
+        }
+
+        settlementMultiplayerPeer {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(settlementMultiplayerDirectory.map { it.dir('peer') })
+            systemProperty 'villagerretaliation.settlementMultiplayer', settlementMultiplayerDirectory.get().asFile.absolutePath
+            systemProperty 'villagerretaliation.settlementMultiplayer.role', 'peer'
+            programArguments.addAll '--username', 'SettlementPeer', '--width', '1280', '--height', '720'
         }
 
         server {
@@ -174,6 +194,31 @@ tasks.named('runSettlementCityAcceptance') {
         def result = new File(settlementCityAcceptanceDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Settlement City acceptance passed')) {
             throw new GradleException("Settlement City acceptance did not finish. Inspect ${settlementCityAcceptanceDirectory.get().asFile}")
+        }
+    }
+}
+
+tasks.named('runSettlementMultiplayerHost') {
+    dependsOn tasks.named('runGameTestServer'), tasks.named('prepareSettlementMultiplayerPeerRun')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Multiplayer acceptance requires generated GameTest world metadata.')
+        def output = settlementMultiplayerDirectory.get().asFile
+        copy {
+            from metadata
+            into new File(output, 'host/saves/SettlementMultiplayer')
+        }
+        ['host', 'peer'].each { role ->
+            def directory = new File(output, role)
+            directory.mkdirs()
+            new File(directory, 'options.txt').text =
+                    'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\n'
+        }
+    }
+    doLast {
+        def result = new File(settlementMultiplayerDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Settlement multiplayer acceptance passed')) {
+            throw new GradleException("Multiplayer acceptance did not finish. Inspect ${settlementMultiplayerDirectory.get().asFile}")
         }
     }
 }
