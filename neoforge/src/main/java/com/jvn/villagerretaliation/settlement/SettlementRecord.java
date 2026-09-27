@@ -361,7 +361,7 @@ public final class SettlementRecord {
                 || this.projects.containsKey(project.id()) || !project.within(this.areas.get(project.area()))
                 || !project.area().equals(this.duties.get(project.builder())) || activeProject(project.builder()) != null
                 || this.projects.values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
-                || this.projects.values().stream().anyMatch(existing -> (existing.active() || existing.site() != null && existing.site().pending()) && existing.overlaps(project))) {
+                || this.projects.values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) {
             return false;
         }
         this.projects.put(project.id(), project);
@@ -861,10 +861,11 @@ public final class SettlementRecord {
             var project = SettlementProject.load((CompoundTag) raw);
             if (!project.town().equals(record.id.value())
                     || project.active() && (!project.within(record.areas.get(project.area()))
-                            || !project.area().equals(record.duties.get(project.builder())) || record.activeProject(project.builder()) != null
-                            || record.projects.values().stream().anyMatch(existing -> existing.active() && existing.overlaps(project)))
+                            || !project.area().equals(record.duties.get(project.builder())) || record.activeProject(project.builder()) != null)
+                    || project.reservesFootprint() && record.projects.values().stream()
+                            .anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))
                     || record.projects.putIfAbsent(project.id(), project) != null) {
-                throw new IllegalArgumentException("Construction project is duplicated or has no matching duty");
+                throw new IllegalArgumentException("Construction project is duplicated, overlaps reserved work or has no matching duty");
             }
         }
         for (Tag raw : tag.getList("Depots", Tag.TAG_COMPOUND)) {

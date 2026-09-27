@@ -88,6 +88,10 @@ public final class SettlementProject {
         return this.status == Status.ACTIVE;
     }
 
+    boolean reservesFootprint() {
+        return active() || this.site != null && this.site.pending();
+    }
+
     public String label() {
         return this.task.getString("StructureLabel");
     }
