@@ -458,7 +458,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
         return hasCarriedHuntingWeapon(context) && HiredRangedAmmo.hasAmmoForEquippedWeapon(context);
     }
 
-    private static boolean isHuntingWeapon(ItemStack stack) {
+    public static boolean isHuntingWeapon(ItemStack stack) {
         return !stack.isEmpty()
                 && (VillagerRetaliationVillagerWeapons.isBowWeapon(stack)
                 || VillagerRetaliationVillagerWeapons.isCrossbowWeapon(stack)
@@ -466,7 +466,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
                 || stack.getItem() instanceof SwordItem);
     }
 
-    private static boolean isHuntingLoot(ItemStack stack) {
+    public static boolean isHuntingLoot(ItemStack stack) {
         return !stack.isEmpty()
                 && (stack.is(ItemTags.MEAT)
                 || stack.is(ItemTags.WOOL)
@@ -500,7 +500,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
                 || stack.is(Items.PUFFERFISH));
     }
 
-    private static double huntingWeaponScore(ItemStack stack) {
+    public static double huntingWeaponScore(ItemStack stack) {
         Item item = stack.getItem();
         double score = HiredRangedAmmo.isWeaponRequiringAmmo(stack)
                 ? (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(stack) ? 3.25D : 3.0D)

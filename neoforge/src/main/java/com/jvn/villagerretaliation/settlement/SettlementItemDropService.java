@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import java.util.Comparator;
 import java.util.List;
@@ -78,7 +79,7 @@ final class SettlementItemDropService {
             }
             if (SettlementAnimalBirthService.existing(level, drop.id()) != null) continue;
             var stack = drop.item(level.registryAccess());
-            if (!filter.test(stack)) continue;
+            if (!filter.test(stack) || HiredPathMemory.isAvoided(level, owner, drop.position())) continue;
             int steps = drop.steps(worker);
             if (steps < 0) steps = SettlementLivestockService.observedSteps(level, town, area, worker, drop.context(level));
             if (steps < 0) {

@@ -117,7 +117,8 @@ public final class SettlementWorkerState {
         this.settings = HiredWorkStateStore.state(villager).copy();
         if (this.role == HiredVillagerRole.BUILDER) this.settings.remove("SettlementConstructionPosition");
         if (this.role == HiredVillagerRole.FISHING || this.role == HiredVillagerRole.LOGGING
-                || this.role == HiredVillagerRole.MINING || this.role == HiredVillagerRole.ANIMAL_HANDLING || this.role == HiredVillagerRole.BUILDER) {
+                || this.role == HiredVillagerRole.MINING || this.role == HiredVillagerRole.ANIMAL_HANDLING
+                || this.role == HiredVillagerRole.HUNTING || this.role == HiredVillagerRole.BUILDER) {
             this.entityContext = villager.saveWithoutId(new CompoundTag());
         }
         if (this.role == HiredVillagerRole.FISHING) {

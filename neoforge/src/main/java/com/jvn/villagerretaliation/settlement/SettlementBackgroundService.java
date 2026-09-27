@@ -81,6 +81,8 @@ public final class SettlementBackgroundService {
                 SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.FISHING) {
                 SettlementBackgroundFishing.tick(level, town, worker, elapsed, multiplier, now);
+            } else if (worker.role() == HiredVillagerRole.HUNTING) {
+                SettlementBackgroundHunting.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.ANIMAL_HANDLING) {
                 SettlementBackgroundAnimalHandling.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.BUILDER) {
