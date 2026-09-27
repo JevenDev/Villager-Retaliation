@@ -173,6 +173,7 @@ public final class SettlementWorkerState {
     }
 
     void observe(ServerLevel level, Villager villager, SettlementWorkforceService.Duty duty, long now) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Worker observation has a different identity");
         if (!duty.area().id().equals(this.area) || duty.area().type().role() != this.role) {
             huntingTarget(null);
             this.serviceBlocked = false;
@@ -231,6 +232,7 @@ public final class SettlementWorkerState {
     }
 
     boolean restore(Villager villager) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Worker handoff has a different identity");
         if (this.huntingBody != null) this.huntingBody.restore(villager, villager.level().getGameTime());
         if (this.role == HiredVillagerRole.HUNTING) {
             com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.restoreMeleeAttackTick(villager, this.huntingAttackAt);

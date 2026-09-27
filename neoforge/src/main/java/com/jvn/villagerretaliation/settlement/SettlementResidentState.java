@@ -46,6 +46,7 @@ public final class SettlementResidentState {
     private boolean familyUnsafe;
     private CompoundTag entityContext = new CompoundTag();
     private SettlementFamilyInventory familyInventory;
+    private SettlementWalletState wallet;
     private SettlementMendingEquipment mendingEquipment;
 
     private SettlementResidentState(UUID id) {
@@ -111,6 +112,8 @@ public final class SettlementResidentState {
     }
 
     void observe(Villager villager, SettlementRecord town, long now) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident observation has a different identity");
+        if (this.wallet != null) this.wallet.restore(villager);
         restoreMending(villager);
         if (this.familyInventory != null) this.familyInventory.restore(villager);
         var snapshot = VillagerRecoveryService.captureRecoveryState(villager);
@@ -167,6 +170,7 @@ public final class SettlementResidentState {
     void rememberFamily(Villager villager) {
         if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident context has a different identity");
         this.familyInventory = SettlementFamilyInventory.capture(villager, this.familyInventory);
+        this.wallet = SettlementWalletState.capture(villager, this.wallet);
         this.entityContext = villager.saveWithoutId(new CompoundTag());
     }
 
@@ -206,10 +210,12 @@ public final class SettlementResidentState {
     }
 
     boolean restore(Villager villager) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident handoff has a different identity");
+        boolean walletRestored = this.wallet != null && this.wallet.restore(villager);
         boolean familyRestored = this.familyInventory != null && this.familyInventory.restore(villager);
         boolean mendingRestored = restoreMending(villager);
         if (villager.getPersistentData().getLong(VERSION_TAG) >= this.version) {
-            return familyRestored || mendingRestored;
+            return familyRestored || mendingRestored || walletRestored;
         }
         VillagerRecoveryService.restoreRecoveryState(villager,
                 new VillagerRecoveryService.RecoverySnapshot(this.food, this.saturation, this.exhaustion, this.healTimer));
@@ -266,7 +272,17 @@ public final class SettlementResidentState {
             }
         }
         this.version++;
+        advanceWallet(level);
         return elapsed;
+    }
+
+    private void advanceWallet(ServerLevel level) {
+        long day = Math.floorDiv(level.getDayTime(), 24000L);
+        if (this.age < 0 || this.wallet != null && !this.wallet.needsUpdate(day)) return;
+        var resident = context(level);
+        if (resident == null) return;
+        com.jvn.villagerretaliation.interaction.VillagerWalletService.updateWallet(resident, day);
+        this.wallet = SettlementWalletState.capture(resident, this.wallet);
     }
 
     void observeShortage(int elapsed, boolean housingShortage) {
@@ -355,6 +371,7 @@ public final class SettlementResidentState {
         tag.putBoolean("FamilyUnsafe", this.familyUnsafe);
         if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
         if (this.familyInventory != null) tag.put("FamilyInventory", this.familyInventory.save());
+        if (this.wallet != null) tag.put("Wallet", this.wallet.save());
         if (this.mendingEquipment != null) tag.put("MendingEquipment", this.mendingEquipment.save());
         return tag;
     }
@@ -382,7 +399,8 @@ public final class SettlementResidentState {
         state.personalCommitment = tag.getBoolean("PersonalCommitment");
         state.familyUnsafe = tag.getBoolean("FamilyUnsafe");
         state.entityContext = tag.getCompound("EntityContext").copy();
-        if (tag.contains("FamilyInventory")) state.familyInventory = SettlementFamilyInventory.load(tag.getCompound("FamilyInventory"));
+        if (tag.contains("FamilyInventory")) state.familyInventory = SettlementFamilyInventory.load(tag.getCompound("FamilyInventory"), state.id);
+        if (tag.contains("Wallet")) state.wallet = SettlementWalletState.load(tag.getCompound("Wallet"), state.id);
         if (tag.contains("MendingEquipment")) state.mendingEquipment = SettlementMendingEquipment.load(tag.getCompound("MendingEquipment"));
         if (!state.entityContext.isEmpty() && (!state.entityContext.hasUUID("UUID") || !state.id.equals(state.entityContext.getUUID("UUID")))) {
             throw new IllegalArgumentException("Resident context has a different identity");

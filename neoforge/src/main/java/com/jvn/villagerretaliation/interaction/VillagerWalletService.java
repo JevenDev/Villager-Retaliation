@@ -19,8 +19,8 @@ import net.minecraft.world.item.ItemStack;
 public final class VillagerWalletService {
     private static final String WALLET_TAG = "VillagerRetaliationWallet";
     private static final String INITIALIZED_TAG = "Initialized";
-    private static final String CURRENT_EMERALDS_TAG = "CurrentEmeralds";
-    private static final String MAX_EMERALDS_TAG = "MaxEmeralds";
+    private static final String CURRENT_CURRENCY_TAG = "CurrentEmeralds";
+    private static final String CURRENCY_CAPACITY_TAG = "MaxEmeralds";
     private static final String LIFETIME_EARNED_TAG = "LifetimeEarned";
     private static final String LIFETIME_NATURAL_EARNED_TAG = "LifetimeNaturalEarned";
     private static final String LIFETIME_SPENT_TAG = "LifetimeSpent";
@@ -31,7 +31,7 @@ public final class VillagerWalletService {
     private static final int WALLET_TICK_INTERVAL = 200;
     private static final int MIN_VENDOR_CAPACITY = 400;
     private static final int ESTABLISHED_VENDOR_CAPACITY = 1000;
-    private static final int MAX_SAFE_EMERALDS = 1_000_000_000;
+    private static final int MAX_SAFE_CURRENCY = 1_000_000_000;
 
     private VillagerWalletService() {
     }
@@ -42,8 +42,8 @@ public final class VillagerWalletService {
         CompoundTag wallet = walletTag(villager);
         return new WalletSnapshot(
                 wallet.getBoolean(INITIALIZED_TAG),
-                safeInt(wallet, CURRENT_EMERALDS_TAG),
-                safeInt(wallet, MAX_EMERALDS_TAG),
+                safeInt(wallet, CURRENT_CURRENCY_TAG),
+                safeInt(wallet, CURRENCY_CAPACITY_TAG),
                 safeInt(wallet, LIFETIME_EARNED_TAG),
                 safeInt(wallet, LIFETIME_SPENT_TAG),
                 safeInt(wallet, LIFETIME_DEPOSITED_TAG),
@@ -59,11 +59,11 @@ public final class VillagerWalletService {
             return;
         }
 
-        int max = calculateMaxEmeralds(villager);
-        int starting = Mth.clamp(startingEmeralds(villager), 0, max);
+        int max = calculateCurrencyCapacity(villager);
+        int starting = Mth.clamp(startingCurrency(villager), 0, max);
         wallet.putBoolean(INITIALIZED_TAG, true);
-        wallet.putInt(CURRENT_EMERALDS_TAG, starting);
-        wallet.putInt(MAX_EMERALDS_TAG, max);
+        wallet.putInt(CURRENT_CURRENCY_TAG, starting);
+        wallet.putInt(CURRENCY_CAPACITY_TAG, max);
         wallet.putInt(LIFETIME_EARNED_TAG, starting);
         wallet.putInt(LIFETIME_NATURAL_EARNED_TAG, 0);
         wallet.putInt(LIFETIME_SPENT_TAG, 0);
@@ -72,12 +72,31 @@ public final class VillagerWalletService {
         wallet.putLong(LAST_DEPOSIT_DAY_TAG, -1L);
     }
 
+    public static int getCurrentCurrency(Villager villager) {
+        return getWallet(villager).currentCurrency();
+    }
+
     public static int getCurrentEmeralds(Villager villager) {
-        return getWallet(villager).currentEmeralds();
+        return getCurrentCurrency(villager);
+    }
+
+    public static int getCurrencyCapacity(Villager villager) {
+        return getWallet(villager).currencyCapacity();
     }
 
     public static int getMaxEmeralds(Villager villager) {
-        return getWallet(villager).maxEmeralds();
+        return getCurrencyCapacity(villager);
+    }
+
+    public static CompoundTag captureWallet(Villager villager) {
+        getWallet(villager);
+        return walletTag(villager).copy();
+    }
+
+    public static void restoreWallet(Villager villager, CompoundTag wallet) {
+        var restored = wallet.copy();
+        sanitize(restored);
+        villager.getPersistentData().put(WALLET_TAG, restored);
     }
 
     public static int addCurrency(Villager villager, int amount) {
@@ -86,11 +105,11 @@ public final class VillagerWalletService {
         }
         initializeWalletIfNeeded(villager);
         CompoundTag wallet = walletTag(villager);
-        int safeAmount = Math.min(amount, MAX_SAFE_EMERALDS - safeInt(wallet, CURRENT_EMERALDS_TAG));
+        int safeAmount = Math.min(amount, MAX_SAFE_CURRENCY - safeInt(wallet, CURRENT_CURRENCY_TAG));
         if (safeAmount <= 0) {
             return 0;
         }
-        wallet.putInt(CURRENT_EMERALDS_TAG, safeInt(wallet, CURRENT_EMERALDS_TAG) + safeAmount);
+        wallet.putInt(CURRENT_CURRENCY_TAG, safeInt(wallet, CURRENT_CURRENCY_TAG) + safeAmount);
         wallet.putInt(LIFETIME_EARNED_TAG, addClamped(safeInt(wallet, LIFETIME_EARNED_TAG), safeAmount));
         return safeAmount;
     }
@@ -108,18 +127,18 @@ public final class VillagerWalletService {
         }
         initializeWalletIfNeeded(villager);
         CompoundTag wallet = walletTag(villager);
-        int current = safeInt(wallet, CURRENT_EMERALDS_TAG);
+        int current = safeInt(wallet, CURRENT_CURRENCY_TAG);
         if (current < amount) {
             return false;
         }
-        wallet.putInt(CURRENT_EMERALDS_TAG, current - amount);
+        wallet.putInt(CURRENT_CURRENCY_TAG, current - amount);
         wallet.putInt(LIFETIME_SPENT_TAG, addClamped(safeInt(wallet, LIFETIME_SPENT_TAG), amount));
         return true;
     }
 
     public static void setMaxEmeraldsFromProfessionAndSkills(Villager villager) {
         initializeWalletIfNeeded(villager);
-        walletTag(villager).putInt(MAX_EMERALDS_TAG, calculateMaxEmeralds(villager));
+        walletTag(villager).putInt(CURRENCY_CAPACITY_TAG, calculateCurrencyCapacity(villager));
     }
 
     public static void tickWallet(Villager villager) {
@@ -131,27 +150,23 @@ public final class VillagerWalletService {
             return;
         }
 
+        updateWallet(villager, currentDay(level));
+    }
+
+    public static void updateWallet(Villager villager, long day) {
+        if (!(villager.level() instanceof ServerLevel) || villager.isBaby() || !villager.isAlive()) return;
         initializeWalletIfNeeded(villager);
         setMaxEmeraldsFromProfessionAndSkills(villager);
-        long day = currentDay(level);
         CompoundTag wallet = walletTag(villager);
-        if (wallet.getLong(LAST_INCOME_DAY_TAG) >= day) {
-            return;
-        }
-        wallet.putLong(LAST_INCOME_DAY_TAG, day);
-
-        int current = safeInt(wallet, CURRENT_EMERALDS_TAG);
-        int max = safeInt(wallet, MAX_EMERALDS_TAG);
-        if (current <= max) {
-            int income = dailyIncome(villager);
-            if (income > 0) {
-                addNaturalEmeralds(villager, income);
+        if (wallet.getLong(LAST_INCOME_DAY_TAG) < day) {
+            wallet.putLong(LAST_INCOME_DAY_TAG, day);
+            if (safeInt(wallet, CURRENT_CURRENCY_TAG) <= safeInt(wallet, CURRENCY_CAPACITY_TAG)) {
+                addNaturalCurrency(villager, dailyIncome(villager, day));
             }
         }
-
         if (getDepositAmount(villager) > 0 && wallet.getLong(LAST_DEPOSIT_DAY_TAG) < day) {
-            wallet.putLong(LAST_DEPOSIT_DAY_TAG, day);
-            tryDepositExcessCurrency(villager);
+            var result = tryDepositExcessCurrency(villager);
+            if (result.deposited() > 0 && result.remaining() == 0) wallet.putLong(LAST_DEPOSIT_DAY_TAG, day);
         }
     }
 
@@ -180,7 +195,8 @@ public final class VillagerWalletService {
 
         initializeWalletIfNeeded(villager);
         CompoundTag wallet = walletTag(villager);
-        int requested = Math.min(amount, safeInt(wallet, CURRENT_EMERALDS_TAG));
+        int requested = Math.min(amount, safeInt(wallet, CURRENT_CURRENCY_TAG));
+        if (!AssignedStorageService.hasLoadedAssignedStorage(level, villager)) return DepositResult.unavailable(requested);
         int remaining = requested;
         int deposited = 0;
         while (remaining > 0) {
@@ -199,7 +215,7 @@ public final class VillagerWalletService {
         }
 
         if (deposited > 0) {
-            wallet.putInt(CURRENT_EMERALDS_TAG, safeInt(wallet, CURRENT_EMERALDS_TAG) - deposited);
+            wallet.putInt(CURRENT_CURRENCY_TAG, safeInt(wallet, CURRENT_CURRENCY_TAG) - deposited);
             wallet.putInt(LIFETIME_DEPOSITED_TAG, addClamped(safeInt(wallet, LIFETIME_DEPOSITED_TAG), deposited));
         }
         return new DepositResult(requested, deposited, requested - deposited, true, false);
@@ -212,14 +228,14 @@ public final class VillagerWalletService {
 
     public static int getVendorCurrencyAvailable(Villager villager) {
         if (hasUnlimitedCurrency()) {
-            return MAX_SAFE_EMERALDS;
+            return MAX_SAFE_CURRENCY;
         }
         return getCurrentEmeralds(villager);
     }
 
     public static int getVendorCurrencyCap(Villager villager) {
         if (hasUnlimitedCurrency()) {
-            return MAX_SAFE_EMERALDS;
+            return MAX_SAFE_CURRENCY;
         }
         return getMaxEmeralds(villager);
     }
@@ -237,25 +253,25 @@ public final class VillagerWalletService {
     }
 
     private static void sanitize(CompoundTag wallet) {
-        wallet.putInt(CURRENT_EMERALDS_TAG, safeInt(wallet, CURRENT_EMERALDS_TAG));
-        wallet.putInt(MAX_EMERALDS_TAG, Math.max(MIN_VENDOR_CAPACITY, safeInt(wallet, MAX_EMERALDS_TAG)));
+        wallet.putInt(CURRENT_CURRENCY_TAG, safeInt(wallet, CURRENT_CURRENCY_TAG));
+        wallet.putInt(CURRENCY_CAPACITY_TAG, Math.max(MIN_VENDOR_CAPACITY, safeInt(wallet, CURRENCY_CAPACITY_TAG)));
         wallet.putInt(LIFETIME_EARNED_TAG, safeInt(wallet, LIFETIME_EARNED_TAG));
         wallet.putInt(LIFETIME_NATURAL_EARNED_TAG, safeInt(wallet, LIFETIME_NATURAL_EARNED_TAG));
         wallet.putInt(LIFETIME_SPENT_TAG, safeInt(wallet, LIFETIME_SPENT_TAG));
         wallet.putInt(LIFETIME_DEPOSITED_TAG, safeInt(wallet, LIFETIME_DEPOSITED_TAG));
     }
 
-    private static int calculateMaxEmeralds(Villager villager) {
+    private static int calculateCurrencyCapacity(Villager villager) {
         WealthRange range = baseRange(villager);
         int skillBonus = skillBonus(villager);
         int professionBonus = professionBonus(professionKey(villager));
         int baseline = range.min() + (range.max() - range.min()) * Math.max(1, villager.getVillagerData().getLevel()) / 5;
         int baseCap = Mth.clamp(baseline + skillBonus + professionBonus, MIN_VENDOR_CAPACITY, ESTABLISHED_VENDOR_CAPACITY);
         int naturalGrowth = safeInt(walletTag(villager), LIFETIME_NATURAL_EARNED_TAG);
-        return Mth.clamp(baseCap + naturalGrowth, MIN_VENDOR_CAPACITY, MAX_SAFE_EMERALDS);
+        return Mth.clamp(baseCap + naturalGrowth, MIN_VENDOR_CAPACITY, MAX_SAFE_CURRENCY);
     }
 
-    private static int addNaturalEmeralds(Villager villager, int amount) {
+    private static int addNaturalCurrency(Villager villager, int amount) {
         if (amount <= 0) {
             return 0;
         }
@@ -263,18 +279,18 @@ public final class VillagerWalletService {
         CompoundTag wallet = walletTag(villager);
         wallet.putInt(LIFETIME_NATURAL_EARNED_TAG, addClamped(safeInt(wallet, LIFETIME_NATURAL_EARNED_TAG), amount));
         setMaxEmeraldsFromProfessionAndSkills(villager);
-        int max = safeInt(wallet, MAX_EMERALDS_TAG);
-        int current = safeInt(wallet, CURRENT_EMERALDS_TAG);
+        int max = safeInt(wallet, CURRENCY_CAPACITY_TAG);
+        int current = safeInt(wallet, CURRENT_CURRENCY_TAG);
         int accepted = Math.min(amount, Math.max(0, max - current));
         if (accepted <= 0) {
             return 0;
         }
-        wallet.putInt(CURRENT_EMERALDS_TAG, current + accepted);
+        wallet.putInt(CURRENT_CURRENCY_TAG, current + accepted);
         wallet.putInt(LIFETIME_EARNED_TAG, addClamped(safeInt(wallet, LIFETIME_EARNED_TAG), accepted));
         return accepted;
     }
 
-    private static int startingEmeralds(Villager villager) {
+    private static int startingCurrency(Villager villager) {
         WealthRange range = startingRange(villager);
         if (range.max() <= range.min()) {
             return range.min();
@@ -282,11 +298,13 @@ public final class VillagerWalletService {
         return range.min() + villager.getRandom().nextInt(range.max() - range.min() + 1);
     }
 
-    private static int dailyIncome(Villager villager) {
+    private static int dailyIncome(Villager villager, long day) {
+        var id = villager.getUUID();
+        var random = net.minecraft.util.RandomSource.create(id.getMostSignificantBits() ^ id.getLeastSignificantBits() ^ day * 0x9E3779B97F4A7C15L);
         String professionKey = professionKey(villager);
         int level = Math.max(1, villager.getVillagerData().getLevel());
         int base = switch (professionKey) {
-            case "nitwit", "none" -> villager.getRandom().nextInt(2);
+            case "nitwit", "none" -> random.nextInt(2);
             default -> Math.max(1, level);
         };
         int skill = skillBonus(villager) / 12;
@@ -296,7 +314,7 @@ public final class VillagerWalletService {
             case "nitwit", "none" -> 0;
             default -> 0;
         };
-        int variance = villager.getRandom().nextInt(2);
+        int variance = random.nextInt(2);
         return Mth.clamp(base + skill + profession + variance, 0, level >= 4 ? 8 : 5);
     }
 
@@ -361,12 +379,12 @@ public final class VillagerWalletService {
     }
 
     private static int safeInt(CompoundTag tag, String key) {
-        return Mth.clamp(tag.getInt(key), 0, MAX_SAFE_EMERALDS);
+        return Mth.clamp(tag.getInt(key), 0, MAX_SAFE_CURRENCY);
     }
 
     private static int addClamped(int left, int right) {
-        if (right >= MAX_SAFE_EMERALDS - left) {
-            return MAX_SAFE_EMERALDS;
+        if (right >= MAX_SAFE_CURRENCY - left) {
+            return MAX_SAFE_CURRENCY;
         }
         return Math.max(0, left + right);
     }
@@ -388,6 +406,13 @@ public final class VillagerWalletService {
             int lifetimeDeposited,
             long lastIncomeDay,
             long lastDepositDay) {
+        public int currentCurrency() {
+            return this.currentEmeralds;
+        }
+
+        public int currencyCapacity() {
+            return this.maxEmeralds;
+        }
     }
 
     public record DepositResult(
