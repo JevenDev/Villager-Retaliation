@@ -90,6 +90,18 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.farming.needs_farmer_job_site");
         }
 
+        var pending = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
+        if (pending.storageTargetPos() != null && context.hasOutputToDeposit()
+                && (pending.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
+                || pending.taskState() == HiredWorkerTaskState.DEPOSITING
+                || pending.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL)) {
+            DepositResult deposit = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
+            if (deposit == DepositResult.MOVING || deposit == DepositResult.DEPOSITED) {
+                return WorkResult.progressed("interaction.work.farming.no_target_depositing");
+            }
+            if (deposit == DepositResult.STORAGE_FULL) return WorkResult.idle(storageFullStatus(context));
+        }
+
         WorkResult hoeResult = ensureFarmingHoe(level, villager, context);
         if (hoeResult != null) {
             return hoeResult;

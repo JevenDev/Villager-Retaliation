@@ -696,11 +696,12 @@ public final class CookingWorker extends AbstractBlockWorker {
             if (!context.isLoaded(level, pos) || !level.getBlockState(pos).is(Blocks.CRAFTING_TABLE)) {
                 continue;
             }
-            HiredPathTarget target = bestWorkTarget(level, villager, context, pos);
-            if (target == null) {
+            boolean outside = !context.isInsideWorkArea(villager.blockPosition());
+            HiredPathTarget target = outside ? null : bestWorkTarget(level, villager, context, pos);
+            if (!outside && target == null) {
                 continue;
             }
-            double distance = villager.distanceToSqr(target.approachPos().getCenter());
+            double distance = villager.distanceToSqr(outside ? pos.getCenter() : target.approachPos().getCenter());
             if (distance < bestDistance) {
                 bestDistance = distance;
                 best = pos;

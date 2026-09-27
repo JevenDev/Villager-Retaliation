@@ -53,6 +53,7 @@
     "ReactToBellMixin",
     "ServerPlayerDuelDropMixin",
     "SetHiddenStateMixin",
+    "ResetProfessionMixin",
     "SetRaidStatusMixin",
     "ShowTradesToPlayerMixin",
     "TradeWithVillagerMixin",

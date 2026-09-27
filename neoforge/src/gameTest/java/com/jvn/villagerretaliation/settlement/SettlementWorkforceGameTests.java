@@ -376,6 +376,124 @@ public final class SettlementWorkforceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void noviceCivicWorkersKeepProfessionUntilReleased(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var villager = fixture.villager();
+        var level = helper.getLevel();
+        try {
+            villager.setVillagerXp(0);
+            villager.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE);
+            assign(helper, fixture);
+            var reset = net.minecraft.world.entity.ai.behavior.ResetProfession.create();
+            helper.assertFalse(reset.tryStart(level, villager, level.getGameTime()),
+                    "civic employment keeps a novice profession without claiming a vanilla job site");
+            helper.assertValueEqual(villager.getVillagerData().getProfession(), VillagerProfession.FARMER,
+                    "the recruited farmer remains able to execute its civic work");
+            helper.assertValueEqual(villager.getVillagerXp(), 0, "profession protection grants no trade experience");
+            helper.assertTrue(SettlementWorkforceService.release(level, fixture.leader(), fixture.town().id(), villager.getUUID()),
+                    "the leader releases the civic duty");
+            helper.assertTrue(reset.tryStart(level, villager, level.getGameTime()),
+                    "the native profession reset resumes after release");
+            helper.assertValueEqual(villager.getVillagerData().getProfession(), VillagerProfession.NONE,
+                    "an unassigned novice can return to ordinary job selection");
+        } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void farmerFinishesDepositBeforeHoeCheckAndFieldCooldown(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var villager = fixture.villager();
+        var pos = villager.blockPosition().east();
+        var original = level.getBlockState(pos);
+        long dayTime = level.getDayTime();
+        try {
+            level.setDayTime(6_000L);
+            var storage = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Harvest",
+                    pos.below(), pos.above(), 5, true);
+            helper.assertTrue(SettlementBuildingService.register(fixture.leader(), fixture.town().id(), storage),
+                    "the farmer has a designated output depot");
+            level.setBlockAndUpdate(pos, com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+            helper.assertTrue(SettlementDepotService.register(fixture.leader(), pos), "the physical depot registers");
+            assign(helper, fixture);
+            var session = HiredWorkSession.active(level, villager);
+            session.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+            session.inventory().insertOutput(new ItemStack(Items.WHEAT, 8));
+            session.state().putLong("NextFarmingFieldScanGameTime", level.getGameTime() + 1_000L);
+            com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.setStorageTarget(session.context(), pos);
+            com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.setState(session.context(),
+                    com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState.MOVING_TO_STORAGE, null);
+            new com.jvn.villagerretaliation.interaction.work.FarmingWorker().tick(level, villager, null, session.context());
+            var depot = ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(pos)).inventory();
+            helper.assertValueEqual(depot.count(stack -> stack.is(Items.WHEAT)), 8,
+                    "a pending delivery survives the hoe check and the field scan cooldown");
+            helper.assertFalse(session.inventory().hasOutput(stack -> stack.is(Items.WHEAT)),
+                    "the deposit moves the original harvest without duplication");
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(session.state(), level.getGameTime()).taskState(),
+                    com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState.RETURNING_TO_WORK_AREA,
+                    "the farmer returns to its field after completing delivery");
+        } finally {
+            villager.discard();
+            level.setBlockAndUpdate(pos, original);
+            level.setDayTime(dayTime);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicCookCollectsIngredientsOutsideKitchenBounds(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var villager = fixture.villager();
+        var center = villager.blockPosition();
+        var table = center.west();
+        var storagePos = center.east(5);
+        var oldTable = level.getBlockState(table);
+        var oldStorage = level.getBlockState(storagePos);
+        long dayTime = level.getDayTime();
+        try {
+            level.setDayTime(6_000L);
+            level.setBlockAndUpdate(table, Blocks.CRAFTING_TABLE.defaultBlockState());
+            var kitchen = new SettlementArea(UUID.randomUUID(), SettlementAreaType.KITCHEN, "Kitchen",
+                    center.offset(-2, -1, -2), center.offset(2, 2, 2), 5, true);
+            helper.assertTrue(SettlementBuildingService.register(fixture.leader(), fixture.town().id(), kitchen), "the kitchen registers");
+            var storage = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Ingredients",
+                    storagePos.below(), storagePos.above(), 5, true);
+            helper.assertTrue(SettlementBuildingService.register(fixture.leader(), fixture.town().id(), storage), "the separate ingredient depot registers");
+            level.setBlockAndUpdate(storagePos, com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+            fixture.leader().setPos(storagePos.north().getBottomCenter());
+            helper.assertTrue(SettlementDepotService.register(fixture.leader(), storagePos), "the physical ingredient depot registers");
+            var depot = ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(storagePos)).inventory();
+            depot.setItem(0, new ItemStack(Items.WHEAT, 12));
+            helper.assertTrue(SettlementWorkforceService.assign(level, fixture.leader(), fixture.town().id(), villager, kitchen.id()),
+                    "the resident receives civic cooking work");
+            var inventory = HiredJobInventory.getJobInventory(villager);
+            var filter = new ItemStack(com.jvn.villagerretaliation.item.VillagerRetaliationItems.ITEM_FILTER.get());
+            com.jvn.villagerretaliation.item.VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.BREAD));
+            inventory.setItem(HiredJobInventory.FILTER_SLOT, filter);
+            villager.setPos(storagePos.north().getBottomCenter());
+            var session = HiredWorkSession.active(level, villager);
+            new com.jvn.villagerretaliation.interaction.work.CookingWorker().tick(level, villager, null, session.context());
+            helper.assertValueEqual(depot.count(stack -> stack.is(Items.WHEAT)), 9,
+                    "a cook outside its kitchen can collect one real bread recipe");
+            helper.assertValueEqual(inventory.countItem(Items.WHEAT), 3, "the three ingredients enter the worker inventory");
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(session.state(), level.getGameTime()).taskState(),
+                    com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState.RETURNING_TO_WORK_AREA,
+                    "the cook returns to the registered kitchen before crafting");
+            helper.assertTrue(level.getBlockState(table).is(Blocks.CRAFTING_TABLE), "the kitchen fixture remains intact");
+        } finally {
+            villager.discard();
+            level.setBlockAndUpdate(table, oldTable);
+            level.setBlockAndUpdate(storagePos, oldStorage);
+            level.setDayTime(dayTime);
+        }
+        helper.succeed();
+    }
+
     private static void assign(GameTestHelper helper, Fixture fixture) {
         helper.assertTrue(SettlementWorkforceService.assign(helper.getLevel(), fixture.leader(), fixture.town().id(),
                 fixture.villager(), fixture.area().id()), "leadership can assign an eligible resident");
