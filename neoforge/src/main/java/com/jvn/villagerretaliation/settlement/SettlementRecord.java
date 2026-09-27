@@ -37,6 +37,8 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
     private final Map<UUID, SettlementArrival> arrivals = new LinkedHashMap<>();
     private final Map<UUID, SettlementResidentState> residents = new LinkedHashMap<>();
+    private final Map<UUID, SettlementHome> homes = new LinkedHashMap<>();
+    private final Map<UUID, SettlementHomeRelease> homeReleases = new LinkedHashMap<>();
     private final Map<UUID, SettlementDeparture> departures = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
     private final Map<UUID, SettlementLivestock> livestock = new LinkedHashMap<>();
@@ -236,12 +238,40 @@ public final class SettlementRecord {
 
     void removeResident(UUID resident) {
         boolean removed = this.residents.remove(resident) != null;
+        removed |= this.homes.remove(resident) != null;
         if (!this.departures.containsKey(resident) && this.arrivals.remove(resident) != null) {
             removed = true;
         }
         if (removed) {
             changed();
         }
+    }
+
+    public Map<UUID, SettlementHome> homes() {
+        return Collections.unmodifiableMap(this.homes);
+    }
+
+    boolean assignHome(UUID resident, BlockPos bed) {
+        if (resident == null || bed != null && this.homes.values().stream()
+                .anyMatch(home -> bed.equals(home.bed()) && !resident.equals(home.resident()))) return false;
+        var previous = this.homes.get(resident);
+        if (previous != null && Objects.equals(previous.bed(), bed)) return true;
+        this.homes.put(resident, new SettlementHome(resident, bed, previous == null ? 1L : Math.incrementExact(previous.version())));
+        changed();
+        return true;
+    }
+
+    Map<UUID, SettlementHomeRelease> homeReleases() {
+        return Collections.unmodifiableMap(this.homeReleases);
+    }
+
+    void releaseHome(UUID id, UUID resident, net.minecraft.core.GlobalPos home) {
+        var release = new SettlementHomeRelease(id, resident, home);
+        if (this.homeReleases.putIfAbsent(id, release) == null) changed();
+    }
+
+    void removeHomeRelease(UUID id) {
+        if (this.homeReleases.remove(id) != null) changed();
     }
 
     public Map<UUID, SettlementApplicant> applicants() {
@@ -493,6 +523,7 @@ public final class SettlementRecord {
         if (previous != null && previous.beds().equals(survey.beds())
                 && previous.workstations().equals(survey.workstations()) && previous.fullyLoaded() == survey.fullyLoaded()
                 && previous.fixtures().equals(survey.fixtures()) && previous.waterSources().equals(survey.waterSources())
+                && previous.bedAvailability().equals(survey.bedAvailability())
                 && survey.checkedAt() - previous.checkedAt() < 1_200L) {
             return;
         }
@@ -653,6 +684,12 @@ public final class SettlementRecord {
         ListTag residentTags = new ListTag();
         this.residents.values().forEach(resident -> residentTags.add(resident.save()));
         tag.put("ResidentCare", residentTags);
+        var homeTags = new ListTag();
+        this.homes.values().forEach(home -> homeTags.add(home.save()));
+        tag.put("Homes", homeTags);
+        var homeReleaseTags = new ListTag();
+        this.homeReleases.values().forEach(release -> homeReleaseTags.add(release.save()));
+        tag.put("HomeReleases", homeReleaseTags);
         ListTag workerTags = new ListTag();
         this.workers.values().forEach(worker -> workerTags.add(worker.save()));
         tag.put("Workers", workerTags);
@@ -711,6 +748,19 @@ public final class SettlementRecord {
             var resident = SettlementResidentState.load((CompoundTag) raw);
             if (record.residents.putIfAbsent(resident.id(), resident) != null) {
                 throw new IllegalArgumentException("Resident care duplicates an identity");
+            }
+        }
+        var claimedBeds = new java.util.HashSet<BlockPos>();
+        for (Tag raw : tag.getList("Homes", Tag.TAG_COMPOUND)) {
+            var home = SettlementHome.load((CompoundTag) raw);
+            if (record.homes.putIfAbsent(home.resident(), home) != null || home.bed() != null && !claimedBeds.add(home.bed())) {
+                throw new IllegalArgumentException("Home assignments duplicate a resident or bed");
+            }
+        }
+        for (Tag raw : tag.getList("HomeReleases", Tag.TAG_COMPOUND)) {
+            var release = SettlementHomeRelease.load((CompoundTag) raw);
+            if (record.homeReleases.putIfAbsent(release.id(), release) != null) {
+                throw new IllegalArgumentException("Home releases duplicate an identity");
             }
         }
         for (Tag raw : tag.getList("Workers", Tag.TAG_COMPOUND)) {

@@ -111,7 +111,21 @@ public final class SettlementBuildingService {
             });
             List<BlockPos> water = new ArrayList<>(observed.waterSources());
             previous.waterSources().stream().filter(pos -> !blocks.observed(pos) && !blocks.blocked(pos)).forEach(water::add);
-            observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), beds, stations, previous.fullyLoaded(), fixtures, water);
+            observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), beds, stations, previous.fullyLoaded(), fixtures, water, observed.bedAvailability());
+        }
+        if (previous != null) {
+            var availability = new java.util.LinkedHashMap<>(observed.bedAvailability());
+            for (var pos : observed.beds()) {
+                if (availability.containsKey(pos)) continue;
+                if (blocks.chunk(pos.getX() >> 4, pos.getZ() >> 4) != null) {
+                    availability.put(pos, !level.getPoiManager().existsAtPosition(net.minecraft.world.entity.ai.village.poi.PoiTypes.HOME, pos)
+                            || level.getPoiManager().getFreeTickets(pos) > 0);
+                } else if (previous.bedAvailability().containsKey(pos)) {
+                    availability.put(pos, previous.bedAvailability().get(pos));
+                }
+            }
+            observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), observed.beds(), observed.workstations(),
+                    observed.fullyLoaded(), observed.fixtures(), observed.waterSources(), availability);
         }
         town.recordSurvey(area.id(), observed);
     }

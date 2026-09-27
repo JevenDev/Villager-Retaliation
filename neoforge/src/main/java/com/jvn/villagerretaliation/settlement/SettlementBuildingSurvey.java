@@ -39,6 +39,7 @@ public final class SettlementBuildingSurvey {
     static Survey inspect(ObservedBlocks blocks, SettlementArea area) {
         var level = blocks.level();
         List<BlockPos> beds = new ArrayList<>();
+        Map<BlockPos, Boolean> bedAvailability = new LinkedHashMap<>();
         List<BlockPos> workstations = new ArrayList<>();
         List<BlockPos> waterSources = new ArrayList<>();
         Map<BlockPos, ResourceLocation> fixtures = new LinkedHashMap<>();
@@ -78,6 +79,12 @@ public final class SettlementBuildingSurvey {
                         BedState bed = inspectBed(blocks, area, position);
                         if (bed == BedState.AVAILABLE) {
                             beds.add(position);
+                            if (blocks.chunk(position.getX() >> 4, position.getZ() >> 4) != null) {
+                                bedAvailability.put(position, !level.getPoiManager().existsAtPosition(PoiTypes.HOME, position)
+                                        || level.getPoiManager().getFreeTickets(position) > 0);
+                            } else if (blocks.pendingConstruction(position, blocks.getBlockState(position))) {
+                                bedAvailability.put(position, true);
+                            }
                         } else if (bed == BedState.UNOBSERVED) {
                             fullyLoaded = false;
                         }
@@ -92,7 +99,7 @@ public final class SettlementBuildingSurvey {
                 }
             }
         }
-        return new Survey(level.getGameTime(), beds, workstations, fullyLoaded, fixtures, waterSources);
+        return new Survey(level.getGameTime(), beds, workstations, fullyLoaded, fixtures, waterSources, bedAvailability);
     }
 
     public static boolean requiresFixture(SettlementAreaType type) {
@@ -286,7 +293,7 @@ public final class SettlementBuildingSurvey {
     }
 
     public record Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded,
-                         Map<BlockPos, ResourceLocation> fixtures, List<BlockPos> waterSources) {
+                         Map<BlockPos, ResourceLocation> fixtures, List<BlockPos> waterSources, Map<BlockPos, Boolean> bedAvailability) {
         public Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded) {
             this(checkedAt, beds, workstations, fullyLoaded, Map.of());
         }
@@ -296,7 +303,16 @@ public final class SettlementBuildingSurvey {
             this(checkedAt, beds, workstations, fullyLoaded, fixtures, List.of());
         }
 
+        public Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded,
+                      Map<BlockPos, ResourceLocation> fixtures, List<BlockPos> waterSources) {
+            this(checkedAt, beds, workstations, fullyLoaded, fixtures, waterSources, Map.of());
+        }
+
         public Survey {
+            bedAvailability = Map.copyOf(bedAvailability);
+            if (!new java.util.HashSet<>(beds).containsAll(bedAvailability.keySet())) {
+                throw new IllegalArgumentException("Bed availability must belong to surveyed beds");
+            }
             beds = beds.stream().distinct().sorted().toList();
             workstations = workstations.stream().distinct().sorted().toList();
             fixtures = Map.copyOf(fixtures);
@@ -326,6 +342,14 @@ public final class SettlementBuildingSurvey {
                 fixtures.add(fixture);
             });
             tag.put("Fixtures", fixtures);
+            var availability = new ListTag();
+            this.bedAvailability.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+                var bed = new CompoundTag();
+                bed.putLong("Position", entry.getKey().asLong());
+                bed.putBoolean("Available", entry.getValue());
+                availability.add(bed);
+            });
+            tag.put("BedAvailability", availability);
             return tag;
         }
 
@@ -338,11 +362,19 @@ public final class SettlementBuildingSurvey {
                     throw new IllegalArgumentException("Observed fixture has an invalid block or duplicate position");
                 }
             }
+            Map<BlockPos, Boolean> availability = new LinkedHashMap<>();
+            for (Tag raw : tag.getList("BedAvailability", Tag.TAG_COMPOUND)) {
+                var entry = (CompoundTag) raw;
+                if (!entry.contains("Position", Tag.TAG_LONG) || !entry.contains("Available", Tag.TAG_BYTE)
+                        || availability.putIfAbsent(BlockPos.of(entry.getLong("Position")), entry.getBoolean("Available")) != null) {
+                    throw new IllegalArgumentException("Bed availability has a missing or duplicate position");
+                }
+            }
             return new Survey(tag.getLong("CheckedAt"),
                     Arrays.stream(tag.getLongArray("Beds")).mapToObj(BlockPos::of).toList(),
                     Arrays.stream(tag.getLongArray("Workstations")).mapToObj(BlockPos::of).toList(),
                     tag.getBoolean("FullyLoaded"), fixtures,
-                    Arrays.stream(tag.getLongArray("WaterSources")).mapToObj(BlockPos::of).toList());
+                    Arrays.stream(tag.getLongArray("WaterSources")).mapToObj(BlockPos::of).toList(), availability);
         }
     }
 }

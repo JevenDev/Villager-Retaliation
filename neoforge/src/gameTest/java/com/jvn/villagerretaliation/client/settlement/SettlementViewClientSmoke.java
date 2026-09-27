@@ -434,6 +434,87 @@ public final class SettlementViewClientSmoke {
                 require(com.jvn.villagerretaliation.settlement.SettlementBrewingService.snapshot(serverPlayer.serverLevel(), town, brewer) == null,
                         "the native form cancels the authoritative brewing order");
             }).join();
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS, "");
+            phase = 43;
+        } else if (phase == 43 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS
+                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Bed bed && bed.available()) {
+            selectFirstRow(screen);
+            button(screen, "villagerretaliation.gui.settlement.assign_home").onPress();
+            phase = 44;
+        } else if (phase == 44 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, fixture.resident().toString());
+            phase = 45;
+        } else if (phase == 45 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS
+                && screen.snapshot().entries().size() == 1 && screen.snapshot().entries().getFirst().id().equals(fixture.resident())) {
+            selectFirstRow(screen);
+            button(screen, "villagerretaliation.gui.settlement.assign_home").onPress();
+            ticks = 0;
+            phase = 46;
+        } else if (phase == 46 && minecraft.screen instanceof SettlementConfirmScreen screen && ++ticks >= 5) {
+            capture("home-review");
+            button(screen, "gui.yes").onPress();
+            ticks = 0;
+            phase = 47;
+        } else if (phase == 47 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS
+                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Bed bed
+                && fixture.resident().equals(bed.resident()) && ++ticks >= 5) {
+            capture("assigned-home");
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                require(town.homes().get(fixture.resident()).bed().equals(bed.position()), "the Beds page assigns the authoritative resident home");
+            }).join();
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            phase = 50;
+        } else if (phase == 50 && minecraft.screen instanceof SettlementViewScreen screen && visibleResident(minecraft) != null) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                var resident = (Villager) serverPlayer.serverLevel().getEntity(fixture.resident());
+                require(resident.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.HOME)
+                        .filter(home -> home.pos().equals(town.homes().get(fixture.resident()).bed())).isPresent(),
+                        "the returning native resident receives the assigned home");
+                require(SettlementWorkforceService.role(resident) == com.jvn.villagerretaliation.interaction.HiredVillagerRole.COMBAT,
+                        "assigning a home preserves the resident's guard job");
+            }).join();
+            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+            phase = 51;
+        } else if (phase == 51 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS, "");
+            phase = 52;
+        } else if (phase == 52 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS
+                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Bed bed
+                && fixture.resident().equals(bed.resident())) {
+            selectFirstRow(screen);
+            button(screen, "villagerretaliation.gui.settlement.release_home").onPress();
+            ticks = 0;
+            phase = 48;
+        } else if (phase == 48 && minecraft.screen instanceof SettlementConfirmScreen screen && ++ticks >= 5) {
+            capture("home-release-review");
+            button(screen, "gui.yes").onPress();
+            phase = 49;
+        } else if (phase == 49 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS
+                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Bed bed && bed.available()) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                require(town.homes().get(fixture.resident()).bed() == null, "the Beds page releases the authoritative assignment");
+                var resident = (Villager) serverPlayer.serverLevel().getEntity(fixture.resident());
+                require(resident.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.HOME).isEmpty(),
+                        "releasing the bed also clears the loaded resident's native home");
+            }).join();
             screen.onClose();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");

@@ -27,6 +27,7 @@ public final class SettlementCareService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
+        SettlementHousingService.update(level, town);
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var roster = registry.residentRoster(town.id(), now);
         var members = new HashSet<java.util.UUID>();
@@ -37,6 +38,7 @@ public final class SettlementCareService {
             SettlementResidentState state = town.residents().get(member.id());
             if (resident != null && resident.isAlive() && resident.level() instanceof ServerLevel residentLevel
                     && residentLevel.isPositionEntityTicking(resident.blockPosition())) {
+                SettlementHousingService.reconcile(resident);
                 if (state == null) {
                     state = SettlementResidentState.capture(resident, town, now);
                     town.recordResident(state);
@@ -72,6 +74,7 @@ public final class SettlementCareService {
         if (town == null) {
             return;
         }
+        SettlementHousingService.reconcile(villager);
         SettlementResidentState state = town.residents().get(villager.getUUID());
         if (state != null) {
             state.restore(villager);
@@ -92,6 +95,8 @@ public final class SettlementCareService {
             town.removeDuty(villager.getUUID());
             return;
         }
+        SettlementHousingService.observe(villager, town);
+        SettlementHousingService.reconcile(villager);
         com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get(level).ensureProfile(level, villager);
         SettlementResidentState state = town.residents().get(villager.getUUID());
         if (state == null) {

@@ -32,6 +32,12 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
     private static void encode(RegistryFriendlyByteBuf buffer, SettlementManagementActionPayload payload) {
         buffer.writeUUID(payload.town());
         switch (payload.command()) {
+            case Home home -> {
+                buffer.writeEnum(Kind.HOME);
+                buffer.writeUUID(home.resident());
+                buffer.writeBlockPos(home.bed());
+                buffer.writeBoolean(home.assign());
+            }
             case Advance ignored -> buffer.writeEnum(Kind.ADVANCE);
             case View ignored -> buffer.writeEnum(Kind.VIEW);
             case DraftBlueprint draft -> {
@@ -158,6 +164,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
     private static SettlementManagementActionPayload decode(RegistryFriendlyByteBuf buffer) {
         UUID town = buffer.readUUID();
         Command command = switch (buffer.readEnum(Kind.class)) {
+            case HOME -> new Home(buffer.readUUID(), buffer.readBlockPos(), buffer.readBoolean());
             case ADVANCE -> new Advance();
             case VIEW -> new View();
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
@@ -277,11 +284,19 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home {
+    }
+
+    public record Home(UUID resident, net.minecraft.core.BlockPos bed, boolean assign) implements Command {
+        public Home {
+            Objects.requireNonNull(resident);
+            Objects.requireNonNull(bed);
+            bed = bed.immutable();
+        }
     }
 
     public record Brew(UUID resident, UUID area, SettlementBrewingOrder order) implements Command {

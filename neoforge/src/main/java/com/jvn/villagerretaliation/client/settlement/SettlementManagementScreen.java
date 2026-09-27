@@ -48,6 +48,7 @@ public final class SettlementManagementScreen extends Screen {
     private final SettlementManagementScreen parent;
     private final SettlementManagementPayload.Resident assigning;
     private final ConstructionBlueprintItem.PreviewData commissioning;
+    private final SettlementManagementPayload.Bed choosingBed;
     private int left;
     private int top;
     private int panelWidth;
@@ -61,16 +62,23 @@ public final class SettlementManagementScreen extends Screen {
 
     private SettlementManagementScreen(SettlementManagementPayload snapshot, SettlementManagementScreen parent,
                                        SettlementManagementPayload.Resident assigning, ConstructionBlueprintItem.PreviewData commissioning) {
+        this(snapshot, parent, assigning, commissioning, null);
+    }
+
+    private SettlementManagementScreen(SettlementManagementPayload snapshot, SettlementManagementScreen parent,
+                                       SettlementManagementPayload.Resident assigning, ConstructionBlueprintItem.PreviewData commissioning,
+                                       SettlementManagementPayload.Bed choosingBed) {
         super(text("title"));
         this.snapshot = snapshot;
         this.parent = parent;
         this.assigning = assigning;
         this.commissioning = commissioning;
-        this.desiredPage = commissioning != null ? Page.RESIDENTS : assigning == null ? snapshot.page() : Page.AREAS;
-        this.desiredIndex = assigning == null && commissioning == null ? snapshot.index() : 0;
-        this.query = assigning == null && commissioning == null ? snapshot.query() : "";
+        this.choosingBed = choosingBed;
+        this.desiredPage = commissioning != null || choosingBed != null ? Page.RESIDENTS : assigning == null ? snapshot.page() : Page.AREAS;
+        this.desiredIndex = assigning == null && commissioning == null && choosingBed == null ? snapshot.index() : 0;
+        this.query = assigning == null && commissioning == null && choosingBed == null ? snapshot.query() : "";
         this.requestId = snapshot.requestId();
-        this.refreshAt = Util.getMillis() + (assigning == null && commissioning == null ? 2_000L : 0L);
+        this.refreshAt = Util.getMillis() + (assigning == null && commissioning == null && choosingBed == null ? 2_000L : 0L);
     }
 
     SettlementManagementScreen root() {
@@ -161,13 +169,13 @@ public final class SettlementManagementScreen extends Screen {
                 submit(new SettlementManagementActionPayload.View());
             }
         }).bounds(this.left + this.panelWidth - 84, this.top - 4, 84, 20).build());
-        this.worldView.visible = this.snapshot.header() != null && this.assigning == null && this.commissioning == null;
+        this.worldView.visible = this.snapshot.header() != null && this.assigning == null && this.commissioning == null && this.choosingBed == null;
         this.worldView.setTooltip(Tooltip.create(text("world_view_hint")));
         int y = this.top + 28;
         int navigationHeight = Math.min(20, (this.panelHeight - 56) / Page.values().length - 2);
         for (Page page : Page.values()) {
             if (page != Page.TOWNS && this.snapshot.header() == null || this.assigning != null && page != Page.AREAS
-                    || this.commissioning != null && page != Page.RESIDENTS) {
+                    || (this.commissioning != null || this.choosingBed != null) && page != Page.RESIDENTS) {
                 continue;
             }
             Button button = addRenderableWidget(Button.builder(enumText("page", page), ignored -> navigate(page, 0, ""))
@@ -279,6 +287,10 @@ public final class SettlementManagementScreen extends Screen {
         }
         this.worldView.active = permits(SettlementPermission.VIEW) && !this.submitting;
         Entry selected = selectedEntry();
+        if (this.choosingBed != null) {
+            action(0, "assign_home", selected instanceof SettlementManagementPayload.Resident && permits(SettlementPermission.STAFF));
+            return;
+        }
         if (this.assigning != null) {
             boolean suitable = selected instanceof SettlementManagementPayload.Area area
                     && area.kind().role() != null && this.assigning.roles().contains(area.kind().role());
@@ -293,6 +305,11 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         switch (this.desiredPage) {
+            case BEDS -> {
+                action(0, "assign_home", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Bed bed && bed.available());
+                action(1, "release_home", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Bed bed && bed.resident() != null);
+                action(2, "bed_resident", selected instanceof SettlementManagementPayload.Bed bed && bed.resident() != null);
+            }
             case PROJECTS -> {
                 action(0, "new_project", permits(SettlementPermission.BUILD) && heldBlueprint() != null
                         && this.snapshot.header() != null && this.snapshot.header().stage().projects() > 0);
@@ -353,6 +370,14 @@ public final class SettlementManagementScreen extends Screen {
 
     private void perform(int action) {
         Entry selected = selectedEntry();
+        if (this.choosingBed != null && selected instanceof SettlementManagementPayload.Resident resident) {
+            this.minecraft.setScreen(new SettlementConfirmScreen(this, text("assign_home"),
+                    text("assign_home_review", name(resident), this.choosingBed.position().toShortString()), () -> {
+                        this.minecraft.setScreen(this.parent);
+                        this.parent.submit(new SettlementManagementActionPayload.Home(resident.id(), this.choosingBed.position(), true));
+                    }));
+            return;
+        }
         if (this.assigning != null && selected instanceof SettlementManagementPayload.Area area) {
             Runnable assign = () -> {
                 this.minecraft.setScreen(this.parent);
@@ -373,6 +398,19 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         switch (this.desiredPage) {
+            case BEDS -> {
+                if (selected instanceof SettlementManagementPayload.Bed bed) {
+                    if (action == 0) {
+                        this.minecraft.setScreen(new SettlementManagementScreen(this.snapshot, this, null, null, bed));
+                    } else if (action == 1) {
+                        this.minecraft.setScreen(new SettlementConfirmScreen(this, text("release_home"),
+                                text("release_home_review", bed.position().toShortString()), () ->
+                                    submit(new SettlementManagementActionPayload.Home(bed.resident(), bed.position(), false))));
+                    } else if (bed.resident() != null) {
+                        navigate(Page.RESIDENTS, 0, bed.resident().toString());
+                    }
+                }
+            }
             case PROJECTS -> {
                 if (action == 3) {
                     this.minecraft.setScreen(new SettlementBlueprintScreen(this));
@@ -509,7 +547,8 @@ public final class SettlementManagementScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        Component heading = this.commissioning != null ? text("choose_builder", this.commissioning.structureLabel())
+        Component heading = this.choosingBed != null ? text("choose_home_resident", this.choosingBed.position().toShortString())
+                : this.commissioning != null ? text("choose_builder", this.commissioning.structureLabel())
                 : this.assigning != null ? text("assign_resident", name(this.assigning))
                 : this.snapshot.header() == null ? this.title : this.snapshot.header().name().isBlank()
                     ? text("unnamed") : Component.literal(this.snapshot.header().name());
@@ -559,6 +598,9 @@ public final class SettlementManagementScreen extends Screen {
             case SettlementManagementPayload.Resident resident -> text("resident_row",
                     resident.baby() ? text("child") : profession(resident.profession()),
                     enumText("presence", resident.presence()), Component.translatableWithFallback("villagerretaliation.gui.settlement.work." + resident.status(), text("work.idle").getString()));
+            case SettlementManagementPayload.Bed bed -> text("bed_row", bed.position().toShortString(),
+                    bed.resident() != null ? text("bed_owner", bed.residentName().isBlank() ? text("unnamed_resident") : Component.literal(bed.residentName()))
+                            : text(bed.available() ? "bed_available" : "bed_unavailable"));
             case SettlementManagementPayload.Area area -> text("area_row", enumText("area", area.kind()), area.workers(),
                     area.kind() == com.jvn.villagerretaliation.settlement.SettlementAreaType.HOME ? text("beds", area.beds()) : text("fixtures", area.fixtures()));
             case SettlementManagementPayload.Depot depot -> text("depot_row", enumText("depot", depot.purpose()), depot.usedSlots(), depot.items());

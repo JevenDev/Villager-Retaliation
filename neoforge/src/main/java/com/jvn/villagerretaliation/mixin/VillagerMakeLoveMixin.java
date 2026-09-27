@@ -86,6 +86,16 @@ public abstract class VillagerMakeLoveMixin {
                 child -> VillagerBirthService.initializeNewborn(level, parent, partner, child, null));
     }
 
+    @Inject(method = "canReach", at = @At("HEAD"), cancellable = true)
+    private void villagerretaliation$preserveAssignedBeds(Villager villager, net.minecraft.core.BlockPos bed,
+                                                         net.minecraft.core.Holder<net.minecraft.world.entity.ai.village.poi.PoiType> type,
+                                                         CallbackInfoReturnable<Boolean> callback) {
+        if (villager.level() instanceof ServerLevel level
+                && !com.jvn.villagerretaliation.settlement.SettlementHousingService.canUse(level, bed, null)) {
+            callback.setReturnValue(false);
+        }
+    }
+
     private static boolean pairAllowed(ServerLevel level, Villager villager) {
         return villager.getBrain().getMemory(MemoryModuleType.BREED_TARGET)
                 .filter(Villager.class::isInstance)

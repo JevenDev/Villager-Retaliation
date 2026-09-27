@@ -68,6 +68,9 @@ public final class SettlementManagementService {
             return false;
         }
         return switch (payload.command()) {
+            case SettlementManagementActionPayload.Home home -> home.assign()
+                    ? SettlementHousingService.assign(player, town, home.resident(), home.bed())
+                    : SettlementHousingService.release(player, town, home.resident(), home.bed());
             case SettlementManagementActionPayload.Advance ignored -> SettlementProgressionService.advance(player, id);
             case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
             case SettlementManagementActionPayload.DraftBlueprint draft -> SettlementBlueprintService.draft(player, town, draft.structure());
@@ -142,6 +145,7 @@ public final class SettlementManagementService {
             switch (request.page()) {
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
+                case BEDS -> beds(level, town, entries);
                 case DEPOTS -> depots(town, entries);
                 case PROJECTS -> town.projects().values().forEach(project -> entries.add(new SettlementManagementPayload.Project(
                         project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.status(),
@@ -212,6 +216,26 @@ public final class SettlementManagementService {
         }
     }
 
+    private static void beds(ServerLevel level, SettlementRecord town, List<Entry> entries) {
+        town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.HOME)
+                .forEach(area -> SettlementBuildingService.refresh(level, town, area));
+        SettlementHousingService.update(level, town);
+        var seen = new java.util.HashSet<BlockPos>();
+        for (var area : town.areas().values()) {
+            var survey = town.surveys().get(area.id());
+            if (!area.enabled() || area.type() != SettlementAreaType.HOME || survey == null) continue;
+            for (var bed : survey.beds()) {
+                if (!seen.add(bed)) continue;
+                var resident = SettlementHousingService.owner(town, bed);
+                String name = resident == null ? "" : VillagerSocialGraphSavedData.get(level).knownName(resident).orElse("");
+                var id = UUID.nameUUIDFromBytes((town.id().value() + ":" + bed.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                entries.add(new SettlementManagementPayload.Bed(id, display(area.name()), bed, resident, display(name),
+                        resident == null && Boolean.TRUE.equals(SettlementHousingService.availability(town, bed))
+                                && SettlementHousingService.canUse(level, bed, null)));
+            }
+        }
+    }
+
     private static void areas(SettlementRecord town, List<Entry> entries) {
         for (var area : town.areas().values()) {
             var survey = town.surveys().get(area.id());
@@ -241,6 +265,7 @@ public final class SettlementManagementService {
     private static String searchable(Entry entry) {
         return entry.name() + " " + entry.id() + switch (entry) {
             case SettlementManagementPayload.Resident resident -> " " + resident.profession().getPath();
+            case SettlementManagementPayload.Bed bed -> " " + bed.position().toShortString() + " " + bed.residentName() + " " + bed.resident();
             case SettlementManagementPayload.Area area -> " " + area.kind().name();
             case SettlementManagementPayload.Depot depot -> " " + depot.purpose().name();
             case SettlementManagementPayload.Applicant applicant -> " " + applicant.profession().getPath();

@@ -279,13 +279,19 @@ public final class SettlementRemoteConstructionGameTests {
         worker.updateInventory(level.registryAccess(), items);
         worker.changed();
         var project = begin(helper, fixture);
-        for (int index = 0; index < 10; index++) SettlementBackgroundConstruction.tick(level, fixture.town(), worker, 200, 1.0D);
+        for (int index = 0; index < 10; index++) {
+            SettlementBuildingService.refresh(level, fixture.town(), fixture.area());
+            SettlementBackgroundConstruction.tick(level, fixture.town(), worker, 200, 1.0D);
+        }
         helper.assertTrue(project.active() && level.getBlockState(position).isAir(), "the remote project cannot build without an actual supply");
         items = worker.items(level.registryAccess());
         items.set(HiredJobInventory.HOTBAR_START, new ItemStack(Items.OAK_PLANKS));
         worker.updateInventory(level.registryAccess(), items);
         worker.changed();
-        for (int index = 0; index < 40 && project.active(); index++) SettlementBackgroundConstruction.tick(level, fixture.town(), worker, 200, 1.0D);
+        for (int index = 0; index < 40 && project.active(); index++) {
+            SettlementBuildingService.refresh(level, fixture.town(), fixture.area());
+            SettlementBackgroundConstruction.tick(level, fixture.town(), worker, 200, 1.0D);
+        }
         helper.assertValueEqual(project.status(), SettlementProject.Status.COMPLETED,
                 "the commissioned project completes through the background worker: " + worker.status() + " / " + project.blocker());
         SettlementConstructionSiteService.update(level, fixture.town());

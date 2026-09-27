@@ -47,6 +47,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case TRADE -> entry instanceof Order;
                 case DELEGATES -> entry instanceof Delegate;
                 case PROJECTS -> entry instanceof Project;
+                case BEDS -> entry instanceof Bed;
                 case SUMMARY -> false;
             };
             if (!valid) {
@@ -143,6 +144,12 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeEnum(project.phase());
                     buffer.writeUtf(project.missingMaterials(), 512);
                 }
+                case Bed bed -> {
+                    buffer.writeBlockPos(bed.position());
+                    writeOptionalId(buffer, bed.resident());
+                    buffer.writeUtf(bed.residentName(), 128);
+                    buffer.writeBoolean(bed.available());
+                }
                 case Delegate delegate -> writePermissions(buffer, delegate.permissions());
             }
         }
@@ -203,6 +210,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case TRADE -> new Order(id, name, buffer.readEnum(SettlementTradeOrder.Direction.class),
                         buffer.readResourceLocation(), buffer.readVarInt(), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer),
                         buffer.readBoolean(), buffer.readUtf(64));
+                case BEDS -> new Bed(id, name, buffer.readBlockPos(), readOptionalId(buffer), buffer.readUtf(128), buffer.readBoolean());
                 case DELEGATES -> new Delegate(id, name, readPermissions(buffer));
                 case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
                         buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
@@ -304,9 +312,19 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
     }
 
-    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project {
+    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed {
         UUID id();
         String name();
+    }
+
+    public record Bed(UUID id, String name, BlockPos position, UUID resident, String residentName, boolean available) implements Entry {
+        public Bed {
+            if (id == null || name == null || name.length() > 128 || position == null
+                    || residentName == null || residentName.length() > 128 || available && resident != null) {
+                throw new IllegalArgumentException("Invalid settlement bed");
+            }
+            position = position.immutable();
+        }
     }
 
     public record Town(UUID id, String name, SettlementStage stage, int population, BlockPos center) implements Entry {
