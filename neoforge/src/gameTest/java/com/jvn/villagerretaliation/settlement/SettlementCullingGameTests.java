@@ -341,6 +341,7 @@ public final class SettlementCullingGameTests {
                 SettlementEntityDeathService.update(level, fixture.town(), level.getGameTime());
                 var orb = level.getEntity(experience.id());
                 helper.assertTrue(orb instanceof net.minecraft.world.entity.ExperienceOrb, "pending experience becomes an actual native orb");
+                helper.assertTrue(fixture.town().groundExperience().containsKey(experience.id()), "delivered death experience enters native transition tracking");
                 helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerWorkExperience.belongsTo(
                         (net.minecraft.world.entity.ExperienceOrb) orb, fixture.worker().context(level, fixture.town())),
                         "native delivery retains work-experience ownership");

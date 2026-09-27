@@ -86,6 +86,15 @@ public final class SettlementChunkReceipts {
         return data.getCompound("GroundItems");
     }
 
+    static CompoundTag groundExperience(LevelChunk chunk, boolean create) {
+        if (!create && !chunk.hasData(RECEIPTS)) return new CompoundTag();
+        var data = chunk.getData(RECEIPTS);
+        if (create && !data.contains("GroundExperience", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+            data.put("GroundExperience", new CompoundTag());
+        }
+        return data.getCompound("GroundExperience");
+    }
+
     static long lastTick(LevelChunk chunk) {
         return chunk.hasData(RECEIPTS) ? chunk.getData(RECEIPTS).getLong("LastTick") : 0L;
     }

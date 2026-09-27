@@ -12,6 +12,9 @@ public final class SettlementSimulationHandoff {
     }
 
     public static void stopTicking(Entity entity) {
+        if (entity instanceof net.minecraft.world.entity.ExperienceOrb orb) {
+            SettlementGroundExperienceService.onUnloaded(orb);
+        }
         if (entity instanceof net.minecraft.world.entity.item.ItemEntity item) {
             SettlementGroundItemService.onUnloaded(item);
         }

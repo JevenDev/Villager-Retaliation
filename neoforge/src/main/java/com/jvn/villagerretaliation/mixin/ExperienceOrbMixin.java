@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.mixin;
 
+import com.jvn.villagerretaliation.settlement.SettlementGroundExperienceService;
 import com.jvn.villagerretaliation.villager.VillagerEquipmentMending;
 import com.jvn.villagerretaliation.villager.VillagerWorkExperience;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -28,7 +29,8 @@ public abstract class ExperienceOrbMixin {
     private void villagerretaliation$preventPlayerTakingVillagerWorkExperience(
             Player player,
             CallbackInfo callback) {
-        if (VillagerWorkExperience.isOwned((ExperienceOrb) (Object) this)) {
+        if (!SettlementGroundExperienceService.onActive((ExperienceOrb) (Object) this)
+                || VillagerWorkExperience.isOwned((ExperienceOrb) (Object) this)) {
             callback.cancel();
         }
     }
@@ -60,6 +62,34 @@ public abstract class ExperienceOrbMixin {
         if (VillagerWorkExperience.isOwned(candidate)) {
             callback.setReturnValue(false);
         }
+    }
+
+    @Inject(method = "playerTouch", at = @At("RETURN"))
+    private void villagerretaliation$observePlayerExperiencePickup(Player player, CallbackInfo callback) {
+        SettlementGroundExperienceService.onChanged((ExperienceOrb) (Object) this);
+    }
+
+    @Inject(method = "merge", at = @At("HEAD"), cancellable = true)
+    private void villagerretaliation$reconcileExperienceBeforeMerge(ExperienceOrb other, CallbackInfo callback) {
+        if (!SettlementGroundExperienceService.onActive((ExperienceOrb) (Object) this)
+                || !SettlementGroundExperienceService.onActive(other)) callback.cancel();
+    }
+
+    @Inject(method = "merge", at = @At("RETURN"))
+    private void villagerretaliation$observeMergedExperience(ExperienceOrb other, CallbackInfo callback) {
+        SettlementGroundExperienceService.onChanged((ExperienceOrb) (Object) this);
+    }
+
+    @Inject(method = "tryMergeToExisting", at = @At("HEAD"))
+    private static void villagerretaliation$reconcileExperienceBeforeAward(net.minecraft.server.level.ServerLevel level,
+                                                                         Vec3 position, int value, CallbackInfoReturnable<Boolean> callback) {
+        SettlementGroundExperienceService.beforeAward(level, position);
+    }
+
+    @Inject(method = "award", at = @At("RETURN"))
+    private static void villagerretaliation$observeAwardedExperience(net.minecraft.server.level.ServerLevel level,
+                                                                   Vec3 position, int value, CallbackInfo callback) {
+        SettlementGroundExperienceService.onAwarded(level, position);
     }
 
     @Inject(method = "scanForEntities", at = @At("TAIL"))
@@ -122,6 +152,7 @@ public abstract class ExperienceOrbMixin {
         if (count <= 0) {
             orb.discard();
         }
+        SettlementGroundExperienceService.onChanged(orb);
         callback.cancel();
     }
 
