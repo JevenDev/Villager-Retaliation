@@ -35,6 +35,7 @@ public final class SettlementBackgroundService {
         SettlementForestService.update(level, town, now);
         SettlementMineService.update(level, town, now);
         SettlementEntityDeathService.update(level, town, now);
+        SettlementHuntingTargetService.update(level, town, now);
         SettlementLivestockService.update(level, town, now);
         SettlementGroundItemService.update(level, town, now);
         for (var worker : town.workers().values()) SettlementBackgroundFishing.migrateExperience(level, town, worker);

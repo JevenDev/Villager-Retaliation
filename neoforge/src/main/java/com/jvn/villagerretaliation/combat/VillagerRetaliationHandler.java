@@ -718,6 +718,12 @@ public final class VillagerRetaliationHandler {
     }
 
     public static boolean engageCustomTarget(Villager villager, LivingEntity target, boolean announceRetaliation) {
+        if (!canEngageCustomTarget(villager, target)) return false;
+        anger(villager, target, false, announceRetaliation);
+        return true;
+    }
+
+    public static boolean canEngageCustomTarget(Villager villager, LivingEntity target) {
         if (villager == null
                 || target == null
                 || !villager.isAlive()
@@ -739,7 +745,6 @@ public final class VillagerRetaliationHandler {
                         VillageCombatAuthorizationService.isAuthorized(villager, target)).denied()) {
             return false;
         }
-        anger(villager, target, false, announceRetaliation);
         return true;
     }
 

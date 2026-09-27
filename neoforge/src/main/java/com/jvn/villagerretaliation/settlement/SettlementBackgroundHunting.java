@@ -75,7 +75,10 @@ final class SettlementBackgroundHunting {
                         allDepots, depots, allowed)) worker.status("hunting_storage_unreachable");
                 return;
             }
-            worker.status("no_observed_hunting_target");
+            var target = SettlementHuntingTargetService.select(level, town, worker, owner);
+            worker.huntingTarget(target == null ? null : target.getUUID());
+            worker.status(target == null ? "no_observed_hunting_target" : "tracking_hunting_target");
+            town.changed();
         } finally {
             var snapshot = inventory.captureSnapshot();
             if (!snapshot.equals(worker.inventory())) worker.changed();

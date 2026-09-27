@@ -388,9 +388,14 @@ public final class VillagerRetaliationRetaliationUtil {
         if (!(villager.level() instanceof ServerLevel level) || target == null || !target.isAlive()) {
             return false;
         }
+        return hasClearLineOfSight(level, villager, target);
+    }
+
+    public static boolean hasClearLineOfSight(net.minecraft.world.level.BlockGetter blocks, AbstractVillager villager, LivingEntity target) {
+        if (target == null || !target.isAlive()) return false;
         Vec3 start = villager.getEyePosition();
         Vec3 end = target.getEyePosition();
-        return level.clip(new ClipContext(
+        return blocks.clip(new ClipContext(
                 start,
                 end,
                 ClipContext.Block.COLLIDER,

@@ -984,6 +984,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof LivingEntity living) {
+            com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.onUnloaded(living);
+        }
         if (event.getEntity() instanceof net.minecraft.world.entity.ExperienceOrb orb) {
             com.jvn.villagerretaliation.settlement.SettlementGroundExperienceService.onUnloaded(orb);
         }

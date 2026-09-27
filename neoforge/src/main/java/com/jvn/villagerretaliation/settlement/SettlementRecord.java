@@ -44,6 +44,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementDeparture> departures = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
     private final Map<UUID, SettlementLivestock> livestock = new LinkedHashMap<>();
+    private final Map<UUID, SettlementHuntingTarget> huntingTargets = new LinkedHashMap<>();
     private final Map<UUID, SettlementAnimalBirth> animalBirths = new LinkedHashMap<>();
     private final Map<UUID, SettlementItemDrop> itemDrops = new LinkedHashMap<>();
     private final Map<UUID, SettlementGroundItem> groundItems = new LinkedHashMap<>();
@@ -386,6 +387,19 @@ public final class SettlementRecord {
 
     void removeGroundExperience(UUID id) {
         if (this.groundExperience.remove(id) != null) changed();
+    }
+
+    Map<UUID, SettlementHuntingTarget> huntingTargets() {
+        return Collections.unmodifiableMap(this.huntingTargets);
+    }
+
+    void recordHuntingTarget(SettlementHuntingTarget target) {
+        this.huntingTargets.put(target.id(), target);
+        changed();
+    }
+
+    void removeHuntingTarget(UUID id) {
+        if (this.huntingTargets.remove(id) != null) changed();
     }
 
     Map<UUID, SettlementEntityDeath> entityDeaths() {
@@ -799,6 +813,9 @@ public final class SettlementRecord {
         ListTag livestockTags = new ListTag();
         this.livestock.values().forEach(animal -> livestockTags.add(animal.save()));
         tag.put("Livestock", livestockTags);
+        var huntingTags = new ListTag();
+        this.huntingTargets.values().forEach(target -> huntingTags.add(target.save()));
+        tag.put("HuntingTargets", huntingTags);
         ListTag animalBirthTags = new ListTag();
         this.animalBirths.values().forEach(birth -> animalBirthTags.add(birth.save()));
         tag.put("AnimalBirths", animalBirthTags);
@@ -904,6 +921,12 @@ public final class SettlementRecord {
             var animal = SettlementLivestock.load((CompoundTag) raw);
             if (record.livestock.putIfAbsent(animal.id(), animal) != null) {
                 throw new IllegalArgumentException("Livestock duplicates an animal identity");
+            }
+        }
+        for (Tag raw : tag.getList("HuntingTargets", Tag.TAG_COMPOUND)) {
+            var target = SettlementHuntingTarget.load((CompoundTag) raw);
+            if (record.huntingTargets.putIfAbsent(target.id(), target) != null) {
+                throw new IllegalArgumentException("Hunting targets duplicate an identity");
             }
         }
         for (Tag raw : tag.getList("AnimalBirths", Tag.TAG_COMPOUND)) {

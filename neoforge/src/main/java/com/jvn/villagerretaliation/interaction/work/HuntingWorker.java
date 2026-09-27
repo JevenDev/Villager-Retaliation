@@ -227,15 +227,15 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return false;
         }
         state.putLong(NEXT_TARGET_SCAN_GAME_TIME_TAG, gameTime + TARGET_SCAN_INTERVAL_TICKS);
-        return findNearestTarget(level, villager, context, targets)
+        return com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.requestedNativeTarget(villager,
+                        target -> isEligibleTarget(villager, target, context, targets))
+                .or(() -> findNearestTarget(level, villager, context, targets))
                 .filter(target -> VillagerRetaliationHandler.engageCustomTarget(villager, target, false))
                 .isPresent();
     }
 
     private static Optional<LivingEntity> findNearestTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredHuntingTargets.Selection targets) {
-        double horizontalRadius = Math.max(6.0D, context.horizontalSearchRadius() + TARGET_SCAN_RADIUS_PADDING);
-        double verticalRadius = Math.max(4.0D, context.verticalRadius() + 2.0D);
-        var bounds = villager.getBoundingBox().inflate(horizontalRadius, verticalRadius, horizontalRadius);
+        var bounds = targetSearchBounds(villager, context.horizontalSearchRadius(), context.verticalRadius());
 
         // Hostile classification can include custom LivingEntity implementations, so preserve the
         // broad query for that mode. Animal-only hunting is the common case and can avoid visiting
@@ -282,13 +282,22 @@ public final class HuntingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             HiredHuntingTargets.Selection targets,
             boolean requireLineOfSight) {
+        return isEligibleTarget(villager, target, targets)
+                && context.isInsideWorkAreaOrRoute(target.blockPosition())
+                && (!requireLineOfSight || VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target));
+    }
+
+    public static net.minecraft.world.phys.AABB targetSearchBounds(Villager villager, int horizontal, int vertical) {
+        double radius = Math.max(6.0D, horizontal + TARGET_SCAN_RADIUS_PADDING);
+        return villager.getBoundingBox().inflate(radius, Math.max(4.0D, vertical + 2.0D), radius);
+    }
+
+    public static boolean isEligibleTarget(Villager villager, LivingEntity target, HiredHuntingTargets.Selection targets) {
         if (target == villager
                 || targets.none()
                 || !matchesSelectedCategory(villager, target, targets)
                 || !target.isAlive()
                 || !villager.canAttack(target)
-                || requireLineOfSight && !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)
-                || !context.isInsideWorkAreaOrRoute(target.blockPosition())
                 || !VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)
                 || target.isAlliedTo(villager)
                 || target instanceof AbstractVillager

@@ -26,6 +26,7 @@ public final class SettlementWorkerState {
     private static final String VERSION_TAG = "VillagerRetaliationSettlementWorkVersion";
     private final UUID id;
     private UUID area;
+    private UUID huntingTarget;
     private HiredVillagerRole role;
     private BlockPos position;
     private CompoundTag inventory = new CompoundTag();
@@ -46,6 +47,14 @@ public final class SettlementWorkerState {
 
     public UUID id() {
         return this.id;
+    }
+
+    UUID huntingTarget() {
+        return this.huntingTarget;
+    }
+
+    void huntingTarget(UUID target) {
+        this.huntingTarget = target;
     }
 
     public UUID area() {
@@ -107,6 +116,7 @@ public final class SettlementWorkerState {
     }
 
     void observe(ServerLevel level, Villager villager, SettlementWorkforceService.Duty duty, long now) {
+        if (!duty.area().id().equals(this.area) || duty.area().type().role() != this.role) this.huntingTarget = null;
         this.area = duty.area().id();
         this.role = duty.area().type().role();
         this.position = villager.blockPosition().immutable();
@@ -279,6 +289,7 @@ public final class SettlementWorkerState {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id);
         tag.putUUID("Area", this.area);
+        if (this.huntingTarget != null) tag.putUUID("HuntingTarget", this.huntingTarget);
         tag.putString("Role", this.role.name());
         tag.putLong("Position", this.position.asLong());
         tag.put("Inventory", this.inventory.copy());
@@ -301,6 +312,7 @@ public final class SettlementWorkerState {
         }
         var state = new SettlementWorkerState(tag.getUUID("Id"));
         state.area = tag.getUUID("Area");
+        state.huntingTarget = tag.hasUUID("HuntingTarget") ? tag.getUUID("HuntingTarget") : null;
         state.role = HiredVillagerRole.valueOf(tag.getString("Role"));
         state.position = BlockPos.of(tag.getLong("Position"));
         state.inventory = tag.getCompound("Inventory").copy();
