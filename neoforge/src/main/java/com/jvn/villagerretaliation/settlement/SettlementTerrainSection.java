@@ -82,6 +82,11 @@ final class SettlementTerrainSection {
         return this.blocks[index(position)];
     }
 
+    BlockState changedFrom(BlockPos position) {
+        return this.pending && contains(position) && this.blocks[index(position)] != this.baseline[index(position)]
+                ? this.baseline[index(position)] : null;
+    }
+
     boolean canChange(BlockPos position, BlockState state) {
         return !this.conflict && contains(position) && !state.hasBlockEntity() && !state(position).hasBlockEntity();
     }

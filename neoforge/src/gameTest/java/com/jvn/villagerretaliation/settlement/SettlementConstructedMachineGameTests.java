@@ -382,6 +382,43 @@ public final class SettlementConstructedMachineGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_constructed_machines")
+    public static void constructedFixturesRequireCompatibleRecordedTerrain(GameTestHelper helper) {
+        SettlementBackgroundConstructionGameTests.capacityFixture(helper, 41, Map.of(BlockPos.ZERO, Blocks.FURNACE.defaultBlockState()), fixture -> {
+            build(helper, fixture, Items.FURNACE);
+            var smeltery = new SettlementArea(UUID.randomUUID(), SettlementAreaType.SMELTERY, "Smeltery",
+                    fixture.area().min(), fixture.area().max(), 5, true);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), smeltery), "the completed machine has its final use");
+            var retired = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FORESTRY, "Retired forest",
+                    fixture.site().min(), fixture.site().max(), 5, true);
+            var forest = new SettlementForest(retired);
+            fixture.site().sections().values().forEach(section -> forest.record(SettlementForestSection.load(retired.id(), section.save())));
+            helper.assertTrue(forest.change(Map.of(fixture.origin().west(), Blocks.OAK_LOG.defaultBlockState())), "earlier pending terrain work is retained");
+            fixture.town().recordForest(forest);
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), smeltery);
+            helper.assertValueEqual(fixture.town().surveys().get(smeltery.id()).fixtures().size(), 1,
+                    "a funded placement supersedes compatible older observations of its starting block");
+            SettlementFurnaceService.update(helper.getLevel(), fixture.town(), 0L);
+            var machine = fixture.town().furnaces().get(fixture.origin());
+            fill(helper, machine, 2);
+            SettlementFurnaceService.update(helper.getLevel(), fixture.town(), 100L);
+            var processing = machine.save().getCompound("Contents").copy();
+            helper.assertTrue(forest.change(Map.of(fixture.origin(), Blocks.OAK_LOG.defaultBlockState())), "another pending change can contradict the placement");
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), smeltery);
+            helper.assertTrue(fixture.town().surveys().get(smeltery.id()).fixtures().isEmpty(),
+                    "conflicting recorded changes cannot keep a constructed workstation operational");
+            SettlementFurnaceService.update(helper.getLevel(), fixture.town(), 200L);
+            helper.assertValueEqual(machine.save().getCompound("Contents"), processing, "the conflict pauses processing without consuming more input or fuel");
+            helper.assertTrue(fixture.project().site().pending(), "inspection preserves the funded construction journal for reconciliation");
+            forest.change(Map.of(fixture.origin(), Blocks.AIR.defaultBlockState()));
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), smeltery);
+            SettlementFurnaceService.update(helper.getLevel(), fixture.town(), 300L);
+            helper.assertValueEqual(machine.items(helper.getLevel().registryAccess()).get(2).getCount(), 1,
+                    "compatible recorded terrain lets the same paid recipe finish without replaying its paused interval");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "conflict checks never load the remote site");
+        });
+    }
+
     private static void build(GameTestHelper helper, Fixture fixture, Item material) {
         fixture.depot().setItem(0, new ItemStack(material));
         SettlementBackgroundConstructionGameTests.work(helper, fixture, 50);

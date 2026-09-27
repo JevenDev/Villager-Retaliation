@@ -11,6 +11,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 final class SettlementConstructionObservations {
     private final Map<BlockPos, List<SettlementConstructionSite>> sections = new HashMap<>();
     private final Map<BlockPos, BlockState> changes = new HashMap<>();
+    private final Map<BlockPos, BlockState> beforeChanges = new HashMap<>();
     private final java.util.Set<SettlementConstructionSite> unavailable = new java.util.HashSet<>();
 
     SettlementConstructionObservations(SettlementRecord town, SettlementBuildingSurvey.ObservedBlocks blocks) {
@@ -20,6 +21,7 @@ final class SettlementConstructionObservations {
             if (site == null || !site.pending()) continue;
             site.sections().keySet().forEach(origin -> this.sections.computeIfAbsent(origin, ignored -> new ArrayList<>()).add(site));
             var projected = new HashMap<BlockPos, BlockState>();
+            var before = new HashMap<BlockPos, BlockState>();
             boolean compatible = !site.conflict();
             for (var placement : site.placements().values()) {
                 for (var part : placement.parts()) {
@@ -30,6 +32,7 @@ final class SettlementConstructionObservations {
                             || chunk != null && projected.getOrDefault(pos, chunk.getBlockState(pos)) != part.before()) {
                         compatible = false;
                     }
+                    before.putIfAbsent(pos, part.before());
                     projected.put(pos, part.after());
                 }
             }
@@ -39,6 +42,7 @@ final class SettlementConstructionObservations {
                         throw new IllegalStateException("Pending construction projects overlap");
                     }
                     this.changes.put(pos, state);
+                    this.beforeChanges.put(pos, before.get(pos));
                 });
             } else {
                 this.unavailable.add(site);
@@ -52,6 +56,10 @@ final class SettlementConstructionObservations {
 
     BlockState changedState(BlockPos pos) {
         return this.changes.get(pos);
+    }
+
+    BlockState changedFrom(BlockPos pos) {
+        return this.beforeChanges.get(pos);
     }
 
     boolean observedChunk(int x, int z) {

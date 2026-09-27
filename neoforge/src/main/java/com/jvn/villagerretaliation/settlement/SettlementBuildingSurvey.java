@@ -50,7 +50,7 @@ public final class SettlementBuildingSurvey {
                 if (chunk != null) {
                     candidates.addAll(points(level, area, chunk));
                 } else {
-                    if (!blocks.construction.observedChunk(chunkX, chunkZ)) {
+                    if (!blocks.terrain.observedChunk(chunkX, chunkZ)) {
                         fullyLoaded = false;
                         continue;
                     }
@@ -67,7 +67,7 @@ public final class SettlementBuildingSurvey {
                         }
                     }
                 }
-                for (var entry : blocks.construction.changes().entrySet()) {
+                for (var entry : blocks.terrain.constructionChanges().entrySet()) {
                     var pos = entry.getKey();
                     if (pos.getX() >> 4 == chunkX && pos.getZ() >> 4 == chunkZ && area.contains(pos)
                             && relevant(area.type(), entry.getValue())) candidates.add(pos);
@@ -224,7 +224,7 @@ public final class SettlementBuildingSurvey {
     static final class ObservedBlocks implements BlockGetter {
         private final ServerLevel level;
         private final LevelChunk supplied;
-        private final SettlementConstructionObservations construction;
+        private final SettlementTerrainObservations terrain;
 
         ObservedBlocks(ServerLevel level, LevelChunk supplied) {
             this(level, supplied, null);
@@ -233,7 +233,7 @@ public final class SettlementBuildingSurvey {
         ObservedBlocks(ServerLevel level, LevelChunk supplied, SettlementRecord town) {
             this.level = level;
             this.supplied = supplied;
-            this.construction = new SettlementConstructionObservations(town, this);
+            this.terrain = new SettlementTerrainObservations(town, this);
         }
 
         ServerLevel level() {
@@ -246,12 +246,15 @@ public final class SettlementBuildingSurvey {
         }
 
         boolean observed(BlockPos position) {
-            return chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16)) != null
-                    || this.construction.state(position) != null;
+            return this.terrain.state(position) != null;
         }
 
         boolean blocked(BlockPos position) {
-            return chunk(position.getX() >> 4, position.getZ() >> 4) == null && this.construction.blocked(position);
+            return this.terrain.blocked(position);
+        }
+
+        boolean pendingConstruction(BlockPos position, BlockState expected) {
+            return this.terrain.constructionChanges().get(position) == expected && this.terrain.state(position) == expected;
         }
 
         @Override
@@ -262,11 +265,7 @@ public final class SettlementBuildingSurvey {
 
         @Override
         public BlockState getBlockState(BlockPos position) {
-            var chunk = chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16));
-            var pending = this.construction.changedState(position);
-            if (pending != null) return pending;
-            if (chunk != null) return chunk.getBlockState(position);
-            var observed = this.construction.state(position);
+            var observed = this.terrain.state(position);
             return observed == null ? Blocks.AIR.defaultBlockState() : observed;
         }
 

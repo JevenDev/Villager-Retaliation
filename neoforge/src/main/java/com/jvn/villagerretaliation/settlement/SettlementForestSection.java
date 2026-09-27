@@ -28,6 +28,10 @@ final class SettlementForestSection {
         return section;
     }
 
+    SettlementTerrainSection terrain() {
+        return this.terrain;
+    }
+
     BlockPos origin() {
         return this.terrain.origin();
     }

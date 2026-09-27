@@ -17,8 +17,7 @@ final class SettlementConstructionMachines {
 
     SettlementConstructionMachines(ServerLevel level, SettlementRecord town, LevelChunk supplied) {
         if (!town.dimension().equals(level.dimension().location())) return;
-        var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, supplied);
-        var observations = new SettlementConstructionObservations(town, blocks);
+        SettlementBuildingSurvey.ObservedBlocks blocks = null;
         for (var project : town.projects().values()) {
             var site = project.site();
             if (site == null) continue;
@@ -26,10 +25,11 @@ final class SettlementConstructionMachines {
                 for (var part : placement.parts()) {
                     if (!part.after().is(Blocks.FURNACE) && !part.after().is(Blocks.SMOKER)
                             && !part.after().is(Blocks.BLAST_FURNACE) && !part.after().is(Blocks.BREWING_STAND)) continue;
+                    if (blocks == null) blocks = new SettlementBuildingSurvey.ObservedBlocks(level, supplied, town);
                     var pos = part.position();
                     var chunk = blocks.chunk(pos.getX() >> 4, pos.getZ() >> 4);
                     if (chunk != null && placement.applied(chunk, project.id(), pos)) continue;
-                    this.sources.put(pos, new Source(placement.id(), part, observations.changedState(pos) == part.after()));
+                    this.sources.put(pos, new Source(placement.id(), part, blocks.pendingConstruction(pos, part.after())));
                 }
             }
         }

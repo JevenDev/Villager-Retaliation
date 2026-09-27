@@ -80,6 +80,19 @@ public final class SettlementFieldPlot {
         return this.crop;
     }
 
+    BlockState observedState(BlockPos position) {
+        if (this.position.equals(position)) return this.soil;
+        if (this.position.above().equals(position)) return this.crop;
+        return this.topKnown && this.position.above(2).equals(position) ? this.top : null;
+    }
+
+    BlockState changedFrom(BlockPos position) {
+        if (!this.pending) return null;
+        if (this.position.equals(position)) return this.soil != this.baselineSoil ? this.baselineSoil : null;
+        if (this.position.above().equals(position)) return this.crop != this.baselineCrop ? this.baselineCrop : null;
+        return this.topKnown && this.position.above(2).equals(position) && this.top != this.baselineTop ? this.baselineTop : null;
+    }
+
     static boolean supportedCrop(BlockState state) {
         return SettlementFarmPlants.supported(state);
     }
