@@ -27,15 +27,31 @@ final class SettlementHuntingCombat {
             return;
         }
         if (elapsed <= 0 || now <= worker.huntingCombatAt()) return;
-        long at = Math.max(Math.max(worker.huntingCombatAt(), Math.max(worker.huntingAttackAt(), VillagerRetaliationHandler.nextMeleeAttackTick(owner))),
-                Math.max(state.observedAt(), Math.max(0L, now - Math.clamp(elapsed, 0, 200))));
-        long nextAttack = worker.huntingAttackAt();
+        long at = Math.max(worker.huntingCombatAt() + 1L,
+                Math.max(state.observedAt(), Math.max(0L, now - Math.clamp(elapsed, 0, 200) + 1L)));
+        long nextAttack = Math.max(worker.huntingAttackAt(), VillagerRetaliationHandler.nextMeleeAttackTick(owner));
         try {
             var terrain = new SettlementExperienceTerrain(level, town);
+            var pursuit = new SettlementHuntingPursuit(level, town, worker);
+            ((LivingEntityCombatAccessor) owner).villagerretaliation$detectEquipmentUpdates();
             while (at <= now && target.isAlive() && owner.isAlive()) {
                 if (!HuntingWorker.isEligibleTarget(owner, target, HiredHuntingTargets.fromState(worker.settings()))) break;
                 worker.huntingTimers(owner, at);
                 var readiness = VillagerRetaliationHandler.prepareObservedMelee(owner, target, terrain, at);
+                if (readiness == VillagerRetaliationHandler.ObservedMelee.OUT_OF_REACH) {
+                    var before = owner.saveWithoutId(new CompoundTag());
+                    if (!pursuit.step(owner, target)) {
+                        worker.status("hunting_path_blocked");
+                        break;
+                    }
+                    worker.huntingEngaged(target.getUUID());
+                    worker.huntingMoved(owner, before, at);
+                    var care = town.residents().get(worker.id());
+                    if (care != null) care.combat(owner);
+                    worker.status("tracking_hunting_target");
+                    at++;
+                    continue;
+                }
                 if (readiness != VillagerRetaliationHandler.ObservedMelee.READY) {
                     worker.status(switch (readiness) {
                         case RETREAT -> "avoiding_hunting_target";
@@ -46,13 +62,27 @@ final class SettlementHuntingCombat {
                     });
                     break;
                 }
+                var movementBefore = owner.saveWithoutId(new CompoundTag());
+                if (pursuit.coast(owner)) {
+                    worker.huntingMoved(owner, movementBefore, at);
+                    var care = town.residents().get(worker.id());
+                    if (care != null) care.combat(owner);
+                    if (!com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.canMeleeHit(terrain, owner, target)) {
+                        at++;
+                        continue;
+                    }
+                }
+                if (at < nextAttack) {
+                    at++;
+                    continue;
+                }
                 state.restoreTimers(target, at);
                 ((LivingEntityCombatAccessor) owner).villagerretaliation$detectEquipmentUpdates();
                 ((LivingEntityCombatAccessor) target).villagerretaliation$detectEquipmentUpdates();
                 var targetBefore = target.saveWithoutId(new CompoundTag());
                 var ownerBefore = owner.saveWithoutId(new CompoundTag());
-                var targetPosition = target.blockPosition().immutable();
-                var ownerPosition = owner.blockPosition().immutable();
+                var targetPosition = state.nativePosition();
+                var ownerPosition = worker.nativePosition();
                 try (var victimCapture = new SettlementDeathCapture(target);
                      var ownerCapture = new SettlementDeathCapture(owner)) {
                     worker.huntingEngaged(target.getUUID());
@@ -74,7 +104,7 @@ final class SettlementHuntingCombat {
                         break;
                     }
                 }
-                at = nextAttack;
+                at++;
             }
         } catch (SettlementExperienceTerrain.Unobserved unavailable) {
             worker.status("hunting_visibility_unobserved");

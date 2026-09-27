@@ -756,6 +756,12 @@ public final class VillagerRetaliationHandler {
         return ObservedMelee.READY;
     }
 
+    public static double observedMeleeMovementSpeed(Villager villager, LivingEntity target) {
+        double movementSpeed = ACTOR_POLICY.movementSpeed(villager)
+                * VillagerArmorerCombatTactics.movementSpeedFactor(villager);
+        return VillagerMountSpeedPolicy.toward(villager, target, movementSpeed);
+    }
+
     public enum ObservedMelee {
         READY, UNAVAILABLE, RETREAT, RANGED, OUT_OF_REACH, BLOCKING
     }

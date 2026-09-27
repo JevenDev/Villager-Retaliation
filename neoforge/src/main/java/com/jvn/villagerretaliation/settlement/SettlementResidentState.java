@@ -139,6 +139,7 @@ public final class SettlementResidentState {
     }
 
     void combat(Villager villager) {
+        this.position = villager.blockPosition().immutable();
         this.health = Math.max(1.0F, villager.getHealth());
         this.maxHealth = villager.getMaxHealth();
         this.downed = VillagerDownedService.isDowned(villager);

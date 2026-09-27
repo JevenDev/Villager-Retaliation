@@ -72,7 +72,7 @@ public final class SettlementHuntingTargetService {
                     && recordable(target) && (contains(town, target.blockPosition()) || state.modified())) {
                 state.observe(target, level.isPositionEntityTicking(target.blockPosition()) ? now : state.observedAt());
                 town.changed();
-            } else if (existing != null || level.areEntitiesLoaded(ChunkPos.asLong(state.position())) || !contains(town, state.position()) && !state.modified()) {
+            } else if (existing != null || level.areEntitiesLoaded(ChunkPos.asLong(state.nativePosition())) || !contains(town, state.position()) && !state.modified()) {
                 if (existing instanceof LivingEntity target && state.matches(target) && recordable(target)) {
                     state.restore(target, target.level().getGameTime());
                 }
@@ -141,7 +141,7 @@ public final class SettlementHuntingTargetService {
             if (existing instanceof LivingEntity actual && actual.level() == level && state.matches(actual)) {
                 state.restore(actual, level.getGameTime());
                 target = actual;
-            } else if (existing == null && !level.areEntitiesLoaded(ChunkPos.asLong(state.position()))) {
+            } else if (existing == null && !level.areEntitiesLoaded(ChunkPos.asLong(state.nativePosition()))) {
                 var livestock = town.livestock().get(state.id());
                 target = livestock == null ? state.context(level) : livestock.context(level);
             } else {
@@ -244,7 +244,7 @@ public final class SettlementHuntingTargetService {
         var id = worker.huntingTarget();
         var state = town.huntingTargets().get(id);
         var existing = SettlementAnimalBirthService.existing(level, id);
-        if (existing == null && state != null && !level.areEntitiesLoaded(ChunkPos.asLong(state.position()))) return Optional.empty();
+        if (existing == null && state != null && !level.areEntitiesLoaded(ChunkPos.asLong(state.nativePosition()))) return Optional.empty();
         worker.huntingTarget(null);
         town.changed();
         if (existing instanceof LivingEntity target && target.level() == level && (state == null || state.matches(target))

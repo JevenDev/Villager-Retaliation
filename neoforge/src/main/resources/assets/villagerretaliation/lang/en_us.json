@@ -2542,6 +2542,7 @@
   "villagerretaliation.gui.settlement.work.collected_work_experience": "Collected work experience",
   "villagerretaliation.gui.settlement.work.no_observed_hunting_target": "No hunting target in sight",
   "villagerretaliation.gui.settlement.work.tracking_hunting_target": "Tracking a hunting target",
+  "villagerretaliation.gui.settlement.work.hunting_path_blocked": "No passable route to the hunting target",
   "villagerretaliation.gui.settlement.work.waiting_for_native_hunting_target": "Waiting to reach an active target",
   "villagerretaliation.gui.settlement.work.avoiding_hunting_target": "Avoiding a dangerous target",
   "villagerretaliation.gui.settlement.work.waiting_for_ranged_hunting": "Waiting for a ranged attack",

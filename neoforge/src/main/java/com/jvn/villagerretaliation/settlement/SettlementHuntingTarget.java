@@ -16,6 +16,7 @@ final class SettlementHuntingTarget {
     private final UUID id;
     private final ResourceLocation type;
     private CompoundTag entity;
+    private BlockPos nativePosition;
     private long version;
     private SettlementCombatClock clock;
 
@@ -29,6 +30,7 @@ final class SettlementHuntingTarget {
         this.id = entity.getUUID("UUID");
         this.type = type;
         this.entity = entity.copy();
+        this.nativePosition = position();
         this.clock = new SettlementCombatClock(Math.max(0L, observedAt), 0, Math.max(0, entity.getShort("HurtTime")), 0.0F);
     }
 
@@ -57,6 +59,10 @@ final class SettlementHuntingTarget {
         return BlockPos.containing(position.getDouble(0), position.getDouble(1), position.getDouble(2));
     }
 
+    BlockPos nativePosition() {
+        return this.nativePosition;
+    }
+
     boolean matches(LivingEntity target) {
         return this.id.equals(target.getUUID()) && this.type.equals(BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()));
     }
@@ -65,6 +71,7 @@ final class SettlementHuntingTarget {
         if (!matches(target)) throw new IllegalArgumentException("Hunting observation changed entity identity");
         restore(target, now);
         this.entity = target.saveWithoutId(new CompoundTag());
+        this.nativePosition = target.blockPosition().immutable();
         this.version = Math.max(this.version, target.getPersistentData().getLong(VERSION_TAG));
         this.clock = SettlementCombatClock.observe(target, now, target.getPersistentData().getLong(VERSION_TAG));
     }
@@ -125,6 +132,7 @@ final class SettlementHuntingTarget {
         var tag = new CompoundTag();
         tag.putString("Type", this.type.toString());
         tag.put("Entity", this.entity.copy());
+        tag.putLong("NativePosition", this.nativePosition.asLong());
         this.clock.save(tag);
         tag.putLong("Version", this.version);
         tag.put("Changes", this.changes.save());
@@ -134,6 +142,7 @@ final class SettlementHuntingTarget {
     static SettlementHuntingTarget load(CompoundTag tag) {
         var state = new SettlementHuntingTarget(ResourceLocation.parse(tag.getString("Type")),
                 tag.getCompound("Entity"), tag.getLong("ObservedAt"));
+        if (tag.contains("NativePosition", Tag.TAG_LONG)) state.nativePosition = BlockPos.of(tag.getLong("NativePosition"));
         state.version = Math.max(0L, tag.getLong("Version"));
         state.changes.load(tag.getList("Changes", Tag.TAG_COMPOUND), state.version);
         state.clock = SettlementCombatClock.load(tag);

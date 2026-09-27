@@ -36,7 +36,7 @@ final class SettlementExperienceRecipients {
                 if (worker != null) worker.restore(villager);
                 if (care != null) care.restore(villager);
             } else {
-                var position = worker != null ? worker.position() : care.position();
+                var position = worker != null ? worker.nativePosition() : care.position();
                 if (this.level.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.asLong(position))
                         || worker == null && !care.canDepart()) return null;
                 villager = worker == null ? care.context(this.level) : worker.context(this.level, town);

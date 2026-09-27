@@ -114,6 +114,15 @@ public final class SettlementWorkerState {
         return this.position;
     }
 
+    BlockPos nativePosition() {
+        return this.huntingBody == null ? this.position : this.huntingBody.nativePosition();
+    }
+
+    void huntingMoved(Villager villager, CompoundTag before, long now) {
+        this.position = villager.blockPosition().immutable();
+        huntingInjury(villager, before, now);
+    }
+
     public int aptitude() {
         return this.aptitude;
     }

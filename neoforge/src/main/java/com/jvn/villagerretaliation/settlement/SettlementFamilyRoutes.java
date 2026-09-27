@@ -38,7 +38,11 @@ final class SettlementFamilyRoutes implements BlockGetter {
     }
 
     List<BlockPos> route(BlockPos start, BlockPos target) {
-        if (start == null || target == null || !safe(start)) return List.of();
+        return route(start, target, position -> true);
+    }
+
+    List<BlockPos> route(BlockPos start, BlockPos target, java.util.function.Predicate<BlockPos> allowed) {
+        if (start == null || target == null || !allowed.test(start) || !allowed.test(target) || !safe(start)) return List.of();
         var costs = new HashMap<BlockPos, Integer>();
         var previous = new HashMap<BlockPos, BlockPos>();
         var queue = new PriorityQueue<Step>(Comparator.comparingInt(Step::estimate).thenComparing(step -> step.position));
@@ -61,7 +65,7 @@ final class SettlementFamilyRoutes implements BlockGetter {
                     var next = current.relative(direction).offset(0, dy, 0);
                     if (Math.abs(next.getX() - this.town.center().getX()) > this.town.stage().radius() + 16
                             || Math.abs(next.getZ() - this.town.center().getZ()) > this.town.stage().radius() + 16
-                            || !safe(next)) continue;
+                            || !allowed.test(next) || !safe(next)) continue;
                     if (dy > 0 && !clear(current.above(2)) || dy < 0 && !clear(next.above(2))) continue;
                     int cost = step.cost + 1;
                     if (cost < costs.getOrDefault(next, Integer.MAX_VALUE)) {

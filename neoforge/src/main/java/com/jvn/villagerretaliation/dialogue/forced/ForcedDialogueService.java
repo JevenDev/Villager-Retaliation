@@ -3162,9 +3162,18 @@ public final class ForcedDialogueService {
                 .filter(ForcedDialogueTriggerGates::isChatOutput)
                 .filter(definition -> definition.matchesWitness(villager))
                 .filter(definition -> villager.distanceToSqr(target) <= definition.witnessRadius() * definition.witnessRadius())
-                .filter(definition -> !definition.requiresLineOfSight() || villager.hasLineOfSight(target))
+                .filter(definition -> !definition.requiresLineOfSight() || hasLoadedLineOfSight(level, villager, target))
                 .filter(definition -> definition.matchesRecentRetaliations(0))
                 .anyMatch(definition -> triggerRetaliationChat(level, villager, target, definition, targetTypeId));
+    }
+
+    private static boolean hasLoadedLineOfSight(ServerLevel level, Villager villager, LivingEntity target) {
+        var from = BlockPos.containing(villager.getEyePosition());
+        var to = BlockPos.containing(target.getEyePosition());
+        return level.hasChunksAt(
+                Math.min(from.getX(), to.getX()) - 1, Math.min(from.getZ(), to.getZ()) - 1,
+                Math.max(from.getX(), to.getX()) + 1, Math.max(from.getZ(), to.getZ()) + 1)
+                && villager.hasLineOfSight(target);
     }
 
     public static void triggerRetaliationDisengagementChat(
