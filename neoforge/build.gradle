@@ -36,6 +36,7 @@ sourceSets.main.resources {
 
 def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
 def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
+def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
 
 neoForge {
     version = rootProject.neo_version
@@ -56,6 +57,14 @@ neoForge {
             gameDirectory.set(settlementClientSmokeDirectory)
             systemProperty 'villagerretaliation.settlementClientSmoke', settlementClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementViewSmoke', '--width', '1280', '--height', '720'
+        }
+
+        settlementTownProfile {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(settlementTownProfileDirectory)
+            systemProperty 'villagerretaliation.settlementTownProfile', settlementTownProfileDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'SettlementTownProfile', '--width', '1280', '--height', '720'
         }
 
         server {
@@ -112,6 +121,28 @@ tasks.named('runSettlementClientSmoke') {
         def result = new File(settlementClientSmokeDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Settlement client smoke checks passed')) {
             throw new GradleException("Settlement client checks did not finish. Inspect ${settlementClientSmokeDirectory.get().asFile}")
+        }
+    }
+}
+
+tasks.named('runSettlementTownProfile') {
+    dependsOn tasks.named('runGameTestServer')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) {
+            throw new GradleException('Settlement town profiling requires the generated GameTest world metadata.')
+        }
+        copy {
+            from metadata
+            into new File(settlementTownProfileDirectory.get().asFile, 'saves/SettlementTownProfile')
+        }
+        new File(settlementTownProfileDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\n'
+    }
+    doLast {
+        def result = new File(settlementTownProfileDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Settlement town profile completed')) {
+            throw new GradleException("Settlement town profiling did not finish. Inspect ${settlementTownProfileDirectory.get().asFile}")
         }
     }
 }
