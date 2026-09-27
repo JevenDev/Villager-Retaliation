@@ -27,6 +27,9 @@ public final class SettlementWorkerState {
     private final UUID id;
     private UUID area;
     private UUID huntingTarget;
+    private long huntingCombatAt;
+    private long huntingAttackAt;
+    private SettlementHuntingTarget huntingBody;
     private HiredVillagerRole role;
     private BlockPos position;
     private CompoundTag inventory = new CompoundTag();
@@ -55,6 +58,30 @@ public final class SettlementWorkerState {
 
     void huntingTarget(UUID target) {
         this.huntingTarget = target;
+    }
+
+    void huntingTimers(Villager villager, long now) {
+        if (this.huntingBody != null) this.huntingBody.restoreTimers(villager, now);
+    }
+
+    void huntingInjury(Villager villager, CompoundTag before, long now) {
+        if (this.huntingBody == null) this.huntingBody = SettlementHuntingTarget.capture(villager, now);
+        this.huntingBody.interacted(villager, before, now);
+        this.entityContext = villager.saveWithoutId(new CompoundTag());
+        changed();
+    }
+
+    long huntingCombatAt() {
+        return this.huntingCombatAt;
+    }
+
+    long huntingAttackAt() {
+        return this.huntingAttackAt;
+    }
+
+    void huntingCombat(long now, long nextAttack) {
+        this.huntingCombatAt = now;
+        this.huntingAttackAt = nextAttack;
     }
 
     public UUID area() {
@@ -117,6 +144,10 @@ public final class SettlementWorkerState {
 
     void observe(ServerLevel level, Villager villager, SettlementWorkforceService.Duty duty, long now) {
         if (!duty.area().id().equals(this.area) || duty.area().type().role() != this.role) this.huntingTarget = null;
+        if (this.huntingBody != null) this.huntingBody.observe(villager, now);
+        else if (duty.area().type().role() == HiredVillagerRole.HUNTING) this.huntingBody = SettlementHuntingTarget.capture(villager, now);
+        this.huntingCombatAt = now;
+        this.huntingAttackAt = com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.nextMeleeAttackTick(villager);
         this.area = duty.area().id();
         this.role = duty.area().type().role();
         this.position = villager.blockPosition().immutable();
@@ -154,6 +185,10 @@ public final class SettlementWorkerState {
     }
 
     boolean restore(Villager villager) {
+        if (this.huntingBody != null) this.huntingBody.restore(villager, villager.level().getGameTime());
+        if (this.role == HiredVillagerRole.HUNTING) {
+            com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.restoreMeleeAttackTick(villager, this.huntingAttackAt);
+        }
         SettlementBrewingService.restore(this, villager);
         if (villager.getPersistentData().getLong(VERSION_TAG) >= this.version) {
             return false;
@@ -290,6 +325,9 @@ public final class SettlementWorkerState {
         tag.putUUID("Id", this.id);
         tag.putUUID("Area", this.area);
         if (this.huntingTarget != null) tag.putUUID("HuntingTarget", this.huntingTarget);
+        tag.putLong("HuntingCombatAt", this.huntingCombatAt);
+        tag.putLong("HuntingAttackAt", this.huntingAttackAt);
+        if (this.huntingBody != null) tag.put("HuntingBody", this.huntingBody.save());
         tag.putString("Role", this.role.name());
         tag.putLong("Position", this.position.asLong());
         tag.put("Inventory", this.inventory.copy());
@@ -313,6 +351,12 @@ public final class SettlementWorkerState {
         var state = new SettlementWorkerState(tag.getUUID("Id"));
         state.area = tag.getUUID("Area");
         state.huntingTarget = tag.hasUUID("HuntingTarget") ? tag.getUUID("HuntingTarget") : null;
+        state.huntingCombatAt = tag.contains("HuntingCombatAt") ? tag.getLong("HuntingCombatAt") : tag.getLong("CheckedAt");
+        state.huntingAttackAt = Math.max(0L, tag.getLong("HuntingAttackAt"));
+        state.huntingBody = tag.contains("HuntingBody", Tag.TAG_COMPOUND) ? SettlementHuntingTarget.load(tag.getCompound("HuntingBody")) : null;
+        if (state.huntingBody != null && !state.huntingBody.id().equals(state.id)) {
+            throw new IllegalArgumentException("Hunter combat state has a different worker identity");
+        }
         state.role = HiredVillagerRole.valueOf(tag.getString("Role"));
         state.position = BlockPos.of(tag.getLong("Position"));
         state.inventory = tag.getCompound("Inventory").copy();

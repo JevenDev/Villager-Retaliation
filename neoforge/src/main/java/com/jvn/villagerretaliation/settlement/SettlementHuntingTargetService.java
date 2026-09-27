@@ -37,7 +37,7 @@ public final class SettlementHuntingTargetService {
         if (targets.isEmpty()) return;
         int cursor = Math.floorMod(CURSORS.getOrDefault(area, 0), targets.size());
         int count = Math.min(16, targets.size());
-        for (int index = 0; index < count; index++) observe(level, town, targets.get((cursor + index) % targets.size()));
+        for (int index = 0; index < count; index++) observe(level, town, targets.get((cursor + index) % targets.size()), false);
         CURSORS.put(area, (cursor + count) % targets.size());
     }
 
@@ -50,7 +50,7 @@ public final class SettlementHuntingTargetService {
         return town.areas().values().stream().anyMatch(area -> area.type() == SettlementAreaType.HUNTING_GROUNDS && area.contains(position));
     }
 
-    private static void observe(ServerLevel level, SettlementRecord town, LivingEntity target) {
+    private static void observe(ServerLevel level, SettlementRecord town, LivingEntity target, boolean stopped) {
         if (!recordable(target) || target.level() != level || !contains(town, target.blockPosition())) return;
         for (var other : SettlementSavedData.get(level).settlements()) {
             if (other != town && other.huntingTargets().containsKey(target.getUUID())) return;
@@ -58,7 +58,7 @@ public final class SettlementHuntingTargetService {
         var state = town.huntingTargets().get(target.getUUID());
         if (state == null || !state.matches(target)) town.recordHuntingTarget(SettlementHuntingTarget.capture(target, level.getGameTime()));
         else {
-            state.observe(target, level.getGameTime());
+            state.observe(target, stopped || level.isPositionEntityTicking(target.blockPosition()) ? level.getGameTime() : state.observedAt());
             town.changed();
         }
     }
@@ -69,10 +69,13 @@ public final class SettlementHuntingTargetService {
             if (town.entityDeaths().containsKey(state.id())) {
                 town.removeHuntingTarget(state.id());
             } else if (existing instanceof LivingEntity target && target.level() == level && state.matches(target)
-                    && recordable(target) && contains(town, target.blockPosition())) {
-                state.observe(target, now);
+                    && recordable(target) && (contains(town, target.blockPosition()) || state.modified())) {
+                state.observe(target, level.isPositionEntityTicking(target.blockPosition()) ? now : state.observedAt());
                 town.changed();
-            } else if (existing != null || level.areEntitiesLoaded(ChunkPos.asLong(state.position())) || !contains(town, state.position())) {
+            } else if (existing != null || level.areEntitiesLoaded(ChunkPos.asLong(state.position())) || !contains(town, state.position()) && !state.modified()) {
+                if (existing instanceof LivingEntity target && state.matches(target) && recordable(target)) {
+                    state.restore(target, target.level().getGameTime());
+                }
                 town.removeHuntingTarget(state.id());
             }
         }
@@ -83,11 +86,20 @@ public final class SettlementHuntingTargetService {
         var reason = target.getRemovalReason();
         for (var town : SettlementSavedData.get(level).settlements()) {
             if (!town.dimension().equals(level.dimension().location())) continue;
+            var state = town.huntingTargets().get(target.getUUID());
+            if (state != null && state.modified() && reason == Entity.RemovalReason.CHANGED_DIMENSION) {
+                state.restore(target, level.getGameTime());
+                town.changed();
+                continue;
+            }
             if (reason != null && reason != Entity.RemovalReason.UNLOADED_TO_CHUNK || !recordable(target)
-                    || !contains(town, target.blockPosition())) {
+                    || !contains(town, target.blockPosition()) && (state == null || !state.modified())) {
                 town.removeHuntingTarget(target.getUUID());
+            } else if (state != null && state.modified() && !contains(town, target.blockPosition())) {
+                state.observe(target, level.getGameTime());
+                town.changed();
             } else {
-                observe(level, town, target);
+                observe(level, town, target, true);
             }
         }
     }
@@ -104,6 +116,7 @@ public final class SettlementHuntingTargetService {
             var existing = SettlementAnimalBirthService.existing(level, state.id());
             LivingEntity target;
             if (existing instanceof LivingEntity actual && actual.level() == level && state.matches(actual)) {
+                state.restore(actual, level.getGameTime());
                 target = actual;
             } else if (existing == null && !level.areEntitiesLoaded(ChunkPos.asLong(state.position()))) {
                 var livestock = town.livestock().get(state.id());
@@ -126,6 +139,18 @@ public final class SettlementHuntingTargetService {
             if (nearest == null || owner.distanceToSqr(target) < owner.distanceToSqr(nearest)) nearest = target;
         }
         return nearest;
+    }
+
+    public static void onActive(LivingEntity target) {
+        if (!(target.level() instanceof ServerLevel level) || target instanceof Player) return;
+        for (var town : SettlementSavedData.get(level).settlements()) {
+            var state = town.huntingTargets().get(target.getUUID());
+            if (state == null) continue;
+            if (state.restore(target, level.getGameTime())) town.changed();
+            if (!town.dimension().equals(level.dimension().location()) && state.matches(target)) {
+                town.removeHuntingTarget(target.getUUID());
+            }
+        }
     }
 
     private static boolean visible(SettlementExperienceTerrain terrain, Villager owner, LivingEntity target) {

@@ -86,6 +86,10 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         return VillagerRetaliationRetaliationUtil.isAttackReady(villager, this.nextAttackTicks, gameTime);
     }
 
+    long nextAttackTick(T villager) {
+        return this.nextAttackTicks.getOrDefault(villager.getUUID(), 0L);
+    }
+
     void setNextAttackTick(T villager, long gameTime) {
         this.nextAttackTicks.put(villager.getUUID(), gameTime);
     }

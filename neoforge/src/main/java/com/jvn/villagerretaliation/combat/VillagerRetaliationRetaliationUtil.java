@@ -369,6 +369,14 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     public static boolean canMeleeHit(AbstractVillager villager, LivingEntity target) {
+        return canMeleeHit(villager, target, villager.hasLineOfSight(target));
+    }
+
+    public static boolean canMeleeHit(net.minecraft.world.level.BlockGetter blocks, AbstractVillager villager, LivingEntity target) {
+        return canMeleeHit(villager, target, hasClearLineOfSight(blocks, villager, target));
+    }
+
+    private static boolean canMeleeHit(AbstractVillager villager, LivingEntity target, boolean visible) {
         Mob meleeBody = villager.getControlledVehicle() instanceof Mob controlledMount
                 ? controlledMount
                 : villager;
@@ -379,7 +387,7 @@ public final class VillagerRetaliationRetaliationUtil {
                 ? AXE_BREAKER_EDGE_REACH
                 : mounted ? MOUNTED_MELEE_EDGE_REACH : MELEE_EDGE_REACH;
         return target.isAlive()
-                && villager.hasLineOfSight(target)
+                && visible
                 && (mounted || axeBreaker || villager.isWithinMeleeAttackRange(target))
                 && isWithinTightMeleeAttackRange(meleeBody, target, edgeReach);
     }

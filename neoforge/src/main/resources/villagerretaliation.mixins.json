@@ -36,6 +36,7 @@
     "ItemFrameSettlementMixin",
     "LivingEntityVillagerExperienceMixin",
     "LivingEntitySettlementLootMixin",
+    "LivingEntityCombatAccessor",
     "LookControlMixin",
     "MerchantResultSlotWalletMixin",
     "NearestItemSensorMixin",

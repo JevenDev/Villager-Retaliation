@@ -24,21 +24,28 @@ public final class SettlementDeathCapture implements AutoCloseable {
         ACTIVE.set(this);
     }
 
+    private static SettlementDeathCapture capture(LivingEntity victim) {
+        for (var capture = ACTIVE.get(); capture != null; capture = capture.previous) {
+            if (capture.victim == victim) return capture;
+        }
+        return null;
+    }
+
     public static void accepted(LivingEntity victim) {
-        var capture = ACTIVE.get();
-        if (capture != null && capture.victim == victim) capture.accepted = true;
+        var capture = capture(victim);
+        if (capture != null) capture.accepted = true;
     }
 
     public static boolean drops(LivingEntity victim, Collection<ItemEntity> drops) {
-        var capture = ACTIVE.get();
-        if (capture == null || capture.victim != victim) return false;
+        var capture = capture(victim);
+        if (capture == null) return false;
         for (var drop : drops) capture.drops.putIfAbsent(drop.getUUID(), drop);
         return true;
     }
 
     public static boolean experience(LivingEntity victim, Vec3 position, int value, Villager owner) {
-        var capture = ACTIVE.get();
-        if (capture == null || capture.victim != victim) return false;
+        var capture = capture(victim);
+        if (capture == null) return false;
         while (value > 0) {
             int amount = owner == null ? ExperienceOrb.getExperienceValue(value) : value;
             var orb = new ExperienceOrb((ServerLevel) victim.level(), position.x, position.y, position.z, amount);

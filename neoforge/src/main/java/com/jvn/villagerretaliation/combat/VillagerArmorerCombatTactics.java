@@ -90,6 +90,14 @@ final class VillagerArmorerCombatTactics {
             double distanceSqr,
             long gameTime,
             boolean meleeAttackReady) {
+        boolean inMeleeRange = canUseShieldTactics(villager) && hasShield(villager)
+                && VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager)
+                && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
+        return handleCombatTactics(villager, target, distanceSqr, gameTime, meleeAttackReady, inMeleeRange);
+    }
+
+    static boolean handleCombatTactics(Villager villager, LivingEntity target, double distanceSqr,
+                                        long gameTime, boolean meleeAttackReady, boolean inMeleeRange) {
         if (!canUseShieldTactics(villager)
                 || VillagerRetaliationRetaliationUtil.isUsingRangedCombatMode(villager)) {
             clearTacticState(villager, true);
@@ -101,8 +109,6 @@ final class VillagerArmorerCombatTactics {
             return true;
         }
 
-        boolean inMeleeRange = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager)
-                && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
         boolean inShieldTriggerRange = distanceSqr <= SHIELD_TRIGGER_RANGE_SQR;
 
         UUID villagerId = villager.getUUID();

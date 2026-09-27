@@ -89,6 +89,7 @@ public final class SettlementLivestock {
         var type = BuiltInRegistries.ENTITY_TYPE.getOptional(this.type).orElse(null);
         if (type == null || !(type.create(level) instanceof Animal animal)) return null;
         animal.load(this.entity.copy());
+        SettlementHuntingTargetService.onActive(animal);
         return animal;
     }
 

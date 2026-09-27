@@ -792,6 +792,8 @@ public final class PlayerRaidGameTests {
         helper.assertTrue(PlayerRaidService.areOpposingParticipants(raider, golem),
                 "a golem should remain a Player Raid defender after its village is merged");
         PlayerRaidService.reconcileCombat(helper.getLevel().getServer(), raid);
+        helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(raider, golem),
+                "raid reconciliation should select the nearer aligned golem before its AI tick");
         VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(raider));
         helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(raider, golem),
                 "a raiding party villager should retain a distant aligned village golem after its AI tick");

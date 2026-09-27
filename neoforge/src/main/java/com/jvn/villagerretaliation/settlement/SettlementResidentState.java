@@ -138,6 +138,16 @@ public final class SettlementResidentState {
         rememberFamily(villager);
     }
 
+    void combat(Villager villager) {
+        this.health = Math.max(1.0F, villager.getHealth());
+        this.maxHealth = villager.getMaxHealth();
+        this.downed = VillagerDownedService.isDowned(villager);
+        this.familyUnsafe = villager.getLastHurtByMob() != null || villager.isOnFire() || this.downed;
+        this.version++;
+        villager.getPersistentData().putLong(VERSION_TAG, this.version);
+        this.entityContext = villager.saveWithoutId(new CompoundTag());
+    }
+
     void mend(Villager villager, java.util.Map<net.minecraft.world.entity.EquipmentSlot, ItemStack> before) {
         this.mendingEquipment = SettlementMendingEquipment.capture(villager, this.mendingEquipment, before);
         remember(villager);

@@ -329,6 +329,7 @@ public final class SettlementCullingGameTests {
         supply(helper, fixture, HiredJobInventory.MAINHAND_SLOT, sword);
         cows(helper, fixture, 3);
         cull(helper, fixture);
+        fixture.town().removeDuty(fixture.worker().id());
         var death = fixture.town().entityDeaths().values().iterator().next();
         var experience = fixture.town().groundExperience().values().iterator().next();
         var saved = death.save();

@@ -78,6 +78,7 @@ final class SettlementBackgroundHunting {
             var target = SettlementHuntingTargetService.select(level, town, worker, owner);
             worker.huntingTarget(target == null ? null : target.getUUID());
             worker.status(target == null ? "no_observed_hunting_target" : "tracking_hunting_target");
+            if (target != null) SettlementHuntingCombat.tick(level, town, worker, owner, target, elapsed);
             town.changed();
         } finally {
             var snapshot = inventory.captureSnapshot();

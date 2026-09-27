@@ -437,6 +437,7 @@ public final class VillagerRetaliationEvents {
         if (entity instanceof net.minecraft.world.entity.animal.Animal animal) {
             com.jvn.villagerretaliation.settlement.SettlementLivestockService.onActive(animal);
         }
+        if (entity instanceof LivingEntity living) com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.onActive(living);
         if (entity instanceof Villager villager) {
             com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onActive(villager);
             com.jvn.villagerretaliation.settlement.SettlementDepartureService.onActive(villager);
@@ -558,6 +559,7 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof net.minecraft.world.entity.animal.Animal animal) {
             com.jvn.villagerretaliation.settlement.SettlementLivestockService.onActive(animal);
         }
+        if (event.getEntity() instanceof LivingEntity living) com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.onActive(living);
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof AbstractVillager villager) {
             VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
             if (villager instanceof Villager regular) {

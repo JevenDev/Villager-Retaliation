@@ -535,17 +535,7 @@ public final class VillagerRetaliationHandler {
             VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(villager, target, movementSpeed);
         }
         if (canMeleeHit && allowMeleeAttack && meleeAttackReady) {
-            var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(villager);
-            villager.swing(attackHand, true);
-            boolean shieldBroken = VillagerCombatStateMachine.tryBreakTargetShield(villager, target);
-            if (!shieldBroken && syncMeleeAttackAttributes(villager) && villager.doHurtTarget(target)) {
-                VillagerEquipmentDurability.postMeleeHit(villager, target, attackHand);
-            }
-            RETALIATION.setNextAttackTick(
-                    villager,
-                    gameTime + ACTOR_POLICY.attackCooldown(villager)
-            );
-            VillagerArmorerCombatTactics.onMeleeAttackCommitted(villager);
+            performMeleeStrike(villager, target, gameTime);
             if (waveringUnarmedCounter) {
                 ForcedDialogueService.triggerRetaliationDisengagementChat(
                         level,
@@ -721,6 +711,53 @@ public final class VillagerRetaliationHandler {
         if (!canEngageCustomTarget(villager, target)) return false;
         anger(villager, target, false, announceRetaliation);
         return true;
+    }
+
+    public static long nextMeleeAttackTick(Villager villager) {
+        return RETALIATION.nextAttackTick(villager);
+    }
+
+    public static void restoreMeleeAttackTick(Villager villager, long nextAttack) {
+        RETALIATION.setNextAttackTick(villager, Math.max(nextAttack, RETALIATION.nextAttackTick(villager)));
+    }
+
+    public static void performMeleeStrike(Villager villager, LivingEntity target, long gameTime) {
+        var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(villager);
+        villager.swing(attackHand, true);
+        boolean shieldBroken = VillagerCombatStateMachine.tryBreakTargetShield(villager, target);
+        if (!shieldBroken && syncMeleeAttackAttributes(villager) && villager.doHurtTarget(target)) {
+            VillagerEquipmentDurability.postMeleeHit(villager, target, attackHand);
+        }
+        RETALIATION.setNextAttackTick(villager, gameTime + ACTOR_POLICY.attackCooldown(villager));
+        VillagerArmorerCombatTactics.onMeleeAttackCommitted(villager);
+    }
+
+    public static ObservedMelee prepareObservedMelee(Villager villager, LivingEntity target,
+                                                    net.minecraft.world.level.BlockGetter blocks, long gameTime) {
+        if (!(villager.level() instanceof ServerLevel level) || !VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()
+                || !canEngageCustomTarget(villager, target) || villager.isBaby() || villager.isSleeping()
+                || com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(villager)
+                || !ACTOR_POLICY.canFightBack(villager) || VillagerInventoryAccess.hasOpenInventory(villager)
+                || VillagerRetaliationPotionUtil.shouldSuppressCombatWhileUsingPotion(villager)
+                || com.jvn.villagerretaliation.party.PartyQuickCommandService.overridesCombatTargeting(villager)) {
+            return ObservedMelee.UNAVAILABLE;
+        }
+        if (target instanceof Creeper || isNaturalHostileTarget(villager, target)
+                && !VillagerRetaliationVillagerRules.canStandGroundAgainstHostileMobs(villager)
+                && !canBravelyStandGroundAgainst(level, villager, target)) return ObservedMelee.RETREAT;
+        double distance = villager.distanceToSqr(target);
+        VillagerCombatStateMachine.prepare(villager, target, distance);
+        if (!VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager)) return ObservedMelee.RANGED;
+        boolean inRange = VillagerRetaliationRetaliationUtil.canMeleeHit(blocks, villager, target);
+        if (!inRange) return ObservedMelee.OUT_OF_REACH;
+        if (!VillagerArmorerCombatTactics.handleCombatTactics(villager, target, distance, gameTime, true, inRange)) {
+            return ObservedMelee.BLOCKING;
+        }
+        return ObservedMelee.READY;
+    }
+
+    public enum ObservedMelee {
+        READY, UNAVAILABLE, RETREAT, RANGED, OUT_OF_REACH, BLOCKING
     }
 
     public static boolean canEngageCustomTarget(Villager villager, LivingEntity target) {
