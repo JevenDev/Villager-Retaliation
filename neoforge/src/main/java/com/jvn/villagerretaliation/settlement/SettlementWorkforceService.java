@@ -148,7 +148,7 @@ public final class SettlementWorkforceService {
     public static boolean workingHours(long dayTime, UUID resident, HiredVillagerRole role) {
         long time = Math.floorMod(dayTime, 24_000L);
         if (role == HiredVillagerRole.COMBAT) {
-            long shift = (resident.getLeastSignificantBits() & 1L) == 0L ? 0L : 12_000L;
+            long shift = (resident.getLeastSignificantBits() & 1L) == 0L ? 2_000L : 14_000L;
             return Math.floorMod(time - shift, 24_000L) < 12_000L;
         }
         return time >= 2_000L && time < 9_000L;
@@ -186,6 +186,7 @@ public final class SettlementWorkforceService {
         UUID areaId = town == null ? null : town.duties().get(villager.getUUID());
         SettlementArea area = areaId == null ? null : town.areas().get(areaId);
         if (area == null && before.state() != VillagerAssignmentState.CIVIC) {
+            SettlementScheduleService.reconcile(villager);
             return;
         }
         if (hasPersonalCommitment(villager) || villager.isBaby() || !villager.isAlive()) {
@@ -195,6 +196,7 @@ public final class SettlementWorkforceService {
             area = null;
         }
         if (area == null || area.type().role() == null || !town.dimension().equals(level.dimension().location())) {
+            SettlementScheduleService.reconcile(villager);
             if (before.state() == VillagerAssignmentState.CIVIC) {
                 SettlementLogisticsService.resetAssignment(villager);
                 HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.paused", Map.of());
@@ -230,6 +232,7 @@ public final class SettlementWorkforceService {
             HiredWorkSession.invalidate(villager);
         }
         SettlementWorkerConfigurationService.apply(villager, town, area);
+        SettlementScheduleService.reconcile(villager);
         SettlementBrewingService.reconcile(villager);
         if (assignmentChanged || Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), 200L) == 0L) {
             SettlementDepotService.synchronizeStorage(level, villager, town);

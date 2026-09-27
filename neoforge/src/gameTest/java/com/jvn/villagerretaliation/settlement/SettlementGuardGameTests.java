@@ -218,7 +218,8 @@ public final class SettlementGuardGameTests {
                 center.offset(-2, -1, -2), center.offset(2, 2, 2), 5, true);
         helper.assertTrue(town.putArea(leader.getUUID(), area), "the guard post is registered");
         var guard = EntityType.VILLAGER.create(level);
-        long shift = Math.floorMod(level.getDayTime(), 24_000L) < 12_000L ? 0L : 1L;
+        long shift = SettlementWorkforceService.workingHours(level.getDayTime(), new UUID(0L, 0L),
+                com.jvn.villagerretaliation.interaction.HiredVillagerRole.COMBAT) ? 0L : 1L;
         guard.setUUID(new UUID(UUID.randomUUID().getMostSignificantBits(), UUID.randomUUID().getLeastSignificantBits() & ~1L | shift));
         guard.setPos(net.minecraft.world.phys.Vec3.atBottomCenterOf(center));
         guard.setNoAi(true);

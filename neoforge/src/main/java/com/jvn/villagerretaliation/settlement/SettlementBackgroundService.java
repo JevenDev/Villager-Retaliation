@@ -119,6 +119,7 @@ public final class SettlementBackgroundService {
             SettlementWorkforceService.duty(villager).ifPresent(duty ->
                     SettlementWorkerConfigurationService.apply(villager, town, duty.area()));
         });
+        SettlementScheduleService.reconcile(villager);
         SettlementConstructionService.reconcile(villager);
         SettlementBrewingService.reconcile(villager);
     }

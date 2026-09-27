@@ -87,7 +87,6 @@ final class SettlementFamilyService {
     }
 
     private static Villager parent(ServerLevel level, SettlementRecord town, UUID id, SettlementFamilyRoutes routes) {
-        if (Math.floorMod(level.getDayTime(), 24_000L) >= 12_000L) return null;
         var care = town.residents().get(id);
         if (care == null) return null;
         for (var dimension : level.getServer().getAllLevels()) {
@@ -100,7 +99,7 @@ final class SettlementFamilyService {
                     || VillageAllegianceApi.canonicalPrimary(level, entity).filter(town.id()::equals).isEmpty())) return null;
         }
         var parent = SettlementPopulationService.familyContext(level, town, care);
-        if (parent == null) return null;
+        if (parent == null || SettlementScheduleService.resting(level, parent)) return null;
         var standing = routes.standing(parent.blockPosition(), parent.isSleeping());
         if (standing == null) return null;
         parent.clearSleepingPos();
