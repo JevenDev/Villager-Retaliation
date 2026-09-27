@@ -419,6 +419,11 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
+        if (entity instanceof net.minecraft.world.entity.item.ItemEntity item
+                && !com.jvn.villagerretaliation.settlement.SettlementGroundItemService.onActive(item)) {
+            event.setCanceled(true);
+            return;
+        }
         if (entity instanceof net.minecraft.world.entity.animal.Animal animal) {
             com.jvn.villagerretaliation.settlement.SettlementLivestockService.onActive(animal);
         }
@@ -525,6 +530,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof net.minecraft.world.entity.item.ItemEntity item
+                && !com.jvn.villagerretaliation.settlement.SettlementGroundItemService.onJoined(item)) {
+            event.setCanceled(true);
+            return;
+        }
         if (event.getEntity() instanceof net.minecraft.world.entity.animal.Animal animal) {
             com.jvn.villagerretaliation.settlement.SettlementLivestockService.onActive(animal);
         }
@@ -954,6 +964,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof net.minecraft.world.entity.item.ItemEntity item) {
+            com.jvn.villagerretaliation.settlement.SettlementGroundItemService.onUnloaded(item);
+        }
         if (event.getEntity() instanceof net.minecraft.world.entity.animal.Animal animal) {
             com.jvn.villagerretaliation.settlement.SettlementLivestockService.onUnloaded(animal);
         }

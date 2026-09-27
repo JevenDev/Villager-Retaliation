@@ -94,6 +94,7 @@ public final class SettlementBuildingService {
         SettlementMineService.observeArea(level, town, area, supplied);
         SettlementConstructionSiteService.observeArea(level, town, area, supplied);
         SettlementLivestockService.observeArea(level, town, area);
+        SettlementGroundItemService.observeArea(level, town, area);
         var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, supplied, town);
         var observed = SettlementBuildingSurvey.inspect(blocks, area);
         var previous = town.surveys().get(area.id());

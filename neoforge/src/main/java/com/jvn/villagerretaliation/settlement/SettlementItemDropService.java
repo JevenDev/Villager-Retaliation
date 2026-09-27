@@ -9,7 +9,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.phys.AABB;
 
 final class SettlementItemDropService {
     private static final java.util.Map<SettlementRecord, Integer> CURSORS = new java.util.WeakHashMap<>();
@@ -48,6 +47,10 @@ final class SettlementItemDropService {
         }
         SettlementChunkReceipts.applied(chunk, receiptKey(town, drop), drop.id(), 1L);
         town.removeItemDrop(drop.id());
+        var area = town.areas().get(drop.area());
+        if (area != null && level.getEntity(drop.id()) instanceof ItemEntity item) {
+            SettlementGroundItemService.observe(level, town, area, item);
+        }
         return true;
     }
 
@@ -93,30 +96,12 @@ final class SettlementItemDropService {
             worker.status("collected_animal_drops");
             return true;
         }
-        var bounds = new AABB(area.min().getX(), area.min().getY(), area.min().getZ(),
-                area.max().getX() + 1.0D, area.max().getY() + 1.0D, area.max().getZ() + 1.0D);
-        var items = level.getEntitiesOfClass(ItemEntity.class, bounds, item -> item.isAlive() && filter.test(item.getItem())).stream()
-                .sorted(Comparator.comparingDouble(item -> item.blockPosition().distSqr(worker.position()))).limit(64).toList();
-        for (var item : items) {
-            int steps = SettlementLivestockService.observedSteps(level, town, area, worker, item);
-            if (steps < 0) {
-                unreachable = true;
-                continue;
-            }
-            var stack = item.getItem();
-            if (!ready(worker, inventory, budget, stack, steps)) return true;
-            var remainder = inventory.insertOutput(stack.copy());
-            owner.onItemPickup(item);
-            if (remainder.isEmpty()) item.discard();
-            else item.setItem(remainder);
-            worker.status("collected_animal_drops");
-            return true;
-        }
+        if (SettlementGroundItemService.collect(level, town, worker, owner, inventory, budget, filter)) return true;
         if (unreachable) worker.status("animal_drop_unreachable");
         return unreachable;
     }
 
-    private static boolean ready(SettlementWorkerState worker, HiredJobInventory inventory, SettlementWorkBudget budget,
+    static boolean ready(SettlementWorkerState worker, HiredJobInventory inventory, SettlementWorkBudget budget,
                                  ItemStack stack, int steps) {
         if (!inventory.canStoreOutputs(List.of(stack.copyWithCount(1)))) {
             worker.status("output_full");

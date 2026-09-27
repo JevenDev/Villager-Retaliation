@@ -33,6 +33,22 @@ final class SettlementItemDrop {
         return new SettlementItemDrop(entity.getUUID(), area, entity.blockPosition(), entity.saveWithoutId(new CompoundTag()), now);
     }
 
+    long checkedAt() {
+        return this.checkedAt;
+    }
+
+    CompoundTag entityTag() {
+        return this.entity.copy();
+    }
+
+    void observe(ItemEntity item, long now) {
+        var observed = item.saveWithoutId(new CompoundTag());
+        if (!observed.getList("Pos", Tag.TAG_DOUBLE).equals(this.entity.getList("Pos", Tag.TAG_DOUBLE))) this.access.clear();
+        this.position = item.blockPosition().immutable();
+        this.entity = observed;
+        this.checkedAt = now;
+    }
+
     UUID id() {
         return this.id;
     }
@@ -61,12 +77,13 @@ final class SettlementItemDrop {
     }
 
     void access(SettlementWorkerState worker, int steps) {
-        if (steps >= 0) this.access.put(worker.id(), new Access(worker.position(), steps));
+        if (steps < 0) this.access.remove(worker.id());
+        else this.access.put(worker.id(), new Access(worker.area(), worker.position(), steps));
     }
 
     int steps(SettlementWorkerState worker) {
         var route = this.access.get(worker.id());
-        return route != null && route.start().equals(worker.position()) ? route.steps() : -1;
+        return route != null && route.area().equals(worker.area()) && route.start().equals(worker.position()) ? route.steps() : -1;
     }
 
     boolean advance(ServerLevel level, long now) {
@@ -109,6 +126,7 @@ final class SettlementItemDrop {
         this.access.forEach((worker, route) -> {
             var entry = new CompoundTag();
             entry.putUUID("Worker", worker);
+            entry.putUUID("Area", route.area());
             entry.putLong("Start", route.start().asLong());
             entry.putInt("Steps", route.steps());
             routes.add(entry);
@@ -134,13 +152,14 @@ final class SettlementItemDrop {
             var route = (CompoundTag) raw;
             if (!route.hasUUID("Worker") || !route.contains("Start", Tag.TAG_LONG) || route.getInt("Steps") < 0
                     || route.getInt("Steps") > 4096 || drop.access.putIfAbsent(route.getUUID("Worker"),
-                            new Access(BlockPos.of(route.getLong("Start")), route.getInt("Steps"))) != null) {
+                            new Access(route.hasUUID("Area") ? route.getUUID("Area") : drop.area(),
+                                    BlockPos.of(route.getLong("Start")), route.getInt("Steps"))) != null) {
                 throw new IllegalArgumentException("Pending item drop access is duplicated or invalid");
             }
         }
         return drop;
     }
 
-    private record Access(BlockPos start, int steps) {
+    private record Access(UUID area, BlockPos start, int steps) {
     }
 }

@@ -26,8 +26,7 @@ final class SettlementLivestockProducts {
                 if (steps == 0 && worker.position().getBottomCenter().distanceToSqr(item.position()) > 2.25D) steps = -1;
                 drop.access(worker, steps);
             }
-            drop.advance(level, now);
-            town.recordItemDrop(drop);
+            if (drop.advance(level, now)) town.recordItemDrop(drop);
             eggTime = chicken.getRandom().nextInt(6_000) + 6_000;
         }
         frame.state().eggTime(eggTime);

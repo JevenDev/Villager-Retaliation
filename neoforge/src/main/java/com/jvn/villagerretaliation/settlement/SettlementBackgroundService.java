@@ -35,6 +35,7 @@ public final class SettlementBackgroundService {
         SettlementForestService.update(level, town, now);
         SettlementMineService.update(level, town, now);
         SettlementLivestockService.update(level, town, now);
+        SettlementGroundItemService.update(level, town, now);
         SettlementConstructionSiteService.update(level, town);
         for (SettlementDepot depot : town.depots().values()) {
             SettlementDepotService.observeRules(level, depot);

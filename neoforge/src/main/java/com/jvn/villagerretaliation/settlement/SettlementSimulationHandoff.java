@@ -12,6 +12,9 @@ public final class SettlementSimulationHandoff {
     }
 
     public static void stopTicking(Entity entity) {
+        if (entity instanceof net.minecraft.world.entity.item.ItemEntity item) {
+            SettlementGroundItemService.onUnloaded(item);
+        }
         if (entity instanceof net.minecraft.world.entity.animal.Animal animal) {
             SettlementLivestockService.onUnloaded(animal);
         }
