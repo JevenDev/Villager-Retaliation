@@ -3,16 +3,20 @@ package com.jvn.villagerretaliation.settlement;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.schedule.Schedule;
 
-final class SettlementScheduleService {
+public final class SettlementScheduleService {
     private SettlementScheduleService() {
     }
 
     static void reconcile(Villager villager) {
-        var brain = villager.getBrain();
+        reconcile(villager, villager.getBrain());
+    }
+
+    public static void reconcile(Villager villager, Brain<Villager> brain) {
         var schedule = brain.getSchedule();
         if (nightGuard(villager)) {
             if (!(schedule instanceof NightGuardSchedule)) brain.setSchedule(new NightGuardSchedule(schedule));

@@ -185,7 +185,6 @@ public final class SettlementGuardScheduleGameTests {
                 helper.assertValueEqual(restored.getBrain().getSchedule().getActivityAt(6_000), Activity.REST,
                         "native join reinstalls the saved duty's rest schedule");
                 restored.refreshBrain(helper.getLevel());
-                SettlementBackgroundService.onActive(restored);
                 helper.assertValueEqual(restored.getBrain().getSchedule().getActivityAt(6_000), Activity.REST,
                         "a rebuilt native brain regains the same civic rest schedule");
                 fixture.setup.town().removeDuty(restored.getUUID());
@@ -197,6 +196,52 @@ public final class SettlementGuardScheduleGameTests {
             }
         } finally {
             cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_guard_schedule")
+    public static void rebuiltGuardBrainsSelectTheCurrentRestActivityBeforeTheNextTick(GameTestHelper helper) {
+        var fixture = fixture(helper, true);
+        var level = helper.getLevel();
+        long previous = level.getDayTime();
+        try {
+            level.setDayTime(6_000L);
+            var guard = fixture.guard;
+            guard.refreshBrain(level);
+            helper.assertTrue(guard.getBrain().isActive(Activity.REST),
+                    "native rebuilding selects the guard's daytime rest before any reconciliation tick");
+            helper.assertValueEqual(guard.getBrain().getSchedule().getActivityAt(6_000), Activity.REST,
+                    "the rebuilt brain keeps the civic rest schedule");
+
+            var settings = SettlementWorkerConfigurationService.snapshot(level, fixture.setup.town(), guard.getUUID());
+            var options = new java.util.EnumMap<>(settings.options());
+            options.put(SettlementWorkerSetting.ENABLED, 0);
+            helper.assertTrue(SettlementWorkerConfigurationService.configure(fixture.setup.leader(), fixture.setup.town(), guard.getUUID(),
+                    fixture.post.id(), new SettlementWorkerSettings(HiredVillagerRole.COMBAT, options, java.util.Set.of(), java.util.Set.of())),
+                    "the leader pauses the night guard");
+            guard.refreshBrain(level);
+            helper.assertTrue(guard.getBrain().getSchedule() == Schedule.VILLAGER_DEFAULT,
+                    "a paused guard rebuilds with the native schedule");
+            helper.assertFalse(guard.getBrain().isActive(Activity.REST),
+                    "pausing does not leave a rebuilt brain on daytime rest");
+
+            options.put(SettlementWorkerSetting.ENABLED, 1);
+            helper.assertTrue(SettlementWorkerConfigurationService.configure(fixture.setup.leader(), fixture.setup.town(), guard.getUUID(),
+                    fixture.post.id(), new SettlementWorkerSettings(HiredVillagerRole.COMBAT, options, java.util.Set.of(), java.util.Set.of())),
+                    "the leader resumes the night guard");
+            guard.refreshBrain(level);
+            helper.assertTrue(guard.getBrain().isActive(Activity.REST), "resumed duty applies before native activity selection");
+
+            helper.assertTrue(SettlementWorkforceService.release(level, fixture.setup.leader(), fixture.setup.town().id(), guard.getUUID()),
+                    "the leader releases the guard");
+            guard.refreshBrain(level);
+            helper.assertTrue(guard.getBrain().getSchedule() == Schedule.VILLAGER_DEFAULT,
+                    "released residents retain ordinary native brain rebuilding");
+            helper.assertFalse(guard.getBrain().isActive(Activity.REST), "released residents select their native daytime activity");
+        } finally {
+            cleanup(helper, fixture);
+            level.setDayTime(previous);
         }
         helper.succeed();
     }
