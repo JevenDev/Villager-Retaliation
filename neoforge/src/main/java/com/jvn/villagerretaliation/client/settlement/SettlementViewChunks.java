@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.compat.sodium.SodiumSettlementCompat;
 import com.jvn.villagerretaliation.network.SettlementViewChunkPayload;
 import com.jvn.villagerretaliation.settlement.SettlementViewWindow;
 import java.util.List;
@@ -82,6 +83,8 @@ public final class SettlementViewChunks {
         }
         remote.replaceWithPacketData(buffer, heightmaps, blockEntities);
         currentLevel.onChunkLoaded(position);
+        // remote chunks bypass sodium's hook inside the vanilla chunk cache
+        SodiumSettlementCompat.onChunkLoaded(currentLevel, position);
         NeoForge.EVENT_BUS.post(new ChunkEvent.Load(remote, false));
         return remote;
     }

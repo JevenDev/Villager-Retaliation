@@ -143,6 +143,18 @@ tasks.named('runSettlementClientSmoke') {
             from metadata
             into new File(settlementClientSmokeDirectory.get().asFile, 'saves/SettlementViewSmoke')
         }
+        def modsDirectory = providers.gradleProperty('settlementClientSmokeModsDirectory').orNull
+        if (modsDirectory != null) {
+            def mods = file(modsDirectory)
+            if (!mods.isDirectory()) {
+                throw new GradleException("Settlement client smoke mods directory does not exist: ${mods}")
+            }
+            copy {
+                from mods
+                include '*.jar'
+                into new File(settlementClientSmokeDirectory.get().asFile, 'mods')
+            }
+        }
         new File(settlementClientSmokeDirectory.get().asFile, 'options.txt').text =
                 'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\n'
     }

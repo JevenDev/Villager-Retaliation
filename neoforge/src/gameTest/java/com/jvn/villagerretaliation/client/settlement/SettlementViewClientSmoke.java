@@ -151,6 +151,7 @@ public final class SettlementViewClientSmoke {
             require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) != null,
                     "the remote terrain uses the separate client chunk cache");
             require(capture("world-view") > 1_000, "the remote grass terrain is rendered");
+            verifySodiumChunk(new ChunkPos(fixture.center()), true);
             Vec3 table = fixture.center().getCenter().add(0.0D, 0.5D, 0.0D);
             clickWorld(screen, table);
             String firstArea = screen.getNarrationMessage().getString();
@@ -246,6 +247,7 @@ public final class SettlementViewClientSmoke {
             require(minecraft.options.getCameraType() == CameraType.THIRD_PERSON_BACK, "damage restores the previous perspective");
             require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) == null,
                     "leaving releases the remote client chunks");
+            verifySodiumChunk(new ChunkPos(fixture.center()), false);
             if (++ticks >= 20) {
                 require(renderBedVertices(zoomBed) == 0, "leaving the town view restores ordinary bed distance culling");
                 UUID player = minecraft.player.getUUID();
@@ -776,8 +778,25 @@ public final class SettlementViewClientSmoke {
         }
     }
 
+    private static void verifySodiumChunk(ChunkPos position, boolean expected) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("sodium")) {
+            return;
+        }
+        try {
+            Class<?> holder = Class.forName("net.caffeinemc.mods.sodium.client.render.chunk.map.ChunkTrackerHolder");
+            Object tracker = holder.getMethod("get", net.minecraft.client.multiplayer.ClientLevel.class)
+                    .invoke(null, Minecraft.getInstance().level);
+            var chunks = (it.unimi.dsi.fastutil.longs.LongCollection) tracker.getClass().getMethod("getReadyChunks").invoke(tracker);
+            require(chunks.contains(position.toLong()) == expected,
+                    expected ? "Sodium tracks the remote settlement terrain" : "leaving releases Sodium's remote settlement terrain");
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Could not inspect Sodium's settlement chunk lifecycle", exception);
+        }
+    }
+
     private static void require(boolean condition, String message) {
         if (!condition) {
+            if (Minecraft.getInstance().isSameThread()) capture("failure");
             throw new IllegalStateException(message);
         }
     }

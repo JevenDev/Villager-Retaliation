@@ -1,6 +1,7 @@
 {
   "required": true,
   "package": "com.jvn.villagerretaliation.mixin",
+  "plugin": "com.jvn.villagerretaliation.compat.VillagerRetaliationMixinPlugin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AbstractArrowAccessor",
