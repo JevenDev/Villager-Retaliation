@@ -37,6 +37,7 @@
     "LivingEntityVillagerExperienceMixin",
     "LivingEntitySettlementLootMixin",
     "LivingEntityCombatAccessor",
+    "VillagerRangedStateMixin",
     "LivingEntitySettlementCombatMixin",
     "LookControlMixin",
     "MerchantResultSlotWalletMixin",

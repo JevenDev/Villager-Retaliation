@@ -7,6 +7,15 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(LivingEntity.class)
 public interface LivingEntityCombatAccessor {
+    @Accessor("useItem")
+    void villagerretaliation$setUseItem(net.minecraft.world.item.ItemStack item);
+
+    @Accessor("useItemRemaining")
+    void villagerretaliation$setUseItemRemaining(int ticks);
+
+    @Invoker("setLivingEntityFlag")
+    void villagerretaliation$setLivingEntityFlag(int flag, boolean value);
+
     @Invoker("detectEquipmentUpdates")
     void villagerretaliation$detectEquipmentUpdates();
 

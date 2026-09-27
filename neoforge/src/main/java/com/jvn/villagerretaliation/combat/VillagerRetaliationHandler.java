@@ -1602,13 +1602,17 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        clearRuntimeState(villager);
+        clearRuntimeState(villager, villager.getRemovalReason() == Entity.RemovalReason.UNLOADED_TO_CHUNK);
     }
 
     private static void clearRuntimeState(Villager villager) {
+        clearRuntimeState(villager, false);
+    }
+
+    private static void clearRuntimeState(Villager villager, boolean unloading) {
         VillagerArmorerCombatTactics.resetState(villager);
         VillagerCombatStateMachine.clearState(villager);
-        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
+        if (!unloading) VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         if (villager.isAlive()) {
@@ -1656,7 +1660,6 @@ public final class VillagerRetaliationHandler {
         LOW_GUTS_RALLY_USED_UNTIL_TICKS.clear();
         VillagerArmorerCombatTactics.clearRuntimeState();
         VillagerCombatStateMachine.clearRuntimeState();
-        VillagerRangedCombatHelper.clearRuntimeState();
         VillagerClericPotionHelper.clearRuntimeState();
         VillagerHostileTierHarass.clearRuntimeState();
         VillagerSmithGolemRepairSupport.clearRuntimeState();
