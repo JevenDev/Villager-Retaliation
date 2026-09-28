@@ -25,12 +25,18 @@ public final class SettlementSavedData extends SavedData {
     private static final int FORMAT_VERSION = 55;
     final SettlementSimulationService simulation = new SettlementSimulationService();
     private final Map<VillageAllegianceId, SettlementRecord> settlements = new LinkedHashMap<>();
+    private final SettlementRecovery recovery = new SettlementRecovery();
 
     private final Map<ResourceLocation, Map<Long, VillageAllegianceId>> ownership = new java.util.HashMap<>();
 
     public static SettlementSavedData get(ServerLevel level) {
-        return level.getServer().overworld().getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(SettlementSavedData::new, SettlementSavedData::load, DataFixTypes.LEVEL),
+        return get(level.getServer().overworld().getDataStorage(), level.getServer()
+                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data"));
+    }
+
+    static SettlementSavedData get(net.minecraft.world.level.storage.DimensionDataStorage storage, java.nio.file.Path directory) {
+        return storage.computeIfAbsent(
+                new SavedData.Factory<>(() -> missing(directory), SettlementSavedData::load, DataFixTypes.LEVEL),
                 DATA_NAME);
     }
 
@@ -54,7 +60,7 @@ public final class SettlementSavedData extends SavedData {
     }
 
     public boolean canEstablish(ResourceLocation dimension, BlockPos center) {
-        if (dimension == null || center == null) return false;
+        if (readOnly() || dimension == null || center == null) return false;
         var chunk = new net.minecraft.world.level.ChunkPos(center);
         for (int x = chunk.x - 1; x <= chunk.x + 1; x++) {
             for (int z = chunk.z - 1; z <= chunk.z + 1; z++) {
@@ -68,7 +74,8 @@ public final class SettlementSavedData extends SavedData {
                                                 VillageAllegianceId villageId, UUID leader,
                                                 BlockPos center, long gameTime) {
         var village = registry.canonicalRecord(villageId).orElse(null);
-        if (village == null || village.archived() || village.originDimension() == null || leader == null
+        if (readOnly() || this.recovery.reserved(villageId)
+                || village == null || this.recovery.reserved(village.id()) || village.archived() || village.originDimension() == null || leader == null
                 || center == null || this.settlements.containsKey(village.id())
                 || registry.isManaged(village.id()) || village.footprintSections().isEmpty() && !canEstablish(village.originDimension(), center)) {
             return Optional.empty();
@@ -187,26 +194,36 @@ public final class SettlementSavedData extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+        if (this.recovery.preservedRoot() != null) return this.recovery.preservedRoot().copy();
         tag.putInt("FormatVersion", FORMAT_VERSION);
         ListTag entries = new ListTag();
         this.settlements.values().forEach(town -> entries.add(town.save(provider)));
+        this.recovery.appendQuarantine(entries);
         tag.put("Settlements", entries);
+        this.recovery.saveOriginal(tag);
         return tag;
     }
 
     public static SettlementSavedData load(CompoundTag tag, HolderLookup.Provider provider) {
-        int version = tag.getInt("FormatVersion");
-        if (version > FORMAT_VERSION) {
-            throw new IllegalArgumentException("Unsupported settlement format " + version);
-        }
         SettlementSavedData data = new SettlementSavedData();
-        for (Tag raw : tag.getList("Settlements", Tag.TAG_COMPOUND)) {
-            SettlementRecord town = SettlementRecord.load((CompoundTag) raw, provider, data::setDirty);
-            if (data.settlements.putIfAbsent(town.id(), town) != null) {
-                throw new IllegalArgumentException("Duplicate settlement identity " + town.id());
-            }
-        }
-        data.settlements.values().stream().filter(town -> town.territory().migrated()).forEach(data::index);
+        data.recovery.load(tag, provider, FORMAT_VERSION, data::setDirty, data.settlements, data.ownership);
         return data;
+    }
+
+    public List<String> recoveryDiagnostics() { return this.recovery.diagnostics(); }
+
+    public boolean readOnly() { return this.recovery.readOnly(); }
+
+    private static SettlementSavedData missing(java.nio.file.Path directory) {
+        var data = new SettlementSavedData();
+        if (!java.nio.file.Files.notExists(directory.resolve(DATA_NAME + ".dat"))) {
+            data.recovery.protect(new CompoundTag(), "Existing settlement file could not be read");
+        }
+        return data;
+    }
+
+    @Override
+    public void save(java.io.File file, HolderLookup.Provider provider) {
+        if (!readOnly()) super.save(file, provider);
     }
 }

@@ -48,6 +48,19 @@ final class VrAdminCommands {
                 })
                 .then(villager())
                 .then(village())
+                .then(literal("settlement").then(literal("recovery").executes(context -> {
+                    var data = com.jvn.villagerretaliation.settlement.SettlementSavedData.get(context.getSource().getLevel());
+                    context.getSource().sendSuccess(() -> Component.literal("Settlement recovery: "
+                            + (data.readOnly() ? "read-only" : data.recoveryDiagnostics().isEmpty() ? "healthy" : "quarantined records")
+                            + ". Usable settlements: " + data.settlements().size()), false);
+                    data.recoveryDiagnostics().forEach(message -> context.getSource().sendSuccess(() -> Component.literal(message), false));
+                    if (!data.recoveryDiagnostics().isEmpty()) context.getSource().sendSuccess(() -> Component.literal(
+                            "Stop the server and back up data/villagerretaliation_settlements.dat. "
+                            + "For a future format, install a compatible mod version. Otherwise repair the Settlements entries "
+                            + "using RecoveryOriginalRoot or restore a known-good backup, then restart. "
+                            + "Quarantined identities and plots remain reserved. Do not delete the file."), false);
+                    return 1;
+                })))
                 .then(datapack())
                 .then(dialogue())
                 .then(quest())
