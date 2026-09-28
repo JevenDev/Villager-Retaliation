@@ -67,8 +67,16 @@ public final class SettlementManagementClient {
             form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementBrewingScreen form) {
             form.result(payload);
-        } else if (Minecraft.getInstance().screen instanceof SettlementBlueprintScreen form) {
+        } else if (Minecraft.getInstance().screen instanceof SettlementBuildingScreen form) {
             form.result(payload);
+        }
+    }
+
+    public static void acceptBuildingPreview(com.jvn.villagerretaliation.network.SettlementBuildingPreviewPayload payload) {
+        var current = current();
+        if (current != null && current.snapshot().header() != null && current.snapshot().header().id().equals(payload.town())) {
+            var draft = current.buildingDraft();
+            if (draft != null) draft.accept(payload);
         }
     }
 
@@ -80,6 +88,7 @@ public final class SettlementManagementClient {
             case SettlementWorkerScreen form -> form.parent();
             case SettlementConfirmScreen confirmation -> confirmation.parent();
             case SettlementBlueprintScreen blueprints -> blueprints.parent();
+            case SettlementBuildingScreen building -> building.parent();
             case SettlementBrewingScreen brewing -> brewing.parent();
             case SettlementItemPickerScreen picker -> picker.parent().parent();
             case null, default -> null;

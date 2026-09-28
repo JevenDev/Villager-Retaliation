@@ -96,10 +96,10 @@ public final class SettlementViewClientSmoke {
         if (started == 0L) {
             started = Util.getMillis();
         }
-        if (Util.getMillis() - started >= 120_000L) {
+        if (Util.getMillis() - started >= 180_000L) {
             capture("failure");
         }
-        require(Util.getMillis() - started < 120_000L, "client smoke run timed out at phase " + phase
+        require(Util.getMillis() - started < 180_000L, "client smoke run timed out at phase " + phase
                 + " on " + (minecraft.screen == null ? "game" : minecraft.screen.getClass().getSimpleName()));
         if (minecraft.level == null || minecraft.player == null || minecraft.getSingleplayerServer() == null) {
             return;
@@ -124,9 +124,12 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 60 && minecraft.screen instanceof SettlementViewScreen screen && visibleResident(minecraft) != null) {
             if (++ticks == 1) {
                 originalHeight = screen.viewHeight();
-                screen.mouseScrolled(40, 80, 0, -100);
+                minecraft.options.broadcastOptions();
             }
-            if (ticks < 120 && (!maxZoomResidentRendered || !screen.terrainLoaded())) return;
+            if (screen.viewHeight() != SettlementViewWindow.MAX_HEIGHT) screen.mouseScrolled(40, 80, 0, -100);
+            if (ticks < 120 && (screen.viewHeight() != SettlementViewWindow.MAX_HEIGHT
+                    || Math.abs(screen.cameraHeight() - screen.viewHeight()) >= 0.1D
+                    || !maxZoomResidentRendered || !screen.terrainLoaded())) return;
             require(screen.viewHeight() == SettlementViewWindow.MAX_HEIGHT, "the rendering check reaches maximum town zoom");
             require(Math.abs(screen.cameraHeight() - screen.viewHeight()) < 0.1D, "the camera eases into maximum zoom");
             require(screen.terrainLoaded(), "the maximum zoom capture includes the streamed terrain");
@@ -347,15 +350,49 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 14;
         } else if (phase == 14 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30) {
-            button(screen, "villagerretaliation.gui.settlement_view.residents").onPress();
+            button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
+            dragWorld(screen, Vec3.atBottomCenterOf(fixture.center().offset(7, 0, 7)),
+                    Vec3.atBottomCenterOf(fixture.center().offset(9, 0, 9)));
+            require(minecraft.screen == screen && screen.selectionGizmo() != null, "drawing opens area adjustments before settings");
+            button(screen, "villagerretaliation.gui.settlement_view.gizmo_resize").onPress();
+            var bounds = screen.selectionGizmo().bounds();
+            var face = new Vec3(bounds.maxX, bounds.getCenter().y, bounds.getCenter().z);
+            dragWorld(screen, face, face.add(2.4, 0, 0));
+            require(screen.selectionGizmo().bounds().minX == bounds.minX
+                    && screen.selectionGizmo().bounds().maxX == bounds.maxX + 2, "resizing snaps one boundary and preserves the opposite face");
+            ticks = 0;
+            phase = 71;
+        } else if (phase == 71 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            capture("area-resize");
+            button(screen, "villagerretaliation.gui.settlement_view.gizmo_move").onPress();
+            var bounds = screen.selectionGizmo().bounds();
+            var handle = gizmoPivot(bounds).add(gizmoScale(screen), 0, 0);
+            dragWorld(screen, handle, handle.add(1.4, 0, 0));
+            require(screen.selectionGizmo().bounds().equals(bounds.move(1, 0, 0)), "area transform moves the fixed-size bounds by whole blocks");
+            ticks = 0;
+            phase = 72;
+        } else if (phase == 72 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            capture("area-transform");
+            button(screen, "villagerretaliation.gui.settlement_view.gizmo_area_settings").onPress();
+            require(minecraft.screen instanceof SettlementEditScreen, "adjusted area bounds open the existing settings form");
+            minecraft.screen.onClose();
+            ticks = 0;
+            phase = 73;
+        } else if (phase == 73 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            phase = 74;
+        } else if (phase == 74 && minecraft.screen instanceof SettlementViewScreen screen) {
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(minecraft.screen == screen && screen.selectionGizmo() == null, "area cancellation keeps the camera session");
+            button(screen, "villagerretaliation.gui.settlement_view.projects").onPress();
             phase = 15;
         } else if (phase == 15 && minecraft.screen instanceof SettlementManagementScreen screen) {
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
             phase = 16;
         } else if (phase == 16 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS) {
-            require(button(screen, "villagerretaliation.gui.settlement.draft_blueprint").active, "Hamlet unlocks blueprint drafting");
-            button(screen, "villagerretaliation.gui.settlement.draft_blueprint").onPress();
+            require(button(screen, "villagerretaliation.gui.settlement.new_building").active, "Hamlet unlocks direct building requests without paper");
+            button(screen, "villagerretaliation.gui.settlement.new_building").onPress();
             phase = 24;
         } else if (phase == 24 && minecraft.screen instanceof SettlementBlueprintScreen screen) {
             screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
@@ -363,82 +400,112 @@ public final class SettlementViewClientSmoke {
                     .setValue("minecraft:village/plains/houses/plains_small_house_1");
             var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
                     .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
-            require(rows.children().size() == 1, "the blueprint catalog filters to the exact house");
+            require(rows.children().size() == 1, "the prefab catalog filters to the exact house");
             rows.children().getFirst().mouseClicked(0, 0, 0);
-            require(button(screen, "villagerretaliation.gui.settlement.draft_blueprint_cost").active, "one real paper enables drafting");
+            require(button(screen, "villagerretaliation.gui.settlement.place_prefab").active, "a prefab can be placed without an item");
             ticks = 0;
             phase = 33;
         } else if (phase == 33 && minecraft.screen instanceof SettlementBlueprintScreen screen && ++ticks >= 5) {
-            capture("blueprint-catalog");
-            button(screen, "villagerretaliation.gui.settlement.draft_blueprint_cost").onPress();
-            ticks = 0;
-            phase = 25;
-        } else if (phase == 25 && minecraft.screen instanceof SettlementBlueprintScreen screen && ++ticks >= 5
-                && !screen.parent().submitting() && heldBlueprint(minecraft) != null) {
-            projectFixture = new ProjectFixture(projectFixture.builder(), heldBlueprint(minecraft).jobId());
-            require(minecraft.player.getInventory().countItem(net.minecraft.world.item.Items.PAPER) == 0, "the client inventory consumed one paper");
-            capture("blueprint-drafted");
-            screen.onClose();
-            phase = 26;
-        } else if (phase == 26 && minecraft.screen instanceof SettlementManagementScreen screen) {
-            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            capture("prefab-catalog");
+            button(screen, "villagerretaliation.gui.settlement.place_prefab").onPress();
             ticks = 0;
             phase = 27;
-        } else if (phase == 27 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
-            require(button(screen, "villagerretaliation.gui.settlement_view.place_blueprint").active, "the held blueprint enables world placement");
-            button(screen, "villagerretaliation.gui.settlement_view.place_blueprint").onPress();
+        } else if (phase == 27 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
+                && screen.parent().buildingDraft().ghost() != null) {
             clickWorld(screen, Vec3.atBottomCenterOf(fixture.center().offset(18, 0, 4)));
+            var draft = screen.parent().buildingDraft();
+            require(draft.placed && draft.anchor.equals(fixture.center().offset(18, 0, 4)), "terrain selection pins the prefab anchor");
             ticks = 0;
             phase = 28;
-        } else if (phase == 28 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
-                && heldBlueprint(minecraft).worldCenter().getX() == fixture.center().getX() + 18
-                && heldBlueprint(minecraft).worldCenter().getZ() == fixture.center().getZ() + 4) {
-            button(screen, "villagerretaliation.gui.settlement_view.rotate_blueprint").onPress();
+        } else if (phase == 28 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            var draft = screen.parent().buildingDraft();
+            var pivot = gizmoPivot(draft.bounds());
+            double radius = gizmoScale(screen) * 1.4;
+            dragWorld(screen, pivot.add(radius, 0, 0), pivot.add(0, 0, radius));
+            require(draft.rotation == net.minecraft.world.level.block.Rotation.CLOCKWISE_90, "the horizontal rotation control snaps to a quarter turn");
             ticks = 0;
             phase = 29;
         } else if (phase == 29 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
-                && heldBlueprint(minecraft).rotation() == net.minecraft.world.level.block.Rotation.CLOCKWISE_90) {
-            capture("blueprint-positioned");
-            button(screen, "villagerretaliation.gui.settlement_view.raise_blueprint").onPress();
+                && screen.parent().buildingDraft().preview.rotation() == net.minecraft.world.level.block.Rotation.CLOCKWISE_90) {
+            capture("prefab-positioned");
+            var draft = screen.parent().buildingDraft();
+            var handle = gizmoPivot(draft.bounds()).add(0, gizmoScale(screen), 0);
+            var anchor = draft.anchor;
+            dragWorld(screen, handle, handle.add(0, 1.4, 0));
+            require(draft.anchor.equals(anchor.above()), "the vertical movement arrow snaps to blocks");
             ticks = 0;
             phase = 30;
-        } else if (phase == 30 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
-                && heldBlueprint(minecraft).worldMin().getY() == fixture.center().getY() + 1
-                && button(screen, "villagerretaliation.gui.settlement_view.lower_blueprint").active) {
-            button(screen, "villagerretaliation.gui.settlement_view.lower_blueprint").onPress();
-            ticks = 0;
-            phase = 31;
-        } else if (phase == 31 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
-                && heldBlueprint(minecraft).worldMin().getY() == fixture.center().getY()) {
+        } else if (phase == 30 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            var draft = screen.parent().buildingDraft();
+            var handle = gizmoPivot(draft.bounds()).add(0, gizmoScale(screen), 0);
+            dragWorld(screen, handle, handle.add(0, -1.4, 0));
+            require(draft.anchor.getY() == fixture.center().getY(), "the prefab returns to ground height");
+            originalX = screen.focusX();
+            screen.mouseClicked(40, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+            screen.mouseDragged(44, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 4, 0);
+            screen.mouseReleased(44, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+            require(screen.focusX() != originalX && draft.placed, "camera dragging remains available during prefab adjustment");
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
-            require(minecraft.screen == screen, "Escape stops positioning without leaving the town view");
-            button(screen, "villagerretaliation.gui.settlement_view.projects").onPress();
+            require(minecraft.screen == screen && screen.parent().buildingDraft() == null, "Escape cancels the draft without leaving town view");
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var town = SettlementSavedData.get(minecraft.getSingleplayerServer().getPlayerList().getPlayer(player).serverLevel()).get(fixture.town()).orElseThrow();
+                require(town.projects().isEmpty() && town.economy().balance().equals(com.jvn.villagerretaliation.sell.CurrencyAmount.of(500, 1)), "preview and cancellation consume no funds or project slots");
+            }).join();
+            button(screen, "villagerretaliation.gui.settlement.new_building").onPress();
+            phase = 31;
+        } else if (phase == 31 && minecraft.screen instanceof SettlementBlueprintScreen screen) {
+            screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow()
+                    .setValue("minecraft:village/plains/houses/plains_small_house_1");
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            rows.children().getFirst().mouseClicked(0, 0, 0);
+            button(screen, "villagerretaliation.gui.settlement.place_prefab").onPress();
+            ticks = 0;
             phase = 32;
-        } else if (phase == 32 && minecraft.screen instanceof SettlementManagementScreen screen
-                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS) {
-            require(button(screen, "villagerretaliation.gui.settlement.new_project").active, "the drafted and positioned blueprint can be commissioned");
-            button(screen, "villagerretaliation.gui.settlement.new_project").onPress();
-            phase = 17;
-        } else if (phase == 17 && minecraft.screen instanceof SettlementManagementScreen screen) {
-            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, projectFixture.builder().toString());
+        } else if (phase == 32 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
+                && screen.parent().buildingDraft().ghost() != null) {
+            clickWorld(screen, Vec3.atBottomCenterOf(fixture.center().offset(18, 0, 4)));
+            projectFixture = new ProjectFixture(projectFixture.builder(), screen.parent().buildingDraft().request);
+            button(screen, "villagerretaliation.gui.settlement_view.building_choose_builder").onPress();
             ticks = 0;
             phase = 18;
-        } else if (phase == 18 && minecraft.screen instanceof SettlementManagementScreen screen
-                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS
-                && screen.snapshot().entries().size() == 1 && screen.snapshot().entries().getFirst().id().equals(projectFixture.builder())) {
-            if (++ticks == 1) selectFirstRow(screen);
-            require(screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident resident
-                    && resident.presence() == com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.UNLOADED,
-                    "the selected construction worker has no loaded entity");
-            require(button(screen, "villagerretaliation.gui.settlement.commission").active, "the unloaded assigned builder remains available");
-            if (ticks < 5) return;
-            capture("unloaded-builder");
-            button(screen, "villagerretaliation.gui.settlement.commission").onPress();
+        } else if (phase == 18 && minecraft.screen instanceof SettlementBuildingScreen screen && ++ticks >= 5
+                && screen.parent().buildingDraft().preview != null) {
+            var draft = screen.parent().buildingDraft();
+            require(draft.preview.builders().size() == 1 && draft.preview.builders().getFirst().id().equals(projectFixture.builder()), "an unassigned unloaded builder is available");
+            require(draft.preview.materials().stream().anyMatch(material -> material.available() < material.required()), "the review identifies missing supplies");
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            rows.children().getFirst().mouseClicked(0, 0, 0);
             ticks = 0;
             phase = 19;
-        } else if (phase == 19 && minecraft.screen instanceof SettlementConfirmScreen screen && ++ticks >= 5) {
+        } else if (phase == 19 && minecraft.screen instanceof SettlementBuildingScreen screen && ++ticks >= 5
+                && button(screen, "villagerretaliation.gui.settlement.request_build").active) {
             capture("project-review");
-            button(screen, "gui.yes").onPress();
+            screen.onClose();
+            phase = 75;
+        } else if (phase == 75 && minecraft.screen instanceof SettlementViewScreen screen) {
+            require(screen.parent().buildingDraft().request.equals(projectFixture.project())
+                    && screen.parent().buildingDraft().builder.equals(projectFixture.builder()), "returning to placement keeps the reviewed draft and builder");
+            screen.selectionGizmo().mode(SettlementSelectionGizmo.Mode.RESIZE);
+            require(screen.selectionGizmo().mode() == SettlementSelectionGizmo.Mode.TRANSFORM, "prefabs retain their fixed dimensions");
+            button(screen, "villagerretaliation.gui.settlement.change_prefab").onPress();
+            phase = 76;
+        } else if (phase == 76 && minecraft.screen instanceof SettlementBlueprintScreen screen) {
+            require(button(screen, "villagerretaliation.gui.settlement.place_prefab").active, "the current prefab remains selected when returning to the catalog");
+            button(screen, "villagerretaliation.gui.settlement.place_prefab").onPress();
+            phase = 77;
+        } else if (phase == 77 && minecraft.screen instanceof SettlementViewScreen screen) {
+            require(screen.parent().buildingDraft().request.equals(projectFixture.project())
+                    && screen.parent().buildingDraft().anchor.equals(fixture.center().offset(18, 0, 4)), "prefab selection preserves the placement draft");
+            button(screen, "villagerretaliation.gui.settlement_view.building_choose_builder").onPress();
+            ticks = 0;
+            phase = 78;
+        } else if (phase == 78 && minecraft.screen instanceof SettlementBuildingScreen screen && ++ticks >= 5
+                && button(screen, "villagerretaliation.gui.settlement.request_build").active) {
+            button(screen, "villagerretaliation.gui.settlement.request_build").onPress();
             phase = 20;
         } else if (phase == 20 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS
@@ -628,10 +695,6 @@ public final class SettlementViewClientSmoke {
         }
     }
 
-    private static com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData heldBlueprint(Minecraft minecraft) {
-        return com.jvn.villagerretaliation.item.ConstructionBlueprintItem.previewData(minecraft.player.getMainHandItem()).orElse(null);
-    }
-
     private static void selectFirstRow(SettlementManagementScreen screen) {
         var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
                 .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
@@ -673,9 +736,6 @@ public final class SettlementViewClientSmoke {
             level.setBlockAndUpdate(position, position.getY() == origin.getY() - 1
                     ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState());
         }
-        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Second house",
-                origin.offset(-3, -1, -4), origin.offset(14, 12, 12), 5, true);
-        require(SettlementBuildingService.register(player, fixture.town(), area), "the construction area is registered");
         Villager builder = EntityType.VILLAGER.create(level);
         builder.setPos(origin.offset(-2, 0, 2).getBottomCenter());
         builder.setNoAi(true);
@@ -683,9 +743,10 @@ public final class SettlementViewClientSmoke {
         builder.setVillagerData(builder.getVillagerData().setProfession(VillagerProfession.MASON));
         VillageAllegianceApi.assignKnown(level, builder, fixture.town(), AllegianceAssignmentSource.EXPLICIT_API);
         require(level.getEntity(builder.getUUID()) == null, "the civic builder remains unloaded");
-        require(SettlementWorkforceService.assign(level, player, fixture.town(), builder, area.id()), "the builder is assigned to construction");
         SettlementCareService.onUnloaded(builder);
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PAPER));
+        com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.give(player, 500);
+        require(com.jvn.villagerretaliation.settlement.SettlementTradeService.depositCurrency(player, fixture.town(), 500), "the construction fee is funded");
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
         player.containerMenu.broadcastChanges();
         return new ProjectFixture(builder.getUUID(), null);
     }
@@ -770,15 +831,36 @@ public final class SettlementViewClientSmoke {
         };
     }
 
-    private static void clickWorld(SettlementViewScreen screen, Vec3 position) {
+    private static Vec3 gizmoPivot(AABB bounds) {
+        return new Vec3(bounds.getCenter().x, bounds.minY + 0.5, bounds.getCenter().z);
+    }
+
+    private static double gizmoScale(SettlementViewScreen screen) {
+        return Math.clamp(screen.cameraHeight() * 0.055, 1.2, 8);
+    }
+
+    private static Vec3 screenPoint(SettlementViewScreen screen, Vec3 position) {
         var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         Vec3 relative = position.subtract(camera.getPosition());
         double distance = relative.dot(new Vec3(camera.getLookVector()));
         double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
         double x = screen.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
         double y = screen.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * screen.height / (2.0D * distance * tangent);
-        screen.mouseClicked(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
-        screen.mouseReleased(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        return new Vec3(x, y, 0);
+    }
+
+    private static void clickWorld(SettlementViewScreen screen, Vec3 position) {
+        var point = screenPoint(screen, position);
+        screen.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseReleased(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+
+    private static void dragWorld(SettlementViewScreen screen, Vec3 start, Vec3 end) {
+        var from = screenPoint(screen, start);
+        var to = screenPoint(screen, end);
+        screen.mouseClicked(from.x, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseDragged(to.x, to.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, to.x - from.x, to.y - from.y);
+        screen.mouseReleased(to.x, to.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
     }
 
     private static Entity visibleResident(Minecraft minecraft) {
@@ -793,7 +875,7 @@ public final class SettlementViewClientSmoke {
     private static Button button(net.minecraft.client.gui.screens.Screen screen, String translation) {
         String label = Component.translatable(translation).getString();
         return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
-                .filter(button -> button.getMessage().getString().equals(label)).findFirst().orElseThrow();
+                .filter(button -> button.visible && button.getMessage().getString().equals(label)).findFirst().orElseThrow();
     }
 
     private static int capture(String name) {

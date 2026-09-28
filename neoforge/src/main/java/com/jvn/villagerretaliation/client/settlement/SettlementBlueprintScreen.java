@@ -1,8 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
-import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
-import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphics;
@@ -11,30 +9,26 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Items;
 
 public final class SettlementBlueprintScreen extends Screen {
     private final SettlementManagementScreen parent;
     private final List<BuilderStructureCatalog.Entry> entries = BuilderStructureCatalog.entries();
     private String query = "";
     private BuilderStructureCatalog.Entry selected;
-    private Component feedback = Component.empty();
     private Blueprints list;
     private Button draft;
     private int left;
     private int panelWidth;
 
     public SettlementBlueprintScreen(SettlementManagementScreen parent) {
-        super(SettlementManagementScreen.text("blueprint_catalog"));
+        super(SettlementManagementScreen.text("building_prefabs"));
         this.parent = parent;
+        var draft = parent.buildingDraft();
+        this.selected = draft == null ? null : entries.stream().filter(entry -> entry.id().equals(draft.structure)).findFirst().orElse(null);
     }
 
     SettlementManagementScreen parent() {
         return this.parent;
-    }
-
-    void result(SettlementManagementActionResultPayload payload) {
-        this.feedback = SettlementManagementScreen.text(payload.applied() ? "blueprint_ready" : "blueprint_failed");
     }
 
     @Override
@@ -53,10 +47,9 @@ public final class SettlementBlueprintScreen extends Screen {
         });
         this.list.refresh();
         int half = (this.panelWidth - 6) / 2;
-        this.draft = addRenderableWidget(Button.builder(SettlementManagementScreen.text("draft_blueprint_cost"), ignored -> {
+        this.draft = addRenderableWidget(Button.builder(SettlementManagementScreen.text("place_prefab"), ignored -> {
             if (this.selected != null) {
-                this.feedback = SettlementManagementScreen.text("saving");
-                this.parent.submit(new SettlementManagementActionPayload.DraftBlueprint(this.selected.id()));
+                this.parent.placeBuilding(this.selected);
             }
         }).bounds(this.left, this.height - 28, half, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
@@ -72,8 +65,7 @@ public final class SettlementBlueprintScreen extends Screen {
 
     private void updateButton() {
         if (this.draft != null) {
-            this.draft.active = this.selected != null && !this.parent.submitting()
-                    && this.minecraft.player != null && this.minecraft.player.getInventory().countItem(Items.PAPER) > 0;
+            this.draft.active = this.selected != null && !this.parent.submitting();
         }
     }
 
@@ -91,7 +83,7 @@ public final class SettlementBlueprintScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, 16, 0xFFFFFF);
-        Component message = this.feedback.getString().isEmpty() ? SettlementManagementScreen.text("blueprint_draft_hint") : this.feedback;
+        Component message = SettlementManagementScreen.text("building_prefab_hint");
         graphics.drawWordWrap(this.font, message, this.left, this.height - 80, this.panelWidth, 0xD0D0D0);
     }
 
@@ -125,7 +117,6 @@ public final class SettlementBlueprintScreen extends Screen {
             super.setSelected(row);
             if (row != null) {
                 selected = row.entry;
-                feedback = Component.empty();
                 updateButton();
             }
         }

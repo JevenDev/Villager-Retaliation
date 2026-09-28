@@ -67,6 +67,12 @@ public final class ConstructionBlueprintPreviewRenderer {
             return;
         }
 
+        renderPreview(event, preview, true);
+    }
+
+    public static void renderPreview(RenderLevelStageEvent event, PreviewData preview, boolean outline) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || preview == null || preview.blocks().isEmpty()) return;
         PoseStack poseStack = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
         MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
@@ -74,7 +80,7 @@ public final class ConstructionBlueprintPreviewRenderer {
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
         renderBlockGhosts(minecraft, poseStack, bufferSource, preview);
-        renderBounds(minecraft.level, poseStack, bufferSource, preview);
+        if (outline) renderBounds(minecraft.level, poseStack, bufferSource, preview);
         poseStack.popPose();
 
         bufferSource.endBatch(RenderType.translucent());

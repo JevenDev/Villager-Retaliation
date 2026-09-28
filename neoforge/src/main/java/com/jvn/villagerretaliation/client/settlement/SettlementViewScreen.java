@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
-import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
+import com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
@@ -71,11 +71,16 @@ public final class SettlementViewScreen extends Screen {
     private Button drawArea;
     private final Button[] guardButtons = new Button[3];
     private Button returnToPost;
-    private final Button[] blueprintButtons = new Button[4];
-    private boolean placingBlueprint;
-    private boolean blueprintPending;
-    private long blueprintSentAt;
-    private Component blueprintFeedback = Component.empty();
+    private Button newBuilding;
+    private Button transform;
+    private Button resize;
+    private Button applyGizmo;
+    private Button cancelGizmo;
+    private Button changePrefab;
+    private SettlementSelectionGizmo gizmo;
+    private boolean buildingGizmo;
+    private SettlementManagementPayload.Area editingArea;
+    private AABB areaBounds;
     private SettlementGuardOrder.Mode guardMode;
     private final List<BlockPos> guardPoints = new ArrayList<>();
     private boolean guardPending;
@@ -115,6 +120,10 @@ public final class SettlementViewScreen extends Screen {
 
     SettlementManagementScreen parent() {
         return this.parent;
+    }
+
+    SettlementSelectionGizmo selectionGizmo() {
+        return this.gizmo;
     }
 
     UUID session() {
@@ -206,13 +215,6 @@ public final class SettlementViewScreen extends Screen {
     }
 
     void acceptResult(SettlementManagementActionResultPayload payload) {
-        if (this.blueprintPending && this.header.id().equals(payload.town())) {
-            this.blueprintPending = false;
-            this.blueprintSentAt = Util.getMillis();
-            this.blueprintFeedback = payload.applied() && this.placingBlueprint ? Component.empty()
-                    : text(payload.applied() ? "blueprint_applied" : "blueprint_denied");
-            updateActions();
-        }
         if (this.guardPending && this.header.id().equals(payload.town())) {
             this.guardPending = false;
             this.guardFeedback = text(payload.applied() ? "guard_applied" : "guard_denied");
@@ -238,8 +240,9 @@ public final class SettlementViewScreen extends Screen {
         this.drawArea = addRenderableWidget(Button.builder(text("draw_area"), ignored -> {
             this.guardMode = null;
             this.guardPoints.clear();
-            this.placingBlueprint = false;
-            this.blueprintFeedback = Component.empty();
+            this.parent.clearBuildingDraft();
+            this.editingArea = null;
+            this.gizmo = null;
             this.drawing = !this.drawing;
             this.dragStart = null;
             this.dragEnd = null;
@@ -262,22 +265,35 @@ public final class SettlementViewScreen extends Screen {
         }
         this.returnToPost = addRenderableWidget(Button.builder(text("guard_post"), ignored -> submitGuardOrder(null))
                 .bounds(8, 76, 148, 20).build());
-        int blueprintWidth = Math.min(112, (this.panelLeft - 20) / 2);
-        this.blueprintButtons[0] = addRenderableWidget(Button.builder(text("place_blueprint"), ignored -> {
-            this.placingBlueprint = !this.placingBlueprint;
-            this.guardMode = null;
-            this.guardPoints.clear();
+        this.newBuilding = addRenderableWidget(Button.builder(SettlementManagementScreen.text("new_building"), ignored -> {
             this.drawing = false;
-            this.dragStart = null;
-            this.dragEnd = null;
-            updateActions();
-        }).bounds(8, 102, blueprintWidth, 20).build());
-        this.blueprintButtons[1] = addRenderableWidget(Button.builder(text("rotate_blueprint"), ignored -> adjustBlueprint(true, 0))
-                .bounds(12 + blueprintWidth, 102, blueprintWidth, 20).build());
-        this.blueprintButtons[2] = addRenderableWidget(Button.builder(text("raise_blueprint"), ignored -> adjustBlueprint(false, 1))
-                .bounds(8, 124, blueprintWidth, 20).build());
-        this.blueprintButtons[3] = addRenderableWidget(Button.builder(text("lower_blueprint"), ignored -> adjustBlueprint(false, -1))
-                .bounds(12 + blueprintWidth, 124, blueprintWidth, 20).build());
+            this.editingArea = null;
+            this.guardMode = null;
+            this.gizmo = null;
+            management().newBuilding();
+        }).bounds(this.panelLeft + 8, 150, this.panelWidth - 16, 20).build());
+        this.transform = addRenderableWidget(Button.builder(text("gizmo_move"), ignored -> {
+            if (this.gizmo != null) this.gizmo.mode(SettlementSelectionGizmo.Mode.TRANSFORM);
+        }).bounds(8, 52, 92, 20).build());
+        this.resize = addRenderableWidget(Button.builder(text("gizmo_resize"), ignored -> {
+            if (this.gizmo != null) this.gizmo.mode(SettlementSelectionGizmo.Mode.RESIZE);
+        }).bounds(104, 52, 68, 20).build());
+        this.applyGizmo = addRenderableWidget(Button.builder(text("gizmo_area_settings"), ignored -> {
+            var draft = this.parent.buildingDraft();
+            if (draft != null && draft.placed) {
+                this.minecraft.setScreen(new SettlementBuildingScreen(management()));
+            } else if (this.editingArea != null) {
+                var area = new SettlementManagementPayload.Area(this.editingArea.id(), this.editingArea.name(), this.editingArea.kind(),
+                        BlockPos.containing(this.areaBounds.minX, this.areaBounds.minY, this.areaBounds.minZ),
+                        BlockPos.containing(this.areaBounds.maxX - 1, this.areaBounds.maxY - 1, this.areaBounds.maxZ - 1),
+                        this.editingArea.priority(), this.editingArea.enabled(), this.editingArea.beds(), this.editingArea.fixtures(), this.editingArea.workers());
+                editArea(area);
+            }
+        }).bounds(176, 52, 100, 20).build());
+        this.changePrefab = addRenderableWidget(Button.builder(SettlementManagementScreen.text("change_prefab"), ignored -> management().newBuilding())
+                .bounds(8, 76, 144, 20).build());
+        this.cancelGizmo = addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), ignored -> cancelGizmo())
+                .bounds(156, 76, 76, 20).build());
         updateActions();
         positionCamera();
     }
@@ -285,10 +301,9 @@ public final class SettlementViewScreen extends Screen {
     @Override
     public void tick() {
         long now = Util.getMillis();
-        if (this.blueprintPending && now - this.blueprintSentAt > 3_000L) {
-            this.blueprintPending = false;
-            this.blueprintFeedback = text("blueprint_denied");
-        }
+        var draft = this.parent.buildingDraft();
+        if (draft != null) draft.tick(this.header.id());
+        synchronizeGizmo();
         updateActions();
         if (this.guardPending && now - this.guardSentAt > 3_000L) {
             this.guardPending = false;
@@ -360,6 +375,12 @@ public final class SettlementViewScreen extends Screen {
         positionCamera();
         this.hovered = mouseX >= 0 && mouseX < this.panelLeft && mouseY >= 0 && mouseY < this.height
                 ? pick(mouseX, mouseY) : new Pick(null, null);
+        var currentDraft = this.parent.buildingDraft();
+        if (currentDraft != null && !currentDraft.placed && this.hovered.position() != null && terrainLoaded()) {
+            currentDraft.move(this.hovered.position().above());
+        }
+        synchronizeGizmo();
+        if (this.gizmo != null && mouseX < this.panelLeft && !SettlementViewClient.panelsOpen(this)) this.gizmo.hover(ray(mouseX, mouseY));
         graphics.fill(this.panelLeft, 0, this.width, this.height, 0xE0101010);
         graphics.drawString(this.font, this.font.plainSubstrByWidth(this.header.name(), this.panelWidth - 16),
                 this.panelLeft + 8, 10, 0xFFFFFF);
@@ -368,7 +389,7 @@ public final class SettlementViewScreen extends Screen {
         graphics.drawString(this.font, text("food", String.format(java.util.Locale.ROOT, "%.1f", this.header.foodDays())),
                 this.panelLeft + 8, 42, 0xD0D0D0);
         Component selection = selectedName();
-        int y = 160;
+        int y = 184;
         for (var line : this.font.split(selection, this.panelWidth - 16)) {
             if (y + this.font.lineHeight > this.height - 78) {
                 break;
@@ -376,8 +397,9 @@ public final class SettlementViewScreen extends Screen {
             graphics.drawString(this.font, line, this.panelLeft + 8, y, 0xFFFFFF);
             y += this.font.lineHeight + 2;
         }
-        Component hint = !this.blueprintFeedback.getString().isEmpty() ? this.blueprintFeedback
-                : this.placingBlueprint ? text("blueprint_place_hint")
+        var draft = this.parent.buildingDraft();
+        Component hint = draft != null ? text(draft.placed ? "building_adjust_hint" : "building_place_hint")
+                : this.editingArea != null ? text("gizmo_area_hint")
                 : this.guardMode != null ? text(this.guardMode == SettlementGuardOrder.Mode.PATROL
                 ? "guard_patrol_hint" : "guard_destination_hint", this.guardPoints.size(), SettlementGuardOrder.MAX_POINTS)
                 : !this.guardFeedback.getString().isEmpty() ? this.guardFeedback : text(this.drawing ? "draw_hint" : "controls");
@@ -413,7 +435,7 @@ public final class SettlementViewScreen extends Screen {
 
     private void updateActions() {
         if (!permits(SettlementPermission.BUILD)) {
-            this.placingBlueprint = false;
+            cancelGizmo();
             this.drawing = false;
             this.dragStart = null;
             this.dragEnd = null;
@@ -422,34 +444,37 @@ public final class SettlementViewScreen extends Screen {
             this.guardMode = null;
             this.guardPoints.clear();
         }
-        var blueprint = heldBlueprint();
-        if (blueprint == null || blueprint.placementLocked()) {
-            this.placingBlueprint = false;
-        }
-        for (var button : this.blueprintButtons) {
-            if (button != null) {
-                button.visible = blueprint != null && permits(SettlementPermission.BUILD) && this.header.projectLimit() > 0;
-                button.active = button.visible && !blueprint.placementLocked() && blueprintReady() && !this.guardPending;
-            }
-        }
-        if (this.blueprintButtons[0] != null) {
-            this.blueprintButtons[0].setMessage(text(this.placingBlueprint ? "cancel_blueprint_placement" : "place_blueprint"));
+        var draft = this.parent.buildingDraft();
+        boolean manipulating = this.gizmo != null;
+        if (this.newBuilding != null) this.newBuilding.active = permits(SettlementPermission.BUILD) && this.header.projectLimit() > 0 && !this.guardPending;
+        if (this.transform != null) {
+            this.transform.visible = manipulating;
+            this.transform.setMessage(text(draft == null ? "gizmo_move" : "gizmo_transform"));
+            this.transform.active = manipulating && this.gizmo.mode() != SettlementSelectionGizmo.Mode.TRANSFORM;
+            this.resize.visible = manipulating && draft == null;
+            this.resize.active = manipulating && this.gizmo.mode() != SettlementSelectionGizmo.Mode.RESIZE;
+            this.applyGizmo.visible = manipulating;
+            this.applyGizmo.setX(draft == null ? 176 : 104);
+            this.applyGizmo.setMessage(text(draft == null ? "gizmo_area_settings" : "building_choose_builder"));
+            this.applyGizmo.active = draft == null || draft.placed && !draft.submitting;
+            this.cancelGizmo.visible = manipulating;
+            this.changePrefab.visible = manipulating && draft != null;
         }
         if (this.manage != null) {
-            this.manage.active = !this.guardPending && !this.blueprintPending && (this.resident != null
+            this.manage.active = !this.guardPending && (this.resident != null
                     || this.selectedArea != null && this.areas.containsKey(this.selectedArea) && permits(SettlementPermission.BUILD));
-            this.drawArea.active = permits(SettlementPermission.BUILD) && !this.guardPending && !this.blueprintPending;
+            this.drawArea.active = permits(SettlementPermission.BUILD) && !this.guardPending;
             this.drawArea.setMessage(text(this.drawing ? "cancel_area" : "draw_area"));
         }
         for (var button : this.guardButtons) {
             if (button != null) {
-                button.visible = selectedGuard();
-                button.active = !this.guardPending && !this.blueprintPending;
+                button.visible = selectedGuard() && !manipulating;
+                button.active = !this.guardPending;
             }
         }
         if (this.returnToPost != null) {
-            this.returnToPost.visible = selectedGuard();
-            this.returnToPost.active = !this.guardPending && !this.blueprintPending;
+            this.returnToPost.visible = selectedGuard() && !manipulating;
+            this.returnToPost.active = !this.guardPending;
             this.guardButtons[SettlementGuardOrder.Mode.PATROL.ordinal()].setMessage(text(
                     this.guardMode == SettlementGuardOrder.Mode.PATROL ? "guard_finish_patrol" : "guard_patrol"));
         }
@@ -467,8 +492,7 @@ public final class SettlementViewScreen extends Screen {
             }
             return;
         }
-        this.placingBlueprint = false;
-        this.blueprintFeedback = Component.empty();
+        cancelGizmo();
         this.guardMode = mode;
         this.guardPoints.clear();
         this.guardFeedback = Component.empty();
@@ -492,43 +516,59 @@ public final class SettlementViewScreen extends Screen {
         updateActions();
     }
 
-    private ConstructionBlueprintItem.PreviewData heldBlueprint() {
-        if (this.minecraft == null || this.minecraft.player == null || this.minecraft.level == null) {
-            return null;
-        }
-        for (var stack : this.minecraft.player.getHandSlots()) {
-            var preview = ConstructionBlueprintItem.previewData(stack).orElse(null);
-            if (preview != null && !preview.locked() && preview.dimension().location().equals(this.minecraft.level.dimension().location())) {
-                return preview;
+    private void cancelGizmo() {
+        this.parent.clearBuildingDraft();
+        this.editingArea = null;
+        this.areaBounds = null;
+        this.gizmo = null;
+    }
+
+    private void synchronizeGizmo() {
+        var draft = this.parent.buildingDraft();
+        if (draft != null) {
+            if (this.gizmo == null || !this.buildingGizmo) {
+                this.gizmo = new SettlementSelectionGizmo(draft.bounds(), true, false, true, this::allowedGizmoBounds);
+                this.buildingGizmo = true;
+                this.editingArea = null;
+                this.drawing = false;
+                this.guardMode = null;
             }
+            this.gizmo.bounds(draft.bounds());
+        } else if (this.editingArea != null) {
+            if (this.gizmo == null || this.buildingGizmo) {
+                this.gizmo = new SettlementSelectionGizmo(this.areaBounds, true, true, false, this::allowedGizmoBounds);
+                this.buildingGizmo = false;
+            }
+            this.gizmo.bounds(this.areaBounds);
+        } else {
+            this.gizmo = null;
         }
-        return null;
+        if (this.gizmo != null) this.gizmo.scale(this.cameraHeight * 0.055);
     }
 
-    private void adjustBlueprint(boolean rotate, int height) {
-        var blueprint = heldBlueprint();
-        if (blueprint == null) {
-            return;
-        }
-        var anchor = new BlockPos(blueprint.worldCenter().getX(), blueprint.worldMin().getY() + height, blueprint.worldCenter().getZ());
-        Rotation rotation = rotate ? blueprint.rotation().getRotated(Rotation.CLOCKWISE_90) : blueprint.rotation();
-        submitBlueprint(blueprint, anchor, rotation);
+    private boolean allowedGizmoBounds(AABB bounds) {
+        var level = this.minecraft.level;
+        var min = BlockPos.containing(bounds.minX, bounds.minY, bounds.minZ);
+        var max = BlockPos.containing(bounds.maxX - 1, bounds.maxY - 1, bounds.maxZ - 1);
+        if (level == null || level.isOutsideBuildHeight(min) || level.isOutsideBuildHeight(max)
+                || !level.getWorldBorder().isWithinBounds(min) || !level.getWorldBorder().isWithinBounds(max)
+                || min.getX() < this.header.center().getX() - this.window.radius() || max.getX() > this.header.center().getX() + this.window.radius()
+                || min.getZ() < this.header.center().getZ() - this.window.radius() || max.getZ() > this.header.center().getZ() + this.window.radius()) return false;
+        return this.parent.buildingDraft() != null || bounds.getXsize() <= 128 && bounds.getYsize() <= 64 && bounds.getZsize() <= 128
+                && bounds.getXsize() * bounds.getYsize() * bounds.getZsize() <= com.jvn.villagerretaliation.settlement.SettlementArea.MAX_VOLUME;
     }
 
-    private boolean blueprintReady() {
-        return !this.blueprintPending && Util.getMillis() - this.blueprintSentAt >= 300L;
-    }
-
-    private void submitBlueprint(ConstructionBlueprintItem.PreviewData blueprint, BlockPos anchor, Rotation rotation) {
-        if (!blueprintReady() || this.guardPending || blueprint.placementLocked() || !permits(SettlementPermission.BUILD)) {
-            return;
+    private void adjustGizmo(SettlementSelectionGizmo.Change change) {
+        var draft = this.parent.buildingDraft();
+        if (draft != null) {
+            draft.placed = true;
+            draft.rotate(change.turns());
+            var old = draft.bounds();
+            draft.move(draft.anchor.offset((int) Math.round(change.bounds().minX - old.minX),
+                    (int) Math.round(change.bounds().minY - old.minY), (int) Math.round(change.bounds().minZ - old.minZ)));
+        } else {
+            this.areaBounds = change.bounds();
         }
-        PacketDistributor.sendToServer(new SettlementManagementActionPayload(this.header.id(),
-                new SettlementManagementActionPayload.PlaceBlueprint(blueprint.jobId(), anchor, rotation)));
-        this.blueprintPending = true;
-        this.blueprintSentAt = Util.getMillis();
-        this.blueprintFeedback = text("blueprint_sending");
-        updateActions();
     }
 
     private boolean permits(SettlementPermission permission) {
@@ -590,8 +630,11 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE && this.placingBlueprint) {
-            this.placingBlueprint = false;
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && (this.gizmo != null || this.drawing)) {
+            cancelGizmo();
+            this.drawing = false;
+            this.dragStart = null;
+            this.dragEnd = null;
             updateActions();
             return true;
         }
@@ -642,8 +685,8 @@ public final class SettlementViewScreen extends Screen {
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
             return true;
         }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.placingBlueprint) {
-            this.placingBlueprint = false;
+        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.gizmo != null) {
+            cancelGizmo();
             updateActions();
             return true;
         }
@@ -656,14 +699,19 @@ public final class SettlementViewScreen extends Screen {
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             return false;
         }
+        var draft = this.parent.buildingDraft();
+        if (this.gizmo != null && (draft == null || draft.placed) && this.gizmo.begin(ray(x, y))) return true;
         var hit = pick(x, y);
-        if (this.placingBlueprint) {
-            var blueprint = heldBlueprint();
-            if (blueprint != null && hit.position() != null) {
-                submitBlueprint(blueprint, hit.position().above(), blueprint.rotation());
+        if (draft != null) {
+            if (hit.position() != null) {
+                draft.move(hit.position().above());
+                draft.placed = true;
+                synchronizeGizmo();
+                updateActions();
             }
             return true;
         }
+        if (this.editingArea != null) return true;
         if (this.guardMode != null) {
             if (hit.position() != null && this.guardPoints.size() < SettlementGuardOrder.MAX_POINTS) {
                 BlockPos destination = hit.position().above();
@@ -677,7 +725,6 @@ public final class SettlementViewScreen extends Screen {
             return true;
         }
         this.guardFeedback = Component.empty();
-        this.blueprintFeedback = Component.empty();
         var matchingAreas = hit.position() == null ? List.<UUID>of() : this.areas.values().stream()
                 .filter(area -> contains(area, hit.position())).map(SettlementManagementPayload.Area::id).toList();
         int previousArea = hit.resident() == null && this.selectedResident == null
@@ -707,6 +754,10 @@ public final class SettlementViewScreen extends Screen {
                     (-Math.sin(yaw) * deltaX + Math.cos(yaw) * deltaY) * scale);
             return true;
         }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.gizmo != null && this.gizmo.dragging()) {
+            this.gizmo.drag(ray(Math.min(x, this.panelLeft - 1), y)).ifPresent(this::adjustGizmo);
+            return true;
+        }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.drawing && this.dragStart != null) {
             BlockPos position = pick(Math.min(x, this.panelLeft - 1), y).position();
             if (position != null) {
@@ -719,25 +770,41 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double x, double y, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.gizmo != null && this.gizmo.dragging()) {
+            this.gizmo.end();
+            return true;
+        }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.drawing && this.dragStart != null && this.dragEnd != null) {
             AABB bounds = draftBounds();
             var area = new SettlementManagementPayload.Area(UUID.randomUUID(), "", SettlementAreaType.HOME,
                     BlockPos.containing(bounds.minX, bounds.minY, bounds.minZ),
                     BlockPos.containing(bounds.maxX - 1.0D, bounds.maxY - 1.0D, bounds.maxZ - 1.0D), 5, true, 0, 0, 0);
-            editArea(area);
+            this.editingArea = area;
+            this.areaBounds = bounds;
+            this.drawing = false;
+            this.dragStart = null;
+            this.dragEnd = null;
+            synchronizeGizmo();
+            updateActions();
             return true;
         }
         return super.mouseReleased(x, y, button);
     }
 
-    private Pick pick(double x, double y) {
+    private SettlementSelectionGizmo.Ray ray(double x, double y) {
         var camera = this.minecraft.gameRenderer.getMainCamera();
         double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
         Vec3 direction = new Vec3(camera.getLookVector())
                 .add(new Vec3(camera.getLeftVector()).scale(-(x / this.width * 2.0D - 1.0D) * tangent * this.width / this.height))
-                .add(new Vec3(camera.getUpVector()).scale((1.0D - y / this.height * 2.0D) * tangent)).normalize();
-        Vec3 start = camera.getPosition();
-        Vec3 end = start.add(direction.scale(256.0D));
+                .add(new Vec3(camera.getUpVector()).scale((1.0D - y / this.height * 2.0D) * tangent));
+        return new SettlementSelectionGizmo.Ray(camera.getPosition(), direction);
+    }
+
+    private Pick pick(double x, double y) {
+        var camera = this.minecraft.gameRenderer.getMainCamera();
+        var ray = ray(x, y);
+        Vec3 start = ray.origin();
+        Vec3 end = start.add(ray.direction().scale(256.0D));
         var block = this.minecraft.level.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE,
                 ClipContext.Fluid.NONE, camera.getEntity()));
         double distance = block.getType() == HitResult.Type.MISS ? 256.0D * 256.0D : start.distanceToSqr(block.getLocation());
@@ -756,6 +823,8 @@ public final class SettlementViewScreen extends Screen {
     }
 
     void renderWorldSelection(RenderLevelStageEvent event) {
+        var draft = this.parent.buildingDraft();
+        if (draft != null) ConstructionBlueprintPreviewRenderer.renderPreview(event, draft.ghost(), false);
         PoseStack pose = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
         var buffers = this.minecraft.renderBuffers().bufferSource();
@@ -772,11 +841,11 @@ public final class SettlementViewScreen extends Screen {
                         selected ? 1.0F : 0.65F, selected ? 1.0F : 0.45F);
             }
         }
-        if (this.selectedBlock != null && this.selectedArea == null && this.selectedResident == null) {
+        if (this.gizmo == null && this.selectedBlock != null && this.selectedArea == null && this.selectedResident == null) {
             LevelRenderer.renderLineBox(pose, lines, new AABB(this.selectedBlock).inflate(0.015D),
                     0.25F, 0.9F, 1.0F, 1.0F);
         }
-        if (this.hovered.position() != null && !this.hovered.position().equals(this.selectedBlock)
+        if (this.gizmo == null && this.hovered.position() != null && !this.hovered.position().equals(this.selectedBlock)
                 && this.hovered.resident() == null && !SettlementViewClient.panelsOpen(this)) {
             LevelRenderer.renderLineBox(pose, lines, new AABB(this.hovered.position()).inflate(0.015D),
                     1.0F, 0.78F, 0.25F, 0.7F);
@@ -798,10 +867,14 @@ public final class SettlementViewScreen extends Screen {
             LevelRenderer.renderLineBox(pose, lines, new AABB(point).deflate(0.15D), 1.0F, 1.0F, 1.0F, 1.0F);
         }
         if (this.drawing && this.dragStart != null && this.dragEnd != null) {
-            LevelRenderer.renderLineBox(pose, lines, draftBounds(), 1.0F, 1.0F, 1.0F, 1.0F);
+            LevelRenderer.renderLineBox(pose, lines, draftBounds(), 0.62F, 0.72F, 0.78F, 0.65F);
+        }
+        if (this.gizmo != null && !SettlementViewClient.panelsOpen(this)) {
+            this.gizmo.render(pose, buffers.getBuffer(SettlementSelectionGizmo.LINES), draft == null || draft.preview == null || draft.preview.failure().isEmpty());
         }
         pose.popPose();
         buffers.endBatch(RenderType.lines());
+        buffers.endBatch(SettlementSelectionGizmo.LINES);
     }
 
     private AABB draftBounds() {
@@ -832,7 +905,11 @@ public final class SettlementViewScreen extends Screen {
         if (this.resident != null) {
             openManagement(Page.RESIDENTS, this.resident.id().toString());
         } else if (this.areas.containsKey(this.selectedArea)) {
-            editArea(this.areas.get(this.selectedArea));
+            this.parent.clearBuildingDraft();
+            this.editingArea = this.areas.get(this.selectedArea);
+            this.areaBounds = new AABB(Vec3.atLowerCornerOf(this.editingArea.min()), Vec3.atLowerCornerOf(this.editingArea.max().offset(1, 1, 1)));
+            synchronizeGizmo();
+            updateActions();
         }
     }
 
