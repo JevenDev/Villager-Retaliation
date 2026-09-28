@@ -641,6 +641,34 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
+    static int removeVillageHere(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        var villages = registry.recordsAt(level, player.blockPosition());
+        var independent = villages.stream().filter(record -> !registry.isManaged(record.id())).toList();
+        if (independent.isEmpty()) {
+            context.getSource().sendFailure(Component.literal(villages.isEmpty()
+                    ? "No tracked village contains your position."
+                    : "This position only contains managed settlements. removeHere cannot remove them."));
+            return 0;
+        }
+        if (independent.size() > 1) {
+            context.getSource().sendFailure(Component.literal(
+                    "Multiple independent villages contain your position. Move to a part of the intended village that does not overlap."));
+            return 0;
+        }
+        var village = independent.getFirst();
+        if (!registry.removeVillage(village.id())) {
+            context.getSource().sendFailure(Component.literal("The village could not be removed."));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Removed village " + village.displayName() + " (" + village.id()
+                        + ") and disabled automatic discovery within its bounds. Blocks and villagers remain."), true);
+        return 1;
+    }
+
     static int renameVillageHere(CommandContext<CommandSourceStack> context) {
         ServerLevel level = context.getSource().getLevel();
         BlockPos position = BlockPos.containing(context.getSource().getPosition());

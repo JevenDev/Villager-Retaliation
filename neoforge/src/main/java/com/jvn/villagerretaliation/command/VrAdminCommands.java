@@ -166,6 +166,7 @@ final class VrAdminCommands {
     private static LiteralArgumentBuilder<CommandSourceStack> village() {
         return literal("village")
                 .then(literal("inspectHere").executes(VillagerRetaliationCommands::inspectVillageHere))
+                .then(literal("removeHere").executes(VillagerRetaliationCommands::removeVillageHere))
                 .then(literal("renameHere")
                         .then(argument("name", StringArgumentType.greedyString())
                                 .executes(VillagerRetaliationCommands::renameVillageHere)))
