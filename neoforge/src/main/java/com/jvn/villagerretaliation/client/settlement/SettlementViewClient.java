@@ -145,6 +145,9 @@ public final class SettlementViewClient {
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
+        if (active != null && event.getStage() == RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) {
+            active.renderPlotTint(event);
+        }
         if (active != null && event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             active.renderWorldSelection(event);
         }
@@ -176,6 +179,7 @@ public final class SettlementViewClient {
             minecraft.options.setCameraType(previousPerspective);
         }
         SettlementViewChunks.clear();
+        SettlementPlotRenderer.clear();
         camera = null;
         previousCamera = null;
         previousPerspective = null;

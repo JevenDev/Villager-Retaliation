@@ -36,6 +36,7 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.config.WeaponAimingDialogueDelayClientPreference::onLoggingOut);
         modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintItemProperties::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::registerShaders);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.settlement.SettlementPlotRenderer::registerShaders);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);

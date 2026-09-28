@@ -1,0 +1,58 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "villagerretaliation:settlement_plots",
+  "fragment": "villagerretaliation:settlement_plots",
+  "attributes": [
+    "Position"
+  ],
+  "samplers": [
+    {
+      "name": "SceneDepth"
+    }
+  ],
+  "uniforms": [
+    {
+      "name": "InverseViewProjection",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "name": "CameraOffset",
+      "type": "float",
+      "count": 3,
+      "values": [
+        0
+      ]
+    },
+    {
+      "name": "PlotStates",
+      "type": "float",
+      "count": 121,
+      "values": [
+        0
+      ]
+    }
+  ]
+}

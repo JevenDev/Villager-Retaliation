@@ -809,6 +809,14 @@ public final class SettlementViewClientSmoke {
                 var resident = (Villager) serverPlayer.serverLevel().getEntity(fixture.resident());
                 require(resident.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.HOME).isEmpty(),
                         "releasing the bed also clears the loaded resident's native home");
+                for (int x = -32; x <= 32; x++) {
+                    for (int z = -32; z <= -8; z++) {
+                        int top = 1 + Math.floorMod(Math.floorDiv(x, 8) + Math.floorDiv(z, 8), 3) * 2;
+                        for (int y = -1; y <= top; y++) {
+                            serverPlayer.serverLevel().setBlock(town.center().offset(x, y, z), Blocks.STONE.defaultBlockState(), 3);
+                        }
+                    }
+                }
             }).join();
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             phase = 100;
@@ -816,6 +824,12 @@ public final class SettlementViewClientSmoke {
             screen.togglePlots();
             var offer = screen.plots().plots().stream().filter(plot -> plot.eligible() && plot.paidFailure().isEmpty()).findFirst().orElseThrow();
             screen.selectPlot(offer.chunk());
+            var hover = new ChunkPos(fixture.center());
+            int hoverX = hover.getMiddleBlockX(), hoverZ = hover.getMiddleBlockZ();
+            var point = screenPoint(screen, new Vec3(hoverX + 0.5D,
+                    minecraft.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, hoverX, hoverZ) + 0.01D, hoverZ + 0.5D));
+            GLFW.glfwSetCursorPos(minecraft.getWindow().getWindow(), point.x * minecraft.getWindow().getGuiScale(),
+                    point.y * minecraft.getWindow().getGuiScale());
             plotCount = screen.plots().totals().owned();
             plotCredits = screen.plots().totals().free();
             plotBalance = screen.plots().totals().spendable().subtract(com.jvn.villagerretaliation.sell.CurrencyAmount.of(offer.price(), 1));
@@ -823,7 +837,14 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 101;
         } else if (phase == 101 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
-            capture("plots-priced-offers");
+            require(new ChunkPos(fixture.center()).equals(screen.hoveredPlot()), "plot hover follows the terrain under the cursor");
+            capture("plots-terrain-tints");
+            minecraft.options.graphicsMode().set(net.minecraft.client.GraphicsStatus.FABULOUS);
+            minecraft.levelRenderer.allChanged();
+            ticks = 0;
+            phase = 106;
+        } else if (phase == 106 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 40 && screen.terrainLoaded()) {
+            capture("plots-terrain-tints-fabulous");
             button(screen, "villagerretaliation.gui.settlement_view.plot_buy").onPress();
             ticks = 0;
             phase = 102;

@@ -4,7 +4,7 @@
   "villagerretaliation.gui.settlement_view.plot_buy": "Buy for %s emeralds",
   "villagerretaliation.gui.settlement_view.plot_price": "%s emeralds",
   "villagerretaliation.gui.settlement_view.plot_totals": "Plots %s/%s   Free %s   Spendable %s",
-  "villagerretaliation.gui.settlement_view.plot_hint": "Select a neighboring plot. Claim free or buy to save your free credits.",
+  "villagerretaliation.gui.settlement_view.plot_hint": "Blue: owned. Green: available. Gold: hover or selection. Select a plot to claim or buy.",
   "villagerretaliation.gui.settlement_view.plot_select": "Select a plot to inspect its claim options.",
   "villagerretaliation.gui.settlement_view.plot_position": "Chunk %s, %s",
   "villagerretaliation.gui.settlement_view.plot_claimed": "Plot claimed.",

@@ -436,7 +436,6 @@ public final class SettlementViewScreen extends Screen {
         }
         synchronizeGizmo();
         if (this.gizmo != null && mouseX < this.panelLeft && !SettlementViewClient.panelsOpen(this)) this.gizmo.hover(ray(mouseX, mouseY));
-        if (this.plotMode) renderPlotLabels(graphics);
         graphics.fill(this.panelLeft, 0, this.width, this.height, 0xE0101010);
         graphics.drawString(this.font, this.font.plainSubstrByWidth(this.header.name(), this.panelWidth - 16),
                 this.panelLeft + 8, 10, 0xFFFFFF);
@@ -960,7 +959,6 @@ public final class SettlementViewScreen extends Screen {
         pose.popPose();
         buffers.endBatch(RenderType.lines());
         buffers.endBatch(SettlementSelectionGizmo.LINES);
-        if (this.plotMode) renderPlots(event);
     }
 
     void togglePlots() {
@@ -1028,56 +1026,13 @@ public final class SettlementViewScreen extends Screen {
         return description.append("\n").append(this.plotFeedback);
     }
 
-    private void renderPlots(RenderLevelStageEvent event) {
-        var pose = event.getPoseStack();
-        var cameraPosition = event.getCamera().getPosition();
-        var buffers = this.minecraft.renderBuffers().bufferSource();
-        pose.pushPose();
-        pose.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
-        var lines = buffers.getBuffer(RenderType.lines());
-        for (var plot : this.plotSnapshot.plots()) {
-            if (!plot.owned() && !plot.eligible()) continue;
-            var chunk = this.minecraft.level.getChunkSource().getChunk(plot.chunk().x, plot.chunk().z, false);
-            if (chunk == null) continue;
-            double y = plotHeight(chunk);
-            boolean selected = plot.chunk().equals(this.selectedPlot);
-            LevelRenderer.renderLineBox(pose, lines, new AABB(plot.chunk().getMinBlockX(), y, plot.chunk().getMinBlockZ(),
-                    plot.chunk().getMaxBlockX() + 1, y + 0.06D, plot.chunk().getMaxBlockZ() + 1),
-                    selected ? 1.0F : plot.owned() ? 0.3F : 0.2F, 0.9F, plot.owned() ? 1.0F : 0.3F, 0.95F);
-        }
-        buffers.endBatch(RenderType.lines());
-        pose.popPose();
+    net.minecraft.world.level.ChunkPos hoveredPlot() {
+        return this.plotMode && this.hovered.position() != null
+                ? new net.minecraft.world.level.ChunkPos(this.hovered.position()) : null;
     }
 
-    private double plotHeight(net.minecraft.world.level.chunk.LevelChunk chunk) {
-        double y = this.minecraft.level.getMinBuildHeight();
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) y = Math.max(y, chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1.15D);
-        }
-        return y;
-    }
-
-    private void renderPlotLabels(GuiGraphics graphics) {
-        var camera = this.minecraft.gameRenderer.getMainCamera();
-        double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
-        graphics.enableScissor(0, 30, this.panelLeft, this.height - 40);
-        for (var plot : this.plotSnapshot.plots()) {
-            if (plot.owned() || !plot.eligible()) continue;
-            var chunk = this.minecraft.level.getChunkSource().getChunk(plot.chunk().x, plot.chunk().z, false);
-            if (chunk == null) continue;
-            var relative = new Vec3(plot.chunk().getMiddleBlockX() + 0.5D, plotHeight(chunk) + 1.0D,
-                    plot.chunk().getMiddleBlockZ() + 0.5D).subtract(camera.getPosition());
-            double depth = relative.dot(new Vec3(camera.getLookVector()));
-            if (depth <= 0.1D) continue;
-            int x = (int) (this.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * this.height / (2.0D * depth * tangent));
-            int y = (int) (this.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * this.height / (2.0D * depth * tangent));
-            var label = text("plot_price", plot.price());
-            int half = this.font.width(label) / 2;
-            if (x + half < 0 || x - half >= this.panelLeft || y < this.buyPlot.getBottom() + 8) continue;
-            graphics.fill(x - half - 3, y - 2, x + half + 3, y + this.font.lineHeight + 2, 0xC0102010);
-            graphics.drawString(this.font, label, x - half, y, 0xFFFFFF);
-        }
-        graphics.disableScissor();
+    void renderPlotTint(RenderLevelStageEvent event) {
+        if (this.plotMode) SettlementPlotRenderer.render(event, this.plotSnapshot, this.selectedPlot, hoveredPlot());
     }
 
     private AABB draftBounds() {
