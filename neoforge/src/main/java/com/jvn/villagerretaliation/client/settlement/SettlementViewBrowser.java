@@ -11,6 +11,7 @@ final class SettlementViewBrowser {
     String query = "";
     String filter = "All";
     int scroll;
+    java.util.Set<java.util.UUID> attention = java.util.Set.of();
 
     List<String> filters(List<SettlementManagementPayload.Entry> entries) {
         var values = new ArrayList<String>();
@@ -34,7 +35,7 @@ final class SettlementViewBrowser {
                 .toLowerCase(Locale.ROOT).contains(needle)).filter(entry -> matches(entry, this.filter)).toList();
     }
 
-    private static boolean matches(SettlementManagementPayload.Entry entry, String filter) {
+    private boolean matches(SettlementManagementPayload.Entry entry, String filter) {
         if (filter.equals("All") || kind(entry).equals(filter)) return true;
         if (entry instanceof SettlementManagementPayload.Resident r) return switch (filter) {
             case "Assigned" -> r.area() != null;
@@ -42,7 +43,7 @@ final class SettlementViewBrowser {
             case "Work enabled" -> r.area() != null && !r.status().equals("paused");
             case "Work paused" -> r.status().equals("paused");
             case "Here", "Away", "Unloaded" -> r.presence().name().equalsIgnoreCase(filter);
-            case "Needs attention" -> !r.diagnostic().isBlank();
+            case "Needs attention" -> this.attention.contains(r.id());
             default -> r.roles().stream().anyMatch(role -> role.name().equalsIgnoreCase(filter));
         };
         if (entry instanceof SettlementManagementPayload.Area area) return filter.equals(area.enabled() ? "Enabled" : "Paused");

@@ -401,7 +401,7 @@ public final class SettlementMultiplayerAcceptance {
         Vec3 relative = position.subtract(camera.getPosition());
         double distance = relative.dot(new Vec3(camera.getLookVector()));
         double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
-        double x = screen.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
+        double x = screen.viewportWidth() / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
         double y = screen.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * screen.height / (2.0D * distance * tangent);
         screen.mouseClicked(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         screen.mouseReleased(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);

@@ -90,6 +90,7 @@ public final class SettlementTownProfileScenario {
         var entry = BuilderStructureCatalog.byId(level.getServer(),
                 ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1")).orElseThrow();
         var plan = BuilderStructureScanner.scan(level, entry, Rotation.NONE).orElseThrow();
+        town.economy().credit(com.jvn.villagerretaliation.sell.CurrencyAmount.of(plan.price() * 8L, 1));
         var fixture = new SettlementTownProfileScenario(level, town, plan, body);
 
         var beds = new ArrayList<BlockPos>();
@@ -208,6 +209,11 @@ public final class SettlementTownProfileScenario {
         return Set.copyOf(this.residents);
     }
 
+    public String viewState(ServerPlayer player) {
+        var session = SettlementViewService.session(player.getUUID());
+        return session == null ? "closed" : session.window + ", held=" + session.held.size();
+    }
+
     public int tickingResidents() {
         int count = 0;
         for (var id : this.residents) {
@@ -316,6 +322,7 @@ public final class SettlementTownProfileScenario {
     }
 
     private SettlementArea area(ServerPlayer player, SettlementAreaType type, String name, BlockPos min, BlockPos max) {
+        SettlementTestPlots.claim(this.level, this.town, min, max);
         var area = new SettlementArea(UUID.randomUUID(), type, name, min, max, 5, true);
         require(SettlementBuildingService.register(player, this.town.id(), area), "the functional area registers: " + name);
         return area;

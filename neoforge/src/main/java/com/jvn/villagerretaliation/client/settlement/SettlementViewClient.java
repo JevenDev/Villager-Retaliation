@@ -72,6 +72,10 @@ public final class SettlementViewClient {
         minecraft.setScreen(active);
     }
 
+    public static void acceptBatch(com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload payload) {
+        if (active != null && active.session().equals(payload.session())) active.acceptBatch(payload);
+    }
+
     public static void acceptOverview(com.jvn.villagerretaliation.network.SettlementViewOverviewPayload payload) {
         if (active != null && active.session().equals(payload.session())) active.acceptOverview(payload);
     }
@@ -126,6 +130,12 @@ public final class SettlementViewClient {
                 && Minecraft.getInstance().getCameraEntity() == camera && active.contains(position);
     }
 
+    public static float projectionOffset() {
+        var minecraft = Minecraft.getInstance();
+        return active != null && minecraft.screen == active && minecraft.getCameraEntity() == camera && active.width > 0
+                ? (float) (active.width - active.viewportWidth()) / active.width : 0;
+    }
+
     public static boolean ownsCamera(Camera current) {
         return active != null && current.getEntity() == camera;
     }
@@ -169,7 +179,7 @@ public final class SettlementViewClient {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        screen.savePreferences();
+        screen.endSession();
         active = null;
         panels = false;
         if (minecraft.getConnection() != null) {

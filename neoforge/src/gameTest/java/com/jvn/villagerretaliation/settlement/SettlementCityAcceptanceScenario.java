@@ -93,6 +93,7 @@ public final class SettlementCityAcceptanceScenario {
         var result = SettlementFoundingService.found(player, center);
         require(result.status() == SettlementFoundingService.Status.FOUNDED, "an empty town is founded through its management block");
         var fixture = new SettlementCityAcceptanceScenario(level, result.town().orElseThrow());
+        require(fixture.town.setManualManagement(player.getUUID(), true), "the fixture uses explicit resident approval and staffing");
         require(fixture.town.stage() == SettlementStage.CAMP && fixture.population() == 0, "founding begins at Camp without residents");
         for (int index = 0; index < 75; index++) {
             var head = center.offset(-40 + index % 10 * 3, 0, -40 + index / 10 * 4);
@@ -138,6 +139,7 @@ public final class SettlementCityAcceptanceScenario {
         fixture.construction = fixture.area(player, SettlementAreaType.CONSTRUCTION, "House", fixture.origin.offset(-4, -1, -4), fixture.origin.offset(16, 12, 16));
         var entry = BuilderStructureCatalog.byId(level.getServer(), ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1")).orElseThrow();
         fixture.plan = BuilderStructureScanner.scan(level, entry, Rotation.NONE).orElseThrow();
+        fixture.town.economy().credit(com.jvn.villagerretaliation.sell.CurrencyAmount.of(fixture.plan.price(), 1));
         for (var block : fixture.plan.blocks()) if (block.requiresMaterial()) require(materials.addItem(block.requiredItem().copy()).isEmpty(), "the finite depot holds one house plan");
         require(general.isEmpty(), "production output begins empty");
         level.setBlockAndUpdate(new BlockPos(0, -61, 0), Blocks.STONE.defaultBlockState());
@@ -313,6 +315,7 @@ public final class SettlementCityAcceptanceScenario {
     }
 
     private SettlementArea area(ServerPlayer player, SettlementAreaType type, String name, BlockPos min, BlockPos max) {
+        SettlementTestPlots.claim(this.level, this.town, min, max);
         var area = new SettlementArea(UUID.randomUUID(), type, name, min, max, 5, true);
         require(SettlementBuildingService.register(player, this.town.id(), area), "the designated area registers: " + name);
         return area;

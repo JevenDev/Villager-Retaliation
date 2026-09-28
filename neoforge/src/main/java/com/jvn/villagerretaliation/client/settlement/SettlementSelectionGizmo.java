@@ -222,7 +222,7 @@ public final class SettlementSelectionGizmo {
         }
     }
 
-    private static void line(PoseStack pose, VertexConsumer lines, Vec3 start, Vec3 end, float red, float green, float blue, float alpha) {
+    static void line(PoseStack pose, VertexConsumer lines, Vec3 start, Vec3 end, float red, float green, float blue, float alpha) {
         var normal = end.subtract(start).normalize();
         lines.addVertex(pose.last().pose(), (float) start.x, (float) start.y, (float) start.z).setColor(red, green, blue, alpha)
                 .setNormal(pose.last(), (float) normal.x, (float) normal.y, (float) normal.z);

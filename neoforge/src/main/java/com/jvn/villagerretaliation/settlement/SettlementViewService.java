@@ -85,7 +85,14 @@ public final class SettlementViewService {
         if (page != null) PacketDistributor.sendToPlayer(player, page);
     }
 
+    public static void command(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementViewBatchPayload request) {
+        var session = SESSIONS.get(player.getUUID());
+        if (session != null && session.id.equals(request.session()) && eligible(player, session.town)
+                && ServerboundRequestLimiter.tryAcquire(player, request.type().id(), 2L)) session.commands.submit(session, request);
+    }
+
     public static void tick(MinecraftServer server) {
+        int commandBudget = 16;
         for (Session session : List.copyOf(SESSIONS.values())) {
             if (session.player.getServer() != server) {
                 continue;
@@ -96,6 +103,7 @@ public final class SettlementViewService {
                 close(session.player.getUUID(), true);
                 continue;
             }
+            commandBudget -= session.commands.tick(session, commandBudget);
             update(session);
         }
     }
@@ -170,6 +178,8 @@ public final class SettlementViewService {
         for (ChunkPos position : session.held) {
             session.level.getChunkSource().removeRegionTicket(TICKET, position, 2, session.id, true);
         }
+        session.overview.clear();
+        session.commands.clear();
         session.held.clear();
         session.sent.clear();
         session.remote.clear();
@@ -191,7 +201,7 @@ public final class SettlementViewService {
         return SESSIONS.get(player);
     }
 
-    private static boolean eligible(ServerPlayer player, SettlementRecord town) {
+    static boolean eligible(ServerPlayer player, SettlementRecord town) {
         return player.isAlive() && !player.isRemoved() && !player.isSpectator() && player.hurtTime == 0
                 && player.level().dimension().location().equals(town.dimension())
                 && town.permits(player.getUUID(), SettlementPermission.VIEW);
@@ -211,6 +221,7 @@ public final class SettlementViewService {
         final Set<ChunkPos> held = new HashSet<>();
         final Set<ChunkPos> sent = new HashSet<>();
         final Set<ChunkPos> remote = new HashSet<>();
+        final SettlementViewCommands commands = new SettlementViewCommands();
         final SettlementViewOverview overview = new SettlementViewOverview();
         SettlementViewWindow window;
         com.jvn.villagerretaliation.network.SettlementPlotSnapshot plots;

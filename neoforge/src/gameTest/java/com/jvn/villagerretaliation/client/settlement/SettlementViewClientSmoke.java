@@ -113,6 +113,7 @@ public final class SettlementViewClientSmoke {
             return;
         }
         if (phase == 0 && minecraft.screen == null) {
+            minecraft.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
             minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             minecraft.options.renderDistance().set(6);
             minecraft.options.guiScale().set(2);
@@ -191,6 +192,7 @@ public final class SettlementViewClientSmoke {
                     "the remote terrain uses the separate client chunk cache");
             require(capture("world-view") > 1_000, "the remote grass terrain is rendered");
             verifySodiumChunk(new ChunkPos(fixture.center()), true);
+            verifyViewInteractions(screen);
             Vec3 table = fixture.center().getCenter().add(0.0D, 0.5D, 0.0D);
             clickWorld(screen, table);
             require(screen.contextPopup() != null && screen.contextPopup().target().kind() == SettlementViewPopup.Kind.CHOOSER,
@@ -512,7 +514,7 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 74 && minecraft.screen instanceof SettlementViewScreen screen) {
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(minecraft.screen == screen && screen.selectionGizmo() == null, "area cancellation keeps the camera session");
-            button(screen, "villagerretaliation.gui.settlement_view.projects").onPress();
+            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
             phase = 15;
         } else if (phase == 15 && minecraft.screen instanceof SettlementManagementScreen screen) {
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
@@ -646,7 +648,7 @@ public final class SettlementViewClientSmoke {
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             ticks = 0;
             phase = 110;
-        } else if (phase == 110 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 80) {
+        } else if (phase == 110 && minecraft.screen instanceof SettlementViewScreen screen && screen.hasProject(projectFixture.project()) && ++ticks >= 10) {
             var bounds = new SettlementViewBounds(projectSnapshot.min(), projectSnapshot.max()).box();
             clickWorld(screen, bounds.getCenter(), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
             require(screen.contextPopup() != null && screen.contextPopup().target().id().equals(projectFixture.project()),
@@ -663,7 +665,10 @@ public final class SettlementViewClientSmoke {
                     && screen.selectionGizmo().bounds().equals(new SettlementViewBounds(projectSnapshot.min(), projectSnapshot.max()).box()),
                     "the new designation starts at the exact construction footprint");
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
-            button(screen, "villagerretaliation.gui.settlement_view.projects").onPress();
+            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+            phase = 114;
+        } else if (phase == 114 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
             phase = 112;
         } else if (phase == 112 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS
@@ -685,7 +690,7 @@ public final class SettlementViewClientSmoke {
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             ticks = 0;
             phase = 113;
-        } else if (phase == 113 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 80) {
+        } else if (phase == 113 && minecraft.screen instanceof SettlementViewScreen screen && !screen.hasProject(projectFixture.project()) && ++ticks >= 10) {
             var bounds = new SettlementViewBounds(projectSnapshot.min(), projectSnapshot.max()).box();
             clickWorld(screen, bounds.getCenter(), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
             require(screen.contextPopup() == null, "cancelled construction no longer leaves a selectable footprint");
@@ -914,6 +919,28 @@ public final class SettlementViewClientSmoke {
             require(screen.plots().plots().stream().anyMatch(plot -> plot.owned() && plot.chunk().equals(new ChunkPos(fixture.center().east(600)))),
                     "the long extension remains visible beyond the old radius ceiling");
             capture("plots-long-extension");
+            screen.togglePlots();
+            screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
+            minecraft.options.guiScale().set(3);
+            minecraft.resizeDisplay();
+            ticks = 0;
+            phase = 120;
+        } else if (phase == 120 && minecraft.screen instanceof SettlementViewScreen screen && screen.terrainLoaded() && ++ticks >= 15) {
+            capture("browser-gui-scale-3");
+            minecraft.options.guiScale().set(4);
+            minecraft.resizeDisplay();
+            ticks = 0;
+            phase = 121;
+        } else if (phase == 121 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 15) {
+            capture("browser-gui-scale-4");
+            minecraft.getWindow().setWindowed(960, 720);
+            ticks = 0;
+            phase = 122;
+        } else if (phase == 122 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 15) {
+            capture("browser-narrow-window");
+            verifyViewBounds(screen);
+            minecraft.options.guiScale().set(2);
+            minecraft.resizeDisplay();
             screen.onClose();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
@@ -923,6 +950,102 @@ public final class SettlementViewClientSmoke {
             LogUtils.getLogger().info("Settlement client smoke checks passed");
             phase = 6;
             minecraft.stop();
+        }
+    }
+
+    private static void verifyViewInteractions(SettlementViewScreen screen) {
+        var minecraft = Minecraft.getInstance();
+        var entity = visibleResident(minecraft);
+        var point = screenPoint(screen, entity.getBoundingBox().getCenter());
+        screen.mouseClicked(point.x - 9, point.y - 12, 0);
+        screen.mouseDragged(point.x + 9, point.y + 12, 0, 18, 24);
+        screen.mouseReleased(point.x + 9, point.y + 12, 0);
+        require(screen.selectedResidents().contains(fixture.resident()), "box selection finds a visible confirmed resident");
+        screen.keyPressed(GLFW.GLFW_KEY_LEFT_SHIFT, 0, GLFW.GLFW_MOD_SHIFT);
+        clickWorld(screen, entity.getBoundingBox().getCenter());
+        require(screen.selectedResidents().isEmpty(), "Shift click toggles a selected resident off");
+        clickWorld(screen, entity.getBoundingBox().getCenter());
+        screen.keyReleased(GLFW.GLFW_KEY_LEFT_SHIFT, 0, 0);
+        require(screen.selectedResidents().contains(fixture.resident()), "Shift click adds a resident");
+        screen.keyPressed(GLFW.GLFW_KEY_1, 0, GLFW.GLFW_MOD_CONTROL);
+        screen.keyPressed(GLFW.GLFW_KEY_2, 0, 0);
+        require(screen.selectedResidents().isEmpty(), "an empty control group clears selection");
+        screen.keyPressed(GLFW.GLFW_KEY_1, 0, 0);
+        require(screen.selectedResidents().contains(fixture.resident()), "control groups restore their residents");
+        screen.keyPressed(GLFW.GLFW_KEY_1, 0, 0);
+        require(Math.abs(screen.focusX() - entity.blockPosition().getX()) < 1, "double recall focuses its members");
+        screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
+        var search = screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow();
+        screen.setFocused(search);
+        search.setFocused(true);
+        double x = screen.focusX();
+        screen.keyPressed(GLFW.GLFW_KEY_W, 0, 0);
+        screen.charTyped('w', 0);
+        screen.keyPressed(GLFW.GLFW_KEY_2, 0, 0);
+        require(search.getValue().equals("w") && screen.selectedResidents().contains(fixture.resident()),
+                "search consumes camera and group shortcuts");
+        require(screen.focusX() == x, "typing does not move the camera");
+        screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+        search.setValue("");
+        int expanded = screen.viewportWidth();
+        literalButton(screen, ">").onPress();
+        require(screen.viewportWidth() > expanded, "collapsing the entire sidebar reclaims its viewport");
+        capture("browser-collapsed");
+        literalButton(screen, "<").onPress();
+        require(screen.viewportWidth() == expanded, "reopening restores the sidebar viewport");
+        screen.savePreferences();
+        var restored = SettlementViewPreferences.forSettlement(fixture.town().value());
+        require(restored.groups.getFirst().contains(fixture.resident()), "control groups survive preference reload");
+        require(restored.sidebar && restored.map, "visibility preferences survive reload");
+        var map = new SettlementOverviewMap();
+        map.layout(screen.viewportWidth(), screen.height, fixture.center(), 32);
+        double oldX = screen.focusX();
+        screen.mouseClicked(map.left + 3, map.top + map.size - 3, 0);
+        screen.mouseReleased(map.left + 3, map.top + map.size - 3, 0);
+        require(screen.focusX() != oldX, "overview terrain pans without moving the player");
+        screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
+        button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
+        screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+        require(minecraft.screen == screen, "Escape cancels area mode before closing the view");
+        verifyPreferenceRecovery();
+    }
+
+    private static void verifyViewBounds(SettlementViewScreen screen) {
+        var minecraft = Minecraft.getInstance();
+        for (int[] size : java.util.List.of(new int[]{320, 240}, new int[]{426, 240}, new int[]{640, 360})) {
+            screen.resize(minecraft, size[0], size[1]);
+            for (var child : screen.children()) {
+                if (child instanceof Button b && b.visible) require(b.getX() >= 0 && b.getRight() <= size[0]
+                        && b.getY() >= 0 && b.getBottom() <= size[1], "visible view controls fit narrow layouts");
+            }
+        }
+        screen.resize(minecraft, minecraft.getWindow().getGuiScaledWidth(), minecraft.getWindow().getGuiScaledHeight());
+    }
+
+    private static Button literalButton(SettlementViewScreen screen, String label) {
+        return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.visible && button.getMessage().getString().equals(label)).findFirst().orElseThrow();
+    }
+
+    private static void verifyPreferenceRecovery() {
+        Path path = Path.of(System.getProperty(OUTPUT), "preference-recovery.properties");
+        try {
+            var saved = new SettlementViewPreferences(path);
+            saved.height = 10_000;
+            saved.yaw = -45;
+            saved.sidebar = false;
+            saved.save();
+            var restored = new SettlementViewPreferences(path);
+            require(restored.height == SettlementViewWindow.MAX_HEIGHT && restored.yaw == 315 && !restored.sidebar,
+                    "restored preferences clamp camera limits");
+            Files.writeString(path, "version=broken");
+            var corrupt = new SettlementViewPreferences(path);
+            corrupt.save();
+            require(Files.readString(path).equals("version=broken") && corrupt.sidebar,
+                    "corrupt preferences use defaults without overwriting the unreadable file");
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
         }
     }
 
@@ -1128,7 +1251,7 @@ public final class SettlementViewClientSmoke {
         Vec3 relative = position.subtract(camera.getPosition());
         double distance = relative.dot(new Vec3(camera.getLookVector()));
         double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
-        double x = screen.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
+        double x = screen.viewportWidth() / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
         double y = screen.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * screen.height / (2.0D * distance * tangent);
         return new Vec3(x, y, 0);
     }

@@ -76,105 +76,105 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     }
 
     static void writeEntry(RegistryFriendlyByteBuf buffer, Entry entry) {
-            buffer.writeUUID(entry.id());
-            buffer.writeUtf(entry.name(), 128);
-            switch (entry) {
-                case Town town -> {
-                    buffer.writeEnum(town.stage());
-                    buffer.writeVarInt(town.population());
-                    buffer.writeBlockPos(town.center());
-                }
-                case Resident resident -> {
-                    buffer.writeResourceLocation(resident.profession());
-                    buffer.writeBoolean(resident.baby());
-                    buffer.writeEnum(resident.presence());
-                    buffer.writeBlockPos(resident.position());
-                    writeOptionalId(buffer, resident.area());
-                    buffer.writeVarInt(resident.food());
-                    buffer.writeFloat(resident.health());
-                    buffer.writeUtf(resident.status(), 64);
-                    buffer.writeVarInt(resident.roles().size());
-                    resident.roles().forEach(buffer::writeEnum);
-                    SettlementManagementActionPayload.writeGuardOrder(buffer, resident.guardOrder());
-                    buffer.writeBoolean(resident.settings() != null);
-                    if (resident.settings() != null) {
-                        SettlementManagementActionPayload.writeWorkerSettings(buffer, resident.settings());
-                    }
-                    SettlementManagementActionPayload.writeBrewingOrder(buffer, resident.brewingOrder());
-                    buffer.writeUtf(resident.diagnostic(), 180);
-                }
-                case Area area -> {
-                    buffer.writeEnum(area.kind());
-                    buffer.writeBlockPos(area.min());
-                    buffer.writeBlockPos(area.max());
-                    buffer.writeVarInt(area.priority());
-                    buffer.writeBoolean(area.enabled());
-                    buffer.writeVarInt(area.beds());
-                    buffer.writeVarInt(area.fixtures());
-                    buffer.writeVarInt(area.workers());
-                }
-                case Depot depot -> {
-                    buffer.writeUUID(depot.area());
-                    buffer.writeBlockPos(depot.position());
-                    buffer.writeEnum(depot.purpose());
-                    buffer.writeVarInt(depot.priority());
-                    buffer.writeVarInt(depot.usedSlots());
-                    buffer.writeVarInt(depot.items());
-                    buffer.writeVarInt(depot.targets().size());
-                    for (StockTarget target : depot.targets()) {
-                        buffer.writeUtf(target.name(), 128);
-                        buffer.writeVarInt(target.count());
-                    }
-                }
-                case Applicant applicant -> {
-                    buffer.writeResourceLocation(applicant.profession());
-                    buffer.writeBoolean(applicant.approved());
-                }
-                case Order order -> {
-                    buffer.writeEnum(order.direction());
-                    buffer.writeResourceLocation(order.item());
-                    buffer.writeVarInt(order.target());
-                    order.price().write(buffer);
-                    order.budget().write(buffer);
-                    buffer.writeBoolean(order.enabled());
-                    buffer.writeUtf(order.result(), 64);
-                }
-                case Project project -> {
-                    buffer.writeUUID(project.area());
-                    buffer.writeUUID(project.builder());
-                    buffer.writeBlockPos(project.origin());
-                    buffer.writeBlockPos(project.min());
-                    buffer.writeBlockPos(project.max());
-                    buffer.writeEnum(project.status());
-                    buffer.writeVarInt(project.placed());
-                    buffer.writeVarInt(project.total());
-                    buffer.writeUtf(project.blocker(), 128);
-                    buffer.writeUtf(project.materials(), 512);
-                    buffer.writeEnum(project.phase());
-                    buffer.writeUtf(project.missingMaterials(), 512);
-                }
-                case Issue issue -> {
-                    buffer.writeEnum(issue.kind());
-                    buffer.writeUtf(issue.cause(), 128);
-                    buffer.writeUtf(issue.detail(), 512);
-                    buffer.writeEnum(issue.target());
-                    writeOptionalId(buffer, issue.targetId());
-                    writeOptionalId(buffer, issue.resident());
-                    writeOptionalId(buffer, issue.area());
-                    buffer.writeBoolean(issue.enabled());
-                }
-                case Bed bed -> {
-                    buffer.writeBlockPos(bed.position());
-                    writeOptionalId(buffer, bed.resident());
-                    buffer.writeUtf(bed.residentName(), 128);
-                    buffer.writeBoolean(bed.available());
-                }
-                case History history -> {
-                    buffer.writeVarLong(history.gameTime());
-                    buffer.writeEnum(history.kind());
-                }
-                case Delegate delegate -> writePermissions(buffer, delegate.permissions());
+        buffer.writeUUID(entry.id());
+        buffer.writeUtf(entry.name(), 128);
+        switch (entry) {
+            case Town town -> {
+                buffer.writeEnum(town.stage());
+                buffer.writeVarInt(town.population());
+                buffer.writeBlockPos(town.center());
             }
+            case Resident resident -> {
+                buffer.writeResourceLocation(resident.profession());
+                buffer.writeBoolean(resident.baby());
+                buffer.writeEnum(resident.presence());
+                buffer.writeBlockPos(resident.position());
+                writeOptionalId(buffer, resident.area());
+                buffer.writeVarInt(resident.food());
+                buffer.writeFloat(resident.health());
+                buffer.writeUtf(resident.status(), 64);
+                buffer.writeVarInt(resident.roles().size());
+                resident.roles().forEach(buffer::writeEnum);
+                SettlementManagementActionPayload.writeGuardOrder(buffer, resident.guardOrder());
+                buffer.writeBoolean(resident.settings() != null);
+                if (resident.settings() != null) {
+                    SettlementManagementActionPayload.writeWorkerSettings(buffer, resident.settings());
+                }
+                SettlementManagementActionPayload.writeBrewingOrder(buffer, resident.brewingOrder());
+                buffer.writeUtf(resident.diagnostic(), 180);
+            }
+            case Area area -> {
+                buffer.writeEnum(area.kind());
+                buffer.writeBlockPos(area.min());
+                buffer.writeBlockPos(area.max());
+                buffer.writeVarInt(area.priority());
+                buffer.writeBoolean(area.enabled());
+                buffer.writeVarInt(area.beds());
+                buffer.writeVarInt(area.fixtures());
+                buffer.writeVarInt(area.workers());
+            }
+            case Depot depot -> {
+                buffer.writeUUID(depot.area());
+                buffer.writeBlockPos(depot.position());
+                buffer.writeEnum(depot.purpose());
+                buffer.writeVarInt(depot.priority());
+                buffer.writeVarInt(depot.usedSlots());
+                buffer.writeVarInt(depot.items());
+                buffer.writeVarInt(depot.targets().size());
+                for (StockTarget target : depot.targets()) {
+                    buffer.writeUtf(target.name(), 128);
+                    buffer.writeVarInt(target.count());
+                }
+            }
+            case Applicant applicant -> {
+                buffer.writeResourceLocation(applicant.profession());
+                buffer.writeBoolean(applicant.approved());
+            }
+            case Order order -> {
+                buffer.writeEnum(order.direction());
+                buffer.writeResourceLocation(order.item());
+                buffer.writeVarInt(order.target());
+                order.price().write(buffer);
+                order.budget().write(buffer);
+                buffer.writeBoolean(order.enabled());
+                buffer.writeUtf(order.result(), 64);
+            }
+            case Project project -> {
+                buffer.writeUUID(project.area());
+                buffer.writeUUID(project.builder());
+                buffer.writeBlockPos(project.origin());
+                buffer.writeBlockPos(project.min());
+                buffer.writeBlockPos(project.max());
+                buffer.writeEnum(project.status());
+                buffer.writeVarInt(project.placed());
+                buffer.writeVarInt(project.total());
+                buffer.writeUtf(project.blocker(), 128);
+                buffer.writeUtf(project.materials(), 512);
+                buffer.writeEnum(project.phase());
+                buffer.writeUtf(project.missingMaterials(), 512);
+            }
+            case Issue issue -> {
+                buffer.writeEnum(issue.kind());
+                buffer.writeUtf(issue.cause(), 128);
+                buffer.writeUtf(issue.detail(), 512);
+                buffer.writeEnum(issue.target());
+                writeOptionalId(buffer, issue.targetId());
+                writeOptionalId(buffer, issue.resident());
+                writeOptionalId(buffer, issue.area());
+                buffer.writeBoolean(issue.enabled());
+            }
+            case Bed bed -> {
+                buffer.writeBlockPos(bed.position());
+                writeOptionalId(buffer, bed.resident());
+                buffer.writeUtf(bed.residentName(), 128);
+                buffer.writeBoolean(bed.available());
+            }
+            case History history -> {
+                buffer.writeVarLong(history.gameTime());
+                buffer.writeEnum(history.kind());
+            }
+            case Delegate delegate -> writePermissions(buffer, delegate.permissions());
+        }
     }
 
     private static SettlementManagementPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -195,61 +195,61 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     }
 
     static Entry readEntry(RegistryFriendlyByteBuf buffer, Page page) {
-            UUID id = buffer.readUUID();
-            String name = buffer.readUtf(128);
-            return switch (page) {
-                case TOWNS -> new Town(id, name, buffer.readEnum(SettlementStage.class), buffer.readVarInt(), buffer.readBlockPos());
-                case RESIDENTS -> {
-                    ResourceLocation profession = buffer.readResourceLocation();
-                    boolean baby = buffer.readBoolean();
-                    var presence = buffer.readEnum(VillageOverviewPayload.Presence.class);
-                    BlockPos position = buffer.readBlockPos();
-                    UUID area = readOptionalId(buffer);
-                    int food = buffer.readVarInt();
-                    float health = buffer.readFloat();
-                    String status = buffer.readUtf(64);
-                    int roles = VillagerPayloads.readCollectionSize(buffer, HiredVillagerRole.values().length, "settlement worker roles");
-                    List<HiredVillagerRole> available = new ArrayList<>(roles);
-                    for (int role = 0; role < roles; role++) {
-                        available.add(buffer.readEnum(HiredVillagerRole.class));
-                    }
-                    yield new Resident(id, name, profession, baby, presence, position, area, food, health, status, available,
-                            SettlementManagementActionPayload.readGuardOrder(buffer),
-                            buffer.readBoolean() ? SettlementManagementActionPayload.readWorkerSettings(buffer) : null,
-                            SettlementManagementActionPayload.readBrewingOrder(buffer), buffer.readUtf(180));
+        UUID id = buffer.readUUID();
+        String name = buffer.readUtf(128);
+        return switch (page) {
+            case TOWNS -> new Town(id, name, buffer.readEnum(SettlementStage.class), buffer.readVarInt(), buffer.readBlockPos());
+            case RESIDENTS -> {
+                ResourceLocation profession = buffer.readResourceLocation();
+                boolean baby = buffer.readBoolean();
+                var presence = buffer.readEnum(VillageOverviewPayload.Presence.class);
+                BlockPos position = buffer.readBlockPos();
+                UUID area = readOptionalId(buffer);
+                int food = buffer.readVarInt();
+                float health = buffer.readFloat();
+                String status = buffer.readUtf(64);
+                int roles = VillagerPayloads.readCollectionSize(buffer, HiredVillagerRole.values().length, "settlement worker roles");
+                List<HiredVillagerRole> available = new ArrayList<>(roles);
+                for (int role = 0; role < roles; role++) {
+                    available.add(buffer.readEnum(HiredVillagerRole.class));
                 }
-                case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
-                        buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
-                case DEPOTS -> {
-                    UUID area = buffer.readUUID();
-                    BlockPos position = buffer.readBlockPos();
-                    var purpose = buffer.readEnum(SettlementDepotPurpose.class);
-                    int priority = buffer.readVarInt();
-                    int slots = buffer.readVarInt();
-                    int items = buffer.readVarInt();
-                    int targets = VillagerPayloads.readCollectionSize(buffer, 16, "depot stock targets");
-                    List<StockTarget> stock = new ArrayList<>(targets);
-                    for (int target = 0; target < targets; target++) {
-                        stock.add(new StockTarget(buffer.readUtf(128), buffer.readVarInt()));
-                    }
-                    yield new Depot(id, name, area, position, purpose, priority, slots, items, stock);
+                yield new Resident(id, name, profession, baby, presence, position, area, food, health, status, available,
+                        SettlementManagementActionPayload.readGuardOrder(buffer),
+                        buffer.readBoolean() ? SettlementManagementActionPayload.readWorkerSettings(buffer) : null,
+                        SettlementManagementActionPayload.readBrewingOrder(buffer), buffer.readUtf(180));
+            }
+            case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
+                    buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
+            case DEPOTS -> {
+                UUID area = buffer.readUUID();
+                BlockPos position = buffer.readBlockPos();
+                var purpose = buffer.readEnum(SettlementDepotPurpose.class);
+                int priority = buffer.readVarInt();
+                int slots = buffer.readVarInt();
+                int items = buffer.readVarInt();
+                int targets = VillagerPayloads.readCollectionSize(buffer, 16, "depot stock targets");
+                List<StockTarget> stock = new ArrayList<>(targets);
+                for (int target = 0; target < targets; target++) {
+                    stock.add(new StockTarget(buffer.readUtf(128), buffer.readVarInt()));
                 }
-                case APPLICANTS -> new Applicant(id, name, buffer.readResourceLocation(), buffer.readBoolean());
-                case TRADE -> new Order(id, name, buffer.readEnum(SettlementTradeOrder.Direction.class),
-                        buffer.readResourceLocation(), buffer.readVarInt(), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer),
-                        buffer.readBoolean(), buffer.readUtf(64));
-                case BEDS -> new Bed(id, name, buffer.readBlockPos(), readOptionalId(buffer), buffer.readUtf(128), buffer.readBoolean());
-                case DELEGATES -> new Delegate(id, name, readPermissions(buffer));
-                case HISTORY -> new History(id, name, buffer.readVarLong(), buffer.readEnum(SettlementEvent.Type.class));
-                case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
-                        buffer.readBlockPos(), buffer.readBlockPos(),
-                        buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
-                        buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512));
-                case ISSUES -> new Issue(id, name, buffer.readEnum(IssueKind.class), buffer.readUtf(128), buffer.readUtf(512),
-                        buffer.readEnum(Page.class), readOptionalId(buffer), readOptionalId(buffer), readOptionalId(buffer),
-                        buffer.readBoolean());
-                case SUMMARY -> throw new IllegalArgumentException("Settlement summary cannot contain rows");
-            };
+                yield new Depot(id, name, area, position, purpose, priority, slots, items, stock);
+            }
+            case APPLICANTS -> new Applicant(id, name, buffer.readResourceLocation(), buffer.readBoolean());
+            case TRADE -> new Order(id, name, buffer.readEnum(SettlementTradeOrder.Direction.class),
+                    buffer.readResourceLocation(), buffer.readVarInt(), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer),
+                    buffer.readBoolean(), buffer.readUtf(64));
+            case BEDS -> new Bed(id, name, buffer.readBlockPos(), readOptionalId(buffer), buffer.readUtf(128), buffer.readBoolean());
+            case DELEGATES -> new Delegate(id, name, readPermissions(buffer));
+            case HISTORY -> new History(id, name, buffer.readVarLong(), buffer.readEnum(SettlementEvent.Type.class));
+            case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
+                    buffer.readBlockPos(), buffer.readBlockPos(),
+                    buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
+                    buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512));
+            case ISSUES -> new Issue(id, name, buffer.readEnum(IssueKind.class), buffer.readUtf(128), buffer.readUtf(512),
+                    buffer.readEnum(Page.class), readOptionalId(buffer), readOptionalId(buffer), readOptionalId(buffer),
+                    buffer.readBoolean());
+            case SUMMARY -> throw new IllegalArgumentException("Settlement summary cannot contain rows");
+        };
     }
 
     static void writeHeader(RegistryFriendlyByteBuf buffer, Header header) {

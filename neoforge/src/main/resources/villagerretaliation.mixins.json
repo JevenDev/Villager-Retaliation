@@ -89,6 +89,7 @@
     "client.SettlementEntityRendererMixin",
     "client.SettlementBlockEntityRendererMixin",
     "client.SettlementLevelRendererMixin",
+    "client.SettlementViewProjectionMixin",
     "client.SlotAccessor",
     "client.MerchantScreenMixin",
     "client.MerchantContainerMixin",

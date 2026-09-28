@@ -45,6 +45,10 @@ public final class SettlementViewSelection {
 
     public void prune(Set<UUID> roster) {
         this.residents.retainAll(roster);
+        pruneGroups(roster);
+    }
+
+    public void pruneGroups(Set<UUID> roster) {
         this.groups.replaceAll(group -> group.stream().filter(roster::contains).toList());
     }
 
@@ -54,6 +58,9 @@ public final class SettlementViewSelection {
         }
         for (int i = 0; i < 9; i++) this.groups.set(i, List.copyOf(new LinkedHashSet<>(saved.get(i))));
     }
+
+    public boolean contains(UUID resident) { return this.residents.contains(resident); }
+    public int size() { return this.residents.size(); }
 
     public List<UUID> residents() { return List.copyOf(this.residents); }
     public List<List<UUID>> groups() { return List.copyOf(this.groups); }

@@ -26,6 +26,8 @@ public final class SettlementViewSnapshots {
     private long sentAt;
     private long refreshAt;
     private long completedAt;
+    private long nextPageAt;
+    private int retries;
 
     public SettlementViewSnapshots(UUID session, UUID town) {
         this.session = session;
@@ -34,8 +36,8 @@ public final class SettlementViewSnapshots {
 
     public SettlementViewOverviewRequestPayload request(long now) {
         if (this.waiting >= 0 && now - this.sentAt < 5_000) return null;
-        if (this.waiting >= 0) refresh();
-        if (now < this.refreshAt) return null;
+        if (this.waiting >= 0 && ++this.retries >= 2) refresh();
+        if (now < this.refreshAt || now < this.nextPageAt) return null;
         this.waiting = ++this.requestId;
         this.sentAt = now;
         return new SettlementViewOverviewRequestPayload(this.session, this.waiting, this.generation,
@@ -49,6 +51,8 @@ public final class SettlementViewSnapshots {
                 || this.generation != 0 && this.generation != payload.generation()
                 || this.total >= 0 && this.total != payload.total()) return false;
         this.waiting = -1;
+        this.retries = 0;
+        this.nextPageAt = now + 100;
         this.generation = payload.generation();
         this.incomingHeader = payload.header();
         this.total = payload.total();
@@ -73,6 +77,13 @@ public final class SettlementViewSnapshots {
         return false;
     }
 
+    public void clear() {
+        refresh();
+        this.complete = Map.of();
+        this.header = null;
+        this.incomingHeader = null;
+    }
+
     public void refresh() {
         this.waiting = -1;
         this.incoming.clear();
@@ -81,6 +92,8 @@ public final class SettlementViewSnapshots {
         this.index = 0;
         this.total = -1;
         this.refreshAt = 0;
+        this.nextPageAt = 0;
+        this.retries = 0;
     }
 
     public List<SettlementManagementPayload.Entry> entries(Page page) { return this.complete.getOrDefault(page, List.of()); }

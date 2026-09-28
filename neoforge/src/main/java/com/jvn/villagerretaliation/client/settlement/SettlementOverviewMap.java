@@ -20,7 +20,7 @@ final class SettlementOverviewMap {
     void layout(int viewportWidth, int height, BlockPos center, int radius) {
         this.size = Math.clamp(Math.min(viewportWidth / 3, (height - 140) / 2), 52, 112);
         this.left = viewportWidth - this.size - 8;
-        this.top = height - this.size - 44;
+        this.top = height - this.size - 80;
         this.center = center;
         this.radius = radius;
     }
@@ -39,7 +39,7 @@ final class SettlementOverviewMap {
         double distance = 25;
         for (var marker : this.markers) {
             double candidate = Math.pow(x - x(marker.position().getX()), 2) + Math.pow(y - y(marker.position().getZ()), 2);
-            if (candidate < distance) { closest = marker; distance = candidate; }
+            if (candidate <= distance) { closest = marker; distance = candidate; }
         }
         return closest;
     }
@@ -70,7 +70,7 @@ final class SettlementOverviewMap {
         g.drawString(font, "N", this.left + 3, this.top + 3, 0xFFFFFF);
         if (contains(mouseX, mouseY)) {
             var marker = marker(mouseX, mouseY);
-            if (marker != null) g.renderTooltip(font, Component.literal(marker.entry().name()
+            if (marker != null) g.renderTooltip(font, Component.literal(SettlementManagementScreen.name(marker.entry()).getString()
                     + (marker.lastKnown() ? " (last known)" : "")), mouseX, mouseY);
         }
     }

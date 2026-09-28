@@ -670,7 +670,7 @@ public final class SettlementManagementScreen extends Screen {
         return text(category + "." + value.name().toLowerCase(Locale.ROOT));
     }
 
-    private static Component name(Entry entry) {
+    static Component name(Entry entry) {
         if (entry instanceof SettlementManagementPayload.Issue issue) {
             return issue.kind() == SettlementManagementPayload.IssueKind.PROGRESSION ? text("issue_progression")
                     : text(issue.kind() == SettlementManagementPayload.IssueKind.WORKER ? "issue_worker" : "issue_project",
@@ -695,7 +695,7 @@ public final class SettlementManagementScreen extends Screen {
         return String.format(Locale.ROOT, "%.1f", value);
     }
 
-    private static Component detail(Entry entry) {
+    static Component detail(Entry entry) {
         return switch (entry) {
             case SettlementManagementPayload.Issue issue -> {
                 if (issue.kind() == SettlementManagementPayload.IssueKind.WORKER && !issue.detail().isBlank()) {

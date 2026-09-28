@@ -15,13 +15,18 @@ final class SettlementViewOverview {
     private SettlementManagementPayload.Header header;
     private Map<Page, List<SettlementManagementPayload.Entry>> entries = Map.of();
 
+    void clear() {
+        this.entries = Map.of();
+        this.header = null;
+    }
+
     SettlementViewOverviewPayload page(SettlementViewService.Session session, SettlementViewOverviewRequestPayload request) {
-        if (request.requestId() <= this.requestId) return null;
+        if (!session.id.equals(request.session()) || request.requestId() <= this.requestId) return null;
         if (request.generation() == 0) {
             if (this.generation > 0 && session.level.getGameTime() - this.refreshed < 100) return null;
             var assessment = SettlementManagementService.overviewHeader(session.player, session.town);
             this.header = assessment.header();
-            var snapshot = SettlementManagementService.overview(session.player, session.town, this.header);
+            var snapshot = SettlementManagementService.overview(session.player, session.town);
             snapshot.put(Page.ISSUES, List.copyOf(assessment.issues()));
             snapshot.replaceAll((category, rows) -> rows.stream().sorted(Comparator
                     .comparing(SettlementManagementPayload.Entry::name, String.CASE_INSENSITIVE_ORDER)

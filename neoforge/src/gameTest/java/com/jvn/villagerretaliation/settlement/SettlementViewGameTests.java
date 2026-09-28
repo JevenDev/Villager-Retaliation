@@ -360,15 +360,17 @@ public final class SettlementViewGameTests {
             helper.assertFalse(client.accept(new com.jvn.villagerretaliation.network.SettlementViewOverviewPayload(
                     UUID.randomUUID(), next.requestId(), page.generation(), page.header(), category, 0, 0, List.of()), 11),
                     "foreign session replies are ignored");
+            int time = 1_001;
             for (var tab : com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.CATEGORIES) {
-                if (tab != category) next = client.request(12);
+                if (tab != category) next = client.request(time - 1);
                 boolean complete = client.accept(new com.jvn.villagerretaliation.network.SettlementViewOverviewPayload(
-                        session.id, next.requestId(), page.generation(), page.header(), tab, 0, 0, List.of()), 13);
+                        session.id, next.requestId(), page.generation(), page.header(), tab, 0, 0, List.of()), time);
                 helper.assertValueEqual(complete, tab == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES,
                         "only a complete refresh replaces the visible snapshot");
+                time += 1_000;
             }
-            helper.assertTrue(client.request(5_012) == null, "refresh waits five seconds after completion");
-            helper.assertTrue(client.request(5_013) != null, "refresh restarts after the completion interval");
+            helper.assertTrue(client.request(9_000) == null, "refresh waits five seconds after completion");
+            helper.assertTrue(client.request(9_001) != null, "refresh restarts after the completion interval");
             expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
                     session.id, 3, 0, category, 1));
             SettlementViewService.close(fixture.player().getUUID(), false);
@@ -394,6 +396,91 @@ public final class SettlementViewGameTests {
         selection.prune(Set.of(members.getFirst()));
         selection.recall(0, 2_000);
         helper.assertValueEqual(selection.residents(), List.of(members.getFirst()), "complete rosters prune remembered groups");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void overviewPaginationAndBulkCommandsStayBoundedAndRevalidate(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        var level = helper.getLevel();
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.GUARD_POST, "Post",
+                town.center(), town.center().offset(2, 2, 2), 5, true);
+        helper.assertTrue(town.putArea(fixture.player().getUUID(), area), "guard post exists");
+        var members = new java.util.ArrayList<UUID>();
+        for (int i = 0; i < 65; i++) {
+            var villager = EntityType.VILLAGER.create(level);
+            villager.setPos(town.center().getCenter());
+            com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.assignKnown(level, villager, town.id(),
+                    com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource.EXPLICIT_API);
+            members.add(villager.getUUID());
+            if (i < 17) town.assignDuty(villager.getUUID(), area.id());
+        }
+        try {
+            SettlementViewService.open(fixture.player(), town.id());
+            var session = SettlementViewService.session(fixture.player().getUUID());
+            var category = com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS;
+            var first = session.overview.page(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+                    session.id, 1, 0, category, 0));
+            helper.assertValueEqual(first.entries().size(), 64, "overview pages stop at 64 entries");
+            var next = session.overview.page(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+                    session.id, 2, first.generation(), category, 1));
+            helper.assertValueEqual(next.entries().size(), 1, "the last page contains the remaining resident");
+            roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.STREAM_CODEC, first);
+            expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementViewOverviewPayload(session.id, 3,
+                    first.generation(), first.header(), category, 0, 65,
+                    java.util.stream.Stream.concat(first.entries().stream(), next.entries().stream()).toList()));
+            helper.assertValueEqual(next.header(), first.header(), "all pages share one assessment");
+            helper.assertTrue(session.held.isEmpty(), "roster pagination does not stream terrain");
+            var order = new SettlementGuardOrder(SettlementGuardOrder.Mode.MOVE, List.of(town.center().east(4)));
+            var targets = members.subList(0, 18).stream()
+                    .map(id -> new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(id, town.duties().get(id))).toList();
+            var request = new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id, UUID.randomUUID(),
+                    SettlementViewAction.MOVE, targets, null, order);
+            roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewBatchPayload.STREAM_CODEC, request);
+            session.commands.submit(session, request);
+            helper.assertValueEqual(session.commands.tick(session, 16), 16, "one tick processes at most its budget");
+            helper.assertValueEqual(town.guardOrders().size(), 16, "remaining residents wait for the next tick");
+            helper.assertValueEqual(session.commands.tick(session, 16), 2, "the next tick completes the batch");
+            helper.assertValueEqual(town.guardOrders().size(), 17, "unloaded guards accept orders while civilians are skipped");
+            long revision = town.revision();
+            session.commands.submit(session, request);
+            helper.assertValueEqual(session.commands.tick(session, 16), 0, "duplicate operations never execute again");
+            helper.assertValueEqual(town.revision(), revision, "deduplication preserves state");
+            var invalid = new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id, UUID.randomUUID(),
+                    SettlementViewAction.MOVE, targets, null, new SettlementGuardOrder(SettlementGuardOrder.Mode.MOVE,
+                            List.of(town.center().east(town.radius() + 1))));
+            var outcome = SettlementViewCommands.apply(session, invalid, targets.getFirst());
+            helper.assertValueEqual(outcome.status(), com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.Status.FAILED,
+                    "invalid routes fail individually");
+            var reassignment = new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id, UUID.randomUUID(),
+                    SettlementViewAction.ASSIGN, List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(
+                            members.getFirst(), null)), area.id(), null);
+            helper.assertValueEqual(SettlementViewCommands.apply(session, reassignment, reassignment.targets().getFirst()).reason(),
+                    "Assignment changed since review", "stale reassignment reviews cannot overwrite a newer assignment");
+            var delegate = player(helper, "ViewOnly");
+            town.setPermissions(fixture.player().getUUID(), delegate.getUUID(), Set.of(SettlementPermission.VIEW));
+            SettlementViewService.open(delegate, town.id());
+            var delegateSession = SettlementViewService.session(delegate.getUUID());
+            var delegateRequest = new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(delegateSession.id,
+                    UUID.randomUUID(), request.action(), request.targets(), request.area(), request.order());
+            var denied = SettlementViewCommands.apply(delegateSession, delegateRequest, targets.getFirst());
+            helper.assertValueEqual(denied.status(), com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.Status.FAILED,
+                    "view access does not grant staff commands");
+            SettlementViewService.close(delegate.getUUID(), false);
+            roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.STREAM_CODEC,
+                    new com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload(session.id, request.operation(), List.of(outcome)));
+            session.commands.submit(session, new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id,
+                    UUID.randomUUID(), SettlementViewAction.RETURN, targets, null, null));
+            SettlementViewService.close(fixture.player().getUUID(), false);
+            helper.assertValueEqual(session.commands.tick(session, 16), 0, "session teardown discards pending commands");
+            expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id, UUID.randomUUID(),
+                    SettlementViewAction.RETURN, java.util.Collections.nCopies(129, targets.getFirst()), null, null));
+            expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id, UUID.randomUUID(),
+                    SettlementViewAction.RETURN, List.of(targets.getFirst(), targets.getFirst()), null, null));
+        } finally {
+            SettlementViewService.close(fixture.player().getUUID(), false);
+        }
         helper.succeed();
     }
 

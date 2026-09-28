@@ -154,7 +154,7 @@ final class SettlementViewPopup {
     }
 
     enum Kind {
-        RESIDENT, AREA, DRAFT, CHOOSER
+        RESIDENT, AREA, DRAFT, CHOOSER, ACTIONS, ASSIGN, CONFIRM_ASSIGN, RESULTS, OVERLAYS
     }
 
     record Target(Kind kind, UUID id, List<UUID> choices) {

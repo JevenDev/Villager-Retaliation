@@ -206,28 +206,27 @@ public final class SettlementManagementService {
     static Assessment overviewHeader(ServerPlayer player, SettlementRecord town) {
         var level = player.serverLevel();
         var registry = VillageAllegianceRegistrySavedData.get(level);
-            var status = SettlementProgressionService.assess(level, town);
-            var issues = SettlementIssueService.issues(level, town, status);
-            Set<SettlementPermission> permissions = EnumSet.noneOf(SettlementPermission.class);
-            for (SettlementPermission permission : SettlementPermission.values()) {
-                if (town.permits(player.getUUID(), permission)) {
-                    permissions.add(permission);
-                }
+        var status = SettlementProgressionService.assess(level, town);
+        var issues = SettlementIssueService.issues(level, town, status);
+        Set<SettlementPermission> permissions = EnumSet.noneOf(SettlementPermission.class);
+        for (SettlementPermission permission : SettlementPermission.values()) {
+            if (town.permits(player.getUUID(), permission)) {
+                permissions.add(permission);
             }
-            var header = new SettlementManagementPayload.Header(town.id().value(), name(registry, town), town.center(), town.leader(),
-                    permissions, town.stage(), town.radius(), town.stage().projects(), town.stage().depots(),
-                    SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
-                    status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
-                    status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
-                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size(), town.manualManagement(), SettlementPlotService.totals(town));
+        }
+        var header = new SettlementManagementPayload.Header(town.id().value(), name(registry, town), town.center(), town.leader(),
+                permissions, town.stage(), town.radius(), town.stage().projects(), town.stage().depots(),
+                SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
+                status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
+                status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
+                town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size(), town.manualManagement(), SettlementPlotService.totals(town));
         return new Assessment(header, issues);
     }
 
-    static java.util.Map<Page, List<Entry>> overview(ServerPlayer player, SettlementRecord town,
-                                                     SettlementManagementPayload.Header header) {
+    static java.util.Map<Page, List<Entry>> overview(ServerPlayer player, SettlementRecord town) {
         var result = new java.util.EnumMap<Page, List<Entry>>(Page.class);
         var residents = new ArrayList<Entry>();
-        residents(player.serverLevel(), VillageAllegianceRegistrySavedData.get(player.serverLevel()), town, residents);
+        residents(player.serverLevel(), VillageAllegianceRegistrySavedData.get(player.serverLevel()), town, residents, false);
         var areas = new ArrayList<Entry>();
         areas(town, areas);
         var projects = new ArrayList<Entry>();
@@ -248,6 +247,11 @@ public final class SettlementManagementService {
 
     private static void residents(ServerLevel level, VillageAllegianceRegistrySavedData registry,
                                   SettlementRecord town, List<Entry> entries) {
+        residents(level, registry, town, entries, true);
+    }
+
+    private static void residents(ServerLevel level, VillageAllegianceRegistrySavedData registry,
+                                  SettlementRecord town, List<Entry> entries, boolean detailed) {
         var social = VillagerSocialGraphSavedData.get(level);
         for (var member : registry.residentRoster(town.id(), level.getGameTime())) {
             var entity = level.getEntity(member.id());
@@ -267,12 +271,12 @@ public final class SettlementManagementService {
             entries.add(new SettlementManagementPayload.Resident(member.id(),
                     display(villager == null ? social.knownName(member.id()).orElse("") : VillagerPresetNameRegistry.resolveDisplayName(villager).getString()),
                     profession, villager == null ? !member.adult() : villager.isBaby(), presence, position, town.duties().get(member.id()),
-                    villager != null ? VillagerRecoveryService.captureRecoveryState(villager).food() : care == null ? -1 : care.food(),
-                    villager != null ? villager.getHealth() : care == null ? -1.0F : care.health(),
+                    !detailed ? -1 : villager != null ? VillagerRecoveryService.captureRecoveryState(villager).food() : care == null ? -1 : care.food(),
+                    !detailed ? -1.0F : villager != null ? villager.getHealth() : care == null ? -1.0F : care.health(),
                     work.status(),
                     villager == null ? care == null ? List.of() : care.availableRoles(level) : HiredVillagerRoles.availableRoles(level, villager),
-                    town.guardOrders().get(member.id()), SettlementWorkerConfigurationService.snapshot(level, town, member.id()),
-                    SettlementBrewingService.snapshot(level, town, member.id()), work.diagnostic()));
+                    town.guardOrders().get(member.id()), detailed ? SettlementWorkerConfigurationService.snapshot(level, town, member.id()) : null,
+                    detailed ? SettlementBrewingService.snapshot(level, town, member.id()) : null, work.diagnostic()));
         }
     }
 

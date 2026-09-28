@@ -184,8 +184,11 @@ public final class SettlementTownProfile {
         if (stage.sampled()) {
             int nativeResidents = fixture.tickingResidents();
             NATIVE_RESIDENTS.computeIfAbsent(stage, ignored -> new ArrayList<>()).add(nativeResidents);
-            if (stage == Stage.ACTIVE || stage == Stage.RETURN) require(nativeResidents == 100,
-                    "every measured active tick has 100 living AI-enabled residents: " + nativeResidents);
+            if ((stage == Stage.ACTIVE || stage == Stage.RETURN) && nativeResidents != 100) {
+                throw new IllegalStateException("every measured active tick has 100 living AI-enabled residents: " + nativeResidents
+                        + ", " + fixture.snapshot(event.getServer().getPlayerList().getPlayer(playerId))
+                        + ", view=" + fixture.viewState(event.getServer().getPlayerList().getPlayer(playerId)));
+            }
             if (stage == Stage.BACKGROUND) require(nativeResidents == 0 && fixture.unloaded(),
                     "every background sample has the complete fixture unloaded");
         }
