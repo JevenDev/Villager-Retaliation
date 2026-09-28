@@ -1597,12 +1597,22 @@ public final class BuilderWorker extends AbstractBlockWorker {
             Iterable<BlockPos> positions,
             HiredWorkArea area,
             BlockPos buildCenter) {
+        Predicate<BlockPos> movementFilter = approach -> BuilderSitePlanner.movementAllowed(area, buildCenter, approach);
         return new HiredMoveToBlockFaceJob(
                 level,
                 villager,
                 positions,
                 MAX_BUILD_TARGETS_TO_PATHFIND,
-                approach -> BuilderSitePlanner.movementAllowed(area, buildCenter, approach)).search();
+                movementFilter,
+                movementFilter,
+                clearingTravelFilter(villager, movementFilter),
+                ignored -> false).search();
+    }
+
+    private static Predicate<BlockPos> clearingTravelFilter(Villager villager, Predicate<BlockPos> movementFilter) {
+        // builders may arrive from a depot outside the site, but must work from inside it
+        boolean returning = !movementFilter.test(villager.blockPosition());
+        return pos -> returning || movementFilter.test(pos);
     }
 
     private List<BuilderApproachCandidate> buildApproachCandidates(
@@ -1965,7 +1975,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         Path path = HiredPathMemory.createPath(level, villager, target.approachPos(), 0);
         if (path != null
                 && path.canReach()
-                && HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)
+                && HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, clearingTravelFilter(villager, movementFilter))
                 && VillagerTaskNavigationUtil.moveToHiredPath(
                         villager,
                         path,

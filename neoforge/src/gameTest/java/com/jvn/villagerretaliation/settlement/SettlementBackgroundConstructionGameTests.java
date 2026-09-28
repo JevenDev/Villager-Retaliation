@@ -287,7 +287,7 @@ public final class SettlementBackgroundConstructionGameTests {
         fixture(helper, true, room(), fixture -> {
             var level = helper.getLevel();
             var origin = fixture.origin();
-            for (var pos : BlockPos.betweenClosed(fixture.site().min(), fixture.site().max())) {
+            for (var pos : BlockPos.betweenClosed(fixture.site().min().west(5), fixture.site().max())) {
                 level.setBlock(pos, pos.getY() < origin.getY() ? Blocks.DIRT.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
             }
             for (int x = -1; x <= 1; x++) {
@@ -309,6 +309,19 @@ public final class SettlementBackgroundConstructionGameTests {
             var state = HiredWorkStateStore.state(builder);
             var context = new HiredWorkContext(inventory, state, origin, fixture.area().min(), fixture.area().max(), 8, 5, true, 100, true, true);
             var worker = new BuilderWorker();
+            if (buried) {
+                builder.setPos(fixture.area().min().west(3).atY(origin.getY()).getBottomCenter());
+                var before = builder.position();
+                var result = worker.tick(level, builder, null, context);
+                helper.assertValueEqual(result.status(), "interaction.work.builder.moving_to_site", "an outside starting node must not block clearance");
+                var target = builder.getNavigation().getTargetPos();
+                helper.assertTrue(target != null && fixture.area().contains(target), "the clearance stance stays inside the workplace");
+                helper.assertValueEqual(builder.position(), before, "starting the return path does not teleport the builder");
+                helper.assertTrue(level.getBlockState(origin.above()).is(Blocks.STONE), "returning builders cannot mine remotely");
+                helper.assertValueEqual(inventory.countItem(Items.OAK_PLANKS), 1, "travel preserves construction materials");
+                builder.setPos(target.getBottomCenter());
+                builder.getNavigation().stop();
+            }
             for (int tick = 0; tick < 40 && fixture.project().active(); tick++) worker.tick(level, builder, null, context);
             helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.COMPLETED,
                     "native work clears the room before completing: " + fixture.project().blocker() + " / "
