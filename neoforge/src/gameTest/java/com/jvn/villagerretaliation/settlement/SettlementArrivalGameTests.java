@@ -55,7 +55,8 @@ public final class SettlementArrivalGameTests {
         depot.clearContent();
         helper.assertFalse(SettlementPopulationService.arrive(level, town, applicant), "queued approval still requires actual food");
         helper.assertTrue(town.arrivals().isEmpty() && town.residents().isEmpty(), "a shortage cannot admit an unsupported resident");
-        town.transferLeadership(town.leader(), UUID.randomUUID());
+        var offer = town.offerLeadership(town.leader(), UUID.randomUUID(), level.getGameTime());
+        town.acceptLeadership(offer.successor(), offer.id(), level.getGameTime());
         depot.setItem(0, new ItemStack(Items.BREAD, 64));
         helper.assertFalse(SettlementPopulationService.arrive(level, town, applicant), "revoked approval cannot admit the applicant later");
         helper.assertTrue(town.applicants().get(applicant.id()).approvedBy().isEmpty(), "new leadership can reconsider the application");

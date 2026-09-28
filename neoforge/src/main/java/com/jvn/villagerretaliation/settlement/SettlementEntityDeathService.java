@@ -16,6 +16,8 @@ import net.minecraft.world.level.ChunkPos;
 public final class SettlementEntityDeathService {
     private static final Map<LivingEntity, SettlementRecord> OWNERS = new WeakHashMap<>();
 
+    static void invalidateOwners() { OWNERS.clear(); }
+
     private SettlementEntityDeathService() {
     }
 

@@ -78,7 +78,7 @@ public final class VillagerDataWarmup {
         SceneSavedData.get(server.overworld());
         PlayerRaidSavedData.get(server.overworld());
         com.jvn.villagerretaliation.settlement.SettlementSavedData.get(server.overworld())
-                .restoreRegistry(com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData
+                .restoreRegistry(server.overworld(), com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData
                         .get(server.overworld()));
         SceneRuntime.initialize(server);
     }

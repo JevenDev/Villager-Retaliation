@@ -24,6 +24,7 @@ public final class SettlementProject {
     private SettlementWorkerSettings previousSettings;
     private int fee;
     private boolean paymentEarned;
+    private boolean paymentDelivered;
     private boolean paymentRefunded;
 
     private SettlementProject(UUID id, UUID area, UUID builder, BlockPos min, BlockPos max, CompoundTag task, Status status) {
@@ -87,6 +88,14 @@ public final class SettlementProject {
 
     public boolean paymentEarned() {
         return this.paymentEarned;
+    }
+
+    public boolean paymentDelivered() { return this.paymentDelivered; }
+
+    boolean acknowledgePayment() {
+        if (!this.paymentEarned || this.paymentDelivered) return false;
+        this.paymentDelivered = true;
+        return true;
     }
 
     boolean earnPayment() {
@@ -254,6 +263,7 @@ public final class SettlementProject {
         if (this.previousSettings != null) tag.put("PreviousSettings", this.previousSettings.save());
         tag.putInt("Fee", this.fee);
         tag.putBoolean("PaymentEarned", this.paymentEarned);
+        tag.putBoolean("PaymentDelivered", this.paymentDelivered);
         tag.putBoolean("PaymentRefunded", this.paymentRefunded);
         return tag;
     }
@@ -267,8 +277,10 @@ public final class SettlementProject {
                 Status.valueOf(tag.getString("Status")));
         project.fee = tag.getInt("Fee");
         project.paymentEarned = tag.getBoolean("PaymentEarned");
+        project.paymentDelivered = tag.getBoolean("PaymentDelivered");
         project.paymentRefunded = tag.getBoolean("PaymentRefunded");
-        if (project.fee < 0 || project.paymentEarned && project.paymentRefunded
+        if (project.fee < 0 || project.paymentDelivered && (!project.paymentEarned || project.fee == 0)
+                || project.paymentEarned && project.paymentRefunded
                 || project.active() && project.paymentRefunded
                 || project.fee > 0 && project.status == Status.COMPLETED && !project.paymentEarned
                 || project.fee > 0 && project.status == Status.CANCELLED && !project.paymentEarned && !project.paymentRefunded) throw new IllegalArgumentException("Invalid construction payment");

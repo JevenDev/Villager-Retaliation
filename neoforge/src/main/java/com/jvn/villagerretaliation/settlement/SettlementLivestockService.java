@@ -19,6 +19,8 @@ public final class SettlementLivestockService {
     private static final Map<SettlementLivestock, Integer> WORKER_CURSORS = new WeakHashMap<>();
     private static final Map<Animal, SettlementRecord> OWNERS = new WeakHashMap<>();
 
+    static void invalidateOwners() { OWNERS.clear(); }
+
     private SettlementLivestockService() {
     }
 

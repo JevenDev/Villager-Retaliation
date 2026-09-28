@@ -51,14 +51,16 @@ public final class SettlementManagementService {
 
     public static void action(ServerPlayer player, SettlementManagementActionPayload payload) {
         if (payload.command() instanceof SettlementManagementActionPayload.ClaimPlot plot) {
-            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town())).orElse(null);
+            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town()))
+                    .filter(value -> value.id().value().equals(payload.town())).orElse(null);
             String failure = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
                     ? SettlementPlotService.claim(player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price()) : "busy";
             PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), failure.isEmpty(), null, failure));
             return;
         }
         if (payload.command() instanceof SettlementManagementActionPayload.CommissionBuilding build) {
-            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town())).orElse(null);
+            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town()))
+                    .filter(value -> value.id().value().equals(payload.town())).orElse(null);
             String failure = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
                     ? SettlementConstructionService.commission(player, town, build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()) : "busy";
             PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), failure.isEmpty(), build.request(), failure));
@@ -77,7 +79,7 @@ public final class SettlementManagementService {
         var data = SettlementSavedData.get(level);
         var id = new VillageAllegianceId(payload.town());
         var town = data.get(id).orElse(null);
-        if (town == null || !town.dimension().equals(level.dimension().location())
+        if (town == null || !town.id().equals(id) || !town.dimension().equals(level.dimension().location())
                 || !town.permits(player.getUUID(), SettlementPermission.VIEW)) {
             return false;
         }
@@ -122,10 +124,7 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.Permissions permissions ->
                     town.setPermissions(player.getUUID(), permissions.player(), permissions.grants());
             case SettlementManagementActionPayload.Transfer transfer -> {
-                boolean transferred = town.transferLeadership(player.getUUID(), transfer.successor());
-                if (transferred) town.recordEvent(level.getGameTime(), SettlementEvent.Type.LEADERSHIP_TRANSFERRED,
-                        playerName(player, transfer.successor()));
-                yield transferred;
+                yield SettlementOwnershipService.offer(player, town, transfer.successor());
             }
             case SettlementManagementActionPayload.Inventory inventory -> level.getEntity(inventory.resident()) instanceof Villager villager
                     && SettlementWorkforceService.duty(villager).filter(duty -> duty.town().id().equals(id)).isPresent()

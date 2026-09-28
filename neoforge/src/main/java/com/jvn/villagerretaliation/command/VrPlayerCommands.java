@@ -41,6 +41,7 @@ final class VrPlayerCommands {
                     return 1;
                 }))
                 .then(party())
+                .then(SettlementCommands.root())
                 .then(duel());
     }
 

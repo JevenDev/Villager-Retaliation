@@ -57,15 +57,17 @@ public final class SettlementAuthorityGameTests {
         long revision = town.revision();
         helper.assertFalse(town.setPermissions(delegate, stranger, Set.of(SettlementPermission.TREASURY)),
                 "a staffing delegate cannot grant treasury access");
-        helper.assertFalse(town.transferLeadership(delegate, stranger), "only the leader can transfer leadership");
+        helper.assertTrue(town.offerLeadership(delegate, stranger, 0L) == null, "only the leader can offer leadership");
         helper.assertFalse(data.putArea(registry, id, delegate,
                 area(SettlementAreaType.HOME, BlockPos.ZERO, new BlockPos(2, 2, 2))),
                 "staffing authority cannot register buildings");
         helper.assertValueEqual(town.revision(), revision, "rejected requests leave state unchanged");
-        helper.assertTrue(town.transferLeadership(leader, stranger), "the leader can explicitly transfer the town");
+        helper.assertTrue(town.offerLeadership(leader, stranger, 0L) != null, "the leader can offer the town");
+        helper.assertValueEqual(town.leader(), leader, "an offer does not transfer ownership");
+        helper.assertTrue(town.acceptLeadership(stranger, town.leadershipOffer().id(), 1L), "the successor must accept");
         helper.assertFalse(town.permits(leader, SettlementPermission.TREASURY), "former leadership is not retained");
         helper.assertTrue(town.permits(stranger, SettlementPermission.TREASURY), "the new leader has authority");
-        helper.assertTrue(town.permits(delegate, SettlementPermission.STAFF), "existing delegation survives transfer");
+        helper.assertFalse(town.permits(delegate, SettlementPermission.STAFF), "old delegates cannot retain authority after transfer");
         helper.succeed();
     }
 

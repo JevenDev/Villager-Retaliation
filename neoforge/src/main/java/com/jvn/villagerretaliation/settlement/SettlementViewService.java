@@ -170,6 +170,12 @@ public final class SettlementViewService {
         return players;
     }
 
+    static void closeTown(SettlementRecord town) {
+        for (Session session : List.copyOf(SESSIONS.values())) {
+            if (session.town == town) close(session.player.getUUID(), true);
+        }
+    }
+
     public static void close(UUID player, boolean notify) {
         Session session = SESSIONS.remove(player);
         if (session == null) {

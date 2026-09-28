@@ -150,6 +150,24 @@ public final class SettlementRecoveryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void malformedBoundaryTypesNeverBecomeEmptyClaims(GameTestHelper helper) throws IOException {
+        for (String key : java.util.List.of("Plots", "Migrated", "FormatVersion")) {
+            var root = root(helper, town(helper, 0), town(helper, 256));
+            if (key.equals("FormatVersion")) root.putString(key, "56");
+            else root.getList("Settlements", Tag.TAG_COMPOUND).getCompound(1).getCompound("Territory").putString(key, "invalid");
+            try (var disk = new Disk(helper, root)) {
+                var before = Files.readAllBytes(disk.file());
+                var data = disk.load();
+                helper.assertTrue(data.readOnly(), "malformed " + key + " protects all boundaries");
+                data.setDirty();
+                disk.save();
+                helper.assertTrue(Arrays.equals(before, Files.readAllBytes(disk.file())), "malformed boundary bytes survive saving");
+            }
+        }
+        helper.succeed();
+    }
+
     private static SettlementRecord town(GameTestHelper helper, int x) {
         return new SettlementRecord(VillageAllegianceId.random(), helper.getLevel().dimension().location(),
                 new BlockPos(x, 64, 0), UUID.randomUUID(), 0, () -> {});

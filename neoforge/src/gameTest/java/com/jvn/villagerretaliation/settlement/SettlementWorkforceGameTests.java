@@ -360,7 +360,8 @@ public final class SettlementWorkforceGameTests {
         var level = helper.getLevel();
         var successor = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "CivicSuccessor"));
         try {
-            fixture.town().transferLeadership(fixture.leader().getUUID(), successor.getUUID());
+            var offer = fixture.town().offerLeadership(fixture.leader().getUUID(), successor.getUUID(), level.getGameTime());
+            fixture.town().acceptLeadership(successor.getUUID(), offer.id(), level.getGameTime());
             helper.assertFalse(VillagerJobInventoryAuthorization.canAccess(level, fixture.villager(), fixture.leader()),
                     "former leaders do not retain civic equipment access");
             helper.assertTrue(VillagerJobInventoryAuthorization.canAccess(level, fixture.villager(), successor),

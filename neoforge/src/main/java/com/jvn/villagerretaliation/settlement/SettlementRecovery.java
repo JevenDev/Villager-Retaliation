@@ -52,7 +52,8 @@ final class SettlementRecovery {
               Map<VillageAllegianceId, SettlementRecord> settlements,
               Map<ResourceLocation, Map<Long, VillageAllegianceId>> ownership) {
         int version = tag.getInt("FormatVersion");
-        if (version > supportedVersion || !tag.contains("Settlements", Tag.TAG_LIST)
+        if (version < 0 || version > supportedVersion || tag.contains("FormatVersion") && !tag.contains("FormatVersion", Tag.TAG_INT)
+                || !tag.contains("Settlements", Tag.TAG_LIST)
                 || !(tag.get("Settlements") instanceof ListTag entries)
                 || !entries.isEmpty() && entries.getElementType() != Tag.TAG_COMPOUND) {
             protect(tag, "Unsupported or malformed settlement root (format " + version + ")");
@@ -83,6 +84,12 @@ final class SettlementRecovery {
                 }
                 var id = new VillageAllegianceId(payload.getUUID("Id"));
                 var dimension = ResourceLocation.parse(payload.getString("Dimension"));
+                if (payload.contains("Territory") && (!payload.contains("Territory", Tag.TAG_COMPOUND)
+                        || !payload.getCompound("Territory").contains("Plots", Tag.TAG_LONG_ARRAY)
+                        || !payload.getCompound("Territory").contains("Migrated", Tag.TAG_BYTE))) {
+                    protect(tag, "Cannot safely read territory boundaries of entry " + index);
+                    return;
+                }
                 var territory = town != null ? town.territory()
                         : SettlementTerritory.load(BlockPos.of(payload.getLong("Center")), payload.getCompound("Territory"));
                 if (!territory.migrated() && town == null) {

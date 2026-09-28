@@ -22,6 +22,8 @@ public final class SettlementGroundItemService {
     private static final Map<SettlementArea, Integer> CURSORS = new WeakHashMap<>();
     private static final Map<SettlementGroundItem, Integer> WORKER_CURSORS = new WeakHashMap<>();
 
+    static void invalidateOwners() { OWNERS.clear(); }
+
     private SettlementGroundItemService() {
     }
 

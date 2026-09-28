@@ -287,6 +287,9 @@ public final class SettlementManagementGameTests {
         helper.assertValueEqual(fixture.town().history().size(), 1, "rejected transfers do not add history");
         helper.assertTrue(act(fixture.leader(), fixture.town(), new SettlementManagementActionPayload.Transfer(delegate.getUUID())),
                 "explicit leadership transfer succeeds");
+        helper.assertValueEqual(fixture.town().history().size(), 1, "an offer does not record a completed transfer");
+        helper.assertTrue(SettlementOwnershipService.accept(delegate, fixture.town(), fixture.town().leadershipOffer().id()),
+                "the successor accepts the management offer");
         helper.assertValueEqual(fixture.town().history().size(), 2, "the successful transfer adds one event");
         helper.assertValueEqual(fixture.town().history().getLast().type(), SettlementEvent.Type.LEADERSHIP_TRANSFERRED,
                 "the transfer remains visible in the town history");

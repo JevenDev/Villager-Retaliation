@@ -27,6 +27,16 @@ public final class VrCommandGameTests {
         CommandNode<CommandSourceStack> admin = child(vr, "admin");
 
         child(child(admin, "village"), "removeHere");
+        CommandNode<CommandSourceStack> settlement = child(vr, "settlement");
+        child(settlement, "confirm");
+        CommandNode<CommandSourceStack> town = child(settlement, "town");
+        for (String action : java.util.List.of("offer", "accept", "cancel", "dissolve", "abandon", "releasePlot", "relocate", "merge")) {
+            child(town, action);
+        }
+        CommandNode<CommandSourceStack> settlementAdmin = child(admin, "settlement");
+        child(settlementAdmin, "recovery");
+        child(settlementAdmin, "recoverOwner");
+        child(settlementAdmin, "confirmOwner");
         CommandNode<CommandSourceStack> villager = child(admin, "villager");
         CommandNode<CommandSourceStack> skill = child(villager, "skill");
         helper.assertTrue(skill.getChild("export") == null,
@@ -78,6 +88,8 @@ public final class VrCommandGameTests {
                 "the legacy /duel root must not be registered");
         helper.assertValueEqual(dispatcher.execute("vr", playerSource), 1,
                 "/vr should execute root help");
+        helper.assertValueEqual(dispatcher.execute("vr settlement", playerSource), 1,
+                "/vr settlement should list available management actions");
         helper.assertValueEqual(dispatcher.execute("vr admin", playerSource.withPermission(2)), 1,
                 "/vr admin should execute operator help");
         helper.assertValueEqual(dispatcher.execute("vr admin debug", playerSource.withPermission(2)), 1,

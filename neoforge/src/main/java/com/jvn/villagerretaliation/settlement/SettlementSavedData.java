@@ -22,10 +22,11 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class SettlementSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_settlements";
-    private static final int FORMAT_VERSION = 55;
+    private static final int FORMAT_VERSION = 56;
     final SettlementSimulationService simulation = new SettlementSimulationService();
     private final Map<VillageAllegianceId, SettlementRecord> settlements = new LinkedHashMap<>();
     private final SettlementRecovery recovery = new SettlementRecovery();
+    private final Map<VillageAllegianceId, CompoundTag> retired = new LinkedHashMap<>();
 
     private final Map<ResourceLocation, Map<Long, VillageAllegianceId>> ownership = new java.util.HashMap<>();
 
@@ -41,6 +42,13 @@ public final class SettlementSavedData extends SavedData {
     }
 
     public Optional<SettlementRecord> get(VillageAllegianceId id) {
+        var visited = new java.util.HashSet<VillageAllegianceId>();
+        while (this.retired.containsKey(id)) {
+            if (!visited.add(id)) return Optional.empty();
+            var entry = this.retired.get(id);
+            if (!entry.hasUUID("MergedInto")) return Optional.empty();
+            id = new VillageAllegianceId(entry.getUUID("MergedInto"));
+        }
         return Optional.ofNullable(this.settlements.get(id));
     }
 
@@ -93,6 +101,7 @@ public final class SettlementSavedData extends SavedData {
             }
         }
         this.settlements.put(town.id(), town);
+        this.retired.remove(town.id());
         index(town);
         town.recordEvent(gameTime, SettlementEvent.Type.ESTABLISHED, "");
         updateFootprint(registry, town);
@@ -125,8 +134,30 @@ public final class SettlementSavedData extends SavedData {
     }
 
     public void restoreRegistry(VillageAllegianceRegistrySavedData registry) {
+        restoreRegistry(null, registry);
+    }
+
+    public void restoreRegistry(ServerLevel level, VillageAllegianceRegistrySavedData registry) {
+        if (readOnly()) return;
         for (SettlementRecord town : this.settlements.values()) {
             registry.ensureRecord(town.id(), town.foundedAt(), town.dimension(), town.center());
+        }
+        for (var entry : this.retired.entrySet()) {
+            var raw = entry.getValue();
+            registry.ensureRecord(entry.getKey(), raw.getLong("FoundedAt"),
+                    ResourceLocation.parse(raw.getString("Dimension")), BlockPos.of(raw.getLong("Center")));
+        }
+        for (var entry : this.retired.entrySet()) {
+            var raw = entry.getValue();
+            if (!raw.hasUUID("MergedInto")) continue;
+            var target = new VillageAllegianceId(raw.getUUID("MergedInto"));
+            while (this.retired.containsKey(target) && this.retired.get(target).hasUUID("MergedInto")) {
+                target = new VillageAllegianceId(this.retired.get(target).getUUID("MergedInto"));
+            }
+            registry.mergeSettlements(level, entry.getKey(), target);
+        }
+        for (var entry : this.retired.entrySet()) {
+            if (!entry.getValue().hasUUID("MergedInto")) registry.releaseSettlement(entry.getKey());
         }
         var ordered = this.settlements.values().stream().sorted(java.util.Comparator
                 .comparingLong((SettlementRecord town) -> registry.canonicalRecord(town.id()).orElseThrow().createdGameTime())
@@ -200,6 +231,9 @@ public final class SettlementSavedData extends SavedData {
         this.settlements.values().forEach(town -> entries.add(town.save(provider)));
         this.recovery.appendQuarantine(entries);
         tag.put("Settlements", entries);
+        var retiredTags = new ListTag();
+        this.retired.values().forEach(entry -> retiredTags.add(entry.copy()));
+        tag.put("RetiredSettlements", retiredTags);
         this.recovery.saveOriginal(tag);
         return tag;
     }
@@ -207,6 +241,41 @@ public final class SettlementSavedData extends SavedData {
     public static SettlementSavedData load(CompoundTag tag, HolderLookup.Provider provider) {
         SettlementSavedData data = new SettlementSavedData();
         data.recovery.load(tag, provider, FORMAT_VERSION, data::setDirty, data.settlements, data.ownership);
+        if (!data.readOnly()) {
+            try {
+                if (tag.contains("RetiredSettlements") && (!(tag.get("RetiredSettlements") instanceof ListTag retiredTags)
+                        || !retiredTags.isEmpty() && retiredTags.getElementType() != Tag.TAG_COMPOUND)) {
+                    throw new IllegalArgumentException("Invalid settlement lifecycle journal");
+                }
+                for (var raw : tag.getList("RetiredSettlements", Tag.TAG_COMPOUND)) {
+                    var entry = (CompoundTag) raw;
+                    if (!entry.hasUUID("Id") || !entry.contains("Center", Tag.TAG_LONG)
+                            || ResourceLocation.tryParse(entry.getString("Dimension")) == null
+                            || entry.contains("MergedInto") && !entry.hasUUID("MergedInto")) {
+                        throw new IllegalArgumentException("Invalid retired settlement identity");
+                    }
+                    var id = new VillageAllegianceId(entry.getUUID("Id"));
+                    if (data.settlements.containsKey(id) || data.recovery.reserved(id) || data.retired.putIfAbsent(id, entry.copy()) != null) {
+                        throw new IllegalArgumentException("Duplicate retired settlement identity");
+                    }
+                }
+                for (var id : data.retired.keySet()) {
+                    var visited = new java.util.HashSet<VillageAllegianceId>();
+                    var cursor = id;
+                    while (data.retired.containsKey(cursor) && data.retired.get(cursor).hasUUID("MergedInto")) {
+                        if (!visited.add(cursor)) throw new IllegalArgumentException("Cyclic settlement merger");
+                        cursor = new VillageAllegianceId(data.retired.get(cursor).getUUID("MergedInto"));
+                    }
+                    if (!data.retired.containsKey(cursor) && !data.settlements.containsKey(cursor) && !data.recovery.reserved(cursor)) {
+                        throw new IllegalArgumentException("Missing settlement merger target");
+                    }
+                }
+            } catch (IllegalArgumentException exception) {
+                data.recovery.protect(tag, exception.toString());
+                data.settlements.clear();
+                data.ownership.clear();
+            }
+        }
         return data;
     }
 
@@ -220,6 +289,47 @@ public final class SettlementSavedData extends SavedData {
             data.recovery.protect(new CompoundTag(), "Existing settlement file could not be read");
         }
         return data;
+    }
+
+    void applyLifecycle(ServerLevel level, SettlementRecord source, SettlementRecord target, CompoundTag replacement) throws java.io.IOException {
+        if (readOnly() || this.settlements.get(source.id()) != source
+                || target != null && this.settlements.get(target.id()) != target) throw new IllegalStateException("Stale settlement lifecycle");
+        var next = replacement == null ? null : SettlementRecord.load(replacement, level.registryAccess(), this::setDirty);
+        var root = save(new CompoundTag(), level.registryAccess());
+        var entries = root.getList("Settlements", Tag.TAG_COMPOUND);
+        entries.removeIf(raw -> {
+            var id = new VillageAllegianceId(((CompoundTag) raw).getUUID("Id"));
+            return id.equals(source.id()) || target != null && id.equals(target.id());
+        });
+        if (replacement != null) entries.add(replacement.copy());
+        CompoundTag retiredEntry = null;
+        if (replacement == null || target != null) {
+            retiredEntry = source.save(level.registryAccess());
+            if (target != null) retiredEntry.putUUID("MergedInto", target.id().value());
+            root.getList("RetiredSettlements", Tag.TAG_COMPOUND).add(retiredEntry);
+        }
+        var wrapper = new CompoundTag();
+        wrapper.put("data", root);
+        net.minecraft.nbt.NbtUtils.addCurrentDataVersion(wrapper);
+        var file = level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                .resolve("data").resolve(DATA_NAME + ".dat");
+        net.neoforged.neoforge.common.IOUtilities.waitUntilIOWorkerComplete();
+        net.neoforged.neoforge.common.IOUtilities.writeNbtCompressed(wrapper, file);
+        this.settlements.remove(source.id());
+        if (target != null) this.settlements.remove(target.id());
+        if (next != null) this.settlements.put(next.id(), next);
+        if (retiredEntry != null) this.retired.put(source.id(), retiredEntry);
+        this.ownership.values().forEach(plots -> plots.values().removeIf(id -> id.equals(source.id()) || target != null && id.equals(target.id())));
+        if (next != null) index(next);
+        this.simulation.invalidate();
+        SettlementViewService.closeTown(source);
+        if (target != null) SettlementViewService.closeTown(target);
+        SettlementGroundItemService.invalidateOwners();
+        SettlementGroundExperienceService.invalidateOwners();
+        SettlementLivestockService.invalidateOwners();
+        SettlementEntityDeathService.invalidateOwners();
+        restoreRegistry(level, VillageAllegianceRegistrySavedData.get(level));
+        setDirty();
     }
 
     @Override

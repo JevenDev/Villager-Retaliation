@@ -211,8 +211,13 @@ public final class SettlementConstructionService {
         var receipts = builder.getPersistentData().getCompound("SettlementConstructionPayments");
         boolean changed = false;
         for (var project : town.projects().values()) {
-            if (!project.builder().equals(builder.getUUID()) || !project.paymentEarned() || project.fee() == 0 || receipts.getBoolean(project.id().toString())) continue;
+            if (!project.builder().equals(builder.getUUID()) || !project.paymentEarned() || project.fee() == 0) continue;
+            if (receipts.getBoolean(project.id().toString())) {
+                if (project.acknowledgePayment()) town.changed();
+                continue;
+            }
             VillagerWalletService.addCurrency(builder, project.fee());
+            project.acknowledgePayment();
             receipts.putBoolean(project.id().toString(), true);
             changed = true;
         }

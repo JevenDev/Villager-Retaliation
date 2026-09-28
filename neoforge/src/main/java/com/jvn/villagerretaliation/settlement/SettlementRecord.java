@@ -64,6 +64,7 @@ public final class SettlementRecord {
     private SettlementSupportState support = new SettlementSupportState();
     private SettlementEconomy economy = new SettlementEconomy(this::changed);
     private UUID leader;
+    private LeadershipOffer leadershipOffer;
     private SettlementStage stage = SettlementStage.CAMP;
     private int radius = SettlementStage.CAMP.radius();
     private SettlementTerritory territory;
@@ -805,14 +806,48 @@ public final class SettlementRecord {
         return true;
     }
 
-    public boolean transferLeadership(UUID actor, UUID successor) {
+    public LeadershipOffer leadershipOffer() { return this.leadershipOffer; }
+
+    public LeadershipOffer offerLeadership(UUID actor, UUID successor, long now) {
         if (!this.leader.equals(actor) || successor == null || successor.equals(this.leader)) {
-            return false;
+            return null;
         }
-        this.delegates.remove(successor);
-        this.leader = successor;
+        this.leadershipOffer = new LeadershipOffer(UUID.randomUUID(), actor, successor, Math.addExact(now, 24_000L));
+        changed();
+        return this.leadershipOffer;
+    }
+
+    public boolean acceptLeadership(UUID actor, UUID offer, long now) {
+        var pending = this.leadershipOffer;
+        if (pending == null || !pending.id().equals(offer) || !pending.successor().equals(actor)
+                || !pending.issuer().equals(this.leader) || now >= pending.expiresAt()) return false;
+        changeLeader(actor);
+        return true;
+    }
+
+    public boolean cancelLeadership(UUID actor, UUID offer) {
+        var pending = this.leadershipOffer;
+        if (pending == null || !pending.id().equals(offer)
+                || !this.leader.equals(actor) && !pending.successor().equals(actor)) return false;
+        this.leadershipOffer = null;
         changed();
         return true;
+    }
+
+    boolean recoverLeadership(net.minecraft.commands.CommandSourceStack source, UUID successor) {
+        if (source == null || !source.hasPermission(2) || successor == null) return false;
+        changeLeader(successor);
+        return true;
+    }
+
+    private void changeLeader(UUID successor) {
+        this.delegates.clear();
+        this.leadershipOffer = null;
+        this.leader = successor;
+        changed();
+    }
+
+    public record LeadershipOffer(UUID id, UUID issuer, UUID successor, long expiresAt) {
     }
 
     boolean putArea(UUID actor, SettlementArea area) {
@@ -886,6 +921,14 @@ public final class SettlementRecord {
         tag.putString("Dimension", this.dimension.toString());
         tag.putLong("Center", this.center.asLong());
         tag.putUUID("Leader", this.leader);
+        if (this.leadershipOffer != null) {
+            var offer = new CompoundTag();
+            offer.putUUID("Id", this.leadershipOffer.id());
+            offer.putUUID("Issuer", this.leadershipOffer.issuer());
+            offer.putUUID("Successor", this.leadershipOffer.successor());
+            offer.putLong("ExpiresAt", this.leadershipOffer.expiresAt());
+            tag.put("LeadershipOffer", offer);
+        }
         tag.putLong("FoundedAt", this.foundedAt);
         tag.putLong("Revision", this.revision);
         var historyTags = new ListTag();
@@ -1036,6 +1079,14 @@ public final class SettlementRecord {
         SettlementRecord record = new SettlementRecord(new VillageAllegianceId(tag.getUUID("Id")),
                 dimension, BlockPos.of(tag.getLong("Center")), tag.getUUID("Leader"),
                 tag.getLong("FoundedAt"), dirty);
+        if (tag.contains("LeadershipOffer")) {
+            var offer = tag.getCompound("LeadershipOffer");
+            if (!offer.hasUUID("Id") || !offer.hasUUID("Issuer") || !offer.hasUUID("Successor")
+                    || !offer.getUUID("Issuer").equals(record.leader) || offer.getUUID("Successor").equals(record.leader)
+                    || offer.getLong("ExpiresAt") < 0L) throw new IllegalArgumentException("Invalid leadership offer");
+            record.leadershipOffer = new LeadershipOffer(offer.getUUID("Id"), offer.getUUID("Issuer"),
+                    offer.getUUID("Successor"), offer.getLong("ExpiresAt"));
+        }
         record.revision = Math.max(0L, tag.getLong("Revision"));
         var historyTags = tag.getList("History", Tag.TAG_COMPOUND);
         var eventIds = new java.util.HashSet<UUID>();

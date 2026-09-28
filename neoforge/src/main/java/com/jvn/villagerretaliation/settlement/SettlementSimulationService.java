@@ -28,6 +28,13 @@ public final class SettlementSimulationService {
     SettlementSimulationService() {
     }
 
+    void invalidate() {
+        this.entries.clear();
+        this.scheduled = List.of();
+        this.arrivals = List.of();
+        this.refreshAt = 0L;
+    }
+
     public static void tick(MinecraftServer server) {
         SettlementMineReactions.tick(server);
         SettlementTerrainDrops.tick(server);

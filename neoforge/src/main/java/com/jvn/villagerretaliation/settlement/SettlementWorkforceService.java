@@ -198,8 +198,8 @@ public final class SettlementWorkforceService {
         var before = VillagerAssignmentStore.snapshot(villager);
         SettlementRecord town = home(level, villager).orElse(null);
         VillagerAssignmentStore.civicSettlement(villager)
-                .filter(id -> town == null || !id.equals(town.id().value()))
                 .flatMap(id -> SettlementSavedData.get(level).get(new VillageAllegianceId(id)))
+                .filter(previous -> town == null || !previous.id().equals(town.id()))
                 .ifPresent(previous -> previous.removeDuty(villager.getUUID()));
         UUID areaId = town == null ? null : town.duties().get(villager.getUUID());
         SettlementArea area = areaId == null ? null : town.workplace(areaId);
@@ -225,6 +225,13 @@ public final class SettlementWorkforceService {
                 VillagerBehaviorSuppressionPolicy.restoreAfterRelease(level, villager);
             }
             return;
+        }
+        if (before.state() == VillagerAssignmentState.CIVIC && before.role() == area.type().role()
+                && VillagerAssignmentStore.civicArea(villager).filter(area.id()::equals).isPresent()
+                && VillagerAssignmentStore.civicSettlement(villager).filter(id -> !id.equals(town.id().value()))
+                        .flatMap(id -> SettlementSavedData.get(level).get(new VillageAllegianceId(id)))
+                        .filter(previous -> previous.id().equals(town.id())).isPresent()) {
+            VillagerAssignmentStore.assignCivic(villager, town.id().value(), area.id(), area.type().role(), level.getGameTime());
         }
         var state = HiredWorkStateStore.state(villager);
         boolean assignmentChanged = before.state() != VillagerAssignmentState.CIVIC

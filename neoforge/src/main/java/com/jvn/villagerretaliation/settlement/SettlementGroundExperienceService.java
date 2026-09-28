@@ -17,6 +17,8 @@ public final class SettlementGroundExperienceService {
     private static final Map<ExperienceOrb, SettlementRecord> OWNERS = new WeakHashMap<>();
     private static final Map<SettlementArea, Integer> CURSORS = new WeakHashMap<>();
 
+    static void invalidateOwners() { OWNERS.clear(); }
+
     private SettlementGroundExperienceService() {
     }
 

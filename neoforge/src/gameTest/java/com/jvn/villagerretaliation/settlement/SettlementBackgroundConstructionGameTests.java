@@ -922,8 +922,10 @@ public final class SettlementBackgroundConstructionGameTests {
     }
 
     static void capacityFixture(GameTestHelper helper, int region, Map<BlockPos, BlockState> blocks, Consumer<Fixture> check) {
-        var base = helper.absolutePos(new BlockPos(2, 2, 2)).offset(14_000_000 + region * 256, 0, 14_000_000);
-        var origin = new BlockPos((base.getX() >> 4 << 4) + 15, region == 2 ? 95 : 80, base.getZ());
+        var base = helper.absolutePos(new BlockPos(2, 2, 2));
+        int x = 14_000_000 + base.getX() * 64 + region * 256;
+        int z = 14_000_000 + base.getZ() * 64;
+        var origin = new BlockPos((x >> 4 << 4) + 15, region == 2 ? 95 : 80, z);
         fixture(helper, origin, blocks, true, check);
     }
 

@@ -197,7 +197,8 @@ public final class SettlementTownProfileScenario {
         for (int index = 0; index < 4; index++) fixture.commission(player, index, index);
         fixture.demand(player, 256, 512);
         var offlineLeader = UUID.randomUUID();
-        require(town.transferLeadership(player.getUUID(), offlineLeader), "the fixture transfers to an offline leader");
+        var offer = town.offerLeadership(player.getUUID(), offlineLeader, 0L);
+        require(offer != null && town.acceptLeadership(offlineLeader, offer.id(), 0L), "the fixture transfers to an offline leader");
         require(town.setPermissions(offlineLeader, player.getUUID(), EnumSet.allOf(SettlementPermission.class)), "the observer receives delegated access");
         player.connection.teleport(body.x, body.y, body.z, 0.0F, 0.0F);
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);

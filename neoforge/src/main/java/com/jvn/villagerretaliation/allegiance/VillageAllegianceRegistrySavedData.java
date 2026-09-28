@@ -257,6 +257,35 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return true;
     }
 
+    public void releaseSettlement(VillageAllegianceId id) {
+        var current = this.records.get(id);
+        if (current == null || this.aliases.containsKey(id) || !this.managedIdentities.remove(id)) return;
+        this.records.put(id, new AllegianceRecord(current.id(), current.createdGameTime(), VillageLifecycleState.ACTIVE,
+                current.displayName(), current.customName(), current.originDimension(), current.originPosition(), current.center(),
+                current.sourceSections(), expandedFootprint(current.sourceSections()), current.historicalFootprintSections(),
+                current.lastSeenGameTime(), 0L, current.residents()));
+        this.mergeObservations.keySet().removeIf(key -> key.contains(id));
+        markFootprintChanged();
+    }
+
+    public boolean mergeSettlements(ServerLevel level, VillageAllegianceId source, VillageAllegianceId target) {
+        var canonicalSource = canonical(source).orElse(null);
+        var canonicalTarget = canonical(target).orElse(null);
+        if (canonicalSource == null || canonicalTarget == null) return false;
+        if (canonicalSource.equals(canonicalTarget)) {
+            if (level != null && this.records.containsKey(source)) {
+                VillageScopeMigrationService.merge(level, this.records.get(source), this.records.get(canonicalTarget));
+            }
+            return true;
+        }
+        if (!canonicalSource.equals(source) || !canonicalTarget.equals(target)) return false;
+        if (!mergeCanonical(level, source, target, true)) return false;
+        this.managedIdentities.remove(source);
+        this.managedIdentities.add(target);
+        setDirty();
+        return true;
+    }
+
     public List<ResidentRecord> residentRoster(VillageAllegianceId id, long gameTime) {
         AllegianceRecord record = canonicalRecord(id).orElse(null);
         if (record == null) {
@@ -682,10 +711,14 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             ServerLevel level,
             VillageAllegianceId source,
             VillageAllegianceId target) {
+        return mergeCanonical(level, source, target, false);
+    }
+
+    private boolean mergeCanonical(ServerLevel level, VillageAllegianceId source, VillageAllegianceId target, boolean settlementLifecycle) {
         AllegianceRecord sourceRecord = this.records.get(source);
         AllegianceRecord targetRecord = this.records.get(target);
         if (sourceRecord == null || targetRecord == null || source.equals(target)
-                || isManaged(source) || isManaged(target)
+                || !settlementLifecycle && (isManaged(source) || isManaged(target))
                 || this.removedIdentities.contains(source) || this.removedIdentities.contains(target)
                 || !java.util.Objects.equals(sourceRecord.originDimension(), targetRecord.originDimension())) {
             return false;

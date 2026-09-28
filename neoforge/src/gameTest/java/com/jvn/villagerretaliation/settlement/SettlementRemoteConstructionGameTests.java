@@ -149,6 +149,7 @@ public final class SettlementRemoteConstructionGameTests {
         var fixture = fixture(helper);
         var storage = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Storage",
                 fixture.origin().offset(22, 0, 0), fixture.origin().offset(24, 2, 2), 5, true);
+        SettlementTestPlots.claim(helper.getLevel(), fixture.town(), storage.min(), storage.max());
         helper.assertTrue(fixture.town().putArea(fixture.town().leader(), storage), "the second workplace is registered");
         helper.assertTrue(fixture.town().assignDuty(fixture.builder().getUUID(), storage.id()), "the authoritative duty changes while the native context stays old");
         var id = hold(helper, fixture);

@@ -130,7 +130,8 @@ public final class SettlementPopulationGameTests {
         helper.assertTrue(town.applicants().isEmpty(), "completed admission consumes the application");
         helper.assertValueEqual(registry.residentRoster(id, level.getGameTime()).size(), 1, "the admitted resident occupies the vacant bed");
         helper.assertFalse(SettlementPopulationService.canGrow(level, town), "unloaded arrivals count toward housing capacity");
-        town.transferLeadership(leader.getUUID(), UUID.randomUUID());
+        var offer = town.offerLeadership(leader.getUUID(), UUID.randomUUID(), level.getGameTime());
+        town.acceptLeadership(offer.successor(), offer.id(), level.getGameTime());
         SettlementArrivalService.update(level, town);
         helper.assertTrue(town.arrivals().containsKey(applicant.id()), "a completed admission survives a leadership transfer");
         helper.assertFalse(level.hasChunkAt(center), "reconciliation also leaves the remote town unloaded");
