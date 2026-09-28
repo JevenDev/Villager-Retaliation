@@ -33,6 +33,7 @@ import net.minecraft.world.item.Items;
 
 public final class SettlementEditScreen extends Screen {
     private final SettlementManagementScreen parent;
+    private final SettlementViewScreen view;
     private final Mode mode;
     private final Entry original;
     private final UUID id;
@@ -53,8 +54,13 @@ public final class SettlementEditScreen extends Screen {
     private int panelHeight;
 
     public SettlementEditScreen(SettlementManagementScreen parent, Mode mode, Entry original) {
+        this(parent, mode, original, null);
+    }
+
+    SettlementEditScreen(SettlementManagementScreen parent, Mode mode, Entry original, SettlementViewScreen view) {
         super(SettlementManagementScreen.enumText("form", mode));
         this.parent = parent;
+        this.view = view;
         this.mode = mode;
         this.original = original;
         this.id = original == null ? UUID.randomUUID() : original.id();
@@ -107,6 +113,7 @@ public final class SettlementEditScreen extends Screen {
             return;
         }
         if (payload.applied()) {
+            if (this.view != null) this.view.areaSaved(this.id);
             onClose();
         } else {
             this.error = text("not_applied");
@@ -330,7 +337,12 @@ public final class SettlementEditScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(this.parent);
+        if (this.view != null && this.parent.submitting()) {
+            return;
+        }
+        if (this.view == null || !SettlementViewClient.resume(this.parent)) {
+            this.minecraft.setScreen(this.parent);
+        }
     }
 
     @Override

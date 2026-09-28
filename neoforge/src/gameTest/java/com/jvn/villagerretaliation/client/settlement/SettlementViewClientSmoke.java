@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.settlement.SettlementArea;
+import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementBuildingService;
 import com.jvn.villagerretaliation.settlement.SettlementCareService;
@@ -74,6 +75,11 @@ public final class SettlementViewClientSmoke {
     private static float originalHeight;
     private static float originalYaw;
     private static Vec3 expectedMovement;
+    private static SettlementArea originalArea;
+    private static SettlementViewBounds refinedBounds;
+    private static int originalAreaCount;
+    private static UUID temporaryLeader;
+    private static Villager unavailableResident;
     private static int panDirection;
     private static final int[] PAN_KEYS = {GLFW.GLFW_KEY_W, GLFW.GLFW_KEY_D, GLFW.GLFW_KEY_S, GLFW.GLFW_KEY_A,
             GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_LEFT};
@@ -98,10 +104,10 @@ public final class SettlementViewClientSmoke {
         if (started == 0L) {
             started = Util.getMillis();
         }
-        if (Util.getMillis() - started >= 120_000L) {
+        if (Util.getMillis() - started >= 180_000L) {
             capture("failure");
         }
-        require(Util.getMillis() - started < 120_000L, "client smoke run timed out at phase " + phase
+        require(Util.getMillis() - started < 180_000L, "client smoke run timed out at phase " + phase
                 + " on " + (minecraft.screen == null ? "game" : minecraft.screen.getClass().getSimpleName()));
         if (minecraft.level == null || minecraft.player == null || minecraft.getSingleplayerServer() == null) {
             return;
@@ -164,14 +170,16 @@ public final class SettlementViewClientSmoke {
             originalYaw = screen.cameraYaw();
             screen.keyPressed(GLFW.GLFW_KEY_Q, 0, 0);
             phase = 80;
-        } else if (phase == 80 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 8) {
+        } else if (phase == 80 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 8
+                && ((originalYaw - screen.cameraYaw() + 360) % 360 > 5 || ticks >= 120)) {
             screen.keyReleased(GLFW.GLFW_KEY_Q, 0, 0);
             require((originalYaw - screen.cameraYaw() + 360) % 360 > 5, "holding Q rotates left");
             originalYaw = screen.cameraYaw();
             screen.keyPressed(GLFW.GLFW_KEY_E, 0, 0);
             ticks = 0;
             phase = 81;
-        } else if (phase == 81 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 8) {
+        } else if (phase == 81 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 8
+                && ((screen.cameraYaw() - originalYaw + 360) % 360 > 5 || ticks >= 120)) {
             screen.keyReleased(GLFW.GLFW_KEY_E, 0, 0);
             require((screen.cameraYaw() - originalYaw + 360) % 360 > 5, "holding E rotates right");
             originalX = screen.focusX();
@@ -202,16 +210,254 @@ public final class SettlementViewClientSmoke {
             verifySodiumChunk(new ChunkPos(fixture.center()), true);
             Vec3 table = fixture.center().getCenter().add(0.0D, 0.5D, 0.0D);
             clickWorld(screen, table);
-            String firstArea = screen.getNarrationMessage().getString();
-            require(firstArea.contains("Guard post") || firstArea.contains("Shared workshop"), "the shared building can be selected");
-            clickWorld(screen, table);
-            String secondArea = screen.getNarrationMessage().getString();
-            require(!secondArea.equals(firstArea) && (secondArea.contains("Guard post") || secondArea.contains("Shared workshop")),
-                    "another click selects the other use of the same building");
-            require(button(screen, "villagerretaliation.gui.settlement_view.manage_selection").active,
-                    "each shared designation can open its management panel");
-            clickWorld(screen, table);
-            require(screen.getNarrationMessage().getString().equals(firstArea), "selection cycles back through the shared designations");
+            require(screen.contextPopup() != null && screen.contextPopup().target().kind() == SettlementViewPopup.Kind.CHOOSER,
+                    "overlapping designations open an explicit chooser");
+            require(screen.contextPopup().buttons().size() == 2, "the chooser includes both uses of the shared building");
+            clickPopup(screen, "Shared workshop");
+            require(screen.contextPopup().narration().getString().contains("Fixtures"), "saved-area details include fixture counts");
+            UUID area = screen.contextPopup().target().id();
+            originalArea = serverArea(area);
+            originalAreaCount = serverAreaCount();
+            clickPopup(screen, "Edit bounds");
+            require(screen.draftBounds().equals(new SettlementViewBounds(originalArea.min(), originalArea.max())),
+                    "saved bounds are edited on a local copy");
+            verifyGizmo(screen);
+            refinedBounds = screen.draftBounds();
+            verifyPopupScales(minecraft);
+            verifyTerrainFollowing(screen);
+            screen.rotateCamera(90);
+            originalYaw = screen.cameraYaw();
+            screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
+            ticks = 0;
+            phase = 83;
+        } else if (phase == 83 && minecraft.screen instanceof SettlementEditScreen screen && ++ticks >= 2) {
+            require(field(screen, "start").getValue().equals(coordinates(refinedBounds.min()))
+                            && field(screen, "end").getValue().equals(coordinates(refinedBounds.max())),
+                    "confirmation opens configuration with the exact refined bounds");
+            require(field(screen, "name").getValue().equals(originalArea.name())
+                            && field(screen, "priority").getValue().equals(Integer.toString(originalArea.priority())),
+                    "editing saved bounds preserves name and priority");
+            capture("bounds-configuration");
+            button(screen, "gui.cancel").onPress();
+            ticks = 0;
+            phase = 84;
+        } else if (phase == 84 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 3) {
+            require(screen.draftBounds().equals(refinedBounds), "configuration cancellation retains the draft in world view");
+            require(screen.cameraYaw() == originalYaw, "returning from configuration retains camera yaw");
+            capture("area-gizmo");
+            verifyGizmo(screen);
+            var target = screen.gizmo().targets(minecraft.gameRenderer.getMainCamera(), screen.width, screen.height,
+                    screen.width - Math.clamp(screen.width / 3, 128, 200), screen.draftBounds()).stream()
+                    .filter(item -> item.handle().face() == Direction.UP).findFirst().orElseThrow();
+            screen.mouseClicked(target.point().x(), target.point().y(), GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            ticks = 0;
+            phase = 105;
+        } else if (phase == 105 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 3) {
+            capture("gizmo-resize-face");
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(screen.draftBounds() == null && serverArea(originalArea.id()).equals(originalArea),
+                    "cancelling bounds editing leaves the saved area unchanged");
+            button(screen, "villagerretaliation.gui.settlement_view.edit_bounds").onPress();
+            dragGizmo(screen, new SettlementViewGizmo.Handle(Direction.Axis.Y, Direction.UP), 2, false);
+            refinedBounds = screen.draftBounds();
+            button(screen, "villagerretaliation.gui.settlement_view.confirm_bounds").onPress();
+            ticks = 0;
+            phase = 85;
+        } else if (phase == 85 && minecraft.screen instanceof SettlementEditScreen screen && ++ticks >= 2) {
+            require(field(screen, "end").getValue().equals(coordinates(refinedBounds.max())),
+                    "Confirm also passes the exact resized bounds");
+            button(screen, "villagerretaliation.gui.settlement.save").onPress();
+            ticks = 0;
+            phase = 86;
+        } else if (phase == 86 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 20
+                && screen.getNarrationMessage().getString().contains(originalArea.name())) {
+            var saved = serverArea(originalArea.id());
+            require(saved.min().equals(refinedBounds.min()) && saved.max().equals(refinedBounds.max())
+                            && saved.name().equals(originalArea.name()) && saved.type() == originalArea.type()
+                            && saved.priority() == originalArea.priority() && saved.enabled() == originalArea.enabled(),
+                    "Save updates the authoritative bounds while preserving saved metadata");
+            require(screen.draftBounds() == null && screen.getNarrationMessage().getString().contains(originalArea.name()),
+                    "successful saving clears the draft and refreshes the selected area");
+            screen.rotateCamera(45.0D - screen.cameraYaw());
+            button(screen, "villagerretaliation.gui.settlement_view.center").onPress();
+            ticks = 0;
+            phase = 87;
+        } else if (phase == 87 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 4) {
+            button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
+            drawWorld(screen, fixture.center().offset(8, -1, -7).getCenter(), fixture.center().offset(10, -1, -5).getCenter());
+            require(minecraft.screen == screen && screen.draftBounds() != null, "releasing an initial draw stays in world view");
+            require(screen.draftBounds().size(Direction.Axis.X) == 3 && screen.draftBounds().size(Direction.Axis.Z) == 3,
+                    "the initial draft includes the exact dragged blocks");
+            refinedBounds = screen.draftBounds();
+            var handle = screen.gizmo().targets(minecraft.gameRenderer.getMainCamera(), screen.width, screen.height,
+                    screen.width - Math.clamp(screen.width / 3, 128, 200), refinedBounds).get(1);
+            screen.mouseClicked(handle.point().x(), handle.point().y(), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+            require(screen.contextPopup() != null && screen.contextPopup().target().kind() == SettlementViewPopup.Kind.DRAFT
+                            && screen.contextPopup().narration().getString().contains("Bounds are valid"),
+                    "draft right-click shows bounds, dimensions and validation: " + (screen.contextPopup() == null ? "none"
+                            : screen.contextPopup().target().kind() + " " + screen.contextPopup().narration().getString()));
+            ticks = 0;
+            phase = 101;
+        } else if (phase == 101 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 3) {
+            capture("draft-context");
+            clickPopup(screen, "Configure");
+            ticks = 0;
+            phase = 88;
+        } else if (phase == 88 && minecraft.screen instanceof SettlementEditScreen screen && ++ticks >= 2) {
+            field(screen, "name").setValue("Refined area");
+            field(screen, "priority").setValue("7");
+            button(screen, "villagerretaliation.gui.settlement.save").onPress();
+            ticks = 0;
+            phase = 89;
+        } else if (phase == 89 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 20) {
+            Minecraft.getInstance().getSingleplayerServer().submit(() -> {
+                var town = serverTown();
+                var saved = town.areas().values().stream().filter(area -> area.name().equals("Refined area")).findFirst().orElseThrow();
+                require(saved.min().equals(refinedBounds.min()) && saved.max().equals(refinedBounds.max()) && saved.priority() == 7,
+                        "the new draft saves through the existing authoritative action");
+                require(town.areas().size() == originalAreaCount + 1, "only Save adds the new area");
+            }).join();
+            require(screen.draftBounds() == null, "saving a new draft clears it");
+            button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
+            drawWorld(screen, fixture.center().offset(8, -1, -3).getCenter(), fixture.center().offset(8, -1, -3).getCenter());
+            require(screen.draftBounds().size(Direction.Axis.X) == 1 && screen.draftBounds().size(Direction.Axis.Z) == 1,
+                    "a single ground block can start a draft");
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(screen.draftBounds() == null && serverAreaCount() == originalAreaCount + 1,
+                    "Escape discards a new draft without saving");
+            temporaryLeader = UUID.randomUUID();
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var town = serverTown();
+                require(town.transferLeadership(player, temporaryLeader), "the permission fixture changes leadership");
+                require(town.setPermissions(temporaryLeader, player, java.util.Set.of(SettlementPermission.VIEW)),
+                        "the permission fixture retains view-only access");
+            }).join();
+            ticks = 0;
+            phase = 90;
+        } else if (phase == 90 && minecraft.screen instanceof SettlementViewScreen screen
+                && !button(screen, "villagerretaliation.gui.settlement_view.draw_area").active) {
+            clickWorld(screen, fixture.center().getCenter().add(0, 0.5D, 0), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+            require(screen.contextPopup() != null && screen.contextPopup().target().kind() == SettlementViewPopup.Kind.CHOOSER,
+                    "view-only users retain the overlapping area chooser");
+            clickPopup(screen, "Shared workshop");
+            require(screen.contextPopup().buttons().isEmpty(), "view-only area details do not offer build actions");
+            screen.mouseClicked(1, 1, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            require(screen.contextPopup() == null, "an outside click dismisses the popup");
+            clickWorld(screen, visibleResident(minecraft).getBoundingBox().getCenter(), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+            ticks = 0;
+            phase = 91;
+        } else if (phase == 91 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
+                && screen.contextPopup() != null && screen.contextPopup().narration().getString().contains("Tamsin")) {
+            require(screen.contextPopup().buttons().size() == 1
+                            && screen.contextPopup().buttons().getFirst().getMessage().getString().equals(
+                            Component.translatable("villagerretaliation.gui.settlement_view.manage_selection").getString()),
+                    "view-only resident details retain management and hide staff actions");
+            capture("view-only-context");
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> require(serverTown().transferLeadership(temporaryLeader, player),
+                    "the permission fixture restores leadership")).join();
+            ticks = 0;
+            phase = 92;
+        } else if (phase == 92 && minecraft.screen instanceof SettlementViewScreen screen
+                && button(screen, "villagerretaliation.gui.settlement_view.draw_area").active) {
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            unavailableResident = EntityType.VILLAGER.create(minecraft.level);
+            unavailableResident.setPos(fixture.center().offset(8, 0, -2).getBottomCenter());
+            unavailableResident.setNoAi(true);
+            minecraft.level.addEntity(unavailableResident);
+            clickWorld(screen, unavailableResident.getBoundingBox().getCenter(), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+            require(screen.contextPopup() != null && screen.contextPopup().target().id().equals(unavailableResident.getUUID())
+                            && !screen.contextPopup().narration().getString().contains("Tamsin"),
+                    "a new resident target clears stale details while loading");
+            ticks = 0;
+            phase = 93;
+        } else if (phase == 93 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5
+                && screen.contextPopup() != null && screen.contextPopup().narration().getString().contains("not a resident")) {
+            require(screen.contextPopup().buttons().isEmpty(), "unavailable residents do not expose management or guard actions");
+            capture("unavailable-resident");
+            unavailableResident.discard();
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            originalX = screen.focusX();
+            originalZ = screen.focusZ();
+            originalYaw = screen.cameraYaw();
+            screen.keyPressed(GLFW.GLFW_KEY_W, 0, 0);
+            screen.keyPressed(GLFW.GLFW_KEY_Q, 0, 0);
+            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+            ticks = 0;
+            phase = 94;
+        } else if (phase == 94 && minecraft.screen instanceof SettlementManagementScreen screen && ++ticks >= 3) {
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            ticks = 0;
+            phase = 95;
+        } else if (phase == 95 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen.cameraYaw() == originalYaw && screen.focusX() == originalX && screen.focusZ() == originalZ,
+                    "screen transitions clear held rotation and movement without a key release");
+            minecraft.options.guiScale().set(3);
+            minecraft.resizeDisplay();
+            ticks = 0;
+            phase = 96;
+        } else if (phase == 96 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 4) {
+            button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
+            drawWorld(screen, fixture.center().offset(8, -1, -3).getCenter(), fixture.center().offset(10, -1, -1).getCenter());
+            verifyGizmo(screen);
+            ticks = 0;
+            phase = 102;
+        } else if (phase == 102 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 3) {
+            capture("gizmo-scale-three");
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            minecraft.options.guiScale().set(4);
+            minecraft.resizeDisplay();
+            ticks = 0;
+            phase = 97;
+        } else if (phase == 97 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 4) {
+            button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
+            drawWorld(screen, fixture.center().offset(8, -1, -3).getCenter(), fixture.center().offset(10, -1, -1).getCenter());
+            verifyGizmo(screen);
+            ticks = 0;
+            phase = 103;
+        } else if (phase == 103 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 3) {
+            capture("gizmo-scale-four");
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            minecraft.options.renderDistance().set(2);
+            screen.mouseScrolled(40, 80, 0, 100);
+            ticks = 0;
+            phase = 98;
+        } else if (phase == 98 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 20) {
+            require(screen.viewHeight() == 8.0F && Math.abs(screen.cameraHeight() - 8) < 0.1D,
+                    "closer zoom remains usable at minimum render distance");
+            button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
+            drawWorld(screen, fixture.center().offset(2, -1, -4).getCenter(), fixture.center().offset(4, -1, -2).getCenter());
+            verifyGizmo(screen);
+            ticks = 0;
+            phase = 104;
+        } else if (phase == 104 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 3) {
+            capture("gizmo-close-zoom");
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            screen.mouseClicked(40, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+            screen.mouseDragged(40, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 100_000, 0);
+            screen.mouseReleased(40, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+            int radius = screen.parent().snapshot().header().radius() + SettlementViewWindow.BORDER;
+            require(screen.focusX() == fixture.center().getX() - radius && screen.focusZ() == fixture.center().getZ() - radius,
+                    "orientation-relative middle drag clamps at the settlement corner");
+            screen.rotateCamera(315 - screen.cameraYaw());
+            ticks = 0;
+            phase = 99;
+        } else if (phase == 99 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            var position = minecraft.gameRenderer.getMainCamera().getPosition();
+            require(Double.isFinite(position.x) && Double.isFinite(position.y) && Double.isFinite(position.z),
+                    "a rotated camera remains finite while corner terrain loads");
+            capture("settlement-corner");
+            screen.rotateCamera(45 - screen.cameraYaw());
+            button(screen, "villagerretaliation.gui.settlement_view.center").onPress();
+            minecraft.options.guiScale().set(2);
+            minecraft.options.renderDistance().set(6);
+            minecraft.resizeDisplay();
+            screen.mouseScrolled(40, 80, 0, Math.log(screen.viewHeight() / 32.0D) / Math.log(1.15D));
+            ticks = 0;
+            phase = 100;
+        } else if (phase == 100 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
             originalX = screen.focusX();
             originalZ = screen.focusZ();
             originalHeight = screen.viewHeight();
@@ -248,12 +494,19 @@ public final class SettlementViewClientSmoke {
             if (ticks == 20) {
                 Entity resident = visibleResident(minecraft);
                 require(resident != null, "the resident remains visible after panning");
-                clickWorld(screen, resident.getBoundingBox().getCenter());
+                clickWorld(screen, resident.getBoundingBox().getCenter(), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
             }
             if (ticks >= 40 && screen.getNarrationMessage().getString().contains("Tamsin")) {
                 require(button(screen, "villagerretaliation.gui.settlement_view.manage_selection").active,
                         "selecting the resident enables its management action");
+                require(screen.contextPopup() != null && screen.contextPopup().target().kind() == SettlementViewPopup.Kind.RESIDENT
+                                && screen.contextPopup().narration().getString().contains("Assigned area")
+                                && screen.contextPopup().narration().getString().contains("Guard order"),
+                        "resident context includes work assignment and guard details");
                 capture("selected-resident");
+                clickPopup(screen, "Move");
+                screen.mouseClicked(40, 150, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+                require(screen.contextPopup() == null, "right-click cancels guard selection without opening a popup");
                 button(screen, "villagerretaliation.gui.settlement_view.guard_move").onPress();
                 clickWorld(screen, Vec3.atBottomCenterOf(fixture.center().offset(4, 0, 3)));
                 ticks = 0;
@@ -439,6 +692,9 @@ public final class SettlementViewClientSmoke {
             phase = 31;
         } else if (phase == 31 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
                 && heldBlueprint(minecraft).worldMin().getY() == fixture.center().getY()) {
+            screen.mouseClicked(40, 150, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+            require(minecraft.screen == screen && screen.contextPopup() == null, "right-click cancels blueprint placement before context actions");
+            button(screen, "villagerretaliation.gui.settlement_view.place_blueprint").onPress();
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(minecraft.screen == screen, "Escape stops positioning without leaving the town view");
             button(screen, "villagerretaliation.gui.settlement_view.projects").onPress();
@@ -729,6 +985,11 @@ public final class SettlementViewClientSmoke {
             level.setBlockAndUpdate(position, position.getY() == center.getY() - 1
                     ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState());
         }
+        for (BlockPos position : BlockPos.betweenClosed(center.offset(-24, -1, 12), center.offset(-12, 12, 24))) {
+            int top = center.getY() - 1 + (position.getX() - center.getX() + 24) / 2;
+            if (position.getZ() >= center.getZ() + 20) top = center.getY() + 12;
+            level.setBlockAndUpdate(position, position.getY() <= top ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState());
+        }
         for (BlockPos position : BlockPos.betweenClosed(center.offset(-8, -1, -3), center.offset(-3, -1, 3))) {
             level.setBlockAndUpdate(position, Blocks.OAK_PLANKS.defaultBlockState());
         }
@@ -800,14 +1061,186 @@ public final class SettlementViewClientSmoke {
     }
 
     private static void clickWorld(SettlementViewScreen screen, Vec3 position) {
+        clickWorld(screen, position, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+
+    private static void clickWorld(SettlementViewScreen screen, Vec3 position, int button) {
+        var point = SettlementViewGizmo.project(Minecraft.getInstance().gameRenderer.getMainCamera(), screen.width, screen.height, position);
+        require(point != null, "the world target is in front of the camera");
+        screen.mouseClicked(point.x(), point.y(), button);
+        screen.mouseReleased(point.x(), point.y(), button);
+    }
+
+    private static void drawWorld(SettlementViewScreen screen, Vec3 start, Vec3 end) {
         var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        Vec3 relative = position.subtract(camera.getPosition());
-        double distance = relative.dot(new Vec3(camera.getLookVector()));
-        double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
-        double x = screen.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
-        double y = screen.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * screen.height / (2.0D * distance * tangent);
-        screen.mouseClicked(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
-        screen.mouseReleased(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        var first = SettlementViewGizmo.project(camera, screen.width, screen.height, start);
+        var last = SettlementViewGizmo.project(camera, screen.width, screen.height, end);
+        require(first != null && last != null, "drawing targets are visible");
+        screen.mouseClicked(first.x(), first.y(), GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseDragged(last.x(), last.y(), GLFW.GLFW_MOUSE_BUTTON_LEFT, last.x() - first.x(), last.y() - first.y());
+        screen.mouseReleased(last.x(), last.y(), GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+
+    private static void clickPopup(SettlementViewScreen screen, String label) {
+        var popup = screen.contextPopup();
+        require(popup != null, "the context popup is open for " + label);
+        int index = -1;
+        for (int item = 0; item < popup.buttons().size(); item++) {
+            if (popup.buttons().get(item).getMessage().getString().startsWith(label)) index = item;
+        }
+        require(index >= 0, "the popup offers " + label);
+        for (int item = 0; item <= index; item++) popup.key(GLFW.GLFW_KEY_DOWN);
+        var button = popup.buttons().get(index);
+        require(button.active, "the popup action is enabled for " + label);
+        screen.mouseClicked(button.getX() + button.getWidth() / 2.0D, button.getY() + 10, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+
+    private static net.minecraft.client.gui.components.EditBox field(SettlementEditScreen screen, String key) {
+        String label = Component.translatable("villagerretaliation.gui.settlement.field." + key).getString();
+        return screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                .map(net.minecraft.client.gui.components.EditBox.class::cast)
+                .filter(field -> field.getMessage().getString().equals(label)).findFirst().orElseThrow();
+    }
+
+    private static String coordinates(BlockPos position) {
+        return position.getX() + " " + position.getY() + " " + position.getZ();
+    }
+
+    private static com.jvn.villagerretaliation.settlement.SettlementRecord serverTown() {
+        var minecraft = Minecraft.getInstance();
+        var player = minecraft.getSingleplayerServer().getPlayerList().getPlayer(minecraft.player.getUUID());
+        return SettlementSavedData.get(player.serverLevel()).get(fixture.town()).orElseThrow();
+    }
+
+    private static SettlementArea serverArea(UUID id) {
+        return Minecraft.getInstance().getSingleplayerServer().submit(() -> serverTown().areas().get(id)).join();
+    }
+
+    private static int serverAreaCount() {
+        return Minecraft.getInstance().getSingleplayerServer().submit(() -> serverTown().areas().size()).join();
+    }
+
+    private static void verifyGizmo(SettlementViewScreen screen) {
+        var before = screen.draftBounds();
+        for (Direction.Axis axis : Direction.Axis.values()) {
+            var handle = new SettlementViewGizmo.Handle(axis, null);
+            dragGizmo(screen, handle, 2, false);
+            dragGizmo(screen, handle, -2, false);
+            require(screen.draftBounds().equals(before), "each translation axis can return to its starting bounds");
+        }
+        for (Direction face : Direction.values()) {
+            var handle = new SettlementViewGizmo.Handle(face.getAxis(), face);
+            int sign = face.getAxisDirection().getStep();
+            dragGizmo(screen, handle, sign, false);
+            dragGizmo(screen, handle, -sign, false);
+            require(screen.draftBounds().equals(before), "each face can resize outward and back");
+        }
+        dragGizmo(screen, new SettlementViewGizmo.Handle(Direction.Axis.X, null), 2, true);
+        require(screen.draftBounds().equals(before), "Escape during a gizmo drag restores its starting bounds");
+    }
+
+    private static void dragGizmo(SettlementViewScreen screen, SettlementViewGizmo.Handle handle, int blocks, boolean cancel) {
+        var minecraft = Minecraft.getInstance();
+        var camera = minecraft.gameRenderer.getMainCamera();
+        var before = screen.draftBounds();
+        int viewportWidth = screen.width - Math.clamp(screen.width / 3, 128, 200);
+        var target = screen.gizmo().targets(camera, screen.width, screen.height, viewportWidth, before).stream()
+                .filter(item -> item.handle().equals(handle)).findFirst()
+                .orElseThrow(() -> new IllegalStateException("No visible gizmo target for " + handle + " on " + before
+                        + " from " + camera.getPosition() + ", yaw=" + camera.getYRot() + ", pitch=" + camera.getXRot()));
+        var start = target.point();
+        var hit = screen.gizmo().hit(camera, screen.width, screen.height, viewportWidth, before, start.x(), start.y());
+        require(hit != null && hit.handle().equals(handle), "the visible handle picks its own transform");
+        if (handle.face() == null) {
+            for (double fraction : new double[]{0.55D, 0.7D, 0.35D}) {
+                var point = new SettlementViewGizmo.Point(target.origin().x() + (start.x() - target.origin().x()) * fraction,
+                        target.origin().y() + (start.y() - target.origin().y()) * fraction);
+                var shaft = screen.gizmo().hit(camera, screen.width, screen.height, viewportWidth, before, point.x(), point.y());
+                if (shaft != null && shaft.handle().equals(handle)) {
+                    start = point;
+                    break;
+                }
+            }
+            require(!start.equals(target.point()), "translation arrows can be dragged by their shafts");
+        }
+        if (handle.face() != null) {
+            var projected = SettlementViewGizmo.project(camera, screen.width, screen.height, target.anchor());
+            require(projected != null && projected.distance(start) < 0.01D,
+                    "resize handles remain attached to their actual faces");
+        }
+        require(start.x() >= 0 && start.x() < viewportWidth && start.y() >= 0 && start.y() < screen.height,
+                "every gizmo handle has a usable world-view target");
+        var ray = SettlementViewGizmo.ray(camera, screen.width, screen.height, start.x(), start.y());
+        double scalar = SettlementViewGizmo.coordinate(ray, target.anchor(), handle.axis());
+        Vec3 axis = new Vec3(handle.axis() == Direction.Axis.X ? 1 : 0, handle.axis() == Direction.Axis.Y ? 1 : 0,
+                handle.axis() == Direction.Axis.Z ? 1 : 0);
+        var pixels = SettlementViewGizmo.pixels(camera, screen.width, screen.height, target.anchor(), handle.axis());
+        var end = !SettlementViewGizmo.screenDrag(camera, ray, handle.axis())
+                ? SettlementViewGizmo.project(camera, screen.width, screen.height, target.anchor().add(axis.scale(scalar + blocks)))
+                : new SettlementViewGizmo.Point(start.x() + pixels.x() * blocks, start.y() + pixels.y() * blocks);
+        require(end != null, "the drag ray projects its exact constrained axis");
+        screen.mouseClicked(start.x(), start.y(), GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(screen.gizmo().dragging(), "the gizmo takes priority over residents and areas");
+        screen.mouseDragged(end.x(), end.y(), GLFW.GLFW_MOUSE_BUTTON_LEFT, end.x() - start.x(), end.y() - start.y());
+        var header = screen.parent().snapshot().header();
+        var limits = new SettlementViewBounds.Limits(header.center(), header.radius(), minecraft.level.getMinBuildHeight(), minecraft.level.getMaxBuildHeight() - 1);
+        var expected = handle.face() == null ? before.translate(handle.axis(), blocks, limits) : before.resize(handle.face(), blocks, limits);
+        require(screen.draftBounds().equals(expected), "ray dragging applies the exact block transform for " + handle);
+        if (cancel) screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+        screen.mouseReleased(end.x(), end.y(), GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+
+    private static void verifyPopupScales(Minecraft minecraft) {
+        for (int scale : new int[]{2, 3, 4}) {
+            int width = 1280 / scale;
+            int height = 720 / scale;
+            var popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.RESIDENT, fixture.resident()), width - 2, height - 2);
+            var lines = java.util.Collections.<Component>nCopies(12, Component.literal("Resident details at the viewport edge"));
+            var actions = java.util.Collections.nCopies(5, new SettlementViewPopup.Action(Component.literal("Manage"), true, () -> {}));
+            popup.update(minecraft.font, width, height, lines, actions);
+            require(popup.contains(width - 5, height - 5), "context popups stay inside the viewport at GUI scale " + scale);
+            for (int item = 0; item < actions.size(); item++) popup.key(GLFW.GLFW_KEY_DOWN);
+            var last = popup.buttons().getLast();
+            require(last.getY() >= 0 && last.getY() + 20 <= height, "keyboard navigation reveals scrolled actions at every scale");
+        }
+    }
+
+    private static void verifyTerrainFollowing(SettlementViewScreen screen) {
+        var minecraft = Minecraft.getInstance();
+        var header = screen.parent().snapshot().header();
+        var window = new SettlementViewWindow(header.center(), header.radius() + SettlementViewWindow.BORDER,
+                screen.focusX(), screen.focusZ(), 8, java.util.List.of(new ChunkPos(header.center())));
+        SettlementViewCamera.Heights heights = (x, z) -> {
+            var chunk = minecraft.level.getChunkSource().getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16), false);
+            return chunk == null ? Double.NaN : chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z) + 1.0D;
+        };
+        var camera = new SettlementViewCamera();
+        double x = fixture.center().getX() - 24 + 0.5D;
+        double z = fixture.center().getZ() + 16.5D;
+        var previous = camera.position(window, x, z, 8, 88, heights, 0);
+        double start = previous.position().y;
+        for (int step = 1; step <= 60; step++) {
+            var next = camera.position(window, x + step * 0.2D, z, 8, 88, heights, 0.02D);
+            require(Math.abs(next.position().y - previous.position().y) < 1.0D, "the camera follows a real slope continuously");
+            previous = next;
+        }
+        require(previous.position().y > start + 3, "terrain following tracks the slope's elevation");
+        double beforeCliff = previous.position().y;
+        var cliff = camera.position(window, x + 12, z + 5, 8, 88, heights, 0.02D);
+        require(cliff.position().y > beforeCliff && cliff.position().y < beforeCliff + 2, "focus height eases across a real cliff");
+        var roofCamera = new SettlementViewCamera();
+        var roof = roofCamera.position(window, fixture.center().getX() - 12.5D, fixture.center().getZ() + 8.5D, 8, 88, heights, 0);
+        double surface = heights.sample((int) Math.floor(roof.position().x), (int) Math.floor(roof.position().z));
+        require(roof.position().y >= surface + 4, "the camera clears a real roof by four blocks");
+        var loading = roofCamera.position(window, fixture.center().getX() - 12.5D, fixture.center().getZ() + 8.5D, 8, 88,
+                (bx, bz) -> Double.NaN, 0.05D);
+        require(Math.abs(loading.position().y - roof.position().y) < 0.001D, "loading boundaries retain the last valid camera elevation");
+        for (int distance : new int[]{2, 6, 12}) {
+            var constrained = new SettlementViewCamera().position(window, screen.focusX(), screen.focusZ(), 64,
+                    distance * 16 - 8, heights, 0);
+            require(Float.isFinite(constrained.pitch()) && constrained.pitch() >= SettlementViewCamera.PITCH,
+                    "camera geometry remains finite at low and high render distances");
+        }
     }
 
     private static Entity visibleResident(Minecraft minecraft) {

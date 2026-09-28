@@ -105,6 +105,7 @@ public final class SettlementViewClient {
         if (active == null || !panels || management.root() != active.parent().root()) {
             return false;
         }
+        active.resumeManagement(management);
         panels = false;
         Minecraft.getInstance().setScreen(active);
         return true;

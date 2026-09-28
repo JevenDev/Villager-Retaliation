@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.client.settlement.SettlementViewCamera;
+import com.jvn.villagerretaliation.client.settlement.SettlementViewBounds;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementViewChunkPayload;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -31,6 +33,53 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class SettlementViewGameTests {
     private SettlementViewGameTests() {
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void draftBoundsSnapTranslateAndResizeEveryFaceWithinLimits(GameTestHelper helper) {
+        var limits = new SettlementViewBounds.Limits(new BlockPos(-100, 64, -200), 256, -64, 319);
+        var original = new SettlementViewBounds(new BlockPos(-110, -64, -210), new BlockPos(-107, -60, -206));
+        var single = SettlementViewBounds.drawing(original.min(), original.min(), limits);
+        helper.assertValueEqual(single.volume(), 1L, "a one-block selection stays valid");
+        helper.assertTrue(single.valid(limits), "single-block bounds include negative coordinates and minimum world height");
+        for (Direction.Axis axis : Direction.Axis.values()) {
+            var translated = original.translate(axis, 12, limits);
+            helper.assertValueEqual(translated.volume(), original.volume(), "translation preserves volume on every axis");
+            helper.assertValueEqual(translated.min().get(axis), original.min().get(axis) + 12, "translation snaps to whole blocks");
+            helper.assertValueEqual(translated.translate(axis, -12, limits), original, "translation can return to its original bounds");
+            for (int direction : List.of(-1, 1)) {
+                var edge = original.translate(axis, direction * 1_000_000, limits);
+                helper.assertTrue(edge.valid(limits), "translation respects settlement and build-height limits");
+                helper.assertValueEqual(direction < 0 ? edge.min().get(axis) : edge.max().get(axis),
+                        direction < 0 ? limits.min(axis) : limits.max(axis), "translation stops exactly at the boundary");
+            }
+        }
+        for (Direction face : Direction.values()) {
+            int sign = face.getAxisDirection().getStep();
+            var expanded = original.resize(face, sign * 3, limits);
+            if (face == Direction.DOWN) {
+                helper.assertValueEqual(expanded, original, "the minimum Y face cannot leave the world");
+            } else {
+                helper.assertValueEqual(expanded.size(face.getAxis()), original.size(face.getAxis()) + 3,
+                        "each resize face grows in its own outward direction");
+            }
+            var contracted = original.resize(face, -sign * 1_000_000, limits);
+            helper.assertValueEqual(contracted.size(face.getAxis()), 1, "every face stops at one block instead of inverting");
+            for (Direction.Axis other : Direction.Axis.values()) {
+                if (other != face.getAxis()) helper.assertValueEqual(contracted.size(other), original.size(other),
+                        "resizing preserves the other dimensions");
+            }
+        }
+        for (Direction.Axis axis : Direction.Axis.values()) {
+            var maximum = single.resize(Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE), 1_000_000, limits);
+            helper.assertValueEqual(maximum.size(axis), axis == Direction.Axis.Y ? 64 : 128, "each dimension keeps its established maximum");
+        }
+        var full = new SettlementViewBounds(new BlockPos(-128, 0, -256), new BlockPos(-1, 3, -129));
+        helper.assertValueEqual(full.volume(), 65_536L, "the maximum volume is inclusive");
+        helper.assertValueEqual(full.resize(Direction.UP, 1, limits), full, "resize cannot exceed the volume limit");
+        var drawn = SettlementViewBounds.drawing(new BlockPos(-1_000, -500, -1_000), new BlockPos(1_000, 500, 1_000), limits);
+        helper.assertTrue(drawn.valid(limits), "initial drawing clamps every dimension, volume and world boundary");
+        helper.succeed();
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
