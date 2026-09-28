@@ -2,12 +2,7 @@ package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
-import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
-import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
-import com.jvn.villagerretaliation.interaction.HiredWorkSession;
-import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
-import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
@@ -94,6 +89,8 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.Brew brew -> SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order());
             case SettlementManagementActionPayload.SaveWorker save -> SettlementWorkerConfigurationService.configure(
                     player, town, save.resident(), save.area(), save.settings());
+            case SettlementManagementActionPayload.WorkerEnabled enabled -> SettlementWorkerConfigurationService.setEnabled(
+                    player, town, enabled.resident(), enabled.area(), enabled.enabled());
             case SettlementManagementActionPayload.Guard guard -> SettlementGuardService.command(player, town, guard.resident(), guard.order());
             case SettlementManagementActionPayload.Assign assign -> SettlementWorkforceService.assignResident(level, player, id, assign.resident(), assign.area());
             case SettlementManagementActionPayload.Release release -> SettlementWorkforceService.release(level, player, id, release.resident());
@@ -150,6 +147,7 @@ public final class SettlementManagementService {
             }
         } else {
             var status = SettlementProgressionService.assess(level, town);
+            var issues = SettlementIssueService.issues(level, town, status);
             Set<SettlementPermission> permissions = EnumSet.noneOf(SettlementPermission.class);
             for (SettlementPermission permission : SettlementPermission.values()) {
                 if (town.permits(player.getUUID(), permission)) {
@@ -161,8 +159,9 @@ public final class SettlementManagementService {
                     SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
                     status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
                     status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
-                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent());
+                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size());
             switch (request.page()) {
+                case ISSUES -> entries.addAll(issues);
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
                 case BEDS -> beds(level, town, entries);
@@ -237,33 +236,18 @@ public final class SettlementManagementService {
         }
     }
 
-    private static ResidentWork residentWork(ServerLevel level, SettlementRecord town, UUID id,
+    static SettlementWorkStatus residentWork(ServerLevel level, SettlementRecord town, UUID id,
                                              Villager villager, SettlementWorkerState worker) {
-        if (town.arrivals().containsKey(id)) return new ResidentWork("awaiting_arrival", "");
-        if (!town.duties().containsKey(id)) return new ResidentWork("unassigned", "");
+        if (town.arrivals().containsKey(id)) return new SettlementWorkStatus("awaiting_arrival", "");
+        var area = town.workplace(town.duties().get(id));
+        if (area == null) return new SettlementWorkStatus("unassigned", "");
         var settings = town.workerSettings().get(id);
-        if (settings != null && !settings.enabled()) return new ResidentWork("paused", "");
-        if (villager == null || worker != null && worker.unsafe()) return new ResidentWork(worker == null ? "idle" : worker.status(), "");
-        var session = HiredWorkSession.active(level, villager);
-        var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
-        if (villager.isSleeping() || brain.status().equals("interaction.work.status.sleeping")
-                || brain.status().equals("interaction.work.status.tired")) return new ResidentWork("resting", "");
-        if (brain.status().equals("interaction.work.status.returning_bounds")) return new ResidentWork("workforce.pathing", "");
-        if (brain.status().equals("interaction.work.hauling.no_demand")) return new ResidentWork("no_demand", "");
-        if (brain.status().equals("interaction.work.builder.choose_structure")) return new ResidentWork("no_construction_project", "");
-        if (brain.status().endsWith(".no_filter")) return new ResidentWork("no_filter", "");
-        if (brain.status().endsWith(".no_crafting_table") || brain.status().equals("interaction.work.craftsman.no_table")) return new ResidentWork("no_crafting_table", "");
-        if (brain.status().equals("interaction.work.cooking.no_station")) return new ResidentWork("no_furnace", "");
-        if (brain.failureReason().endsWith("_profession_required")) return new ResidentWork("profession_required", "");
-        var preview = ClipboardWorkforceService.workPreview(session, brain);
-        String status = !preview.diagnostic().isBlank() && (brain.taskState() == HiredWorkerTaskState.SELECTING_TARGET
-                || preview.status() == WorkerStatus.WAITING
-                || preview.status() == WorkerStatus.UNKNOWN)
-                ? "needs_attention" : "workforce." + preview.status().name().toLowerCase(Locale.ROOT);
-        return new ResidentWork(status, preview.diagnostic());
-    }
-
-    private record ResidentWork(String status, String diagnostic) {
+        if (settings != null && !settings.enabled()) return new SettlementWorkStatus("paused", "");
+        if (!area.enabled()) return new SettlementWorkStatus("area_paused", "");
+        if (worker != null && (!worker.area().equals(area.id()) || worker.role() != area.type().role())) worker = null;
+        if (villager == null) return worker == null ? new SettlementWorkStatus("awaiting_worker_observation", "")
+                : new SettlementWorkStatus(worker.status(), worker.diagnostic());
+        return SettlementWorkStatus.observe(level, villager);
     }
 
     private static void beds(ServerLevel level, SettlementRecord town, List<Entry> entries) {
@@ -314,6 +298,8 @@ public final class SettlementManagementService {
 
     private static String searchable(Entry entry) {
         return entry.name() + " " + entry.id() + switch (entry) {
+            case SettlementManagementPayload.Issue issue -> " " + issue.kind().name() + " " + issue.cause() + " "
+                    + issue.detail() + " " + issue.targetId() + " " + issue.resident() + " " + issue.area();
             case SettlementManagementPayload.Resident resident -> " " + resident.profession().getPath();
             case SettlementManagementPayload.Bed bed -> " " + bed.position().toShortString() + " " + bed.residentName() + " " + bed.resident();
             case SettlementManagementPayload.Area area -> " " + area.kind().name();

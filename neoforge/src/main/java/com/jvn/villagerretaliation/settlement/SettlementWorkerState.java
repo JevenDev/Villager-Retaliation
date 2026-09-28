@@ -47,6 +47,7 @@ public final class SettlementWorkerState {
     private boolean unsafe;
     private boolean serviceBlocked;
     private String status = "idle";
+    private String diagnostic = "";
 
     private SettlementWorkerState(UUID id) {
         this.id = id;
@@ -134,6 +135,10 @@ public final class SettlementWorkerState {
         return this.status;
     }
 
+    String diagnostic() {
+        return this.diagnostic;
+    }
+
     boolean unsafe() {
         return this.unsafe;
     }
@@ -210,7 +215,9 @@ public final class SettlementWorkerState {
                 || villager.getLastHurtByMob() != null && !villager.getLastHurtByMob().getUUID().equals(engagement)
                 || villager.isOnFire() || villager.isInLava()
                 || com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil.hasVanillaFleeState(level, villager.getBrain());
-        this.status = this.unsafe ? "unsafe" : "active";
+        var work = SettlementWorkStatus.observe(level, villager);
+        this.status = this.unsafe ? "unsafe" : work.status();
+        this.diagnostic = this.unsafe ? "" : work.diagnostic();
         var brain = HiredWorkerBrain.snapshot(this.settings, now);
         if (!villager.isSleeping() && !brain.status().equals("interaction.work.status.sleeping")
                 && !brain.status().equals("interaction.work.status.tired")) {
@@ -327,6 +334,7 @@ public final class SettlementWorkerState {
 
     void status(String status) {
         this.status = status;
+        this.diagnostic = "";
         if (!status.equals("resting") && !status.equals("unsafe")) {
             this.serviceBlocked = switch (status) {
                 case "missing_hoe", "missing_rod", "missing_axe", "missing_hunting_weapon",
@@ -405,6 +413,7 @@ public final class SettlementWorkerState {
         tag.putBoolean("Unsafe", this.unsafe);
         tag.putBoolean("ServiceBlocked", this.serviceBlocked);
         tag.putString("Status", this.status);
+        tag.putString("Diagnostic", this.diagnostic);
         return tag;
     }
 
@@ -436,6 +445,8 @@ public final class SettlementWorkerState {
         state.unsafe = tag.getBoolean("Unsafe");
         state.serviceBlocked = tag.getBoolean("ServiceBlocked");
         state.status = tag.getString("Status");
+        String diagnostic = tag.getString("Diagnostic");
+        state.diagnostic = diagnostic.substring(0, Math.min(180, diagnostic.length()));
         return state;
     }
 }

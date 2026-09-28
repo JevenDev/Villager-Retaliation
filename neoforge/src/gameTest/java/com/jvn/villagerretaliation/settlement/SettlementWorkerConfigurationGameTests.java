@@ -39,6 +39,59 @@ public final class SettlementWorkerConfigurationGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_settings")
+    public static void quickPauseUsesCurrentSettingsAndRejectsStaleAssignments(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.FARM, false);
+        var town = fixture.town();
+        var resident = fixture.villager().getUUID();
+        var pause = new SettlementManagementActionPayload(town.id().value(),
+                new SettlementManagementActionPayload.WorkerEnabled(resident, fixture.area().id(), false));
+        var current = snapshot(helper, fixture).with(SettlementWorkerSetting.TILL_SOIL, 0);
+        helper.assertTrue(configure(fixture.leader(), fixture, current), "another screen changes the current settings");
+        var worker = town.workers().get(resident);
+        var inventory = worker.items(helper.getLevel().registryAccess());
+        inventory.set(HiredJobInventory.MAIN_GRID_START, new ItemStack(Items.WHEAT, 7));
+        worker.updateInventory(helper.getLevel().registryAccess(), inventory);
+        worker.work(200, 1.0D);
+        worker.spend(100);
+        long version = worker.version();
+        var viewer = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "PauseViewer"));
+        town.setPermissions(fixture.leader().getUUID(), viewer.getUUID(), Set.of(SettlementPermission.VIEW));
+        long revision = town.revision();
+        helper.assertFalse(SettlementManagementService.execute(viewer, pause), "viewers cannot pause a worker");
+        helper.assertValueEqual(town.revision(), revision, "rejected pauses leave saved state untouched");
+        town.setPermissions(fixture.leader().getUUID(), viewer.getUUID(), Set.of(SettlementPermission.STAFF));
+        helper.assertTrue(SettlementManagementService.execute(viewer, pause), "staff can pause an unloaded worker");
+        helper.assertValueEqual(snapshot(helper, fixture), current.with(SettlementWorkerSetting.ENABLED, 0),
+                "a stale quick action preserves all current role settings");
+        helper.assertTrue(SettlementManagementService.execute(viewer, pause), "repeated pause requests remain a pause");
+        helper.assertFalse(worker.settings().getBoolean("Enabled"), "the background worker is immediately paused");
+        helper.assertValueEqual(worker.version(), version, "quick controls do not replay production");
+        var restored = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+        helper.assertValueEqual(restored.workerSettings().get(resident), snapshot(helper, fixture), "the pause survives reload");
+        helper.assertValueEqual(restored.workers().get(resident).version(), version, "reload preserves the inventory receipt");
+        var resume = new SettlementManagementActionPayload(town.id().value(),
+                new SettlementManagementActionPayload.WorkerEnabled(resident, fixture.area().id(), true));
+        helper.assertTrue(SettlementManagementService.execute(viewer, resume), "staff can resume the same assignment");
+        helper.assertValueEqual(snapshot(helper, fixture), current, "resume also preserves the newer settings");
+        var other = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Other farm",
+                fixture.area().min().offset(5, 0, 0), fixture.area().max().offset(5, 0, 0), 5, true);
+        town.putArea(fixture.leader().getUUID(), other);
+        town.assignDuty(resident, other.id());
+        helper.assertFalse(SettlementManagementService.execute(viewer, pause), "a quick action cannot change a reassigned worker");
+        helper.assertFalse(SettlementManagementService.execute(viewer, new SettlementManagementActionPayload(town.id().value(),
+                new SettlementManagementActionPayload.WorkerEnabled(UUID.randomUUID(), other.id(), false))), "foreign residents are rejected");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            SettlementManagementActionPayload.STREAM_CODEC.encode(buffer, pause);
+            helper.assertValueEqual(SettlementManagementActionPayload.STREAM_CODEC.decode(buffer), pause, "quick action fields round trip");
+            helper.assertValueEqual(buffer.readableBytes(), 0, "the complete action is decoded");
+        } finally {
+            buffer.release();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_settings")
     public static void settingsRequireStaffAndTheCurrentResidentAssignment(GameTestHelper helper) {
         var fixture = fixture(helper, SettlementAreaType.FARM, true);
         var delegate = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "WorkerDelegate"));

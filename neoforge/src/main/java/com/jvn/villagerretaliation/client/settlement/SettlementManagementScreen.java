@@ -43,7 +43,9 @@ public final class SettlementManagementScreen extends Screen {
     private Button next;
     private Rows rows;
     private EditBox search;
-    private final Button[] actions = new Button[4];
+    private final Button[] actions = new Button[5];
+    private UUID pendingResident;
+    private int pendingResidentAction;
     private final SettlementManagementScreen parent;
     private final SettlementManagementPayload.Resident assigning;
     private SettlementBuildingDraft buildingDraft;
@@ -96,12 +98,23 @@ public final class SettlementManagementScreen extends Screen {
         boolean changedAccess = (this.snapshot.header() == null) != (payload.header() == null);
         this.snapshot = payload;
         this.desiredIndex = payload.index();
+        if (this.selected == null && payload.entries().size() == 1 && payload.entries().getFirst().id().toString().equals(this.query)) {
+            this.selected = payload.entries().getFirst().id();
+        }
         if (changedAccess) {
             rebuildWidgets();
         } else {
             updateSearch();
             populateRows();
             updateActions();
+        }
+        if (this.pendingResident != null && this.minecraft.screen == this && currentPage()) {
+            UUID resident = this.pendingResident;
+            this.pendingResident = null;
+            if (selectedEntry() instanceof SettlementManagementPayload.Resident selected && selected.id().equals(resident)
+                    && permits(SettlementPermission.STAFF) && this.actions[this.pendingResidentAction].active) {
+                perform(this.pendingResidentAction);
+            }
         }
     }
 
@@ -157,6 +170,7 @@ public final class SettlementManagementScreen extends Screen {
         this.contentLeft = this.left + 102;
         this.contentWidth = this.panelWidth - 102;
         this.worldView = addRenderableWidget(Button.builder(text("world_view"), ignored -> {
+            this.pendingResident = null;
             if (!SettlementViewClient.resume(this)) {
                 this.viewRequested = true;
                 submit(new SettlementManagementActionPayload.View());
@@ -186,24 +200,41 @@ public final class SettlementManagementScreen extends Screen {
         this.search.active = this.search.visible;
         this.search.setResponder(this::searchChanged);
         addRenderableWidget(this.search);
-        this.rows = addRenderableWidget(new Rows(this.contentLeft, this.top + 56, this.contentWidth, Math.max(36, this.panelHeight - 112)));
+        int actionCount = actionColumns();
+        int extraActions = extraActionHeight();
+        this.rows = addRenderableWidget(new Rows(this.contentLeft, this.top + 56, this.contentWidth,
+                Math.max(36, this.panelHeight - 112 - extraActions)));
         int bottom = this.top + this.panelHeight;
         this.previous = addRenderableWidget(Button.builder(Component.literal("<"), ignored -> navigate(this.desiredPage, this.desiredIndex - 1, this.query))
-                .bounds(this.contentLeft, bottom - 46, 24, 20).build());
+                .bounds(this.contentLeft, bottom - 46 - extraActions, 24, 20).build());
         this.next = addRenderableWidget(Button.builder(Component.literal(">"), ignored -> navigate(this.desiredPage, this.desiredIndex + 1, this.query))
-                .bounds(this.contentLeft + 28, bottom - 46, 24, 20).build());
+                .bounds(this.contentLeft + 28, bottom - 46 - extraActions, 24, 20).build());
         addRenderableWidget(Button.builder(text("refresh"), ignored -> {
             this.refreshAt = Util.getMillis();
-        }).bounds(this.contentLeft + this.contentWidth - 64, bottom - 46, 64, 20).build());
-        int actionCount = this.desiredPage == Page.RESIDENTS || this.desiredPage == Page.PROJECTS ? 4 : 3;
+        }).bounds(this.contentLeft + this.contentWidth - 64, bottom - 46 - extraActions, 64, 20).build());
         int actionWidth = (this.contentWidth - (actionCount - 1) * 4) / actionCount;
         for (int index = 0; index < this.actions.length; index++) {
             int action = index;
             this.actions[index] = addRenderableWidget(Button.builder(Component.empty(), ignored -> perform(action))
-                    .bounds(this.contentLeft + (actionWidth + 4) * index, bottom - 20, actionWidth, 20).build());
+                    .bounds(this.contentLeft + (actionWidth + 4) * (index % actionCount),
+                            bottom - 20 - extraActions + (index / actionCount) * 24, actionWidth, 20).build());
         }
         populateRows();
         updateActions();
+    }
+
+    private int actionColumns() {
+        int columns = this.desiredPage == Page.PROJECTS || this.desiredPage == Page.ISSUES || this.desiredPage == Page.SUMMARY ? 4 : 3;
+        return this.contentWidth < 360 ? 2 : columns;
+    }
+
+    private int extraActionHeight() {
+        int count = switch (this.desiredPage) {
+            case RESIDENTS -> 5;
+            case PROJECTS, ISSUES, SUMMARY -> 4;
+            default -> 3;
+        };
+        return ((count - 1) / actionColumns()) * 24;
     }
 
     private boolean currentPage() {
@@ -219,7 +250,8 @@ public final class SettlementManagementScreen extends Screen {
         } else if (this.desiredPage == Page.SUMMARY) {
             addSummary();
         } else if (this.snapshot.entries().isEmpty()) {
-            this.rows.add(null, text(this.desiredPage == Page.TOWNS ? "no_towns" : "empty"), Component.empty());
+            this.rows.add(null, text(this.desiredPage == Page.TOWNS ? "no_towns"
+                    : this.desiredPage == Page.ISSUES && this.query.isBlank() ? "no_issues" : "empty"), Component.empty());
         } else {
             for (Entry entry : this.snapshot.entries()) {
                 this.rows.add(entry, name(entry), detail(entry));
@@ -236,6 +268,7 @@ public final class SettlementManagementScreen extends Screen {
         if (header == null) {
             return;
         }
+        this.rows.add(null, text("issues_count", header.issues()), text("issues_hint"));
         this.rows.add(null, text("population", header.population(), header.housing()), text("housing_hint"));
         this.rows.add(null, text("food", decimal(header.foodDays())), text("food_hint"));
         this.rows.add(null, text("stage", enumText("stage", header.stage())), text("bounds", header.radius()));
@@ -264,6 +297,7 @@ public final class SettlementManagementScreen extends Screen {
     }
 
     private void searchChanged(String value) {
+        this.pendingResident = null;
         this.query = value;
         this.desiredIndex = 0;
         this.refreshAt = Util.getMillis() + 350L;
@@ -271,6 +305,7 @@ public final class SettlementManagementScreen extends Screen {
     }
 
     private void navigate(Page page, int index, String query) {
+        this.pendingResident = null;
         this.desiredPage = page;
         this.desiredIndex = Math.max(0, index);
         this.query = query;
@@ -305,6 +340,20 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         switch (this.desiredPage) {
+            case ISSUES -> {
+                action(0, "issue_open", selected instanceof SettlementManagementPayload.Issue);
+                if (selected instanceof SettlementManagementPayload.Issue issue) {
+                    if (issue.kind() == SettlementManagementPayload.IssueKind.WORKER) {
+                        action(1, issue.enabled() ? "pause_worker" : "resume_worker", permits(SettlementPermission.STAFF));
+                        action(2, "assign", permits(SettlementPermission.STAFF));
+                        action(3, "worker_settings", permits(SettlementPermission.STAFF));
+                    } else if (issue.kind() == SettlementManagementPayload.IssueKind.PROJECT) {
+                        action(1, "project_builder", true);
+                        action(2, "cancel_project", permits(SettlementPermission.BUILD));
+                        action(3, "issue_area", true);
+                    }
+                }
+            }
             case BEDS -> {
                 action(0, "assign_home", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Bed bed && bed.available());
                 action(1, "release_home", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Bed bed && bed.resident() != null);
@@ -323,6 +372,7 @@ public final class SettlementManagementScreen extends Screen {
                 action(0, "advance", leader() && this.snapshot.header() != null && this.snapshot.header().ready());
                 action(1, "treasury", permits(SettlementPermission.TREASURY));
                 action(2, "budget", permits(SettlementPermission.TREASURY));
+                action(3, "page.issues", permits(SettlementPermission.VIEW));
             }
             case RESIDENTS -> {
                 action(0, "assign", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
@@ -332,6 +382,9 @@ public final class SettlementManagementScreen extends Screen {
                         && resident.area() != null && resident.settings() != null);
                 action(2, "inventory", permits(SettlementPermission.LOGISTICS) && selected instanceof SettlementManagementPayload.Resident resident
                         && resident.area() != null && resident.presence() != com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.UNLOADED);
+                action(4, selected instanceof SettlementManagementPayload.Resident resident && resident.settings() != null
+                                && !resident.settings().enabled() ? "resume_worker" : "pause_worker",
+                        permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident && resident.settings() != null);
             }
             case AREAS -> {
                 action(0, "add", permits(SettlementPermission.BUILD));
@@ -368,6 +421,7 @@ public final class SettlementManagementScreen extends Screen {
     }
 
     private void perform(int action) {
+        if (!this.actions[action].active) return;
         Entry selected = selectedEntry();
         if (this.choosingBed != null && selected instanceof SettlementManagementPayload.Resident resident) {
             this.minecraft.setScreen(new SettlementConfirmScreen(this, text("assign_home"),
@@ -390,6 +444,30 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         switch (this.desiredPage) {
+            case ISSUES -> {
+                if (selected instanceof SettlementManagementPayload.Issue issue) {
+                    if (action == 0) {
+                        navigate(issue.target(), 0, issue.targetId() == null ? "" : issue.targetId().toString());
+                    } else if (issue.kind() == SettlementManagementPayload.IssueKind.WORKER) {
+                        if (action == 1) {
+                            submit(new SettlementManagementActionPayload.WorkerEnabled(issue.resident(), issue.area(), !issue.enabled()));
+                            navigate(Page.RESIDENTS, 0, issue.resident().toString());
+                        } else {
+                            navigate(Page.RESIDENTS, 0, issue.resident().toString());
+                            this.pendingResident = issue.resident();
+                            this.pendingResidentAction = action == 2 ? 0 : 3;
+                        }
+                    } else if (issue.kind() == SettlementManagementPayload.IssueKind.PROJECT) {
+                        if (action == 1) {
+                            navigate(Page.RESIDENTS, 0, issue.resident().toString());
+                        } else if (action == 2) {
+                            confirm("cancel_project", issue, () -> submit(new SettlementManagementActionPayload.CancelProject(issue.targetId())));
+                        } else {
+                            navigate(Page.AREAS, 0, issue.area().toString());
+                        }
+                    }
+                }
+            }
             case BEDS -> {
                 if (selected instanceof SettlementManagementPayload.Bed bed) {
                     if (action == 0) {
@@ -420,6 +498,8 @@ public final class SettlementManagementScreen extends Screen {
             case SUMMARY -> {
                 if (action == 0) {
                     submit(new SettlementManagementActionPayload.Advance());
+                } else if (action == 3) {
+                    navigate(Page.ISSUES, 0, "");
                 } else {
                     edit(action == 1 ? SettlementEditScreen.Mode.TREASURY : SettlementEditScreen.Mode.BUDGET, null);
                 }
@@ -432,6 +512,8 @@ public final class SettlementManagementScreen extends Screen {
                         confirm("release_resident", resident, () -> submit(new SettlementManagementActionPayload.Release(resident.id())));
                     } else if (action == 2) {
                         submit(new SettlementManagementActionPayload.Inventory(resident.id()));
+                    } else if (action == 4) {
+                        submit(new SettlementManagementActionPayload.WorkerEnabled(resident.id(), resident.area(), !resident.settings().enabled()));
                     } else {
                         this.minecraft.setScreen(new SettlementWorkerScreen(this, resident));
                     }
@@ -533,6 +615,7 @@ public final class SettlementManagementScreen extends Screen {
 
     @Override
     public void onClose() {
+        this.pendingResident = null;
         this.minecraft.setScreen(this.parent);
     }
 
@@ -560,7 +643,8 @@ public final class SettlementManagementScreen extends Screen {
         }
         int pages = Math.max(1, (this.snapshot.total() + SettlementManagementRequestPayload.PAGE_SIZE - 1) / SettlementManagementRequestPayload.PAGE_SIZE);
         fitted(graphics, this.feedback.getString().isEmpty() ? text("page_count", this.desiredIndex + 1, pages) : this.feedback,
-                this.contentLeft + 60, this.top + this.panelHeight - 40, this.contentWidth - 132, 0xD0D0D0);
+                this.contentLeft + 60, this.top + this.panelHeight - 40 - extraActionHeight(),
+                this.contentWidth - 132, 0xD0D0D0);
     }
 
     private void fitted(GuiGraphics graphics, Component value, int x, int y, int width, int color) {
@@ -580,6 +664,11 @@ public final class SettlementManagementScreen extends Screen {
     }
 
     private static Component name(Entry entry) {
+        if (entry instanceof SettlementManagementPayload.Issue issue) {
+            return issue.kind() == SettlementManagementPayload.IssueKind.PROGRESSION ? text("issue_progression")
+                    : text(issue.kind() == SettlementManagementPayload.IssueKind.WORKER ? "issue_worker" : "issue_project",
+                            issue.name().isBlank() ? text("unnamed_resident") : Component.literal(issue.name()));
+        }
         if (entry instanceof SettlementManagementPayload.History history) {
             Component subject = history.kind() == com.jvn.villagerretaliation.settlement.SettlementEvent.Type.STAGE_ADVANCED
                     ? text("stage." + history.name().toLowerCase(Locale.ROOT)) : Component.literal(history.name());
@@ -601,6 +690,19 @@ public final class SettlementManagementScreen extends Screen {
 
     private static Component detail(Entry entry) {
         return switch (entry) {
+            case SettlementManagementPayload.Issue issue -> {
+                if (issue.kind() == SettlementManagementPayload.IssueKind.WORKER && !issue.detail().isBlank()) {
+                    yield Component.literal(issue.detail());
+                }
+                String key = switch (issue.kind()) {
+                    case PROGRESSION -> "villagerretaliation.gui.settlement.requirement." + issue.cause();
+                    case PROJECT -> "villagerretaliation.gui.settlement.project_blocker." + issue.cause();
+                    case WORKER -> issue.cause().startsWith("workforce.")
+                            ? "villagerretaliation.gui.clipboard_workforce.status." + issue.cause().substring("workforce.".length())
+                            : "villagerretaliation.gui.settlement.work." + issue.cause();
+                };
+                yield Component.translatableWithFallback(key, text("work.needs_attention").getString());
+            }
             case SettlementManagementPayload.Town town -> text("town_row", enumText("stage", town.stage()), town.population());
             case SettlementManagementPayload.Resident resident -> text("resident_row",
                     resident.baby() ? text("child") : profession(resident.profession()),
@@ -706,7 +808,11 @@ public final class SettlementManagementScreen extends Screen {
             fitted(graphics, this.secondary, x + 3, y + 15, width - 8, 0xD0D0D0);
             if (hovered) {
                 List<Component> lines = new ArrayList<>(List.of(this.primary, this.secondary));
-                if (this.entry instanceof SettlementManagementPayload.Resident resident) {
+                if (this.entry instanceof SettlementManagementPayload.Issue issue) {
+                    if (!issue.detail().isBlank() && issue.kind() != SettlementManagementPayload.IssueKind.WORKER) lines.add(issue.kind() == SettlementManagementPayload.IssueKind.PROJECT
+                            ? text("project_missing", issue.detail()) : Component.literal(issue.detail()));
+                    lines.add(text("issue_destination", enumText("page", issue.target())));
+                } else if (this.entry instanceof SettlementManagementPayload.Resident resident) {
                     if (!resident.diagnostic().isBlank()) lines.add(Component.literal(resident.diagnostic()));
                     lines.add(text("resident_care", resident.food() < 0 ? "?" : resident.food(),
                             resident.health() < 0 ? "?" : decimal(resident.health())));

@@ -48,6 +48,63 @@ public final class SettlementConstructionGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction")
+    public static void projectIssuesLinkBuildersAndReuseAuthorizedCancellation(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        var level = helper.getLevel();
+        try {
+            town.advance();
+            var project = begin(helper, fixture);
+            var state = HiredWorkStateStore.state(fixture.builder());
+            BuilderTaskState.setBlocked(state, "missing_materials");
+            BuilderTaskState.setMissingMaterials(state, "Oak Planks x12");
+            SettlementConstructionService.observe(fixture.builder(), state);
+            var request = new SettlementManagementRequestPayload(town.id().value(),
+                    SettlementManagementRequestPayload.Page.ISSUES, 0, project.id().toString(), 5, false);
+            var page = SettlementManagementService.snapshot(fixture.leader(), request);
+            var issue = (SettlementManagementPayload.Issue) page.entries().getFirst();
+            helper.assertValueEqual(issue.kind(), SettlementManagementPayload.IssueKind.PROJECT, "active blockers become project issues");
+            helper.assertValueEqual(issue.detail(), "Oak Planks x12", "the issue includes missing materials");
+            helper.assertValueEqual(issue.targetId(), project.id(), "navigation identifies the project");
+            helper.assertValueEqual(issue.resident(), fixture.builder().getUUID(), "builder access identifies the resident");
+            helper.assertValueEqual(issue.area(), fixture.area().id(), "the construction area remains reachable");
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            helper.assertTrue(SettlementIssueService.issues(level, restored, SettlementProgressionService.assess(level, restored))
+                    .stream().anyMatch(issue::equals), "the blocked project survives reload without replaying construction");
+            var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), level.registryAccess());
+            try {
+                SettlementManagementPayload.STREAM_CODEC.encode(buffer, page);
+                helper.assertValueEqual(SettlementManagementPayload.STREAM_CODEC.decode(buffer), page, "project issue fields round trip");
+            } finally {
+                buffer.release();
+            }
+            var delegate = player(helper, "IssueBuilder");
+            town.setPermissions(fixture.leader().getUUID(), delegate.getUUID(), Set.of(SettlementPermission.STAFF));
+            var cancel = new SettlementManagementActionPayload(town.id().value(),
+                    new SettlementManagementActionPayload.CancelProject(issue.targetId()));
+            helper.assertFalse(SettlementManagementService.execute(delegate, cancel), "staff controls do not grant construction cancellation");
+            var builderPage = SettlementManagementService.snapshot(delegate, new SettlementManagementRequestPayload(town.id().value(),
+                    SettlementManagementRequestPayload.Page.RESIDENTS, 0, issue.resident().toString(), 6, false));
+            helper.assertValueEqual(builderPage.entries().getFirst().id(), fixture.builder().getUUID(), "the builder link resolves exactly");
+            BuilderTaskState.setBlocked(state, "site_unloaded");
+            SettlementConstructionService.observe(fixture.builder(), state);
+            helper.assertValueEqual(SettlementManagementService.snapshot(fixture.leader(), request).total(), 0,
+                    "awaiting site observation suppresses retained material warnings");
+            BuilderTaskState.setBlocked(state, "blocked_existing");
+            SettlementConstructionService.observe(fixture.builder(), state);
+            helper.assertValueEqual(SettlementManagementService.snapshot(fixture.leader(), request).total(), 1, "a real obstruction reappears");
+            town.setPermissions(fixture.leader().getUUID(), delegate.getUUID(), Set.of(SettlementPermission.BUILD));
+            helper.assertTrue(SettlementManagementService.execute(delegate, cancel), "build delegates use the existing cancellation action");
+            helper.assertValueEqual(project.status(), SettlementProject.Status.CANCELLED, "cancellation updates the real project");
+            helper.assertValueEqual(SettlementManagementService.snapshot(fixture.leader(), request).total(), 0, "cancelled project blockers disappear");
+            helper.assertFalse(SettlementManagementService.execute(delegate, cancel), "a stale cancellation cannot replay");
+        } finally {
+            fixture.builder().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction")
     public static void commissioningRequiresBuildPermissionStageAndAssignedBuilder(GameTestHelper helper) {
         var fixture = fixture(helper);
         var delegate = player(helper, "ProjectDelegate");

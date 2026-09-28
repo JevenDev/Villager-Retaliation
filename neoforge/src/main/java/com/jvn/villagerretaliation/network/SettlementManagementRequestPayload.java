@@ -53,6 +53,7 @@ public record SettlementManagementRequestPayload(UUID town, Page page, int index
         DELEGATES,
         PROJECTS,
         BEDS,
-        HISTORY
+        HISTORY,
+        ISSUES
     }
 }
