@@ -338,6 +338,47 @@ public final class SettlementViewGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void overviewKeepsStablePagesAndRejectsStaleReplies(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            SettlementViewService.open(fixture.player(), fixture.town().id());
+            var session = SettlementViewService.session(fixture.player().getUUID());
+            var category = com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS;
+            var request = new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(session.id, 1, 0, category, 0);
+            var page = session.overview.page(session, request);
+            helper.assertTrue(page != null && page.entries().isEmpty(), "empty rosters complete authoritatively");
+            roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload.STREAM_CODEC, request);
+            roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.STREAM_CODEC, page);
+            helper.assertTrue(session.overview.page(session, request) == null, "replayed requests are rejected");
+            helper.assertTrue(session.overview.page(session,
+                    new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(session.id, 2,
+                            page.generation() + 1, category, 0)) == null, "unknown generations are rejected");
+            helper.assertTrue(session.held.isEmpty(), "overview generation does not request terrain");
+            var client = new com.jvn.villagerretaliation.client.settlement.SettlementViewSnapshots(session.id, fixture.town().id().value());
+            var next = client.request(10);
+            helper.assertFalse(client.accept(new com.jvn.villagerretaliation.network.SettlementViewOverviewPayload(
+                    UUID.randomUUID(), next.requestId(), page.generation(), page.header(), category, 0, 0, List.of()), 11),
+                    "foreign session replies are ignored");
+            for (var tab : com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.CATEGORIES) {
+                if (tab != category) next = client.request(12);
+                boolean complete = client.accept(new com.jvn.villagerretaliation.network.SettlementViewOverviewPayload(
+                        session.id, next.requestId(), page.generation(), page.header(), tab, 0, 0, List.of()), 13);
+                helper.assertValueEqual(complete, tab == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES,
+                        "only a complete refresh replaces the visible snapshot");
+            }
+            helper.assertTrue(client.request(5_012) == null, "refresh waits five seconds after completion");
+            helper.assertTrue(client.request(5_013) != null, "refresh restarts after the completion interval");
+            expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+                    session.id, 3, 0, category, 1));
+            SettlementViewService.close(fixture.player().getUUID(), false);
+            helper.assertTrue(SettlementViewService.session(fixture.player().getUUID()) == null, "closing releases snapshot ownership");
+        } finally {
+            SettlementViewService.close(fixture.player().getUUID(), false);
+        }
+        helper.succeed();
+    }
+
     private static void expectInvalid(GameTestHelper helper, Runnable action) {
         boolean rejected = false;
         try {

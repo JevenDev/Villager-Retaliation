@@ -72,6 +72,10 @@ public final class SettlementViewClient {
         minecraft.setScreen(active);
     }
 
+    public static void acceptOverview(com.jvn.villagerretaliation.network.SettlementViewOverviewPayload payload) {
+        if (active != null && active.session().equals(payload.session())) active.acceptOverview(payload);
+    }
+
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (active == null) {

@@ -49,10 +49,9 @@ public final class SettlementViewScreen extends Screen {
     private static final double ZOOM_RESPONSE = 14.0D;
     private final SettlementManagementScreen parent;
     private final UUID session;
+    private final SettlementViewSnapshots snapshots;
     private final Map<UUID, SettlementManagementPayload.Area> areas = new LinkedHashMap<>();
-    private final Map<UUID, SettlementManagementPayload.Area> incomingAreas = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Project> projects = new LinkedHashMap<>();
-    private final Map<UUID, SettlementManagementPayload.Project> incomingProjects = new LinkedHashMap<>();
     private final Set<Integer> heldKeys = new HashSet<>();
     private final SettlementViewCamera camera = new SettlementViewCamera();
     private SettlementViewPopup popup;
@@ -114,16 +113,13 @@ public final class SettlementViewScreen extends Screen {
     private long waitingSince;
     private long detailsAt;
     private long residentRefreshAt;
-    private long areaRefreshAt;
-    private int areaPage;
-    private long projectRefreshAt;
-    private int projectPage;
 
     SettlementViewScreen(SettlementManagementScreen parent, SettlementViewStatePayload payload) {
         super(text("title"));
         this.parent = parent;
         this.header = parent.snapshot().header();
         this.session = payload.session();
+        this.snapshots = new SettlementViewSnapshots(this.session, this.header.id());
         this.plotSnapshot = payload.plots();
         this.window = payload.window();
         this.focusX = this.window.x();
@@ -172,6 +168,7 @@ public final class SettlementViewScreen extends Screen {
     }
 
     void resumeManagement(SettlementManagementScreen management) {
+        this.snapshots.refresh();
         var updated = management.snapshot().header();
         if (updated != null && updated.id().equals(this.header.id())) {
             this.header = updated;
@@ -179,12 +176,6 @@ public final class SettlementViewScreen extends Screen {
         clearControls();
         this.lastFrame = 0L;
         this.waitingRequestId = -1;
-        this.incomingAreas.clear();
-        this.areaPage = 0;
-        this.areaRefreshAt = 0L;
-        this.incomingProjects.clear();
-        this.projectPage = 0;
-        this.projectRefreshAt = 0L;
         this.detailsAt = Math.max(this.detailsAt, Util.getMillis() + 300L);
     }
 
@@ -221,6 +212,23 @@ public final class SettlementViewScreen extends Screen {
         positionCamera();
     }
 
+    void acceptOverview(com.jvn.villagerretaliation.network.SettlementViewOverviewPayload payload) {
+        if (!this.snapshots.accept(payload, Util.getMillis())) return;
+        this.header = this.snapshots.header();
+        this.areas.clear();
+        this.projects.clear();
+        for (var entry : this.snapshots.entries(Page.AREAS)) {
+            var area = (SettlementManagementPayload.Area) entry;
+            this.areas.put(area.id(), area);
+        }
+        for (var entry : this.snapshots.entries(Page.PROJECTS)) {
+            var project = (SettlementManagementPayload.Project) entry;
+            if (project.status() != SettlementProject.Status.CANCELLED || project.blocker().equals("pending_world")
+                    || project.blocker().equals("world_conflict")) this.projects.put(project.id(), project);
+        }
+        updateActions();
+    }
+
     void acceptManagement(SettlementManagementPayload payload) {
         if (payload.requestId() != this.waitingRequestId) {
             return;
@@ -231,43 +239,7 @@ public final class SettlementViewScreen extends Screen {
             return;
         }
         this.header = payload.header();
-        if (payload.page() == Page.AREAS && this.waitingPage == Page.AREAS) {
-            if (payload.index() == 0) {
-                this.incomingAreas.clear();
-            }
-            for (var entry : payload.entries()) {
-                if (entry instanceof SettlementManagementPayload.Area area) {
-                    this.incomingAreas.put(area.id(), area);
-                }
-            }
-            if ((payload.index() + 1) * SettlementManagementRequestPayload.PAGE_SIZE < payload.total()) {
-                this.areaPage = payload.index() + 1;
-                this.areaRefreshAt = 0L;
-            } else {
-                this.areas.clear();
-                this.areas.putAll(this.incomingAreas);
-                this.areaPage = 0;
-                this.areaRefreshAt = Util.getMillis() + 3_000L;
-            }
-        } else if (payload.page() == Page.PROJECTS && this.waitingPage == Page.PROJECTS) {
-            if (payload.index() == 0) this.incomingProjects.clear();
-            for (var entry : payload.entries()) {
-                if (entry instanceof SettlementManagementPayload.Project project
-                        && (project.status() != SettlementProject.Status.CANCELLED
-                        || project.blocker().equals("pending_world") || project.blocker().equals("world_conflict"))) {
-                    this.incomingProjects.put(project.id(), project);
-                }
-            }
-            if ((payload.index() + 1) * SettlementManagementRequestPayload.PAGE_SIZE < payload.total()) {
-                this.projectPage = payload.index() + 1;
-                this.projectRefreshAt = 0L;
-            } else {
-                this.projects.clear();
-                this.projects.putAll(this.incomingProjects);
-                this.projectPage = 0;
-                this.projectRefreshAt = Util.getMillis() + 3_000L;
-            }
-        } else if (payload.page() == Page.RESIDENTS && this.waitingPage == Page.RESIDENTS) {
+        if (payload.page() == Page.RESIDENTS && this.waitingPage == Page.RESIDENTS) {
             this.residentChecked = payload.query().equals(String.valueOf(this.selectedResident));
             this.resident = payload.entries().stream().filter(entry -> entry.id().equals(this.selectedResident))
                     .filter(SettlementManagementPayload.Resident.class::isInstance)
@@ -377,6 +349,8 @@ public final class SettlementViewScreen extends Screen {
     @Override
     public void tick() {
         long now = Util.getMillis();
+        var overviewRequest = this.snapshots.request(now);
+        if (overviewRequest != null) PacketDistributor.sendToServer(overviewRequest);
         refreshPopup();
         var draft = this.parent.buildingDraft();
         if (draft != null) draft.tick(this.header.id());
@@ -395,10 +369,8 @@ public final class SettlementViewScreen extends Screen {
             if (this.selectedResident != null && now >= this.residentRefreshAt) {
                 requestDetails(Page.RESIDENTS, 0, this.selectedResident.toString(), now);
                 this.residentRefreshAt = now + 2_000L;
-            } else if (now >= this.areaRefreshAt) {
-                requestDetails(Page.AREAS, this.areaPage, "", now);
-            } else if (now >= this.projectRefreshAt) {
-                requestDetails(Page.PROJECTS, this.projectPage, "", now);
+
+
             }
         }
     }
@@ -1120,15 +1092,13 @@ public final class SettlementViewScreen extends Screen {
     }
 
     void areaSaved(UUID id) {
+        this.snapshots.refresh();
         cancelGizmo();
         this.selectedArea = id;
         this.selectedResident = null;
         this.resident = null;
         this.areas.remove(id);
         this.waitingRequestId = -1;
-        this.incomingAreas.clear();
-        this.areaPage = 0;
-        this.areaRefreshAt = 0L;
         this.detailsAt = Math.max(this.detailsAt, Util.getMillis() + 300L);
     }
 

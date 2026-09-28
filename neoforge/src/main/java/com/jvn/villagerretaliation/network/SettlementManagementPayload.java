@@ -72,7 +72,10 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         buffer.writeVarInt(payload.requestId());
         buffer.writeBoolean(payload.openScreen());
         buffer.writeVarInt(payload.entries().size());
-        for (Entry entry : payload.entries()) {
+        for (Entry entry : payload.entries()) writeEntry(buffer, entry);
+    }
+
+    static void writeEntry(RegistryFriendlyByteBuf buffer, Entry entry) {
             buffer.writeUUID(entry.id());
             buffer.writeUtf(entry.name(), 128);
             switch (entry) {
@@ -172,7 +175,6 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 }
                 case Delegate delegate -> writePermissions(buffer, delegate.permissions());
             }
-        }
     }
 
     private static SettlementManagementPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -187,9 +189,15 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         int count = VillagerPayloads.readCollectionSize(buffer, SettlementManagementRequestPayload.PAGE_SIZE, "settlement page");
         List<Entry> entries = new ArrayList<>(count);
         for (int entry = 0; entry < count; entry++) {
+            entries.add(readEntry(buffer, page));
+        }
+        return new SettlementManagementPayload(dimension, header, page, index, total, query, requestId, open, entries);
+    }
+
+    static Entry readEntry(RegistryFriendlyByteBuf buffer, Page page) {
             UUID id = buffer.readUUID();
             String name = buffer.readUtf(128);
-            entries.add(switch (page) {
+            return switch (page) {
                 case TOWNS -> new Town(id, name, buffer.readEnum(SettlementStage.class), buffer.readVarInt(), buffer.readBlockPos());
                 case RESIDENTS -> {
                     ResourceLocation profession = buffer.readResourceLocation();
@@ -241,12 +249,10 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         buffer.readEnum(Page.class), readOptionalId(buffer), readOptionalId(buffer), readOptionalId(buffer),
                         buffer.readBoolean());
                 case SUMMARY -> throw new IllegalArgumentException("Settlement summary cannot contain rows");
-            });
-        }
-        return new SettlementManagementPayload(dimension, header, page, index, total, query, requestId, open, entries);
+            };
     }
 
-    private static void writeHeader(RegistryFriendlyByteBuf buffer, Header header) {
+    static void writeHeader(RegistryFriendlyByteBuf buffer, Header header) {
         buffer.writeUUID(header.id());
         buffer.writeUtf(header.name(), 128);
         buffer.writeBlockPos(header.center());
@@ -276,7 +282,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         SettlementPlotSnapshot.Totals.write(buffer, header.plots());
     }
 
-    private static Header readHeader(RegistryFriendlyByteBuf buffer) {
+    static Header readHeader(RegistryFriendlyByteBuf buffer) {
         UUID id = buffer.readUUID();
         String name = buffer.readUtf(128);
         BlockPos center = buffer.readBlockPos();
@@ -306,14 +312,14 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.readVarInt(), buffer.readBoolean(), SettlementPlotSnapshot.Totals.read(buffer));
     }
 
-    private static void writeOptionalId(RegistryFriendlyByteBuf buffer, UUID id) {
+    static void writeOptionalId(RegistryFriendlyByteBuf buffer, UUID id) {
         buffer.writeBoolean(id != null);
         if (id != null) {
             buffer.writeUUID(id);
         }
     }
 
-    private static UUID readOptionalId(RegistryFriendlyByteBuf buffer) {
+    static UUID readOptionalId(RegistryFriendlyByteBuf buffer) {
         return buffer.readBoolean() ? buffer.readUUID() : null;
     }
 

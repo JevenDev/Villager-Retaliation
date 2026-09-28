@@ -77,6 +77,14 @@ public final class SettlementViewService {
         session.level.getChunkSource().move(player);
     }
 
+    public static void overview(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload request) {
+        var session = SESSIONS.get(player.getUUID());
+        if (session == null || !session.id.equals(request.session()) || !eligible(player, session.town)
+                || !ServerboundRequestLimiter.tryAcquire(player, request.type().id(), 1L)) return;
+        var page = session.overview.page(session, request);
+        if (page != null) PacketDistributor.sendToPlayer(player, page);
+    }
+
     public static void tick(MinecraftServer server) {
         for (Session session : List.copyOf(SESSIONS.values())) {
             if (session.player.getServer() != server) {
@@ -203,6 +211,7 @@ public final class SettlementViewService {
         final Set<ChunkPos> held = new HashSet<>();
         final Set<ChunkPos> sent = new HashSet<>();
         final Set<ChunkPos> remote = new HashSet<>();
+        final SettlementViewOverview overview = new SettlementViewOverview();
         SettlementViewWindow window;
         com.jvn.villagerretaliation.network.SettlementPlotSnapshot plots;
         int requestId;

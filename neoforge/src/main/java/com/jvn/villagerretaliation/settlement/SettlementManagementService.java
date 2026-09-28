@@ -156,20 +156,9 @@ public final class SettlementManagementService {
                 }
             }
         } else {
-            var status = SettlementProgressionService.assess(level, town);
-            var issues = SettlementIssueService.issues(level, town, status);
-            Set<SettlementPermission> permissions = EnumSet.noneOf(SettlementPermission.class);
-            for (SettlementPermission permission : SettlementPermission.values()) {
-                if (town.permits(player.getUUID(), permission)) {
-                    permissions.add(permission);
-                }
-            }
-            header = new SettlementManagementPayload.Header(town.id().value(), name(registry, town), town.center(), town.leader(),
-                    permissions, town.stage(), town.radius(), town.stage().projects(), town.stage().depots(),
-                    SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
-                    status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
-                    status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
-                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size(), town.manualManagement(), SettlementPlotService.totals(town));
+            var assessment = overviewHeader(player, town);
+            header = assessment.header();
+            var issues = assessment.issues();
             switch (request.page()) {
                 case ISSUES -> entries.addAll(issues);
                 case RESIDENTS -> residents(level, registry, town, entries);
@@ -178,11 +167,7 @@ public final class SettlementManagementService {
                 case HISTORY -> town.history().reversed().forEach(event -> entries.add(new SettlementManagementPayload.History(
                         event.id(), event.subject(), event.gameTime(), event.type())));
                 case DEPOTS -> depots(town, entries);
-                case PROJECTS -> town.projects().values().forEach(project -> entries.add(new SettlementManagementPayload.Project(
-                        project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.min(), project.max(), project.status(),
-                        project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
-                        project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),
-                        project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())))));
+                case PROJECTS -> projects(town, entries);
                 case APPLICANTS -> {
                     for (var applicant : town.applicants().values()) {
                         ResourceLocation profession = ResourceLocation.tryParse(applicant.entity().getCompound("VillagerData").getString("profession"));
@@ -214,6 +199,51 @@ public final class SettlementManagementService {
         int start = index * size;
         return new SettlementManagementPayload(level.dimension().location(), header, request.page(), index, filtered.size(),
                 request.query(), request.requestId(), request.openScreen(), filtered.subList(start, Math.min(filtered.size(), start + size)));
+    }
+
+    record Assessment(SettlementManagementPayload.Header header, List<SettlementManagementPayload.Issue> issues) { }
+
+    static Assessment overviewHeader(ServerPlayer player, SettlementRecord town) {
+        var level = player.serverLevel();
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+            var status = SettlementProgressionService.assess(level, town);
+            var issues = SettlementIssueService.issues(level, town, status);
+            Set<SettlementPermission> permissions = EnumSet.noneOf(SettlementPermission.class);
+            for (SettlementPermission permission : SettlementPermission.values()) {
+                if (town.permits(player.getUUID(), permission)) {
+                    permissions.add(permission);
+                }
+            }
+            var header = new SettlementManagementPayload.Header(town.id().value(), name(registry, town), town.center(), town.leader(),
+                    permissions, town.stage(), town.radius(), town.stage().projects(), town.stage().depots(),
+                    SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
+                    status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
+                    status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
+                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size(), town.manualManagement(), SettlementPlotService.totals(town));
+        return new Assessment(header, issues);
+    }
+
+    static java.util.Map<Page, List<Entry>> overview(ServerPlayer player, SettlementRecord town,
+                                                     SettlementManagementPayload.Header header) {
+        var result = new java.util.EnumMap<Page, List<Entry>>(Page.class);
+        var residents = new ArrayList<Entry>();
+        residents(player.serverLevel(), VillageAllegianceRegistrySavedData.get(player.serverLevel()), town, residents);
+        var areas = new ArrayList<Entry>();
+        areas(town, areas);
+        var projects = new ArrayList<Entry>();
+        projects(town, projects);
+        result.put(Page.RESIDENTS, residents);
+        result.put(Page.AREAS, areas);
+        result.put(Page.PROJECTS, projects);
+        return result;
+    }
+
+    private static void projects(SettlementRecord town, List<Entry> entries) {
+        town.projects().values().forEach(project -> entries.add(new SettlementManagementPayload.Project(
+                        project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.min(), project.max(), project.status(),
+                        project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
+                        project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),
+                        project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())))));
     }
 
     private static void residents(ServerLevel level, VillageAllegianceRegistrySavedData registry,
