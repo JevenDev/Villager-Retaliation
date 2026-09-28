@@ -224,14 +224,14 @@ public final class SettlementManagementScreen extends Screen {
     }
 
     private int actionColumns() {
-        int columns = this.desiredPage == Page.PROJECTS || this.desiredPage == Page.ISSUES || this.desiredPage == Page.SUMMARY ? 4 : 3;
+        int columns = this.desiredPage == Page.PROJECTS || this.desiredPage == Page.ISSUES ? 4 : 3;
         return this.contentWidth < 360 ? 2 : columns;
     }
 
     private int extraActionHeight() {
         int count = switch (this.desiredPage) {
-            case RESIDENTS -> 5;
-            case PROJECTS, ISSUES, SUMMARY -> 4;
+            case RESIDENTS, SUMMARY -> 5;
+            case PROJECTS, ISSUES -> 4;
             default -> 3;
         };
         return ((count - 1) / actionColumns()) * 24;
@@ -269,6 +269,7 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         this.rows.add(null, text("issues_count", header.issues()), text("issues_hint"));
+        this.rows.add(null, text(header.manualManagement() ? "manual_management" : "autonomous_management"), text("management_hint"));
         this.rows.add(null, text("population", header.population(), header.housing()), text("housing_hint"));
         this.rows.add(null, text("food", decimal(header.foodDays())), text("food_hint"));
         this.rows.add(null, text("stage", enumText("stage", header.stage())), text("bounds", header.radius()));
@@ -373,6 +374,7 @@ public final class SettlementManagementScreen extends Screen {
                 action(1, "treasury", permits(SettlementPermission.TREASURY));
                 action(2, "budget", permits(SettlementPermission.TREASURY));
                 action(3, "page.issues", permits(SettlementPermission.VIEW));
+                action(4, this.snapshot.header() != null && this.snapshot.header().manualManagement() ? "enable_autonomy" : "manage_manually", leader());
             }
             case RESIDENTS -> {
                 action(0, "assign", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
@@ -500,6 +502,8 @@ public final class SettlementManagementScreen extends Screen {
                     submit(new SettlementManagementActionPayload.Advance());
                 } else if (action == 3) {
                     navigate(Page.ISSUES, 0, "");
+                } else if (action == 4) {
+                    submit(new SettlementManagementActionPayload.Management(!this.snapshot.header().manualManagement()));
                 } else {
                     edit(action == 1 ? SettlementEditScreen.Mode.TREASURY : SettlementEditScreen.Mode.BUDGET, null);
                 }

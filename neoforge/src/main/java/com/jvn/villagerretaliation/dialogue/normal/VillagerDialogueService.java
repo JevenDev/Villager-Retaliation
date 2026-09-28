@@ -70,7 +70,7 @@ public final class VillagerDialogueService {
                         line.maxUses(),
                         effectiveWeight(line),
                         line.recentlyUsed(recentDialogueIds),
-                        line.hasFreshVariant(recentDialogueIds)))
+                        line.hasFreshVariant(context, recentDialogueIds)))
                 .toList();
         Set<String> candidateIds = candidates.stream()
                 .map(DialogueCandidateExplanation::id)
@@ -433,7 +433,7 @@ public final class VillagerDialogueService {
 
         List<DialogueLine> weightedPool = preferred;
         List<DialogueLine> freshCandidates = weightedPool.stream()
-                .filter(line -> line.hasFreshVariant(recentIds))
+                .filter(line -> line.hasFreshVariant(context, recentIds))
                 .toList();
         if (!freshCandidates.isEmpty()) {
             weightedPool = freshCandidates;

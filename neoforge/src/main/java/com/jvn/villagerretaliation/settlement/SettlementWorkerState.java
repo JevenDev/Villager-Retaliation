@@ -178,6 +178,7 @@ public final class SettlementWorkerState {
     }
 
     void observe(ServerLevel level, Villager villager, SettlementWorkforceService.Duty duty, long now) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Worker observation has a different identity");
         if (!duty.area().id().equals(this.area) || duty.area().type().role() != this.role) {
             huntingTarget(null);
             this.serviceBlocked = false;
@@ -210,7 +211,7 @@ public final class SettlementWorkerState {
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
         this.brewingVersion = Math.max(this.brewingVersion, SettlementBrewingService.version(villager));
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
         this.unsafe = villager.getTarget() != null && engagement == null
                 || villager.getLastHurtByMob() != null && !villager.getLastHurtByMob().getUUID().equals(engagement)
                 || villager.isOnFire() || villager.isInLava()
@@ -238,6 +239,7 @@ public final class SettlementWorkerState {
     }
 
     boolean restore(Villager villager) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Worker handoff has a different identity");
         if (this.huntingBody != null) this.huntingBody.restore(villager, villager.level().getGameTime());
         if (this.role == HiredVillagerRole.HUNTING) {
             com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.restoreMeleeAttackTick(villager, this.huntingAttackAt);
@@ -267,8 +269,8 @@ public final class SettlementWorkerState {
     }
 
     int elapsed(long now) {
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         return elapsed;
     }
 

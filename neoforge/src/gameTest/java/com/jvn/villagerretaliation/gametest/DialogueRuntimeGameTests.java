@@ -90,6 +90,38 @@ public final class DialogueRuntimeGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, batch = "dialogue_runtime")
+    public static void authoredVariantsUsePersonalContextAndIgnoreIneligibleFreshText(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var player = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
+                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "DialogueReader"));
+        var first = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+        var second = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+        first.setPos(helper.absolutePos(new net.minecraft.core.BlockPos(1, 2, 1)).getCenter());
+        second.setPos(first.position());
+        var event = VillagerRetaliation.id("personal_context_test");
+        com.jvn.villagerretaliation.village.VillageEventMemory.remember(level, event, first.blockPosition(), first, player,
+                com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.VILLAGER);
+        var firstContext = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(level, player, first);
+        var secondContext = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(level, player, second);
+        var authored = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.lines(firstContext).stream()
+                .flatMap(line -> line.textVariants().stream()).filter(variant -> !variant.text().isBlank()).findFirst().orElseThrow();
+        var personal = new DialogueCondition.Memory(Set.of(event), DialogueCondition.MemorySource.THIS_VILLAGER, true,
+                DialogueCondition.MemoryKind.EVENT_TAG);
+        var remembered = new DialogueTextVariant("personal_line", authored.text(), authored.textKey(), 1, 1, 1.0D,
+                List.of(personal), authored.metadata(), DialogueUsagePolicy.DEFAULT);
+        var child = new DialogueTextVariant("child_line", authored.text(), authored.textKey(), 0, 1, 1.0D,
+                List.of(new DialogueCondition.VillagerAge(true, false)), authored.metadata(), DialogueUsagePolicy.DEFAULT);
+        helper.assertTrue(DialogueTextVariant.select(List.of(remembered), firstContext, List.of()).isPresent(),
+                "an individual event makes the authored response available to its owner");
+        helper.assertTrue(DialogueTextVariant.select(List.of(remembered), secondContext, List.of()).isEmpty(),
+                "a neighboring resident cannot speak as the event owner");
+        helper.assertFalse(DialogueTextVariant.hasFresh(List.of(remembered, child), firstContext, List.of("personal_line")),
+                "an ineligible child line cannot defeat adult repeat avoidance");
+        helper.assertValueEqual(remembered.text(), authored.text(), "selection retains the datapack author's exact text");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "dialogue_runtime")
     public static void scopedUsageLedgerPersistsCountsAndCooldownTime(GameTestHelper helper) {
         DialogueUsageSavedData data = new DialogueUsageSavedData();
         data.remember("world", "line", 40L);

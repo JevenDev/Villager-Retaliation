@@ -20,7 +20,7 @@ public final class SettlementSupportState {
     }
 
     void observe(long gameTime, boolean supported, boolean shortage) {
-        long elapsed = this.checkedAt < 0L ? 0L : Math.clamp(gameTime - this.checkedAt, 0L, 200L);
+        long elapsed = this.checkedAt < 0L ? 0L : SettlementSimulationClock.elapsed(this.checkedAt, gameTime);
         this.checkedAt = gameTime;
         this.sustainedTicks = supported ? Math.min(24_000L * 30L, this.sustainedTicks + elapsed) : 0L;
         this.shortageTicks = shortage ? Math.min(24_000L * 30L, this.shortageTicks + elapsed) : 0L;

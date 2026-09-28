@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -27,35 +26,33 @@ public final class SettlementPopulationService {
     private SettlementPopulationService() {
     }
 
-    public static void tick(MinecraftServer server) {
-        long now = server.overworld().getGameTime();
-        if (now % 200L != 0L) {
-            return;
+    static void update(ServerLevel level, SettlementRecord town, long now) {
+        if (level.hasChunkAt(town.center()) && town.applicants().values().stream().anyMatch(applicant -> applicant.approvedBy().isPresent())) {
+            town.areas().values().forEach(area -> SettlementBuildingService.refresh(level, town, area));
         }
-        for (ServerLevel level : server.getAllLevels()) {
-            for (SettlementRecord town : SettlementSavedData.get(level).settlements()) {
-                if (!town.dimension().equals(level.dimension().location())) {
-                    continue;
-                }
-                if (level.hasChunkAt(town.center()) && town.applicants().values().stream().anyMatch(applicant -> applicant.approvedBy().isPresent())) {
-                    town.areas().values().forEach(area -> SettlementBuildingService.refresh(level, town, area));
-                }
-                SettlementArrivalService.update(level, town);
-                for (SettlementApplicant applicant : List.copyOf(town.applicants().values())) {
-                    if (applicant.approvedBy().isPresent()) {
-                        arrive(level, town, applicant);
-                    } else if (now - applicant.createdAt() >= 7L * 24_000L) {
-                        town.removeApplicant(applicant.id());
-                    }
-                }
-                provideFamilyFood(level, town);
-                SettlementFamilyService.update(level, town, now);
-                if (now >= town.nextApplicantAt() && canGrow(level, town)
-                        && town.applicants().size() < SettlementRecord.MAX_APPLICANTS) {
-                    propose(level, town);
-                    town.scheduleApplicant(now + 24_000L);
-                }
+        SettlementArrivalService.update(level, town);
+        for (SettlementApplicant applicant : List.copyOf(town.applicants().values())) {
+            if (!town.manualManagement() && applicant.approvedBy().isEmpty() && canGrow(level, town)) {
+                applicant = applicant.approve(town.leader());
+                town.putApplicant(applicant);
             }
+            if (applicant.approvedBy().isPresent()) {
+                arrive(level, town, applicant);
+            } else if (now - applicant.createdAt() >= 7L * 24_000L) {
+                town.removeApplicant(applicant.id());
+            }
+        }
+        provideFamilyFood(level, town);
+        SettlementFamilyService.update(level, town, now);
+        if (now >= town.nextApplicantAt() && canGrow(level, town)
+                && town.applicants().size() < SettlementRecord.MAX_APPLICANTS) {
+            var applicant = propose(level, town).orElse(null);
+            if (!town.manualManagement() && applicant != null) {
+                applicant = applicant.approve(town.leader());
+                town.putApplicant(applicant);
+                arrive(level, town, applicant);
+            }
+            town.scheduleApplicant(now + 24_000L);
         }
     }
 

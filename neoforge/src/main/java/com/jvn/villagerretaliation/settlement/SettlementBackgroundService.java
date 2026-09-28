@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.List;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -11,100 +10,91 @@ public final class SettlementBackgroundService {
     private SettlementBackgroundService() {
     }
 
-    public static void tick(MinecraftServer server) {
-        SettlementMineReactions.tick(server);
-        SettlementTerrainDrops.tick(server);
-        long now = server.overworld().getGameTime();
-        if (now % 200L != 0L) {
-            return;
-        }
-        for (ServerLevel level : server.getAllLevels()) {
-            for (SettlementRecord town : SettlementSavedData.get(level).settlements()) {
-                if (town.dimension().equals(level.dimension().location())) {
-                    update(level, town, now);
-                }
-            }
-        }
+    static void update(ServerLevel level, SettlementRecord town, long now) {
+        var jobs = new java.util.ArrayList<Runnable>();
+        schedule(level, town, now, jobs);
+        jobs.forEach(Runnable::run);
     }
 
-    static void update(ServerLevel level, SettlementRecord town, long now) {
-        SettlementFurnaceService.update(level, town, now);
-        SettlementBrewingStandService.update(level, town, now);
-        SettlementFieldService.update(level, town, now);
-        SettlementFisheryService.update(level, town);
-        SettlementForestService.update(level, town, now);
-        SettlementMineService.update(level, town, now);
-        SettlementEntityDeathService.update(level, town, now);
-        SettlementHuntingTargetService.update(level, town, now);
-        SettlementLivestockService.update(level, town, now);
-        SettlementGroundItemService.update(level, town, now);
-        for (var worker : town.workers().values()) SettlementBackgroundFishing.migrateExperience(level, town, worker);
-        SettlementGroundExperienceService.update(level, town, now);
-        SettlementConstructionSiteService.update(level, town);
-        for (SettlementDepot depot : town.depots().values()) {
-            SettlementDepotService.observeRules(level, depot);
+    static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
+        jobs.add(() -> SettlementFurnaceService.update(level, town, now));
+        jobs.add(() -> SettlementBrewingStandService.update(level, town, now));
+        jobs.add(() -> SettlementFieldService.update(level, town, now));
+        jobs.add(() -> SettlementFisheryService.update(level, town));
+        jobs.add(() -> SettlementForestService.update(level, town, now));
+        jobs.add(() -> SettlementMineService.update(level, town, now));
+        jobs.add(() -> SettlementEntityDeathService.update(level, town, now));
+        jobs.add(() -> SettlementHuntingTargetService.update(level, town, now));
+        jobs.add(() -> SettlementLivestockService.update(level, town, now));
+        jobs.add(() -> SettlementGroundItemService.update(level, town, now));
+        jobs.add(() -> {
+            for (var worker : town.workers().values()) SettlementBackgroundFishing.migrateExperience(level, town, worker);
+            SettlementGroundExperienceService.update(level, town, now);
+        });
+        jobs.add(() -> SettlementConstructionSiteService.update(level, town));
+        for (var depot : town.depots().values()) jobs.add(() -> SettlementDepotService.observeRules(level, depot));
+        for (var resident : town.duties().keySet()) jobs.add(() -> updateWorker(level, town, resident, now));
+        jobs.add(() -> SettlementProjectileService.update(level, town, now));
+    }
+
+    private static void updateWorker(ServerLevel level, SettlementRecord town, java.util.UUID resident, long now) {
+        var assignedArea = town.duties().get(resident);
+        var worker = town.workers().get(resident);
+        var entity = level.getEntity(resident);
+        if (entity instanceof Villager villager && level.isPositionEntityTicking(villager.blockPosition())) {
+            observe(level, villager, level.getGameTime());
+            return;
         }
-        for (var assignment : List.copyOf(town.duties().entrySet())) {
-            var worker = town.workers().get(assignment.getKey());
-            var entity = level.getEntity(assignment.getKey());
-            if (entity instanceof Villager villager && level.isPositionEntityTicking(villager.blockPosition())) {
-                observe(level, villager, now);
-                continue;
-            }
-            if (worker == null) {
-                continue;
-            }
-            int elapsed = worker.elapsed(now);
-            if (elapsed <= 0) {
-                continue;
-            }
-            var area = town.workplace(assignment.getValue());
-            var care = town.residents().get(worker.id());
-            var settings = town.workerSettings().get(worker.id());
-            if (area != null && settings != null) {
-                settings.apply(worker.settings(), area.enabled());
-            }
-            if (area == null || !area.enabled() || !area.id().equals(worker.area()) || area.type().role() != worker.role()
-                    || care == null || !care.availableForWork()
-                    || worker.settings().contains("Enabled") && !worker.settings().getBoolean("Enabled")
-                    || !SettlementWorkforceService.workingHours(level.getDayTime(), worker.id(), worker.role())) {
-                worker.status("resting");
-                continue;
-            }
-            if (worker.unsafe()) {
-                worker.status("unsafe");
-                continue;
-            }
-            double multiplier = care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D);
-            if (worker.role() == HiredVillagerRole.COURIER) {
-                SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.SMELTER) {
-                SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.FISHING) {
-                SettlementBackgroundFishing.tick(level, town, worker, elapsed, multiplier, now);
-            } else if (worker.role() == HiredVillagerRole.HUNTING) {
-                SettlementBackgroundHunting.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.ANIMAL_HANDLING) {
-                SettlementBackgroundAnimalHandling.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.BUILDER) {
-                SettlementBackgroundConstruction.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.LOGGING) {
-                SettlementBackgroundLogging.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.MINING) {
-                SettlementBackgroundMining.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.FARMING) {
-                SettlementBackgroundFarming.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.BREWING) {
-                SettlementBackgroundBrewing.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.CRAFTSMAN
-                    || worker.role() == HiredVillagerRole.COOK && !SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier)) {
-                SettlementBackgroundCrafting.tick(level, town, worker, elapsed, multiplier);
-            }
+        if (worker == null) {
+            return;
         }
-        SettlementProjectileService.update(level, town, now);
-        if (!town.workers().isEmpty()) {
-            town.changed();
+        int elapsed = worker.elapsed(now);
+        if (elapsed <= 0) {
+            return;
         }
+        var area = town.workplace(assignedArea);
+        var care = town.residents().get(worker.id());
+        var settings = town.workerSettings().get(worker.id());
+        if (area != null && settings != null) {
+            settings.apply(worker.settings(), area.enabled());
+        }
+        if (area == null || !area.enabled() || !area.id().equals(worker.area()) || area.type().role() != worker.role()
+                || care == null || !care.availableForWork()
+                || worker.settings().contains("Enabled") && !worker.settings().getBoolean("Enabled")
+                || !SettlementWorkforceService.workingHours(level.getDayTime(), worker.id(), worker.role())) {
+            worker.status("resting");
+            return;
+        }
+        if (worker.unsafe()) {
+            worker.status("unsafe");
+            return;
+        }
+        double multiplier = care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D);
+        if (worker.role() == HiredVillagerRole.COURIER) {
+            SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.SMELTER) {
+            SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.FISHING) {
+            SettlementBackgroundFishing.tick(level, town, worker, elapsed, multiplier, now);
+        } else if (worker.role() == HiredVillagerRole.HUNTING) {
+            SettlementBackgroundHunting.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.ANIMAL_HANDLING) {
+            SettlementBackgroundAnimalHandling.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.BUILDER) {
+            SettlementBackgroundConstruction.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.LOGGING) {
+            SettlementBackgroundLogging.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.MINING) {
+            SettlementBackgroundMining.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.FARMING) {
+            SettlementBackgroundFarming.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.BREWING) {
+            SettlementBackgroundBrewing.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.CRAFTSMAN
+                || worker.role() == HiredVillagerRole.COOK && !SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier)) {
+            SettlementBackgroundCrafting.tick(level, town, worker, elapsed, multiplier);
+        }
+        town.changed();
     }
 
     public static void onActive(Villager villager) {

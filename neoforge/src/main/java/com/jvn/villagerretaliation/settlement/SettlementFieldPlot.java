@@ -192,7 +192,7 @@ public final class SettlementFieldPlot {
 
     void observe(ServerLevel level, LevelChunk chunk, long now) {
         refresh(chunk);
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
         observeEnvironment(level, chunk);
     }
 
@@ -240,8 +240,8 @@ public final class SettlementFieldPlot {
     }
 
     void advance(ServerLevel level, SettlementRecord town, long now) {
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         if (elapsed == 0 || this.conflict || !this.environmentKnown
                 || town.areas().values().stream().noneMatch(area -> area.enabled() && SettlementFieldService.serves(area, this))) {
             return;
@@ -394,7 +394,7 @@ public final class SettlementFieldPlot {
     }
 
     void pause(long now) {
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
     }
 
     private static LevelChunk chunk(ServerLevel level, LevelChunk supplied, BlockPos position) {

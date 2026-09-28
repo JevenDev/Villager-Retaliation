@@ -18,9 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
@@ -75,21 +72,6 @@ public final class SettlementTradeService {
         return SettlementSavedData.get(player.serverLevel()).get(id)
                 .filter(town -> town.dimension().equals(player.level().dimension().location()))
                 .filter(town -> town.permits(player.getUUID(), permission)).orElse(null);
-    }
-
-    public static void tick(MinecraftServer server) {
-        if (server.overworld().getGameTime() % 200L != 0L) {
-            return;
-        }
-        for (SettlementRecord town : SettlementSavedData.get(server.overworld()).settlements()) {
-            if (town.economy().orders().isEmpty()) {
-                continue;
-            }
-            ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, town.dimension()));
-            if (level != null) {
-                process(level, town);
-            }
-        }
     }
 
     static Map<UUID, Result> process(ServerLevel level, SettlementRecord town) {

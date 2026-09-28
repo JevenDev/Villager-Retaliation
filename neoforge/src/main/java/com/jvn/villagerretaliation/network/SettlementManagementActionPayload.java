@@ -38,6 +38,10 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
                 buffer.writeBlockPos(home.bed());
                 buffer.writeBoolean(home.assign());
             }
+            case Management management -> {
+                buffer.writeEnum(Kind.MANAGEMENT);
+                buffer.writeBoolean(management.manual());
+            }
             case Advance ignored -> buffer.writeEnum(Kind.ADVANCE);
             case View ignored -> buffer.writeEnum(Kind.VIEW);
             case DraftBlueprint draft -> {
@@ -179,6 +183,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         UUID town = buffer.readUUID();
         Command command = switch (buffer.readEnum(Kind.class)) {
             case HOME -> new Home(buffer.readUUID(), buffer.readBlockPos(), buffer.readBoolean());
+            case MANAGEMENT -> new Management(buffer.readBoolean());
             case ADVANCE -> new Advance();
             case VIEW -> new View();
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
@@ -301,11 +306,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management {
     }
 
     public record Home(UUID resident, net.minecraft.core.BlockPos bed, boolean assign) implements Command {
@@ -321,6 +326,9 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             Objects.requireNonNull(resident);
             Objects.requireNonNull(area);
         }
+    }
+
+    public record Management(boolean manual) implements Command {
     }
 
     public record Advance() implements Command {

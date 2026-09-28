@@ -92,19 +92,22 @@ public final class VillagerCurrencyResources {
                 return current.currency();
             }
 
-            CurrencyDefinition loaded = read(server);
+            CurrencyDefinition loaded = read(server.getResourceManager());
             cachedCurrency = new CachedCurrency(server, loaded);
             return loaded;
         }
     }
 
-    private static CurrencyDefinition read(MinecraftServer server) {
+    public static void reload(MinecraftServer server, net.minecraft.server.packs.resources.ResourceManager resources) {
+        cachedCurrency = new CachedCurrency(server, read(resources));
+    }
+
+    private static CurrencyDefinition read(net.minecraft.server.packs.resources.ResourceManager resources) {
         CurrencyDefinition[] selected = new CurrencyDefinition[]{DEFAULT_CURRENCY};
-        DatapackResourceLoader.forEachJsonResource(
-                server,
-                CURRENCY_ROOT,
-                location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
-                (location, resource) -> readFile(location, resource).ifPresent(currency -> selected[0] = currency));
+        resources.listResources(CURRENCY_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
+                        && location.getPath().endsWith(".json")).entrySet().stream()
+                .sorted(java.util.Map.Entry.comparingByKey(java.util.Comparator.comparing(ResourceLocation::toString)))
+                .forEach(entry -> readFile(entry.getKey(), entry.getValue()).ifPresent(currency -> selected[0] = currency));
         return selected[0];
     }
 

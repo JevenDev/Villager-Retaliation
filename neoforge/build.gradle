@@ -37,6 +37,7 @@ sourceSets.main.resources {
 def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
 def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
 def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
+def settlementManyVillageProfileDirectory = layout.buildDirectory.dir("settlement-many-village-profile/${System.currentTimeMillis()}")
 def settlementCityAcceptanceDirectory = layout.buildDirectory.dir("settlement-city-acceptance/${System.currentTimeMillis()}")
 def settlementMultiplayerDirectory = layout.buildDirectory.dir("settlement-multiplayer/${System.currentTimeMillis()}")
 
@@ -67,6 +68,14 @@ neoForge {
             gameDirectory.set(settlementTownProfileDirectory)
             systemProperty 'villagerretaliation.settlementTownProfile', settlementTownProfileDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementTownProfile', '--width', '1280', '--height', '720'
+        }
+
+        settlementManyVillageProfile {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(settlementManyVillageProfileDirectory)
+            systemProperty 'villagerretaliation.settlementManyVillageProfile', settlementManyVillageProfileDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'SettlementManyVillageProfile', '--width', '1280', '--height', '720'
         }
 
         settlementCityAcceptance {
@@ -184,6 +193,26 @@ tasks.named('runSettlementTownProfile') {
         def result = new File(settlementTownProfileDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Settlement town profile completed')) {
             throw new GradleException("Settlement town profiling did not finish. Inspect ${settlementTownProfileDirectory.get().asFile}")
+        }
+    }
+}
+
+tasks.named('runSettlementManyVillageProfile') {
+    dependsOn tasks.named('runGameTestServer')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Many-village profiling requires generated GameTest world metadata.')
+        copy {
+            from metadata
+            into new File(settlementManyVillageProfileDirectory.get().asFile, 'saves/SettlementManyVillageProfile')
+        }
+        new File(settlementManyVillageProfileDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\n'
+    }
+    doLast {
+        def result = new File(settlementManyVillageProfileDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Many-village profile passed')) {
+            throw new GradleException("Many-village profiling did not pass. Inspect ${settlementManyVillageProfileDirectory.get().asFile}")
         }
     }
 }

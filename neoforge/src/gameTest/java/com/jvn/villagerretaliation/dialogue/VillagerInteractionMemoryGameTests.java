@@ -55,6 +55,42 @@ public final class VillagerInteractionMemoryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, batch = "dialogue_memory")
+    public static void savedDialogueMemoryIsBoundedAndOwnedByEachResident(GameTestHelper helper) {
+        var owner = UUID.randomUUID();
+        var player = UUID.randomUUID();
+        var entry = new CompoundTag();
+        entry.putUUID("Villager", owner);
+        entry.putUUID("Player", player);
+        var recent = new ListTag();
+        var usage = new ListTag();
+        for (int index = 0; index < 300; index++) {
+            recent.add(StringTag.valueOf("line_" + index));
+            var line = new CompoundTag();
+            line.putString("DialogueId", "line_" + index);
+            line.putInt("Count", Integer.MAX_VALUE);
+            line.putLong("GameTime", index);
+            usage.add(line);
+        }
+        entry.put("RecentLines", recent);
+        entry.put("DialogueUsage", usage);
+        var entries = new ListTag();
+        entries.add(entry);
+        var root = new CompoundTag();
+        root.put("Entries", entries);
+        var restored = VillagerInteractionSavedData.load(root, helper.getLevel().registryAccess());
+        var memory = restored.getOrCreate(owner, player);
+        helper.assertValueEqual(memory.recentDialogueIds().size(), 5, "oversized saves retain only the bounded recent history");
+        helper.assertValueEqual(memory.recentDialogueIds().getLast(), "line_299", "the newest authored line survives");
+        memory.rememberDialogueId(com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType.GREETING, "line_299", 400L, 0L, 24000L);
+        helper.assertValueEqual(memory.dialogueUsage("line_299").count(), Integer.MAX_VALUE, "long-lived usage never wraps and re-enables exhausted content");
+        helper.assertTrue(restored.getOrCreate(UUID.randomUUID(), player).recentDialogueIds().isEmpty(), "neighbors do not inherit personal dialogue history");
+        var saved = restored.save(new CompoundTag(), helper.getLevel().registryAccess());
+        helper.assertValueEqual(saved.getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0)
+                .getList("DialogueUsage", net.minecraft.nbt.Tag.TAG_COMPOUND).size(), 256, "the durable usage history stays bounded");
+        helper.succeed();
+    }
+
     private static VillagerInteractionSavedData loadLegacyEncounter(
             GameTestHelper helper,
             UUID playerId,

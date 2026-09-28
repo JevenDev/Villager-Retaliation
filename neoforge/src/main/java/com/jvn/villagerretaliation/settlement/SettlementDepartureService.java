@@ -21,7 +21,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -33,20 +32,6 @@ public final class SettlementDepartureService {
     private static final String WALK_TAG = "VillagerRetaliationLeavingSettlement";
 
     private SettlementDepartureService() {
-    }
-
-    public static void tick(MinecraftServer server) {
-        long now = server.overworld().getGameTime();
-        if (now % 200L != 0L) {
-            return;
-        }
-        for (ServerLevel level : server.getAllLevels()) {
-            for (SettlementRecord town : SettlementSavedData.get(level).settlements()) {
-                if (town.dimension().equals(level.dimension().location())) {
-                    process(level, town, now);
-                }
-            }
-        }
     }
 
     static List<UUID> process(ServerLevel level, SettlementRecord town, long now) {

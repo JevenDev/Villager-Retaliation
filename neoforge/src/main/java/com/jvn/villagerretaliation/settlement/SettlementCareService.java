@@ -12,58 +12,54 @@ public final class SettlementCareService {
     private SettlementCareService() {
     }
 
-    public static void tick(MinecraftServer server) {
-        long now = server.overworld().getGameTime();
-        if (now % 200L != 0L) {
-            return;
-        }
-        for (ServerLevel level : server.getAllLevels()) {
-            for (SettlementRecord town : SettlementSavedData.get(level).settlements()) {
-                if (town.dimension().equals(level.dimension().location())) {
-                    update(level, town, now);
-                }
-            }
-        }
+    static void update(ServerLevel level, SettlementRecord town, long now) {
+        var jobs = new java.util.ArrayList<Runnable>();
+        schedule(level, town, now, jobs);
+        jobs.forEach(Runnable::run);
     }
 
-    static void update(ServerLevel level, SettlementRecord town, long now) {
-        SettlementHousingService.update(level, town);
+    static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
+        jobs.add(() -> SettlementHousingService.update(level, town));
+        for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now)) {
+            jobs.add(() -> updateResident(level, town, member.id(), now));
+        }
+        jobs.add(() -> {
+            var members = new HashSet<java.util.UUID>();
+            VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now).forEach(member -> members.add(member.id()));
+            for (var id : List.copyOf(town.residents().keySet())) {
+                if (!members.contains(id)) town.removeResident(id);
+            }
+        });
+    }
+
+    private static void updateResident(ServerLevel level, SettlementRecord town, java.util.UUID id, long now) {
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var roster = registry.residentRoster(town.id(), now);
-        var members = new HashSet<java.util.UUID>();
+        var member = roster.stream().filter(candidate -> candidate.id().equals(id)).findFirst().orElse(null);
+        if (member == null) return;
         boolean housingShortage = town.housingCapacity() < roster.size();
-        for (var member : roster) {
-            members.add(member.id());
-            Villager resident = findResident(level.getServer(), member.id());
-            SettlementResidentState state = town.residents().get(member.id());
-            if (resident != null && resident.isAlive() && resident.level() instanceof ServerLevel residentLevel
-                    && residentLevel.isPositionEntityTicking(resident.blockPosition())) {
-                SettlementHousingService.reconcile(resident);
-                if (state == null) {
-                    state = SettlementResidentState.capture(resident, town, now);
-                    town.recordResident(state);
-                } else {
-                    int elapsed = (int) Math.clamp(now - state.checkedAt(), 0L, 200L);
-                    state.restore(resident);
-                    state.observe(resident, town, now);
-                    state.observeShortage(elapsed, housingShortage);
-                }
-            } else if (state != null) {
-                int elapsed = state.advance(level, town, now);
+        Villager resident = findResident(level.getServer(), id);
+        SettlementResidentState state = town.residents().get(id);
+        if (resident != null && resident.isAlive() && resident.level() instanceof ServerLevel residentLevel
+                && residentLevel.isPositionEntityTicking(resident.blockPosition())) {
+            SettlementHousingService.reconcile(resident);
+            if (state == null) {
+                state = SettlementResidentState.capture(resident, town, level.getGameTime());
+                town.recordResident(state);
+            } else {
+                int elapsed = SettlementSimulationClock.elapsed(state.checkedAt(), now);
+                state.restore(resident);
+                state.observe(resident, town, level.getGameTime());
                 state.observeShortage(elapsed, housingShortage);
-                if (state.present() && state.age() >= 0 && !member.adult()) {
-                    registry.addOrUpdateResident(town.id(), member.id(), true, member.nitwit(), now);
-                }
+            }
+        } else if (state != null) {
+            int elapsed = state.advance(level, town, now);
+            state.observeShortage(elapsed, housingShortage);
+            if (state.present() && state.age() >= 0 && !member.adult()) {
+                registry.addOrUpdateResident(town.id(), member.id(), true, member.nitwit(), now);
             }
         }
-        for (var id : List.copyOf(town.residents().keySet())) {
-            if (!members.contains(id)) {
-                town.removeResident(id);
-            }
-        }
-        if (!roster.isEmpty()) {
-            town.changed();
-        }
+        town.changed();
     }
 
     public static void onActive(Villager villager) {

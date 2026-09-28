@@ -269,6 +269,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         header.budget().write(buffer);
         header.spent().write(buffer);
         buffer.writeVarInt(header.issues());
+        buffer.writeBoolean(header.manualManagement());
     }
 
     private static Header readHeader(RegistryFriendlyByteBuf buffer) {
@@ -298,7 +299,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         return new Header(id, name, center, leader, permissions, stage, radius, projects, depots, supply, demand,
                 population, housing, food, shortage, support, required,
                 ready, missing, CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer),
-                buffer.readVarInt());
+                buffer.readVarInt(), buffer.readBoolean());
     }
 
     private static void writeOptionalId(RegistryFriendlyByteBuf buffer, UUID id) {
@@ -340,7 +341,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                          SettlementStage stage, int radius, int projectLimit, int depotLimit, int marketSupply, int marketDemand,
                          int population, int housing, double foodDays, long shortageTicks,
                          long supportTicks, long requiredTicks, boolean ready, List<SettlementProgressionService.Requirement> missing,
-                         CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent, int issues) {
+                         CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent, int issues, boolean manualManagement) {
         public Header {
             if (issues < 0) throw new IllegalArgumentException("Invalid settlement issue count");
             new com.jvn.villagerretaliation.settlement.SettlementStageRules.Limits(

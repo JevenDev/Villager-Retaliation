@@ -67,6 +67,9 @@ public final class SettlementRecord {
     private SettlementStage stage = SettlementStage.CAMP;
     private int radius = SettlementStage.CAMP.radius();
     private long revision;
+    private long simulationResumedAt;
+    private boolean manualManagement;
+    private final Set<UUID> manualDuties = new java.util.HashSet<>();
 
     SettlementRecord(VillageAllegianceId id, ResourceLocation dimension, BlockPos center,
                      UUID leader, long foundedAt, Runnable dirty) {
@@ -97,6 +100,34 @@ public final class SettlementRecord {
 
     public long foundedAt() {
         return this.foundedAt;
+    }
+
+    long simulationResumedAt() {
+        return this.simulationResumedAt;
+    }
+
+    void resumeSimulation(long now) {
+        this.simulationResumedAt = now;
+        changed();
+    }
+
+    public boolean manualManagement() {
+        return this.manualManagement;
+    }
+
+    public boolean setManualManagement(UUID actor, boolean manual) {
+        if (!this.leader.equals(actor)) return false;
+        this.manualManagement = manual;
+        changed();
+        return true;
+    }
+
+    boolean manuallyStaffed(UUID resident) {
+        return this.manualDuties.contains(resident);
+    }
+
+    void rememberManualDuty(UUID resident) {
+        if (this.manualDuties.add(resident)) changed();
     }
 
     public long revision() {
@@ -879,6 +910,11 @@ public final class SettlementRecord {
             surveyTags.add(entry);
         });
         tag.put("Surveys", surveyTags);
+        tag.putBoolean("ManualManagement", this.manualManagement);
+        var manualDutyTags = new ListTag();
+        this.manualDuties.stream().sorted().forEach(id -> manualDutyTags.add(net.minecraft.nbt.NbtUtils.createUUID(id)));
+        tag.put("ManualDuties", manualDutyTags);
+        tag.putLong("SimulationResumedAt", this.simulationResumedAt);
         tag.put("Support", this.support.save());
         ListTag supportServices = new ListTag();
         SettlementStageRules.forStage(this.stage.next().orElse(this.stage)).services().stream().sorted()
@@ -982,6 +1018,9 @@ public final class SettlementRecord {
             throw new IllegalArgumentException("Saved settlement expansion radius exceeds its limit");
         }
         record.radius = Math.max(savedRadius, record.stage.radius());
+        record.manualManagement = tag.getBoolean("ManualManagement");
+        for (var id : tag.getList("ManualDuties", Tag.TAG_INT_ARRAY)) record.manualDuties.add(net.minecraft.nbt.NbtUtils.loadUUID(id));
+        record.simulationResumedAt = Math.max(0L, tag.getLong("SimulationResumedAt"));
         record.support = SettlementSupportState.load(tag.getCompound("Support"));
         var supportStage = record.stage.next().orElse(record.stage);
         Set<SettlementProgressionService.Requirement> supportedServices = SettlementStageRules.legacy(supportStage).services();

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -16,18 +15,12 @@ public final class SettlementProgressionService {
     private SettlementProgressionService() {
     }
 
-    public static void tick(MinecraftServer server) {
-        long gameTime = server.overworld().getGameTime();
-        if (gameTime % 200L != 0L) {
-            return;
-        }
-        var registry = VillageAllegianceRegistrySavedData.get(server.overworld());
-        for (SettlementRecord town : SettlementSavedData.get(server.overworld()).settlements()) {
-            Status status = assess(registry, town, gameTime);
-            town.support().observe(gameTime, status.missing().isEmpty(),
-                    status.population() > 0 && (status.housing() < status.population() || status.foodDays() < 0.25D));
-            town.changed();
-        }
+    static void update(ServerLevel level, SettlementRecord town, long now) {
+        Status status = assess(level, town);
+        town.support().observe(now, status.missing().isEmpty(),
+                status.population() > 0 && (status.housing() < status.population() || status.foodDays() < 0.25D));
+        town.changed();
+        if (!town.manualManagement() && assess(level, town).ready()) advance(town, now);
     }
 
     public static Status assess(ServerLevel level, SettlementRecord town) {
@@ -91,10 +84,14 @@ public final class SettlementProgressionService {
             }
             return false;
         }
+        advance(town, player.serverLevel().getGameTime());
+        return true;
+    }
+
+    private static void advance(SettlementRecord town, long now) {
         town.support().resetAdvancement();
         town.advance();
-        town.recordEvent(player.serverLevel().getGameTime(), SettlementEvent.Type.STAGE_ADVANCED, town.stage().name());
-        return true;
+        town.recordEvent(now, SettlementEvent.Type.STAGE_ADVANCED, town.stage().name());
     }
 
     private static boolean staffed(SettlementRecord town, SettlementAreaType type, Set<UUID> adults) {

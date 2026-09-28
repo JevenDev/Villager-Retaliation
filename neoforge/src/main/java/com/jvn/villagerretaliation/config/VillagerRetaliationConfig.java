@@ -19,6 +19,7 @@ public final class VillagerRetaliationConfig {
 
     public static final ConfigWrapper<?> CONFIG = loadConfig();
 
+    public static final ConfigValue<Integer> SETTLEMENT_MAX_BACKGROUND_VILLAGES = bind("settlements.maxBackgroundVillages", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_DAILY_NUTRITION = bind("settlements.dailyNutrition", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_ADVANCEMENT_DAYS = bind("settlements.advancementDays", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_FOOD_RESERVE_DAYS = bind("settlements.foodReserveDays", Integer.class);

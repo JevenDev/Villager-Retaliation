@@ -152,12 +152,38 @@ public final class HiredJobInventory implements Container {
         save();
         CompoundTag snapshot = jobInventoryTag(this.villager).copy();
         snapshot.putInt(LAYOUT_VERSION_TAG, CURRENT_LAYOUT_VERSION);
+        snapshot.putUUID("Owner", this.villager.getUUID());
         return snapshot;
     }
 
     public void restoreSnapshot(CompoundTag snapshot) {
+        if (snapshot.hasUUID("Owner") && !this.villager.getUUID().equals(snapshot.getUUID("Owner"))) {
+            throw new IllegalArgumentException("Job inventory snapshot belongs to another villager");
+        }
+        if (snapshot.getInt(LAYOUT_VERSION_TAG) > CURRENT_LAYOUT_VERSION) {
+            throw new IllegalArgumentException("Job inventory snapshot uses an unsupported layout");
+        }
+        validateSnapshotList(snapshot, ITEMS_TAG);
+        validateSnapshotList(snapshot, SLOT_TYPES_TAG);
+        var typedSlots = new java.util.HashSet<Integer>();
+        for (Tag raw : snapshot.getList(SLOT_TYPES_TAG, Tag.TAG_COMPOUND)) {
+            var type = (CompoundTag) raw;
+            int slot = type.getInt(SLOT_TAG);
+            if (!type.contains(SLOT_TAG, Tag.TAG_INT) || !isValidSlot(slot) || !typedSlots.add(slot)) {
+                throw new IllegalArgumentException("Job inventory snapshot contains an invalid slot layout");
+            }
+        }
         NonNullList<ItemStack> restored = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(snapshot, restored, this.villager.level().registryAccess());
+        var slots = new java.util.HashSet<Integer>();
+        for (Tag raw : snapshot.getList(ITEMS_TAG, Tag.TAG_COMPOUND)) {
+            var entry = (CompoundTag) raw;
+            int slot = entry.getByte(SLOT_TAG) & 255;
+            if (!entry.contains(SLOT_TAG, Tag.TAG_BYTE) || !isValidSlot(slot) || !slots.add(slot)) {
+                throw new IllegalArgumentException("Job inventory snapshot contains an invalid or duplicate slot");
+            }
+            restored.set(slot, ItemStack.parse(this.villager.registryAccess(), entry)
+                    .orElseThrow(() -> new IllegalArgumentException("Job inventory snapshot contains an invalid item")));
+        }
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
             if (equipmentSlot != null && (!this.items.get(slot).isEmpty() || !restored.get(slot).isEmpty())) {
@@ -172,6 +198,13 @@ public final class HiredJobInventory implements Container {
         this.villager.getPersistentData().put(TAG, restoredSnapshot);
         load();
         save();
+    }
+
+    private static void validateSnapshotList(CompoundTag snapshot, String key) {
+        if (!snapshot.contains(key)) return;
+        if (!(snapshot.get(key) instanceof ListTag entries) || !entries.isEmpty() && entries.getElementType() != Tag.TAG_COMPOUND) {
+            throw new IllegalArgumentException("Job inventory snapshot contains an invalid " + key + " list");
+        }
     }
 
     public static void clearInheritedStateForNewborn(Villager child) {

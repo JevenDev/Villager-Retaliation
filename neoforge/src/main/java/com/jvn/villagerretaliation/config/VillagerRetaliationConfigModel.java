@@ -71,6 +71,9 @@ public final class VillagerRetaliationConfigModel {
     public DebugOverlay debugOverlay = new DebugOverlay();
 
     public static final class Settlements {
+        @RangeConstraint(min = 0, max = 10000)
+        public int maxBackgroundVillages = 100;
+
         @RangeConstraint(min = 1, max = 100)
         public int dailyNutrition = 12;
 
