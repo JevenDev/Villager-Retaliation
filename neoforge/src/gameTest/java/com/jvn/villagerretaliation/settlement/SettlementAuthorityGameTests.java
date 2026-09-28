@@ -76,7 +76,8 @@ public final class SettlementAuthorityGameTests {
         UUID leader = UUID.randomUUID();
         var left = registry.create(0L, Level.OVERWORLD.location(), BlockPos.ZERO, "");
         var right = registry.create(0L, Level.OVERWORLD.location(), new BlockPos(64, 0, 0), "");
-        data.establish(registry, left, leader, BlockPos.ZERO, 0L).orElseThrow();
+        var leftTown = data.establish(registry, left, leader, BlockPos.ZERO, 0L).orElseThrow();
+        SettlementTestPlots.claim(data, registry, leftTown, new BlockPos(30, 0, 0), new BlockPos(40, 4, 8));
         data.establish(registry, right, leader, new BlockPos(64, 0, 0), 0L).orElseThrow();
         helper.assertTrue(data.putArea(registry, left, leader,
                 area(SettlementAreaType.WORKSHOP, new BlockPos(30, 0, 0), new BlockPos(40, 4, 8))),
@@ -138,19 +139,20 @@ public final class SettlementAuthorityGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100)
-    public static void registeredFootprintReplacesAutomaticExpansion(GameTestHelper helper) {
+    public static void claimedFootprintSurvivesAreaRemoval(GameTestHelper helper) {
         var registry = new VillageAllegianceRegistrySavedData();
         var data = new SettlementSavedData();
         UUID leader = UUID.randomUUID();
         var id = registry.create(0L, Level.OVERWORLD.location(), BlockPos.ZERO, "");
         data.establish(registry, id, leader, BlockPos.ZERO, 0L).orElseThrow();
         var farm = area(SettlementAreaType.FARM, new BlockPos(32, 0, 0), new BlockPos(47, 0, 15));
+        SettlementTestPlots.claim(data, registry, data.get(id).orElseThrow(), farm.min(), farm.max());
         data.putArea(registry, id, leader, farm);
         helper.assertTrue(registry.record(id).orElseThrow().footprintSections()
                 .contains(SectionPos.asLong(farm.min())), "registered areas contribute their footprint");
         data.removeArea(registry, id, leader, farm.id());
-        helper.assertFalse(registry.record(id).orElseThrow().footprintSections()
-                .contains(SectionPos.asLong(farm.min())), "removing an area removes its active footprint");
+        helper.assertTrue(registry.record(id).orElseThrow().footprintSections()
+                .contains(SectionPos.asLong(farm.min())), "removing an area preserves its owned plot");
         helper.assertTrue(registry.record(id).orElseThrow().historicalFootprintSections()
                 .contains(SectionPos.asLong(farm.min())), "historical references retain their prior footprint");
         helper.succeed();

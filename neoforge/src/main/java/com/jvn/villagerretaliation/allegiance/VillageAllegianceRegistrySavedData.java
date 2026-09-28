@@ -47,6 +47,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     private final Map<MergeKey, MergeObservation> mergeObservations = new HashMap<>();
     private final Map<ResourceLocation, Map<Long, List<VillageAllegianceId>>> footprintIndex = new HashMap<>();
     private boolean footprintIndexDirty = true;
+    private final Map<ResourceLocation, Map<Long, List<VillageAllegianceId>>> managedColumnIndex = new HashMap<>();
 
     public static VillageAllegianceRegistrySavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -238,7 +239,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     public boolean manage(VillageAllegianceId id, BlockPos center, Set<Long> footprint) {
         AllegianceRecord current = canonicalRecord(id).orElse(null);
-        if (current == null || current.archived() || center == null || footprint == null || footprint.isEmpty()) {
+        if (current == null || current.archived() || center == null || footprint == null) {
             return false;
         }
         boolean changed = this.managedIdentities.add(current.id());
@@ -289,6 +290,13 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     /** Read-only lookup used by UI and assignment diagnostics. */
     public Optional<VillageAllegianceId> peekAt(ServerLevel level, BlockPos pos) {
         return resolveAt(level, pos);
+    }
+
+    public boolean contains(AllegianceRecord village, BlockPos position) {
+        if (!isManaged(village.id())) return village.footprintSections().contains(SectionPos.asLong(position));
+        rebuildFootprintIndexIfNeeded();
+        return this.managedColumnIndex.getOrDefault(village.originDimension(), Map.of())
+                .getOrDefault(new net.minecraft.world.level.ChunkPos(position).toLong(), List.of()).contains(village.id());
     }
 
     public List<AllegianceRecord> recordsAt(ServerLevel level, BlockPos pos) {
@@ -781,9 +789,10 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     private List<AllegianceRecord> indexedRecords(ResourceLocation dimension, long section) {
         rebuildFootprintIndexIfNeeded();
-        List<VillageAllegianceId> ids = this.footprintIndex
-                .getOrDefault(dimension, Map.of())
-                .getOrDefault(section, List.of());
+        List<VillageAllegianceId> ids = new ArrayList<>(this.footprintIndex
+                .getOrDefault(dimension, Map.of()).getOrDefault(section, List.of()));
+        ids.addAll(this.managedColumnIndex.getOrDefault(dimension, Map.of()).getOrDefault(
+                net.minecraft.world.level.ChunkPos.asLong(SectionPos.x(section), SectionPos.z(section)), List.of()));
         if (ids.isEmpty()) {
             return List.of();
         }
@@ -802,15 +811,19 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return;
         }
         this.footprintIndex.clear();
+        this.managedColumnIndex.clear();
         for (AllegianceRecord record : this.records.values()) {
             if (record.archived() || record.originDimension() == null
                     || canonical(record.id()).filter(record.id()::equals).isEmpty()) {
                 continue;
             }
-            Map<Long, List<VillageAllegianceId>> dimensionIndex = this.footprintIndex.computeIfAbsent(
-                    record.originDimension(), ignored -> new HashMap<>());
+            boolean managed = isManaged(record.id());
+            Map<Long, List<VillageAllegianceId>> dimensionIndex = (managed ? this.managedColumnIndex : this.footprintIndex)
+                    .computeIfAbsent(record.originDimension(), ignored -> new HashMap<>());
             for (long section : record.footprintSections()) {
-                dimensionIndex.computeIfAbsent(section, ignored -> new ArrayList<>()).add(record.id());
+                long key = managed ? net.minecraft.world.level.ChunkPos.asLong(SectionPos.x(section), SectionPos.z(section)) : section;
+                var owners = dimensionIndex.computeIfAbsent(key, ignored -> new ArrayList<>());
+                if (!owners.contains(record.id())) owners.add(record.id());
             }
         }
         this.footprintIndexDirty = false;

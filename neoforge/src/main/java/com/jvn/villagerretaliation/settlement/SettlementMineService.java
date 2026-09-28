@@ -38,6 +38,7 @@ public final class SettlementMineService {
         for (var town : SettlementSavedData.get(level).settlements()) {
             if (!town.dimension().equals(level.dimension().location())) continue;
             for (var mine : town.mines().values()) {
+                if (!town.contains(mine.min(), mine.max())) continue;
                 for (var section : List.copyOf(mine.sections().values())) {
                     if (section.min().getX() >> 4 == chunk.getPos().x && section.min().getZ() >> 4 == chunk.getPos().z) {
                         boolean deferFluids = event instanceof ChunkEvent.Unload || !level.shouldTickBlocksAt(chunk.getPos().toLong());
@@ -50,7 +51,7 @@ public final class SettlementMineService {
     }
 
     static void observeArea(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
-        if (area.type() != SettlementAreaType.MINE) return;
+        if (area.type() != SettlementAreaType.MINE || !town.owns(area)) return;
         var mine = town.mines().get(area.id());
         if (mine == null || !mine.matches(area) && !mine.pending()) {
             mine = new SettlementMine(area);
@@ -102,6 +103,7 @@ public final class SettlementMineService {
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
         for (var mine : List.copyOf(town.mines().values())) {
+            if (!town.contains(mine.min(), mine.max())) continue;
             refresh(level, mine);
             SettlementMinePhysics.advance(level, mine);
             SettlementMineFluids.advance(level, mine, now);

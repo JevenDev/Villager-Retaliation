@@ -348,6 +348,7 @@ public final class SettlementRemoteConstructionGameTests {
         if (hamlet) town.advance();
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Building site",
                 origin.offset(-4, -1, -4), origin.offset(20, 12, 20), 5, true);
+        SettlementTestPlots.claim(level, town, area.min(), area.max());
         helper.assertTrue(town.putArea(town.leader(), area), "the construction designation is registered");
         for (var pos : BlockPos.betweenClosed(area.min(), area.max())) {
             level.setBlock(pos, pos.getY() < origin.getY() ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);

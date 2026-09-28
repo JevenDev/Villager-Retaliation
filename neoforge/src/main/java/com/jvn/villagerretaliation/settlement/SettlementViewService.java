@@ -93,6 +93,13 @@ public final class SettlementViewService {
     }
 
     static void update(Session session) {
+        if (session.level.getGameTime() % 10L == 0L) {
+            var plots = SettlementPlotService.snapshot(session.player, session.town, session.window);
+            if (!plots.equals(session.plots)) {
+                session.window = SettlementViewWindow.around(session.town, session.window.x(), session.window.z(), session.window.height());
+                sendState(session, true);
+            }
+        }
         int tickets = 0;
         for (ChunkPos position : session.window.chunks()) {
             if (!session.held.contains(position)) {
@@ -183,8 +190,9 @@ public final class SettlementViewService {
     }
 
     private static void sendState(Session session, boolean active) {
+        session.plots = SettlementPlotService.snapshot(session.player, session.town, session.window);
         PacketDistributor.sendToPlayer(session.player, new SettlementViewStatePayload(session.id, session.town.id().value(),
-                session.town.dimension(), session.requestId, session.window, active));
+                session.town.dimension(), session.requestId, session.window, active, session.plots));
     }
 
     static final class Session {
@@ -196,6 +204,7 @@ public final class SettlementViewService {
         final Set<ChunkPos> sent = new HashSet<>();
         final Set<ChunkPos> remote = new HashSet<>();
         SettlementViewWindow window;
+        com.jvn.villagerretaliation.network.SettlementPlotSnapshot plots;
         int requestId;
         long lastRequest;
 

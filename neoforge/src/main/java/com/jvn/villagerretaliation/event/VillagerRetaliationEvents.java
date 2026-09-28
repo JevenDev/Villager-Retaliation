@@ -251,6 +251,8 @@ public final class VillagerRetaliationEvents {
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
                 com.jvn.villagerretaliation.settlement.SettlementStageRules::reload);
+        event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
+                com.jvn.villagerretaliation.settlement.SettlementPlotPricing::reload);
         var registryAccess = event.getRegistryAccess();
         event.addListener((barrier, resourceManager, preparationProfiler, reloadProfiler, backgroundExecutor, gameExecutor) ->
                 java.util.concurrent.CompletableFuture

@@ -33,7 +33,7 @@ public final class SettlementBrewingStandService {
                 reconcileChunk(level, town, chunk);
                 for (var block : chunk.getBlockEntities().values()) {
                     if (block instanceof BrewingStandBlockEntity stand && SettlementBrewingStandState.supported(stand)) {
-                        var area = town.areas().values().stream().filter(candidate -> accepts(candidate, stand)).findFirst().orElse(null);
+                        var area = town.areas().values().stream().filter(candidate -> town.owns(candidate) && accepts(candidate, stand)).findFirst().orElse(null);
                         if (area != null) {
                             observe(level, town, area, stand, level.getGameTime());
                             chunk.setUnsaved(true);
@@ -47,6 +47,7 @@ public final class SettlementBrewingStandService {
     static void reconcileChunk(ServerLevel level, SettlementRecord town, LevelChunk chunk) {
         var construction = new SettlementConstructionMachines(level, town, chunk);
         for (var state : List.copyOf(town.brewingStands().values())) {
+            if (!town.contains(state.position()) || town.areas().containsKey(state.area()) && !town.owns(town.areas().get(state.area()))) continue;
             if (!new ChunkPos(state.position()).equals(chunk.getPos())) {
                 continue;
             }
@@ -107,6 +108,7 @@ public final class SettlementBrewingStandService {
             }
         }
         for (var state : List.copyOf(town.brewingStands().values())) {
+            if (!town.contains(state.position()) || town.areas().containsKey(state.area()) && !town.owns(town.areas().get(state.area()))) continue;
             var area = town.areas().get(state.area());
             var source = construction.source(state.position(), state.id());
             if (source != null) {

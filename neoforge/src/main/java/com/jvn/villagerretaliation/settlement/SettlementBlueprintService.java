@@ -90,7 +90,7 @@ public final class SettlementBlueprintService {
         BlockPos min = origin.offset(plan.localMin());
         BlockPos max = origin.offset(plan.localMax());
         var level = player.serverLevel();
-        return SettlementGuardOrder.within(town, min) && SettlementGuardOrder.within(town, max)
+        return town.contains(min, max)
                 && !level.isOutsideBuildHeight(min) && !level.isOutsideBuildHeight(max)
                 && level.getWorldBorder().isWithinBounds(min) && level.getWorldBorder().isWithinBounds(max);
     }

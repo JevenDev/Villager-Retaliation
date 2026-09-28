@@ -1,6 +1,6 @@
 {
   DataVersion: 3955,
-  size: [48, 16, 48],
+  size: [96, 16, 96],
   palette: [
     {
       Name: "minecraft:air"

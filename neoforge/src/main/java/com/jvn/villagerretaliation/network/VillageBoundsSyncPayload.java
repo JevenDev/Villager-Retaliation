@@ -46,6 +46,7 @@ public record VillageBoundsSyncPayload(
             buffer.writeUtf(entry.name(), NAME_LIMIT);
             buffer.writeBlockPos(entry.center());
             buffer.writeEnum(entry.lifecycle());
+            buffer.writeBoolean(entry.chunkColumns());
             buffer.writeVarInt(entry.sections().size());
             for (long section : entry.sections()) {
                 buffer.writeLong(section);
@@ -66,6 +67,7 @@ public record VillageBoundsSyncPayload(
             String name = buffer.readUtf(NAME_LIMIT);
             BlockPos center = buffer.readBlockPos();
             VillageLifecycleState lifecycle = buffer.readEnum(VillageLifecycleState.class);
+            boolean chunkColumns = buffer.readBoolean();
             int sectionCount = VillagerPayloads.readCollectionSize(
                     buffer, MAX_SECTIONS_PER_VILLAGE, "village footprint sections");
             totalSections += sectionCount;
@@ -76,7 +78,7 @@ public record VillageBoundsSyncPayload(
             for (int sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
                 sections.add(buffer.readLong());
             }
-            villages.add(new VillageEntry(id, name, center, lifecycle, sections));
+            villages.add(new VillageEntry(id, name, center, lifecycle, sections, chunkColumns));
         }
         return new VillageBoundsSyncPayload(enabled, dimension, villages, buffer.readVarInt());
     }
@@ -91,7 +93,11 @@ public record VillageBoundsSyncPayload(
             String name,
             BlockPos center,
             VillageLifecycleState lifecycle,
-            List<Long> sections) {
+            List<Long> sections, boolean chunkColumns) {
+        public VillageEntry(VillageAllegianceId id, String name, BlockPos center, VillageLifecycleState lifecycle, List<Long> sections) {
+            this(id, name, center, lifecycle, sections, false);
+        }
+
         public VillageEntry {
             name = name == null ? "" : name.strip();
             if (name.length() > NAME_LIMIT) {
@@ -104,7 +110,10 @@ public record VillageBoundsSyncPayload(
         }
 
         public boolean contains(BlockPos position) {
-            return position != null && this.sections.contains(SectionPos.asLong(position));
+            return position != null && (this.chunkColumns
+                    ? this.sections.stream().anyMatch(section -> SectionPos.x(section) == position.getX() >> 4
+                            && SectionPos.z(section) == position.getZ() >> 4)
+                    : this.sections.contains(SectionPos.asLong(position)));
         }
     }
 }

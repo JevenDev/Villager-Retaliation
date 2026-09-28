@@ -717,6 +717,7 @@ public final class SettlementAnimalHandlingGameTests {
         town.putArea(town.leader(), area);
         var storage = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Storage",
                 center.east(15), center.offset(18, 3, 3), 5, true);
+        SettlementTestPlots.claim(level, town, storage.min(), storage.max());
         town.putArea(town.leader(), storage);
         var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Home",
                 center.west(5), center.west(3), 5, true);

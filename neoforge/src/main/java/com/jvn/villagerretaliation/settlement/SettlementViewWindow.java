@@ -15,7 +15,7 @@ public record SettlementViewWindow(BlockPos center, int radius, double x, double
     public SettlementViewWindow {
         center = center.immutable();
         chunks = List.copyOf(chunks);
-        if (radius < 1 || radius > SettlementStageRules.MAX_RADIUS + BORDER || chunks.size() > MAX_CHUNKS
+        if (radius < 1 || radius > 60_000_000 + BORDER || chunks.size() > MAX_CHUNKS
                 || !Double.isFinite(x) || !Double.isFinite(z) || !Float.isFinite(height)
                 || height < MIN_HEIGHT || height > MAX_HEIGHT
                 || Math.abs(x - center.getX()) > radius || Math.abs(z - center.getZ()) > radius

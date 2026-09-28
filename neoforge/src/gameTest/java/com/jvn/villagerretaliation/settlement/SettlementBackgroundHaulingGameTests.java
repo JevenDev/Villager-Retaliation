@@ -266,6 +266,7 @@ public final class SettlementBackgroundHaulingGameTests {
         var id = registry.create(0L, level.dimension().location(), center, "");
         var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, 0L).orElseThrow();
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Distribution", center, center.offset(63, 2, 3), 5, true);
+        SettlementTestPlots.claim(level, town, area.min(), area.max());
         town.putArea(town.leader(), area);
         var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Homes", center.west(3), center.west(), 5, true);
         town.putArea(town.leader(), home);

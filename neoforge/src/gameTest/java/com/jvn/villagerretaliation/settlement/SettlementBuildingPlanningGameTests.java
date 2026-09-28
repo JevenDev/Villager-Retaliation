@@ -157,7 +157,7 @@ public final class SettlementBuildingPlanningGameTests {
                     build.anchor().east(fixture.town().radius() + 32), build.rotation(), build.builder()), "bounds", "the footprint must fit the settlement");
             helper.assertValueEqual(SettlementConstructionService.commission(delegate, fixture.town(), build.request(), build.structure(),
                     build.anchor().atY(helper.getLevel().getMaxBuildHeight()), build.rotation(), build.builder()), "bounds", "world height limits reject placement");
-            var storage = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Other duty", fixture.area().min().east(24), fixture.area().max().east(24), 5, true);
+            var storage = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Other duty", fixture.area().min().above(24), fixture.area().max().above(24), 5, true);
             helper.assertTrue(fixture.town().putArea(fixture.town().leader(), storage), "a second working duty exists");
             helper.assertTrue(fixture.town().assignDuty(build.builder(), storage.id()), "the builder takes another duty");
             helper.assertValueEqual(SettlementConstructionService.commission(delegate, fixture.town(), build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()), "builder", "another working duty prevents commissioning");

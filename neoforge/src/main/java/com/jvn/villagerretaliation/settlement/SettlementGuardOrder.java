@@ -23,8 +23,7 @@ public record SettlementGuardOrder(Mode mode, List<BlockPos> points) {
     }
 
     static boolean within(SettlementRecord town, BlockPos point) {
-        return Math.abs((long) point.getX() - town.center().getX()) <= town.radius()
-                && Math.abs((long) point.getZ() - town.center().getZ()) <= town.radius();
+        return town.contains(point);
     }
 
     CompoundTag save() {

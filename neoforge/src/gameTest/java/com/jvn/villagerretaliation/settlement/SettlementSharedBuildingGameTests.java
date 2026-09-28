@@ -87,7 +87,9 @@ public final class SettlementSharedBuildingGameTests {
         register(helper, fixture, SettlementAreaType.WORKSHOP, 5);
         var level = helper.getLevel();
         var registry = VillageAllegianceRegistrySavedData.get(level);
-        var center = fixture.town().center().above(48);
+        helper.assertFalse(SettlementSavedData.get(level).canEstablish(level.dimension().location(), fixture.town().center().above(48)),
+                "chunk columns cannot be founded above another settlement");
+        var center = fixture.town().center().offset(1_000_000, 0, 1_000_000);
         var id = registry.create(0L, level.dimension().location(), center, "");
         var other = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, 0L).orElseThrow();
         helper.assertFalse(SettlementSavedData.get(level).putArea(registry, id, other.leader(),

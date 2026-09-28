@@ -21,7 +21,7 @@ public final class SettlementStageRules {
     public static final int MAX_PROJECTS = 64;
     public static final int MAX_DEPOTS = 512;
     public static final int MAX_MARKET_CAPACITY = 65_536;
-    private static final Set<String> KEYS = Set.of("radius", "projects", "depots", "market_supply", "market_demand", "services");
+    private static final Set<String> KEYS = Set.of("radius", "projects", "depots", "market_supply", "market_demand", "services", "plots", "free_plots");
     private static final Set<SettlementProgressionService.Requirement> SERVICES = EnumSet.of(
             SettlementProgressionService.Requirement.FOOD_PRODUCTION, SettlementProgressionService.Requirement.KITCHEN,
             SettlementProgressionService.Requirement.GUARD_POST, SettlementProgressionService.Requirement.WORKSHOP,
@@ -48,7 +48,7 @@ public final class SettlementStageRules {
             try (var reader = resources.getResourceOrThrow(location).openAsReader()) {
                 var root = GsonHelper.parse(reader);
                 DatapackDiagnostics.warnUnknownRootKeys(location, "settlement stages", root, KEYS);
-                loaded.put(stage, parse(root));
+                loaded.put(stage, parse(root, stage));
             } catch (IOException | JsonParseException | IllegalArgumentException exception) {
                 throw new IllegalStateException("Invalid settlement stage rules at " + location, exception);
             }
@@ -57,6 +57,10 @@ public final class SettlementStageRules {
     }
 
     static Limits parse(JsonObject root) {
+        return parse(root, SettlementStage.CAMP);
+    }
+
+    private static Limits parse(JsonObject root, SettlementStage stage) {
         var services = EnumSet.noneOf(SettlementProgressionService.Requirement.class);
         for (var entry : GsonHelper.getAsJsonArray(root, "services")) {
             var requirement = SettlementProgressionService.Requirement.valueOf(
@@ -64,7 +68,9 @@ public final class SettlementStageRules {
             if (!services.add(requirement)) throw new IllegalArgumentException("Duplicate settlement service " + requirement);
         }
         return new Limits(integer(root, "radius"), integer(root, "projects"), integer(root, "depots"),
-                integer(root, "market_supply"), integer(root, "market_demand"), services);
+                integer(root, "market_supply"), integer(root, "market_demand"), services,
+                root.has("plots") ? integer(root, "plots") : defaultPlots(stage),
+                root.has("free_plots") ? integer(root, "free_plots") : defaultFreePlots(stage));
     }
 
     private static int integer(JsonObject root, String key) {
@@ -87,7 +93,7 @@ public final class SettlementStageRules {
             if (value == null) throw new IllegalArgumentException("Missing settlement stage " + stage);
             if (previous != null && (value.radius() < previous.radius() || value.projects() < previous.projects()
                     || value.depots() < previous.depots() || value.marketSupply() < previous.marketSupply()
-                    || value.marketDemand() < previous.marketDemand())) {
+                    || value.marketDemand() < previous.marketDemand() || value.plots() < previous.plots())) {
                 throw new IllegalArgumentException("Settlement capacities cannot decrease at " + stage);
             }
             if (stage == SettlementStage.CAMP && value.projects() != 0
@@ -126,16 +132,32 @@ public final class SettlementStageRules {
             }
             int projects = stage == SettlementStage.CAMP ? 0 : 1 << (stage.ordinal() - 1);
             int supply = stage.ordinal() < SettlementStage.VILLAGE.ordinal() ? 0 : 16 << stage.ordinal();
-            defaults.put(stage, new Limits(stage.legacyRadius(), projects, 8 << stage.ordinal(), supply, supply * 2, services));
+            defaults.put(stage, new Limits(stage.legacyRadius(), projects, 8 << stage.ordinal(), supply, supply * 2, services,
+                    defaultPlots(stage), defaultFreePlots(stage)));
         }
         return Map.copyOf(defaults);
     }
 
+    static int defaultPlots(SettlementStage stage) {
+        int side = 3 + 2 * stage.ordinal();
+        return side * side;
+    }
+
+    static int defaultFreePlots(SettlementStage stage) {
+        return stage == SettlementStage.CAMP ? 0 : 2 + 2 * stage.ordinal();
+    }
+
     public record Limits(int radius, int projects, int depots, int marketSupply, int marketDemand,
-                         Set<SettlementProgressionService.Requirement> services) {
+                         Set<SettlementProgressionService.Requirement> services, int plots, int freePlots) {
+        public Limits(int radius, int projects, int depots, int marketSupply, int marketDemand,
+                      Set<SettlementProgressionService.Requirement> services) {
+            this(radius, projects, depots, marketSupply, marketDemand, services, 9, 0);
+        }
+
         public Limits {
             services = Set.copyOf(services);
-            if (radius < 16 || radius > MAX_RADIUS || projects < 0 || projects > MAX_PROJECTS
+            if (plots < 9 || plots > 65_536 || freePlots < 0 || freePlots > 65_536
+                    || radius < 16 || radius > MAX_RADIUS || projects < 0 || projects > MAX_PROJECTS
                     || depots < 1 || depots > MAX_DEPOTS || marketSupply < 0 || marketSupply > MAX_MARKET_CAPACITY
                     || marketDemand < 0 || marketDemand > MAX_MARKET_CAPACITY || !SERVICES.containsAll(services)) {
                 throw new IllegalArgumentException("Settlement stage rules exceed their limits or contain a non-service requirement");

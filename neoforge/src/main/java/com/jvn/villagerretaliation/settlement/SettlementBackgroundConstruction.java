@@ -32,7 +32,7 @@ final class SettlementBackgroundConstruction {
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var project = town.activeProject(worker.id());
         var area = town.workplace(worker.area());
-        if (project == null || area == null || !area.enabled() || !project.area().equals(worker.area()) || !project.within(area)) {
+        if (project == null || !town.owns(project) || area == null || !area.enabled() || !project.area().equals(worker.area()) || !project.within(area)) {
             worker.status("no_construction_project");
             return;
         }

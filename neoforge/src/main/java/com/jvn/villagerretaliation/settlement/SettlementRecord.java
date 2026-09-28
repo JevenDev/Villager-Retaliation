@@ -66,6 +66,7 @@ public final class SettlementRecord {
     private UUID leader;
     private SettlementStage stage = SettlementStage.CAMP;
     private int radius = SettlementStage.CAMP.radius();
+    private SettlementTerritory territory;
     private long revision;
     private long simulationResumedAt;
     private boolean manualManagement;
@@ -80,6 +81,8 @@ public final class SettlementRecord {
         this.foundedAt = Math.max(0L, foundedAt);
         this.dirty = Objects.requireNonNull(dirty, "dirty");
         this.nextApplicantAt = this.foundedAt + 600L;
+        this.territory = new SettlementTerritory(center);
+        this.territory.start();
     }
 
     public VillageAllegianceId id() {
@@ -150,7 +153,33 @@ public final class SettlementRecord {
     }
 
     public int radius() {
-        return this.radius;
+        return Math.max(this.radius, this.territory.envelopeRadius(this.center));
+    }
+
+    public SettlementTerritory territory() { return this.territory; }
+
+    public boolean contains(BlockPos position) { return this.territory.contains(position); }
+
+    public boolean contains(BlockPos min, BlockPos max) { return this.territory.contains(min, max); }
+
+    public boolean owns(SettlementArea area) { return area != null && contains(area.min(), area.max()); }
+
+    boolean owns(SettlementProject project) {
+        return contains(project.min(), project.max())
+                && (project.workplace() == null || owns(project.workplace()))
+                && (project.site() == null || owns(project.site().area()));
+    }
+
+    void migrateTerritory(Set<Long> plots, String conflict) {
+        this.territory = new SettlementTerritory(this.center);
+        this.territory.migrate(plots, this.stage, conflict);
+        this.areas.replaceAll((id, area) -> effectiveArea(area));
+        changed();
+    }
+
+    private SettlementArea effectiveArea(SettlementArea area) {
+        return area == null || !this.territory.migrated() || owns(area) || !area.enabled() ? area
+                : new SettlementArea(area.id(), area.type(), area.name(), area.min(), area.max(), area.priority(), false);
     }
 
     public SettlementEconomy economy() {
@@ -537,16 +566,16 @@ public final class SettlementRecord {
     public SettlementArea workplace(UUID id) {
         if (id == null) return null;
         var area = this.areas.get(id);
-        if (area != null) return area;
+        if (area != null) return effectiveArea(area);
         return this.projects.values().stream().filter(project -> project.workplace() != null
-                && project.area().equals(id) && (project.active() || project.site() != null)).map(SettlementProject::workplace).findFirst().orElse(null);
+                && project.area().equals(id) && (project.active() || project.site() != null)).map(SettlementProject::workplace).map(this::effectiveArea).findFirst().orElse(null);
     }
 
     public java.util.List<SettlementArea> workplaces() {
         var result = new java.util.ArrayList<>(this.areas.values());
         this.projects.values().stream().filter(project -> project.workplace() != null && project.reservesFootprint())
                 .map(SettlementProject::workplace).forEach(result::add);
-        return java.util.List.copyOf(result);
+        return result.stream().map(this::effectiveArea).toList();
     }
 
     public Map<UUID, UUID> duties() {
@@ -581,7 +610,7 @@ public final class SettlementRecord {
     boolean startProject(UUID actor, SettlementProject project) {
         var area = project.workplace() == null ? workplace(project.area()) : project.workplace();
         if (!permits(actor, SettlementPermission.BUILD) || !project.active() || !project.town().equals(this.id.value())
-                || this.projects.containsKey(project.id()) || !project.within(area)
+                || this.projects.containsKey(project.id()) || !project.within(area) || !owns(project)
                 || project.workplace() == null && !project.area().equals(this.duties.get(project.builder()))
                 || project.workplace() != null && !Objects.equals(project.previousArea(), this.duties.get(project.builder()))
                 || activeProject(project.builder()) != null
@@ -686,7 +715,7 @@ public final class SettlementRecord {
     SettlementDepot registerDepot(UUID actor, UUID areaId, BlockPos position, SettlementDepotPurpose purpose) {
         SettlementArea area = this.areas.get(areaId);
         if (!permits(actor, SettlementPermission.LOGISTICS) || area == null || purpose == null
-                || area.type() == SettlementAreaType.HOME || !area.contains(position)
+                || area.type() == SettlementAreaType.HOME || !area.contains(position) || !owns(area)
                 || this.depots.size() >= this.stage.depots()
                 || this.depots.values().stream().anyMatch(depot -> depot.position().equals(position))) {
             return null;
@@ -725,7 +754,7 @@ public final class SettlementRecord {
 
     public int housingCapacity() {
         return this.areas.values().stream()
-                .filter(area -> area.enabled() && area.type() == SettlementAreaType.HOME)
+                .filter(area -> area.enabled() && owns(area) && area.type() == SettlementAreaType.HOME)
                 .map(area -> this.surveys.get(area.id()))
                 .filter(Objects::nonNull)
                 .mapToInt(survey -> survey.beds().size())
@@ -788,7 +817,7 @@ public final class SettlementRecord {
 
     boolean putArea(UUID actor, SettlementArea area) {
         if (!permits(actor, SettlementPermission.BUILD) || area == null
-                || !area.within(this.center, this.radius)
+                || !owns(area)
                 || this.projects.values().stream().anyMatch(project -> project.workplace() != null
                         && (project.area().equals(area.id()) || project.reservesFootprint() && project.overlaps(area)
                                 && area.type().changesTerrain() && area.type() != SettlementAreaType.CONSTRUCTION))
@@ -832,6 +861,7 @@ public final class SettlementRecord {
 
     void refreshStageRules(boolean resetSupport) {
         this.radius = Math.max(this.radius, this.stage.radius());
+        this.territory.refresh(this.stage);
         if (resetSupport) this.support.resetAdvancement();
         changed();
     }
@@ -840,6 +870,7 @@ public final class SettlementRecord {
         this.stage.next().ifPresent(next -> {
             this.stage = next;
             this.radius = Math.max(this.radius, next.radius());
+            this.territory.advance(next);
             changed();
         });
     }
@@ -862,6 +893,7 @@ public final class SettlementRecord {
         tag.put("History", historyTags);
         tag.putString("Stage", this.stage.name());
         tag.putInt("ExpansionRadius", this.radius);
+        tag.put("Territory", this.territory.save());
         ListTag delegateTags = new ListTag();
         this.delegates.forEach((player, permissions) -> {
             CompoundTag entry = new CompoundTag();
@@ -1013,6 +1045,9 @@ public final class SettlementRecord {
             record.history.add(event);
         }
         record.stage = SettlementStage.valueOf(tag.getString("Stage"));
+        record.territory = tag.contains("Territory", Tag.TAG_COMPOUND)
+                ? SettlementTerritory.load(record.center, tag.getCompound("Territory")) : new SettlementTerritory(record.center);
+        record.territory.refresh(record.stage);
         int savedRadius = tag.contains("ExpansionRadius") ? tag.getInt("ExpansionRadius") : record.stage.legacyRadius();
         if (savedRadius < 16 || savedRadius > SettlementStageRules.MAX_RADIUS) {
             throw new IllegalArgumentException("Saved settlement expansion radius exceeds its limit");
@@ -1203,7 +1238,7 @@ public final class SettlementRecord {
         }
         for (Tag raw : tag.getList("Areas", Tag.TAG_COMPOUND)) {
             SettlementArea area = SettlementArea.load((CompoundTag) raw);
-            if (!area.within(record.center, record.radius) || record.areas.size() >= MAX_AREAS
+            if (!record.territory.migrated() && !area.within(record.center, record.radius) || record.areas.size() >= MAX_AREAS
                     || record.areas.containsKey(area.id())
                     || record.areas.values().stream().anyMatch(existing -> existing.conflictsWith(area))) {
                 throw new IllegalArgumentException("Settlement areas exceed their bounds or have conflicting uses");
@@ -1213,7 +1248,7 @@ public final class SettlementRecord {
         for (Tag raw : tag.getList("Projects", Tag.TAG_COMPOUND)) {
             var project = SettlementProject.load((CompoundTag) raw);
             if (!project.town().equals(record.id.value()) || record.projects.putIfAbsent(project.id(), project) != null
-                    || project.workplace() != null && (!project.workplace().within(record.center, record.radius)
+                    || project.workplace() != null && (!record.territory.migrated() && !project.workplace().within(record.center, record.radius)
                             || record.areas.containsKey(project.area()))) {
                 throw new IllegalArgumentException("Invalid or duplicated construction project");
             }
@@ -1237,7 +1272,9 @@ public final class SettlementRecord {
             UUID resident = entry.getUUID("Resident");
             var area = record.workplace(record.duties.get(resident));
             var order = SettlementGuardOrder.load(entry);
-            if (area == null || area.type() != SettlementAreaType.GUARD_POST || !order.within(record)
+            if (area == null || area.type() != SettlementAreaType.GUARD_POST || !record.territory.migrated() && !order.points().stream().allMatch(point ->
+                            Math.abs((long) point.getX() - record.center.getX()) <= record.radius
+                                    && Math.abs((long) point.getZ() - record.center.getZ()) <= record.radius)
                     || record.guardOrders.putIfAbsent(resident, order) != null) {
                 throw new IllegalArgumentException("Guard order is duplicated or outside its settlement");
             }
@@ -1284,6 +1321,7 @@ public final class SettlementRecord {
                 throw new IllegalArgumentException("Building survey is duplicated or outside its area");
             }
         }
+        record.areas.replaceAll((id, area) -> record.effectiveArea(area));
         return record;
     }
 }

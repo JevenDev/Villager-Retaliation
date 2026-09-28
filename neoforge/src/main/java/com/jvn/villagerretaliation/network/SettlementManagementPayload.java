@@ -270,6 +270,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         header.spent().write(buffer);
         buffer.writeVarInt(header.issues());
         buffer.writeBoolean(header.manualManagement());
+        SettlementPlotSnapshot.Totals.write(buffer, header.plots());
     }
 
     private static Header readHeader(RegistryFriendlyByteBuf buffer) {
@@ -299,7 +300,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         return new Header(id, name, center, leader, permissions, stage, radius, projects, depots, supply, demand,
                 population, housing, food, shortage, support, required,
                 ready, missing, CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer),
-                buffer.readVarInt(), buffer.readBoolean());
+                buffer.readVarInt(), buffer.readBoolean(), SettlementPlotSnapshot.Totals.read(buffer));
     }
 
     private static void writeOptionalId(RegistryFriendlyByteBuf buffer, UUID id) {
@@ -341,11 +342,13 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                          SettlementStage stage, int radius, int projectLimit, int depotLimit, int marketSupply, int marketDemand,
                          int population, int housing, double foodDays, long shortageTicks,
                          long supportTicks, long requiredTicks, boolean ready, List<SettlementProgressionService.Requirement> missing,
-                         CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent, int issues, boolean manualManagement) {
+                         CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent, int issues, boolean manualManagement, SettlementPlotSnapshot.Totals plots) {
         public Header {
+            java.util.Objects.requireNonNull(plots);
+            if (radius < 1 || radius > 60_000_000) throw new IllegalArgumentException("Invalid camera envelope");
             if (issues < 0) throw new IllegalArgumentException("Invalid settlement issue count");
             new com.jvn.villagerretaliation.settlement.SettlementStageRules.Limits(
-                    radius, projectLimit, depotLimit, marketSupply, marketDemand, Set.of());
+                    16, projectLimit, depotLimit, marketSupply, marketDemand, Set.of());
             permissions = Set.copyOf(permissions);
             missing = List.copyOf(missing);
             center = center.immutable();

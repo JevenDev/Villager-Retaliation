@@ -70,7 +70,7 @@ public final class SettlementSimulationService {
     }
 
     private void refresh(MinecraftServer server, long now, long currentDay, int cap) {
-        var towns = SettlementSavedData.get(server.overworld()).settlements();
+        var towns = SettlementSavedData.get(server.overworld()).settlements().stream().filter(town -> town.territory().active()).toList();
         var reconciliation = new ArrayList<Runnable>();
         for (var town : towns) {
             if (town.arrivals().isEmpty()) continue;

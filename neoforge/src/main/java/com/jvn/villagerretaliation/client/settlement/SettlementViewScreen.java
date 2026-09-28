@@ -71,6 +71,13 @@ public final class SettlementViewScreen extends Screen {
     private boolean moved;
     private int panelLeft;
     private int panelWidth;
+    private boolean plotMode;
+    private boolean plotPending;
+    private net.minecraft.world.level.ChunkPos selectedPlot;
+    private com.jvn.villagerretaliation.network.SettlementPlotSnapshot plotSnapshot;
+    private Button claimFree;
+    private Button buyPlot;
+    private Component plotFeedback = Component.empty();
     private Button manage;
     private Button drawArea;
     private final Button[] guardButtons = new Button[3];
@@ -112,6 +119,7 @@ public final class SettlementViewScreen extends Screen {
         this.parent = parent;
         this.header = parent.snapshot().header();
         this.session = payload.session();
+        this.plotSnapshot = payload.plots();
         this.window = payload.window();
         this.focusX = this.window.x();
         this.focusZ = this.window.z();
@@ -190,7 +198,9 @@ public final class SettlementViewScreen extends Screen {
             return;
         }
         this.acceptedRequestId = payload.requestId();
+        this.plotSnapshot = payload.plots();
         this.window = payload.window();
+        updatePlotActions();
         SettlementViewChunks.update(this.window);
         if (payload.requestId() >= this.requestId && !this.moved) {
             this.focusX = this.window.x();
@@ -241,6 +251,12 @@ public final class SettlementViewScreen extends Screen {
     }
 
     void acceptResult(SettlementManagementActionResultPayload payload) {
+        if (this.plotPending && this.header.id().equals(payload.town())) {
+            this.plotPending = false;
+            this.plotFeedback = text(payload.applied() ? "plot_claimed" : "plot_" + payload.failure());
+            this.moved = true;
+            updatePlotActions();
+        }
         if (this.guardPending && this.header.id().equals(payload.town())) {
             this.guardPending = false;
             this.guardFeedback = text(payload.applied() ? "guard_applied" : "guard_denied");
@@ -267,6 +283,8 @@ public final class SettlementViewScreen extends Screen {
         this.manage = addRenderableWidget(Button.builder(text("manage_selection"), ignored -> manageSelection())
                 .bounds(this.panelLeft + 8, this.height - 70, this.panelWidth - 16, 20).build());
         this.drawArea = addRenderableWidget(Button.builder(text("draw_area"), ignored -> {
+            this.plotMode = false;
+            updatePlotActions();
             this.guardMode = null;
             this.guardPoints.clear();
             this.parent.clearBuildingDraft();
@@ -280,14 +298,15 @@ public final class SettlementViewScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), ignored -> onClose())
                 .bounds(this.panelLeft + 8, this.height - 26, this.panelWidth - 16, 20).build());
         addRenderableWidget(Button.builder(text("center"), ignored -> {
-            this.focusX = this.window.center().getX() + 0.5D;
-            this.focusZ = this.window.center().getZ() + 0.5D;
-            this.panVelocityX = 0.0D;
-            this.panVelocityZ = 0.0D;
-            this.moved = true;
+            focus(this.window.center().getX() + 0.5D, this.window.center().getZ() + 0.5D);
         }).bounds(8, 8, 76, 20).build());
         addRenderableWidget(Button.builder(Component.literal("-"), ignored -> zoom(1.0D)).bounds(88, 8, 22, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), ignored -> zoom(-1.0D)).bounds(114, 8, 22, 20).build());
+        addRenderableWidget(Button.builder(text("plots"), ignored -> togglePlots()).bounds(140, 8, Math.min(64, this.panelLeft - 148), 20).build());
+        this.claimFree = addRenderableWidget(Button.builder(text("plot_free"), ignored -> claimPlot(true)).bounds(8, 62, Math.min(104, this.panelLeft - 16), 20).build());
+        this.buyPlot = addRenderableWidget(Button.builder(text("plot_buy", 0), ignored -> claimPlot(false)).bounds(this.panelLeft >= 288 ? 116 : 8, this.panelLeft >= 288 ? 62 : 86,
+                        Math.min(156, this.panelLeft - 16), 20).build());
+        updatePlotActions();
         for (var mode : SettlementGuardOrder.Mode.values()) {
             this.guardButtons[mode.ordinal()] = addRenderableWidget(Button.builder(text("guard_" + mode.name().toLowerCase(java.util.Locale.ROOT)),
                     ignored -> beginGuardOrder(mode)).bounds(8 + mode.ordinal() * 76, 52, 72, 20).build());
@@ -299,6 +318,8 @@ public final class SettlementViewScreen extends Screen {
             this.editingArea = null;
             this.guardMode = null;
             this.gizmo = null;
+            this.plotMode = false;
+            updatePlotActions();
             management().newBuilding();
         }).bounds(this.panelLeft + 8, 150, this.panelWidth - 16, 20).build());
         this.transform = addRenderableWidget(Button.builder(text("gizmo_move"), ignored -> {
@@ -415,6 +436,7 @@ public final class SettlementViewScreen extends Screen {
         }
         synchronizeGizmo();
         if (this.gizmo != null && mouseX < this.panelLeft && !SettlementViewClient.panelsOpen(this)) this.gizmo.hover(ray(mouseX, mouseY));
+        if (this.plotMode) renderPlotLabels(graphics);
         graphics.fill(this.panelLeft, 0, this.width, this.height, 0xE0101010);
         graphics.drawString(this.font, this.font.plainSubstrByWidth(this.header.name(), this.panelWidth - 16),
                 this.panelLeft + 8, 10, 0xFFFFFF);
@@ -422,13 +444,21 @@ public final class SettlementViewScreen extends Screen {
                 this.panelLeft + 8, 28, 0xD0D0D0);
         graphics.drawString(this.font, text("food", String.format(java.util.Locale.ROOT, "%.1f", this.header.foodDays())),
                 this.panelLeft + 8, 42, 0xD0D0D0);
-        Component selection = selectedName();
-        int y = 184;
-        for (var line : this.font.split(selection, this.panelWidth - 16)) {
-            if (y + this.font.lineHeight > this.height - 78) {
+        if (this.plotMode) {
+            var totals = this.plotSnapshot.totals();
+            int plotY = 34;
+            for (var line : this.font.split(text("plot_totals", totals.owned(), totals.capacity(), totals.free(), totals.spendable().decimal(2)), this.panelLeft - 16)) {
+                graphics.drawString(this.font, line, 8, plotY, 0xFFFFFF);
+                plotY += this.font.lineHeight + 1;
+            }
+        }
+        Component selection = this.plotMode ? plotDescription() : selectedName();
+        int y = this.plotMode ? this.buyPlot.getBottom() + 8 : 184;
+        for (var line : this.font.split(selection, this.plotMode ? this.panelLeft - 16 : this.panelWidth - 16)) {
+            if (y + this.font.lineHeight > this.height - (this.plotMode ? 48 : 78)) {
                 break;
             }
-            graphics.drawString(this.font, line, this.panelLeft + 8, y, 0xFFFFFF);
+            graphics.drawString(this.font, line, this.plotMode ? 8 : this.panelLeft + 8, y, 0xFFFFFF);
             y += this.font.lineHeight + 2;
         }
         var draft = this.parent.buildingDraft();
@@ -436,6 +466,7 @@ public final class SettlementViewScreen extends Screen {
                 : this.editingArea != null ? text("gizmo_area_hint")
                 : this.guardMode != null ? text(this.guardMode == SettlementGuardOrder.Mode.PATROL
                 ? "guard_patrol_hint" : "guard_destination_hint", this.guardPoints.size(), SettlementGuardOrder.MAX_POINTS)
+                : this.plotMode ? text("plot_hint")
                 : !this.guardFeedback.getString().isEmpty() ? this.guardFeedback : text(this.drawing ? "draw_hint" : "controls");
         var lines = this.font.split(hint, Math.max(80, this.panelLeft - 16));
         int hintTop = this.height - 8 - lines.size() * (this.font.lineHeight + 1);
@@ -503,12 +534,12 @@ public final class SettlementViewScreen extends Screen {
         }
         for (var button : this.guardButtons) {
             if (button != null) {
-                button.visible = selectedGuard() && !manipulating;
+                button.visible = selectedGuard() && !manipulating && !this.plotMode;
                 button.active = !this.guardPending;
             }
         }
         if (this.returnToPost != null) {
-            this.returnToPost.visible = selectedGuard() && !manipulating;
+            this.returnToPost.visible = selectedGuard() && !manipulating && !this.plotMode;
             this.returnToPost.active = !this.guardPending;
             this.guardButtons[SettlementGuardOrder.Mode.PATROL.ordinal()].setMessage(text(
                     this.guardMode == SettlementGuardOrder.Mode.PATROL ? "guard_finish_patrol" : "guard_patrol"));
@@ -613,6 +644,12 @@ public final class SettlementViewScreen extends Screen {
 
     private boolean held(int key) {
         return this.heldKeys.contains(key);
+    }
+
+    void focus(double x, double z) {
+        this.panVelocityX = 0.0D;
+        this.panVelocityZ = 0.0D;
+        pan(x - this.focusX, z - this.focusZ);
     }
 
     private void pan(double x, double z) {
@@ -730,6 +767,11 @@ public final class SettlementViewScreen extends Screen {
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
             this.panning = true;
+            return true;
+        }
+        if (this.plotMode && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
+            var hit = pick(x, y);
+            if (hit.position() != null) selectPlot(new net.minecraft.world.level.ChunkPos(hit.position()));
             return true;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.parent.buildingDraft() != null) {
@@ -918,6 +960,124 @@ public final class SettlementViewScreen extends Screen {
         pose.popPose();
         buffers.endBatch(RenderType.lines());
         buffers.endBatch(SettlementSelectionGizmo.LINES);
+        if (this.plotMode) renderPlots(event);
+    }
+
+    void togglePlots() {
+        this.plotMode = !this.plotMode;
+        this.drawing = false;
+        this.guardMode = null;
+        this.guardPoints.clear();
+        this.gizmo = null;
+        this.editingArea = null;
+        this.parent.clearBuildingDraft();
+        this.popup = null;
+        updateActions();
+        updatePlotActions();
+    }
+
+    com.jvn.villagerretaliation.network.SettlementPlotSnapshot plots() { return this.plotSnapshot; }
+
+    void selectPlot(net.minecraft.world.level.ChunkPos chunk) {
+        this.selectedPlot = chunk;
+        this.plotFeedback = Component.empty();
+        updatePlotActions();
+    }
+
+    private com.jvn.villagerretaliation.network.SettlementPlotSnapshot.Plot plotOffer() {
+        return this.plotSnapshot.plots().stream().filter(plot -> plot.chunk().equals(this.selectedPlot)).findFirst().orElse(null);
+    }
+
+    private void updatePlotActions() {
+        if (this.claimFree == null) return;
+        var offer = plotOffer();
+        this.claimFree.visible = this.plotMode;
+        this.buyPlot.visible = this.plotMode;
+        this.claimFree.active = offer != null && offer.freeFailure().isEmpty() && !this.plotPending;
+        this.buyPlot.active = offer != null && offer.paidFailure().isEmpty() && !this.plotPending;
+        this.buyPlot.setMessage(text("plot_buy", offer == null ? 0 : offer.price()));
+    }
+
+    void claimPlot(boolean free) {
+        var offer = plotOffer();
+        if (offer == null || this.plotPending || !(free ? offer.freeFailure() : offer.paidFailure()).isEmpty()) return;
+        this.plotPending = true;
+        PacketDistributor.sendToServer(new SettlementManagementActionPayload(this.header.id(),
+                new SettlementManagementActionPayload.ClaimPlot(offer.chunk().x, offer.chunk().z, free,
+                        this.plotSnapshot.totals().revision(), offer.price())));
+        updatePlotActions();
+    }
+
+    private Component plotDescription() {
+        var description = Component.empty();
+        if (!this.plotSnapshot.totals().conflict().isEmpty()) description.append(this.plotSnapshot.totals().conflict()).append("\n");
+        var offer = plotOffer();
+        if (offer == null) return description.append(text("plot_select"));
+        description.append(text("plot_position", offer.chunk().x, offer.chunk().z)).append("\n");
+        if (offer.owned()) description.append(text("plot_owned"));
+        else {
+            description.append(text("plot_buy", offer.price())).append("\n");
+            if (!offer.freeFailure().isEmpty()) description.append(text("plot_" + offer.freeFailure())).append("\n");
+            if (!offer.paidFailure().isEmpty() && !offer.paidFailure().equals(offer.freeFailure())) {
+                description.append(text("plot_" + offer.paidFailure())).append("\n");
+            }
+            if (offer.freeFailure().equals("capacity") || offer.paidFailure().equals("capacity")) {
+                this.header.stage().next().ifPresent(stage -> description.append(text("plot_next", stage.name())).append("\n"));
+            }
+        }
+        return description.append("\n").append(this.plotFeedback);
+    }
+
+    private void renderPlots(RenderLevelStageEvent event) {
+        var pose = event.getPoseStack();
+        var cameraPosition = event.getCamera().getPosition();
+        var buffers = this.minecraft.renderBuffers().bufferSource();
+        pose.pushPose();
+        pose.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
+        var lines = buffers.getBuffer(RenderType.lines());
+        for (var plot : this.plotSnapshot.plots()) {
+            if (!plot.owned() && !plot.eligible()) continue;
+            var chunk = this.minecraft.level.getChunkSource().getChunk(plot.chunk().x, plot.chunk().z, false);
+            if (chunk == null) continue;
+            double y = plotHeight(chunk);
+            boolean selected = plot.chunk().equals(this.selectedPlot);
+            LevelRenderer.renderLineBox(pose, lines, new AABB(plot.chunk().getMinBlockX(), y, plot.chunk().getMinBlockZ(),
+                    plot.chunk().getMaxBlockX() + 1, y + 0.06D, plot.chunk().getMaxBlockZ() + 1),
+                    selected ? 1.0F : plot.owned() ? 0.3F : 0.2F, 0.9F, plot.owned() ? 1.0F : 0.3F, 0.95F);
+        }
+        buffers.endBatch(RenderType.lines());
+        pose.popPose();
+    }
+
+    private double plotHeight(net.minecraft.world.level.chunk.LevelChunk chunk) {
+        double y = this.minecraft.level.getMinBuildHeight();
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) y = Math.max(y, chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1.15D);
+        }
+        return y;
+    }
+
+    private void renderPlotLabels(GuiGraphics graphics) {
+        var camera = this.minecraft.gameRenderer.getMainCamera();
+        double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
+        graphics.enableScissor(0, 30, this.panelLeft, this.height - 40);
+        for (var plot : this.plotSnapshot.plots()) {
+            if (plot.owned() || !plot.eligible()) continue;
+            var chunk = this.minecraft.level.getChunkSource().getChunk(plot.chunk().x, plot.chunk().z, false);
+            if (chunk == null) continue;
+            var relative = new Vec3(plot.chunk().getMiddleBlockX() + 0.5D, plotHeight(chunk) + 1.0D,
+                    plot.chunk().getMiddleBlockZ() + 0.5D).subtract(camera.getPosition());
+            double depth = relative.dot(new Vec3(camera.getLookVector()));
+            if (depth <= 0.1D) continue;
+            int x = (int) (this.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * this.height / (2.0D * depth * tangent));
+            int y = (int) (this.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * this.height / (2.0D * depth * tangent));
+            var label = text("plot_price", plot.price());
+            int half = this.font.width(label) / 2;
+            if (x + half < 0 || x - half >= this.panelLeft || y < this.buyPlot.getBottom() + 8) continue;
+            graphics.fill(x - half - 3, y - 2, x + half + 3, y + this.font.lineHeight + 2, 0xC0102010);
+            graphics.drawString(this.font, label, x - half, y, 0xFFFFFF);
+        }
+        graphics.disableScissor();
     }
 
     private AABB draftBounds() {

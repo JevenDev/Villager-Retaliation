@@ -379,6 +379,7 @@ public final class SettlementRemoteStaffingGameTests {
     private static SettlementArea area(Fixture fixture, SettlementAreaType type, int offset) {
         var min = fixture.town().center().east(offset);
         var area = new SettlementArea(UUID.randomUUID(), type, "Workplace", min, min.offset(2, 2, 2), 5, true);
+        SettlementTestPlots.claim(fixture.leader().serverLevel(), fixture.town(), area.min(), area.max());
         if (!fixture.town().putArea(fixture.town().leader(), area)) throw new IllegalStateException("Test workplace could not be registered");
         return area;
     }

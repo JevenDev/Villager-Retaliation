@@ -20,7 +20,7 @@ final class SettlementConstructionMachines {
         SettlementBuildingSurvey.ObservedBlocks blocks = null;
         for (var project : town.projects().values()) {
             var site = project.site();
-            if (site == null) continue;
+            if (site == null || !town.owns(project)) continue;
             for (var placement : site.placements().values()) {
                 for (var part : placement.parts()) {
                     if (!part.after().is(Blocks.FURNACE) && !part.after().is(Blocks.SMOKER)

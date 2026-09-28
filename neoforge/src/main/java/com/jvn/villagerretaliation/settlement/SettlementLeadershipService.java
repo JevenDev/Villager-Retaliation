@@ -107,8 +107,7 @@ public final class SettlementLeadershipService {
         if (village == null || !player.isAlive() || player.isSpectator() || player.distanceToSqr(table.getCenter()) > 64.0D
                 || !level.hasChunkAt(table)
                 || !level.getBlockState(table).is(VillagerRetaliationBlocks.SETTLEMENT_MANAGEMENT.get())
-                || !registry.discoverAt(level, table).flatMap(registry::canonical).filter(village.id()::equals).isPresent()
-                || !SettlementSavedData.get(level).canEstablish(level.dimension().location(), table)) {
+                || !registry.discoverAt(level, table).flatMap(registry::canonical).filter(village.id()::equals).isPresent()) {
             return Optional.empty();
         }
         observe(level, village);

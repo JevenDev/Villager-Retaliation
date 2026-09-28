@@ -424,6 +424,7 @@ public final class SettlementConstructionGameTests {
         town.economy().credit(com.jvn.villagerretaliation.sell.CurrencyAmount.of(10_000, 1));
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Building site",
                 origin.offset(-4, -1, -4), origin.offset(20, 12, 20), 5, true);
+        SettlementTestPlots.claim(level, town, area.min(), area.max());
         helper.assertTrue(town.putArea(leader.getUUID(), area), "the construction area is registered");
         var entry = BuilderStructureCatalog.byId(level.getServer(),
                 ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1")).orElseThrow();

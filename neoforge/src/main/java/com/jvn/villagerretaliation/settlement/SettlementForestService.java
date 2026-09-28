@@ -30,6 +30,7 @@ public final class SettlementForestService {
         for (var town : SettlementSavedData.get(level).settlements()) {
             if (!town.dimension().equals(level.dimension().location())) continue;
             for (var forest : town.forests().values()) {
+                if (!forest.ownedBy(town)) continue;
                 for (var section : List.copyOf(forest.sections().values())) {
                     if (section.min().getX() >> 4 == chunk.getPos().x && section.min().getZ() >> 4 == chunk.getPos().z) {
                         if (!reconcile(level, section, chunk) && !section.pending()) forest.remove(section.origin());
@@ -43,7 +44,7 @@ public final class SettlementForestService {
     }
 
     static void observeArea(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
-        if (area.type() != SettlementAreaType.FORESTRY) return;
+        if (area.type() != SettlementAreaType.FORESTRY || !town.owns(area)) return;
         var forest = town.forests().get(area.id());
         if (forest == null || !forest.matches(area) && !forest.pending()) {
             forest = new SettlementForest(area);
@@ -95,6 +96,7 @@ public final class SettlementForestService {
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
         for (var forest : List.copyOf(town.forests().values())) {
+            if (!forest.ownedBy(town)) continue;
             refresh(level, forest);
             var area = town.areas().get(forest.area());
             SettlementForestGrowth.advance(level, forest, area != null && area.enabled() && forest.matches(area), now);

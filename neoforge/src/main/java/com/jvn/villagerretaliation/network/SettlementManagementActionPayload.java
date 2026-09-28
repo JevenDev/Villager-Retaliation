@@ -32,6 +32,14 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
     private static void encode(RegistryFriendlyByteBuf buffer, SettlementManagementActionPayload payload) {
         buffer.writeUUID(payload.town());
         switch (payload.command()) {
+            case ClaimPlot plot -> {
+                buffer.writeEnum(Kind.CLAIM_PLOT);
+                buffer.writeInt(plot.x());
+                buffer.writeInt(plot.z());
+                buffer.writeBoolean(plot.free());
+                buffer.writeVarLong(plot.revision());
+                buffer.writeVarLong(plot.price());
+            }
             case Home home -> {
                 buffer.writeEnum(Kind.HOME);
                 buffer.writeUUID(home.resident());
@@ -182,6 +190,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
     private static SettlementManagementActionPayload decode(RegistryFriendlyByteBuf buffer) {
         UUID town = buffer.readUUID();
         Command command = switch (buffer.readEnum(Kind.class)) {
+            case CLAIM_PLOT -> new ClaimPlot(buffer.readInt(), buffer.readInt(), buffer.readBoolean(), buffer.readVarLong(), buffer.readVarLong());
             case HOME -> new Home(buffer.readUUID(), buffer.readBlockPos(), buffer.readBoolean());
             case MANAGEMENT -> new Management(buffer.readBoolean());
             case ADVANCE -> new Advance();
@@ -306,11 +315,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot {
     }
 
     public record Home(UUID resident, net.minecraft.core.BlockPos bed, boolean assign) implements Command {
@@ -325,6 +334,14 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         public Brew {
             Objects.requireNonNull(resident);
             Objects.requireNonNull(area);
+        }
+    }
+
+    public record ClaimPlot(int x, int z, boolean free, long revision, long price) implements Command {
+        public ClaimPlot {
+            if (!com.jvn.villagerretaliation.settlement.SettlementTerritory.validChunk(x, z) || revision < 0 || price < 0) {
+                throw new IllegalArgumentException("Invalid plot claim");
+            }
         }
     }
 

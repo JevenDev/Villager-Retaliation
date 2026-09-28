@@ -269,6 +269,7 @@ public final class SettlementMiningRouteGameTests {
         var id = registry.create(0L, level.dimension().location(), center, "");
         var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, 0L).orElseThrow();
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.MINE, "Wide mine", origin, origin.offset(127, 2, 127), 5, true);
+        SettlementTestPlots.claim(level, town, area.min(), area.max());
         helper.assertTrue(town.putArea(town.leader(), area), "the wide mine fits its legal area and settlement bounds");
         var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Home", center.above(8), center.above(8), 5, true);
         town.putArea(town.leader(), home);

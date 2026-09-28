@@ -301,7 +301,7 @@ public final class SettlementTradeGameTests {
         var custom = new java.util.EnumMap<>(previous);
         var village = previous.get(SettlementStage.VILLAGE);
         custom.put(SettlementStage.VILLAGE, new SettlementStageRules.Limits(village.radius(), village.projects(), village.depots(),
-                3, 5, village.services()));
+                3, 5, village.services(), village.plots(), village.freePlots()));
         try {
             SettlementStageRules.apply(custom);
             withFixture(helper, fixture -> {
@@ -325,7 +325,7 @@ public final class SettlementTradeGameTests {
                 helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 800L).get(sell.id()).status(),
                         SettlementTradeService.Status.MARKET_LIMIT, "exhausted demand stops further sales");
                 custom.put(SettlementStage.VILLAGE, new SettlementStageRules.Limits(village.radius(), village.projects(), village.depots(),
-                        1, 2, village.services()));
+                        1, 2, village.services(), village.plots(), village.freePlots()));
                 SettlementStageRules.apply(custom);
                 helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 1_000L).get(sell.id()).status(),
                         SettlementTradeService.Status.MARKET_LIMIT, "lower limits cannot reset already used daily demand");

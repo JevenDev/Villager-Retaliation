@@ -1,0 +1,5 @@
+{
+  "base": 16,
+  "purchase_increment": 2,
+  "distance_increment": 4
+}

@@ -546,7 +546,7 @@ public final class VillageAllegianceService {
         return registry.canonicalRecord(residency.village())
                 .filter(record -> level.dimension().location().equals(record.originDimension()))
                 .filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE)
-                .filter(record -> record.footprintSections().contains(net.minecraft.core.SectionPos.asLong(position)))
+                .filter(record -> registry.contains(record, position))
                 .map(VillageAllegianceRegistrySavedData.AllegianceRecord::id);
     }
 

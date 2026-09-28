@@ -32,7 +32,7 @@ public final class SettlementFurnaceService {
                 reconcileChunk(level, town, chunk);
                 for (var blockEntity : chunk.getBlockEntities().values()) {
                     if (blockEntity instanceof AbstractFurnaceBlockEntity furnace && SettlementFurnaceState.supported(furnace)) {
-                        var area = town.areas().values().stream().filter(candidate -> accepts(candidate, furnace)).findFirst().orElse(null);
+                        var area = town.areas().values().stream().filter(candidate -> town.owns(candidate) && accepts(candidate, furnace)).findFirst().orElse(null);
                         if (area != null) {
                             observe(level, town, area, furnace, level.getGameTime());
                             chunk.setUnsaved(true);
@@ -46,6 +46,7 @@ public final class SettlementFurnaceService {
     static void reconcileChunk(ServerLevel level, SettlementRecord town, LevelChunk chunk) {
         var construction = new SettlementConstructionMachines(level, town, chunk);
         for (SettlementFurnaceState state : List.copyOf(town.furnaces().values())) {
+            if (!town.contains(state.position()) || town.areas().values().stream().anyMatch(area -> !town.owns(area) && accepts(area, state.position(), state.block()))) continue;
             if (!new ChunkPos(state.position()).equals(chunk.getPos())) {
                 continue;
             }
@@ -103,6 +104,7 @@ public final class SettlementFurnaceService {
             }
         }
         for (SettlementFurnaceState state : List.copyOf(town.furnaces().values())) {
+            if (!town.contains(state.position()) || town.areas().values().stream().anyMatch(area -> !town.owns(area) && accepts(area, state.position(), state.block()))) continue;
             boolean operating = town.areas().values().stream().anyMatch(area -> serves(area, state));
             var source = construction.source(state.position(), state.id());
             if (source != null) {

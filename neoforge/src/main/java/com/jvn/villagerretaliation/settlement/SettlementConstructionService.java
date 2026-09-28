@@ -111,7 +111,7 @@ public final class SettlementConstructionService {
         reconcile(builder);
         if (BuilderTaskState.hasTask(HiredWorkStateStore.state(builder))) return "builder";
         var area = workplace(level, town, plan, origin, request);
-        if (area == null) return "placement";
+        if (area == null || !town.owns(area)) return "bounds";
         var project = SettlementProject.planned(town, area, resident, plan, origin, request, level.getGameTime());
         if (town.economy().constructionFunds().compareTo(CurrencyAmount.of(plan.price(), 1)) < 0) return "funds";
         if (!town.startProject(player.getUUID(), project)) return "capacity";
@@ -157,12 +157,12 @@ public final class SettlementConstructionService {
         var min = plan.worldMin(origin);
         var max = plan.worldMax(origin);
         if (town.stage().projects() == 0 || town.projects().values().stream().filter(SettlementProject::active).count() >= town.stage().projects()) return "capacity";
-        if (!SettlementGuardOrder.within(town, min) || !SettlementGuardOrder.within(town, max)
+        if (!town.contains(min, max)
                 || level.isOutsideBuildHeight(min) || level.isOutsideBuildHeight(max)
                 || !level.getWorldBorder().isWithinBounds(min) || !level.getWorldBorder().isWithinBounds(max)) return "bounds";
         var footprint = new AABB(Vec3.atLowerCornerOf(min), Vec3.atLowerCornerOf(max.offset(1, 1, 1)));
         if (SettlementSavedData.get(level).settlements().stream().filter(other -> other.dimension().equals(town.dimension()))
-                .flatMap(other -> other.projects().values().stream()).anyMatch(project -> project.reservesFootprint()
+                .flatMap(other -> other.projects().values().stream().filter(other::owns)).anyMatch(project -> project.reservesFootprint()
                 && new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)))
                         .intersects(footprint))) return "overlap";
         if (town.areas().values().stream().anyMatch(area -> area.type().changesTerrain() && area.type() != SettlementAreaType.CONSTRUCTION
@@ -170,10 +170,10 @@ public final class SettlementConstructionService {
                         .intersects(footprint))) return "overlap";
         if (SettlementSavedData.get(level).settlements().stream()
                 .filter(other -> !other.id().equals(town.id()) && other.dimension().equals(town.dimension()))
-                .anyMatch(other -> footprint.contains(other.center().getCenter()) || other.areas().values().stream().anyMatch(area ->
+                .anyMatch(other -> other.areas().values().stream().filter(other::owns).anyMatch(area ->
                         footprint.intersects(new AABB(Vec3.atLowerCornerOf(area.min()), Vec3.atLowerCornerOf(area.max().offset(1, 1, 1))))))) return "overlap";
         var area = workplace(level, town, plan, origin, UUID.randomUUID());
-        if (area == null) return "placement";
+        if (area == null || !town.owns(area)) return "bounds";
         var check = BuilderSitePlanner.validateSite(level, player, null, HiredWorkArea.fromBounds(area.min(), area.max(), true), plan, origin);
         return check.valid() ? "" : "placement";
     }
@@ -285,6 +285,7 @@ public final class SettlementConstructionService {
 
     public static boolean prepare(Villager builder, CompoundTag state) {
         var project = project(builder, state);
+        if (project != null && !town(builder, state).owns(project)) return false;
         if (project == null || project.site() == null || !project.site().pending()) return true;
         SettlementConstructionSiteService.refresh((ServerLevel) builder.level(), project.site());
         town(builder, state).changed();
@@ -297,7 +298,8 @@ public final class SettlementConstructionService {
         if (project == null) {
             return duty == null && !state.getCompound(BuilderTaskState.TASK_TAG).hasUUID("SettlementTown");
         }
-        return project.active() && duty != null && project.builder().equals(builder.getUUID())
+        return project.active() && duty != null && duty.area().enabled() && duty.town().owns(project)
+                && project.builder().equals(builder.getUUID())
                 && builder.level().getWorldBorder().isWithinBounds(project.min()) && builder.level().getWorldBorder().isWithinBounds(project.max())
                 && project.town().equals(duty.town().id().value()) && project.area().equals(duty.area().id())
                 && project.within(duty.area()) && project.structure().equals(plan.entry().id()) && project.rotation() == plan.rotation()

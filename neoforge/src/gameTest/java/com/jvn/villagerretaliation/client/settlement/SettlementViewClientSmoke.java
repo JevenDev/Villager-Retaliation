@@ -76,6 +76,9 @@ public final class SettlementViewClientSmoke {
     private static float originalYaw;
     private static String originalAreaNarration;
     private static int panDirection;
+    private static int plotCount;
+    private static int plotCredits;
+    private static com.jvn.villagerretaliation.sell.CurrencyAmount plotBalance;
     private static final int[] PAN_KEYS = {GLFW.GLFW_KEY_W, GLFW.GLFW_KEY_D, GLFW.GLFW_KEY_S, GLFW.GLFW_KEY_A,
             GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_LEFT};
     private static final int[] PAN_X = {-1, -1, 1, 1, -1, -1, 1, 1};
@@ -807,6 +810,52 @@ public final class SettlementViewClientSmoke {
                 require(resident.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.HOME).isEmpty(),
                         "releasing the bed also clears the loaded resident's native home");
             }).join();
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            phase = 100;
+        } else if (phase == 100 && minecraft.screen instanceof SettlementViewScreen screen && screen.terrainLoaded()) {
+            screen.togglePlots();
+            var offer = screen.plots().plots().stream().filter(plot -> plot.eligible() && plot.paidFailure().isEmpty()).findFirst().orElseThrow();
+            screen.selectPlot(offer.chunk());
+            plotCount = screen.plots().totals().owned();
+            plotCredits = screen.plots().totals().free();
+            plotBalance = screen.plots().totals().spendable().subtract(com.jvn.villagerretaliation.sell.CurrencyAmount.of(offer.price(), 1));
+            require(plotCredits > 0, "the paid claim can preserve banked free credits");
+            ticks = 0;
+            phase = 101;
+        } else if (phase == 101 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            capture("plots-priced-offers");
+            button(screen, "villagerretaliation.gui.settlement_view.plot_buy").onPress();
+            ticks = 0;
+            phase = 102;
+        } else if (phase == 102 && minecraft.screen instanceof SettlementViewScreen screen && screen.plots().totals().owned() == plotCount + 1 && ++ticks >= 10) {
+            require(screen.plots().totals().free() == plotCredits, "paying preserves free credits");
+            require(screen.plots().totals().spendable().equals(plotBalance), "the quoted price is charged exactly once");
+            var offer = screen.plots().plots().stream().filter(plot -> plot.eligible() && plot.freeFailure().isEmpty()).findFirst().orElseThrow();
+            screen.selectPlot(offer.chunk());
+            button(screen, "villagerretaliation.gui.settlement_view.plot_free").onPress();
+            phase = 103;
+        } else if (phase == 103 && minecraft.screen instanceof SettlementViewScreen screen && screen.plots().totals().owned() == plotCount + 2) {
+            require(screen.plots().totals().free() == plotCredits - 1, "the free claim consumes one credit");
+            require(screen.plots().totals().spendable().equals(plotBalance), "the free claim preserves currency");
+            capture("plots-purchased");
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(serverPlayer.serverLevel(), town, town.center(), town.center().east(600));
+            }).join();
+            ticks = 0;
+            phase = 104;
+        } else if (phase == 104 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 20) {
+            screen.focus(fixture.center().getX() + 600.5D, fixture.center().getZ() + 0.5D);
+            ticks = 0;
+            phase = 105;
+        } else if (phase == 105 && minecraft.screen instanceof SettlementViewScreen screen
+                && screen.focusX() > fixture.center().getX() + 512 && screen.terrainLoaded() && ++ticks >= 20) {
+            require(screen.plots().plots().size() <= SettlementViewWindow.MAX_CHUNKS, "remote plot snapshots stay bounded");
+            require(screen.plots().plots().stream().anyMatch(plot -> plot.owned() && plot.chunk().equals(new ChunkPos(fixture.center().east(600)))),
+                    "the long extension remains visible beyond the old radius ceiling");
+            capture("plots-long-extension");
             screen.onClose();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
@@ -879,6 +928,7 @@ public final class SettlementViewClientSmoke {
         var origin = fixture.center().offset(30, 0, 0);
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.BREWERY, "Brewery",
                 origin, origin.offset(4, 4, 4), 5, true);
+        com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, SettlementSavedData.get(level).get(fixture.town()).orElseThrow(), area.min(), area.max());
         require(SettlementBuildingService.register(player, fixture.town(), area), "the brewery is registered");
         Villager villager = EntityType.VILLAGER.create(level);
         villager.setPos(origin.getBottomCenter());
@@ -906,6 +956,8 @@ public final class SettlementViewClientSmoke {
         }
         level.getServer().overworld().getDataStorage().set("villagerretaliation_settlements", SettlementSavedData.load(saved, level.registryAccess()));
         var origin = fixture.center().offset(12, 0, 0);
+        com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, SettlementSavedData.get(level).get(fixture.town()).orElseThrow(),
+                origin.offset(-3, -1, -4), origin.offset(14, 12, 12));
         for (BlockPos position : BlockPos.betweenClosed(origin.offset(-3, -1, -4), origin.offset(14, 12, 12))) {
             level.setBlockAndUpdate(position, position.getY() == origin.getY() - 1
                     ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState());
@@ -1061,7 +1113,9 @@ public final class SettlementViewClientSmoke {
     private static Button button(net.minecraft.client.gui.screens.Screen screen, String translation) {
         String label = Component.translatable(translation).getString();
         return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
-                .filter(button -> button.visible && button.getMessage().getString().equals(label)).findFirst().orElseThrow();
+                .filter(button -> button.visible && (button.getMessage().getString().equals(label)
+                        || button.getMessage().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents contents
+                        && contents.getKey().equals(translation))).findFirst().orElseThrow();
     }
 
     private static int capture(String name) {

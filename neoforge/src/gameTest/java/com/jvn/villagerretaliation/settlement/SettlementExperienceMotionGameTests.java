@@ -344,13 +344,15 @@ public final class SettlementExperienceMotionGameTests {
 
     private static Fixture fixture(GameTestHelper helper, boolean terrain, boolean wall) {
         var level = helper.getLevel();
-        var origin = helper.absolutePos(new BlockPos(2, 2, 2)).offset(14_000_000, 0, 14_000_000);
+        var test = helper.absolutePos(new BlockPos(2, 2, 2));
+        var origin = new BlockPos(14_000_000 + test.getX() * 4, test.getY(), 14_000_000 + test.getZ() * 4);
         var center = new BlockPos((origin.getX() & ~15) + 8, 85, (origin.getZ() & ~15) + 8);
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(0L, level.dimension().location(), center, "");
         var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, 0L).orElseThrow();
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.ANIMAL_PEN, "Pen",
                 center.offset(-10, -2, -10), center.offset(30, 5, 10), 5, true);
+        SettlementTestPlots.claim(level, town, area.min(), area.max());
         town.putArea(town.leader(), area);
         if (terrain) {
             for (int x = -1; x <= 2; x++) for (int z = -1; z <= 1; z++) {

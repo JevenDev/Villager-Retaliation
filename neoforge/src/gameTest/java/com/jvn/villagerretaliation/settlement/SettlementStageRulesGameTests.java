@@ -91,13 +91,14 @@ public final class SettlementStageRulesGameTests {
         var custom = rules();
         custom.put(SettlementStage.CAMP, new SettlementStageRules.Limits(80, 0, 2, 0, 0, Set.of()));
         var hamlet = custom.get(SettlementStage.HAMLET);
-        custom.put(SettlementStage.HAMLET, new SettlementStageRules.Limits(96, 2, hamlet.depots(), 0, 0, hamlet.services()));
+        custom.put(SettlementStage.HAMLET, new SettlementStageRules.Limits(96, 2, hamlet.depots(), 0, 0, hamlet.services(), hamlet.plots(), hamlet.freePlots()));
         try {
             SettlementStageRules.apply(custom);
             helper.assertValueEqual(fixture.town().radius(), 80, "a live reload expands an existing town");
             var stores = area(fixture, SettlementAreaType.DEPOT, 76, 3);
+            SettlementTestPlots.claim(helper.getLevel(), fixture.town(), stores.min(), stores.max());
             helper.assertTrue(fixture.town().putArea(fixture.leader().getUUID(), stores), "designation can use the expanded boundary");
-            helper.assertFalse(fixture.town().putArea(fixture.leader().getUUID(), area(fixture, SettlementAreaType.FARM, 81, 3)),
+            helper.assertFalse(fixture.town().putArea(fixture.leader().getUUID(), area(fixture, SettlementAreaType.FARM, 112, 3)),
                     "designation still rejects the configured boundary's exterior");
             for (int index = 0; index < 2; index++) {
                 var depot = fixture.town().registerDepot(fixture.leader().getUUID(), stores.id(), stores.min().south(index),
@@ -115,6 +116,7 @@ public final class SettlementStageRulesGameTests {
                 var origin = fixture.town().center().offset(-40 + index * 24, 0, 20);
                 var site = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Site " + index,
                         origin.offset(plan.localMin()), origin.offset(plan.localMax()), 5, true);
+                SettlementTestPlots.claim(helper.getLevel(), fixture.town(), site.min(), site.max());
                 helper.assertTrue(fixture.town().putArea(fixture.leader().getUUID(), site), "construction sites register");
                 var builder = UUID.randomUUID();
                 fixture.town().assignDuty(builder, site.id());
@@ -144,6 +146,7 @@ public final class SettlementStageRulesGameTests {
         try {
             SettlementStageRules.apply(expanded);
             var post = area(fixture, SettlementAreaType.GUARD_POST, 90, 4);
+            SettlementTestPlots.claim(helper.getLevel(), fixture.town(), post.min(), post.max());
             helper.assertTrue(fixture.town().putArea(fixture.leader().getUUID(), post), "the earned boundary contains the outlying post");
             var guard = UUID.randomUUID();
             fixture.town().assignDuty(guard, post.id());
@@ -182,11 +185,13 @@ public final class SettlementStageRulesGameTests {
         var previous = rules();
         var fixture = fixture(helper);
         var area = area(fixture, SettlementAreaType.FARM, 60, 3);
+        SettlementTestPlots.claim(helper.getLevel(), fixture.town(), area.min(), area.max());
         fixture.town().putArea(fixture.leader().getUUID(), area);
         fixture.town().support().observe(0, true, false);
         fixture.town().support().observe(200, true, false);
         var saved = fixture.town().save(helper.getLevel().registryAccess());
         saved.remove("ExpansionRadius");
+        saved.remove("Territory");
         saved.remove("SupportServices");
         var smaller = rules();
         smaller.put(SettlementStage.CAMP, new SettlementStageRules.Limits(16, 0, 1, 0, 0, Set.of()));
@@ -216,7 +221,7 @@ public final class SettlementStageRulesGameTests {
         var custom = rules();
         var limits = custom.get(SettlementStage.HAMLET);
         custom.put(SettlementStage.HAMLET, new SettlementStageRules.Limits(limits.radius(), limits.projects(), limits.depots(),
-                0, 0, Set.of(SettlementProgressionService.Requirement.GUARD_POST)));
+                0, 0, Set.of(SettlementProgressionService.Requirement.GUARD_POST), limits.plots(), limits.freePlots()));
         try {
             SettlementStageRules.apply(custom);
             var status = SettlementProgressionService.assess(helper.getLevel(), fixture.town());
@@ -241,7 +246,7 @@ public final class SettlementStageRulesGameTests {
             fixture.town().support().observe(400, true, false);
             var capacitiesOnly = rules();
             capacitiesOnly.put(SettlementStage.CITY, new SettlementStageRules.Limits(320, 8, 128, 256, 512,
-                    previous.get(SettlementStage.CITY).services()));
+                    previous.get(SettlementStage.CITY).services(), 121, 10));
             SettlementStageRules.apply(capacitiesOnly);
             helper.assertValueEqual(fixture.town().support().sustainedTicks(), 200L, "unrelated capacity changes preserve valid support");
         } finally {
@@ -257,7 +262,7 @@ public final class SettlementStageRulesGameTests {
         while (fixture.town().stage() != SettlementStage.CITY) fixture.town().advance();
         var custom = rules();
         custom.put(SettlementStage.CITY, new SettlementStageRules.Limits(320, 12, 160, 512, 1_024,
-                previous.get(SettlementStage.CITY).services()));
+                previous.get(SettlementStage.CITY).services(), 121, 10));
         try {
             SettlementStageRules.apply(custom);
             var snapshot = SettlementManagementService.snapshot(fixture.leader(), new SettlementManagementRequestPayload(
@@ -296,6 +301,8 @@ public final class SettlementStageRulesGameTests {
 
     private static JsonObject json(SettlementStageRules.Limits limits) {
         var root = new JsonObject();
+        root.addProperty("plots", limits.plots());
+        root.addProperty("free_plots", limits.freePlots());
         root.addProperty("radius", limits.radius());
         root.addProperty("projects", limits.projects());
         root.addProperty("depots", limits.depots());

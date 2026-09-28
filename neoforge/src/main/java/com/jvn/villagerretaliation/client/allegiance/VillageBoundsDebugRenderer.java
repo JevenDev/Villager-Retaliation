@@ -133,7 +133,9 @@ public final class VillageBoundsDebugRenderer {
             return;
         }
         VillageGeometry containing = VILLAGES.stream()
-                .filter(village -> village.sections().contains(SectionPos.asLong(minecraft.player.blockPosition())))
+                .filter(village -> village.chunkColumns() ? village.sections().stream().anyMatch(section ->
+                        SectionPos.x(section) == minecraft.player.getBlockX() >> 4 && SectionPos.z(section) == minecraft.player.getBlockZ() >> 4)
+                        : village.sections().contains(SectionPos.asLong(minecraft.player.blockPosition())))
                 .findFirst().orElse(null);
         if (containing == null || containing.name().isBlank()) {
             return;
@@ -153,10 +155,10 @@ public final class VillageBoundsDebugRenderer {
             int sy = section.y();
             int sz = section.z();
             int x0 = SectionPos.sectionToBlockCoord(sx);
-            int y0 = SectionPos.sectionToBlockCoord(sy);
+            int y0 = entry.chunkColumns() ? Minecraft.getInstance().level.getMinBuildHeight() : SectionPos.sectionToBlockCoord(sy);
             int z0 = SectionPos.sectionToBlockCoord(sz);
             int x1 = x0 + 16;
-            int y1 = y0 + 16;
+            int y1 = entry.chunkColumns() ? Minecraft.getInstance().level.getMaxBuildHeight() : y0 + 16;
             int z1 = z0 + 16;
             if (!sections.contains(SectionPos.asLong(sx - 1, sy, sz))) {
                 addFace(edges, 0, new IntPoint(x0, y0, z0), new IntPoint(x0, y1, z0),
@@ -187,7 +189,7 @@ public final class VillageBoundsDebugRenderer {
                 .filter(edge -> edge.getValue().count == 1 || edge.getValue().faceNormals.size() > 1)
                 .map(edge -> new LineSegment(edge.getKey().first, edge.getKey().second))
                 .toList();
-        return new VillageGeometry(entry.name(), entry.center(), Set.copyOf(sections), boundary);
+        return new VillageGeometry(entry.name(), entry.center(), Set.copyOf(sections), boundary, entry.chunkColumns());
     }
 
     private static void addFace(
@@ -258,7 +260,7 @@ public final class VillageBoundsDebugRenderer {
         subscribedDimension = null;
     }
 
-    private record VillageGeometry(String name, BlockPos center, Set<Long> sections, List<LineSegment> boundary) {
+    private record VillageGeometry(String name, BlockPos center, Set<Long> sections, List<LineSegment> boundary, boolean chunkColumns) {
     }
 
     private record LineSegment(IntPoint first, IntPoint second) {

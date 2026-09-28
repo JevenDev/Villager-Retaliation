@@ -19,7 +19,7 @@ public final class SettlementStock {
 
     public static List<SettlementDepot> depots(SettlementRecord town) {
         return town.depots().values().stream()
-                .filter(depot -> town.areas().get(depot.area()) != null && town.areas().get(depot.area()).enabled())
+                .filter(depot -> town.owns(town.areas().get(depot.area())) && town.areas().get(depot.area()).enabled())
                 .sorted(Comparator.comparingInt(SettlementDepot::priority).reversed().thenComparing(SettlementDepot::id))
                 .toList();
     }

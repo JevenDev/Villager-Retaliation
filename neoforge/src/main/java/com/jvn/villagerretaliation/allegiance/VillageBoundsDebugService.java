@@ -92,21 +92,29 @@ public final class VillageBoundsDebugService {
                 .activeRecords(dimension).stream()
                 .filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE
                         || record.lifecycleState() == VillageLifecycleState.EMPTY_GRACE)
-                .filter(record -> record.center().distSqr(player.blockPosition()) <= radiusSqr)
+                .filter(record -> record.center().distSqr(player.blockPosition()) <= radiusSqr
+                        || VillageAllegianceRegistrySavedData.get(level).isManaged(record.id()) && record.footprintSections().stream().anyMatch(section ->
+                        Math.abs((long) net.minecraft.core.SectionPos.x(section) * 16 - player.getBlockX()) <= RADIUS
+                                && Math.abs((long) net.minecraft.core.SectionPos.z(section) * 16 - player.getBlockZ()) <= RADIUS))
                 .filter(record -> !record.footprintSections().isEmpty())
-                .filter(record -> record.footprintSections().size() <= VillageBoundsSyncPayload.MAX_SECTIONS_PER_VILLAGE)
+                .filter(record -> VillageAllegianceRegistrySavedData.get(level).isManaged(record.id())
+                        || record.footprintSections().size() <= VillageBoundsSyncPayload.MAX_SECTIONS_PER_VILLAGE)
                 .sorted(Comparator.comparingDouble(record -> record.center().distSqr(player.blockPosition())))
                 .toList();
         List<VillageBoundsSyncPayload.VillageEntry> entries = new ArrayList<>();
         int totalSections = 0;
         for (VillageAllegianceRegistrySavedData.AllegianceRecord record : nearby) {
-            if (entries.size() >= VillageBoundsSyncPayload.MAX_VILLAGES
-                    || totalSections + record.footprintSections().size() > VillageBoundsSyncPayload.MAX_TOTAL_SECTIONS) {
-                break;
-            }
-            List<Long> sections = record.footprintSections().stream().sorted().toList();
+            if (entries.size() >= VillageBoundsSyncPayload.MAX_VILLAGES || totalSections >= VillageBoundsSyncPayload.MAX_TOTAL_SECTIONS) break;
+            List<Long> sections = record.footprintSections().stream().sorted(Comparator
+                    .comparingLong((Long section) -> {
+                        long x = (long) net.minecraft.core.SectionPos.x(section) * 16 - player.getBlockX();
+                        long z = (long) net.minecraft.core.SectionPos.z(section) * 16 - player.getBlockZ();
+                        return x * x + z * z;
+                    }).thenComparingLong(Long::longValue))
+                    .limit(Math.min(VillageBoundsSyncPayload.MAX_SECTIONS_PER_VILLAGE, VillageBoundsSyncPayload.MAX_TOTAL_SECTIONS - totalSections)).toList();
             entries.add(new VillageBoundsSyncPayload.VillageEntry(
-                    record.id(), record.displayName(), record.center(), record.lifecycleState(), sections));
+                    record.id(), record.displayName(), record.center(), record.lifecycleState(), sections,
+                    VillageAllegianceRegistrySavedData.get(level).isManaged(record.id())));
             totalSections += sections.size();
         }
         PacketDistributor.sendToPlayer(player, new VillageBoundsSyncPayload(true, dimension, entries, VISIBLE_TICKS));

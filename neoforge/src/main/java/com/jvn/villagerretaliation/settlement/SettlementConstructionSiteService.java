@@ -15,7 +15,7 @@ final class SettlementConstructionSiteService {
     }
 
     static void observeArea(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
-        if (area.type() != SettlementAreaType.CONSTRUCTION) return;
+        if (area.type() != SettlementAreaType.CONSTRUCTION || !area.enabled() || !town.owns(area)) return;
         for (var project : town.projects().values()) {
             if (!project.active() || !project.area().equals(area.id())) continue;
             project.observeSite(area);
@@ -50,7 +50,7 @@ final class SettlementConstructionSiteService {
 
     static void update(ServerLevel level, SettlementRecord town) {
         for (var project : town.projects().values()) {
-            if (project.site() == null) continue;
+            if (project.site() == null || !town.owns(project)) continue;
             refresh(level, project.site());
             if (!project.active() && !project.site().pending()) town.clearProjectSite(project);
             town.changed();

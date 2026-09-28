@@ -92,7 +92,7 @@ public final class VillageOverviewService {
                     : VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
             boolean baby = villager == null ? !resident.adult() : villager.isBaby();
             Presence presence = villager == null ? Presence.UNLOADED
-                    : village.footprintSections().contains(SectionPos.asLong(villager.blockPosition()))
+                    : VillageAllegianceRegistrySavedData.get(level).contains(village, villager.blockPosition())
                             ? Presence.HERE : Presence.AWAY;
             var standing = reputation.get(resident.id(), player.getUUID());
             residents.add(new Resident(name, profession, baby, presence,
@@ -122,7 +122,7 @@ public final class VillageOverviewService {
                 level.getPoiManager().getInChunk(type -> type.is(PoiTypes.HOME)
                                 || type.is(PoiTypeTags.ACQUIRABLE_JOB_SITE), chunk, PoiManager.Occupancy.ANY)
                         .filter(poi -> poi.getPos().distSqr(anchor) <= 96.0D * 96.0D)
-                        .filter(poi -> village.footprintSections().contains(SectionPos.asLong(poi.getPos())))
+                        .filter(poi -> VillageAllegianceRegistrySavedData.get(level).contains(village, poi.getPos()))
                         .forEach(poi -> {
                             if (poi.getPoiType().is(PoiTypes.HOME)) {
                                 counts[0]++;

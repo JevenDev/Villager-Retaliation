@@ -72,6 +72,7 @@ public final class SettlementBlueprintGameTests {
         var before = ConstructionBlueprintItem.previewData(blueprint).orElseThrow();
         helper.assertTrue(blueprint == fixture.player().getMainHandItem(), "the consumed held paper frees its inventory slot for the blueprint");
         BlockPos anchor = fixture.town().center().offset(20, 2, -20);
+        SettlementTestPlots.claim(helper.getLevel(), fixture.town(), anchor.offset(-16, 0, -16), anchor.offset(16, 12, 16));
         helper.assertTrue(SettlementBlueprintService.place(fixture.player(), fixture.town(), before.jobId(), anchor, Rotation.CLOCKWISE_90),
                 "a real blueprint can be rotated and positioned remotely");
         var after = ConstructionBlueprintItem.previewData(blueprint).orElseThrow();

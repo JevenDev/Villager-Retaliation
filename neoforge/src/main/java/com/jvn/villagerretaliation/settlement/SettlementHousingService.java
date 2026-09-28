@@ -232,7 +232,7 @@ public final class SettlementHousingService {
     public static Boolean availability(SettlementRecord town, BlockPos bed) {
         for (var area : town.areas().values()) {
             var survey = town.surveys().get(area.id());
-            if (area.enabled() && area.type() == SettlementAreaType.HOME && survey != null && survey.beds().contains(bed)) {
+            if (area.enabled() && town.owns(area) && area.type() == SettlementAreaType.HOME && survey != null && survey.beds().contains(bed)) {
                 return survey.bedAvailability().get(bed);
             }
         }
@@ -240,7 +240,7 @@ public final class SettlementHousingService {
     }
 
     static boolean usable(SettlementRecord town, BlockPos bed) {
-        return town.areas().values().stream().filter(area -> area.enabled() && area.type() == SettlementAreaType.HOME)
+        return town.areas().values().stream().filter(area -> area.enabled() && town.owns(area) && area.type() == SettlementAreaType.HOME)
                 .map(area -> town.surveys().get(area.id())).filter(Objects::nonNull).anyMatch(survey -> survey.beds().contains(bed));
     }
 

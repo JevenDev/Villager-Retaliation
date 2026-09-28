@@ -551,13 +551,15 @@ public final class SettlementFamilyBirthGameTests {
 
     private static Fixture remote(GameTestHelper helper, int separation) {
         var level = helper.getLevel();
-        var center = helper.absolutePos(new BlockPos(1, 2, 1)).offset(7_900_000, 0, 7_900_000);
+        var origin = helper.absolutePos(new BlockPos(1, 2, 1));
+        var center = new BlockPos(7_900_000 + origin.getX() * 4, origin.getY(), 7_900_000 + origin.getZ() * 4);
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(level.getGameTime(), level.dimension().location(), center, "");
         var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, level.getGameTime()).orElseThrow();
         var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Home", center.offset(-1, 0, -1),
                 center.offset(separation + 5, 3, 5), 5, true);
         var depotArea = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Depot", center.above(5), center.offset(3, 6, 3), 5, true);
+        SettlementTestPlots.claim(level, town, home.min(), home.max());
         SettlementSavedData.get(level).putArea(registry, id, town.leader(), home);
         SettlementSavedData.get(level).putArea(registry, id, town.leader(), depotArea);
         var depot = town.registerDepot(town.leader(), depotArea.id(), depotArea.min(), SettlementDepotPurpose.GENERAL);

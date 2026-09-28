@@ -45,7 +45,8 @@ public final class SettlementGuardService {
     public static Optional<SettlementGuardOrder> order(Villager villager) {
         return SettlementWorkforceService.duty(villager)
                 .filter(duty -> duty.area().type() == SettlementAreaType.GUARD_POST)
-                .map(duty -> duty.town().guardOrders().get(villager.getUUID()));
+                .flatMap(duty -> Optional.ofNullable(duty.town().guardOrders().get(villager.getUUID()))
+                        .filter(order -> order.within(duty.town())));
     }
 
     public static HiredRoute route(Villager villager, HiredRoute fallback) {

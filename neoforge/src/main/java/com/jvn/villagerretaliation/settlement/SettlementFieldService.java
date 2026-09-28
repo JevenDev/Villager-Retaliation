@@ -28,6 +28,7 @@ public final class SettlementFieldService {
                 continue;
             }
             for (var plot : List.copyOf(town.fields().values())) {
+                if (!town.contains(plot.position()) || town.areas().values().stream().anyMatch(area -> !town.owns(area) && area.type().usesFields() && area.contains(plot.position()))) continue;
                 if (new ChunkPos(plot.position()).equals(chunk.getPos())) {
                     if (plot.reconcile(chunk)) {
                         plot.observe(level, chunk, level.getGameTime());
@@ -42,7 +43,7 @@ public final class SettlementFieldService {
     }
 
     static void observeArea(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
-        if (!area.type().usesFields()) {
+        if (!area.type().usesFields() || !town.owns(area)) {
             return;
         }
         for (int chunkX = Math.floorDiv(area.min().getX(), 16); chunkX <= Math.floorDiv(area.max().getX(), 16); chunkX++) {
@@ -97,6 +98,10 @@ public final class SettlementFieldService {
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
         for (var plot : List.copyOf(town.fields().values())) {
+            if (!town.contains(plot.position()) || town.areas().values().stream().anyMatch(area -> !town.owns(area) && area.type().usesFields() && area.contains(plot.position()))) {
+                plot.pause(now);
+                continue;
+            }
             var areas = town.areas().values().stream().filter(area -> serves(area, plot)).toList();
             var chunk = loaded(level, plot.position());
             if (chunk != null && !plot.reconcile(chunk)) {

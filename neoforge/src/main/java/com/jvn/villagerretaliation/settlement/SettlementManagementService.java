@@ -50,6 +50,13 @@ public final class SettlementManagementService {
     }
 
     public static void action(ServerPlayer player, SettlementManagementActionPayload payload) {
+        if (payload.command() instanceof SettlementManagementActionPayload.ClaimPlot plot) {
+            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town())).orElse(null);
+            String failure = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
+                    ? SettlementPlotService.claim(player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price()) : "busy";
+            PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), failure.isEmpty(), null, failure));
+            return;
+        }
         if (payload.command() instanceof SettlementManagementActionPayload.CommissionBuilding build) {
             var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town())).orElse(null);
             String failure = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
@@ -75,6 +82,8 @@ public final class SettlementManagementService {
             return false;
         }
         return switch (payload.command()) {
+            case SettlementManagementActionPayload.ClaimPlot plot -> SettlementPlotService.claim(
+                    player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price()).isEmpty();
             case SettlementManagementActionPayload.Home home -> home.assign()
                     ? SettlementHousingService.assign(player, town, home.resident(), home.bed())
                     : SettlementHousingService.release(player, town, home.resident(), home.bed());
@@ -160,7 +169,7 @@ public final class SettlementManagementService {
                     SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
                     status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
                     status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
-                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size(), town.manualManagement());
+                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size(), town.manualManagement(), SettlementPlotService.totals(town));
             switch (request.page()) {
                 case ISSUES -> entries.addAll(issues);
                 case RESIDENTS -> residents(level, registry, town, entries);

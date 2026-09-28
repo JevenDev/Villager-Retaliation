@@ -272,7 +272,10 @@ public final class SettlementManagementScreen extends Screen {
         this.rows.add(null, text(header.manualManagement() ? "manual_management" : "autonomous_management"), text("management_hint"));
         this.rows.add(null, text("population", header.population(), header.housing()), text("housing_hint"));
         this.rows.add(null, text("food", decimal(header.foodDays())), text("food_hint"));
-        this.rows.add(null, text("stage", enumText("stage", header.stage())), text("bounds", header.radius()));
+        this.rows.add(null, text("stage", enumText("stage", header.stage())),
+                Component.translatable("villagerretaliation.gui.settlement_view.plot_totals",
+                        header.plots().owned(), header.plots().capacity(), header.plots().free(), header.plots().spendable().decimal(2)));
+        if (!header.plots().conflict().isEmpty()) this.rows.add(null, Component.literal(header.plots().conflict()), Component.empty());
         this.rows.add(null, text("support", decimal(header.supportTicks() / 24_000.0D), decimal(header.requiredTicks() / 24_000.0D)),
                 text(header.ready() ? "ready" : "support_hint"));
         if (header.shortageTicks() > 0L) {

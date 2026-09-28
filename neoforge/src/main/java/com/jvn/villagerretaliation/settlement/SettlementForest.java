@@ -37,6 +37,10 @@ public final class SettlementForest implements BlockGetter {
         return this.area;
     }
 
+    boolean ownedBy(SettlementRecord town) {
+        return town.contains(this.min, this.max);
+    }
+
     boolean matches(SettlementArea area) {
         return area.id().equals(this.area) && area.type() == SettlementAreaType.FORESTRY
                 && area.min().equals(this.min) && area.max().equals(this.max);

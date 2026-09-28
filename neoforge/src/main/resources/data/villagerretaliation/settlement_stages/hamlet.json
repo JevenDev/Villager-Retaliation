@@ -1,4 +1,6 @@
 {
+  "plots": 25,
+  "free_plots": 4,
   "radius": 96,
   "projects": 1,
   "depots": 16,
