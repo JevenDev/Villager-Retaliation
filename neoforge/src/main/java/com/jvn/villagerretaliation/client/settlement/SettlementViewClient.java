@@ -169,6 +169,7 @@ public final class SettlementViewClient {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
+        screen.savePreferences();
         active = null;
         panels = false;
         if (minecraft.getConnection() != null) {

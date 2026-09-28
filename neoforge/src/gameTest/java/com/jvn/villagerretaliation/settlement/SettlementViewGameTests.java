@@ -379,6 +379,24 @@ public final class SettlementViewGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void controlGroupsRetainBoundedSelectionUntilAuthoritativePruning(GameTestHelper helper) {
+        var selection = new com.jvn.villagerretaliation.client.settlement.SettlementViewSelection();
+        var members = java.util.stream.IntStream.range(0, 129).mapToObj(i -> UUID.randomUUID()).toList();
+        helper.assertFalse(selection.select(members, false), "oversized box selections report truncation");
+        helper.assertValueEqual(selection.residents().size(), 128, "selection stays bounded");
+        selection.store(0);
+        selection.select(List.of(), false);
+        helper.assertFalse(selection.recall(0, 1_000), "first recall does not focus");
+        helper.assertTrue(selection.recall(0, 1_200), "double recall focuses");
+        helper.assertTrue(selection.toggle(members.getFirst()), "shift click removes a member");
+        helper.assertValueEqual(selection.residents().size(), 127, "toggle affects only the clicked member");
+        selection.prune(Set.of(members.getFirst()));
+        selection.recall(0, 2_000);
+        helper.assertValueEqual(selection.residents(), List.of(members.getFirst()), "complete rosters prune remembered groups");
+        helper.succeed();
+    }
+
     private static void expectInvalid(GameTestHelper helper, Runnable action) {
         boolean rejected = false;
         try {

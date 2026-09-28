@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
 import com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer;
+import com.jvn.villagerretaliation.client.settlement.SettlementViewInteraction.Mode;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
@@ -50,6 +51,16 @@ public final class SettlementViewScreen extends Screen {
     private final SettlementManagementScreen parent;
     private final UUID session;
     private final SettlementViewSnapshots snapshots;
+    private final SettlementViewSelection selection = new SettlementViewSelection();
+    private final SettlementViewPreferences preferences;
+    private final Map<UUID, SettlementManagementPayload.Resident> roster = new LinkedHashMap<>();
+    private double boxX = -1;
+    private double boxY;
+    private double boxEndX;
+    private double boxEndY;
+    private boolean boxAdd;
+    private boolean boxDragging;
+    private List<UUID> beforeBox = List.of();
     private final Map<UUID, SettlementManagementPayload.Area> areas = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Project> projects = new LinkedHashMap<>();
     private final Set<Integer> heldKeys = new HashSet<>();
@@ -73,7 +84,6 @@ public final class SettlementViewScreen extends Screen {
     private boolean moved;
     private int panelLeft;
     private int panelWidth;
-    private boolean plotMode;
     private boolean plotPending;
     private net.minecraft.world.level.ChunkPos selectedPlot;
     private com.jvn.villagerretaliation.network.SettlementPlotSnapshot plotSnapshot;
@@ -106,7 +116,7 @@ public final class SettlementViewScreen extends Screen {
     private BlockPos selectedBlock;
     private BlockPos dragStart;
     private BlockPos dragEnd;
-    private boolean drawing;
+    private final SettlementViewInteraction interaction = new SettlementViewInteraction();
     private int managementRequestId;
     private int waitingRequestId = -1;
     private Page waitingPage;
@@ -125,7 +135,12 @@ public final class SettlementViewScreen extends Screen {
         this.focusX = this.window.x();
         this.focusZ = this.window.z();
         this.viewHeight = this.window.height();
+        this.preferences = SettlementViewPreferences.forSettlement(this.header.id());
+        this.selection.restore(this.preferences.groups);
+        this.viewHeight = this.preferences.height;
+        this.camera.rotate((this.preferences.yaw - this.camera.yaw()) / 90.0D, 1);
         this.cameraHeight = this.viewHeight;
+        this.moved = true;
         this.requestId = payload.requestId();
         this.acceptedRequestId = payload.requestId();
         this.managementRequestId = parent.snapshot().requestId() + 1;
@@ -215,6 +230,15 @@ public final class SettlementViewScreen extends Screen {
     void acceptOverview(com.jvn.villagerretaliation.network.SettlementViewOverviewPayload payload) {
         if (!this.snapshots.accept(payload, Util.getMillis())) return;
         this.header = this.snapshots.header();
+        this.roster.clear();
+        for (var entry : this.snapshots.entries(Page.RESIDENTS)) {
+            var row = (SettlementManagementPayload.Resident) entry;
+            this.roster.put(row.id(), row);
+        }
+        var groups = this.selection.groups();
+        this.selection.prune(this.roster.keySet());
+        syncSelection();
+        if (!groups.equals(this.selection.groups())) savePreferences();
         this.areas.clear();
         this.projects.clear();
         for (var entry : this.snapshots.entries(Page.AREAS)) {
@@ -281,14 +305,15 @@ public final class SettlementViewScreen extends Screen {
         this.manage = addRenderableWidget(Button.builder(text("manage_selection"), ignored -> manageSelection())
                 .bounds(this.panelLeft + 8, this.height - 70, this.panelWidth - 16, 20).build());
         this.drawArea = addRenderableWidget(Button.builder(text("draw_area"), ignored -> {
-            this.plotMode = false;
+            if (this.interaction.is(Mode.SELECT_PLOT)) this.interaction.enter(Mode.SELECT);
             updatePlotActions();
             this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
             this.guardPoints.clear();
             this.parent.clearBuildingDraft();
             this.editingArea = null;
             this.gizmo = null;
-            this.drawing = !this.drawing;
+            enterMode(this.interaction.is(Mode.DRAW_AREA) ? Mode.SELECT : Mode.DRAW_AREA);
             this.dragStart = null;
             this.dragEnd = null;
             updateActions();
@@ -312,11 +337,12 @@ public final class SettlementViewScreen extends Screen {
         this.returnToPost = addRenderableWidget(Button.builder(text("guard_post"), ignored -> submitGuardOrder(null))
                 .bounds(8, 76, 148, 20).build());
         this.newBuilding = addRenderableWidget(Button.builder(SettlementManagementScreen.text("new_building"), ignored -> {
-            this.drawing = false;
+            if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
             this.editingArea = null;
             this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
             this.gizmo = null;
-            this.plotMode = false;
+            if (this.interaction.is(Mode.SELECT_PLOT)) this.interaction.enter(Mode.SELECT);
             updatePlotActions();
             management().newBuilding();
         }).bounds(this.panelLeft + 8, 150, this.panelWidth - 16, 20).build());
@@ -417,7 +443,7 @@ public final class SettlementViewScreen extends Screen {
                 - (held(GLFW.GLFW_KEY_S) || held(GLFW.GLFW_KEY_DOWN) ? 1 : 0);
         double right = (held(GLFW.GLFW_KEY_D) || held(GLFW.GLFW_KEY_RIGHT) ? 1 : 0)
                 - (held(GLFW.GLFW_KEY_A) || held(GLFW.GLFW_KEY_LEFT) ? 1 : 0);
-        double speed = this.viewHeight / Math.max(1.0D, Math.hypot(forward, right));
+        double speed = this.viewHeight * (hasShiftDown() ? 2.5D : 1.0D) / Math.max(1.0D, Math.hypot(forward, right));
         Vec3 movement = SettlementViewCamera.movement(this.camera.yaw(), right, forward);
         double response = 1.0D - Math.exp(-MOVE_RESPONSE * elapsed);
         this.panVelocityX += (movement.x * speed - this.panVelocityX) * response;
@@ -443,7 +469,7 @@ public final class SettlementViewScreen extends Screen {
                 this.panelLeft + 8, 28, 0xD0D0D0);
         graphics.drawString(this.font, text("food", String.format(java.util.Locale.ROOT, "%.1f", this.header.foodDays())),
                 this.panelLeft + 8, 42, 0xD0D0D0);
-        if (this.plotMode) {
+        if (this.interaction.is(Mode.SELECT_PLOT)) {
             var totals = this.plotSnapshot.totals();
             int plotY = 34;
             for (var line : this.font.split(text("plot_totals", totals.owned(), totals.capacity(), totals.free(), totals.spendable().decimal(2)), this.panelLeft - 16)) {
@@ -451,13 +477,13 @@ public final class SettlementViewScreen extends Screen {
                 plotY += this.font.lineHeight + 1;
             }
         }
-        Component selection = this.plotMode ? plotDescription() : selectedName();
-        int y = this.plotMode ? this.buyPlot.getBottom() + 8 : 184;
-        for (var line : this.font.split(selection, this.plotMode ? this.panelLeft - 16 : this.panelWidth - 16)) {
-            if (y + this.font.lineHeight > this.height - (this.plotMode ? 48 : 78)) {
+        Component selection = this.interaction.is(Mode.SELECT_PLOT) ? plotDescription() : selectedName();
+        int y = this.interaction.is(Mode.SELECT_PLOT) ? this.buyPlot.getBottom() + 8 : 184;
+        for (var line : this.font.split(selection, this.interaction.is(Mode.SELECT_PLOT) ? this.panelLeft - 16 : this.panelWidth - 16)) {
+            if (y + this.font.lineHeight > this.height - (this.interaction.is(Mode.SELECT_PLOT) ? 48 : 78)) {
                 break;
             }
-            graphics.drawString(this.font, line, this.plotMode ? 8 : this.panelLeft + 8, y, 0xFFFFFF);
+            graphics.drawString(this.font, line, this.interaction.is(Mode.SELECT_PLOT) ? 8 : this.panelLeft + 8, y, 0xFFFFFF);
             y += this.font.lineHeight + 2;
         }
         var draft = this.parent.buildingDraft();
@@ -465,8 +491,8 @@ public final class SettlementViewScreen extends Screen {
                 : this.editingArea != null ? text("gizmo_area_hint")
                 : this.guardMode != null ? text(this.guardMode == SettlementGuardOrder.Mode.PATROL
                 ? "guard_patrol_hint" : "guard_destination_hint", this.guardPoints.size(), SettlementGuardOrder.MAX_POINTS)
-                : this.plotMode ? text("plot_hint")
-                : !this.guardFeedback.getString().isEmpty() ? this.guardFeedback : text(this.drawing ? "draw_hint" : "controls");
+                : this.interaction.is(Mode.SELECT_PLOT) ? text("plot_hint")
+                : !this.guardFeedback.getString().isEmpty() ? this.guardFeedback : text(this.interaction.is(Mode.DRAW_AREA) ? "draw_hint" : "controls");
         var lines = this.font.split(hint, Math.max(80, this.panelLeft - 16));
         int hintTop = this.height - 8 - lines.size() * (this.font.lineHeight + 1);
         graphics.fill(4, hintTop - 4, this.panelLeft - 4, this.height - 4, 0xD0101010);
@@ -477,11 +503,26 @@ public final class SettlementViewScreen extends Screen {
         if (!terrainLoaded()) {
             graphics.drawString(this.font, text("loading"), 8, 34, 0xFFFFFF);
         }
+        if (this.boxDragging) {
+            int left = (int) Math.min(this.boxX, this.boxEndX);
+            int top = (int) Math.min(this.boxY, this.boxEndY);
+            int rightEdge = (int) Math.max(this.boxX, this.boxEndX);
+            int bottom = (int) Math.max(this.boxY, this.boxEndY);
+            graphics.fill(left, top, rightEdge, bottom, 0x3040CCFF);
+            graphics.renderOutline(left, top, rightEdge - left, bottom - top, 0xFF40CCFF);
+        }
         super.render(graphics, mouseX, mouseY, partialTick);
         if (this.popup != null) this.popup.render(graphics, this.font, mouseX, mouseY, partialTick);
     }
 
     private Component selectedName() {
+        if (this.selection.residents().size() > 1) {
+            var rows = this.selection.residents().stream().map(this.roster::get).filter(java.util.Objects::nonNull).toList();
+            long paused = rows.stream().filter(row -> row.status().equals("paused")).count();
+            long assignments = rows.stream().map(SettlementManagementPayload.Resident::area).distinct().count();
+            return Component.literal(rows.size() + " residents selected\n" + paused + " paused\n"
+                    + (assignments > 1 ? "Mixed assignments" : "Shared assignment"));
+        }
         if (this.resident != null) {
             Component name = text("resident", this.resident.name(), Math.round(this.resident.health()), this.resident.food());
             return this.resident.guardOrder() == null ? name : name.copy().append("\n")
@@ -503,12 +544,13 @@ public final class SettlementViewScreen extends Screen {
     private void updateActions() {
         if (!permits(SettlementPermission.BUILD)) {
             cancelGizmo();
-            this.drawing = false;
+            if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
             this.dragStart = null;
             this.dragEnd = null;
         }
         if (!selectedGuard()) {
             this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
             this.guardPoints.clear();
         }
         var draft = this.parent.buildingDraft();
@@ -532,16 +574,16 @@ public final class SettlementViewScreen extends Screen {
                     || this.projects.containsKey(this.selectedArea)
                     || this.selectedArea != null && this.areas.containsKey(this.selectedArea) && permits(SettlementPermission.BUILD));
             this.drawArea.active = permits(SettlementPermission.BUILD) && !this.guardPending;
-            this.drawArea.setMessage(text(this.drawing ? "cancel_area" : "draw_area"));
+            this.drawArea.setMessage(text(this.interaction.is(Mode.DRAW_AREA) ? "cancel_area" : "draw_area"));
         }
         for (var button : this.guardButtons) {
             if (button != null) {
-                button.visible = selectedGuard() && !manipulating && !this.plotMode;
+                button.visible = selectedGuard() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
                 button.active = !this.guardPending;
             }
         }
         if (this.returnToPost != null) {
-            this.returnToPost.visible = selectedGuard() && !manipulating && !this.plotMode;
+            this.returnToPost.visible = selectedGuard() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
             this.returnToPost.active = !this.guardPending;
             this.guardButtons[SettlementGuardOrder.Mode.PATROL.ordinal()].setMessage(text(
                     this.guardMode == SettlementGuardOrder.Mode.PATROL ? "guard_finish_patrol" : "guard_patrol"));
@@ -561,10 +603,11 @@ public final class SettlementViewScreen extends Screen {
             return;
         }
         cancelGizmo();
+        enterMode(Mode.GUARD_TARGET);
         this.guardMode = mode;
         this.guardPoints.clear();
         this.guardFeedback = Component.empty();
-        this.drawing = false;
+        if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
         this.dragStart = null;
         this.dragEnd = null;
         updateActions();
@@ -579,12 +622,32 @@ public final class SettlementViewScreen extends Screen {
         this.guardPending = true;
         this.guardSentAt = Util.getMillis();
         this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
         this.guardPoints.clear();
         this.guardFeedback = text("guard_sending");
         updateActions();
     }
 
+    private void enterMode(Mode mode) {
+        clearControls();
+        this.boxX = -1;
+        this.boxDragging = false;
+        this.dragStart = null;
+        this.dragEnd = null;
+        this.guardMode = null;
+        this.guardPoints.clear();
+        if (mode != Mode.PLACE_BUILDING) this.parent.clearBuildingDraft();
+        if (mode != Mode.EDIT_BOUNDS) {
+            this.editingArea = null;
+            this.areaBounds = null;
+        }
+        this.gizmo = null;
+        this.popup = null;
+        this.interaction.enter(mode);
+    }
+
     private void cancelGizmo() {
+        if (this.interaction.is(Mode.EDIT_BOUNDS) || this.interaction.is(Mode.PLACE_BUILDING)) this.interaction.enter(Mode.SELECT);
         this.parent.clearBuildingDraft();
         this.editingArea = null;
         this.areaBounds = null;
@@ -595,12 +658,14 @@ public final class SettlementViewScreen extends Screen {
     private void synchronizeGizmo() {
         var draft = this.parent.buildingDraft();
         if (draft != null) {
+            this.interaction.enter(Mode.PLACE_BUILDING);
             if (this.gizmo == null || !this.buildingGizmo) {
                 this.gizmo = new SettlementSelectionGizmo(draft.bounds(), true, false, true, this::allowedGizmoBounds);
                 this.buildingGizmo = true;
                 this.editingArea = null;
-                this.drawing = false;
+                if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
                 this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
             }
             this.gizmo.bounds(draft.bounds());
         } else if (this.editingArea != null) {
@@ -700,18 +765,46 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && this.boxX >= 0) {
+            this.boxX = -1;
+            this.boxDragging = false;
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_F) { focusSelection(); return true; }
+        if (keyCode == GLFW.GLFW_KEY_HOME) { focus(this.window.center().getX(), this.window.center().getZ()); return true; }
+        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode <= GLFW.GLFW_KEY_9) {
+            int group = keyCode - GLFW.GLFW_KEY_1;
+            if ((modifiers & GLFW.GLFW_MOD_CONTROL) != 0) {
+                this.selection.store(group);
+                savePreferences();
+                this.guardFeedback = Component.literal("Group " + (group + 1) + " saved");
+            } else {
+                boolean focus = this.selection.recall(group, Util.getMillis());
+                this.selectedArea = null;
+                syncSelection();
+                if (focus) focusSelection();
+            }
+            return true;
+        }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && this.popup != null) {
             this.popup = null;
             return true;
         }
         if (this.popup != null && this.popup.key(keyCode)) return true;
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && !this.interaction.is(Mode.SELECT)) {
+            if (this.gizmo != null && this.gizmo.dragging()) this.gizmo.end();
+            else enterMode(Mode.SELECT);
+            updateActions();
+            updatePlotActions();
+            return true;
+        }
         if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) && this.editingArea != null) {
             confirmDraft();
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE && (this.gizmo != null || this.drawing)) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && (this.gizmo != null || this.interaction.is(Mode.DRAW_AREA))) {
             cancelGizmo();
-            this.drawing = false;
+            if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
             this.dragStart = null;
             this.dragEnd = null;
             updateActions();
@@ -719,6 +812,7 @@ public final class SettlementViewScreen extends Screen {
         }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && this.guardMode != null) {
             this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
             this.guardPoints.clear();
             updateActions();
             return true;
@@ -771,7 +865,7 @@ public final class SettlementViewScreen extends Screen {
             this.panning = true;
             return true;
         }
-        if (this.plotMode && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
+        if (this.interaction.is(Mode.SELECT_PLOT) && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
             var hit = pick(x, y);
             if (hit.position() != null) selectPlot(new net.minecraft.world.level.ChunkPos(hit.position()));
             return true;
@@ -783,6 +877,7 @@ public final class SettlementViewScreen extends Screen {
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.guardMode != null) {
             this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
             this.guardPoints.clear();
             updateActions();
             return true;
@@ -818,10 +913,19 @@ public final class SettlementViewScreen extends Screen {
             return true;
         }
         this.guardFeedback = Component.empty();
+        if (!this.interaction.is(Mode.DRAW_AREA)) {
+            this.boxX = x;
+            this.boxY = y;
+            this.boxEndX = x;
+            this.boxEndY = y;
+            this.boxAdd = hasShiftDown();
+            this.beforeBox = this.selection.residents();
+            this.boxDragging = false;
+        }
         var matching = matchingAreas(hit, x, y);
         select(hit, matching.isEmpty() ? null : matching.getFirst());
-        if (hit.resident() == null && matching.size() > 1 && !this.drawing) openChooser(matching, x, y);
-        if (this.drawing) {
+        if (hit.resident() == null && matching.size() > 1 && !this.interaction.is(Mode.DRAW_AREA)) openChooser(matching, x, y);
+        if (this.interaction.is(Mode.DRAW_AREA)) {
             this.dragStart = hit.position();
             this.dragEnd = hit.position();
         }
@@ -844,11 +948,18 @@ public final class SettlementViewScreen extends Screen {
             this.gizmo.drag(ray(Math.min(x, this.panelLeft - 1), y)).ifPresent(this::adjustGizmo);
             return true;
         }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.drawing && this.dragStart != null) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.interaction.is(Mode.DRAW_AREA) && this.dragStart != null) {
             BlockPos position = pick(Math.min(x, this.panelLeft - 1), y).position();
             if (position != null) {
                 this.dragEnd = position;
             }
+            return true;
+        }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.boxX >= 0) {
+            this.boxEndX = Math.clamp(x, 0, this.panelLeft - 1);
+            this.boxEndY = Math.clamp(y, 0, this.height - 1);
+            this.boxDragging |= Math.hypot(x - this.boxX, y - this.boxY) >= 4;
+            if (this.boxDragging) this.popup = null;
             return true;
         }
         return super.mouseDragged(x, y, button, deltaX, deltaY);
@@ -856,19 +967,26 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double x, double y, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.boxX >= 0) {
+            if (this.boxDragging) finishBox();
+            this.boxX = -1;
+            this.boxDragging = false;
+            return true;
+        }
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) this.panning = false;
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.gizmo != null && this.gizmo.dragging()) {
             this.gizmo.end();
             return true;
         }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.drawing && this.dragStart != null && this.dragEnd != null) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.interaction.is(Mode.DRAW_AREA) && this.dragStart != null && this.dragEnd != null) {
             AABB bounds = draftBounds();
             var area = new SettlementManagementPayload.Area(UUID.randomUUID(), "", SettlementAreaType.HOME,
                     BlockPos.containing(bounds.minX, bounds.minY, bounds.minZ),
                     BlockPos.containing(bounds.maxX - 1.0D, bounds.maxY - 1.0D, bounds.maxZ - 1.0D), 5, true, 0, 0, 0);
-            this.editingArea = area;
+            this.interaction.enter(Mode.EDIT_BOUNDS);
+        this.editingArea = area;
             this.areaBounds = bounds;
-            this.drawing = false;
+            if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
             this.dragStart = null;
             this.dragEnd = null;
             synchronizeGizmo();
@@ -897,7 +1015,7 @@ public final class SettlementViewScreen extends Screen {
         double distance = block.getType() == HitResult.Type.MISS ? 256.0D * 256.0D : start.distanceToSqr(block.getLocation());
         UUID residentId = null;
         for (Entity entity : this.minecraft.level.entitiesForRendering()) {
-            if (entity instanceof Villager && this.window.contains(entity.blockPosition())) {
+            if (entity instanceof Villager && this.roster.containsKey(entity.getUUID()) && this.window.contains(entity.blockPosition())) {
                 var hit = entity.getBoundingBox().inflate(0.2D).clip(start, end);
                 if (hit.isPresent() && hit.get().distanceToSqr(start) < distance) {
                     distance = hit.get().distanceToSqr(start);
@@ -937,9 +1055,9 @@ public final class SettlementViewScreen extends Screen {
             LevelRenderer.renderLineBox(pose, lines, new AABB(this.hovered.position()).inflate(0.015D),
                     1.0F, 0.78F, 0.25F, 0.7F);
         }
-        if (this.selectedResident != null || this.hovered.resident() != null) {
+        if (!this.selection.residents().isEmpty() || this.hovered.resident() != null) {
             for (Entity entity : this.minecraft.level.entitiesForRendering()) {
-                if (entity.getUUID().equals(this.selectedResident)) {
+                if (this.selection.residents().contains(entity.getUUID())) {
                     LevelRenderer.renderLineBox(pose, lines, entity.getBoundingBox().inflate(0.08D),
                             0.25F, 0.9F, 1.0F, 1.0F);
                 } else if (entity.getUUID().equals(this.hovered.resident()) && !SettlementViewClient.panelsOpen(this)) {
@@ -953,7 +1071,7 @@ public final class SettlementViewScreen extends Screen {
         for (BlockPos point : points) {
             LevelRenderer.renderLineBox(pose, lines, new AABB(point).deflate(0.15D), 1.0F, 1.0F, 1.0F, 1.0F);
         }
-        if (this.drawing && this.dragStart != null && this.dragEnd != null) {
+        if (this.interaction.is(Mode.DRAW_AREA) && this.dragStart != null && this.dragEnd != null) {
             LevelRenderer.renderLineBox(pose, lines, draftBounds(), 0.62F, 0.72F, 0.78F, 0.65F);
         }
         for (var project : this.projects.values()) {
@@ -976,9 +1094,10 @@ public final class SettlementViewScreen extends Screen {
     }
 
     void togglePlots() {
-        this.plotMode = !this.plotMode;
-        this.drawing = false;
+        enterMode(this.interaction.is(Mode.SELECT_PLOT) ? Mode.SELECT : Mode.SELECT_PLOT);
+        if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
         this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
         this.guardPoints.clear();
         this.gizmo = null;
         this.editingArea = null;
@@ -1003,8 +1122,8 @@ public final class SettlementViewScreen extends Screen {
     private void updatePlotActions() {
         if (this.claimFree == null) return;
         var offer = plotOffer();
-        this.claimFree.visible = this.plotMode;
-        this.buyPlot.visible = this.plotMode;
+        this.claimFree.visible = this.interaction.is(Mode.SELECT_PLOT);
+        this.buyPlot.visible = this.interaction.is(Mode.SELECT_PLOT);
         this.claimFree.active = offer != null && offer.freeFailure().isEmpty() && !this.plotPending;
         this.buyPlot.active = offer != null && offer.paidFailure().isEmpty() && !this.plotPending;
         this.buyPlot.setMessage(text("plot_buy", offer == null ? 0 : offer.price()));
@@ -1041,12 +1160,12 @@ public final class SettlementViewScreen extends Screen {
     }
 
     net.minecraft.world.level.ChunkPos hoveredPlot() {
-        return this.plotMode && this.hovered.position() != null
+        return this.interaction.is(Mode.SELECT_PLOT) && this.hovered.position() != null
                 ? new net.minecraft.world.level.ChunkPos(this.hovered.position()) : null;
     }
 
     void renderPlotTint(RenderLevelStageEvent event) {
-        if (this.plotMode) SettlementPlotRenderer.render(event, this.plotSnapshot, this.selectedPlot, hoveredPlot());
+        if (this.interaction.is(Mode.SELECT_PLOT)) SettlementPlotRenderer.render(event, this.plotSnapshot, this.selectedPlot, hoveredPlot());
     }
 
     private AABB draftBounds() {
@@ -1076,8 +1195,10 @@ public final class SettlementViewScreen extends Screen {
         cancelGizmo();
         clearControls();
         this.guardMode = null;
+        if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
         this.guardPoints.clear();
-        this.drawing = false;
+        if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
+        this.interaction.enter(Mode.EDIT_BOUNDS);
         this.editingArea = area;
         this.areaBounds = new SettlementViewBounds(area.min(), area.max()).box();
         synchronizeGizmo();
@@ -1110,13 +1231,72 @@ public final class SettlementViewScreen extends Screen {
     private void select(Pick hit, UUID area) {
         this.selectedArea = hit.resident() == null ? area : null;
         this.selectedBlock = hit.position();
-        if (!java.util.Objects.equals(this.selectedResident, hit.resident())) {
-            this.selectedResident = hit.resident();
+        if (hit.resident() != null && hasShiftDown()) {
+            if (!this.selection.toggle(hit.resident())) this.guardFeedback = Component.literal("Selection limit: 128 residents");
+        } else {
+            this.selection.select(hit.resident() == null ? List.of() : List.of(hit.resident()), false);
+        }
+        syncSelection();
+        updateActions();
+    }
+
+    private void syncSelection() {
+        UUID single = this.selection.single();
+        if (!java.util.Objects.equals(this.selectedResident, single)) {
+            this.selectedResident = single;
             this.resident = null;
             this.residentChecked = false;
-            this.residentRefreshAt = 0L;
+            this.residentRefreshAt = 0;
         }
-        updateActions();
+    }
+
+    void savePreferences() {
+        this.preferences.groups = this.selection.groups();
+        this.preferences.height = this.viewHeight;
+        this.preferences.yaw = this.camera.yaw();
+        this.preferences.save();
+    }
+
+    private void focusSelection() {
+        var positions = this.selection.residents().stream().map(this.roster::get).filter(java.util.Objects::nonNull)
+                .map(SettlementManagementPayload.Resident::position).toList();
+        if (!positions.isEmpty()) {
+            focus(positions.stream().mapToInt(BlockPos::getX).average().orElse(this.focusX),
+                    positions.stream().mapToInt(BlockPos::getZ).average().orElse(this.focusZ));
+        } else if (this.selectedArea != null) {
+            var area = selectableAreas().stream().filter(row -> row.id().equals(this.selectedArea)).findFirst().orElse(null);
+            if (area != null) focus((area.min().getX() + area.max().getX()) / 2.0D, (area.min().getZ() + area.max().getZ()) / 2.0D);
+        } else if (this.selectedBlock != null) focus(this.selectedBlock.getX(), this.selectedBlock.getZ());
+    }
+
+    private double[] project(Vec3 position) {
+        var camera = this.minecraft.gameRenderer.getMainCamera();
+        Vec3 offset = position.subtract(camera.getPosition());
+        double depth = offset.dot(new Vec3(camera.getLookVector()));
+        if (depth <= 0) return null;
+        double scale = this.height / (2.0D * Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D)) * depth);
+        return new double[] {this.width / 2.0D - offset.dot(new Vec3(camera.getLeftVector())) * scale,
+                this.height / 2.0D - offset.dot(new Vec3(camera.getUpVector())) * scale};
+    }
+
+    private void finishBox() {
+        List<UUID> visible = new ArrayList<>();
+        for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof Villager) || !this.roster.containsKey(entity.getUUID()) || !contains(entity.blockPosition())) continue;
+            var point = project(entity.getBoundingBox().getCenter());
+            if (point == null || point[0] < 0 || point[0] >= this.panelLeft || point[1] < 0 || point[1] >= this.height) continue;
+            if (point[0] < Math.min(this.boxX, this.boxEndX) || point[0] > Math.max(this.boxX, this.boxEndX)
+                    || point[1] < Math.min(this.boxY, this.boxEndY) || point[1] > Math.max(this.boxY, this.boxEndY)) continue;
+            var camera = this.minecraft.gameRenderer.getMainCamera();
+            var obstruction = this.minecraft.level.clip(new ClipContext(camera.getPosition(), entity.getBoundingBox().getCenter(),
+                    ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, camera.getEntity()));
+            if (obstruction.getType() == HitResult.Type.MISS) visible.add(entity.getUUID());
+        }
+        if (this.boxAdd) this.selection.select(this.beforeBox, false);
+        if (!this.selection.select(visible, this.boxAdd)) this.guardFeedback = Component.literal("Selection limit: 128 residents");
+        this.selectedArea = null;
+        this.selectedBlock = null;
+        syncSelection();
     }
 
     private List<UUID> matchingAreas(Pick hit, double x, double y) {
@@ -1165,7 +1345,7 @@ public final class SettlementViewScreen extends Screen {
         if (handle) {
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DRAFT, this.editingArea.id()), x, y);
         } else if (hit.resident() != null) {
-            select(hit, null);
+            if (!this.selection.residents().contains(hit.resident())) select(hit, null);
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.RESIDENT, hit.resident()), x, y);
         } else if (this.editingArea != null && editedBounds().box().clip(ray.origin(), ray.end()).isPresent()) {
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DRAFT, this.editingArea.id()), x, y);
