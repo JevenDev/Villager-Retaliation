@@ -41,8 +41,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public final class SettlementViewScreen extends Screen {
-    private static final float YAW = 45.0F;
-    static final float PITCH = 35.26439F;
+    static final float PITCH = SettlementViewCamera.PITCH;
     private static final double MOVE_RESPONSE = 12.0D;
     private static final double ZOOM_RESPONSE = 14.0D;
     private final SettlementManagementScreen parent;
@@ -50,6 +49,7 @@ public final class SettlementViewScreen extends Screen {
     private final Map<UUID, SettlementManagementPayload.Area> areas = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Area> incomingAreas = new LinkedHashMap<>();
     private final Set<Integer> heldKeys = new HashSet<>();
+    private final SettlementViewCamera camera = new SettlementViewCamera();
     private SettlementManagementPayload.Header header;
     private SettlementViewWindow window;
     private double focusX;
@@ -135,6 +135,14 @@ public final class SettlementViewScreen extends Screen {
 
     float viewHeight() {
         return this.viewHeight;
+    }
+
+    void rotateCamera(double degrees) {
+        this.camera.rotate(degrees / 90.0D, 1.0D);
+    }
+
+    float cameraYaw() {
+        return this.camera.yaw();
     }
 
     double cameraHeight() {
@@ -223,6 +231,8 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     protected void init() {
+        clearControls();
+        this.lastFrame = 0L;
         this.panelWidth = Math.clamp(this.width / 3, 128, 200);
         this.panelLeft = this.width - this.panelWidth;
         addRenderableWidget(Button.builder(text("overview"), ignored -> openManagement(Page.SUMMARY, ""))
@@ -335,29 +345,34 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public Component getNarrationMessage() {
-        return this.title.copy().append(". ").append(selectedName());
+        return this.title.copy().append(". ").append(selectedName()).append(". ").append(text("controls"));
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         long now = Util.getMillis();
-        double elapsed = this.lastFrame == 0L ? 0.0D : Math.clamp((now - this.lastFrame) / 1_000.0D, 0.0D, 0.05D);
+        double frameTime = this.lastFrame == 0L ? 0.0D : Math.max(0.0D, (now - this.lastFrame) / 1_000.0D);
+        double elapsed = Math.min(frameTime, 0.05D);
         this.lastFrame = now;
+        if (!this.minecraft.isWindowActive()) {
+            clearControls();
+        }
+        rotateCamera(((held(GLFW.GLFW_KEY_E) ? 1 : 0) - (held(GLFW.GLFW_KEY_Q) ? 1 : 0)) * 90.0D * frameTime);
         double forward = (held(GLFW.GLFW_KEY_W) || held(GLFW.GLFW_KEY_UP) ? 1 : 0)
                 - (held(GLFW.GLFW_KEY_S) || held(GLFW.GLFW_KEY_DOWN) ? 1 : 0);
         double right = (held(GLFW.GLFW_KEY_D) || held(GLFW.GLFW_KEY_RIGHT) ? 1 : 0)
                 - (held(GLFW.GLFW_KEY_A) || held(GLFW.GLFW_KEY_LEFT) ? 1 : 0);
         double speed = this.viewHeight / Math.max(1.0D, Math.hypot(forward, right));
-        double yaw = Math.toRadians(YAW);
+        Vec3 movement = SettlementViewCamera.movement(this.camera.yaw(), right, forward);
         double response = 1.0D - Math.exp(-MOVE_RESPONSE * elapsed);
-        this.panVelocityX += ((-right * Math.cos(yaw) - forward * Math.sin(yaw)) * speed - this.panVelocityX) * response;
-        this.panVelocityZ += ((-right * Math.sin(yaw) + forward * Math.cos(yaw)) * speed - this.panVelocityZ) * response;
+        this.panVelocityX += (movement.x * speed - this.panVelocityX) * response;
+        this.panVelocityZ += (movement.z * speed - this.panVelocityZ) * response;
         pan(this.panVelocityX * elapsed, this.panVelocityZ * elapsed);
         this.cameraHeight += (this.viewHeight - this.cameraHeight) * (1.0D - Math.exp(-ZOOM_RESPONSE * elapsed));
         if (Math.abs(this.viewHeight - this.cameraHeight) < 0.01D) {
             this.cameraHeight = this.viewHeight;
         }
-        positionCamera();
+        positionCamera(frameTime);
         this.hovered = mouseX >= 0 && mouseX < this.panelLeft && mouseY >= 0 && mouseY < this.height
                 ? pick(mouseX, mouseY) : new Pick(null, null);
         graphics.fill(this.panelLeft, 0, this.width, this.height, 0xE0101010);
@@ -558,34 +573,27 @@ public final class SettlementViewScreen extends Screen {
     }
 
     private void positionCamera() {
+        positionCamera(0.0D);
+    }
+
+    private void positionCamera(double elapsed) {
         if (this.minecraft == null || this.minecraft.level == null) {
             return;
         }
-        int ground = this.window.center().getY();
-        var chunk = this.minecraft.level.getChunkSource().getChunk(Math.floorDiv((int) Math.floor(this.focusX), 16),
-                Math.floorDiv((int) Math.floor(this.focusZ), 16), false);
-        if (chunk != null) {
-            ground = Math.max(ground, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(this.focusX),
-                    (int) Math.floor(this.focusZ)));
-        }
-        double yaw = Math.toRadians(YAW);
-        double maximumVisibleDistance = this.minecraft.options.getEffectiveRenderDistance() * 16.0D - 8.0D;
-        double targetPitch = Math.max(PITCH, Math.toDegrees(Math.asin(Math.min(1.0D,
-                this.cameraHeight / Math.max(1.0D, maximumVisibleDistance)))));
-        double offset = this.cameraHeight / Math.tan(Math.toRadians(targetPitch));
-        double limitX = (this.window.center().getX() + this.window.radius() - this.focusX) / Math.sin(yaw);
-        double limitZ = (this.focusZ - this.window.center().getZ() + this.window.radius()) / Math.cos(yaw);
-        offset = Math.max(0.0D, Math.min(offset, Math.min(limitX, limitZ)));
-        double x = this.focusX + Math.sin(yaw) * offset;
-        double z = this.focusZ - Math.cos(yaw) * offset;
-        double y = ground + this.cameraHeight;
-        var cameraChunk = this.minecraft.level.getChunkSource().getChunk(Math.floorDiv((int) Math.floor(x), 16),
-                Math.floorDiv((int) Math.floor(z), 16), false);
-        if (cameraChunk != null) {
-            y = Math.max(y, cameraChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(x), (int) Math.floor(z)) + 4.0D);
-        }
-        float pitch = (float) Math.toDegrees(Math.atan2(y - ground, offset));
-        SettlementViewClient.position(x, y, z, YAW, pitch);
+        var pose = this.camera.position(this.window, this.focusX, this.focusZ, this.cameraHeight,
+                this.minecraft.options.getEffectiveRenderDistance() * 16.0D - 8.0D, this::terrainHeight, elapsed);
+        SettlementViewClient.position(pose.position().x, pose.position().y, pose.position().z, pose.yaw(), pose.pitch());
+    }
+
+    private double terrainHeight(int x, int z) {
+        var chunk = this.minecraft.level.getChunkSource().getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16), false);
+        return chunk == null ? Double.NaN : chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z) + 1.0D;
+    }
+
+    void clearControls() {
+        this.heldKeys.clear();
+        this.panVelocityX = 0.0D;
+        this.panVelocityZ = 0.0D;
     }
 
     @Override
@@ -619,6 +627,7 @@ public final class SettlementViewScreen extends Screen {
 
     private static boolean navigationKey(int key) {
         return key == GLFW.GLFW_KEY_W || key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_S || key == GLFW.GLFW_KEY_D
+                || key == GLFW.GLFW_KEY_Q || key == GLFW.GLFW_KEY_E
                 || key == GLFW.GLFW_KEY_UP || key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_DOWN || key == GLFW.GLFW_KEY_RIGHT;
     }
 
@@ -700,7 +709,7 @@ public final class SettlementViewScreen extends Screen {
     public boolean mouseDragged(double x, double y, int button, double deltaX, double deltaY) {
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && x < this.panelLeft) {
             double scale = 2.0D * this.viewHeight * Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D)) / this.height;
-            double yaw = Math.toRadians(YAW);
+            double yaw = Math.toRadians(this.camera.yaw());
             this.panVelocityX = 0.0D;
             this.panVelocityZ = 0.0D;
             pan((-Math.cos(yaw) * deltaX - Math.sin(yaw) * deltaY) * scale,
@@ -844,9 +853,8 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public void removed() {
-        this.heldKeys.clear();
-        this.panVelocityX = 0.0D;
-        this.panVelocityZ = 0.0D;
+        clearControls();
+        this.lastFrame = 0L;
         if (!SettlementViewClient.panelsOpen(this)) {
             SettlementViewClient.end(this);
         }

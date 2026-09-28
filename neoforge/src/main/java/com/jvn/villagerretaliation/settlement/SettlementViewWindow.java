@@ -9,7 +9,7 @@ import net.minecraft.world.level.ChunkPos;
 public record SettlementViewWindow(BlockPos center, int radius, double x, double z, float height, List<ChunkPos> chunks) {
     public static final int BORDER = 16;
     public static final int MAX_CHUNKS = 121;
-    public static final float MIN_HEIGHT = 16.0F;
+    public static final float MIN_HEIGHT = 8.0F;
     public static final float MAX_HEIGHT = 64.0F;
 
     public SettlementViewWindow {

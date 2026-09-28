@@ -2681,7 +2681,7 @@
   "villagerretaliation.gui.settlement_view.not_resident": "This villager is not a resident of this settlement.",
   "villagerretaliation.gui.settlement_view.select_hint": "Select a resident or registered area.",
   "villagerretaliation.gui.settlement_view.position": "%s, %s, %s",
-  "villagerretaliation.gui.settlement_view.controls": "WASD or middle drag to pan. Scroll to zoom. Click to select, then click again to cycle shared areas. Your body remains vulnerable. Damage exits this view.",
+  "villagerretaliation.gui.settlement_view.controls": "Hold Q/E to rotate. WASD, arrows or middle drag to pan. Scroll to zoom. Click to select, then click again to cycle shared areas. Your body remains vulnerable. Damage exits this view.",
   "villagerretaliation.gui.settlement_view.draw_hint": "Drag across a build to select its area. Release to choose its function, height and name.",
   "villagerretaliation.gui.settlement_view.loading": "Loading terrain…",
   "villagerretaliation.gui.settlement_view.guard_move": "Move",

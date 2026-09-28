@@ -72,6 +72,8 @@ public final class SettlementViewClientSmoke {
     private static double originalX;
     private static double originalZ;
     private static float originalHeight;
+    private static float originalYaw;
+    private static Vec3 expectedMovement;
     private static int panDirection;
     private static final int[] PAN_KEYS = {GLFW.GLFW_KEY_W, GLFW.GLFW_KEY_D, GLFW.GLFW_KEY_S, GLFW.GLFW_KEY_A,
             GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_LEFT};
@@ -158,6 +160,33 @@ public final class SettlementViewClientSmoke {
                     "the centered settlement camera has an isometric-style tilt");
             capture("minimum-zoom");
             screen.mouseScrolled(40, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
+            ticks = 0;
+            originalYaw = screen.cameraYaw();
+            screen.keyPressed(GLFW.GLFW_KEY_Q, 0, 0);
+            phase = 80;
+        } else if (phase == 80 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 8) {
+            screen.keyReleased(GLFW.GLFW_KEY_Q, 0, 0);
+            require((originalYaw - screen.cameraYaw() + 360) % 360 > 5, "holding Q rotates left");
+            originalYaw = screen.cameraYaw();
+            screen.keyPressed(GLFW.GLFW_KEY_E, 0, 0);
+            ticks = 0;
+            phase = 81;
+        } else if (phase == 81 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 8) {
+            screen.keyReleased(GLFW.GLFW_KEY_E, 0, 0);
+            require((screen.cameraYaw() - originalYaw + 360) % 360 > 5, "holding E rotates right");
+            originalX = screen.focusX();
+            originalZ = screen.focusZ();
+            expectedMovement = SettlementViewCamera.movement(screen.cameraYaw(), 0, 1);
+            screen.keyPressed(GLFW.GLFW_KEY_W, 0, 0);
+            ticks = 0;
+            phase = 82;
+        } else if (phase == 82 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 8) {
+            screen.keyReleased(GLFW.GLFW_KEY_W, 0, 0);
+            require(new Vec3(screen.focusX() - originalX, 0, screen.focusZ() - originalZ).dot(expectedMovement) > 0.1D,
+                    "panning follows the rotated camera");
+            screen.clearControls();
+            button(screen, "villagerretaliation.gui.settlement_view.center").onPress();
+            screen.rotateCamera(45.0D - screen.cameraYaw());
             ticks = 0;
             phase = 3;
         } else if (phase == 3 && minecraft.screen instanceof SettlementViewScreen screen && visibleResident(minecraft) != null) {
