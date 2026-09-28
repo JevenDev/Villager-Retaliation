@@ -4,9 +4,11 @@ import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -188,6 +190,140 @@ public final class SettlementBackgroundConstructionGameTests {
                     "clearing damages the actual tool once");
             helper.assertValueEqual(fixture.site().placements().size(), 2, "clearing and building remain ordered world operations");
         });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_construction")
+    public static void buriedFoundationsClearReachableStoneBeforeTheLowestBlueprintBlock(GameTestHelper helper) {
+        fixture(helper, false, Map.of(BlockPos.ZERO, Blocks.OAK_PLANKS.defaultBlockState(),
+                BlockPos.ZERO.above(), Blocks.OAK_PLANKS.defaultBlockState()), fixture -> {
+            var blocks = new LinkedHashMap<BlockPos, BlockState>();
+            blocks.put(fixture.origin(), Blocks.STONE.defaultBlockState());
+            blocks.put(fixture.origin().above(), Blocks.STONE.defaultBlockState());
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 1; z++) {
+                    if (x != 0 || z != 0) blocks.put(fixture.origin().offset(x, 0, z), Blocks.BEDROCK.defaultBlockState());
+                }
+            }
+            scene(fixture, blocks);
+            fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 2));
+            fixture.depot().setItem(1, new ItemStack(Items.IRON_PICKAXE));
+            work(helper, fixture, 30);
+            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.COMPLETED,
+                    "reachable stone is mined before the buried floor: " + fixture.worker().status());
+            helper.assertTrue(fixture.site().getBlockState(fixture.origin()).is(Blocks.OAK_PLANKS)
+                    && fixture.site().getBlockState(fixture.origin().above()).is(Blocks.OAK_PLANKS), "both blueprint blocks are placed");
+            helper.assertValueEqual(count(helper, fixture, Items.OAK_PLANKS), 0, "only the two real building materials are consumed");
+            helper.assertValueEqual(count(helper, fixture, Items.COBBLESTONE), 2, "both mined stone blocks retain their drops");
+            helper.assertTrue(fixture.depot().getItem(1).isEmpty(), "the pickaxe is collected from village storage");
+            helper.assertValueEqual(fixture.worker().items(helper.getLevel().registryAccess()).get(HiredJobInventory.MAINHAND_SLOT).getDamageValue(), 2,
+                    "each mined block wears the stored pickaxe once");
+            helper.assertTrue(fixture.site().getBlockState(fixture.origin().east()).is(Blocks.BEDROCK),
+                    "terrain outside the blueprint remains unchanged");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "excavating the foundation does not load the remote site");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_construction")
+    public static void largeHouseExcavatesItsStoneFoundationUsingVillageStorage(GameTestHelper helper) {
+        var origin = helper.absolutePos(new BlockPos(2, 2, 2)).offset(8_000_000, 0, 8_000_000).atY(80);
+        fixture(helper, origin, null, true, ResourceLocation.withDefaultNamespace("village/plains/houses/plains_big_house_1"), fixture -> {
+            var level = helper.getLevel();
+            var blocks = new LinkedHashMap<BlockPos, BlockState>();
+            for (var pos : BlockPos.betweenClosed(fixture.site().min().atY(origin.getY()), fixture.site().max().atY(origin.getY() + 1))) {
+                blocks.put(pos.immutable(), Blocks.STONE.defaultBlockState());
+            }
+            scene(fixture, blocks);
+            fixture.builder().setPos(origin.offset(-2, 2, 0).getBottomCenter());
+            fixture.worker().observe(level, fixture.builder(), SettlementWorkforceService.duty(fixture.builder()).orElseThrow(), 0L);
+            int slot = 0;
+            for (var material : fixture.plan().materials()) {
+                int remaining = material.count();
+                while (remaining > 0) {
+                    int count = Math.min(material.item().getMaxStackSize(), remaining);
+                    fixture.depot().setItem(slot++, material.item().copyWithCount(count));
+                    remaining -= count;
+                }
+            }
+            fixture.depot().setItem(slot++, new ItemStack(Items.IRON_PICKAXE));
+            fixture.depot().setItem(slot++, new ItemStack(Items.IRON_AXE));
+            fixture.depot().setItem(slot++, new ItemStack(Items.IRON_SHOVEL));
+            fixture.depot().setItem(slot, new ItemStack(Items.IRON_HOE));
+            work(helper, fixture, 1500);
+            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.COMPLETED,
+                    "the large house can excavate a buried stone floor: " + fixture.worker().status() + " / " + fixture.project().blocker());
+            for (var block : fixture.plan().blocks()) helper.assertTrue(BuilderStructureScanner.sameSchematicState(
+                    fixture.site().getBlockState(fixture.plan().worldPos(origin, block)), block.state()), "every large-house block reaches its planned state");
+            for (var block : fixture.plan().clearingBlocks()) helper.assertTrue(
+                    fixture.site().getBlockState(fixture.plan().worldPos(origin, block)).isAir(), "the large house has clear rooms and entrances");
+            helper.assertFalse(level.hasChunkAt(origin), "the buried house completes without loading its remote chunks");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_native_foundation_clearance")
+    public static void loadedBuildersClearRoomTerrainBeforeMiningBuriedFoundations(GameTestHelper helper) {
+        nativeFoundation(helper, true);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_native_room_clearance")
+    public static void matchingBuildingBlocksDoNotCompleteConstructionBeforeRoomsAreCleared(GameTestHelper helper) {
+        nativeFoundation(helper, false);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_construction")
+    public static void clearingRoomsPreservesProtectedBlockEntitiesAndSupplies(GameTestHelper helper) {
+        fixture(helper, false, room(), fixture -> {
+            scene(fixture, Map.of(fixture.origin().above(), Blocks.CHEST.defaultBlockState()));
+            fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 2));
+            fixture.depot().setItem(1, new ItemStack(Items.IRON_AXE));
+            work(helper, fixture, 10);
+            helper.assertValueEqual(fixture.worker().status(), "construction_blocked_existing", "a protected room container blocks construction");
+            helper.assertFalse(fixture.site().pending(), "a room container cannot be erased");
+            helper.assertValueEqual(count(helper, fixture, Items.OAK_PLANKS), 2, "protected room contents preserve building supplies");
+            helper.assertValueEqual(count(helper, fixture, Items.IRON_AXE), 1, "the tool stays in storage");
+        });
+    }
+
+    private static void nativeFoundation(GameTestHelper helper, boolean buried) {
+        fixture(helper, true, room(), fixture -> {
+            var level = helper.getLevel();
+            var origin = fixture.origin();
+            for (var pos : BlockPos.betweenClosed(fixture.site().min(), fixture.site().max())) {
+                level.setBlock(pos, pos.getY() < origin.getY() ? Blocks.DIRT.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
+            }
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 1; z++) {
+                    if (x != 0 || z != 0) level.setBlock(origin.offset(x, 0, z), Blocks.BEDROCK.defaultBlockState(), 2);
+                }
+            }
+            level.setBlock(origin, buried ? Blocks.STONE.defaultBlockState() : Blocks.OAK_PLANKS.defaultBlockState(), 2);
+            level.setBlock(origin.above(), Blocks.STONE.defaultBlockState(), 2);
+            level.setBlock(origin.above(3), Blocks.OAK_PLANKS.defaultBlockState(), 2);
+            var builder = fixture.builder();
+            builder.setPos(origin.west().above().getBottomCenter());
+            helper.assertTrue(level.addFreshEntity(builder), "the builder is loaded beside its foundation");
+            SettlementBackgroundService.onActive(builder);
+            builder.setPos(origin.west().above().getBottomCenter());
+            var inventory = HiredJobInventory.getJobInventory(builder);
+            inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
+            if (buried) inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.OAK_PLANKS));
+            var state = HiredWorkStateStore.state(builder);
+            var context = new HiredWorkContext(inventory, state, origin, fixture.area().min(), fixture.area().max(), 8, 5, true, 100, true, true);
+            var worker = new BuilderWorker();
+            for (int tick = 0; tick < 40 && fixture.project().active(); tick++) worker.tick(level, builder, null, context);
+            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.COMPLETED,
+                    "native work clears the room before completing: " + fixture.project().blocker() + " / "
+                            + level.getBlockState(origin) + " / " + level.getBlockState(origin.above()) + " / " + builder.position());
+            helper.assertTrue(level.getBlockState(origin).is(Blocks.OAK_PLANKS), "the foundation reaches its planned state");
+            helper.assertTrue(level.getBlockState(origin.above()).isAir(), "the room terrain is mined instead of ignored");
+            helper.assertTrue(level.getBlockState(origin.above(3)).is(Blocks.OAK_PLANKS), "the existing roof is preserved");
+            helper.assertValueEqual(inventory.countItem(Items.COBBLESTONE), buried ? 2 : 1, "native mining retains exactly the real drops");
+            helper.assertValueEqual(fixture.project().total(), 2, "empty spaces do not change saved building progress or material counts");
+        });
+    }
+
+    private static Map<BlockPos, BlockState> room() {
+        return Map.of(BlockPos.ZERO, Blocks.OAK_PLANKS.defaultBlockState(), BlockPos.ZERO.above(), Blocks.AIR.defaultBlockState(),
+                BlockPos.ZERO.above(2), Blocks.AIR.defaultBlockState(), BlockPos.ZERO.above(3), Blocks.OAK_PLANKS.defaultBlockState());
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_construction")
@@ -827,8 +963,12 @@ public final class SettlementBackgroundConstructionGameTests {
     }
 
     static void fixture(GameTestHelper helper, BlockPos origin, Map<BlockPos, BlockState> blocks, boolean finish, Consumer<Fixture> check) {
+        fixture(helper, origin, blocks, finish, ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1"), check);
+    }
+
+    private static void fixture(GameTestHelper helper, BlockPos origin, Map<BlockPos, BlockState> blocks, boolean finish,
+                                ResourceLocation id, Consumer<Fixture> check) {
         var level = helper.getLevel();
-        var id = ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1");
         var template = level.getStructureManager().get(id).orElseThrow();
         var original = template.save(new CompoundTag());
         if (blocks != null) {

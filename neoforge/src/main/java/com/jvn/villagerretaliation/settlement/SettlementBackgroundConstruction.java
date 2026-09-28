@@ -78,7 +78,7 @@ final class SettlementBackgroundConstruction {
         var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
         var view = new SettlementConstructionView(level, site);
         try {
-            for (var block : plan.blocks()) {
+            for (var block : plan.siteBlocks(view, project.origin())) {
                 var pos = plan.worldPos(project.origin(), block);
                 var current = site.getBlockState(pos);
                 if (!BuilderStructureScanner.sameSchematicState(current, block.state())
@@ -94,7 +94,8 @@ final class SettlementBackgroundConstruction {
                 while (index < plan.blocks().size() && BuilderStructureScanner.sameSchematicState(
                         site.getBlockState(plan.worldPos(project.origin(), plan.blocks().get(index))), plan.blocks().get(index).state())) index++;
                 BuilderTaskState.setPlacedIndex(state, index);
-                if (index >= plan.blocks().size()) {
+                var obstructions = obstructions(site, view, plan, project);
+                if (index >= plan.blocks().size() && obstructions.isEmpty()) {
                     if (depositLeftovers(level, town, worker, inventory, plan, budget)) return;
                     project.observe(state);
                     town.finishProject(project.id(), SettlementProject.Status.COMPLETED);
@@ -106,19 +107,19 @@ final class SettlementBackgroundConstruction {
                     worker.status("completed_construction");
                     return;
                 }
-                var group = BuilderWorker.placementGroup(plan, project.origin(), plan.blocks().get(index));
-                var obstruction = obstruction(site, view, plan, project);
-                BlockPos target = obstruction == null ? group.materialPart().worldPos() : obstruction;
+                boolean clearing = !obstructions.isEmpty();
+                var group = clearing ? null : BuilderWorker.placementGroup(plan, project.origin(), plan.blocks().get(index));
+                var targets = clearing ? obstructions : List.of(group.materialPart().worldPos());
                 BlockPos start = state.contains(POSITION) ? BlockPos.of(state.getLong(POSITION)) : worker.position();
-                var route = SettlementConstructionRoutes.route(site, project, plan, start, target, owner, obstruction != null);
-                if (route.isEmpty()) {
+                var route = SettlementConstructionRoutes.route(site, project, plan, start, targets, owner, clearing);
+                if (route == null) {
                     blocked(worker, "construction_unreachable", "path_blocked");
                     return;
                 }
-                double travel = (route.size() - 1) * 16.0D;
-                if (obstruction != null) {
-                    if (!clear(level, worker, site, owner, inventory, depots, budget, obstruction, route.getLast(), travel)) return;
-                    state.putLong(POSITION, route.getLast().asLong());
+                double travel = (route.steps().size() - 1) * 16.0D;
+                if (clearing) {
+                    if (!clear(level, worker, site, owner, inventory, depots, budget, route.target(), route.steps().getLast(), travel)) return;
+                    state.putLong(POSITION, route.steps().getLast().asLong());
                     continue;
                 }
                 var changes = new ArrayList<SettlementConstructionPlacement.Part>();
@@ -175,7 +176,7 @@ final class SettlementBackgroundConstruction {
                     }
                 }
                 inventory.syncMainHandEquipment();
-                state.putLong(POSITION, route.getLast().asLong());
+                state.putLong(POSITION, route.steps().getLast().asLong());
                 BuilderTaskState.setPlacedIndex(state, index + 1);
                 BuilderTaskState.setPhase(state, BuilderBuildPhase.BUILDING);
                 BuilderTaskState.clearMissingMaterials(state);
@@ -194,17 +195,18 @@ final class SettlementBackgroundConstruction {
         }
     }
 
-    private static BlockPos obstruction(SettlementConstructionSite site, SettlementConstructionView view,
-                                        BuilderStructureScanner.StructurePlan plan, SettlementProject project) {
-        for (var block : plan.blocks()) {
+    private static List<BlockPos> obstructions(SettlementConstructionSite site, SettlementConstructionView view,
+                                             BuilderStructureScanner.StructurePlan plan, SettlementProject project) {
+        var positions = new ArrayList<BlockPos>();
+        for (var block : plan.siteBlocks(view, project.origin())) {
             var pos = plan.worldPos(project.origin(), block);
             var current = site.getBlockState(pos);
             if (!BuilderStructureScanner.sameSchematicState(current, block.state())
                     && !BuilderStructureScanner.canTransformExisting(current, block.state())
                     && !BuilderSitePlanner.safeReplaceable(view, pos, current)
-                    && MiningBlockRules.isBuilderClearableObstruction(site, pos, current)) return pos;
+                    && MiningBlockRules.isBuilderClearableObstruction(site, pos, current)) positions.add(pos);
         }
-        return null;
+        return positions;
     }
 
     private static boolean clear(ServerLevel level, SettlementWorkerState worker, SettlementConstructionSite site, Villager owner,

@@ -37,7 +37,7 @@ public final class BuilderSitePlanner {
                     ? "interaction.work.builder.site_outside_area"
                     : "interaction.work.builder.site_too_far");
         }
-        for (BuilderStructureScanner.BuildBlock block : plan.blocks()) {
+        for (BuilderStructureScanner.BuildBlock block : plan.siteBlocks(level, origin)) {
             BlockPos worldPos = plan.worldPos(origin, block);
             if (!level.hasChunkAt(worldPos)) {
                 return SiteResult.failed("interaction.work.builder.site_unloaded", worldPos);
@@ -58,7 +58,7 @@ public final class BuilderSitePlanner {
         if (plan.blocks().size() > Math.max(128, VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get())) {
             return SiteResult.failed("interaction.work.builder.too_large");
         }
-        for (BuilderStructureScanner.BuildBlock block : plan.blocks()) {
+        for (BuilderStructureScanner.BuildBlock block : plan.siteBlocks(level, origin)) {
             BlockPos worldPos = plan.worldPos(origin, block);
             if (!level.hasChunkAt(worldPos)) {
                 return SiteResult.failed("interaction.work.builder.site_unloaded", worldPos);

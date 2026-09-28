@@ -23,6 +23,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -188,6 +189,7 @@ public final class BuilderStructureScanner {
         BlockState[] palette = palette(nbt);
         ListTag blocksTag = nbt.getList("blocks", Tag.TAG_COMPOUND);
         List<BuildBlock> blocks = new ArrayList<>();
+        List<BuildBlock> clearingBlocks = new ArrayList<>();
         Map<Item, Integer> materials = new LinkedHashMap<>();
 
         for (int i = 0; i < blocksTag.size(); i++) {
@@ -204,7 +206,7 @@ public final class BuilderStructureScanner {
                 state = jigsawFinalState(blockEntityTag).orElse(Blocks.AIR.defaultBlockState());
                 blockEntityTag = null;
             }
-            if (shouldSkip(state)) {
+            if (shouldSkip(state) && !state.isAir()) {
                 continue;
             }
 
@@ -215,6 +217,10 @@ public final class BuilderStructureScanner {
             BlockPos local = new BlockPos(posTag.getInt(0), posTag.getInt(1), posTag.getInt(2));
             BlockPos rotatedPos = StructureTemplate.transform(local, Mirror.NONE, rotation, BlockPos.ZERO);
             BlockState rotatedState = state.rotate(rotation);
+            if (rotatedState.isAir()) {
+                clearingBlocks.add(new BuildBlock(rotatedPos.immutable(), rotatedState, null, ItemStack.EMPTY, BuilderToolAction.NONE));
+                continue;
+            }
             BuilderToolAction toolAction = toolAction(rotatedState);
             ItemStack required = consumesRequiredItem(rotatedState) ? requiredItem(rotatedState, toolAction) : ItemStack.EMPTY;
             if (!required.isEmpty()) {
@@ -230,7 +236,13 @@ public final class BuilderStructureScanner {
                 .toList();
         Bounds bounds = Bounds.from(blocks);
         int price = price(entry, blocks.size());
-        return new StructurePlan(entry, rotation, template.getSize(rotation), bounds.min(), bounds.max(), blocks, requirements, price);
+        var clearance = clearingBlocks.stream().filter(block -> {
+            var pos = block.localPos();
+            return pos.getX() >= bounds.min().getX() && pos.getX() <= bounds.max().getX()
+                    && pos.getY() >= bounds.min().getY() && pos.getY() <= bounds.max().getY()
+                    && pos.getZ() >= bounds.min().getZ() && pos.getZ() <= bounds.max().getZ();
+        }).toList();
+        return new StructurePlan(entry, rotation, template.getSize(rotation), bounds.min(), bounds.max(), blocks, requirements, price, clearance);
     }
 
     private static BlockState[] palette(CompoundTag nbt) {
@@ -444,7 +456,34 @@ public final class BuilderStructureScanner {
             BlockPos localMax,
             List<BuildBlock> blocks,
             List<MaterialRequirement> materials,
-            int price) {
+            int price,
+            List<BuildBlock> clearingBlocks) {
+        public StructurePlan(BuilderStructureCatalog.Entry entry, Rotation rotation, Vec3i templateSize,
+                             BlockPos localMin, BlockPos localMax, List<BuildBlock> blocks,
+                             List<MaterialRequirement> materials, int price) {
+            this(entry, rotation, templateSize, localMin, localMax, blocks, materials, price, List.of());
+        }
+
+        public List<BuildBlock> siteBlocks() {
+            var siteBlocks = new ArrayList<>(this.blocks);
+            siteBlocks.addAll(this.clearingBlocks);
+            return siteBlocks;
+        }
+
+        public List<BuildBlock> siteBlocks(LevelReader level, BlockPos origin) {
+            var siteBlocks = siteBlocks();
+            for (var block : this.blocks) {
+                if (block.toolAction() != BuilderToolAction.SHOVEL_FLATTEN && block.toolAction() != BuilderToolAction.HOE_TILL) continue;
+                var pos = worldPos(origin, block);
+                var above = block.localPos().above();
+                if (above.getY() > this.localMax.getY() || !level.hasChunkAt(pos.above())
+                        || block.state().canSurvive(level, pos)
+                        || this.blocks.stream().anyMatch(part -> part.localPos().equals(above))) continue;
+                siteBlocks.add(new BuildBlock(above, Blocks.AIR.defaultBlockState(), null, ItemStack.EMPTY, BuilderToolAction.NONE));
+            }
+            return siteBlocks;
+        }
+
         public BlockPos localCenter() {
             return new BlockPos(
                     Math.floorDiv(this.localMin.getX() + this.localMax.getX(), 2),

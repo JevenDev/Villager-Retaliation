@@ -27,6 +27,7 @@ import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -153,28 +154,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         int index = skipAlreadyPlaced(level, context.state(), plan.get(), origin);
-        if (index >= plan.get().blocks().size()) {
-            return finishBuild(level, villager, hirer, context, plan.get());
-        }
-
-        BuilderStructureScanner.BuildBlock block = plan.get().blocks().get(index);
-        BlockPos worldPos = plan.get().worldPos(origin, block);
-        PlacementGroup placementGroup = placementGroup(plan.get(), origin, block);
-
         BlockPos buildCenter = origin.offset(plan.get().localCenter());
-        WorkResult interiorEvacuationResult = moveOutOfBuildInteriorIfNeeded(
-                level,
-                villager,
-                context,
-                area,
-                buildCenter,
-                plan.get(),
-                origin,
-                block);
-        if (interiorEvacuationResult != null) {
-            return interiorEvacuationResult;
-        }
-
         PlacementGroup reachableObstruction = reachablePlacementObstructionGroup(
                 level,
                 villager,
@@ -199,13 +179,33 @@ public final class BuilderWorker extends AbstractBlockWorker {
         PlacementGroup remainingObstruction = firstRemainingPlacementObstructionGroup(level, plan.get(), origin, index);
         if (remainingObstruction != null) {
             PlacementPart obstruction = firstPlacementObstruction(level, remainingObstruction);
-            BlockPos obstructionPos = obstruction == null ? worldPos : obstruction.worldPos();
+            BlockPos obstructionPos = obstruction == null ? buildCenter : obstruction.worldPos();
             BuilderTaskState.setBlocked(context.state(), "path_blocked");
             HiredWorkerBrain.setFailure(context, "path_blocked", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, obstructionPos);
             return WorkResult.idle("interaction.work.builder.path_blocked", Map.of(
                     "target", HiredWorkerBrain.formatPos(obstructionPos),
                     "structure", BuilderTaskState.structureLabel(context.state())));
+        }
+
+        if (index >= plan.get().blocks().size()) {
+            return finishBuild(level, villager, hirer, context, plan.get());
+        }
+
+        BuilderStructureScanner.BuildBlock block = plan.get().blocks().get(index);
+        BlockPos worldPos = plan.get().worldPos(origin, block);
+        PlacementGroup placementGroup = placementGroup(plan.get(), origin, block);
+        WorkResult interiorEvacuationResult = moveOutOfBuildInteriorIfNeeded(
+                level,
+                villager,
+                context,
+                area,
+                buildCenter,
+                plan.get(),
+                origin,
+                block);
+        if (interiorEvacuationResult != null) {
+            return interiorEvacuationResult;
         }
 
         WorkResult evacuationResult = moveOutOfSchematicIfNeeded(level, villager, context, area, buildCenter, plan.get(), origin);
@@ -1544,55 +1544,23 @@ public final class BuilderWorker extends AbstractBlockWorker {
             int startIndex,
             HiredWorkArea area,
             BlockPos buildCenter) {
-        List<ReachableObstruction> candidates = new ArrayList<>();
+        Map<BlockPos, PlacementGroup> candidates = new LinkedHashMap<>();
         Set<Long> seenGroups = new HashSet<>();
-        int reachable = 0;
-        for (int i = Math.max(0, startIndex); i < plan.blocks().size(); i++) {
-            PlacementGroup group = placementGroup(plan, origin, plan.blocks().get(i));
+        var blocks = plan.siteBlocks(level, origin);
+        for (int i = Math.max(0, startIndex); i < blocks.size(); i++) {
+            PlacementGroup group = placementGroup(plan, origin, blocks.get(i));
             if (!seenGroups.add(group.materialPart().worldPos().asLong())) {
                 continue;
             }
-            ReachableObstruction reachableObstruction = reachablePlacementObstruction(
-                    level,
-                    villager,
-                    group,
-                    area,
-                    buildCenter,
-                    i - startIndex);
-            if (reachableObstruction == null) {
-                continue;
-            }
-            candidates.add(reachableObstruction);
-            reachable++;
-            if (reachable >= 5) {
-                break;
+            for (PlacementPart obstruction : placementObstructions(level, group)) {
+                candidates.putIfAbsent(obstruction.worldPos(), group);
             }
         }
-        candidates.sort(Comparator.comparingDouble(ReachableObstruction::score));
-        return candidates.isEmpty() ? null : candidates.getFirst().group();
-    }
-
-    private ReachableObstruction reachablePlacementObstruction(
-            ServerLevel level,
-            Villager villager,
-            PlacementGroup group,
-            HiredWorkArea area,
-            BlockPos buildCenter,
-            int blockOffset) {
-        ReachableObstruction best = null;
-        double bestScore = Double.MAX_VALUE;
-        for (PlacementPart obstruction : placementObstructions(level, group)) {
-            HiredPathResult result = clearingPathResult(level, villager, obstruction.worldPos(), area, buildCenter);
-            if (!result.reachesDestination()) {
-                continue;
-            }
-            double score = result.score() + Math.max(0, blockOffset) * 0.05D;
-            if (score < bestScore) {
-                bestScore = score;
-                best = new ReachableObstruction(group, obstruction, score);
-            }
+        if (candidates.isEmpty()) {
+            return null;
         }
-        return best;
+        HiredPathResult result = clearingPathResult(level, villager, candidates.keySet(), area, buildCenter);
+        return result.reachesDestination() ? candidates.get(result.target().blockPos()) : null;
     }
 
     private PlacementGroup firstRemainingPlacementObstructionGroup(
@@ -1601,8 +1569,9 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BlockPos origin,
             int startIndex) {
         Set<Long> seenGroups = new HashSet<>();
-        for (int i = Math.max(0, startIndex); i < plan.blocks().size(); i++) {
-            PlacementGroup group = placementGroup(plan, origin, plan.blocks().get(i));
+        var blocks = plan.siteBlocks(level, origin);
+        for (int i = Math.max(0, startIndex); i < blocks.size(); i++) {
+            PlacementGroup group = placementGroup(plan, origin, blocks.get(i));
             if (!seenGroups.add(group.materialPart().worldPos().asLong())) {
                 continue;
             }
@@ -1619,11 +1588,20 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BlockPos pos,
             HiredWorkArea area,
             BlockPos buildCenter) {
+        return clearingPathResult(level, villager, List.of(pos), area, buildCenter);
+    }
+
+    private HiredPathResult clearingPathResult(
+            ServerLevel level,
+            Villager villager,
+            Iterable<BlockPos> positions,
+            HiredWorkArea area,
+            BlockPos buildCenter) {
         return new HiredMoveToBlockFaceJob(
                 level,
                 villager,
-                List.of(pos),
-                8,
+                positions,
+                MAX_BUILD_TARGETS_TO_PATHFIND,
                 approach -> BuilderSitePlanner.movementAllowed(area, buildCenter, approach)).search();
     }
 
@@ -2109,8 +2087,19 @@ public final class BuilderWorker extends AbstractBlockWorker {
             PlacementGroup group,
             HiredWorkArea area,
             BlockPos buildCenter) {
-        ReachableObstruction reachable = reachablePlacementObstruction(level, villager, group, area, buildCenter, 0);
-        return reachable == null ? null : reachable.obstruction();
+        List<PlacementPart> obstructions = placementObstructions(level, group);
+        if (obstructions.isEmpty()) {
+            return null;
+        }
+        HiredPathResult result = clearingPathResult(
+                level, villager, obstructions.stream().map(PlacementPart::worldPos).toList(), area, buildCenter);
+        if (!result.reachesDestination()) {
+            return null;
+        }
+        return obstructions.stream()
+                .filter(part -> part.worldPos().equals(result.target().blockPos()))
+                .findFirst()
+                .orElse(null);
     }
 
     private int actualBreakProgressGoal(ServerLevel level, BlockPos pos, ItemStack tool) {
@@ -2723,9 +2712,6 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     private record ClearSpotCandidate(BlockPos pos, double distanceSqr) {
-    }
-
-    private record ReachableObstruction(PlacementGroup group, PlacementPart obstruction, double score) {
     }
 
     private record BuildSiteIntermediate(BlockPos pos, double score) {
