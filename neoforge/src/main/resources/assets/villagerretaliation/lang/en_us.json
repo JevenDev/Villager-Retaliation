@@ -2422,7 +2422,7 @@
   "villagerretaliation.gui.settlement.treasury_limits": "Reserve: %s. Spent today: %s / %s.",
   "villagerretaliation.gui.settlement.page_count": "Page %s / %s",
   "villagerretaliation.gui.settlement.town_row": "%s, %s residents",
-  "villagerretaliation.gui.settlement.resident_row": "%s, %s, %s",
+  "villagerretaliation.gui.settlement.resident_row": "%s, %s, %s, %s",
   "villagerretaliation.gui.settlement.area_row": "%s, %s workers, %s",
   "villagerretaliation.gui.settlement.beds": "%s beds",
   "villagerretaliation.gui.settlement.fixtures": "%s workstations",
@@ -2957,5 +2957,11 @@
   "villagerretaliation.gui.settlement_view.building_choose_builder": "Choose builder",
   "villagerretaliation.gui.settlement_view.building_place_hint": "Click the ground to place the prefab. Drag an axis to move it or the ring to rotate.",
   "villagerretaliation.gui.settlement_view.building_adjust_hint": "Drag an axis to adjust the position or height. Drag the ring to rotate, then choose a builder.",
-  "villagerretaliation.gui.settlement_view.gizmo_area_hint": "Move adjusts the whole area. Resize adjusts one face. Open Area settings when ready."
+  "villagerretaliation.gui.settlement_view.gizmo_area_hint": "Move adjusts the whole area. Resize adjusts one face. Open Area settings when ready.",
+  "villagerretaliation.gui.settlement.automatic_staffing": "Automatic staffing",
+  "villagerretaliation.gui.settlement.automatic_staffing_all": "Automate all staffing",
+  "villagerretaliation.gui.settlement.automatic_staffing_all_hint": "Return every resident to automatic staffing? Current duties stay assigned. Idle residents become eligible when town autonomy is enabled. Personal commitments and departures remain protected.",
+  "villagerretaliation.gui.settlement.automatic_staffing_hint": "Staffing authority controls future assignment. Returning to automatic staffing keeps the current duty and respects personal commitments.",
+  "villagerretaliation.gui.settlement.staffing_manual": "Manual staffing",
+  "villagerretaliation.gui.settlement.staffing_automatic": "Automatic staffing"
 }

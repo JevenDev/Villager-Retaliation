@@ -105,6 +105,7 @@ public final class SettlementManagementService {
                     player, town, enabled.resident(), enabled.area(), enabled.enabled());
             case SettlementManagementActionPayload.Guard guard -> SettlementGuardService.command(player, town, guard.resident(), guard.order());
             case SettlementManagementActionPayload.Assign assign -> SettlementWorkforceService.assignResident(level, player, id, assign.resident(), assign.area());
+            case SettlementManagementActionPayload.AutomaticStaffing automatic -> SettlementWorkforceService.automaticStaffing(player, town, automatic.resident());
             case SettlementManagementActionPayload.Release release -> SettlementWorkforceService.release(level, player, id, release.resident());
             case SettlementManagementActionPayload.Applicant applicant -> applicant.approve()
                     ? SettlementPopulationService.approve(player, id, applicant.id()) : SettlementPopulationService.decline(player, id, applicant.id());
@@ -275,7 +276,7 @@ public final class SettlementManagementService {
                     work.status(),
                     villager == null ? care == null ? List.of() : care.availableRoles(level) : HiredVillagerRoles.availableRoles(level, villager),
                     town.guardOrders().get(member.id()), detailed ? SettlementWorkerConfigurationService.snapshot(level, town, member.id()) : null,
-                    detailed ? SettlementBrewingService.snapshot(level, town, member.id()) : null, work.diagnostic()));
+                    detailed ? SettlementBrewingService.snapshot(level, town, member.id()) : null, work.diagnostic(), town.manuallyStaffed(member.id())));
         }
     }
 

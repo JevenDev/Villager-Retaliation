@@ -134,6 +134,12 @@ public final class SettlementRecord {
         if (this.manualDuties.add(resident)) changed();
     }
 
+    boolean returnToAutomaticStaffing(UUID actor, UUID resident) {
+        if (!permits(actor, SettlementPermission.STAFF) || resident == null) return false;
+        if (this.manualDuties.remove(resident)) changed();
+        return true;
+    }
+
     public long revision() {
         return this.revision;
     }
@@ -325,6 +331,7 @@ public final class SettlementRecord {
 
     void removeResident(UUID resident) {
         boolean removed = this.residents.remove(resident) != null;
+        removed |= this.manualDuties.remove(resident);
         removed |= this.homes.remove(resident) != null;
         removed |= this.courtships.values().removeIf(attempt -> attempt.involves(resident));
         if (!this.departures.containsKey(resident) && this.arrivals.remove(resident) != null) {

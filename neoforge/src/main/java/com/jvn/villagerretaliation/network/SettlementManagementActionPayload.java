@@ -107,6 +107,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
                 buffer.writeUUID(assign.resident());
                 buffer.writeUUID(assign.area());
             }
+            case AutomaticStaffing automatic -> {
+                buffer.writeEnum(Kind.AUTOMATIC_STAFFING);
+                buffer.writeBoolean(automatic.resident() != null);
+                if (automatic.resident() != null) buffer.writeUUID(automatic.resident());
+            }
             case Release release -> {
                 buffer.writeEnum(Kind.RELEASE);
                 buffer.writeUUID(release.resident());
@@ -206,6 +211,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case START_PROJECT -> new StartProject(buffer.readUUID(), buffer.readUUID());
             case CANCEL_PROJECT -> new CancelProject(buffer.readUUID());
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
+            case AUTOMATIC_STAFFING -> new AutomaticStaffing(buffer.readBoolean() ? buffer.readUUID() : null);
             case RELEASE -> new Release(buffer.readUUID());
             case APPLICANT -> new Applicant(buffer.readUUID(), buffer.readBoolean());
             case SAVE_AREA -> new SaveArea(new SettlementArea(buffer.readUUID(), buffer.readEnum(SettlementAreaType.class),
@@ -315,11 +321,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing {
     }
 
     public record Home(UUID resident, net.minecraft.core.BlockPos bed, boolean assign) implements Command {
@@ -413,6 +419,9 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
     }
 
     public record Assign(UUID resident, UUID area) implements Command {
+    }
+
+    public record AutomaticStaffing(UUID resident) implements Command {
     }
 
     public record Release(UUID resident) implements Command {

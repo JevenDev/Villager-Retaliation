@@ -43,7 +43,7 @@ public final class SettlementManagementScreen extends Screen {
     private Button next;
     private Rows rows;
     private EditBox search;
-    private final Button[] actions = new Button[5];
+    private final Button[] actions = new Button[7];
     private UUID pendingResident;
     private int pendingResidentAction;
     private final SettlementManagementScreen parent;
@@ -230,7 +230,8 @@ public final class SettlementManagementScreen extends Screen {
 
     private int extraActionHeight() {
         int count = switch (this.desiredPage) {
-            case RESIDENTS, SUMMARY -> 5;
+            case RESIDENTS -> 7;
+            case SUMMARY -> 5;
             case PROJECTS, ISSUES -> 4;
             default -> 3;
         };
@@ -382,6 +383,9 @@ public final class SettlementManagementScreen extends Screen {
             case RESIDENTS -> {
                 action(0, "assign", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
                         && !resident.baby() && !resident.roles().isEmpty());
+                action(5, "automatic_staffing", permits(SettlementPermission.STAFF)
+                        && selected instanceof SettlementManagementPayload.Resident resident && resident.manualStaffing());
+                action(6, "automatic_staffing_all", permits(SettlementPermission.STAFF));
                 action(1, "release", leader() && selected instanceof SettlementManagementPayload.Resident resident && resident.area() != null);
                 action(3, "worker_settings", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
                         && resident.area() != null && resident.settings() != null);
@@ -512,6 +516,11 @@ public final class SettlementManagementScreen extends Screen {
                 }
             }
             case RESIDENTS -> {
+                if (action == 6) {
+                    this.minecraft.setScreen(new SettlementConfirmScreen(this, text("automatic_staffing_all"),
+                            text("automatic_staffing_all_hint"), () -> submit(new SettlementManagementActionPayload.AutomaticStaffing(null))));
+                    return;
+                }
                 if (selected instanceof SettlementManagementPayload.Resident resident) {
                     if (action == 0) {
                         this.minecraft.setScreen(new SettlementManagementScreen(this.snapshot, this, resident, null));
@@ -519,6 +528,8 @@ public final class SettlementManagementScreen extends Screen {
                         confirm("release_resident", resident, () -> submit(new SettlementManagementActionPayload.Release(resident.id())));
                     } else if (action == 2) {
                         submit(new SettlementManagementActionPayload.Inventory(resident.id()));
+                    } else if (action == 5) {
+                        submit(new SettlementManagementActionPayload.AutomaticStaffing(resident.id()));
                     } else if (action == 4) {
                         submit(new SettlementManagementActionPayload.WorkerEnabled(resident.id(), resident.area(), !resident.settings().enabled()));
                     } else {
@@ -715,7 +726,7 @@ public final class SettlementManagementScreen extends Screen {
                     resident.baby() ? text("child") : profession(resident.profession()),
                     enumText("presence", resident.presence()), Component.translatableWithFallback(resident.status().startsWith("workforce.")
                             ? "villagerretaliation.gui.clipboard_workforce.status." + resident.status().substring("workforce.".length())
-                            : "villagerretaliation.gui.settlement.work." + resident.status(), text("work.idle").getString()));
+                            : "villagerretaliation.gui.settlement.work." + resident.status(), text("work.idle").getString()), text(resident.manualStaffing() ? "staffing_manual" : "staffing_automatic"));
             case SettlementManagementPayload.Bed bed -> text("bed_row", bed.position().toShortString(),
                     bed.resident() != null ? text("bed_owner", bed.residentName().isBlank() ? text("unnamed_resident") : Component.literal(bed.residentName()))
                             : text(bed.available() ? "bed_available" : "bed_unavailable"));
@@ -820,6 +831,7 @@ public final class SettlementManagementScreen extends Screen {
                             ? text("project_missing", issue.detail()) : Component.literal(issue.detail()));
                     lines.add(text("issue_destination", enumText("page", issue.target())));
                 } else if (this.entry instanceof SettlementManagementPayload.Resident resident) {
+                    lines.add(text("automatic_staffing_hint"));
                     if (!resident.diagnostic().isBlank()) lines.add(Component.literal(resident.diagnostic()));
                     lines.add(text("resident_care", resident.food() < 0 ? "?" : resident.food(),
                             resident.health() < 0 ? "?" : decimal(resident.health())));

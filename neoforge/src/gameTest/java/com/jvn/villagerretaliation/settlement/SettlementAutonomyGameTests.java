@@ -98,6 +98,45 @@ public final class SettlementAutonomyGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_autonomy")
+    public static void automaticStaffingRestoresFutureAuthorityWithoutChangingDuties(GameTestHelper helper) {
+        var town = fixture(helper, 3);
+        var level = helper.getLevel();
+        var leader = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
+                new com.mojang.authlib.GameProfile(town.leader(), "StaffingLeader"));
+        var residents = town.residents().keySet().stream().sorted().toList();
+        residents.forEach(town::rememberManualDuty);
+        SettlementAutonomyService.update(level, town);
+        helper.assertTrue(town.duties().isEmpty(), "manual idle choices block automatic assignment");
+        var outsider = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
+                new com.mojang.authlib.GameProfile(UUID.randomUUID(), "StaffingViewer"));
+        helper.assertFalse(SettlementWorkforceService.automaticStaffing(outsider, town, null), "outsiders cannot restore staffing");
+        helper.assertFalse(SettlementWorkforceService.automaticStaffing(leader, town, UUID.randomUUID()), "unknown residents are rejected");
+        town.setPermissions(town.leader(), outsider.getUUID(), java.util.Set.of(SettlementPermission.STAFF));
+        helper.assertTrue(SettlementWorkforceService.automaticStaffing(outsider, town, residents.getFirst()), "staff delegates can restore an unloaded resident");
+        long revision = town.revision();
+        helper.assertTrue(SettlementWorkforceService.automaticStaffing(outsider, town, residents.getFirst()), "repeated requests succeed");
+        helper.assertValueEqual(town.revision(), revision, "repeated requests do not change the record");
+        var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+        helper.assertFalse(restored.manuallyStaffed(residents.getFirst()), "automatic authority survives reload");
+        helper.assertTrue(restored.manuallyStaffed(residents.getLast()), "other manual choices survive reload");
+        helper.assertTrue(SettlementWorkforceService.automaticStaffing(leader, town, null), "bulk restore succeeds");
+        SettlementAutonomyService.update(level, town);
+        helper.assertFalse(town.duties().isEmpty(), "eligible idle residents receive suitable work");
+        var duties = java.util.Map.copyOf(town.duties());
+        duties.keySet().forEach(town::rememberManualDuty);
+        SettlementWorkforceService.automaticStaffing(leader, town, null);
+        helper.assertValueEqual(town.duties(), duties, "returning authority preserves current duties");
+        town.setManualManagement(town.leader(), true);
+        residents.forEach(town::rememberManualDuty);
+        town.setManualManagement(town.leader(), false);
+        helper.assertTrue(town.manuallyStaffed(residents.getFirst()), "town policy never clears personal manual choices");
+        town.removeResident(residents.getFirst());
+        helper.assertFalse(town.manuallyStaffed(residents.getFirst()), "resident removal clears obsolete authority");
+        helper.assertFalse(level.hasChunkAt(town.center()), "staffing controls do not load chunks");
+        helper.succeed();
+    }
+
     private static SettlementRecord fixture(GameTestHelper helper, int population) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(BlockPos.ZERO);

@@ -117,6 +117,22 @@ public final class SettlementWorkforceService {
         return true;
     }
 
+    static boolean automaticStaffing(ServerPlayer player, SettlementRecord town, UUID resident) {
+        if (player == null || !player.isAlive() || player.isSpectator() || town == null
+                || SettlementSavedData.get(player.serverLevel()).readOnly()
+                || !town.dimension().equals(player.serverLevel().dimension().location())
+                || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return false;
+        var members = VillageAllegianceRegistrySavedData.get(player.serverLevel())
+                .residentRoster(town.id(), player.serverLevel().getGameTime());
+        if (resident != null && members.stream().noneMatch(member -> member.id().equals(resident))) return false;
+        for (var member : members) {
+            if (resident == null || resident.equals(member.id())) {
+                town.returnToAutomaticStaffing(player.getUUID(), member.id());
+            }
+        }
+        return true;
+    }
+
     public static boolean canManageEquipment(ServerLevel level, Villager villager, ServerPlayer player) {
         if (player == null || villager == null || !player.isAlive() || player.isSpectator()
                 || player.level() != level || villager.level() != level || !villager.isAlive() || villager.isBaby()
