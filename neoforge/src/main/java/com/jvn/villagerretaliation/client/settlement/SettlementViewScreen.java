@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
 import com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
@@ -27,6 +28,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -41,8 +43,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public final class SettlementViewScreen extends Screen {
-    private static final float YAW = 45.0F;
-    static final float PITCH = 35.26439F;
+    static final float PITCH = SettlementViewCamera.PITCH;
     private static final double MOVE_RESPONSE = 12.0D;
     private static final double ZOOM_RESPONSE = 14.0D;
     private final SettlementManagementScreen parent;
@@ -50,6 +51,9 @@ public final class SettlementViewScreen extends Screen {
     private final Map<UUID, SettlementManagementPayload.Area> areas = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Area> incomingAreas = new LinkedHashMap<>();
     private final Set<Integer> heldKeys = new HashSet<>();
+    private final SettlementViewCamera camera = new SettlementViewCamera();
+    private SettlementViewPopup popup;
+    private boolean panning;
     private SettlementManagementPayload.Header header;
     private SettlementViewWindow window;
     private double focusX;
@@ -146,6 +150,28 @@ public final class SettlementViewScreen extends Screen {
         return this.viewHeight;
     }
 
+    void rotateCamera(double degrees) {
+        this.camera.rotate(degrees / 90.0D, 1.0D);
+    }
+
+    float cameraYaw() {
+        return this.camera.yaw();
+    }
+
+    void resumeManagement(SettlementManagementScreen management) {
+        var updated = management.snapshot().header();
+        if (updated != null && updated.id().equals(this.header.id())) {
+            this.header = updated;
+        }
+        clearControls();
+        this.lastFrame = 0L;
+        this.waitingRequestId = -1;
+        this.incomingAreas.clear();
+        this.areaPage = 0;
+        this.areaRefreshAt = 0L;
+        this.detailsAt = Math.max(this.detailsAt, Util.getMillis() + 300L);
+    }
+
     double cameraHeight() {
         return this.cameraHeight;
     }
@@ -225,6 +251,9 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     protected void init() {
+        clearControls();
+        this.popup = null;
+        this.lastFrame = 0L;
         this.panelWidth = Math.clamp(this.width / 3, 128, 200);
         this.panelLeft = this.width - this.panelWidth;
         addRenderableWidget(Button.builder(text("overview"), ignored -> openManagement(Page.SUMMARY, ""))
@@ -301,6 +330,7 @@ public final class SettlementViewScreen extends Screen {
     @Override
     public void tick() {
         long now = Util.getMillis();
+        refreshPopup();
         var draft = this.parent.buildingDraft();
         if (draft != null) draft.tick(this.header.id());
         synchronizeGizmo();
@@ -350,29 +380,33 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public Component getNarrationMessage() {
-        return this.title.copy().append(". ").append(selectedName());
+        return this.title.copy().append(". ").append(selectedName()).append(". ").append(text("controls"))
+                .append(this.popup == null ? Component.empty() : this.popup.narration());
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         long now = Util.getMillis();
-        double elapsed = this.lastFrame == 0L ? 0.0D : Math.clamp((now - this.lastFrame) / 1_000.0D, 0.0D, 0.05D);
+        double frameTime = this.lastFrame == 0L ? 0.0D : Math.max(0.0D, (now - this.lastFrame) / 1_000.0D);
+        double elapsed = Math.min(frameTime, 0.05D);
         this.lastFrame = now;
+        if (!this.minecraft.isWindowActive()) clearControls();
+        rotateCamera(((held(GLFW.GLFW_KEY_E) ? 1 : 0) - (held(GLFW.GLFW_KEY_Q) ? 1 : 0)) * 90.0D * frameTime);
         double forward = (held(GLFW.GLFW_KEY_W) || held(GLFW.GLFW_KEY_UP) ? 1 : 0)
                 - (held(GLFW.GLFW_KEY_S) || held(GLFW.GLFW_KEY_DOWN) ? 1 : 0);
         double right = (held(GLFW.GLFW_KEY_D) || held(GLFW.GLFW_KEY_RIGHT) ? 1 : 0)
                 - (held(GLFW.GLFW_KEY_A) || held(GLFW.GLFW_KEY_LEFT) ? 1 : 0);
         double speed = this.viewHeight / Math.max(1.0D, Math.hypot(forward, right));
-        double yaw = Math.toRadians(YAW);
+        Vec3 movement = SettlementViewCamera.movement(this.camera.yaw(), right, forward);
         double response = 1.0D - Math.exp(-MOVE_RESPONSE * elapsed);
-        this.panVelocityX += ((-right * Math.cos(yaw) - forward * Math.sin(yaw)) * speed - this.panVelocityX) * response;
-        this.panVelocityZ += ((-right * Math.sin(yaw) + forward * Math.cos(yaw)) * speed - this.panVelocityZ) * response;
+        this.panVelocityX += (movement.x * speed - this.panVelocityX) * response;
+        this.panVelocityZ += (movement.z * speed - this.panVelocityZ) * response;
         pan(this.panVelocityX * elapsed, this.panVelocityZ * elapsed);
         this.cameraHeight += (this.viewHeight - this.cameraHeight) * (1.0D - Math.exp(-ZOOM_RESPONSE * elapsed));
         if (Math.abs(this.viewHeight - this.cameraHeight) < 0.01D) {
             this.cameraHeight = this.viewHeight;
         }
-        positionCamera();
+        positionCamera(frameTime);
         this.hovered = mouseX >= 0 && mouseX < this.panelLeft && mouseY >= 0 && mouseY < this.height
                 ? pick(mouseX, mouseY) : new Pick(null, null);
         var currentDraft = this.parent.buildingDraft();
@@ -414,6 +448,7 @@ public final class SettlementViewScreen extends Screen {
             graphics.drawString(this.font, text("loading"), 8, 34, 0xFFFFFF);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+        if (this.popup != null) this.popup.render(graphics, this.font, mouseX, mouseY, partialTick);
     }
 
     private Component selectedName() {
@@ -521,6 +556,7 @@ public final class SettlementViewScreen extends Screen {
         this.editingArea = null;
         this.areaBounds = null;
         this.gizmo = null;
+        this.popup = null;
     }
 
     private void synchronizeGizmo() {
@@ -598,38 +634,42 @@ public final class SettlementViewScreen extends Screen {
     }
 
     private void positionCamera() {
+        positionCamera(0.0D);
+    }
+
+    private void positionCamera(double elapsed) {
         if (this.minecraft == null || this.minecraft.level == null) {
             return;
         }
-        int ground = this.window.center().getY();
-        var chunk = this.minecraft.level.getChunkSource().getChunk(Math.floorDiv((int) Math.floor(this.focusX), 16),
-                Math.floorDiv((int) Math.floor(this.focusZ), 16), false);
-        if (chunk != null) {
-            ground = Math.max(ground, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(this.focusX),
-                    (int) Math.floor(this.focusZ)));
-        }
-        double yaw = Math.toRadians(YAW);
-        double maximumVisibleDistance = this.minecraft.options.getEffectiveRenderDistance() * 16.0D - 8.0D;
-        double targetPitch = Math.max(PITCH, Math.toDegrees(Math.asin(Math.min(1.0D,
-                this.cameraHeight / Math.max(1.0D, maximumVisibleDistance)))));
-        double offset = this.cameraHeight / Math.tan(Math.toRadians(targetPitch));
-        double limitX = (this.window.center().getX() + this.window.radius() - this.focusX) / Math.sin(yaw);
-        double limitZ = (this.focusZ - this.window.center().getZ() + this.window.radius()) / Math.cos(yaw);
-        offset = Math.max(0.0D, Math.min(offset, Math.min(limitX, limitZ)));
-        double x = this.focusX + Math.sin(yaw) * offset;
-        double z = this.focusZ - Math.cos(yaw) * offset;
-        double y = ground + this.cameraHeight;
-        var cameraChunk = this.minecraft.level.getChunkSource().getChunk(Math.floorDiv((int) Math.floor(x), 16),
-                Math.floorDiv((int) Math.floor(z), 16), false);
-        if (cameraChunk != null) {
-            y = Math.max(y, cameraChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(x), (int) Math.floor(z)) + 4.0D);
-        }
-        float pitch = (float) Math.toDegrees(Math.atan2(y - ground, offset));
-        SettlementViewClient.position(x, y, z, YAW, pitch);
+        var pose = this.camera.position(this.window, this.focusX, this.focusZ, this.cameraHeight,
+                this.minecraft.options.getEffectiveRenderDistance() * 16.0D - 8.0D, this::terrainHeight, elapsed);
+        SettlementViewClient.position(pose.position().x, pose.position().y, pose.position().z, pose.yaw(), pose.pitch());
+    }
+
+    private double terrainHeight(int x, int z) {
+        var chunk = this.minecraft.level.getChunkSource().getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16), false);
+        return chunk == null ? Double.NaN : chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z) + 1.0D;
+    }
+
+    void clearControls() {
+        this.panning = false;
+        if (this.gizmo != null) this.gizmo.end();
+        this.heldKeys.clear();
+        this.panVelocityX = 0.0D;
+        this.panVelocityZ = 0.0D;
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && this.popup != null) {
+            this.popup = null;
+            return true;
+        }
+        if (this.popup != null && this.popup.key(keyCode)) return true;
+        if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) && this.editingArea != null) {
+            confirmDraft();
+            return true;
+        }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && (this.gizmo != null || this.drawing)) {
             cancelGizmo();
             this.drawing = false;
@@ -645,7 +685,7 @@ public final class SettlementViewScreen extends Screen {
             return true;
         }
         if (navigationKey(keyCode)) {
-            this.heldKeys.add(keyCode);
+            if (this.gizmo == null || !this.gizmo.dragging()) this.heldKeys.add(keyCode);
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
@@ -662,11 +702,13 @@ public final class SettlementViewScreen extends Screen {
 
     private static boolean navigationKey(int key) {
         return key == GLFW.GLFW_KEY_W || key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_S || key == GLFW.GLFW_KEY_D
+                || key == GLFW.GLFW_KEY_Q || key == GLFW.GLFW_KEY_E
                 || key == GLFW.GLFW_KEY_UP || key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_DOWN || key == GLFW.GLFW_KEY_RIGHT;
     }
 
     @Override
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+        if (this.popup != null && this.popup.scroll(x, y, vertical) || this.gizmo != null && this.gizmo.dragging()) return true;
         if (x < this.panelLeft) {
             zoom(-vertical);
             return true;
@@ -676,6 +718,10 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
+        if (this.popup != null) {
+            if (this.popup.click(x, y, button)) return true;
+            this.popup = null;
+        }
         if (super.mouseClicked(x, y, button)) {
             return true;
         }
@@ -683,9 +729,10 @@ public final class SettlementViewScreen extends Screen {
             return false;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+            this.panning = true;
             return true;
         }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.gizmo != null) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.parent.buildingDraft() != null) {
             cancelGizmo();
             updateActions();
             return true;
@@ -696,9 +743,11 @@ public final class SettlementViewScreen extends Screen {
             updateActions();
             return true;
         }
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            return false;
+        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            openContext(pick(x, y), x, y);
+            return true;
         }
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
         var draft = this.parent.buildingDraft();
         if (this.gizmo != null && (draft == null || draft.placed) && this.gizmo.begin(ray(x, y))) return true;
         var hit = pick(x, y);
@@ -725,16 +774,9 @@ public final class SettlementViewScreen extends Screen {
             return true;
         }
         this.guardFeedback = Component.empty();
-        var matchingAreas = hit.position() == null ? List.<UUID>of() : this.areas.values().stream()
-                .filter(area -> contains(area, hit.position())).map(SettlementManagementPayload.Area::id).toList();
-        int previousArea = hit.resident() == null && this.selectedResident == null
-                && java.util.Objects.equals(this.selectedBlock, hit.position()) ? matchingAreas.indexOf(this.selectedArea) : -1;
-        this.selectedArea = matchingAreas.isEmpty() ? null : matchingAreas.get((previousArea + 1) % matchingAreas.size());
-        this.selectedBlock = hit.position();
-        this.selectedResident = hit.resident();
-        this.resident = null;
-        this.residentChecked = false;
-        this.residentRefreshAt = 0L;
+        var matching = matchingAreas(hit, x, y);
+        select(hit, matching.isEmpty() ? null : matching.getFirst());
+        if (hit.resident() == null && matching.size() > 1 && !this.drawing) openChooser(matching, x, y);
         if (this.drawing) {
             this.dragStart = hit.position();
             this.dragEnd = hit.position();
@@ -745,9 +787,9 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double x, double y, int button, double deltaX, double deltaY) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && x < this.panelLeft) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && this.panning) {
             double scale = 2.0D * this.viewHeight * Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D)) / this.height;
-            double yaw = Math.toRadians(YAW);
+            double yaw = Math.toRadians(this.camera.yaw());
             this.panVelocityX = 0.0D;
             this.panVelocityZ = 0.0D;
             pan((-Math.cos(yaw) * deltaX - Math.sin(yaw) * deltaY) * scale,
@@ -770,6 +812,7 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double x, double y, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) this.panning = false;
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.gizmo != null && this.gizmo.dragging()) {
             this.gizmo.end();
             return true;
@@ -878,16 +921,222 @@ public final class SettlementViewScreen extends Screen {
     }
 
     private AABB draftBounds() {
-        return new AABB(Math.min(this.dragStart.getX(), this.dragEnd.getX()),
-                Math.min(this.header.center().getY(), Math.min(this.dragStart.getY(), this.dragEnd.getY())),
-                Math.min(this.dragStart.getZ(), this.dragEnd.getZ()), Math.max(this.dragStart.getX(), this.dragEnd.getX()) + 1,
-                Math.max(this.dragStart.getY(), this.dragEnd.getY()) + 5, Math.max(this.dragStart.getZ(), this.dragEnd.getZ()) + 1);
+        BlockPos first = new BlockPos(this.dragStart.getX(),
+                Math.min(this.header.center().getY(), Math.min(this.dragStart.getY(), this.dragEnd.getY())), this.dragStart.getZ());
+        BlockPos second = new BlockPos(this.dragEnd.getX(), Math.max(this.dragStart.getY(), this.dragEnd.getY()) + 4, this.dragEnd.getZ());
+        return SettlementViewBounds.drawing(first, second, boundsLimits()).box();
     }
 
-    private static boolean contains(SettlementManagementPayload.Area area, BlockPos position) {
-        return position.getX() >= area.min().getX() && position.getX() <= area.max().getX()
-                && position.getY() >= area.min().getY() && position.getY() <= area.max().getY()
-                && position.getZ() >= area.min().getZ() && position.getZ() <= area.max().getZ();
+    SettlementViewPopup contextPopup() {
+        return this.popup;
+    }
+
+    private SettlementViewBounds editedBounds() {
+        return this.areaBounds == null ? null : new SettlementViewBounds(
+                BlockPos.containing(this.areaBounds.minX, this.areaBounds.minY, this.areaBounds.minZ),
+                BlockPos.containing(this.areaBounds.maxX - 1, this.areaBounds.maxY - 1, this.areaBounds.maxZ - 1));
+    }
+
+    private SettlementViewBounds.Limits boundsLimits() {
+        return new SettlementViewBounds.Limits(this.header.center(), this.header.radius(),
+                this.minecraft.level.getMinBuildHeight(), this.minecraft.level.getMaxBuildHeight() - 1);
+    }
+
+    private void beginBoundsEdit(SettlementManagementPayload.Area area) {
+        if (area == null || !permits(SettlementPermission.BUILD) || this.guardPending) return;
+        cancelGizmo();
+        clearControls();
+        this.guardMode = null;
+        this.guardPoints.clear();
+        this.drawing = false;
+        this.editingArea = area;
+        this.areaBounds = new SettlementViewBounds(area.min(), area.max()).box();
+        synchronizeGizmo();
+        updateActions();
+    }
+
+    private void confirmDraft() {
+        if (this.editingArea != null && this.gizmo != null && !this.gizmo.dragging()
+                && allowedGizmoBounds(this.areaBounds) && permits(SettlementPermission.BUILD) && !this.guardPending) {
+            this.applyGizmo.onPress();
+        }
+    }
+
+    void areaSaved(UUID id) {
+        cancelGizmo();
+        this.selectedArea = id;
+        this.selectedResident = null;
+        this.resident = null;
+        this.areas.remove(id);
+        this.waitingRequestId = -1;
+        this.incomingAreas.clear();
+        this.areaPage = 0;
+        this.areaRefreshAt = 0L;
+        this.detailsAt = Math.max(this.detailsAt, Util.getMillis() + 300L);
+    }
+
+    private static Component boundsDetails(SettlementViewBounds bounds) {
+        return text("bounds", bounds.min().toShortString(), bounds.max().toShortString()).copy().append("\n")
+                .append(text("dimensions", bounds.size(Direction.Axis.X), bounds.size(Direction.Axis.Y), bounds.size(Direction.Axis.Z)));
+    }
+
+    private void select(Pick hit, UUID area) {
+        this.selectedArea = hit.resident() == null ? area : null;
+        this.selectedBlock = hit.position();
+        if (!java.util.Objects.equals(this.selectedResident, hit.resident())) {
+            this.selectedResident = hit.resident();
+            this.resident = null;
+            this.residentChecked = false;
+            this.residentRefreshAt = 0L;
+        }
+        updateActions();
+    }
+
+    private List<UUID> matchingAreas(Pick hit, double x, double y) {
+        if (hit.position() != null) {
+            var touching = this.areas.values().stream()
+                    .filter(area -> new SettlementViewBounds(area.min(), area.max()).box().contains(Vec3.atCenterOf(hit.position())))
+                    .map(SettlementManagementPayload.Area::id).toList();
+            if (!touching.isEmpty()) {
+                return touching;
+            }
+        }
+        var ray = ray(x, y);
+        Vec3 end = hit.position() == null ? ray.end() : ray.origin().add(ray.direction()
+                .scale(ray.origin().distanceTo(Vec3.atCenterOf(hit.position())) + 1.0D));
+        return this.areas.values().stream().filter(area -> new SettlementViewBounds(area.min(), area.max()).box()
+                .clip(ray.origin(), end).isPresent()).map(SettlementManagementPayload.Area::id).toList();
+    }
+
+    private void openChooser(List<UUID> choices, double x, double y) {
+        this.popup = new SettlementViewPopup(new SettlementViewPopup.Target(SettlementViewPopup.Kind.CHOOSER, null, choices), x, y);
+        clearControls();
+        refreshPopup();
+    }
+
+    private void openContext(Pick hit, double x, double y) {
+        clearControls();
+        var ray = ray(x, y);
+        boolean handle = this.editingArea != null && this.gizmo != null && this.gizmo.hover(ray);
+        if (handle) {
+            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DRAFT, this.editingArea.id()), x, y);
+        } else if (hit.resident() != null) {
+            select(hit, null);
+            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.RESIDENT, hit.resident()), x, y);
+        } else if (this.editingArea != null && editedBounds().box().clip(ray.origin(), ray.end()).isPresent()) {
+            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DRAFT, this.editingArea.id()), x, y);
+        } else {
+            var matching = matchingAreas(hit, x, y);
+            select(hit, matching.isEmpty() ? null : matching.getFirst());
+            if (matching.size() > 1) {
+                openChooser(matching, x, y);
+                return;
+            }
+            if (!matching.isEmpty()) {
+                this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.AREA, matching.getFirst()), x, y);
+            }
+        }
+        refreshPopup();
+    }
+
+    private void refreshPopup() {
+        if (this.popup == null || this.minecraft == null || this.minecraft.level == null) {
+            return;
+        }
+        var target = this.popup.target();
+        List<Component> details = new ArrayList<>();
+        List<SettlementViewPopup.Action> actions = new ArrayList<>();
+        boolean ready = !this.guardPending;
+        switch (target.kind()) {
+            case RESIDENT -> {
+                var current = this.resident != null && this.resident.id().equals(target.id()) ? this.resident : null;
+                if (current == null) {
+                    details.add(text(this.residentChecked && target.id().equals(this.selectedResident) ? "not_resident" : "checking_resident"));
+                } else {
+                    details.add(text("resident", current.name(), Math.round(current.health()), current.food()));
+                    details.add(Component.translatableWithFallback(VillagerProfessionUtil.parse(current.profession().toString())
+                            .map(profession -> VillagerProfessionUtil.translationKey(profession, "entity.minecraft.villager.none"))
+                            .orElse("entity.minecraft.villager.none"), current.profession().getPath()));
+                    details.add(SettlementManagementScreen.enumText("presence", current.presence()));
+                    details.add(Component.translatableWithFallback(current.status().startsWith("workforce.")
+                            ? "villagerretaliation.gui.clipboard_workforce.status." + current.status().substring("workforce.".length())
+                            : "villagerretaliation.gui.settlement.work." + current.status(),
+                            SettlementManagementScreen.text("work.idle").getString()));
+                    var assigned = this.areas.get(current.area());
+                    details.add(text("assigned_area", current.area() == null ? text("unassigned")
+                            : assigned == null ? text("details_loading") : Component.literal(assigned.name())));
+                    details.add(text("guard_order", text(current.guardOrder() == null ? "guard_order_none"
+                            : "guard_" + current.guardOrder().mode().name().toLowerCase(java.util.Locale.ROOT))));
+                    actions.add(contextAction("manage_selection", ready, () -> openManagement(Page.RESIDENTS, target.id().toString())));
+                    if (target.id().equals(this.selectedResident) && selectedGuard()) {
+                        for (var mode : SettlementGuardOrder.Mode.values()) {
+                            actions.add(contextAction("guard_" + mode.name().toLowerCase(java.util.Locale.ROOT), ready, () -> beginGuardOrder(mode)));
+                        }
+                        actions.add(contextAction("guard_post", ready, () -> submitGuardOrder(null)));
+                    }
+                }
+            }
+            case AREA -> {
+                var area = this.areas.get(target.id());
+                if (area == null) {
+                    details.add(text("details_unavailable"));
+                } else {
+                    details.add(Component.literal(area.name()));
+                    details.add(SettlementManagementScreen.enumText("area", area.kind()));
+                    details.add(boundsDetails(new SettlementViewBounds(area.min(), area.max())));
+                    details.add(SettlementManagementScreen.text(area.enabled() ? "enabled" : "disabled"));
+                    details.add(text("area_counts", area.workers(), area.beds(), area.fixtures()));
+                    if (permits(SettlementPermission.BUILD)) {
+                        actions.add(contextAction("configure", ready, () -> {
+                            beginBoundsEdit(area);
+                            confirmDraft();
+                        }));
+                        actions.add(contextAction("edit_bounds", ready, () -> beginBoundsEdit(area)));
+                    }
+                }
+            }
+            case DRAFT -> {
+                if (this.editingArea == null || !this.editingArea.id().equals(target.id())) {
+                    details.add(text("details_unavailable"));
+                } else {
+                    details.add(text("draft"));
+                    details.add(boundsDetails(editedBounds()));
+                    boolean valid = editedBounds().valid(boundsLimits());
+                    details.add(text(valid ? "bounds_valid" : "bounds_invalid"));
+                    actions.add(contextAction("configure", ready && valid && permits(SettlementPermission.BUILD), this::confirmDraft));
+                    actions.add(contextAction("cancel_area", ready, () -> {
+                        cancelGizmo();
+                        updateActions();
+                    }));
+                }
+            }
+            case CHOOSER -> {
+                details.add(text("choose_area"));
+                for (UUID id : target.choices()) {
+                    var area = this.areas.get(id);
+                    if (area != null) {
+                        actions.add(new SettlementViewPopup.Action(text("area_choice", area.name(), SettlementManagementScreen.enumText("area", area.kind())),
+                                true, () -> {
+                            this.selectedArea = id;
+                            this.selectedResident = null;
+                            this.resident = null;
+                            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.AREA, id), this.popup.anchorX(), this.popup.anchorY());
+                            updateActions();
+                            refreshPopup();
+                        }));
+                    }
+                }
+                if (actions.isEmpty()) details.add(text("details_unavailable"));
+            }
+        }
+        this.popup.update(this.font, this.width, this.height, details, actions);
+    }
+
+    private SettlementViewPopup.Action contextAction(String key, boolean enabled, Runnable run) {
+        return new SettlementViewPopup.Action(text(key), enabled, () -> {
+            this.popup = null;
+            run.run();
+        });
     }
 
     private SettlementManagementScreen management() {
@@ -916,14 +1165,13 @@ public final class SettlementViewScreen extends Screen {
     private void editArea(SettlementManagementPayload.Area area) {
         var screen = management();
         this.minecraft.setScreen(screen);
-        this.minecraft.setScreen(new SettlementEditScreen(screen, SettlementEditScreen.Mode.AREA, area));
+        this.minecraft.setScreen(new SettlementEditScreen(screen, SettlementEditScreen.Mode.AREA, area, this));
     }
 
     @Override
     public void removed() {
-        this.heldKeys.clear();
-        this.panVelocityX = 0.0D;
-        this.panVelocityZ = 0.0D;
+        clearControls();
+        this.lastFrame = 0L;
         if (!SettlementViewClient.panelsOpen(this)) {
             SettlementViewClient.end(this);
         }

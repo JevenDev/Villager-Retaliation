@@ -73,6 +73,8 @@ public final class SettlementViewClientSmoke {
     private static double originalX;
     private static double originalZ;
     private static float originalHeight;
+    private static float originalYaw;
+    private static String originalAreaNarration;
     private static int panDirection;
     private static final int[] PAN_KEYS = {GLFW.GLFW_KEY_W, GLFW.GLFW_KEY_D, GLFW.GLFW_KEY_S, GLFW.GLFW_KEY_A,
             GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_LEFT};
@@ -93,6 +95,7 @@ public final class SettlementViewClientSmoke {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
+        minecraft.setWindowActive(true);
         minecraft.options.pauseOnLostFocus = false;
         if (started == 0L) {
             started = Util.getMillis();
@@ -163,6 +166,15 @@ public final class SettlementViewClientSmoke {
             capture("minimum-zoom");
             screen.mouseScrolled(40, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
             ticks = 0;
+            originalYaw = screen.cameraYaw();
+            screen.keyPressed(GLFW.GLFW_KEY_E, 0, 0);
+            phase = 90;
+        } else if (phase == 90 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            screen.keyReleased(GLFW.GLFW_KEY_E, 0, 0);
+            require(Math.abs(screen.cameraYaw() - originalYaw) > 0.5F, "E rotates the world camera");
+            capture("camera-rotation");
+            screen.rotateCamera(originalYaw - screen.cameraYaw());
+            ticks = 0;
             phase = 3;
         } else if (phase == 3 && minecraft.screen instanceof SettlementViewScreen screen && visibleResident(minecraft) != null) {
             if (++ticks < 30) {
@@ -177,16 +189,38 @@ public final class SettlementViewClientSmoke {
             verifySodiumChunk(new ChunkPos(fixture.center()), true);
             Vec3 table = fixture.center().getCenter().add(0.0D, 0.5D, 0.0D);
             clickWorld(screen, table);
-            String firstArea = screen.getNarrationMessage().getString();
-            require(firstArea.contains("Guard post") || firstArea.contains("Shared workshop"), "the shared building can be selected");
-            clickWorld(screen, table);
-            String secondArea = screen.getNarrationMessage().getString();
-            require(!secondArea.equals(firstArea) && (secondArea.contains("Guard post") || secondArea.contains("Shared workshop")),
-                    "another click selects the other use of the same building");
-            require(button(screen, "villagerretaliation.gui.settlement_view.manage_selection").active,
-                    "each shared designation can open its management panel");
-            clickWorld(screen, table);
-            require(screen.getNarrationMessage().getString().equals(firstArea), "selection cycles back through the shared designations");
+            require(screen.contextPopup() != null && screen.contextPopup().target().kind() == SettlementViewPopup.Kind.CHOOSER,
+                    "overlapping building uses open a choice menu");
+            require(screen.contextPopup().buttons().size() == 2, "the menu includes both shared designations");
+            ticks = 0;
+            phase = 91;
+        } else if (phase == 91 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            capture("shared-use-choice");
+            clickContextAction(screen, 0);
+            require(screen.contextPopup().target().kind() == SettlementViewPopup.Kind.AREA, "choosing an area opens its context actions");
+            originalAreaNarration = screen.getNarrationMessage().getString();
+            require(originalAreaNarration.contains("Guard post") || originalAreaNarration.contains("Shared workshop"),
+                    "the first designation is selected");
+            ticks = 0;
+            phase = 92;
+        } else if (phase == 92 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen.contextPopup().buttons().stream().anyMatch(action -> action.getMessage().getString().equals(
+                    Component.translatable("villagerretaliation.gui.settlement_view.edit_bounds").getString())),
+                    "area context actions include bounds editing");
+            capture("area-context");
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            clickWorld(screen, fixture.center().getCenter().add(0.0D, 0.5D, 0.0D));
+            ticks = 0;
+            phase = 93;
+        } else if (phase == 93 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            clickContextAction(screen, 1);
+            ticks = 0;
+            phase = 94;
+        } else if (phase == 94 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(!screen.getNarrationMessage().getString().equals(originalAreaNarration),
+                    "the menu can select the other use of the same building");
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(minecraft.screen == screen && screen.contextPopup() == null, "Escape dismisses context actions and keeps the camera session");
             originalX = screen.focusX();
             originalZ = screen.focusZ();
             originalHeight = screen.viewHeight();
@@ -466,6 +500,8 @@ public final class SettlementViewClientSmoke {
             minecraft.screen.onClose();
             ticks = 0;
             phase = 73;
+        } else if (phase == 73 && minecraft.screen instanceof SettlementViewScreen) {
+            phase = 74;
         } else if (phase == 73 && minecraft.screen instanceof SettlementManagementScreen screen) {
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             phase = 74;
@@ -865,6 +901,7 @@ public final class SettlementViewClientSmoke {
             var entry = (net.minecraft.nbt.CompoundTag) raw;
             if (entry.getUUID("Id").equals(fixture.town().value())) {
                 entry.putString("Stage", "HAMLET");
+                entry.putBoolean("ManualManagement", true);
             }
         }
         level.getServer().overworld().getDataStorage().set("villagerretaliation_settlements", SettlementSavedData.load(saved, level.registryAccess()));
@@ -987,9 +1024,21 @@ public final class SettlementViewClientSmoke {
     }
 
     private static void clickWorld(SettlementViewScreen screen, Vec3 position) {
+        clickWorld(screen, position, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+
+    private static void clickWorld(SettlementViewScreen screen, Vec3 position, int button) {
         var point = screenPoint(screen, position);
-        screen.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
-        screen.mouseReleased(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseClicked(point.x, point.y, button);
+        screen.mouseReleased(point.x, point.y, button);
+    }
+
+    private static void clickContextAction(SettlementViewScreen screen, int index) {
+        var action = screen.contextPopup().buttons().get(index);
+        double x = action.getX() + action.getWidth() / 2.0D;
+        double y = action.getY() + action.getHeight() / 2.0D;
+        screen.mouseClicked(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseReleased(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
     }
 
     private static void dragWorld(SettlementViewScreen screen, Vec3 start, Vec3 end) {

@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.client.settlement.SettlementViewCamera;
+import com.jvn.villagerretaliation.client.settlement.SettlementViewBounds;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementViewChunkPayload;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -30,6 +33,95 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class SettlementViewGameTests {
     private SettlementViewGameTests() {
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void draftBoundsSnapTranslateAndResizeEveryFaceWithinLimits(GameTestHelper helper) {
+        var limits = new SettlementViewBounds.Limits(new BlockPos(-100, 64, -200), 256, -64, 319);
+        var original = new SettlementViewBounds(new BlockPos(-110, -64, -210), new BlockPos(-107, -60, -206));
+        var single = SettlementViewBounds.drawing(original.min(), original.min(), limits);
+        helper.assertValueEqual(single.volume(), 1L, "a one-block selection stays valid");
+        helper.assertTrue(single.valid(limits), "single-block bounds include negative coordinates and minimum world height");
+        for (Direction.Axis axis : Direction.Axis.values()) {
+            var translated = original.translate(axis, 12, limits);
+            helper.assertValueEqual(translated.volume(), original.volume(), "translation preserves volume on every axis");
+            helper.assertValueEqual(translated.min().get(axis), original.min().get(axis) + 12, "translation snaps to whole blocks");
+            helper.assertValueEqual(translated.translate(axis, -12, limits), original, "translation can return to its original bounds");
+            for (int direction : List.of(-1, 1)) {
+                var edge = original.translate(axis, direction * 1_000_000, limits);
+                helper.assertTrue(edge.valid(limits), "translation respects settlement and build-height limits");
+                helper.assertValueEqual(direction < 0 ? edge.min().get(axis) : edge.max().get(axis),
+                        direction < 0 ? limits.min(axis) : limits.max(axis), "translation stops exactly at the boundary");
+            }
+        }
+        for (Direction face : Direction.values()) {
+            int sign = face.getAxisDirection().getStep();
+            var expanded = original.resize(face, sign * 3, limits);
+            if (face == Direction.DOWN) {
+                helper.assertValueEqual(expanded, original, "the minimum Y face cannot leave the world");
+            } else {
+                helper.assertValueEqual(expanded.size(face.getAxis()), original.size(face.getAxis()) + 3,
+                        "each resize face grows in its own outward direction");
+            }
+            var contracted = original.resize(face, -sign * 1_000_000, limits);
+            helper.assertValueEqual(contracted.size(face.getAxis()), 1, "every face stops at one block instead of inverting");
+            for (Direction.Axis other : Direction.Axis.values()) {
+                if (other != face.getAxis()) helper.assertValueEqual(contracted.size(other), original.size(other),
+                        "resizing preserves the other dimensions");
+            }
+        }
+        for (Direction.Axis axis : Direction.Axis.values()) {
+            var maximum = single.resize(Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE), 1_000_000, limits);
+            helper.assertValueEqual(maximum.size(axis), axis == Direction.Axis.Y ? 64 : 128, "each dimension keeps its established maximum");
+        }
+        var full = new SettlementViewBounds(new BlockPos(-128, 0, -256), new BlockPos(-1, 3, -129));
+        helper.assertValueEqual(full.volume(), 65_536L, "the maximum volume is inclusive");
+        helper.assertValueEqual(full.resize(Direction.UP, 1, limits), full, "resize cannot exceed the volume limit");
+        var drawn = SettlementViewBounds.drawing(new BlockPos(-1_000, -500, -1_000), new BlockPos(1_000, 500, 1_000), limits);
+        helper.assertTrue(drawn.valid(limits), "initial drawing clamps every dimension, volume and world boundary");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void cameraRotationTerrainAndBoundariesAreContinuous(GameTestHelper helper) {
+        var window = new SettlementViewWindow(new BlockPos(-100, 64, -200), 48, -100, -200, 8.0F,
+                List.of(new ChunkPos(-7, -13)));
+        for (int yaw = 0; yaw < 360; yaw += 15) {
+            double dx = Math.sin(Math.toRadians(yaw));
+            double dz = -Math.cos(Math.toRadians(yaw));
+            for (int ox : List.of(-48, 0, 48)) {
+                for (int oz : List.of(-48, 0, 48)) {
+                    double x = -100 + ox;
+                    double z = -200 + oz;
+                    double offset = Math.min(90.0D, SettlementViewCamera.boundaryOffset(window, x, z, dx, dz));
+                    helper.assertTrue(Double.isFinite(offset) && offset >= 0.0D, "every camera bearing has a finite offset");
+                    helper.assertTrue(Math.abs(x + dx * offset + 100) <= 48.00001D
+                            && Math.abs(z + dz * offset + 200) <= 48.00001D, "all bearings respect negative settlement corners");
+                }
+            }
+        }
+        var slow = new SettlementViewCamera();
+        var fast = new SettlementViewCamera();
+        slow.rotate(-1, 1);
+        for (int frame = 0; frame < 100; frame++) fast.rotate(-1, 0.01D);
+        helper.assertTrue(Math.abs(slow.yaw() - fast.yaw()) < 0.001F, "rotation is independent of frame rate");
+        helper.assertValueEqual(slow.yaw(), 315.0F, "left rotation wraps through north");
+        slow.rotate(1, 1);
+        helper.assertValueEqual(slow.yaw(), 45.0F, "right rotation reverses left rotation");
+        helper.assertTrue(Math.abs(SettlementViewCamera.interpolate((x, z) -> x + z, -1.25D, -2.25D) + 4.5D) < 0.00001D,
+                "neighboring terrain samples interpolate across negative blocks");
+        var camera = new SettlementViewCamera();
+        var flat = camera.position(window, -100, -200, 8, 88, (x, z) -> 64, 0);
+        helper.assertTrue(Math.abs(flat.pitch() - SettlementViewCamera.PITCH) < 0.001F, "flat terrain preserves the viewing angle");
+        var cliff = camera.position(window, -100, -200, 8, 88, (x, z) -> x > -96 ? 100 : 64, 0.02D);
+        helper.assertTrue(cliff.position().y >= 104, "a roof or cliff immediately receives four blocks of clearance");
+        var missing = camera.position(window, -100, -200, 8, 88, (x, z) -> Double.NaN, 0.02D);
+        helper.assertTrue(Math.abs(missing.position().y - cliff.position().y) < 0.001D, "loading terrain retains the last elevation");
+        var recovery = camera.position(window, -100, -200, 8, 88, (x, z) -> 64, 0.02D);
+        helper.assertTrue(recovery.position().y < cliff.position().y && recovery.position().y > flat.position().y + 20,
+                "downward clearance recovery eases after an obstruction");
+        helper.assertValueEqual(SettlementViewWindow.MIN_HEIGHT, 8.0F, "the shared zoom minimum is eight blocks");
+        helper.succeed();
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
