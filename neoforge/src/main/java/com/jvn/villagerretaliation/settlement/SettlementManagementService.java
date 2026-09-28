@@ -179,7 +179,7 @@ public final class SettlementManagementService {
                         event.id(), event.subject(), event.gameTime(), event.type())));
                 case DEPOTS -> depots(town, entries);
                 case PROJECTS -> town.projects().values().forEach(project -> entries.add(new SettlementManagementPayload.Project(
-                        project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.status(),
+                        project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.min(), project.max(), project.status(),
                         project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
                         project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),
                         project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())))));

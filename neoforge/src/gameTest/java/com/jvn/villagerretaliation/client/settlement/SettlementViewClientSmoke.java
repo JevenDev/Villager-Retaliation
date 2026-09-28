@@ -65,6 +65,7 @@ public final class SettlementViewClientSmoke {
     private static CompletableFuture<Void> serverCheck;
     private static Fixture fixture;
     private static ProjectFixture projectFixture;
+    private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
     private static UUID brewer;
     private static Villager issueFarmer;
     private static long started;
@@ -638,6 +639,35 @@ public final class SettlementViewClientSmoke {
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS
                 && screen.snapshot().entries().stream().anyMatch(entry -> entry.id().equals(projectFixture.project()))) {
             capture("project-started");
+            projectSnapshot = screen.snapshot().entries().stream()
+                    .filter(entry -> entry.id().equals(projectFixture.project()))
+                    .map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Project.class::cast).findFirst().orElseThrow();
+            require(projectSnapshot.min().getX() <= projectSnapshot.max().getX(), "project bounds survive the management payload");
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            ticks = 0;
+            phase = 110;
+        } else if (phase == 110 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 80) {
+            var bounds = new SettlementViewBounds(projectSnapshot.min(), projectSnapshot.max()).box();
+            clickWorld(screen, bounds.getCenter(), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+            require(screen.contextPopup() != null && screen.contextPopup().target().id().equals(projectFixture.project()),
+                    "queued construction can be selected in the world view");
+            require(screen.contextPopup().narration().getString().contains(projectSnapshot.name()), "construction context identifies the selected project");
+            capture("project-world-selection");
+            clickContextAction(screen, 2);
+            require(minecraft.screen instanceof SettlementEditScreen, "construction footprint can open a new area designation");
+            minecraft.screen.onClose();
+            ticks = 0;
+            phase = 111;
+        } else if (phase == 111 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen.selectionGizmo() != null
+                    && screen.selectionGizmo().bounds().equals(new SettlementViewBounds(projectSnapshot.min(), projectSnapshot.max()).box()),
+                    "the new designation starts at the exact construction footprint");
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            button(screen, "villagerretaliation.gui.settlement_view.projects").onPress();
+            phase = 112;
+        } else if (phase == 112 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS
+                && screen.snapshot().entries().stream().anyMatch(entry -> entry.id().equals(projectFixture.project()))) {
             selectFirstRow(screen);
             button(screen, "villagerretaliation.gui.settlement.cancel_project").onPress();
             ticks = 0;
@@ -652,6 +682,13 @@ public final class SettlementViewClientSmoke {
                                 && project.id().equals(projectFixture.project())
                                 && project.status() == com.jvn.villagerretaliation.settlement.SettlementProject.Status.CANCELLED)) {
             capture("project-cancelled");
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            ticks = 0;
+            phase = 113;
+        } else if (phase == 113 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 80) {
+            var bounds = new SettlementViewBounds(projectSnapshot.min(), projectSnapshot.max()).box();
+            clickWorld(screen, bounds.getCenter(), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+            require(screen.contextPopup() == null, "cancelled construction no longer leaves a selectable footprint");
             screen.onClose();
             ticks = 0;
             phase = 23;

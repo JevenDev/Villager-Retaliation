@@ -140,6 +140,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeUUID(project.area());
                     buffer.writeUUID(project.builder());
                     buffer.writeBlockPos(project.origin());
+                    buffer.writeBlockPos(project.min());
+                    buffer.writeBlockPos(project.max());
                     buffer.writeEnum(project.status());
                     buffer.writeVarInt(project.placed());
                     buffer.writeVarInt(project.total());
@@ -232,6 +234,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case DELEGATES -> new Delegate(id, name, readPermissions(buffer));
                 case HISTORY -> new History(id, name, buffer.readVarLong(), buffer.readEnum(SettlementEvent.Type.class));
                 case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
+                        buffer.readBlockPos(), buffer.readBlockPos(),
                         buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
                         buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512));
                 case ISSUES -> new Issue(id, name, buffer.readEnum(IssueKind.class), buffer.readUtf(128), buffer.readUtf(512),
@@ -445,11 +448,12 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         CurrencyAmount price, CurrencyAmount budget, boolean enabled, String result) implements Entry {
     }
 
-    public record Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, SettlementProject.Status status,
+    public record Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, BlockPos min, BlockPos max, SettlementProject.Status status,
                           int placed, int total, String blocker, String materials,
                           com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials) implements Entry {
         public Project {
             if (id == null || area == null || builder == null || origin == null || status == null || name == null || name.length() > 128
+                    || min == null || max == null || min.getX() > max.getX() || min.getY() > max.getY() || min.getZ() > max.getZ()
                     || placed < 0 || total <= 0 || placed > total || blocker == null || blocker.length() > 128
                     || materials == null || materials.length() > 512 || phase == null || missingMaterials == null || missingMaterials.length() > 512) {
                 throw new IllegalArgumentException("Invalid construction project snapshot");

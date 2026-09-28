@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.network.SettlementViewStatePayload;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
+import com.jvn.villagerretaliation.settlement.SettlementProject;
 import com.jvn.villagerretaliation.settlement.SettlementViewWindow;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.ArrayList;
@@ -50,6 +51,8 @@ public final class SettlementViewScreen extends Screen {
     private final UUID session;
     private final Map<UUID, SettlementManagementPayload.Area> areas = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Area> incomingAreas = new LinkedHashMap<>();
+    private final Map<UUID, SettlementManagementPayload.Project> projects = new LinkedHashMap<>();
+    private final Map<UUID, SettlementManagementPayload.Project> incomingProjects = new LinkedHashMap<>();
     private final Set<Integer> heldKeys = new HashSet<>();
     private final SettlementViewCamera camera = new SettlementViewCamera();
     private SettlementViewPopup popup;
@@ -113,6 +116,8 @@ public final class SettlementViewScreen extends Screen {
     private long residentRefreshAt;
     private long areaRefreshAt;
     private int areaPage;
+    private long projectRefreshAt;
+    private int projectPage;
 
     SettlementViewScreen(SettlementManagementScreen parent, SettlementViewStatePayload payload) {
         super(text("title"));
@@ -177,6 +182,9 @@ public final class SettlementViewScreen extends Screen {
         this.incomingAreas.clear();
         this.areaPage = 0;
         this.areaRefreshAt = 0L;
+        this.incomingProjects.clear();
+        this.projectPage = 0;
+        this.projectRefreshAt = 0L;
         this.detailsAt = Math.max(this.detailsAt, Util.getMillis() + 300L);
     }
 
@@ -240,6 +248,24 @@ public final class SettlementViewScreen extends Screen {
                 this.areas.putAll(this.incomingAreas);
                 this.areaPage = 0;
                 this.areaRefreshAt = Util.getMillis() + 3_000L;
+            }
+        } else if (payload.page() == Page.PROJECTS && this.waitingPage == Page.PROJECTS) {
+            if (payload.index() == 0) this.incomingProjects.clear();
+            for (var entry : payload.entries()) {
+                if (entry instanceof SettlementManagementPayload.Project project
+                        && (project.status() != SettlementProject.Status.CANCELLED
+                        || project.blocker().equals("pending_world") || project.blocker().equals("world_conflict"))) {
+                    this.incomingProjects.put(project.id(), project);
+                }
+            }
+            if ((payload.index() + 1) * SettlementManagementRequestPayload.PAGE_SIZE < payload.total()) {
+                this.projectPage = payload.index() + 1;
+                this.projectRefreshAt = 0L;
+            } else {
+                this.projects.clear();
+                this.projects.putAll(this.incomingProjects);
+                this.projectPage = 0;
+                this.projectRefreshAt = Util.getMillis() + 3_000L;
             }
         } else if (payload.page() == Page.RESIDENTS && this.waitingPage == Page.RESIDENTS) {
             this.residentChecked = payload.query().equals(String.valueOf(this.selectedResident));
@@ -371,6 +397,8 @@ public final class SettlementViewScreen extends Screen {
                 this.residentRefreshAt = now + 2_000L;
             } else if (now >= this.areaRefreshAt) {
                 requestDetails(Page.AREAS, this.areaPage, "", now);
+            } else if (now >= this.projectRefreshAt) {
+                requestDetails(Page.PROJECTS, this.projectPage, "", now);
             }
         }
     }
@@ -487,6 +515,8 @@ public final class SettlementViewScreen extends Screen {
             return this.resident.guardOrder() == null ? name : name.copy().append("\n")
                     .append(text("guard_" + this.resident.guardOrder().mode().name().toLowerCase(java.util.Locale.ROOT)));
         }
+        var project = this.projects.get(this.selectedArea);
+        if (project != null) return Component.literal(project.name()).append("\n").append(projectProgress(project));
         var area = this.areas.get(this.selectedArea);
         if (area != null) {
             return text("area", area.name(), SettlementManagementScreen.enumText("area", area.kind()), area.workers(), area.beds());
@@ -527,6 +557,7 @@ public final class SettlementViewScreen extends Screen {
         }
         if (this.manage != null) {
             this.manage.active = !this.guardPending && (this.resident != null
+                    || this.projects.containsKey(this.selectedArea)
                     || this.selectedArea != null && this.areas.containsKey(this.selectedArea) && permits(SettlementPermission.BUILD));
             this.drawArea.active = permits(SettlementPermission.BUILD) && !this.guardPending;
             this.drawArea.setMessage(text(this.drawing ? "cancel_area" : "draw_area"));
@@ -953,6 +984,17 @@ public final class SettlementViewScreen extends Screen {
         if (this.drawing && this.dragStart != null && this.dragEnd != null) {
             LevelRenderer.renderLineBox(pose, lines, draftBounds(), 0.62F, 0.72F, 0.78F, 0.65F);
         }
+        for (var project : this.projects.values()) {
+            if (this.window.chunks().stream().anyMatch(chunk -> chunk.getMaxBlockX() >= project.min().getX()
+                    && chunk.getMinBlockX() <= project.max().getX() && chunk.getMaxBlockZ() >= project.min().getZ()
+                    && chunk.getMinBlockZ() <= project.max().getZ())) {
+                boolean selected = project.id().equals(this.selectedArea);
+                LevelRenderer.renderLineBox(pose, buffers.getBuffer(SettlementSelectionGizmo.LINES),
+                        new SettlementViewBounds(project.min(), project.max()).box(),
+                        selected ? 0.25F : 1.0F, selected ? 0.9F : 0.78F,
+                        selected ? 1.0F : 0.25F, selected ? 1.0F : 0.8F);
+            }
+        }
         if (this.gizmo != null && !SettlementViewClient.panelsOpen(this)) {
             this.gizmo.render(pose, buffers.getBuffer(SettlementSelectionGizmo.LINES), draft == null || draft.preview == null || draft.preview.failure().isEmpty());
         }
@@ -1109,7 +1151,7 @@ public final class SettlementViewScreen extends Screen {
 
     private List<UUID> matchingAreas(Pick hit, double x, double y) {
         if (hit.position() != null) {
-            var touching = this.areas.values().stream()
+            var touching = selectableAreas().stream()
                     .filter(area -> new SettlementViewBounds(area.min(), area.max()).box().contains(Vec3.atCenterOf(hit.position())))
                     .map(SettlementManagementPayload.Area::id).toList();
             if (!touching.isEmpty()) {
@@ -1119,8 +1161,25 @@ public final class SettlementViewScreen extends Screen {
         var ray = ray(x, y);
         Vec3 end = hit.position() == null ? ray.end() : ray.origin().add(ray.direction()
                 .scale(ray.origin().distanceTo(Vec3.atCenterOf(hit.position())) + 1.0D));
-        return this.areas.values().stream().filter(area -> new SettlementViewBounds(area.min(), area.max()).box()
+        return selectableAreas().stream().filter(area -> new SettlementViewBounds(area.min(), area.max()).box()
                 .clip(ray.origin(), end).isPresent()).map(SettlementManagementPayload.Area::id).toList();
+    }
+
+    private List<SettlementManagementPayload.Area> selectableAreas() {
+        var result = new ArrayList<>(this.areas.values());
+        this.projects.values().forEach(project -> result.add(projectArea(project)));
+        return result;
+    }
+
+    private static SettlementManagementPayload.Area projectArea(SettlementManagementPayload.Project project) {
+        return new SettlementManagementPayload.Area(project.id(), project.name(), SettlementAreaType.CONSTRUCTION,
+                project.min(), project.max(), 5, true, 0, 0, project.status() == SettlementProject.Status.ACTIVE ? 1 : 0);
+    }
+
+    private static Component projectProgress(SettlementManagementPayload.Project project) {
+        return SettlementManagementScreen.text("project_row",
+                project.status() == SettlementProject.Status.ACTIVE ? SettlementManagementScreen.enumText("project_phase", project.phase())
+                        : SettlementManagementScreen.enumText("project_status", project.status()), project.placed(), project.total());
     }
 
     private void openChooser(List<UUID> choices, double x, double y) {
@@ -1193,7 +1252,27 @@ public final class SettlementViewScreen extends Screen {
             }
             case AREA -> {
                 var area = this.areas.get(target.id());
-                if (area == null) {
+                var project = this.projects.get(target.id());
+                if (project != null) {
+                    details.add(Component.literal(project.name()));
+                    details.add(projectProgress(project));
+                    details.add(boundsDetails(new SettlementViewBounds(project.min(), project.max())));
+                    if (!project.blocker().isBlank()) {
+                        details.add(Component.translatableWithFallback("villagerretaliation.gui.settlement.project_blocker."
+                                + project.blocker().replace("interaction.work.builder.", ""), SettlementManagementScreen.text("project_blocked").getString()));
+                    }
+                    if (!project.missingMaterials().isBlank()) details.add(SettlementManagementScreen.text("project_missing", project.missingMaterials()));
+                    actions.add(contextAction("manage_selection", ready, () -> openManagement(Page.PROJECTS, project.id().toString())));
+                    actions.add(new SettlementViewPopup.Action(SettlementManagementScreen.text("project_builder"), ready,
+                            () -> openManagement(Page.RESIDENTS, project.builder().toString())));
+                    if (permits(SettlementPermission.BUILD)) {
+                        actions.add(contextAction("draw_area", ready, () -> {
+                            beginBoundsEdit(new SettlementManagementPayload.Area(UUID.randomUUID(), "", SettlementAreaType.HOME,
+                                    project.min(), project.max(), 5, true, 0, 0, 0));
+                            confirmDraft();
+                        }));
+                    }
+                } else if (area == null) {
                     details.add(text("details_unavailable"));
                 } else {
                     details.add(Component.literal(area.name()));
@@ -1228,7 +1307,8 @@ public final class SettlementViewScreen extends Screen {
             case CHOOSER -> {
                 details.add(text("choose_area"));
                 for (UUID id : target.choices()) {
-                    var area = this.areas.get(id);
+                    var project = this.projects.get(id);
+                    var area = project == null ? this.areas.get(id) : projectArea(project);
                     if (area != null) {
                         actions.add(new SettlementViewPopup.Action(text("area_choice", area.name(), SettlementManagementScreen.enumText("area", area.kind())),
                                 true, () -> {
@@ -1268,6 +1348,8 @@ public final class SettlementViewScreen extends Screen {
     private void manageSelection() {
         if (this.resident != null) {
             openManagement(Page.RESIDENTS, this.resident.id().toString());
+        } else if (this.projects.containsKey(this.selectedArea)) {
+            openManagement(Page.PROJECTS, this.selectedArea.toString());
         } else if (this.areas.containsKey(this.selectedArea)) {
             this.parent.clearBuildingDraft();
             this.editingArea = this.areas.get(this.selectedArea);
