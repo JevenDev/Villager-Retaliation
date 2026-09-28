@@ -26,6 +26,7 @@ public final class VrCommandGameTests {
         child(vr, "duel");
         CommandNode<CommandSourceStack> admin = child(vr, "admin");
 
+        child(child(admin, "village"), "removeHere");
         CommandNode<CommandSourceStack> villager = child(admin, "villager");
         CommandNode<CommandSourceStack> skill = child(villager, "skill");
         helper.assertTrue(skill.getChild("export") == null,

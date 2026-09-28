@@ -535,6 +535,158 @@ public final class SettlementWorkforceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void leaderPaidHireReleasesCivicDutyAndChargesExactlyOnce(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        assign(helper, fixture);
+        var level = helper.getLevel();
+        var villager = fixture.villager();
+        try {
+            int cost = HiredVillagerContractService.getHireCost(level, villager, fixture.leader(), 1, HiredVillagerRole.FARMING);
+            com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.give(fixture.leader(), cost + 5);
+            HiredJobInventory.getJobInventory(villager).setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.WHEAT_SEEDS, 7));
+            helper.assertTrue(RecruitmentPolicy.mayAcceptPaidContract(level, villager, fixture.leader()).allowed(),
+                    "the leader can accept a paid civic transfer");
+            helper.assertFalse(RecruitmentPolicy.mayHire(level, villager, fixture.leader()).allowed(),
+                    "general recruitment still cannot displace civic duty");
+            long revision = VillagerAssignmentStore.snapshot(villager).revision();
+            paidRequest(helper, fixture, fixture.leader(), HiredVillagerRole.FARMING, revision);
+            helper.assertTrue(HiredVillagerContractService.isHiredBy(level, villager, fixture.leader()), "the paid contract starts");
+            helper.assertFalse(fixture.town().duties().containsKey(villager.getUUID()), "acceptance releases civic duty");
+            helper.assertValueEqual(VillagerAssignmentStore.snapshot(villager).state(), VillagerAssignmentState.HIRED,
+                    "the entity and town agree on the transfer");
+            helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).countItem(Items.WHEAT_SEEDS), 7,
+                    "the transfer preserves job supplies");
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(fixture.leader()), 5,
+                    "the normal price is charged once");
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.handleRecruitRequest(fixture.leader(),
+                    villager.getId(), com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY,
+                    HiredVillagerRole.FARMING, revision);
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(fixture.leader()), 5,
+                    "replaying the stale acceptance cannot charge again");
+            helper.assertFalse(SettlementWorkforceService.assign(level, fixture.leader(), fixture.town().id(), villager, fixture.area().id()),
+                    "the paid contract cannot transfer back into civic duty");
+        } finally {
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(fixture.leader(), false);
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicHireRejectsNonleaderDespiteStaffPermission(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        assign(helper, fixture);
+        var outsider = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "HiringStaff"));
+        outsider.setPos(fixture.leader().position());
+        fixture.town().setPermissions(fixture.leader().getUUID(), outsider.getUUID(), Set.of(SettlementPermission.STAFF));
+        outsider.getInventory().setItem(0, new ItemStack(Items.EMERALD, 64));
+        try {
+            paidRequest(helper, fixture, outsider, HiredVillagerRole.FARMING, VillagerAssignmentStore.snapshot(fixture.villager()).revision());
+            assertCivic(helper, fixture);
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(outsider), 64,
+                    "rejected staff hiring takes no payment");
+        } finally {
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(outsider, false);
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicHirePreservesDutyWhenPaymentIsInsufficient(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        assign(helper, fixture);
+        try {
+            fixture.leader().getInventory().clearContent();
+            paidRequest(helper, fixture, fixture.leader(), HiredVillagerRole.FARMING,
+                    VillagerAssignmentStore.snapshot(fixture.villager()).revision());
+            assertCivic(helper, fixture);
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(fixture.leader()), 0,
+                    "failed payment does not create currency");
+        } finally {
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(fixture.leader(), false);
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicHireRejectsStaleAssignmentAndUnsuitableRole(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        assign(helper, fixture);
+        fixture.leader().getInventory().setItem(0, new ItemStack(Items.EMERALD, 64));
+        try {
+            long revision = VillagerAssignmentStore.snapshot(fixture.villager()).revision();
+            paidRequest(helper, fixture, fixture.leader(), HiredVillagerRole.FARMING, revision - 1);
+            assertCivic(helper, fixture);
+            paidRequest(helper, fixture, fixture.leader(), HiredVillagerRole.BUILDER, revision);
+            assertCivic(helper, fixture);
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(fixture.leader()), 64,
+                    "stale requests and unsuitable contract roles take no payment");
+        } finally {
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(fixture.leader(), false);
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicHireRejectsMismatchedTownAssignment(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        assign(helper, fixture);
+        fixture.leader().getInventory().setItem(0, new ItemStack(Items.EMERALD, 64));
+        try {
+            VillagerAssignmentStore.assignCivic(fixture.villager(), fixture.town().id().value(), UUID.randomUUID(),
+                    HiredVillagerRole.FARMING, helper.getLevel().getGameTime());
+            helper.assertFalse(HiredVillagerContractService.startPaidHireContract(helper.getLevel(), fixture.villager(),
+                    fixture.leader(), 1, 5, HiredVillagerRole.FARMING), "mismatched entity and town assignments reject transfer");
+            helper.assertValueEqual(fixture.town().duties().get(fixture.villager().getUUID()), fixture.area().id(),
+                    "failed validation preserves the town duty");
+            helper.assertFalse(HiredVillagerContractService.hasContract(fixture.villager()), "failed validation creates no contract");
+        } finally {
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicLeadershipDoesNotBypassHiringReputation(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        assign(helper, fixture);
+        fixture.leader().getInventory().setItem(0, new ItemStack(Items.EMERALD, 64));
+        try {
+            com.jvn.villagerretaliation.reputation.VillagerReputationManager.setReputation(
+                    helper.getLevel(), fixture.villager(), fixture.leader().getUUID(), -100);
+            helper.assertValueEqual(RecruitmentPolicy.mayAcceptPaidContract(helper.getLevel(), fixture.villager(), fixture.leader()).reason(),
+                    RecruitmentPolicy.DenialReason.INSUFFICIENT_REPUTATION, "leadership retains the normal trust requirement");
+            com.jvn.villagerretaliation.interaction.HiredContractRequestHandler.handle(fixture.leader(), helper.getLevel(),
+                    fixture.villager(), com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY,
+                    HiredVillagerRole.FARMING);
+            assertCivic(helper, fixture);
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(fixture.leader()), 64,
+                    "insufficient trust takes no payment");
+        } finally {
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
+    private static void paidRequest(GameTestHelper helper, Fixture fixture, ServerPlayer player, HiredVillagerRole role, long revision) {
+        helper.assertTrue(com.jvn.villagerretaliation.interaction.VillagerConversationService.start(player, fixture.villager()),
+                "the existing villager conversation is available");
+        com.jvn.villagerretaliation.interaction.VillagerInteractionService.handleRecruitRequest(player, fixture.villager().getId(),
+                com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY, role, revision);
+    }
+
+    private static void assertCivic(GameTestHelper helper, Fixture fixture) {
+        helper.assertValueEqual(fixture.town().duties().get(fixture.villager().getUUID()), fixture.area().id(),
+                "the town duty survives rejected hiring");
+        helper.assertValueEqual(VillagerAssignmentStore.snapshot(fixture.villager()).state(), VillagerAssignmentState.CIVIC,
+                "the entity remains on civic duty");
+        helper.assertFalse(HiredVillagerContractService.hasContract(fixture.villager()), "rejected hiring creates no contract");
+    }
+
     private static void assign(GameTestHelper helper, Fixture fixture) {
         helper.assertTrue(SettlementWorkforceService.assign(helper.getLevel(), fixture.leader(), fixture.town().id(),
                 fixture.villager(), fixture.area().id()), "leadership can assign an eligible resident");

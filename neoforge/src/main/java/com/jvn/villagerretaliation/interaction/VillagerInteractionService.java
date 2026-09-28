@@ -717,6 +717,8 @@ public final class VillagerInteractionService {
             return;
         }
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)
+                && !(RecruitmentActionMappings.hireDays(action) > 0
+                        && RecruitmentPolicy.mayAcceptPaidContract(level, villager, player).allowed())
                 && !canAdministerContract
                 && !canAdministerPartyContract
                 && !canOpenJobInventory

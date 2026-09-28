@@ -330,6 +330,28 @@ public final class SettlementBackgroundCraftingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void partialCraftSurvivesNativeReturnWithoutSpendingIngredientsTwice(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            fixture.supply().setItem(0, new ItemStack(Items.OAK_PLANKS, 8));
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 50, 1.0D);
+            helper.assertValueEqual(fixture.worker().status(), "crafting", "travel and crafting need more than the first interval");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 8, "unfinished work reserves no ingredients");
+            SettlementBackgroundService.onActive(fixture.villager());
+            SettlementSimulationHandoff.stopTicking(fixture.villager());
+            helper.assertValueEqual(fixture.worker().progress(), 50.0D, "native return retains the paid part of the job");
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 100, 1.0D);
+            helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 1, "the remaining interval completes the original recipe");
+            helper.assertTrue(fixture.supply().isEmpty(), "only one recipe consumes ingredients");
+            SettlementBackgroundService.onActive(fixture.villager());
+            var inventory = HiredJobInventory.getJobInventory(fixture.villager());
+            helper.assertValueEqual(inventory.countItem(Items.CHEST), 1, "the actual result reaches the native worker");
+            inventory.removeItem(HiredJobInventory.MAIN_GRID_START, 1);
+            SettlementBackgroundService.onActive(fixture.villager());
+            helper.assertValueEqual(inventory.countItem(Items.CHEST), 0, "the same recipe result cannot be returned twice");
+        });
+    }
+
     private static int carried(GameTestHelper helper, Fixture fixture, Item item) {
         return fixture.worker().items(helper.getLevel().registryAccess()).stream()
                 .filter(stack -> stack.is(item)).mapToInt(ItemStack::getCount).sum();

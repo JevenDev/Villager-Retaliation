@@ -30,7 +30,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class VillageAllegianceRegistrySavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_village_allegiances";
-    private static final int FORMAT_VERSION = 4;
+    private static final int FORMAT_VERSION = 5;
     private static final int DISCOVERY_RADIUS_BLOCKS = 128;
     private static final long RESIDENT_LAST_SEEN_REFRESH_TICKS = 1_200L;
     private static final long AUTO_MERGE_OBSERVATION_SPACING_TICKS = 100L;
@@ -40,6 +40,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     private final Map<VillageAllegianceId, AllegianceRecord> records = new LinkedHashMap<>();
     private final Set<VillageAllegianceId> managedIdentities = new LinkedHashSet<>();
+    private final Set<VillageAllegianceId> removedIdentities = new LinkedHashSet<>();
     private final Map<VillageAllegianceId, VillageAllegianceId> aliases = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, Optional<VillageAllegianceId>> canonicalCache = new HashMap<>();
     private final Map<UUID, LinkedHashSet<VillageAllegianceId>> residentRecords = new HashMap<>();
@@ -124,6 +125,14 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 data.canonical(id).filter(id::equals).ifPresent(data.managedIdentities::add);
             }
         }
+        for (Tag raw : tag.getList("RemovedIdentities", Tag.TAG_COMPOUND)) {
+            if (raw instanceof CompoundTag entry && entry.hasUUID("Id")) {
+                VillageAllegianceId id = new VillageAllegianceId(entry.getUUID("Id"));
+                data.canonicalRecord(id)
+                        .filter(record -> record.id().equals(id) && record.archived() && !data.isManaged(id))
+                        .ifPresent(record -> data.removedIdentities.add(id));
+            }
+        }
         data.ensureNames();
         data.rebuildResidentIndex();
         return data;
@@ -180,6 +189,13 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             managedTags.add(entry);
         }
         tag.put("ManagedIdentities", managedTags);
+        ListTag removedTags = new ListTag();
+        for (VillageAllegianceId id : this.removedIdentities) {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("Id", id.value());
+            removedTags.add(entry);
+        }
+        tag.put("RemovedIdentities", removedTags);
         return tag;
     }
 
@@ -354,6 +370,18 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
         String normalized = proposed.strip().replaceAll("\\s+", " ");
         return normalized.isBlank() || normalized.length() > 32 ? Optional.empty() : Optional.of(normalized);
+    }
+
+    public boolean removeVillage(VillageAllegianceId id) {
+        AllegianceRecord current = canonicalRecord(id).orElse(null);
+        if (current == null || current.archived() || isManaged(current.id())) {
+            return false;
+        }
+        this.records.put(current.id(), current.withLifecycle(VillageLifecycleState.ARCHIVED, current.emptyObservedTicks()));
+        this.removedIdentities.add(current.id());
+        this.mergeObservations.keySet().removeIf(key -> key.contains(current.id()));
+        markFootprintChanged();
+        return true;
     }
 
     public boolean archive(VillageAllegianceId id) {
@@ -549,7 +577,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     /** Reverses one direct merge using the still-retained source record. */
     public boolean undoMerge(VillageAllegianceId source) {
         VillageAllegianceId target = this.aliases.get(source);
-        if (target == null || this.aliases.containsKey(target) || isManaged(target)) {
+        if (target == null || this.aliases.containsKey(target) || isManaged(target)
+                || this.removedIdentities.contains(source) || this.removedIdentities.contains(target)) {
             return false;
         }
         AllegianceRecord sourceRecord = this.records.get(source);
@@ -649,6 +678,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         AllegianceRecord targetRecord = this.records.get(target);
         if (sourceRecord == null || targetRecord == null || source.equals(target)
                 || isManaged(source) || isManaged(target)
+                || this.removedIdentities.contains(source) || this.removedIdentities.contains(target)
                 || !java.util.Objects.equals(sourceRecord.originDimension(), targetRecord.originDimension())) {
             return false;
         }
@@ -685,6 +715,13 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 manager.getInChunk(type -> type.is(PoiTypeTags.VILLAGE), new ChunkPos(x, z), PoiManager.Occupancy.IS_OCCUPIED)
                         .map(record -> SectionPos.asLong(record.getPos()))
                         .forEach(sections::add);
+            }
+        }
+        for (VillageAllegianceId id : this.removedIdentities) {
+            AllegianceRecord removed = this.records.get(id);
+            if (level.dimension().location().equals(removed.originDimension())) {
+                sections.removeAll(removed.sourceSections());
+                sections.removeAll(removed.footprintSections());
             }
         }
         return sections;

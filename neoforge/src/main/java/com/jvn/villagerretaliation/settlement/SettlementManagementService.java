@@ -245,8 +245,11 @@ public final class SettlementManagementService {
         if (settings != null && !settings.enabled()) return new SettlementWorkStatus("paused", "");
         if (!area.enabled()) return new SettlementWorkStatus("area_paused", "");
         if (worker != null && (!worker.area().equals(area.id()) || worker.role() != area.type().role())) worker = null;
-        if (villager == null) return worker == null ? new SettlementWorkStatus("awaiting_worker_observation", "")
-                : new SettlementWorkStatus(worker.status(), worker.diagnostic());
+        if (villager == null || !level.isPositionEntityTicking(villager.blockPosition()) || worker != null && worker.unsafe()) {
+            String status = worker == null ? "awaiting_worker_observation" : worker.status();
+            String diagnostic = worker == null ? "" : worker.diagnostic();
+            return new SettlementWorkStatus(status, diagnostic.isBlank() ? SettlementWorkerDiagnostics.describe(status) : diagnostic);
+        }
         return SettlementWorkStatus.observe(level, villager);
     }
 
