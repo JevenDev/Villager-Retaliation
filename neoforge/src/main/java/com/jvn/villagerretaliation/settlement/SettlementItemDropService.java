@@ -68,7 +68,7 @@ final class SettlementItemDropService {
 
     static boolean collect(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, Villager owner, HiredJobInventory inventory,
                            SettlementWorkBudget budget, Predicate<ItemStack> filter) {
-        var area = town.areas().get(worker.area());
+        var area = town.workplace(worker.area());
         if (area == null || !area.contains(worker.position())) return false;
         boolean unreachable = false;
         for (var drop : town.itemDrops().values().stream().filter(drop -> drop.area().equals(area.id()) && area.contains(drop.position()))

@@ -52,7 +52,7 @@ final class SettlementConstructionSiteService {
         for (var project : town.projects().values()) {
             if (project.site() == null) continue;
             refresh(level, project.site());
-            if (!project.active() && !project.site().pending()) project.clearSite();
+            if (!project.active() && !project.site().pending()) town.clearProjectSite(project);
             town.changed();
         }
     }

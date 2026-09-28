@@ -60,7 +60,7 @@ public final class SettlementWorkforceService {
                 || hasPersonalCommitment(villager)) {
             return false;
         }
-        SettlementArea area = town.areas().get(areaId);
+        SettlementArea area = town.workplace(areaId);
         if (area == null || area.type().role() == null
                 || !HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())
                 || area.type() == SettlementAreaType.CONSTRUCTION && town.stage().projects() == 0
@@ -131,7 +131,7 @@ public final class SettlementWorkforceService {
                 || !VillageAllegianceApi.canonicalPrimary(level, villager).filter(town.id()::equals).isPresent()) {
             return Optional.empty();
         }
-        SettlementArea area = town.areas().get(areaId);
+        SettlementArea area = town.workplace(areaId);
         return area == null || area.type().role() == null ? Optional.empty() : Optional.of(new Duty(town, area));
     }
 
@@ -184,7 +184,7 @@ public final class SettlementWorkforceService {
                 .flatMap(id -> SettlementSavedData.get(level).get(new VillageAllegianceId(id)))
                 .ifPresent(previous -> previous.removeDuty(villager.getUUID()));
         UUID areaId = town == null ? null : town.duties().get(villager.getUUID());
-        SettlementArea area = areaId == null ? null : town.areas().get(areaId);
+        SettlementArea area = areaId == null ? null : town.workplace(areaId);
         if (area == null && before.state() != VillagerAssignmentState.CIVIC) {
             SettlementScheduleService.reconcile(villager);
             return;

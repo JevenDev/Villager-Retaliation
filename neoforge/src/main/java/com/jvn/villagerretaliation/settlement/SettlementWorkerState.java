@@ -299,6 +299,10 @@ public final class SettlementWorkerState {
         this.inventory = snapshot.copy();
     }
 
+    void rememberPayments(Villager villager) {
+        this.entityContext = villager.saveWithoutId(new CompoundTag());
+    }
+
     CompoundTag entityContext() {
         return this.entityContext.copy();
     }

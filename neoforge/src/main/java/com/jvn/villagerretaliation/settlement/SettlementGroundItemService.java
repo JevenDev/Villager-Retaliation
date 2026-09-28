@@ -59,7 +59,7 @@ public final class SettlementGroundItemService {
 
     private static void observeAccess(ServerLevel level, SettlementRecord town, SettlementGroundItem state, ItemEntity item) {
         var workers = town.workers().values().stream().filter(worker -> {
-            var area = town.areas().get(worker.area());
+            var area = town.workplace(worker.area());
             return area != null && area.contains(item.blockPosition()) && area.contains(worker.position());
         }).toList();
         if (workers.isEmpty()) return;
@@ -67,7 +67,7 @@ public final class SettlementGroundItemService {
         int count = Math.min(4, workers.size());
         for (int index = 0; index < count; index++) {
             var worker = workers.get((cursor + index) % workers.size());
-            var area = town.areas().get(worker.area());
+            var area = town.workplace(worker.area());
             int steps = SettlementLivestockService.observedSteps(level, town, area, worker, item);
             if (steps != SettlementLivestockService.UNOBSERVED) state.drop().access(worker, steps);
         }
@@ -231,7 +231,7 @@ public final class SettlementGroundItemService {
 
     static boolean collect(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, Villager owner,
                            HiredJobInventory inventory, SettlementWorkBudget budget, Predicate<ItemStack> filter) {
-        var area = town.areas().get(worker.area());
+        var area = town.workplace(worker.area());
         if (area == null || !area.contains(worker.position())) return false;
         observeArea(level, town, area);
         boolean unreachable = false;

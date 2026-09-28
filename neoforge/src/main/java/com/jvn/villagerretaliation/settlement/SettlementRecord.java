@@ -503,6 +503,21 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.areas);
     }
 
+    public SettlementArea workplace(UUID id) {
+        if (id == null) return null;
+        var area = this.areas.get(id);
+        if (area != null) return area;
+        return this.projects.values().stream().filter(project -> project.workplace() != null
+                && project.area().equals(id) && (project.active() || project.site() != null)).map(SettlementProject::workplace).findFirst().orElse(null);
+    }
+
+    public java.util.List<SettlementArea> workplaces() {
+        var result = new java.util.ArrayList<>(this.areas.values());
+        this.projects.values().stream().filter(project -> project.workplace() != null && project.reservesFootprint())
+                .map(SettlementProject::workplace).forEach(result::add);
+        return java.util.List.copyOf(result);
+    }
+
     public Map<UUID, UUID> duties() {
         return Collections.unmodifiableMap(this.duties);
     }
@@ -512,7 +527,7 @@ public final class SettlementRecord {
     }
 
     boolean setGuardOrder(UUID actor, UUID resident, SettlementGuardOrder order) {
-        var area = this.areas.get(this.duties.get(resident));
+        var area = workplace(this.duties.get(resident));
         if (!permits(actor, SettlementPermission.STAFF) || area == null || area.type() != SettlementAreaType.GUARD_POST
                 || order != null && !order.within(this)) {
             return false;
@@ -533,21 +548,46 @@ public final class SettlementRecord {
     }
 
     boolean startProject(UUID actor, SettlementProject project) {
+        var area = project.workplace() == null ? workplace(project.area()) : project.workplace();
         if (!permits(actor, SettlementPermission.BUILD) || !project.active() || !project.town().equals(this.id.value())
-                || this.projects.containsKey(project.id()) || !project.within(this.areas.get(project.area()))
-                || !project.area().equals(this.duties.get(project.builder())) || activeProject(project.builder()) != null
+                || this.projects.containsKey(project.id()) || !project.within(area)
+                || project.workplace() == null && !project.area().equals(this.duties.get(project.builder()))
+                || project.workplace() != null && !Objects.equals(project.previousArea(), this.duties.get(project.builder()))
+                || activeProject(project.builder()) != null
                 || this.projects.values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
                 || this.projects.values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) {
             return false;
         }
+        if (project.fee() > 0 && !this.economy.reserveConstruction(project.fee())) return false;
         this.projects.put(project.id(), project);
+        if (project.workplace() != null) {
+            this.duties.put(project.builder(), project.area());
+            this.workerSettings.remove(project.builder());
+        }
         changed();
         return true;
+    }
+
+    void clearProjectSite(SettlementProject project) {
+        project.clearSite();
+        if (project.workplace() != null) this.surveys.remove(project.area());
+        changed();
     }
 
     void finishProject(UUID id, SettlementProject.Status status) {
         var project = this.projects.get(id);
         if (project != null && project.finish(status)) {
+            if (status == SettlementProject.Status.COMPLETED) project.earnPayment();
+            else this.economy.credit(com.jvn.villagerretaliation.sell.CurrencyAmount.of(project.refundPayment(), 1));
+            if (project.workplace() != null && project.area().equals(this.duties.get(project.builder()))) {
+                this.duties.remove(project.builder());
+                this.workerSettings.remove(project.builder());
+                var previous = this.areas.get(project.previousArea());
+                if (previous != null && previous.type() == SettlementAreaType.CONSTRUCTION) {
+                    this.duties.put(project.builder(), previous.id());
+                    if (project.previousSettings() != null) this.workerSettings.put(project.builder(), project.previousSettings());
+                }
+            }
             changed();
         }
     }
@@ -564,7 +604,7 @@ public final class SettlementRecord {
     }
 
     boolean setWorkerSettings(UUID actor, UUID resident, SettlementWorkerSettings settings) {
-        var area = this.areas.get(this.duties.get(resident));
+        var area = workplace(this.duties.get(resident));
         if (!permits(actor, SettlementPermission.STAFF) || area == null || settings == null || area.type().role() != settings.role()) {
             return false;
         }
@@ -662,7 +702,7 @@ public final class SettlementRecord {
     }
 
     void recordSurvey(UUID area, SettlementBuildingSurvey.Survey survey) {
-        if (!this.areas.containsKey(area)) {
+        if (workplace(area) == null) {
             return;
         }
         var previous = this.surveys.get(area);
@@ -718,6 +758,9 @@ public final class SettlementRecord {
     boolean putArea(UUID actor, SettlementArea area) {
         if (!permits(actor, SettlementPermission.BUILD) || area == null
                 || !area.within(this.center, this.radius)
+                || this.projects.values().stream().anyMatch(project -> project.workplace() != null
+                        && (project.area().equals(area.id()) || project.reservesFootprint() && project.overlaps(area)
+                                && area.type().changesTerrain() && area.type() != SettlementAreaType.CONSTRUCTION))
                 || !this.areas.containsKey(area.id()) && this.areas.size() >= MAX_AREAS
                 || this.areas.containsKey(area.id()) && this.areas.get(area.id()).type() != area.type()
                         && this.duties.containsValue(area.id())
@@ -1128,12 +1171,20 @@ public final class SettlementRecord {
             }
             record.areas.put(area.id(), area);
         }
+        for (Tag raw : tag.getList("Projects", Tag.TAG_COMPOUND)) {
+            var project = SettlementProject.load((CompoundTag) raw);
+            if (!project.town().equals(record.id.value()) || record.projects.putIfAbsent(project.id(), project) != null
+                    || project.workplace() != null && (!project.workplace().within(record.center, record.radius)
+                            || record.areas.containsKey(project.area()))) {
+                throw new IllegalArgumentException("Invalid or duplicated construction project");
+            }
+        }
         for (Tag raw : tag.getList("Duties", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) raw;
             if (!entry.hasUUID("Resident") || !entry.hasUUID("Area")) {
                 throw new IllegalArgumentException("Settlement duty is missing its resident or area");
             }
-            SettlementArea area = record.areas.get(entry.getUUID("Area"));
+            SettlementArea area = record.workplace(entry.getUUID("Area"));
             if (area == null || area.type().role() == null
                     || record.duties.putIfAbsent(entry.getUUID("Resident"), area.id()) != null) {
                 throw new IllegalArgumentException("Settlement duty is duplicated or has no workplace");
@@ -1145,7 +1196,7 @@ public final class SettlementRecord {
                 throw new IllegalArgumentException("Guard order is missing its resident");
             }
             UUID resident = entry.getUUID("Resident");
-            var area = record.areas.get(record.duties.get(resident));
+            var area = record.workplace(record.duties.get(resident));
             var order = SettlementGuardOrder.load(entry);
             if (area == null || area.type() != SettlementAreaType.GUARD_POST || !order.within(record)
                     || record.guardOrders.putIfAbsent(resident, order) != null) {
@@ -1158,22 +1209,20 @@ public final class SettlementRecord {
                 throw new IllegalArgumentException("Worker settings are missing their resident");
             }
             UUID resident = entry.getUUID("Resident");
-            var area = record.areas.get(record.duties.get(resident));
+            var area = record.workplace(record.duties.get(resident));
             var settings = SettlementWorkerSettings.load(entry);
             if (area == null || area.type().role() != settings.role()
                     || record.workerSettings.putIfAbsent(resident, settings) != null) {
                 throw new IllegalArgumentException("Worker settings are duplicated or have no matching duty");
             }
         }
-        for (Tag raw : tag.getList("Projects", Tag.TAG_COMPOUND)) {
-            var project = SettlementProject.load((CompoundTag) raw);
-            if (!project.town().equals(record.id.value())
-                    || project.active() && (!project.within(record.areas.get(project.area()))
-                            || !project.area().equals(record.duties.get(project.builder())) || record.activeProject(project.builder()) != null)
-                    || project.reservesFootprint() && record.projects.values().stream()
-                            .anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))
-                    || record.projects.putIfAbsent(project.id(), project) != null) {
-                throw new IllegalArgumentException("Construction project is duplicated, overlaps reserved work or has no matching duty");
+        for (var project : record.projects.values()) {
+            if (project.active() && (!project.within(record.workplace(project.area()))
+                    || !project.area().equals(record.duties.get(project.builder()))
+                    || record.projects.values().stream().anyMatch(other -> other != project && other.active() && other.builder().equals(project.builder())))
+                    || project.reservesFootprint() && record.projects.values().stream().anyMatch(existing -> existing != project
+                            && existing.reservesFootprint() && existing.overlaps(project))) {
+                throw new IllegalArgumentException("Construction project overlaps reserved work or has no matching duty");
             }
         }
         for (Tag raw : tag.getList("Depots", Tag.TAG_COMPOUND)) {
@@ -1187,7 +1236,7 @@ public final class SettlementRecord {
         }
         for (Tag raw : tag.getList("Surveys", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) raw;
-            SettlementArea area = entry.hasUUID("Area") ? record.areas.get(entry.getUUID("Area")) : null;
+            SettlementArea area = entry.hasUUID("Area") ? record.workplace(entry.getUUID("Area")) : null;
             var survey = SettlementBuildingSurvey.Survey.load(entry);
             if (area == null || survey.beds().stream().anyMatch(pos -> !area.contains(pos))
                     || survey.workstations().stream().anyMatch(pos -> !area.contains(pos))

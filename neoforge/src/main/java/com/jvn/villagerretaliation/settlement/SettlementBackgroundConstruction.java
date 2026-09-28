@@ -31,7 +31,7 @@ final class SettlementBackgroundConstruction {
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var project = town.activeProject(worker.id());
-        var area = town.areas().get(worker.area());
+        var area = town.workplace(worker.area());
         if (project == null || area == null || !area.enabled() || !project.area().equals(worker.area()) || !project.within(area)) {
             worker.status("no_construction_project");
             return;
@@ -98,6 +98,7 @@ final class SettlementBackgroundConstruction {
                     if (depositLeftovers(level, town, worker, inventory, plan, budget)) return;
                     project.observe(state);
                     town.finishProject(project.id(), SettlementProject.Status.COMPLETED);
+                    SettlementConstructionService.synchronizePayments(town, owner);
                     town.recordEvent(level.getGameTime(), SettlementEvent.Type.PROJECT_COMPLETED, project.label());
                     ConstructionBlueprintItem.completeMatchingBlueprints(level, project.id());
                     BuilderTaskState.clearTask(state);
@@ -167,6 +168,7 @@ final class SettlementBackgroundConstruction {
                 }
                 if (consumes && !inventory.consumeSupplyExactly(material::materialMatches, 1)) throw new IllegalStateException("Verified construction material disappeared");
                 site.queue(new SettlementConstructionPlacement(changes));
+                SettlementConstructionService.worked(town, project, owner);
                 for (var part : group.parts()) {
                     if (part.block().requiresToolAction() && changes.stream().anyMatch(change -> change.position().equals(part.worldPos()))) {
                         VillagerEquipmentDurability.hurtTool(tool, owner, EquipmentSlot.MAINHAND);
@@ -230,6 +232,10 @@ final class SettlementBackgroundConstruction {
             return false;
         }
         site.queue(new SettlementConstructionPlacement(List.of(new SettlementConstructionPlacement.Part(pos, block, block.getFluidState().createLegacyBlock(), null))));
+        SettlementWorkforceService.home(level, owner).ifPresent(town -> {
+            var project = town.activeProject(owner.getUUID());
+            if (project != null) SettlementConstructionService.worked(town, project, owner);
+        });
         drops.forEach(inventory::insertOutput);
         if (!VillagerEquipmentDurability.mineBlock(tool, level, block, pos, owner)) VillagerEquipmentDurability.hurtTool(tool, owner, EquipmentSlot.MAINHAND);
         inventory.syncMainHandEquipment();

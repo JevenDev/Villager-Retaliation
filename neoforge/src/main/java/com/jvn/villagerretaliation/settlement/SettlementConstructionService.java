@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.settlement;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
@@ -18,12 +19,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Rotation;
+import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public final class SettlementConstructionService {
     private SettlementConstructionService() {
@@ -33,10 +39,8 @@ public final class SettlementConstructionService {
         if (!canBuild(player, town) || town.stage().projects() == 0 || resident == null) return false;
         var level = player.serverLevel();
         var builder = resolveBuilder(level, town, resident);
-        if (builder == null || !builder.isAlive() || builder.isBaby() || SettlementWorkforceService.hasPersonalCommitment(builder)
-                || !VillageAllegianceApi.canonicalPrimary(level, builder).filter(town.id()::equals).isPresent()
-                || !HiredVillagerRoles.availableRoles(level, builder).contains(HiredVillagerRole.BUILDER)) return false;
-        var area = town.areas().get(town.duties().get(resident));
+        if (!eligible(level, town, builder)) return false;
+        var area = town.workplace(town.duties().get(resident));
         if (area == null || area.type() != SettlementAreaType.CONSTRUCTION) return false;
         SettlementConstructionSiteService.update(level, town);
         ItemStack blueprint = heldBlueprint(player, blueprintId);
@@ -58,6 +62,7 @@ public final class SettlementConstructionService {
                         HiredWorkArea.fromBounds(area.min(), area.max(), true), plan, preview.origin()).valid()) {
             return false;
         }
+        project.reservePayment(plan.price());
         SettlementBackgroundService.onActive(builder);
         var duty = SettlementWorkforceService.duty(builder).orElse(null);
         if (duty == null || duty.town() != town || !duty.area().id().equals(area.id())) return false;
@@ -83,7 +88,145 @@ public final class SettlementConstructionService {
         return true;
     }
 
-    private static Villager resolveBuilder(ServerLevel level, SettlementRecord town, UUID resident) {
+    public static String commission(ServerPlayer player, SettlementRecord town, UUID request, ResourceLocation structure,
+                                    BlockPos anchor, Rotation rotation, UUID resident) {
+        if (!canBuild(player, town)) return "permission";
+        var existing = town.projects().get(request);
+        if (existing != null) {
+            var accepted = scan(player.serverLevel(), structure, rotation);
+            return accepted != null && existing.builder().equals(resident) && existing.structure().equals(structure)
+                    && existing.rotation() == rotation && existing.origin().equals(origin(accepted, anchor)) ? "" : "duplicate";
+        }
+        var level = player.serverLevel();
+        if (SettlementSavedData.get(level).settlements().stream().anyMatch(other -> other.projects().containsKey(request))) return "duplicate";
+        var plan = scan(level, structure, rotation);
+        if (plan == null) return "prefab";
+        var origin = origin(plan, anchor);
+        String failure = placementFailure(player, town, plan, origin);
+        if (!failure.isEmpty()) return failure;
+        var builder = resolveBuilder(level, town, resident);
+        if (!eligible(level, town, builder)) return "builder";
+        var previous = town.workers().get(resident);
+        if (previous != null) previous.restore(builder);
+        reconcile(builder);
+        if (BuilderTaskState.hasTask(HiredWorkStateStore.state(builder))) return "builder";
+        var area = workplace(level, town, plan, origin, request);
+        if (area == null) return "placement";
+        var project = SettlementProject.planned(town, area, resident, plan, origin, request, level.getGameTime());
+        if (town.economy().constructionFunds().compareTo(CurrencyAmount.of(plan.price(), 1)) < 0) return "funds";
+        if (!town.startProject(player.getUUID(), project)) return "capacity";
+        SettlementWorkforceService.reconcile(level, builder);
+        var state = HiredWorkStateStore.state(builder);
+        HiredWorkStateStore.pauseWork(level, builder, HiredVillagerRole.BUILDER, "interaction.work.builder.started", Map.of());
+        project.restore(state);
+        state.remove("NextWorkGameTime");
+        state.remove("ProgressTicks");
+        SettlementConstructionSiteService.observeArea(level, town, area, null);
+        town.recordEvent(level.getGameTime(), SettlementEvent.Type.PROJECT_STARTED, project.label());
+        HiredWorkSession.invalidate(builder);
+        SettlementBackgroundService.onUnloaded(builder);
+        var care = town.residents().get(resident);
+        if (care != null) care.remember(builder);
+        return "";
+    }
+
+    static BuilderStructureScanner.StructurePlan scan(ServerLevel level, ResourceLocation structure, Rotation rotation) {
+        var entry = BuilderStructureCatalog.byId(level.getServer(), structure).orElse(null);
+        return entry == null ? null : BuilderStructureScanner.scan(level, entry, rotation).orElse(null);
+    }
+
+    static BlockPos origin(BuilderStructureScanner.StructurePlan plan, BlockPos anchor) {
+        return anchor.offset(-plan.localCenter().getX(), -plan.localMin().getY(), -plan.localCenter().getZ());
+    }
+
+    static boolean eligible(ServerLevel level, SettlementRecord town, Villager builder) {
+        if (builder == null || !builder.isAlive() || builder.isBaby() || VillagerDownedService.isDowned(builder)
+                || Math.abs(builder.getX() - town.center().getX()) > town.radius() + 16
+                || Math.abs(builder.getZ() - town.center().getZ()) > town.radius() + 16
+                || SettlementWorkforceService.hasPersonalCommitment(builder)
+                || !VillageAllegianceApi.canonicalPrimary(level, builder).filter(town.id()::equals).isPresent()
+                || !HiredVillagerRoles.availableRoles(level, builder).contains(HiredVillagerRole.BUILDER)
+                || town.activeProject(builder.getUUID()) != null || town.departures().containsKey(builder.getUUID())) return false;
+        var area = town.workplace(town.duties().get(builder.getUUID()));
+        var settings = town.workerSettings().get(builder.getUUID());
+        return area == null || area.type() == SettlementAreaType.CONSTRUCTION && area.enabled() && (settings == null || settings.options().get(SettlementWorkerSetting.ENABLED) == 1);
+    }
+
+    static String placementFailure(ServerPlayer player, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin) {
+        var level = player.serverLevel();
+        var min = plan.worldMin(origin);
+        var max = plan.worldMax(origin);
+        if (town.stage().projects() == 0 || town.projects().values().stream().filter(SettlementProject::active).count() >= town.stage().projects()) return "capacity";
+        if (!SettlementGuardOrder.within(town, min) || !SettlementGuardOrder.within(town, max)
+                || level.isOutsideBuildHeight(min) || level.isOutsideBuildHeight(max)
+                || !level.getWorldBorder().isWithinBounds(min) || !level.getWorldBorder().isWithinBounds(max)) return "bounds";
+        var footprint = new AABB(Vec3.atLowerCornerOf(min), Vec3.atLowerCornerOf(max.offset(1, 1, 1)));
+        if (SettlementSavedData.get(level).settlements().stream().filter(other -> other.dimension().equals(town.dimension()))
+                .flatMap(other -> other.projects().values().stream()).anyMatch(project -> project.reservesFootprint()
+                && new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)))
+                        .intersects(footprint))) return "overlap";
+        if (town.areas().values().stream().anyMatch(area -> area.type().changesTerrain() && area.type() != SettlementAreaType.CONSTRUCTION
+                && new AABB(Vec3.atLowerCornerOf(area.min()), Vec3.atLowerCornerOf(area.max().offset(1, 1, 1)))
+                        .intersects(footprint))) return "overlap";
+        if (SettlementSavedData.get(level).settlements().stream()
+                .filter(other -> !other.id().equals(town.id()) && other.dimension().equals(town.dimension()))
+                .anyMatch(other -> footprint.contains(other.center().getCenter()) || other.areas().values().stream().anyMatch(area ->
+                        footprint.intersects(new AABB(Vec3.atLowerCornerOf(area.min()), Vec3.atLowerCornerOf(area.max().offset(1, 1, 1))))))) return "overlap";
+        var area = workplace(level, town, plan, origin, UUID.randomUUID());
+        if (area == null) return "placement";
+        var check = BuilderSitePlanner.validateSite(level, player, null, HiredWorkArea.fromBounds(area.min(), area.max(), true), plan, origin);
+        return check.valid() ? "" : "placement";
+    }
+
+    private static SettlementArea workplace(ServerLevel level, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin, UUID id) {
+        var min = plan.worldMin(origin);
+        var max = plan.worldMax(origin);
+        var border = level.getWorldBorder();
+        var lower = new BlockPos(Math.max(min.getX() - 4, (int) Math.ceil(Math.max(town.center().getX() - town.radius(), border.getMinX()))),
+                Math.max(min.getY() - 2, level.getMinBuildHeight()),
+                Math.max(min.getZ() - 4, (int) Math.ceil(Math.max(town.center().getZ() - town.radius(), border.getMinZ()))));
+        var upper = new BlockPos(Math.min(max.getX() + 4, (int) Math.floor(Math.min(town.center().getX() + town.radius(), border.getMaxX() - 1))),
+                Math.min(max.getY() + 2, level.getMaxBuildHeight() - 1),
+                Math.min(max.getZ() + 4, (int) Math.floor(Math.min(town.center().getZ() + town.radius(), border.getMaxZ() - 1))));
+        try {
+            var name = plan.entry().menuLabel();
+            return new SettlementArea(id, SettlementAreaType.CONSTRUCTION, name.substring(0, Math.min(name.length(), SettlementArea.MAX_NAME_LENGTH)), lower, upper, 5, true);
+        } catch (IllegalArgumentException invalidBounds) {
+            return null;
+        }
+    }
+
+    public static void worked(Villager builder, CompoundTag state) {
+        var town = town(builder, state);
+        var project = project(builder, state);
+        if (town != null && project != null && project.active()) worked(town, project, builder);
+    }
+
+    static void worked(SettlementRecord town, SettlementProject project, Villager builder) {
+        if (project.earnPayment()) town.changed();
+        synchronizePayments(town, builder);
+    }
+
+    static void synchronizePayments(SettlementRecord town, Villager builder) {
+        var receipts = builder.getPersistentData().getCompound("SettlementConstructionPayments");
+        boolean changed = false;
+        for (var project : town.projects().values()) {
+            if (!project.builder().equals(builder.getUUID()) || !project.paymentEarned() || project.fee() == 0 || receipts.getBoolean(project.id().toString())) continue;
+            VillagerWalletService.addCurrency(builder, project.fee());
+            receipts.putBoolean(project.id().toString(), true);
+            changed = true;
+        }
+        if (changed) {
+            builder.getPersistentData().put("SettlementConstructionPayments", receipts);
+            var worker = town.workers().get(builder.getUUID());
+            if (worker != null) worker.rememberPayments(builder);
+            var care = town.residents().get(builder.getUUID());
+            if (care != null) care.remember(builder);
+            town.changed();
+        }
+    }
+
+    static Villager resolveBuilder(ServerLevel level, SettlementRecord town, UUID resident) {
         if (town.departures().containsKey(resident)
                 || !VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
                         .map(record -> record.residents().containsKey(resident)).orElse(false)) return null;
@@ -104,6 +247,7 @@ public final class SettlementConstructionService {
         town.recordEvent(player.serverLevel().getGameTime(), SettlementEvent.Type.PROJECT_CANCELLED, project.label());
         if (player.serverLevel().getEntity(project.builder()) instanceof Villager builder) {
             reconcile(builder);
+            SettlementWorkforceService.reconcile(player.serverLevel(), builder);
         }
         var worker = town.workers().get(project.builder());
         if (worker != null && projectId.equals(BuilderTaskState.jobId(worker.settings()).orElse(null))) {
@@ -175,6 +319,7 @@ public final class SettlementConstructionService {
         if (town != null && project != null && project.active() && project.builder().equals(builder.getUUID())) {
             observe(builder, state);
             town.finishProject(project.id(), status);
+            synchronizePayments(town, builder);
             town.recordEvent(builder.level().getGameTime(), status == SettlementProject.Status.COMPLETED
                     ? SettlementEvent.Type.PROJECT_COMPLETED : SettlementEvent.Type.PROJECT_CANCELLED, project.label());
         }
@@ -182,6 +327,7 @@ public final class SettlementConstructionService {
 
     public static void reconcile(Villager builder) {
         var state = HiredWorkStateStore.state(builder);
+        SettlementWorkforceService.home((ServerLevel) builder.level(), builder).ifPresent(town -> synchronizePayments(town, builder));
         var project = project(builder, state);
         if (state.getCompound(BuilderTaskState.TASK_TAG).hasUUID("SettlementTown")
                 && (project == null || !project.active() || !project.builder().equals(builder.getUUID())
@@ -227,7 +373,7 @@ public final class SettlementConstructionService {
         return ItemStack.EMPTY;
     }
 
-    private static boolean canBuild(ServerPlayer player, SettlementRecord town) {
+    static boolean canBuild(ServerPlayer player, SettlementRecord town) {
         return player != null && town != null && player.isAlive() && !player.isSpectator()
                 && town.dimension().equals(player.level().dimension().location())
                 && town.permits(player.getUUID(), SettlementPermission.BUILD);

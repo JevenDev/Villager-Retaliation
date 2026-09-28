@@ -1932,7 +1932,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         swingWorkTool(villager);
         EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
         });
-        level.destroyBlock(pos, false, villager);
+        if (level.destroyBlock(pos, false, villager)) SettlementConstructionService.worked(villager, context.state());
         HiredPathMemory.onBlockChanged(level, pos);
         level.destroyBlockProgress(villager.getId(), pos, -1);
         damageTool(context, villager, tool, level, state, pos);
@@ -2612,12 +2612,14 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 if (!placedSource) {
                     return false;
                 }
+                SettlementConstructionService.worked(villager, context.state());
                 HiredPathMemory.onBlockChanged(level, worldPos);
             }
             boolean placed = level.setBlock(worldPos, block.state(), Block.UPDATE_ALL);
             if (!placed) {
                 return false;
             }
+            SettlementConstructionService.worked(villager, context.state());
             HiredPathMemory.onBlockChanged(level, worldPos);
             if (block.requiresToolAction()) {
                 damageTool(context, villager, actionTool);

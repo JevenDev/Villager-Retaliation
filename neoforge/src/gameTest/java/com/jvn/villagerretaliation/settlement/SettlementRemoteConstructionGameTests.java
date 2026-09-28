@@ -344,6 +344,7 @@ public final class SettlementRemoteConstructionGameTests {
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(level.getGameTime(), level.dimension().location(), origin, "");
         var town = SettlementSavedData.get(level).establish(registry, id, leader.getUUID(), origin, level.getGameTime()).orElseThrow();
+        town.economy().credit(com.jvn.villagerretaliation.sell.CurrencyAmount.of(10_000, 1));
         if (hamlet) town.advance();
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Building site",
                 origin.offset(-4, -1, -4), origin.offset(20, 12, 20), 5, true);

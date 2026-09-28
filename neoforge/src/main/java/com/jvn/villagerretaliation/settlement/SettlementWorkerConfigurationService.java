@@ -18,7 +18,7 @@ public final class SettlementWorkerConfigurationService {
     }
 
     public static SettlementWorkerSettings snapshot(ServerLevel level, SettlementRecord town, UUID resident) {
-        var area = town.areas().get(town.duties().get(resident));
+        var area = town.workplace(town.duties().get(resident));
         if (area == null || area.type().role() == null) {
             return null;
         }
@@ -43,7 +43,7 @@ public final class SettlementWorkerConfigurationService {
                 || !settings.animals().isEmpty() && !HiredAnimalBreedingTargets.options().containsAll(settings.animals())) {
             return false;
         }
-        var area = town.areas().get(areaId);
+        var area = town.workplace(areaId);
         if (area == null || area.type().role() != settings.role()) {
             return false;
         }

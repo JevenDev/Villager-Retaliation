@@ -73,6 +73,15 @@ public final class SettlementEconomy {
         this.dirty.run();
     }
 
+    public CurrencyAmount constructionFunds() {
+        return this.balance.subtractClamped(this.reserve);
+    }
+
+    boolean reserveConstruction(int fee) {
+        var cost = CurrencyAmount.of(fee, 1);
+        return constructionFunds().compareTo(cost) >= 0 && withdraw(cost);
+    }
+
     boolean withdraw(CurrencyAmount amount) {
         if (this.balance.compareTo(amount) < 0) {
             return false;

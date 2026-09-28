@@ -19,6 +19,12 @@ public final class SettlementProject {
     private CompoundTag task;
     private Status status;
     private SettlementConstructionSite site;
+    private SettlementArea workplace;
+    private UUID previousArea;
+    private SettlementWorkerSettings previousSettings;
+    private int fee;
+    private boolean paymentEarned;
+    private boolean paymentRefunded;
 
     private SettlementProject(UUID id, UUID area, UUID builder, BlockPos min, BlockPos max, CompoundTag task, Status status) {
         this.id = Objects.requireNonNull(id);
@@ -46,6 +52,53 @@ public final class SettlementProject {
         BuilderTaskState.task(state).putUUID("SettlementTown", town.id().value());
         return new SettlementProject(id, area, builder, origin.offset(plan.localMin()), origin.offset(plan.localMax()),
                 BuilderTaskState.task(state), Status.ACTIVE);
+    }
+
+    static SettlementProject planned(SettlementRecord town, SettlementArea workplace, UUID builder,
+                                      BuilderStructureScanner.StructurePlan plan, BlockPos origin, UUID id, long now) {
+        var project = create(town, workplace.id(), builder, plan, origin, id, now);
+        project.workplace = workplace;
+        project.previousArea = town.duties().get(builder);
+        project.previousSettings = town.workerSettings().get(builder);
+        project.fee = plan.price();
+        return project;
+    }
+
+    public SettlementArea workplace() {
+        return this.workplace;
+    }
+
+    UUID previousArea() {
+        return this.previousArea;
+    }
+
+    SettlementWorkerSettings previousSettings() {
+        return this.previousSettings;
+    }
+
+    void reservePayment(int fee) {
+        if (fee <= 0 || this.fee != 0) throw new IllegalArgumentException("Invalid construction fee");
+        this.fee = fee;
+    }
+
+    public int fee() {
+        return this.fee;
+    }
+
+    public boolean paymentEarned() {
+        return this.paymentEarned;
+    }
+
+    boolean earnPayment() {
+        if (this.fee == 0 || this.paymentEarned || this.paymentRefunded) return false;
+        this.paymentEarned = true;
+        return true;
+    }
+
+    int refundPayment() {
+        if (this.fee == 0 || this.paymentEarned || this.paymentRefunded) return 0;
+        this.paymentRefunded = true;
+        return this.fee;
     }
 
     SettlementConstructionSite site() {
@@ -145,6 +198,12 @@ public final class SettlementProject {
                 && this.min.getZ() <= other.max.getZ() && this.max.getZ() >= other.min.getZ();
     }
 
+    boolean overlaps(SettlementArea other) {
+        return this.min.getX() <= other.max().getX() && this.max.getX() >= other.min().getX()
+                && this.min.getY() <= other.max().getY() && this.max.getY() >= other.min().getY()
+                && this.min.getZ() <= other.max().getZ() && this.max.getZ() >= other.min().getZ();
+    }
+
     CompoundTag state() {
         CompoundTag state = new CompoundTag();
         state.put(BuilderTaskState.TASK_TAG, this.task.copy());
@@ -190,6 +249,12 @@ public final class SettlementProject {
         tag.put("Task", this.task.copy());
         if (this.site != null) tag.put("Site", this.site.save());
         tag.putString("Status", this.status.name());
+        if (this.workplace != null) tag.put("Workplace", this.workplace.save());
+        if (this.previousArea != null) tag.putUUID("PreviousArea", this.previousArea);
+        if (this.previousSettings != null) tag.put("PreviousSettings", this.previousSettings.save());
+        tag.putInt("Fee", this.fee);
+        tag.putBoolean("PaymentEarned", this.paymentEarned);
+        tag.putBoolean("PaymentRefunded", this.paymentRefunded);
         return tag;
     }
 
@@ -200,6 +265,29 @@ public final class SettlementProject {
         var project = new SettlementProject(tag.getUUID("Id"), tag.getUUID("Area"), tag.getUUID("Builder"),
                 BlockPos.of(tag.getLong("Min")), BlockPos.of(tag.getLong("Max")), tag.getCompound("Task"),
                 Status.valueOf(tag.getString("Status")));
+        project.fee = tag.getInt("Fee");
+        project.paymentEarned = tag.getBoolean("PaymentEarned");
+        project.paymentRefunded = tag.getBoolean("PaymentRefunded");
+        if (project.fee < 0 || project.paymentEarned && project.paymentRefunded
+                || project.active() && project.paymentRefunded
+                || project.fee > 0 && project.status == Status.COMPLETED && !project.paymentEarned
+                || project.fee > 0 && project.status == Status.CANCELLED && !project.paymentEarned && !project.paymentRefunded) throw new IllegalArgumentException("Invalid construction payment");
+        if (tag.contains("Workplace", Tag.TAG_COMPOUND)) {
+            project.workplace = SettlementArea.load(tag.getCompound("Workplace"));
+            if (!project.id.equals(project.area) || !project.area.equals(project.workplace.id()) || !project.within(project.workplace)) {
+                throw new IllegalArgumentException("Invalid project workplace");
+            }
+        }
+        if (tag.hasUUID("PreviousArea")) project.previousArea = tag.getUUID("PreviousArea");
+        if (tag.contains("PreviousSettings", Tag.TAG_COMPOUND)) {
+            project.previousSettings = SettlementWorkerSettings.load(tag.getCompound("PreviousSettings"));
+            if (project.previousArea == null || project.previousSettings.role() != com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER) {
+                throw new IllegalArgumentException("Invalid previous construction assignment");
+            }
+        }
+        if (project.previousArea != null && (project.workplace == null || project.previousArea.equals(project.area))) {
+            throw new IllegalArgumentException("Invalid previous project assignment");
+        }
         if (tag.contains("Site", Tag.TAG_COMPOUND)) {
             project.site = SettlementConstructionSite.load(project.id, tag.getCompound("Site"));
             if (!project.site.area().id().equals(project.area)) throw new IllegalArgumentException("Construction observations belong to a different area");

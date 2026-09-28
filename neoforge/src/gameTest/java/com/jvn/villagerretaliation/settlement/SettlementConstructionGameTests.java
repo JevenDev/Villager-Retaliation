@@ -217,10 +217,12 @@ public final class SettlementConstructionGameTests {
             var session = HiredWorkSession.create(level, fixture.builder(), HiredVillagerRole.BUILDER);
             worker.tick(level, fixture.builder(), null, session.context());
             helper.assertTrue(level.getBlockState(position).isAir(), "missing supplies cannot create a block");
+            helper.assertFalse(project.paymentEarned(), "waiting for materials does not earn the fee");
             inventory.setItem(HiredJobInventory.HOTBAR_START, target.requiredItem().copyWithCount(1));
             var result = worker.tick(level, fixture.builder(), null, session.context());
             helper.assertTrue(level.getBlockState(position).equals(target.state()), "the native builder places the real requested block: " + result.status());
             helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).isEmpty(), "exactly one real supply is consumed");
+            helper.assertTrue(project.paymentEarned(), "a committed native placement earns the reserved fee");
             for (int i = 0; i < 4 && project.active(); i++) {
                 worker.tick(level, fixture.builder(), null, session.context());
             }
@@ -354,7 +356,7 @@ public final class SettlementConstructionGameTests {
         return FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
     }
 
-    private static Fixture fixture(GameTestHelper helper) {
+    static Fixture fixture(GameTestHelper helper) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(12, 2, 12));
         var leader = player(helper, "ProjectLeader");
@@ -362,6 +364,7 @@ public final class SettlementConstructionGameTests {
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(level.getGameTime(), level.dimension().location(), origin, "");
         var town = SettlementSavedData.get(level).establish(registry, id, leader.getUUID(), origin, level.getGameTime()).orElseThrow();
+        town.economy().credit(com.jvn.villagerretaliation.sell.CurrencyAmount.of(10_000, 1));
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Building site",
                 origin.offset(-4, -1, -4), origin.offset(20, 12, 20), 5, true);
         helper.assertTrue(town.putArea(leader.getUUID(), area), "the construction area is registered");
@@ -380,7 +383,7 @@ public final class SettlementConstructionGameTests {
         return new Fixture(town, area, leader, builder, origin, plan);
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, ServerPlayer leader, Villager builder, BlockPos origin,
+    record Fixture(SettlementRecord town, SettlementArea area, ServerPlayer leader, Villager builder, BlockPos origin,
                            BuilderStructureScanner.StructurePlan plan) {
     }
 }

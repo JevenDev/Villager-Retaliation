@@ -41,7 +41,7 @@ public final class SettlementBuildingService {
             List<Site> sites = new ArrayList<>();
             for (SettlementRecord town : towns) {
                 if (town.dimension().equals(level.dimension().location())) {
-                    town.areas().values().stream().filter(SettlementArea::enabled)
+                    town.workplaces().stream().filter(SettlementArea::enabled)
                             .forEach(area -> sites.add(new Site(town, area)));
                 }
             }
@@ -73,7 +73,7 @@ public final class SettlementBuildingService {
             if (!town.dimension().equals(level.dimension().location())) {
                 continue;
             }
-            for (SettlementArea area : town.areas().values()) {
+            for (SettlementArea area : town.workplaces()) {
                 int margin = area.type() == SettlementAreaType.FISHERY ? 11 : 2;
                 if (area.min().getX() <= position.getMaxBlockX() + margin && area.max().getX() >= position.getMinBlockX() - margin
                         && area.min().getZ() <= position.getMaxBlockZ() + margin && area.max().getZ() >= position.getMinBlockZ() - margin) {

@@ -55,6 +55,13 @@ public final class SettlementManagementService {
     }
 
     public static void action(ServerPlayer player, SettlementManagementActionPayload payload) {
+        if (payload.command() instanceof SettlementManagementActionPayload.CommissionBuilding build) {
+            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town())).orElse(null);
+            String failure = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
+                    ? SettlementConstructionService.commission(player, town, build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()) : "busy";
+            PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), failure.isEmpty(), build.request(), failure));
+            return;
+        }
         boolean applied = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
                 && execute(player, payload);
         PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), applied));
@@ -80,6 +87,8 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
             case SettlementManagementActionPayload.DraftBlueprint draft -> SettlementBlueprintService.draft(player, town, draft.structure());
             case SettlementManagementActionPayload.PlaceBlueprint place -> SettlementBlueprintService.place(player, town, place.blueprint(), place.anchor(), place.rotation());
+            case SettlementManagementActionPayload.CommissionBuilding build -> SettlementConstructionService.commission(player, town,
+                    build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()).isEmpty();
             case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
             case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
             case SettlementManagementActionPayload.Brew brew -> SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order());

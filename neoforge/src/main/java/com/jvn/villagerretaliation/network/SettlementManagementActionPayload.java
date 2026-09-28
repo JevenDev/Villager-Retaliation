@@ -50,6 +50,14 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
                 buffer.writeBlockPos(place.anchor());
                 buffer.writeEnum(place.rotation());
             }
+            case CommissionBuilding build -> {
+                buffer.writeEnum(Kind.COMMISSION_BUILDING);
+                buffer.writeUUID(build.request());
+                buffer.writeResourceLocation(build.structure());
+                buffer.writeBlockPos(build.anchor());
+                buffer.writeEnum(build.rotation());
+                buffer.writeUUID(build.builder());
+            }
             case StartProject start -> {
                 buffer.writeEnum(Kind.START_PROJECT);
                 buffer.writeUUID(start.resident());
@@ -172,6 +180,8 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
             case DRAFT_BLUEPRINT -> new DraftBlueprint(buffer.readResourceLocation());
             case PLACE_BLUEPRINT -> new PlaceBlueprint(buffer.readUUID(), buffer.readBlockPos(), buffer.readEnum(net.minecraft.world.level.block.Rotation.class));
+            case COMMISSION_BUILDING -> new CommissionBuilding(buffer.readUUID(), buffer.readResourceLocation(), buffer.readBlockPos(),
+                    buffer.readEnum(net.minecraft.world.level.block.Rotation.class), buffer.readUUID());
             case START_PROJECT -> new StartProject(buffer.readUUID(), buffer.readUUID());
             case CANCEL_PROJECT -> new CancelProject(buffer.readUUID());
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
@@ -284,11 +294,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding {
     }
 
     public record Home(UUID resident, net.minecraft.core.BlockPos bed, boolean assign) implements Command {
@@ -323,6 +333,18 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             Objects.requireNonNull(blueprint);
             Objects.requireNonNull(anchor);
             Objects.requireNonNull(rotation);
+            anchor = anchor.immutable();
+        }
+    }
+
+    public record CommissionBuilding(UUID request, net.minecraft.resources.ResourceLocation structure, net.minecraft.core.BlockPos anchor,
+                                     net.minecraft.world.level.block.Rotation rotation, UUID builder) implements Command {
+        public CommissionBuilding {
+            Objects.requireNonNull(request);
+            Objects.requireNonNull(structure);
+            Objects.requireNonNull(anchor);
+            Objects.requireNonNull(rotation);
+            Objects.requireNonNull(builder);
             anchor = anchor.immutable();
         }
     }

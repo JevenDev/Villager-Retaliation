@@ -180,7 +180,7 @@ public final class SettlementPopulationService {
         if (care == null || !care.safeForFamily() || care.age() != 0 || town.departures().containsKey(care.id())) return null;
         var resident = care.context(level);
         if (resident == null) return null;
-        var area = town.areas().get(town.duties().get(care.id()));
+        var area = town.workplace(town.duties().get(care.id()));
         var worker = town.workers().get(care.id());
         if (area != null) {
             var settings = town.workerSettings().get(care.id());

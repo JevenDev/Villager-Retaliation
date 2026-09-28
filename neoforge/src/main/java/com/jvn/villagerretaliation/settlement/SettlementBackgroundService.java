@@ -58,7 +58,7 @@ public final class SettlementBackgroundService {
             if (elapsed <= 0) {
                 continue;
             }
-            var area = town.areas().get(assignment.getValue());
+            var area = town.workplace(assignment.getValue());
             var care = town.residents().get(worker.id());
             var settings = town.workerSettings().get(worker.id());
             if (area != null && settings != null) {
