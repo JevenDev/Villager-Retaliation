@@ -232,7 +232,7 @@ public final class HiredSupplyCrafting {
             return false;
         }
         for (BlockPos pos : context.workAreaPositions()) {
-            if (context.isLoaded(level, pos) && level.getBlockState(pos).is(Blocks.CRAFTING_TABLE)) {
+            if (context.permitsStation(pos) && context.isLoaded(level, pos) && level.getBlockState(pos).is(Blocks.CRAFTING_TABLE)) {
                 return true;
             }
         }

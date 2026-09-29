@@ -72,7 +72,8 @@ final class SettlementBackgroundHauling {
                 continue;
             }
             for (SettlementDepot destination : depots) {
-                if (courier ? !destination.purpose().providesSupplies() : !destination.purpose().acceptsOutputs()) {
+                if (!SettlementWorksiteLinks.permitsOutput(worker.settings(), destination.id())
+                        || (courier ? !destination.purpose().providesSupplies() : !destination.purpose().acceptsOutputs())) {
                     continue;
                 }
                 int count = Math.min(cargo.getCount(), receiveAllowance(level, destination, cargo));

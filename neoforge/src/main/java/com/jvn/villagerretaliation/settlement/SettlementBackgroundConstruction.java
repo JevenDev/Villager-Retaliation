@@ -298,6 +298,7 @@ final class SettlementBackgroundConstruction {
             var stack = inventory.getItem(slot);
             if (stack.isEmpty() || plan.materials().stream().noneMatch(material -> BuilderStructureScanner.sameMaterial(stack, material.item()))) continue;
             for (var depot : SettlementStock.outputs(town)) {
+                if (!SettlementWorksiteLinks.permitsOutput(worker.settings(), depot.id())) continue;
                 int count = Math.min(stack.getCount(), SettlementLogisticsService.framedAllowance(level, depot, stack,
                         com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation.RECEIVE, true));
                 count = Math.min(count, SettlementStock.capacity(List.of(depot), stack));

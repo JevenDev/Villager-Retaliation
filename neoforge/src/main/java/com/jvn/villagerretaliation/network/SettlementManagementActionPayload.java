@@ -274,11 +274,42 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         if (plan != null) {
             writeWorkerSettings(buffer, plan.settings());
             buffer.writeVarInt(plan.desiredStaff());
+            writeWorksiteLinks(buffer, plan.links());
         }
     }
 
     static SettlementWorksitePlan readWorksitePlan(RegistryFriendlyByteBuf buffer) {
-        return buffer.readBoolean() ? new SettlementWorksitePlan(readWorkerSettings(buffer), buffer.readVarInt()) : null;
+        return buffer.readBoolean() ? new SettlementWorksitePlan(readWorkerSettings(buffer), buffer.readVarInt(), readWorksiteLinks(buffer)) : null;
+    }
+
+    private static void writeWorksiteLinks(RegistryFriendlyByteBuf buffer, com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks links) {
+        buffer.writeVarInt(links.supplies().size());
+        links.supplies().stream().sorted().forEach(buffer::writeUUID);
+        buffer.writeVarInt(links.outputs().size());
+        links.outputs().stream().sorted().forEach(buffer::writeUUID);
+        buffer.writeVarInt(links.stations().size());
+        links.stations().stream().sorted().forEach(buffer::writeBlockPos);
+    }
+
+    private static com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks readWorksiteLinks(RegistryFriendlyByteBuf buffer) {
+        Set<UUID> supplies = readDepotLinks(buffer), outputs = readDepotLinks(buffer);
+        int count = VillagerPayloads.readCollectionSize(buffer,
+                com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks.MAX_LINKS, "worksite stations");
+        var stations = new java.util.HashSet<net.minecraft.core.BlockPos>();
+        for (int index = 0; index < count; index++) {
+            if (!stations.add(buffer.readBlockPos())) throw new IllegalArgumentException("Duplicate worksite station");
+        }
+        return new com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks(supplies, outputs, stations);
+    }
+
+    private static Set<UUID> readDepotLinks(RegistryFriendlyByteBuf buffer) {
+        int count = VillagerPayloads.readCollectionSize(buffer,
+                com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks.MAX_LINKS, "worksite depots");
+        var links = new java.util.HashSet<UUID>();
+        for (int index = 0; index < count; index++) {
+            if (!links.add(buffer.readUUID())) throw new IllegalArgumentException("Duplicate worksite depot");
+        }
+        return links;
     }
 
     static void writeWorkerSettings(RegistryFriendlyByteBuf buffer, SettlementWorkerSettings settings) {

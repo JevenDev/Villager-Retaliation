@@ -506,6 +506,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
     private static boolean isValidSmeltingStation(ServerLevel level, HiredWorkContext context, BlockPos pos) {
         return pos != null
                 && context.isInsideWorkArea(pos)
+                && context.permitsStation(pos)
                 && context.isLoaded(level, pos)
                 && (level.getBlockEntity(pos) instanceof FurnaceBlockEntity
                 || level.getBlockEntity(pos) instanceof BlastFurnaceBlockEntity);

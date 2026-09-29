@@ -51,6 +51,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case BEDS -> entry instanceof Bed;
                 case HISTORY -> entry instanceof History;
                 case ISSUES -> entry instanceof Issue;
+                case STATIONS -> entry instanceof Station;
                 case SUMMARY -> false;
             };
             if (!valid) {
@@ -116,6 +117,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.writeVarInt(area.workers());
                 SettlementManagementActionPayload.writeWorksitePlan(buffer, area.plan());
             }
+            case Station station -> buffer.writeBlockPos(station.position());
             case Depot depot -> {
                 buffer.writeUUID(depot.area());
                 buffer.writeBlockPos(depot.position());
@@ -224,6 +226,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
                     buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
                     SettlementManagementActionPayload.readWorksitePlan(buffer));
+            case STATIONS -> new Station(id, name, buffer.readBlockPos());
             case DEPOTS -> {
                 UUID area = buffer.readUUID();
                 BlockPos position = buffer.readBlockPos();
@@ -385,7 +388,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
     }
 
-    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History, Issue {
+    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History, Issue, Station {
         UUID id();
         String name();
     }
@@ -492,6 +495,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             this(id, name, kind, min, max, priority, enabled, beds, fixtures, workers, null);
         }
     }
+
+    public record Station(UUID id, String name, BlockPos position) implements Entry { }
 
     public record Depot(UUID id, String name, UUID area, BlockPos position, SettlementDepotPurpose purpose, int priority,
                         int usedSlots, int items, List<StockTarget> targets) implements Entry {

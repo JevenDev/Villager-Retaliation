@@ -241,6 +241,15 @@ public record HiredWorkContext(
         return this.assignment.isInsideWorkArea(pos);
     }
 
+    public boolean permitsStation(BlockPos station) {
+        long[] permitted = this.state.getCompound("WorksiteLinks").getLongArray("Stations");
+        if (permitted.length == 0) return true;
+        for (long position : permitted) {
+            if (position == station.asLong()) return true;
+        }
+        return false;
+    }
+
     public boolean hasRoute() {
         return this.assignment.hasRoute();
     }

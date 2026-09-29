@@ -239,6 +239,7 @@ public final class SettlementWorkforceService {
             if (before.state() == VillagerAssignmentState.CIVIC) {
                 SettlementLogisticsService.resetAssignment(villager);
                 HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.paused", Map.of());
+                HiredWorkStateStore.state(villager).remove(SettlementWorksiteLinks.STATE_TAG);
                 VillagerAssignmentStore.unassign(villager);
                 SettlementBrewingService.reconcile(villager);
                 AssignedStorageService.removeAllAssignedStorage(level, villager);

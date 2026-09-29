@@ -554,6 +554,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
     private static boolean isValidBrewingStand(ServerLevel level, HiredWorkContext context, BlockPos pos) {
         return pos != null
                 && context.isInsideWorkArea(pos)
+                && context.permitsStation(pos)
                 && context.isLoaded(level, pos)
                 && level.getBlockState(pos).is(Blocks.BREWING_STAND);
     }

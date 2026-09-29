@@ -19,6 +19,17 @@ public final class SettlementWorksiteService {
                 || adopt == town.worksitePlans().containsKey(areaId)
                 || !HiredLoggingFilters.options().containsAll(plan.settings().logs())
                 || !HiredAnimalBreedingTargets.options().containsAll(plan.settings().animals())) return false;
+        var previous = town.worksitePlans().get(areaId);
+        var previousLinks = previous == null ? SettlementWorksiteLinks.AUTOMATIC : previous.links();
+        if ((!plan.links().supplies().equals(previousLinks.supplies()) || !plan.links().outputs().equals(previousLinks.outputs()))
+                && !town.permits(player.getUUID(), SettlementPermission.LOGISTICS)) return false;
+        if (!plan.links().equals(previousLinks)) {
+            if (!town.depots().keySet().containsAll(plan.links().supplies()) || !town.depots().keySet().containsAll(plan.links().outputs())
+                    || plan.links().stations().stream().anyMatch(position -> !area.contains(position)
+                            || player.serverLevel().isOutsideBuildHeight(position))) return false;
+            var survey = town.surveys().get(areaId);
+            if (!plan.links().stations().isEmpty() && (survey == null || !survey.workstations().containsAll(plan.links().stations()))) return false;
+        }
         var retained = new LinkedHashMap<UUID, SettlementWorkerSettings>();
         if (adopt) {
             for (var duty : town.duties().entrySet()) {
@@ -34,15 +45,22 @@ public final class SettlementWorksiteService {
             if (!areaId.equals(duty.getValue())) continue;
             if (player.serverLevel().getEntity(duty.getKey()) instanceof Villager villager) {
                 SettlementBackgroundService.onActive(villager);
+                SettlementDepotService.synchronizeStorage(player.serverLevel(), villager, town);
                 SettlementBackgroundService.onUnloaded(villager);
             } else {
                 var worker = town.workers().get(duty.getKey());
                 if (worker != null && areaId.equals(worker.area())) {
                     town.effectiveWorkerSettings(duty.getKey()).apply(worker.settings(), area.enabled());
+                    plan.links().apply(worker.settings());
                 }
             }
         }
         return true;
+    }
+
+    static SettlementWorksiteLinks links(SettlementRecord town, UUID area) {
+        var plan = town.worksitePlans().get(area);
+        return plan == null ? SettlementWorksiteLinks.AUTOMATIC : plan.links();
     }
 
     public static boolean reset(ServerPlayer player, SettlementRecord town, UUID resident, UUID area, int mask) {

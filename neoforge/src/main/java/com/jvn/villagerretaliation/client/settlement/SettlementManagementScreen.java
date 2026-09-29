@@ -226,8 +226,9 @@ public final class SettlementManagementScreen extends Screen {
         this.worldView.visible = this.snapshot.header() != null && this.assigning == null && this.choosingBed == null;
         this.worldView.setTooltip(Tooltip.create(text("world_view_hint")));
         int y = this.top + 28;
-        int navigationHeight = Math.min(20, (this.panelHeight - 56) / Page.values().length - 2);
+        int navigationHeight = Math.min(20, (this.panelHeight - 56) / (Page.values().length - 1) - 2);
         for (Page page : Page.values()) {
+            if (page == Page.STATIONS) continue;
             if (page != Page.TOWNS && this.snapshot.header() == null || this.assigning != null && page != Page.AREAS
                     || this.choosingBed != null && page != Page.RESIDENTS) {
                 continue;
@@ -369,7 +370,7 @@ public final class SettlementManagementScreen extends Screen {
         updateActions();
     }
 
-    private void navigate(Page page, int index, String query) {
+    void navigate(Page page, int index, String query) {
         this.pendingResident = null;
         this.desiredPage = page;
         this.desiredIndex = Math.max(0, index);
@@ -815,6 +816,7 @@ public final class SettlementManagementScreen extends Screen {
                             : text(bed.available() ? "bed_available" : "bed_unavailable"));
             case SettlementManagementPayload.Area area -> text("area_row", enumText("area", area.kind()), area.workers(),
                     area.kind() == com.jvn.villagerretaliation.settlement.SettlementAreaType.HOME ? text("beds", area.beds()) : text("fixtures", area.fixtures()));
+            case SettlementManagementPayload.Station station -> Component.literal(station.position().toShortString());
             case SettlementManagementPayload.Depot depot -> text("depot_row", enumText("depot", depot.purpose()), depot.usedSlots(), depot.items());
             case SettlementManagementPayload.Applicant applicant -> text("applicant_row",
                     profession(applicant.profession()),

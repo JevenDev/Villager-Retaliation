@@ -88,11 +88,13 @@ public final class SettlementWorkerConfigurationService {
         var settings = town.effectiveWorkerSettings(villager.getUUID());
         var state = HiredWorkStateStore.state(villager);
         if (settings == null) {
+            state.remove(SettlementWorksiteLinks.STATE_TAG);
             state.putBoolean("Enabled", area.enabled());
             return;
         }
         int oldMode = SettlementWorkerSetting.MINING_MODE.read(state);
-        if (settings.apply(state, area.enabled())) {
+        boolean linksChanged = SettlementWorksiteService.links(town, area.id()).apply(state);
+        if (settings.apply(state, area.enabled()) || linksChanged) {
             var level = (ServerLevel) villager.level();
             HiredWorkStateStore.pauseWork(level, villager, area.type().role(),
                     state.getBoolean("Enabled") ? "interaction.work.status.waiting_tick" : "interaction.work.status.paused", Map.of());

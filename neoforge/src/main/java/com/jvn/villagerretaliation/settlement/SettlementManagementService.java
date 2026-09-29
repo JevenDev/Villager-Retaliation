@@ -180,6 +180,7 @@ public final class SettlementManagementService {
                 case ISSUES -> entries.addAll(issues);
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
+                case STATIONS -> stations(town, request.query(), entries);
                 case BEDS -> beds(level, town, entries);
                 case HISTORY -> town.history().reversed().forEach(event -> entries.add(new SettlementManagementPayload.History(
                         event.id(), event.subject(), event.gameTime(), event.type())));
@@ -207,7 +208,7 @@ public final class SettlementManagementService {
                 }
             }
         }
-        String needle = request.query().strip().toLowerCase(Locale.ROOT);
+        String needle = request.page() == Page.STATIONS ? "" : request.query().strip().toLowerCase(Locale.ROOT);
         var matching = entries.stream().filter(entry -> searchable(entry).toLowerCase(Locale.ROOT).contains(needle));
         var filtered = (request.page() == Page.HISTORY ? matching
                 : matching.sorted(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(Entry::id))).toList();
@@ -335,6 +336,17 @@ public final class SettlementManagementService {
                                 && SettlementHousingService.canUse(level, bed, null)));
             }
         }
+    }
+
+    private static void stations(SettlementRecord town, String areaId, List<Entry> entries) {
+        var area = town.areas().values().stream().filter(candidate -> candidate.id().toString().equals(areaId)).findFirst().orElse(null);
+        var survey = area == null ? null : town.surveys().get(area.id());
+        if (survey == null) return;
+        survey.fixtures().forEach((position, block) -> {
+            if (area.contains(position)) entries.add(new SettlementManagementPayload.Station(
+                    UUID.nameUUIDFromBytes((areaId + ":" + position.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                    block.toString(), position));
+        });
     }
 
     private static void areas(SettlementRecord town, List<Entry> entries) {

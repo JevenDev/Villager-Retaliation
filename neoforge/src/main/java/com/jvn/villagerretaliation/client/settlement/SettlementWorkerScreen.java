@@ -35,6 +35,8 @@ public final class SettlementWorkerScreen extends Screen {
     private final SettlementManagementPayload.Area worksite;
     private final SettlementViewScreen view;
     private int desiredStaff;
+    private com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks links;
+    private Button connections;
     private EditBox staff;
     private Button reset;
     private final List<Button> rows = new ArrayList<>();
@@ -73,11 +75,16 @@ public final class SettlementWorkerScreen extends Screen {
         var plan = area.plan() == null ? SettlementWorksitePlan.defaults(area.kind().role()) : area.plan();
         this.draft = plan.settings();
         this.desiredStaff = plan.desiredStaff();
+        this.links = plan.links();
     }
 
     public SettlementManagementScreen parent() {
         return this.parent;
     }
+
+    SettlementManagementPayload.Area worksite() { return this.worksite; }
+    com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks links() { return this.links; }
+    void links(com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks links) { this.links = links; }
 
     public void result(SettlementManagementActionResultPayload payload) {
         if (this.parent.snapshot().header() == null || !this.parent.snapshot().header().id().equals(payload.town())) {
@@ -101,11 +108,17 @@ public final class SettlementWorkerScreen extends Screen {
         this.filters = this.draft.role() == HiredVillagerRole.LOGGING ? HiredLoggingFilters.options()
                 : this.draft.role() == HiredVillagerRole.ANIMAL_HANDLING ? HiredAnimalBreedingTargets.options() : List.of();
         if (!this.filters.isEmpty()) {
-            int half = (this.panelWidth - 4) / 2;
+            int half = (this.panelWidth - 4 - (this.worksite == null ? 0 : 104)) / 2;
             addRenderableWidget(Button.builder(text("worker_options"), ignored -> switchPage(false))
                     .bounds(this.left, this.top + 22, half, 20).build());
             addRenderableWidget(Button.builder(text(this.draft.role() == HiredVillagerRole.LOGGING ? "worker_logs" : "worker_animals"),
                     ignored -> switchPage(true)).bounds(this.left + half + 4, this.top + 22, half, 20).build());
+        }
+        if (this.worksite != null) {
+            this.connections = addRenderableWidget(Button.builder(text("worksite_links"), ignored ->
+                    this.minecraft.setScreen(new SettlementWorksiteLinksScreen(this)))
+                    .bounds(this.filters.isEmpty() ? this.left : this.left + this.panelWidth - 100,
+                            this.top + 22, this.filters.isEmpty() ? this.panelWidth : 100, 20).build());
         }
         if (this.resident != null && this.draft.role() == HiredVillagerRole.BREWING) {
             this.brewing = addRenderableWidget(Button.builder(text("brewing_orders"), ignored ->
@@ -167,7 +180,7 @@ public final class SettlementWorkerScreen extends Screen {
             this.parent.submit(this.worksite == null
                     ? new SettlementManagementActionPayload.SaveWorker(this.resident.id(), this.resident.area(), this.draft)
                     : new SettlementManagementActionPayload.SaveWorksite(this.worksite.id(),
-                            new SettlementWorksitePlan(this.draft, this.desiredStaff), this.worksite.plan() == null));
+                            new SettlementWorksitePlan(this.draft, this.desiredStaff, this.links), this.worksite.plan() == null));
             this.feedback = text("saving");
             updateRows();
         }).bounds(this.left + this.panelWidth - 94, bottom - 20, 94, 20).build());
@@ -232,6 +245,7 @@ public final class SettlementWorkerScreen extends Screen {
             this.staff.active = allowed;
         }
         if (this.reset != null) this.reset.active = allowed && this.draft.overrides() != 0;
+        if (this.connections != null) this.connections.active = allowed;
         List<ResourceLocation> visible = this.filtering ? visibleFilters() : List.of();
         int total = this.filtering ? visible.size() : this.settings.size();
         this.page = Math.clamp(this.page, 0, Math.max(0, (total - 1) / this.rows.size()));
@@ -265,7 +279,7 @@ public final class SettlementWorkerScreen extends Screen {
         this.save.active = allowed && (this.worksite == null ? !this.draft.equals(this.resident.settings())
                 : this.desiredStaff >= 0 && this.desiredStaff <= SettlementWorksitePlan.MAX_STAFF
                         && (this.worksite.plan() == null || this.desiredStaff != this.worksite.plan().desiredStaff()
-                                || !this.draft.equals(this.worksite.plan().settings())));
+                                || !this.draft.equals(this.worksite.plan().settings()) || !this.links.equals(this.worksite.plan().links())));
         if (this.brewing != null) {
             this.brewing.active = allowed && this.draft.equals(this.resident.settings());
         }

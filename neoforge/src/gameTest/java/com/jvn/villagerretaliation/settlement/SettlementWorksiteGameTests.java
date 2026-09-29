@@ -188,6 +188,150 @@ public final class SettlementWorksiteGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_worksite_links")
+    public static void worksiteStorageLinksConstrainActiveAndBackgroundWorkers(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.FARM, true);
+        try {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var resident = fixture.villager().getUUID();
+            var source = town.registerDepot(town.leader(), fixture.area().id(), fixture.area().min(), SettlementDepotPurpose.GENERAL);
+            var output = town.registerDepot(town.leader(), fixture.area().id(), fixture.area().min().east(), SettlementDepotPurpose.GENERAL);
+            helper.assertTrue(source != null && output != null, "the worksite has two communal depots");
+            source.observeRules(List.of());
+            output.observeRules(List.of());
+            source.setItem(0, new ItemStack(Items.WHEAT, 9));
+            output.setItem(0, new ItemStack(Items.CARROT, 12));
+            var links = new SettlementWorksiteLinks(Set.of(source.id()), Set.of(output.id()), Set.of());
+            var defaults = SettlementWorksitePlan.defaults(HiredVillagerRole.FARMING);
+            var plan = new SettlementWorksitePlan(defaults.settings(), 1, links);
+            var delegate = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "StorageDelegate"));
+            town.setPermissions(town.leader(), delegate.getUUID(), Set.of(SettlementPermission.STAFF));
+            helper.assertFalse(SettlementWorksiteService.configure(delegate, town, fixture.area().id(), plan, true),
+                    "staff permission alone cannot change communal storage access");
+            town.setPermissions(town.leader(), delegate.getUUID(), Set.of(SettlementPermission.STAFF, SettlementPermission.LOGISTICS));
+            helper.assertTrue(SettlementWorksiteService.configure(delegate, town, fixture.area().id(), plan, true),
+                    "authorized delegates can link separate supply and output depots");
+            var assigned = com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.get(level).assignedTo(resident);
+            helper.assertValueEqual(assigned.size(), 2, "the active worker receives only the selected purposes");
+            helper.assertTrue(assigned.stream().allMatch(record -> record.purpose().equals("supply")
+                            ? record.pos().equals(source.position()) : record.pos().equals(output.position())),
+                    "active storage links preserve direction");
+            var worker = town.workers().get(resident);
+            var items = worker.items(level.registryAccess());
+            var supplies = SettlementProductionInventory.supplies(level, worker, items, List.of(source, output));
+            helper.assertTrue(supplies.stream().anyMatch(supply -> supply.depot() == source), "selected supply stock is available");
+            helper.assertTrue(supplies.stream().noneMatch(supply -> supply.depot() == output), "output storage cannot supply ingredients");
+            int slot = worker.outputSlots().getFirst();
+            items.set(slot, new ItemStack(Items.POTATO, 7));
+            worker.updateInventory(level.registryAccess(), items);
+            helper.assertTrue(SettlementBackgroundHauling.depositCarried(level, town, worker, 1_000, 1.0D,
+                    List.of(source, output), false), "background workers deposit their carried outputs");
+            helper.assertValueEqual(source.count(stack -> stack.is(Items.POTATO)), 0, "supplies do not receive outputs");
+            helper.assertValueEqual(output.count(stack -> stack.is(Items.POTATO)), 7, "selected outputs receive the whole delivery");
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            helper.assertValueEqual(restored.worksitePlans().get(fixture.area().id()).links(), links, "storage links survive reload");
+            var foreign = new SettlementWorksitePlan(defaults.settings(), 1,
+                    new SettlementWorksiteLinks(Set.of(UUID.randomUUID()), Set.of(output.id()), Set.of()));
+            helper.assertFalse(SettlementWorksiteService.configure(fixture.leader(), town, fixture.area().id(), foreign, false),
+                    "worksites cannot claim foreign depot identities");
+            helper.assertTrue(SettlementWorkforceService.release(level, fixture.leader(), town.id(), resident), "the civic assignment can be released");
+            helper.assertFalse(HiredWorkStateStore.state(fixture.villager()).contains(SettlementWorksiteLinks.STATE_TAG),
+                    "communal links cannot leak into a later personal job");
+        } finally {
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_worksite_links")
+    public static void worksiteStationsRespectObservationSelectionAndSaveVersions(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.WORKSHOP, false);
+        var level = helper.getLevel();
+        var town = fixture.town();
+        var first = fixture.area().min();
+        var second = first.east();
+        var table = ResourceLocation.withDefaultNamespace("crafting_table");
+        town.recordSurvey(fixture.area().id(), new SettlementBuildingSurvey.Survey(level.getGameTime(), List.of(),
+                List.of(first, second), true, java.util.Map.of(first, table, second, table)));
+        var defaults = SettlementWorksitePlan.defaults(HiredVillagerRole.CRAFTSMAN);
+        var links = new SettlementWorksiteLinks(Set.of(), Set.of(), Set.of(first));
+        var plan = new SettlementWorksitePlan(defaults.settings(), 1, links);
+        helper.assertTrue(SettlementWorksiteService.configure(fixture.leader(), town, fixture.area().id(), plan, true),
+                "an observed workstation can be selected");
+        SettlementBackgroundService.onActive(fixture.villager());
+        var context = com.jvn.villagerretaliation.interaction.HiredWorkSession.active(level, fixture.villager()).context();
+        helper.assertTrue(context.permitsStation(first), "active work sessions admit the selected station");
+        helper.assertFalse(context.permitsStation(second), "active work sessions reject the nearby unselected station");
+        var unobserved = new SettlementWorksitePlan(defaults.settings(), 1,
+                new SettlementWorksiteLinks(Set.of(), Set.of(), Set.of(first.south())));
+        helper.assertFalse(SettlementWorksiteService.configure(fixture.leader(), town, fixture.area().id(), unobserved, false),
+                "unobserved stations cannot be selected by coordinates alone");
+        town.recordSurvey(fixture.area().id(), new SettlementBuildingSurvey.Survey(level.getGameTime(), List.of(),
+                List.of(second), true, java.util.Map.of(second, table)));
+        var worker = town.workers().get(fixture.villager().getUUID());
+        SettlementBackgroundCrafting.tick(level, town, worker, 1_000, 1.0D);
+        helper.assertValueEqual(worker.status(), "no_crafting_table", "a missing selected station never falls back to another table");
+        var action = new SettlementManagementActionPayload(town.id().value(),
+                new SettlementManagementActionPayload.SaveWorksite(fixture.area().id(), plan, false));
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), level.registryAccess());
+        try {
+            SettlementManagementActionPayload.STREAM_CODEC.encode(buffer, action);
+            helper.assertValueEqual(SettlementManagementActionPayload.STREAM_CODEC.decode(buffer), action, "station links retain exact positions over the network");
+            var stations = SettlementManagementService.snapshot(fixture.leader(), new SettlementManagementRequestPayload(town.id().value(),
+                    SettlementManagementRequestPayload.Page.STATIONS, 0, fixture.area().id().toString(), 1, false));
+            SettlementManagementPayload.STREAM_CODEC.encode(buffer, stations);
+            var decoded = SettlementManagementPayload.STREAM_CODEC.decode(buffer);
+            helper.assertValueEqual(((SettlementManagementPayload.Station) decoded.entries().getFirst()).position(), second,
+                    "station pickers receive the currently observed choices");
+        } finally {
+            buffer.release();
+        }
+        var legacy = plan.save();
+        legacy.putInt("Version", 1);
+        legacy.remove("Links");
+        helper.assertValueEqual(SettlementWorksitePlan.load(legacy).links(), SettlementWorksiteLinks.AUTOMATIC,
+                "older plans keep automatic storage and station discovery");
+        var damaged = plan.save();
+        damaged.getCompound("Links").putString("Stations", "invalid");
+        boolean rejected = false;
+        try {
+            SettlementWorksitePlan.load(damaged);
+        } catch (IllegalArgumentException exception) {
+            rejected = true;
+        }
+        helper.assertTrue(rejected, "damaged station lists reach save recovery");
+        helper.assertFalse(level.hasChunkAt(first), "worksite links never force remote chunks to load");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_worksite_crafting_access")
+    public static void recursiveCraftingRespectsWorksiteStationSelection(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.WORKSHOP, true);
+        try {
+            var level = helper.getLevel();
+            var selected = fixture.area().min();
+            var other = selected.east();
+            level.setBlockAndUpdate(other, net.minecraft.world.level.block.Blocks.CRAFTING_TABLE.defaultBlockState());
+            fixture.town().recordSurvey(fixture.area().id(), new SettlementBuildingSurvey.Survey(level.getGameTime(), List.of(),
+                    List.of(selected, other), true, java.util.Map.of(selected, ResourceLocation.withDefaultNamespace("crafting_table"),
+                            other, ResourceLocation.withDefaultNamespace("crafting_table"))));
+            var plan = new SettlementWorksitePlan(SettlementWorksitePlan.defaults(HiredVillagerRole.CRAFTSMAN).settings(), 1,
+                    new SettlementWorksiteLinks(Set.of(), Set.of(), Set.of(selected)));
+            helper.assertTrue(SettlementWorksiteService.configure(fixture.leader(), fixture.town(), fixture.area().id(), plan, true),
+                    "the workshop adopts its selected table");
+            var context = com.jvn.villagerretaliation.interaction.HiredWorkSession.active(level, fixture.villager()).context();
+            helper.assertFalse(com.jvn.villagerretaliation.interaction.work.HiredSupplyCrafting.hasCraftingTable(level, context),
+                    "recursive ingredient crafting cannot use a disallowed nearby table");
+            level.setBlockAndUpdate(selected, net.minecraft.world.level.block.Blocks.CRAFTING_TABLE.defaultBlockState());
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.work.HiredSupplyCrafting.hasCraftingTable(level, context),
+                    "recursive ingredient crafting can use the selected table when present");
+        } finally {
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
     private static SettlementWorkerSettings snapshot(GameTestHelper helper, Fixture fixture) {
         return SettlementWorkerConfigurationService.snapshot(helper.getLevel(), fixture.town(), fixture.villager().getUUID());
     }

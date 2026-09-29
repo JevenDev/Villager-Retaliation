@@ -35,6 +35,7 @@ final class SettlementBackgroundBrewing {
         }
         var construction = new SettlementConstructionMachines(level, town, null);
         var machines = town.brewingStands().values().stream().filter(state -> state.area().equals(worker.area()))
+                .filter(state -> SettlementWorksiteService.links(town, worker.area()).permitsStation(state.position()))
                 .sorted(Comparator.comparingDouble(state -> state.position().distSqr(worker.position()))).toList();
         for (var machine : machines) {
             if (!SettlementBrewingStandService.available(level, machine, construction)) {

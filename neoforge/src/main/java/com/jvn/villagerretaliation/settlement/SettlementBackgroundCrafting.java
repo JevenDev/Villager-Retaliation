@@ -32,7 +32,8 @@ final class SettlementBackgroundCrafting {
         var survey = town.surveys().get(worker.area());
         var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, null, town);
         BlockPos table = survey == null ? null : survey.fixtures().entrySet().stream()
-                .filter(entry -> CRAFTING_TABLE.equals(entry.getValue())
+                .filter(entry -> SettlementWorksiteService.links(town, worker.area()).permitsStation(entry.getKey())
+                        && CRAFTING_TABLE.equals(entry.getValue())
                         && SettlementBuildingSurvey.fixtureAvailable(blocks, entry.getKey(), entry.getValue())).map(Map.Entry::getKey)
                 .min(Comparator.comparingDouble(pos -> pos.distSqr(worker.position()))).orElse(null);
         if (table == null) {

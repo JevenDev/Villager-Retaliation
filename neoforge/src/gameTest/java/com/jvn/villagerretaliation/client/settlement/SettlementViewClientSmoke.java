@@ -489,6 +489,21 @@ public final class SettlementViewClientSmoke {
             button(screen, "villagerretaliation.gui.settlement.worksite_settings").onPress();
             phase = 96;
         } else if (phase == 96 && minecraft.screen instanceof SettlementWorkerScreen screen) {
+            button(screen, "villagerretaliation.gui.settlement.worksite_links").onPress();
+            phase = 101;
+        } else if (phase == 101 && minecraft.screen instanceof SettlementWorksiteLinksScreen screen
+                && screen.parent().parent().snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.DEPOTS) {
+            requireButtonsFit(screen);
+            capture("worksite-storage-links");
+            button(screen, "villagerretaliation.gui.settlement.worksite_stations").onPress();
+            phase = 102;
+        } else if (phase == 102 && minecraft.screen instanceof SettlementWorksiteLinksScreen screen
+                && screen.parent().parent().snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.STATIONS) {
+            requireButtonsFit(screen);
+            capture("worksite-station-links");
+            screen.onClose();
+            phase = 103;
+        } else if (phase == 103 && minecraft.screen instanceof SettlementWorkerScreen screen) {
             requireButtonsFit(screen);
             screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
                     .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.visible).findFirst().orElseThrow().setValue("2");

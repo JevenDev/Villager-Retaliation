@@ -3075,5 +3075,12 @@
   "villagerretaliation.gui.settlement.worksite_reset": "Inherit all",
   "villagerretaliation.gui.settlement.worksite_inherit": "Inherit from worksite",
   "villagerretaliation.gui.settlement.worksite_inherit_hint": "Shift-click to inherit this setting. Save to apply.",
-  "villagerretaliation.gui.settlement.worksite_adopt_hint": "Preview: new staff inherit these settings. Keep all %s current workers' settings as individual overrides."
+  "villagerretaliation.gui.settlement.worksite_adopt_hint": "Preview: new staff inherit these settings. Keep all %s current workers' settings as individual overrides.",
+  "villagerretaliation.gui.settlement.worksite_links": "Connections",
+  "villagerretaliation.gui.settlement.worksite_supplies": "Supplies",
+  "villagerretaliation.gui.settlement.worksite_outputs": "Outputs",
+  "villagerretaliation.gui.settlement.worksite_stations": "Stations",
+  "villagerretaliation.gui.settlement.worksite_automatic": "Automatic",
+  "villagerretaliation.gui.settlement.worksite_links_automatic": "Automatic: use all eligible locations. Save the plan to apply.",
+  "villagerretaliation.gui.settlement.worksite_links_selected": "%s selected. Unavailable links remain selected until cleared. Save the plan to apply."
 }

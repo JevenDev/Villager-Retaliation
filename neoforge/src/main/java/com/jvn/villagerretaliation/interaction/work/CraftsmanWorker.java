@@ -205,7 +205,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
         for (BlockPos pos : context.workAreaPositions()) {
-            if (!context.isLoaded(level, pos) || !level.getBlockState(pos).is(Blocks.CRAFTING_TABLE)) {
+            if (!context.permitsStation(pos) || !context.isLoaded(level, pos) || !level.getBlockState(pos).is(Blocks.CRAFTING_TABLE)) {
                 continue;
             }
             double distance = villager.distanceToSqr(pos.getCenter());

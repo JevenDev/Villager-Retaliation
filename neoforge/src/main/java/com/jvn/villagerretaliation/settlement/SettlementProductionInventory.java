@@ -27,7 +27,7 @@ final class SettlementProductionInventory {
             return result;
         }
         for (SettlementDepot depot : depots) {
-            if (!depot.purpose().providesSupplies()) {
+            if (!depot.purpose().providesSupplies() || !SettlementWorksiteLinks.permitsSupply(worker.settings(), depot.id())) {
                 continue;
             }
             int depotStart = result.size();

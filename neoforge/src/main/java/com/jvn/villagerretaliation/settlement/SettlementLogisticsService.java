@@ -75,7 +75,9 @@ public final class SettlementLogisticsService {
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         List<ItemStack> cargo = inventory.collectOutputItems().stream().map(HiredJobInventory.OutputStack::stack).toList();
         SettlementHaulTask current = task(villager);
-        if (current != null && valid(level, town, current, !cargo.isEmpty())
+        var links = SettlementWorksiteService.links(town, town.duties().get(villager.getUUID()));
+        if (current != null && links.permitsOutput(current.destination())
+                && (!cargo.isEmpty() || links.permitsSupply(current.source())) && valid(level, town, current, !cargo.isEmpty())
                 && (cargo.isEmpty() || cargo.stream().anyMatch(current::matches))) {
             return current;
         }
@@ -87,7 +89,7 @@ public final class SettlementLogisticsService {
         if (!cargo.isEmpty()) {
             for (ItemStack stack : cargo) {
                 for (SettlementDepot destination : depots) {
-                    if (destination.purpose().providesSupplies()
+                    if (destination.purpose().providesSupplies() && links.permitsOutput(destination.id())
                             && SettlementStock.capacity(List.of(destination), stack) > 0
                             && AssignedStorageService.unreservedFramedAllowance(level, destination.position(), stack,
                                     VillagerFilterPolicy.TransferOperation.RECEIVE) > 0) {
@@ -129,12 +131,15 @@ public final class SettlementLogisticsService {
     private static SettlementHaulTask select(ServerLevel level, SettlementRecord town, List<SettlementDepot> depots,
                                              UUID worker, net.minecraft.core.BlockPos position,
                                              java.util.function.Predicate<ItemStack> mayWithdraw, boolean background) {
+        var links = SettlementWorksiteService.links(town, town.duties().get(worker));
         for (SettlementDepot destination : depots) {
+            if (!links.permitsOutput(destination.id())) continue;
             if (destination.stockTargets().isEmpty() && destination.purpose() != SettlementDepotPurpose.FOOD) {
                 continue;
             }
             List<SettlementDepot> sources = sources(depots, destination, position);
             for (SettlementDepot source : sources) {
+                if (!links.permitsSupply(source.id())) continue;
                 for (int slot = 0; slot < source.getContainerSize(); slot++) {
                     ItemStack sample = source.getItem(slot);
                     if (sample.isEmpty() || !destination.purpose().accepts(sample)
@@ -158,7 +163,7 @@ public final class SettlementLogisticsService {
             }
         }
         for (SettlementDepot source : depots) {
-            if (source.purpose() != SettlementDepotPurpose.OUTPUT) {
+            if (source.purpose() != SettlementDepotPurpose.OUTPUT || !links.permitsSupply(source.id())) {
                 continue;
             }
             for (int slot = 0; slot < source.getContainerSize(); slot++) {
@@ -174,7 +179,7 @@ public final class SettlementLogisticsService {
                     continue;
                 }
                 for (SettlementDepot destination : depots) {
-                    if (!destination.id().equals(source.id()) && destination.purpose() == SettlementDepotPurpose.GENERAL
+                    if (!destination.id().equals(source.id()) && links.permitsOutput(destination.id()) && destination.purpose() == SettlementDepotPurpose.GENERAL
                             && destination.stockTarget(sample) < 0 && SettlementStock.capacity(List.of(destination), sample) > 0
                             && framedAllowance(level, destination, sample, VillagerFilterPolicy.TransferOperation.RECEIVE, background) > 0) {
                         int existing = destination.count(stack -> ItemStack.isSameItemSameComponents(stack, sample));

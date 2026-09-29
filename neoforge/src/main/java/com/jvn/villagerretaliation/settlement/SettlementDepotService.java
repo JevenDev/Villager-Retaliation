@@ -100,6 +100,16 @@ public final class SettlementDepotService {
         if (area == null || !area.enabled() || !town.permits(record.hirerId(), SettlementPermission.LOGISTICS)) {
             return false;
         }
+        if (duty != null) {
+            var links = SettlementWorksiteService.links(town, duty.area().id());
+            boolean permitted = switch (AssignedStorageService.normalizePurpose(record.purpose())) {
+                case AssignedStorageService.SUPPLY_PURPOSE -> links.permitsSupply(depot.id());
+                case AssignedStorageService.OUTPUT_PURPOSE -> links.permitsOutput(depot.id());
+                case AssignedStorageService.GENERAL_PURPOSE -> links.permitsSupply(depot.id()) && links.permitsOutput(depot.id());
+                default -> false;
+            };
+            if (!permitted) return false;
+        }
         if (duty != null && duty.area().type() == SettlementAreaType.DEPOT) {
             return SettlementLogisticsService.permitsStorage(villager, depot, AssignedStorageService.normalizePurpose(record.purpose()));
         }
@@ -114,6 +124,7 @@ public final class SettlementDepotService {
     public static void synchronizeStorage(ServerLevel level, Villager villager, SettlementRecord town) {
         AssignedStorageSavedData storage = AssignedStorageSavedData.get(level);
         boolean hauler = SettlementLogisticsService.isHauler(villager);
+        var links = SettlementWorksiteService.links(town, town.duties().get(villager.getUUID()));
         List<AssignedContainerRecord> desired = new ArrayList<>(hauler
                 ? SettlementLogisticsService.assignments(level, villager, town) : List.of());
         for (SettlementDepot depot : hauler ? List.<SettlementDepot>of() : town.depots().values()) {
@@ -121,13 +132,14 @@ public final class SettlementDepotService {
             if (area == null || !area.enabled()) {
                 continue;
             }
-            if (depot.purpose().providesSupplies()) {
+            if (depot.purpose().providesSupplies() && links.permitsSupply(depot.id())) {
                 desired.add(reference(level, villager, town, depot, AssignedStorageService.SUPPLY_PURPOSE));
             }
-            if (depot.purpose().acceptsOutputs()) {
+            if (depot.purpose().acceptsOutputs() && links.permitsOutput(depot.id())) {
                 desired.add(reference(level, villager, town, depot, AssignedStorageService.OUTPUT_PURPOSE));
             }
         }
+        desired.removeIf(record -> !permittedForWorker(level, villager, record));
         List<AssignedContainerRecord> existing = storage.assignedTo(villager.getUUID());
         for (AssignedContainerRecord record : existing) {
             if (desired.stream().noneMatch(candidate -> sameAssignment(record, candidate))) {
