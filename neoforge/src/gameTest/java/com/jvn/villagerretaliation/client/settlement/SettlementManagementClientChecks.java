@@ -51,6 +51,7 @@ final class SettlementManagementClientChecks {
         browser.updateAttention(List.of());
         require(browser.rows(List.of(row)).isEmpty(), "resolved issues leave the attention filter");
         verifyProductionTracking();
+        verifyTransferTracking();
     }
 
     private static void verifyProductionTracking() {
@@ -79,6 +80,36 @@ final class SettlementManagementClientChecks {
         var reply = new com.jvn.villagerretaliation.network.ProductionSnapshotPayload(snapshot.dimension(), target, edit.request(), true,
                 snapshot.role(), snapshot.title(), true, "", "", null, 0, List.of(), List.of(), java.util.Map.of());
         require(!state.accept(reply, null), "a late action reply cannot replace the newer recovery snapshot");
+    }
+
+    private static void verifyTransferTracking() {
+        var target = new com.jvn.villagerretaliation.network.ProductionTarget(null, UUID.randomUUID());
+        var state = new com.jvn.villagerretaliation.client.inventory.TransferClientState(target);
+        var first = state.poll(0L);
+        require(first != null && !state.editable(), "transfer controls require an authorized snapshot");
+        var snapshot = new com.jvn.villagerretaliation.network.TransferSnapshotPayload(ResourceLocation.withDefaultNamespace("overworld"),
+                target, first.request(), false, "Personal courier", true, "", "", null, List.of(), List.of());
+        require(state.accept(snapshot, null) && state.editable(), "the courier owner can edit transfers");
+        var refresh = state.poll(1_000L);
+        require(refresh != null && state.editable(), "refreshing keeps authorized controls usable");
+        var command = new com.jvn.villagerretaliation.network.TransferRequestPayload.Append(
+                new com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint(BlockPos.ZERO, null),
+                new com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint(BlockPos.ZERO.east(), null),
+                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_INGOT), 4);
+        var edit = state.request(command, 1_050L);
+        require(edit != null && state.busy(), "a transfer edit waits for its acknowledgement");
+        require(!state.accept(snapshot, null) && state.busy(), "stale snapshots cannot finish a newer edit");
+        require(state.request(command, 1_060L) == null, "an unanswered transfer cannot be submitted twice");
+        require(state.poll(11_049L) == null && state.busy(), "transfers retain the complete acknowledgement window");
+        var recovery = state.poll(11_050L);
+        require(recovery != null && recovery.command() instanceof com.jvn.villagerretaliation.network.TransferRequestPayload.View,
+                "a timeout refreshes without replaying the shipment");
+        var late = new com.jvn.villagerretaliation.network.TransferSnapshotPayload(snapshot.dimension(), target, edit.request(), true,
+                snapshot.title(), true, "", "", null, List.of(), List.of());
+        require(!state.accept(late, null), "a late shipment acknowledgement cannot replace the recovery snapshot");
+        var revoked = new com.jvn.villagerretaliation.network.TransferSnapshotPayload(snapshot.dimension(), target, recovery.request(), false,
+                snapshot.title(), false, "Permission changed", "", null, List.of(), List.of());
+        require(state.accept(revoked, null) && !state.editable(), "revoked authority disables the transfer controls");
     }
 
     private static void require(boolean condition, String message) {

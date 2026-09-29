@@ -47,7 +47,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-public final class SettlementViewScreen extends Screen implements com.jvn.villagerretaliation.client.inventory.ProductionClient.Receiver {
+public final class SettlementViewScreen extends Screen implements com.jvn.villagerretaliation.client.inventory.ProductionClient.Receiver,
+        com.jvn.villagerretaliation.client.inventory.TransferClient.Receiver {
     static final float PITCH = SettlementViewCamera.PITCH;
     private static final double MOVE_RESPONSE = 12.0D;
     private static final double ZOOM_RESPONSE = 14.0D;
@@ -2022,6 +2023,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.inspector.accept(payload);
     }
 
+    @Override
+    public void acceptTransfer(com.jvn.villagerretaliation.network.TransferSnapshotPayload payload) {
+        this.inspector.acceptTransfers(payload);
+    }
+
     private void inspectorAction(SettlementSelectionInspector.Section section) {
         var selected = inspectorSelection();
         var area = inspectorWorksite();
@@ -2042,6 +2048,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     this.minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen(management(),
                             new com.jvn.villagerretaliation.network.ProductionTarget(this.header.id(), area.id()),
                             () -> SettlementViewClient.resume(this.parent)));
+                } else if (area != null && area.kind() == SettlementAreaType.DEPOT) {
+                    this.minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.TransferOrdersScreen(management(),
+                            new com.jvn.villagerretaliation.network.ProductionTarget(this.header.id(), area.id()),
+                            () -> SettlementViewClient.resume(this.parent)));
                 } else if (area != null && area.kind() == SettlementAreaType.TRADING_POST) {
                     openManagement(Page.TRADE, "");
                 } else if (area != null && area.kind() == SettlementAreaType.FISHERY) {
@@ -2055,8 +2065,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     else this.minecraft.setScreen(new SettlementWorkerScreen(management(), area, this));
                 } else if (area != null && area.kind() == SettlementAreaType.CONSTRUCTION) {
                     openManagement(Page.PROJECTS, selected instanceof SettlementManagementPayload.Project project ? project.id().toString() : "");
-                } else if (area != null && area.kind() == SettlementAreaType.DEPOT) {
-                    openManagement(Page.DEPOTS, "");
                 } else {
                     this.selection.select(inspectorStaff().stream().map(SettlementManagementPayload.Resident::id).toList(), false);
                     this.selectedArea = null;

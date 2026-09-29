@@ -571,6 +571,19 @@ public final class VillagerReputationNetworking {
                                 com.jvn.villagerretaliation.interaction.work.HiredFishingSpotService.handle(player, payload)))
         );
         network.safePlayToClientThreaded(
+                TransferSnapshotPayload.TYPE,
+                TransferSnapshotPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.inventory.TransferClient",
+                "accept"
+        );
+        network.playToServer(
+                TransferRequestPayload.TYPE,
+                TransferRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.interaction.work.courier.TransferManagementService.handle(player, payload)))
+        );
+        network.safePlayToClientThreaded(
                 ProductionSnapshotPayload.TYPE,
                 ProductionSnapshotPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.inventory.ProductionClient",

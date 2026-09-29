@@ -1764,6 +1764,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addWorkOptions() {
+        if (this.hiredByPlayer && this.activeHiredRole == HiredVillagerRole.COURIER) {
+            this.options.add(DialogueOption.enabled("Transfer orders", () -> {
+                if (this.minecraft.level.getEntity(this.villagerEntityId) instanceof Villager villager) {
+                    this.minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.TransferOrdersScreen(null,
+                            new com.jvn.villagerretaliation.network.ProductionTarget(null, villager.getUUID())));
+                }
+            }));
+        }
         if (this.hiredByPlayer && this.activeHiredRole == HiredVillagerRole.FISHING) {
             this.options.add(DialogueOption.enabled("Fishing spots", () -> {
                 if (this.minecraft.level.getEntity(this.villagerEntityId) instanceof Villager villager) {

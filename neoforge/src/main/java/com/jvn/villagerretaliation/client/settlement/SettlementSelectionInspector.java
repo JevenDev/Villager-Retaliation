@@ -43,6 +43,7 @@ final class SettlementSelectionInspector {
     private List<UUID> key = List.of();
     private Section section = Section.OVERVIEW;
     private ProductionClientState production;
+    private com.jvn.villagerretaliation.client.inventory.TransferClientState transfers;
     private Button primary;
     private Button back;
     private int left;
@@ -92,6 +93,7 @@ final class SettlementSelectionInspector {
     boolean visible() { return this.visible; }
     Section section() { return this.section; }
     ProductionClientState production() { return this.production; }
+    com.jvn.villagerretaliation.client.inventory.TransferClientState transfers() { return this.transfers; }
     boolean sharedWorksite() { return this.worksite != null && this.worksite.plan() != null; }
     void reveal() { this.suppressed = false; }
 
@@ -115,6 +117,11 @@ final class SettlementSelectionInspector {
                 ? new ProductionTarget(header.id(), worksite.id()) : null;
         if (!Objects.equals(target, this.production == null ? null : this.production.target())) {
             this.production = target == null ? null : new ProductionClientState(target);
+        }
+        var transferTarget = worksite != null && worksite.kind() == SettlementAreaType.DEPOT
+                ? new ProductionTarget(header.id(), worksite.id()) : null;
+        if (!Objects.equals(transferTarget, this.transfers == null ? null : this.transfers.target())) {
+            this.transfers = transferTarget == null ? null : new com.jvn.villagerretaliation.client.inventory.TransferClientState(transferTarget);
         }
         update();
         this.primary.active &= !busy;
@@ -143,7 +150,7 @@ final class SettlementSelectionInspector {
         String label = switch (this.section) {
             case OVERVIEW -> "Focus selection";
             case STAFF -> this.selected instanceof Area && this.worksite != null && this.worksite.plan() != null ? "Fill staffing" : "Staff actions";
-            case ORDERS -> this.production != null ? "Edit production" : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST
+            case ORDERS -> this.transfers != null ? "Edit transfers" : this.production != null ? "Edit production" : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST
                     ? "Trade orders" : this.worksite != null && this.worksite.kind() == SettlementAreaType.FISHERY ? "Fishing settings"
                     : this.selected instanceof Resident ? "Worker actions"
                     : this.worksite != null && (this.worksite.kind() == SettlementAreaType.GUARD_POST
@@ -155,7 +162,7 @@ final class SettlementSelectionInspector {
             case STORAGE -> "Storage and stations";
         };
         this.primary.setMessage(Component.literal(label));
-        this.primary.active = this.section == Section.OVERVIEW || this.production != null && this.section == Section.ORDERS
+        this.primary.active = this.section == Section.OVERVIEW || (this.production != null || this.transfers != null) && this.section == Section.ORDERS
                 || this.header.permissions().contains(this.section == Section.STORAGE ? SettlementPermission.STAFF
                 : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST && this.section == Section.ORDERS
                 ? SettlementPermission.VIEW : SettlementPermission.STAFF);
@@ -175,10 +182,18 @@ final class SettlementSelectionInspector {
     }
 
     void tick() {
+        if (this.visible && this.transfers != null) {
+            var request = this.transfers.poll(Util.getMillis());
+            if (request != null) PacketDistributor.sendToServer(request);
+        }
         if (this.visible && this.production != null) {
             var request = this.production.poll(Util.getMillis());
             if (request != null) PacketDistributor.sendToServer(request);
         }
+    }
+
+    void acceptTransfers(com.jvn.villagerretaliation.network.TransferSnapshotPayload payload) {
+        if (this.transfers != null && this.transfers.accept(payload, Minecraft.getInstance().level.registryAccess())) update();
     }
 
     void accept(ProductionSnapshotPayload payload) {
@@ -223,7 +238,19 @@ final class SettlementSelectionInspector {
     }
 
     private void orders() {
-        if (this.production != null) {
+        if (this.transfers != null) {
+            if (this.transfers.snapshot() == null) { line("Loading transfer orders..."); return; }
+            if (!this.transfers.feedback().isEmpty()) line(this.transfers.feedback());
+            var queue = this.transfers.queue();
+            if (queue == null || queue.orders().isEmpty()) line("No explicit transfers. Stock replenishment continues.");
+            if (queue != null) for (var order : queue.orders()) {
+                line(order.sample().getHoverName().copy().append(" / transfer " + order.amount()));
+                line("Delivered " + order.delivered() + " / in transit " + order.pending());
+                line(order.source().position().toShortString() + " to " + order.destination().position().toShortString());
+                line(order.cancelled() ? "Cancelled" : order.delivered() >= order.amount() ? "Complete" : order.paused() ? "Paused"
+                        : order.blocker().isEmpty() ? "Ready" : order.blocker().replace('_', ' '));
+            }
+        } else if (this.production != null) {
             if (this.production.snapshot() == null) { line("Loading production orders..."); return; }
             if (!this.production.feedback().isEmpty()) line(this.production.feedback());
             var queue = this.production.queue();

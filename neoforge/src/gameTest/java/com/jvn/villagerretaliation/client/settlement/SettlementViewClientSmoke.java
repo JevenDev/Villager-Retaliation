@@ -68,6 +68,7 @@ public final class SettlementViewClientSmoke {
     private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
     private static UUID brewer;
     private static UUID productionArea;
+    private static UUID transferArea;
     private static SettlementViewScreen productionView;
     private static Villager issueFarmer;
     private static long started;
@@ -757,6 +758,111 @@ public final class SettlementViewClientSmoke {
             require(screen == productionView && screen.focusX() == originalX && screen.focusZ() == originalZ
                             && screen.viewHeight() == originalHeight && screen.cameraYaw() == originalYaw,
                     "fishing priority picking restores the same map camera and selection");
+            UUID player = minecraft.player.getUUID();
+            transferArea = minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var level = serverPlayer.serverLevel();
+                var town = SettlementSavedData.get(level).get(fixture.town()).orElseThrow();
+                var origin = fixture.center().offset(-6, 0, 4);
+                var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Transfer depot", origin, origin.offset(3, 2, 2), 5, true);
+                com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, town, area.min(), area.max());
+                require(SettlementBuildingService.register(serverPlayer, town.id(), area), "the courier fixture has a worksite");
+                require(com.jvn.villagerretaliation.settlement.SettlementWorksiteService.configure(serverPlayer, town, area.id(),
+                        com.jvn.villagerretaliation.settlement.SettlementWorksitePlan.defaults(com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER), true),
+                        "the courier fixture explicitly adopts shared transfers");
+                var previousPosition = serverPlayer.position();
+                try {
+                    serverPlayer.setPos(origin.getCenter());
+                    for (var position : java.util.List.of(origin, origin.east(3))) {
+                        level.setBlockAndUpdate(position, com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+                        require(com.jvn.villagerretaliation.settlement.SettlementDepotService.register(serverPlayer, position), "the transfer storage registers");
+                    }
+                } finally { serverPlayer.setPos(previousPosition); }
+                var source = ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(origin)).inventory();
+                var sample = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 12);
+                sample.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Construction iron"));
+                source.setItem(0, sample);
+                return area.id();
+            }).join();
+            screen.refreshManagement();
+            ticks = 0;
+            phase = 161;
+        } else if (phase == 161 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            screen.inspect(new com.jvn.villagerretaliation.network.SettlementManagementPayload.Area(transferArea, "Transfer depot",
+                    SettlementAreaType.DEPOT, fixture.center().offset(-6, 0, 4), fixture.center().offset(-3, 2, 6), 5, true, 0, 0, 0));
+            if (screen.inspector().transfers() == null) return;
+            button(screen, "Orders").onPress();
+            ticks = 0;
+            phase = 149;
+        } else if (phase == 149 && minecraft.screen instanceof SettlementViewScreen screen
+                && screen.inspector().transfers() != null && screen.inspector().transfers().editable() && ++ticks >= 5) {
+            capture("inspector-transfer-orders");
+            button(screen, "Edit transfers").onPress();
+            ticks = 0;
+            phase = 150;
+        } else if (phase == 150 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferOrdersScreen screen
+                && screen.state().editable() && ++ticks >= 5) {
+            requireButtonsFit(screen);
+            button(screen, "Add order").onPress();
+            ticks = 0;
+            phase = 151;
+        } else if (phase == 151 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferEditorScreen screen && ++ticks >= 5) {
+            for (int width : new int[] {320, 426, minecraft.getWindow().getGuiScaledWidth()}) {
+                screen.init(minecraft, width, minecraft.getWindow().getGuiScaledHeight());
+                requireButtonsFit(screen);
+            }
+            button(screen, "Choose source").onPress();
+            ticks = 0;
+            phase = 152;
+        } else if (phase == 152 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferChoiceScreen screen && ++ticks >= 5) {
+            chooseTransfer(screen, fixture.center().offset(-6, 0, 4).toShortString());
+            ticks = 0;
+            phase = 153;
+        } else if (phase == 153 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferEditorScreen screen && ++ticks >= 5) {
+            button(screen, "Choose destination").onPress();
+            ticks = 0;
+            phase = 154;
+        } else if (phase == 154 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferChoiceScreen screen && ++ticks >= 5) {
+            capture("transfer-storage-picker");
+            chooseTransfer(screen, fixture.center().offset(-3, 0, 4).toShortString());
+            ticks = 0;
+            phase = 155;
+        } else if (phase == 155 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferEditorScreen screen && ++ticks >= 5) {
+            button(screen, "Choose exact item").onPress();
+            ticks = 0;
+            phase = 156;
+        } else if (phase == 156 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferChoiceScreen screen && ++ticks >= 5) {
+            capture("transfer-item-picker");
+            chooseTransfer(screen, "Construction iron");
+            ticks = 0;
+            phase = 157;
+        } else if (phase == 157 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferEditorScreen screen && ++ticks >= 5) {
+            screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow().setValue("7");
+            require(button(screen, "Add transfer").active, "selected endpoints, exact item and quantity enable the transfer");
+            require(minecraft.getCameraEntity() != minecraft.player, "transfer pickers preserve the map camera");
+            capture("transfer-editor");
+            button(screen, "Add transfer").onPress();
+            ticks = 0;
+            phase = 158;
+        } else if (phase == 158 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferOrdersScreen screen
+                && screen.state().editable() && screen.state().queue() != null && screen.state().queue().orders().size() == 1 && ++ticks >= 5) {
+            var order = screen.state().queue().orders().getFirst();
+            require(order.amount() == 7 && order.sample().getHoverName().getString().equals("Construction iron"),
+                    "the transfer editor saves exact components and quantity");
+            capture("transfer-orders");
+            button(screen, "Pause").onPress();
+            ticks = 0;
+            phase = 159;
+        } else if (phase == 159 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferOrdersScreen screen
+                && screen.state().editable() && screen.state().queue().orders().getFirst().paused() && ++ticks >= 5) {
+            screen.onClose();
+            ticks = 0;
+            phase = 160;
+        } else if (phase == 160 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen == productionView && screen.focusX() == originalX && screen.focusZ() == originalZ
+                            && screen.viewHeight() == originalHeight && screen.cameraYaw() == originalYaw,
+                    "transfer controls restore the same map camera and selection");
             button(screen, "Browse settlement").onPress();
             require(!screen.inspector().visible(), "browsing hides the inspector without clearing the map selection");
             var targets = java.util.List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(fixture.resident(), null));
@@ -1695,6 +1801,16 @@ public final class SettlementViewClientSmoke {
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException("Could not inspect Sodium's settlement chunk lifecycle", exception);
         }
+    }
+
+    private static void chooseTransfer(net.minecraft.client.gui.screens.Screen screen, String query) {
+        requireButtonsFit(screen);
+        screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow().setValue(query);
+        var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+        require(!rows.children().isEmpty(), "the requested transfer choice is visible");
+        rows.children().getFirst().mouseClicked(0, 0, 0);
     }
 
     private static void require(boolean condition, String message) {
