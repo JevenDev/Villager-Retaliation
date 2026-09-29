@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
 public final class SettlementViewInteraction {
-    public enum Mode { SELECT, DRAW_AREA, EDIT_BOUNDS, PLACE_BUILDING, SELECT_PLOT, GUARD_TARGET, TASK_AREA, EDIT_ROUTE }
+    public enum Mode { SELECT, DRAW_AREA, EDIT_BOUNDS, PLACE_BUILDING, SELECT_PLOT, GUARD_TARGET, TASK_AREA, EDIT_ROUTE, SELECT_STORAGE }
     private Mode mode = Mode.SELECT;
 
     public Mode mode() { return this.mode; }

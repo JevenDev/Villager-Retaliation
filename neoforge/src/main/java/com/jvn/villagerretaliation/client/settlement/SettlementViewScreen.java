@@ -140,6 +140,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private Button groupActions;
     private Button commandResults;
     private Component guardFeedback = Component.empty();
+    private SettlementStorageScreen storagePicker;
     private UUID selectedResident;
     private SettlementManagementPayload.Resident resident;
     private boolean residentChecked;
@@ -838,7 +839,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     this.guardMode == SettlementGuardOrder.Mode.PATROL ? "guard_finish_patrol" : "guard_patrol"));
         }
         updateRouteButtons();
-        if (this.routeDraft != null) {
+        if (this.routeDraft != null || this.storagePicker != null) {
             for (var button : this.guardButtons) if (button != null) button.visible = false;
             this.returnToPost.visible = false;
             this.groupActions.visible = false;
@@ -1035,7 +1036,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void savePersistentRoute(boolean inherit) {
-        if (this.routeDraft == null || this.parent.submitting() || this.commands.busy()) return;
+        if (this.routeDraft == null || this.routeDraft.dragging() || this.parent.submitting() || this.commands.busy()) return;
         if (!inherit && !this.routeDraft.validation().isEmpty()) {
             this.guardFeedback = Component.literal(this.routeDraft.validation());
             return;
@@ -1282,6 +1283,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.storagePicker != null) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) finishStoragePick(null);
+            else if (navigationKey(keyCode)) this.heldKeys.add(keyCode);
+            return true;
+        }
         if (this.search != null && this.search.isFocused()) {
             clearControls();
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) { this.search.setFocused(false); setFocused(null); return true; }
@@ -1393,6 +1399,18 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
+        if (this.storagePicker != null) {
+            if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) finishStoragePick(null);
+            else if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && x < this.panelLeft) this.panning = true;
+            else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.preferences.map && this.overviewMap.contains(x, y)) {
+                focus(this.overviewMap.worldX(x), this.overviewMap.worldZ(y));
+            } else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && x < this.panelLeft && y > 48) {
+                var position = pick(x, y).position();
+                if (position == null) this.guardFeedback = Component.literal("No loaded map surface at this position.");
+                else finishStoragePick(position);
+            }
+            return true;
+        }
         if (this.popup != null) {
             if (this.popup.click(x, y, button)) return true;
             this.popup = null;
@@ -2261,7 +2279,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void updateInspector() {
         this.inspector.update(this.header, inspectorSelection(), inspectorWorksite(), inspectorStaff(),
                 this.snapshots.entries(Page.DEPOTS), this.snapshots.entries(Page.TRADE),
-                this.preferences.sidebar && !this.interaction.is(Mode.SELECT_PLOT), this.commands.busy() || this.parent.submitting() || this.routeDraft != null);
+                this.preferences.sidebar && !this.interaction.is(Mode.SELECT_PLOT), this.commands.busy() || this.parent.submitting() || this.routeDraft != null || this.storagePicker != null);
         for (var widget : this.browserWidgets) widget.visible = this.preferences.sidebar && !this.inspector.visible();
         if (this.inspector.visible() && this.search != null) this.search.setFocused(false);
         updateBrowserRows();
@@ -2329,12 +2347,34 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 } else if (area != null) this.minecraft.setScreen(new SettlementWorkerScreen(management(), area, this));
             }
             case STORAGE -> {
-                if (area != null) {
-                    var form = new SettlementWorkerScreen(management(), area, this);
-                    this.minecraft.setScreen(new SettlementWorksiteLinksScreen(form));
+                if (area != null && area.kind().role() != null) {
+                    if (area.plan() == null && !(selected instanceof SettlementManagementPayload.Resident)) {
+                        this.minecraft.setScreen(new SettlementWorkerScreen(management(), area, this));
+                    } else this.minecraft.setScreen(new SettlementStorageScreen(management(), this, area,
+                            selected instanceof SettlementManagementPayload.Resident resident ? resident : null));
                 }
             }
         }
+    }
+
+    void pickStorage(SettlementStorageScreen form) {
+        enterMode(Mode.SELECT_STORAGE);
+        this.storagePicker = form;
+        SettlementViewClient.resume(this.parent);
+        this.guardFeedback = Component.literal("Select a loaded storage block. Middle-drag pans. Escape or right-click returns without adding.");
+        updateActions();
+        updateInspector();
+    }
+
+    private void finishStoragePick(BlockPos position) {
+        var form = this.storagePicker;
+        this.storagePicker = null;
+        enterMode(Mode.SELECT);
+        this.guardFeedback = Component.empty();
+        if (position != null) form.picked(position);
+        SettlementViewClient.openPanels(this);
+        this.minecraft.setScreen(form);
+        form.request();
     }
 
     private SettlementManagementScreen management() {

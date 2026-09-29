@@ -59,6 +59,8 @@ public final class SettlementManagementClient {
             var current = current();
             if (current != null) {
                 current.accept(payload);
+                if (minecraft.screen instanceof SettlementStorageScreen storage) storage.accept(payload);
+                else if (minecraft.screen instanceof SettlementStorageFilterScreen filter) filter.parent().accept(payload);
             }
         }
     }
@@ -72,6 +74,10 @@ public final class SettlementManagementClient {
         if (!current.result(payload)) return;
         if (Minecraft.getInstance().screen instanceof SettlementViewScreen view) {
             view.acceptManagementResult(payload);
+        } else if (Minecraft.getInstance().screen instanceof SettlementStorageFilterScreen form) {
+            form.result(payload);
+        } else if (Minecraft.getInstance().screen instanceof SettlementStorageScreen form) {
+            form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementEditScreen form) {
             form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementProjectScreen form) {
@@ -99,6 +105,8 @@ public final class SettlementManagementClient {
             case SettlementViewScreen view -> view.parent();
             case SettlementEditScreen form -> form.parent();
             case SettlementWorkerScreen form -> form.parent();
+            case SettlementStorageScreen form -> form.parent();
+            case SettlementStorageFilterScreen form -> form.parent().parent();
             case SettlementProjectScreen form -> form.parent();
             case SettlementWorksiteAdoptionScreen form -> form.previous().parent();
             case SettlementTemporaryTaskScreen form -> form.parent();

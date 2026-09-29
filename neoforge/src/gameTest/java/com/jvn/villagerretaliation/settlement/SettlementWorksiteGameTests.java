@@ -343,6 +343,7 @@ public final class SettlementWorksiteGameTests {
             var legacy = defaults.save();
             legacy.remove("Version");
             legacy.remove("FishingSpots");
+            legacy.remove("Storage");
             int added = 0;
             for (var option : SettlementWorkerSetting.values()) {
                 if (option.ordinal() > SettlementWorkerSetting.GUARD_MODE.ordinal() && option.supports(role)) {
@@ -350,7 +351,7 @@ public final class SettlementWorksiteGameTests {
                     added |= 1 << option.ordinal();
                 }
             }
-            legacy.putInt("Overrides", defaults.overrides() & ~added);
+            legacy.putInt("Overrides", defaults.overrides() & ~(added | SettlementStorageLinks.OVERRIDE));
             helper.assertValueEqual(SettlementWorkerSettings.load(legacy), defaults,
                     "legacy complete settings preserve old behavior for new controls");
             legacy.putInt("Overrides", 1 << SettlementWorkerSetting.ENABLED.ordinal());

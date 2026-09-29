@@ -718,16 +718,82 @@ public final class SettlementViewClientSmoke {
             phase = 141;
         } else if (phase == 141 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
             capture("inspector-storage");
-            button(screen, "Storage and stations").onPress();
+            button(screen, "Edit storage links").onPress();
             ticks = 0;
             phase = 142;
-        } else if (phase == 142 && minecraft.screen instanceof SettlementWorksiteLinksScreen screen && ++ticks >= 5) {
+        } else if (phase == 142 && minecraft.screen instanceof SettlementStorageScreen screen && screen.draft() != null && ++ticks >= 5) {
             requireButtonsFit(screen);
-            require(minecraft.getCameraEntity() != minecraft.player, "the station picker retains the active map camera");
-            screen.onClose();
+            require(minecraft.getCameraEntity() != minecraft.player, "the storage editor retains the active map camera");
+            minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                var position = fixture.center().offset(2, 0, 2);
+                level.setBlockAndUpdate(position, net.minecraft.world.level.block.Blocks.BARREL.defaultBlockState());
+                var filter = new net.minecraft.world.item.ItemStack(com.jvn.villagerretaliation.item.VillagerRetaliationItems.ITEM_FILTER.get());
+                com.jvn.villagerretaliation.item.VillagerItemFilterData.setEntry(filter, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WHEAT));
+                var frame = new net.minecraft.world.entity.decoration.ItemFrame(level, position.south(), net.minecraft.core.Direction.SOUTH);
+                frame.setItem(filter);
+                level.addFreshEntity(frame);
+            }).join();
+            button(screen, "Clear all").onPress();
+            require(screen.draft().entries().isEmpty() && !screen.draft().automatic(), "clear creates an explicit local storage draft");
+            button(screen, "Add on map").onPress();
             ticks = 0;
-            phase = 143;
-        } else if (phase == 143 && minecraft.screen instanceof SettlementWorkerScreen screen && ++ticks >= 5) {
+            phase = 242;
+        } else if (phase == 242 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            ticks = 0;
+            phase = 243;
+        } else if (phase == 243 && minecraft.screen instanceof SettlementStorageScreen screen && ++ticks >= 5) {
+            require(screen.draft().entries().isEmpty() && !screen.draft().automatic(), "cancelled map picking preserves the storage draft");
+            button(screen, "Add on map").onPress();
+            ticks = 0;
+            phase = 244;
+        } else if (phase == 244 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            clickWorld(screen, fixture.center().offset(2, 0, 2).getCenter());
+            ticks = 0;
+            phase = 245;
+        } else if (phase == 245 && minecraft.screen instanceof SettlementStorageScreen screen && ++ticks >= 5) {
+            require(screen.draft().entries().size() == 1 && screen.draft().entries().getFirst().position().equals(fixture.center().offset(2, 0, 2)),
+                    "map picking adds the actual container position");
+            button(screen, "Purpose").onPress();
+            button(screen, "Priority +").onPress();
+            require(screen.draft().entries().getFirst().purpose() == com.jvn.villagerretaliation.settlement.SettlementStorageLinks.Purpose.SUPPLY
+                    && screen.draft().entries().getFirst().priority() == 4, "purpose and priority edit the selected draft link");
+            capture("ordinary-storage-draft");
+            button(screen, "Save storage").onPress();
+            ticks = 0;
+            phase = 246;
+        } else if (phase == 246 && minecraft.screen instanceof SettlementStorageScreen screen && !screen.parent().submitting() && ++ticks >= 15) {
+            minecraft.getSingleplayerServer().submit(() -> {
+                var town = SettlementSavedData.get(minecraft.getSingleplayerServer().overworld()).get(fixture.town()).orElseThrow();
+                var storage = town.worksitePlans().get(productionArea).settings().storage();
+                require(storage.entries().size() == 1 && storage.entries().getFirst().position().equals(fixture.center().offset(2, 0, 2)),
+                        "saving the editor persists ordinary storage on the authoritative worksite");
+            }).join();
+            capture("ordinary-storage-saved");
+            screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(button -> button.visible && button.getMessage().getString().contains("Barrel")).findFirst().orElseThrow().onPress();
+            require(button(screen, "Edit contents").active, "the actual framed matcher is editable from the map");
+            button(screen, "Edit contents").onPress();
+            ticks = 0;
+            phase = 247;
+        } else if (phase == 247 && minecraft.screen instanceof SettlementStorageFilterScreen screen && ++ticks >= 5) {
+            requireButtonsFit(screen);
+            button(screen, "Clear").onPress();
+            require(button(screen, "Save physical filter").active, "matcher edits stay in a cancellable draft");
+            capture("ordinary-storage-filter-draft");
+            button(screen, "Save physical filter").onPress();
+            ticks = 0;
+            phase = 248;
+        } else if (phase == 248 && minecraft.screen instanceof SettlementStorageScreen screen && !screen.parent().submitting() && ++ticks >= 10) {
+            minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                var position = fixture.center().offset(2, 0, 2);
+                var frame = level.getEntitiesOfClass(net.minecraft.world.entity.decoration.ItemFrame.class, new AABB(position).inflate(2),
+                        entity -> entity.getPos().relative(entity.getDirection().getOpposite()).equals(position)).getFirst();
+                require(com.jvn.villagerretaliation.item.VillagerItemFilterData.entry(frame.getItem(), 0).isEmpty(),
+                        "the filter editor changes the real frame without moving its item");
+            }).join();
             screen.onClose();
             ticks = 0;
             phase = 144;

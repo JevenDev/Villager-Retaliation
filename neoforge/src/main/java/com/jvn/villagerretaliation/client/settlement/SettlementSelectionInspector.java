@@ -140,7 +140,7 @@ final class SettlementSelectionInspector {
             case STAFF -> !this.staff.isEmpty() || this.worksite != null || this.selected instanceof Project;
             case ORDERS -> this.worksite != null || this.selected instanceof Resident;
             case SETTINGS -> this.worksite != null || this.selected instanceof Resident resident && resident.settings() != null;
-            case STORAGE -> this.worksite != null;
+            case STORAGE -> this.worksite != null && this.worksite.kind().role() != null;
         };
     }
 
@@ -172,7 +172,7 @@ final class SettlementSelectionInspector {
                     : this.worksite != null && this.worksite.kind() == SettlementAreaType.DEPOT ? "Manage logistics" : "Temporary task";
             case SETTINGS -> this.selected instanceof Resident ? "Worker settings" : this.worksite != null && this.worksite.plan() == null
                     ? "Preview adoption" : "Worksite settings";
-            case STORAGE -> "Storage and stations";
+            case STORAGE -> "Edit storage links";
         };
         this.primary.setMessage(Component.literal(label));
         this.primary.active = this.section == Section.OVERVIEW || (this.production != null || this.transfers != null) && this.section == Section.ORDERS
@@ -371,7 +371,19 @@ final class SettlementSelectionInspector {
     private void storage() {
         var plan = this.worksite.plan();
         var links = plan == null ? com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks.AUTOMATIC : plan.links();
-        line(plan == null ? "Adoption preview: automatic links" : "Worksite storage links");
+        var settings = this.selected instanceof Resident resident && resident.settings() != null ? resident.settings() : plan == null ? null : plan.settings();
+        var storage = settings == null ? com.jvn.villagerretaliation.settlement.SettlementStorageLinks.AUTOMATIC : settings.storage();
+        line(this.selected instanceof Resident && settings != null ? (settings.overrides() & com.jvn.villagerretaliation.settlement.SettlementStorageLinks.OVERRIDE) != 0
+                ? "Worker storage override" : "Inherits worksite storage" : plan == null ? "Adoption preview: automatic links" : "Worksite storage defaults");
+        if (!storage.automatic()) {
+            if (storage.entries().isEmpty()) line("No assigned storage. Automatic depot discovery is disabled.");
+            for (var link : storage.entries()) line(link.purpose().label() + " / " + link.position().toShortString() + " / priority " + link.priority());
+            line("Edit storage links to review live availability and framed filters.");
+            line("Ordinary containers require loaded workers and reachable storage.");
+            line(links.stations().isEmpty() ? "Stations: automatic" : "Permitted stations: " + links.stations().size());
+            return;
+        }
+        line("Automatic depot assignments");
         line(links.supplies().isEmpty() ? "Supplies: automatic" : "Supply depots: " + links.supplies().size());
         line(links.outputs().isEmpty() ? "Outputs: automatic" : "Output depots: " + links.outputs().size());
         line(links.stations().isEmpty() ? "Stations: automatic" : "Permitted stations: " + links.stations().size());

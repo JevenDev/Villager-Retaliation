@@ -58,7 +58,7 @@ public final class SettlementBackgroundService {
         var settings = town.effectiveWorkerSettings(worker.id());
         if (area != null && settings != null) {
             settings.apply(worker.settings(), area.enabled());
-            SettlementWorksiteService.links(town, area.id()).apply(worker.settings());
+            SettlementWorksiteService.links(town, area.id(), worker.id()).apply(worker.settings());
         }
         if (area == null || !area.enabled() || !area.id().equals(worker.area()) || area.type().role() != worker.role()
                 || care == null || !care.availableForWork()

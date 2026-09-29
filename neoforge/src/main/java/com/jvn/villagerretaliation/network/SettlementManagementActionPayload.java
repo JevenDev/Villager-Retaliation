@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.settlement.SettlementTradeOrder;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSetting;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
 import com.jvn.villagerretaliation.settlement.SettlementWorksitePlan;
+import com.jvn.villagerretaliation.settlement.SettlementStorageLinks;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.EnumSet;
 import java.util.List;
@@ -40,6 +41,33 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         buffer.writeUUID(payload.town());
         buffer.writeUUID(payload.request());
         switch (payload.command()) {
+            case SaveStorageFilter filter -> {
+                buffer.writeEnum(Kind.SAVE_STORAGE_FILTER);
+                buffer.writeUUID(filter.scope());
+                buffer.writeBlockPos(filter.position());
+                buffer.writeUUID(filter.frame());
+                net.minecraft.world.item.ItemStack.STREAM_CODEC.encode(buffer, filter.expected());
+                net.minecraft.world.item.ItemStack.STREAM_CODEC.encode(buffer, filter.filter());
+            }
+            case StorageFilter filter -> {
+                buffer.writeEnum(Kind.STORAGE_FILTER);
+                buffer.writeUUID(filter.scope());
+                buffer.writeBlockPos(filter.position());
+                buffer.writeUUID(filter.frame());
+                net.minecraft.world.item.ItemStack.STREAM_CODEC.encode(buffer, filter.expected());
+                buffer.writeEnum(filter.field());
+                buffer.writeVarInt(filter.value());
+            }
+            case SaveStorage storage -> {
+                buffer.writeEnum(Kind.SAVE_STORAGE);
+                buffer.writeUUID(storage.area());
+                buffer.writeBoolean(storage.resident() != null);
+                if (storage.resident() != null) buffer.writeUUID(storage.resident());
+                buffer.writeBoolean(storage.expectedOverride());
+                storage.expected().write(buffer);
+                buffer.writeBoolean(storage.links() != null);
+                if (storage.links() != null) storage.links().write(buffer);
+            }
             case SaveRoute route -> {
                 buffer.writeEnum(Kind.SAVE_ROUTE);
                 buffer.writeUUID(route.area());
@@ -244,6 +272,14 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case BREW -> new Brew(buffer.readUUID(), buffer.readUUID(), readBrewingOrder(buffer));
             case SAVE_WORKSITE -> new SaveWorksite(buffer.readUUID(), readWorksitePlan(buffer), buffer.readBoolean());
+            case SAVE_STORAGE_FILTER -> new SaveStorageFilter(buffer.readUUID(), buffer.readBlockPos(), buffer.readUUID(),
+                    net.minecraft.world.item.ItemStack.STREAM_CODEC.decode(buffer), net.minecraft.world.item.ItemStack.STREAM_CODEC.decode(buffer));
+            case STORAGE_FILTER -> new StorageFilter(buffer.readUUID(), buffer.readBlockPos(), buffer.readUUID(),
+                    net.minecraft.world.item.ItemStack.STREAM_CODEC.decode(buffer),
+                    buffer.readEnum(com.jvn.villagerretaliation.item.VillagerFilterPolicy.PolicyField.class), buffer.readVarInt());
+            case SAVE_STORAGE -> new SaveStorage(buffer.readUUID(), buffer.readBoolean() ? buffer.readUUID() : null,
+                    buffer.readBoolean(), SettlementStorageLinks.read(buffer),
+                    buffer.readBoolean() ? SettlementStorageLinks.read(buffer) : null);
             case SAVE_ROUTE -> new SaveRoute(buffer.readUUID(), buffer.readBoolean() ? buffer.readUUID() : null,
                     readGuardOrder(buffer), readGuardOrder(buffer));
             case RESET_WORKER -> new ResetWorker(buffer.readUUID(), buffer.readUUID(), buffer.readInt());
@@ -312,6 +348,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
     }
 
     private static void writeWorksiteLinks(RegistryFriendlyByteBuf buffer, com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks links) {
+        buffer.writeBoolean(links.explicitDepots());
         buffer.writeVarInt(links.supplies().size());
         links.supplies().stream().sorted().forEach(buffer::writeUUID);
         buffer.writeVarInt(links.outputs().size());
@@ -321,6 +358,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
     }
 
     private static com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks readWorksiteLinks(RegistryFriendlyByteBuf buffer) {
+        boolean explicit = buffer.readBoolean();
         Set<UUID> supplies = readDepotLinks(buffer), outputs = readDepotLinks(buffer);
         int count = VillagerPayloads.readCollectionSize(buffer,
                 com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks.MAX_LINKS, "worksite stations");
@@ -328,7 +366,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         for (int index = 0; index < count; index++) {
             if (!stations.add(buffer.readBlockPos())) throw new IllegalArgumentException("Duplicate worksite station");
         }
-        return new com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks(supplies, outputs, stations);
+        return new com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks(supplies, outputs, stations, explicit);
     }
 
     private static Set<UUID> readDepotLinks(RegistryFriendlyByteBuf buffer) {
@@ -355,6 +393,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         buffer.writeInt(settings.overrides());
         buffer.writeVarInt(settings.fishingSpots().positions().size());
         settings.fishingSpots().positions().forEach(buffer::writeBlockPos);
+        settings.storage().write(buffer);
     }
 
     static SettlementWorkerSettings readWorkerSettings(RegistryFriendlyByteBuf buffer) {
@@ -373,7 +412,8 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         var positions = new java.util.ArrayList<net.minecraft.core.BlockPos>();
         for (int index = 0; index < count; index++) positions.add(buffer.readBlockPos());
         return new SettlementWorkerSettings(role, options, logs, animals, overrides,
-                new com.jvn.villagerretaliation.interaction.work.HiredFishingSpots(positions));
+                new com.jvn.villagerretaliation.interaction.work.HiredFishingSpots(positions),
+                com.jvn.villagerretaliation.settlement.SettlementStorageLinks.read(buffer));
     }
 
     private static Set<net.minecraft.resources.ResourceLocation> readWorkerFilters(RegistryFriendlyByteBuf buffer) {
@@ -438,15 +478,46 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter {
     }
 
     public record SaveRoute(UUID area, UUID resident, SettlementGuardOrder expected, SettlementGuardOrder route) implements Command {
         public SaveRoute { Objects.requireNonNull(area); }
+    }
+
+    public record SaveStorageFilter(UUID scope, net.minecraft.core.BlockPos position, UUID frame,
+                                    net.minecraft.world.item.ItemStack expected, net.minecraft.world.item.ItemStack filter) implements Command {
+        public SaveStorageFilter {
+            Objects.requireNonNull(scope);
+            position = Objects.requireNonNull(position).immutable();
+            Objects.requireNonNull(frame);
+            expected = expected.copyWithCount(1);
+            filter = filter.copyWithCount(1);
+        }
+    }
+
+    public record StorageFilter(UUID scope, net.minecraft.core.BlockPos position, UUID frame,
+                                net.minecraft.world.item.ItemStack expected,
+                                com.jvn.villagerretaliation.item.VillagerFilterPolicy.PolicyField field, int value) implements Command {
+        public StorageFilter {
+            Objects.requireNonNull(scope);
+            position = Objects.requireNonNull(position).immutable();
+            Objects.requireNonNull(frame);
+            expected = expected.copyWithCount(1);
+            Objects.requireNonNull(field);
+        }
+    }
+
+    public record SaveStorage(UUID area, UUID resident, boolean expectedOverride, SettlementStorageLinks expected,
+                              SettlementStorageLinks links) implements Command {
+        public SaveStorage {
+            Objects.requireNonNull(area);
+            Objects.requireNonNull(expected);
+        }
     }
 
     public record SaveWorksite(UUID area, SettlementWorksitePlan plan, boolean adopt) implements Command {

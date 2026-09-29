@@ -67,6 +67,14 @@ public final class SettlementWorkerConfigurationService {
             return false;
         }
         var previous = snapshot(level, town, resident);
+        var plan = town.worksitePlans().get(areaId);
+        var resolved = plan == null ? settings : settings.resolve(plan.settings());
+        boolean automaticReset = previous != null && previous.storage().automatic() && resolved.storage().automatic()
+                && (settings.overrides() & SettlementStorageLinks.OVERRIDE) == 0;
+        if (previous != null && ((previous.overrides() ^ settings.overrides()) & SettlementStorageLinks.OVERRIDE) != 0
+                && !automaticReset && !town.permits(player.getUUID(), SettlementPermission.LOGISTICS)) return false;
+        if (!SettlementStorageService.validate(player, town, area.type().role(), previous == null
+                ? SettlementStorageLinks.AUTOMATIC : previous.storage(), resolved.storage()).isEmpty()) return false;
         if (!SettlementWorksiteService.validFishingSpots(level, town, area, previous == null
                 ? com.jvn.villagerretaliation.interaction.work.HiredFishingSpots.AUTOMATIC : previous.fishingSpots(),
                 settings.fishingSpots())) return false;
@@ -75,11 +83,13 @@ public final class SettlementWorkerConfigurationService {
         }
         if (villager != null) {
             SettlementBackgroundService.onActive(villager);
+            SettlementDepotService.synchronizeStorage(level, villager, town);
             SettlementBackgroundService.onUnloaded(villager);
         } else {
             var worker = town.workers().get(resident);
             if (worker != null && worker.area().equals(areaId)) {
                 town.effectiveWorkerSettings(resident).apply(worker.settings(), area.enabled());
+                SettlementWorksiteService.links(town, areaId, resident).apply(worker.settings());
             }
         }
         return true;
@@ -93,6 +103,7 @@ public final class SettlementWorkerConfigurationService {
         var state = HiredWorkStateStore.state(villager);
         if (settings == null) {
             state.remove(SettlementWorksiteLinks.STATE_TAG);
+            state.remove(SettlementStorageLinks.STATE_TAG);
             state.putBoolean("Enabled", area.enabled());
             return;
         }
@@ -100,7 +111,7 @@ public final class SettlementWorkerConfigurationService {
                 && settings.options().entrySet().stream().allMatch(entry -> entry.getKey().read(state) == entry.getValue())
                 && state.getBoolean("Enabled") == (settings.enabled() && area.enabled());
         int oldMode = SettlementWorkerSetting.MINING_MODE.read(state);
-        boolean linksChanged = SettlementWorksiteService.links(town, area.id()).apply(state);
+        boolean linksChanged = SettlementWorksiteService.links(town, area.id(), villager.getUUID()).apply(state);
         if (settings.apply(state, area.enabled()) || linksChanged) {
             var level = (ServerLevel) villager.level();
             if (!preserveFishing || linksChanged) HiredWorkStateStore.pauseWork(level, villager, area.type().role(),

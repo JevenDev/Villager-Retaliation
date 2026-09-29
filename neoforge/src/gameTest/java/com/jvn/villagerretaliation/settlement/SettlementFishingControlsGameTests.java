@@ -62,7 +62,8 @@ public final class SettlementFishingControlsGameTests {
         var legacy = defaults.save();
         legacy.putInt("Version", 2);
         legacy.remove("FishingSpots");
-        legacy.putInt("Overrides", defaults.overrides() & ~SettlementWorkerSettings.FISHING_SPOTS_OVERRIDE);
+        legacy.remove("Storage");
+        legacy.putInt("Overrides", defaults.overrides() & ~(SettlementWorkerSettings.FISHING_SPOTS_OVERRIDE | SettlementStorageLinks.OVERRIDE));
         helper.assertValueEqual(SettlementWorkerSettings.load(legacy), defaults, "old fully overridden settings retain automatic fishing");
         legacy.putInt("Overrides", 0);
         helper.assertValueEqual(SettlementWorkerSettings.load(legacy).overrides(), 0, "old inherited workers continue inheriting");

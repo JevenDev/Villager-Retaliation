@@ -14,6 +14,8 @@ import com.jvn.villagerretaliation.settlement.SettlementProject;
 import com.jvn.villagerretaliation.settlement.SettlementProgressionService;
 import com.jvn.villagerretaliation.settlement.SettlementStage;
 import com.jvn.villagerretaliation.settlement.SettlementTradeOrder;
+import com.jvn.villagerretaliation.settlement.SettlementStorageLinks;
+import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -52,6 +54,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case HISTORY -> entry instanceof History;
                 case ISSUES -> entry instanceof Issue;
                 case STATIONS -> entry instanceof Station;
+                case STORAGE -> entry instanceof Storage;
                 case SUMMARY -> false;
             };
             if (!valid) {
@@ -80,6 +83,25 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         buffer.writeUUID(entry.id());
         buffer.writeUtf(entry.name(), 128);
         switch (entry) {
+            case Storage storage -> {
+                buffer.writeUUID(storage.area());
+                writeOptionalId(buffer, storage.resident());
+                storage.links().write(buffer);
+                buffer.writeBoolean(storage.override());
+                buffer.writeVarInt(storage.containers().size());
+                for (var container : storage.containers()) {
+                    buffer.writeBlockPos(container.link().position());
+                    buffer.writeEnum(container.link().purpose());
+                    buffer.writeVarInt(container.link().priority());
+                    buffer.writeUtf(container.name(), 128);
+                    buffer.writeUtf(container.status(), 64);
+                    buffer.writeVarInt(container.filters().size());
+                    for (var filter : container.filters()) {
+                        buffer.writeUUID(filter.frame());
+                        ItemStack.STREAM_CODEC.encode(buffer, filter.item());
+                    }
+                }
+            }
             case Town town -> {
                 buffer.writeEnum(town.stage());
                 buffer.writeVarInt(town.population());
@@ -214,6 +236,25 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         UUID id = buffer.readUUID();
         String name = buffer.readUtf(128);
         return switch (page) {
+            case STORAGE -> {
+                var area = buffer.readUUID();
+                var resident = readOptionalId(buffer);
+                var links = SettlementStorageLinks.read(buffer);
+                boolean override = buffer.readBoolean();
+                int count = VillagerPayloads.readCollectionSize(buffer, SettlementStorageLinks.MAX_LINKS, "storage status");
+                var containers = new ArrayList<StorageStatus>();
+                for (int index = 0; index < count; index++) {
+                    var link = new SettlementStorageLinks.Link(buffer.readBlockPos(), buffer.readEnum(SettlementStorageLinks.Purpose.class), buffer.readVarInt());
+                    String containerName = buffer.readUtf(128), status = buffer.readUtf(64);
+                    int size = VillagerPayloads.readCollectionSize(buffer, 16, "storage filters");
+                    var filters = new ArrayList<StorageFilter>();
+                    for (int filter = 0; filter < size; filter++) {
+                        filters.add(new StorageFilter(buffer.readUUID(), ItemStack.STREAM_CODEC.decode(buffer)));
+                    }
+                    containers.add(new StorageStatus(link, containerName, status, filters));
+                }
+                yield new Storage(id, name, area, resident, links, override, containers);
+            }
             case TOWNS -> new Town(id, name, buffer.readEnum(SettlementStage.class), buffer.readVarInt(), buffer.readBlockPos());
             case RESIDENTS -> {
                 ResourceLocation profession = buffer.readResourceLocation();
@@ -401,9 +442,28 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
     }
 
-    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History, Issue, Station {
+    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History, Issue, Station, Storage {
         UUID id();
         String name();
+    }
+
+    public record Storage(UUID id, String name, UUID area, UUID resident, SettlementStorageLinks links,
+                          boolean override, List<StorageStatus> containers) implements Entry {
+        public Storage {
+            if (containers.size() > SettlementStorageLinks.MAX_LINKS) throw new IllegalArgumentException("Too many storage statuses");
+            containers = List.copyOf(containers);
+        }
+    }
+
+    public record StorageStatus(SettlementStorageLinks.Link link, String name, String status, List<StorageFilter> filters) {
+        public StorageStatus {
+            if (filters.size() > 16) throw new IllegalArgumentException("Too many framed storage filters");
+            filters = List.copyOf(filters);
+        }
+    }
+
+    public record StorageFilter(UUID frame, ItemStack item) {
+        public StorageFilter { item = item.copyWithCount(1); }
     }
 
     public enum IssueKind {

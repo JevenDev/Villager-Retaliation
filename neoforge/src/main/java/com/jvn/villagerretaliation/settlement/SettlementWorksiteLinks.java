@@ -8,7 +8,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 
-public record SettlementWorksiteLinks(Set<UUID> supplies, Set<UUID> outputs, Set<BlockPos> stations) {
+public record SettlementWorksiteLinks(Set<UUID> supplies, Set<UUID> outputs, Set<BlockPos> stations, boolean explicitDepots) {
+    public SettlementWorksiteLinks(Set<UUID> supplies, Set<UUID> outputs, Set<BlockPos> stations) {
+        this(supplies, outputs, stations, false);
+    }
+
     public static final int MAX_LINKS = 128;
     public static final String STATE_TAG = "WorksiteLinks";
     public static final SettlementWorksiteLinks AUTOMATIC = new SettlementWorksiteLinks(Set.of(), Set.of(), Set.of());
@@ -23,11 +27,11 @@ public record SettlementWorksiteLinks(Set<UUID> supplies, Set<UUID> outputs, Set
     }
 
     public boolean permitsSupply(UUID depot) {
-        return this.supplies.isEmpty() || this.supplies.contains(depot);
+        return !this.explicitDepots && this.supplies.isEmpty() || this.supplies.contains(depot);
     }
 
     public boolean permitsOutput(UUID depot) {
-        return this.outputs.isEmpty() || this.outputs.contains(depot);
+        return !this.explicitDepots && this.outputs.isEmpty() || this.outputs.contains(depot);
     }
 
     public boolean permitsStation(BlockPos station) {
@@ -42,15 +46,17 @@ public record SettlementWorksiteLinks(Set<UUID> supplies, Set<UUID> outputs, Set
     }
 
     static boolean permitsSupply(CompoundTag state, UUID depot) {
-        return permitsDepot(state.getCompound(STATE_TAG).getList("Supplies", Tag.TAG_COMPOUND), depot);
+        var links = state.getCompound(STATE_TAG);
+        return permitsDepot(links.getList("Supplies", Tag.TAG_COMPOUND), depot, links.getBoolean("ExplicitDepots"));
     }
 
     static boolean permitsOutput(CompoundTag state, UUID depot) {
-        return permitsDepot(state.getCompound(STATE_TAG).getList("Outputs", Tag.TAG_COMPOUND), depot);
+        var links = state.getCompound(STATE_TAG);
+        return permitsDepot(links.getList("Outputs", Tag.TAG_COMPOUND), depot, links.getBoolean("ExplicitDepots"));
     }
 
-    private static boolean permitsDepot(ListTag links, UUID depot) {
-        if (links.isEmpty()) return true;
+    private static boolean permitsDepot(ListTag links, UUID depot, boolean explicit) {
+        if (links.isEmpty()) return !explicit;
         for (var tag : links) {
             if (((CompoundTag) tag).hasUUID("Depot") && ((CompoundTag) tag).getUUID("Depot").equals(depot)) return true;
         }
@@ -59,6 +65,7 @@ public record SettlementWorksiteLinks(Set<UUID> supplies, Set<UUID> outputs, Set
 
     CompoundTag save() {
         var tag = new CompoundTag();
+        tag.putBoolean("ExplicitDepots", this.explicitDepots);
         tag.put("Supplies", depots(this.supplies));
         tag.put("Outputs", depots(this.outputs));
         tag.putLongArray("Stations", this.stations.stream().sorted().mapToLong(BlockPos::asLong).toArray());
@@ -73,7 +80,8 @@ public record SettlementWorksiteLinks(Set<UUID> supplies, Set<UUID> outputs, Set
         for (long position : positions) {
             if (!stations.add(BlockPos.of(position))) throw new IllegalArgumentException("Duplicate worksite station");
         }
-        return new SettlementWorksiteLinks(depots(tag, "Supplies"), depots(tag, "Outputs"), stations);
+        if (tag.contains("ExplicitDepots") && !tag.contains("ExplicitDepots", Tag.TAG_BYTE)) throw new IllegalArgumentException("Invalid depot link policy");
+        return new SettlementWorksiteLinks(depots(tag, "Supplies"), depots(tag, "Outputs"), stations, tag.getBoolean("ExplicitDepots"));
     }
 
     private static ListTag depots(Set<UUID> ids) {

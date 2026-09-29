@@ -87,6 +87,15 @@ public final class SettlementDepotService {
     public static boolean permittedForWorker(ServerLevel level, Villager villager, AssignedContainerRecord record) {
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         SettlementRecord town = duty == null ? null : duty.town();
+        if (duty != null) {
+            var configured = SettlementStorageService.effective(town, villager.getUUID());
+            if (!configured.automatic()) {
+                return record.dimension().equals(level.dimension()) && record.hirerId().equals(town.leader())
+                        && configured.entries().stream().anyMatch(link -> link.position().equals(record.pos())
+                        && link.purpose().id().equals(record.purpose())
+                        && SettlementStorageService.permitted(level, duty.town(), duty.area().type().role(), link));
+            }
+        }
         if (town == null && level.hasChunkAt(record.pos())
                 && level.getBlockEntity(record.pos()) instanceof SettlementDepotBlockEntity) {
             town = SettlementSavedData.get(level).at(level.dimension().location(), record.pos()).orElse(null);
@@ -101,7 +110,7 @@ public final class SettlementDepotService {
             return false;
         }
         if (duty != null) {
-            var links = SettlementWorksiteService.links(town, duty.area().id());
+            var links = SettlementWorksiteService.links(town, duty.area().id(), villager.getUUID());
             boolean permitted = switch (AssignedStorageService.normalizePurpose(record.purpose())) {
                 case AssignedStorageService.SUPPLY_PURPOSE -> links.permitsSupply(depot.id());
                 case AssignedStorageService.OUTPUT_PURPOSE -> links.permitsOutput(depot.id());
@@ -122,12 +131,21 @@ public final class SettlementDepotService {
     }
 
     public static void synchronizeStorage(ServerLevel level, Villager villager, SettlementRecord town) {
+        if (SettlementWorkforceService.hasPersonalCommitment(villager)
+                || SettlementWorkforceService.duty(villager).filter(duty -> duty.town() == town).isEmpty()) return;
         AssignedStorageSavedData storage = AssignedStorageSavedData.get(level);
-        boolean hauler = SettlementLogisticsService.isHauler(villager);
-        var links = SettlementWorksiteService.links(town, town.duties().get(villager.getUUID()));
+        var configured = SettlementStorageService.effective(town, villager.getUUID());
+        boolean hauler = configured.automatic() && SettlementLogisticsService.isHauler(villager);
+        var links = SettlementWorksiteService.links(town, town.duties().get(villager.getUUID()), villager.getUUID());
         List<AssignedContainerRecord> desired = new ArrayList<>(hauler
                 ? SettlementLogisticsService.assignments(level, villager, town) : List.of());
-        for (SettlementDepot depot : hauler ? List.<SettlementDepot>of() : town.depots().values()) {
+        if (!configured.automatic()) {
+            for (var link : configured.entries()) {
+                desired.add(new AssignedContainerRecord(level.dimension(), link.position(), villager.getUUID(), town.leader(),
+                        link.purpose().id(), link.priority(), "unknown"));
+            }
+        }
+        for (SettlementDepot depot : hauler || !configured.automatic() ? List.<SettlementDepot>of() : town.depots().values()) {
             SettlementArea area = town.areas().get(depot.area());
             if (area == null || !area.enabled()) {
                 continue;
@@ -139,7 +157,7 @@ public final class SettlementDepotService {
                 desired.add(reference(level, villager, town, depot, AssignedStorageService.OUTPUT_PURPOSE));
             }
         }
-        desired.removeIf(record -> !permittedForWorker(level, villager, record));
+        if (configured.automatic()) desired.removeIf(record -> !permittedForWorker(level, villager, record));
         List<AssignedContainerRecord> existing = storage.assignedTo(villager.getUUID());
         for (AssignedContainerRecord record : existing) {
             if (desired.stream().noneMatch(candidate -> sameAssignment(record, candidate))) {

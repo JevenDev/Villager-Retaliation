@@ -23,11 +23,14 @@ public final class SettlementWorksiteService {
                 || plan.route().positions().anyMatch(position -> player.serverLevel().isOutsideBuildHeight(position)
                         || !player.serverLevel().getWorldBorder().isWithinBounds(position)))) return false;
         var previous = town.worksitePlans().get(areaId);
+        if (!SettlementStorageService.validate(player, town, area.type().role(), previous == null
+                ? SettlementStorageLinks.AUTOMATIC : previous.settings().storage(), plan.settings().storage()).isEmpty()) return false;
         if (!validFishingSpots(player.serverLevel(), town, area, previous == null
                 ? com.jvn.villagerretaliation.interaction.work.HiredFishingSpots.AUTOMATIC : previous.settings().fishingSpots(),
                 plan.settings().fishingSpots())) return false;
         var previousLinks = previous == null ? SettlementWorksiteLinks.AUTOMATIC : previous.links();
-        if ((!plan.links().supplies().equals(previousLinks.supplies()) || !plan.links().outputs().equals(previousLinks.outputs()))
+        if ((!plan.links().supplies().equals(previousLinks.supplies()) || !plan.links().outputs().equals(previousLinks.outputs())
+                || plan.links().explicitDepots() != previousLinks.explicitDepots())
                 && !town.permits(player.getUUID(), SettlementPermission.LOGISTICS)) return false;
         if (!plan.links().equals(previousLinks)) {
             if (!town.depots().keySet().containsAll(plan.links().supplies()) || !town.depots().keySet().containsAll(plan.links().outputs())
@@ -57,7 +60,7 @@ public final class SettlementWorksiteService {
                 var worker = town.workers().get(duty.getKey());
                 if (worker != null && areaId.equals(worker.area())) {
                     town.effectiveWorkerSettings(duty.getKey()).apply(worker.settings(), area.enabled());
-                    plan.links().apply(worker.settings());
+                    links(town, areaId, duty.getKey()).apply(worker.settings());
                 }
             }
         }
@@ -76,7 +79,13 @@ public final class SettlementWorksiteService {
 
     static SettlementWorksiteLinks links(SettlementRecord town, UUID area) {
         var plan = town.worksitePlans().get(area);
-        return plan == null ? SettlementWorksiteLinks.AUTOMATIC : plan.links();
+        return plan == null ? SettlementWorksiteLinks.AUTOMATIC : SettlementStorageService.depotLinks(town, plan.links(), plan.settings().storage());
+    }
+
+    static SettlementWorksiteLinks links(SettlementRecord town, UUID area, UUID resident) {
+        var plan = town.worksitePlans().get(area);
+        return SettlementStorageService.depotLinks(town, plan == null ? SettlementWorksiteLinks.AUTOMATIC : plan.links(),
+                SettlementStorageService.effective(town, resident));
     }
 
     public static boolean reset(ServerPlayer player, SettlementRecord town, UUID resident, UUID area, int mask) {

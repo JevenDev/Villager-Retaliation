@@ -107,7 +107,9 @@ public final class SettlementWorkerDiagnostics {
             case "supply_full", "support_inventory_full", "fill_supply_full" ->
                     "Free supply slots in the job inventory for the next work batch.";
             case "storage_full" ->
-                    "Provide depot space and check that depot filters accept the carried output.";
+                    "Free space in the assigned storage and check that its filters accept the carried output.";
+            case "route_requires_loaded_worker" ->
+                    "Visit this courier and its saved route. Ordinary storage and explicit routes require a live worker.";
             case "awaiting_worker_observation" ->
                     "Visit this worker to enable background work.";
             case "no_observed_hunting_target", "no_observed_field", "no_observed_fishery", "no_observed_forest", "no_observed_mine",

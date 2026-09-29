@@ -27,6 +27,7 @@ public final class SettlementWorkerSettings {
     private final Set<ResourceLocation> logs;
     private final Set<ResourceLocation> animals;
     private final HiredFishingSpots fishingSpots;
+    private final SettlementStorageLinks storage;
     private final CompoundTag saved;
     private final int overrides;
 
@@ -42,6 +43,12 @@ public final class SettlementWorkerSettings {
 
     public SettlementWorkerSettings(HiredVillagerRole role, Map<SettlementWorkerSetting, Integer> options,
                                     Set<ResourceLocation> logs, Set<ResourceLocation> animals, int overrides, HiredFishingSpots fishingSpots) {
+        this(role, options, logs, animals, overrides, fishingSpots, SettlementStorageLinks.AUTOMATIC);
+    }
+
+    public SettlementWorkerSettings(HiredVillagerRole role, Map<SettlementWorkerSetting, Integer> options,
+                                    Set<ResourceLocation> logs, Set<ResourceLocation> animals, int overrides, HiredFishingSpots fishingSpots,
+                                    SettlementStorageLinks storage) {
         this.role = Objects.requireNonNull(role);
         if ((overrides & ~allOverrides(role)) != 0) {
             throw new IllegalArgumentException("Overrides do not match their role");
@@ -51,6 +58,7 @@ public final class SettlementWorkerSettings {
         this.logs = Set.copyOf(logs);
         this.animals = Set.copyOf(animals);
         this.fishingSpots = Objects.requireNonNull(fishingSpots);
+        this.storage = Objects.requireNonNull(storage);
         for (var setting : SettlementWorkerSetting.values()) {
             Integer value = options.get(setting);
             if (setting.supports(role) ? value == null || !setting.definition().valid(role, value) : value != null) {
@@ -83,17 +91,18 @@ public final class SettlementWorkerSettings {
     }
 
     public HiredFishingSpots fishingSpots() { return this.fishingSpots; }
+    public SettlementStorageLinks storage() { return this.storage; }
 
     @Override
     public boolean equals(Object other) {
         return this == other || other instanceof SettlementWorkerSettings settings && this.role == settings.role
                 && this.options.equals(settings.options) && this.logs.equals(settings.logs) && this.animals.equals(settings.animals)
-                && this.overrides == settings.overrides && this.fishingSpots.equals(settings.fishingSpots);
+                && this.overrides == settings.overrides && this.fishingSpots.equals(settings.fishingSpots) && this.storage.equals(settings.storage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.role, this.options, this.logs, this.animals, this.overrides, this.fishingSpots);
+        return Objects.hash(this.role, this.options, this.logs, this.animals, this.overrides, this.fishingSpots, this.storage);
     }
 
     public static SettlementWorkerSettings capture(HiredVillagerRole role, CompoundTag state) {
@@ -106,14 +115,15 @@ public final class SettlementWorkerSettings {
         return new SettlementWorkerSettings(role, options,
                 role == HiredVillagerRole.LOGGING ? HiredLoggingFilters.selectedFilterIds(state) : Set.of(),
                 role == HiredVillagerRole.ANIMAL_HANDLING ? HiredAnimalBreedingTargets.selectedTargetIds(state) : Set.of(), allOverrides(role),
-                role == HiredVillagerRole.FISHING ? HiredFishingSpots.read(state) : HiredFishingSpots.AUTOMATIC);
+                role == HiredVillagerRole.FISHING ? HiredFishingSpots.read(state) : HiredFishingSpots.AUTOMATIC,
+                SettlementStorageLinks.read(state));
     }
 
     public SettlementWorkerSettings with(SettlementWorkerSetting setting, int value) {
         var changed = new EnumMap<SettlementWorkerSetting, Integer>(SettlementWorkerSetting.class);
         changed.putAll(this.options);
         changed.put(setting, value);
-        return new SettlementWorkerSettings(this.role, changed, this.logs, this.animals, this.overrides | 1 << setting.ordinal(), this.fishingSpots);
+        return new SettlementWorkerSettings(this.role, changed, this.logs, this.animals, this.overrides | 1 << setting.ordinal(), this.fishingSpots, this.storage);
     }
 
     public int overrides() {
@@ -125,19 +135,24 @@ public final class SettlementWorkerSettings {
     }
 
     public SettlementWorkerSettings withOverrides(int overrides) {
-        return new SettlementWorkerSettings(this.role, this.options, this.logs, this.animals, overrides, this.fishingSpots);
+        return new SettlementWorkerSettings(this.role, this.options, this.logs, this.animals, overrides, this.fishingSpots, this.storage);
     }
 
     public SettlementWorkerSettings withFilters(Set<ResourceLocation> logs, Set<ResourceLocation> animals) {
         int mask = this.role == HiredVillagerRole.LOGGING ? LOGS_OVERRIDE
                 : this.role == HiredVillagerRole.ANIMAL_HANDLING ? ANIMALS_OVERRIDE : 0;
-        return new SettlementWorkerSettings(this.role, this.options, logs, animals, this.overrides | mask, this.fishingSpots);
+        return new SettlementWorkerSettings(this.role, this.options, logs, animals, this.overrides | mask, this.fishingSpots, this.storage);
     }
 
     public SettlementWorkerSettings withFishingSpots(HiredFishingSpots fishingSpots) {
         if (this.role != HiredVillagerRole.FISHING) throw new IllegalArgumentException("Fishing spots require a fisher");
         return new SettlementWorkerSettings(this.role, this.options, this.logs, this.animals,
-                this.overrides | FISHING_SPOTS_OVERRIDE, fishingSpots);
+                this.overrides | FISHING_SPOTS_OVERRIDE, fishingSpots, this.storage);
+    }
+
+    public SettlementWorkerSettings withStorage(SettlementStorageLinks storage) {
+        return new SettlementWorkerSettings(this.role, this.options, this.logs, this.animals,
+                this.overrides | SettlementStorageLinks.OVERRIDE, this.fishingSpots, storage);
     }
 
     public SettlementWorkerSettings resolve(SettlementWorkerSettings worksite) {
@@ -147,11 +162,12 @@ public final class SettlementWorkerSettings {
         return new SettlementWorkerSettings(this.role, effective,
                 (this.overrides & LOGS_OVERRIDE) != 0 ? this.logs : worksite.logs,
                 (this.overrides & ANIMALS_OVERRIDE) != 0 ? this.animals : worksite.animals, this.overrides,
-                (this.overrides & FISHING_SPOTS_OVERRIDE) != 0 ? this.fishingSpots : worksite.fishingSpots);
+                (this.overrides & FISHING_SPOTS_OVERRIDE) != 0 ? this.fishingSpots : worksite.fishingSpots,
+                (this.overrides & SettlementStorageLinks.OVERRIDE) != 0 ? this.storage : worksite.storage);
     }
 
     public static int allOverrides(HiredVillagerRole role) {
-        int mask = 0;
+        int mask = SettlementStorageLinks.OVERRIDE;
         for (var setting : SettlementWorkerSetting.values()) {
             if (setting.supports(role)) mask |= 1 << setting.ordinal();
         }
@@ -169,6 +185,7 @@ public final class SettlementWorkerSettings {
         boolean changed = !this.saved.equals(state.getCompound(APPLIED_TAG));
         if (changed) {
             this.options.forEach((setting, value) -> setting.apply(state, value));
+            state.put(SettlementStorageLinks.STATE_TAG, this.storage.save());
             if (this.role == HiredVillagerRole.LOGGING) {
                 state.put("LoggingFilters", filters(this.logs));
                 state.putString(HiredLoggingFilters.LEGACY_FILTER_TAG, "any");
@@ -191,7 +208,8 @@ public final class SettlementWorkerSettings {
 
     private CompoundTag encode() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("Version", 3);
+        tag.putInt("Version", 4);
+        tag.put("Storage", this.storage.save());
         tag.putString("Role", this.role.name());
         CompoundTag settings = new CompoundTag();
         this.options.forEach((key, value) -> settings.putInt(key.name(), value));
@@ -207,7 +225,7 @@ public final class SettlementWorkerSettings {
         if (tag.contains("Overrides") && !tag.contains("Overrides", Tag.TAG_INT)) {
             throw new IllegalArgumentException("Worker overrides must be an integer");
         }
-        if (tag.contains("Version") && (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 2 || tag.getInt("Version") > 3))) {
+        if (tag.contains("Version") && (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 2 || tag.getInt("Version") > 4))) {
             throw new IllegalArgumentException("Unsupported worker settings version");
         }
         var role = HiredVillagerRole.valueOf(tag.getString("Role"));
@@ -220,7 +238,8 @@ public final class SettlementWorkerSettings {
             options.put(SettlementWorkerSetting.valueOf(key), values.getInt(key));
         }
         boolean legacyFishing = role == HiredVillagerRole.FISHING && tag.getInt("Version") < 3;
-        int legacyMask = allOverrides(role) & (legacyFishing ? ~FISHING_SPOTS_OVERRIDE : -1);
+        boolean legacyStorage = tag.getInt("Version") < 4;
+        int legacyMask = allOverrides(role) & (legacyFishing ? ~FISHING_SPOTS_OVERRIDE : -1) & (legacyStorage ? ~SettlementStorageLinks.OVERRIDE : -1);
         int overrides = tag.contains("Overrides", Tag.TAG_INT) ? tag.getInt("Overrides") : legacyMask;
         if (!tag.contains("Version")) {
             int added = 0;
@@ -234,12 +253,17 @@ public final class SettlementWorkerSettings {
             if ((overrides | added) == legacyMask) overrides |= added;
         }
         if (legacyFishing && overrides == legacyMask) overrides |= FISHING_SPOTS_OVERRIDE;
+        if (legacyStorage && overrides == (allOverrides(role) & ~SettlementStorageLinks.OVERRIDE)) overrides |= SettlementStorageLinks.OVERRIDE;
+        if (tag.getInt("Version") >= 4 ? !tag.contains("Storage", Tag.TAG_COMPOUND) : tag.contains("Storage")) {
+            throw new IllegalArgumentException("Invalid storage links in worker settings");
+        }
         if (tag.getInt("Version") >= 3 ? !tag.contains("FishingSpots", Tag.TAG_COMPOUND) : tag.contains("FishingSpots")) {
             throw new IllegalArgumentException("Invalid fishing preferences in worker settings");
         }
         return new SettlementWorkerSettings(role, options, readFilters(tag.getList("Logs", Tag.TAG_STRING)),
                 readFilters(tag.getList("Animals", Tag.TAG_STRING)), overrides,
-                tag.getInt("Version") >= 3 ? HiredFishingSpots.load(tag.getCompound("FishingSpots")) : HiredFishingSpots.AUTOMATIC);
+                tag.getInt("Version") >= 3 ? HiredFishingSpots.load(tag.getCompound("FishingSpots")) : HiredFishingSpots.AUTOMATIC,
+                legacyStorage ? SettlementStorageLinks.AUTOMATIC : SettlementStorageLinks.load(tag.getCompound("Storage")));
     }
 
     private static ListTag filters(Set<ResourceLocation> values) {

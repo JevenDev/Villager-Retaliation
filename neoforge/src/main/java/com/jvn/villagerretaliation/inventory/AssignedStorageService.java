@@ -240,6 +240,36 @@ public final class AssignedStorageService {
         return candidate == null ? List.of(pos.immutable()) : candidate.positions();
     }
 
+    public static boolean containerLoaded(ServerLevel level, BlockPos pos) {
+        if (!level.hasChunkAt(pos)) return false;
+        var state = level.getBlockState(pos);
+        return !(state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock)
+                || state.getValue(net.minecraft.world.level.block.ChestBlock.TYPE) == net.minecraft.world.level.block.state.properties.ChestType.SINGLE
+                || level.hasChunkAt(pos.relative(net.minecraft.world.level.block.ChestBlock.getConnectedDirection(state)));
+    }
+
+    public static List<BlockPos> containerPositions(ServerLevel level, BlockPos pos) {
+        return level != null && pos != null && level.hasChunkAt(pos) ? resolvedContainerPositions(level, pos) : List.of();
+    }
+
+    public static String containerStatus(ServerLevel level, BlockPos pos, String purpose, ServerPlayer actor) {
+        if (!containerLoaded(level, pos)) return "unloaded";
+        if (!isValidContainerForPurpose(level, pos, purpose)) return level.getBlockEntity(pos) == null ? "missing" : "incompatible";
+        if (!PartyContainerLootService.isAvailable(level, pos, actor)) return "inaccessible";
+        var candidate = VillagerInventoryOverflowService.ContainerCandidate.resolve(level, pos);
+        if (candidate == null) return "incompatible";
+        boolean space = false;
+        for (int slot = 0; slot < candidate.container().getContainerSize(); slot++) {
+            var stack = candidate.container().getItem(slot);
+            if (stack.isEmpty() || stack.getCount() < Math.min(stack.getMaxStackSize(), candidate.container().getMaxStackSize())) {
+                space = true;
+                break;
+            }
+        }
+        if (!SUPPLY_PURPOSE.equals(normalizePurpose(purpose)) && !space) return "full";
+        return "available";
+    }
+
     public static boolean isValidContainer(ServerLevel level, BlockPos pos) {
         return level != null
                 && pos != null

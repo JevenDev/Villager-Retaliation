@@ -42,6 +42,7 @@ public final class SettlementLogisticsService {
     public static boolean isHauler(Villager villager) {
         return SettlementWorkforceService.duty(villager)
                 .map(duty -> duty.area().type() == SettlementAreaType.DEPOT
+                        && SettlementStorageService.effective(duty.town(), villager.getUUID()).automatic()
                         && SettlementGuardService.configuredRoute(duty.town(), duty.area(), villager.getUUID()) == null
                         || SettlementTransferService.pending(duty.town(), villager.getUUID()) != null).orElse(false);
     }
@@ -77,7 +78,7 @@ public final class SettlementLogisticsService {
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         List<ItemStack> cargo = inventory.collectOutputItems().stream().map(HiredJobInventory.OutputStack::stack).toList();
         SettlementHaulTask current = task(villager);
-        var links = SettlementWorksiteService.links(town, town.duties().get(villager.getUUID()));
+        var links = SettlementWorksiteService.links(town, town.duties().get(villager.getUUID()), villager.getUUID());
         if (current != null && links.permitsOutput(current.destination())
                 && (!cargo.isEmpty() || links.permitsSupply(current.source())) && valid(level, town, current, !cargo.isEmpty())
                 && (cargo.isEmpty() || cargo.stream().anyMatch(current::matches))) {
@@ -133,7 +134,7 @@ public final class SettlementLogisticsService {
     private static SettlementHaulTask select(ServerLevel level, SettlementRecord town, List<SettlementDepot> depots,
                                              UUID worker, net.minecraft.core.BlockPos position,
                                              java.util.function.Predicate<ItemStack> mayWithdraw, boolean background) {
-        var links = SettlementWorksiteService.links(town, town.duties().get(worker));
+        var links = SettlementWorksiteService.links(town, town.duties().get(worker), worker);
         for (SettlementDepot destination : depots) {
             if (!links.permitsOutput(destination.id())) continue;
             if (destination.stockTargets().isEmpty() && destination.purpose() != SettlementDepotPurpose.FOOD) {

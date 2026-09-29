@@ -80,6 +80,15 @@ public final class SettlementManagementService {
         }
         failure = SettlementManagementValidation.selection(player, town, payload.command());
         if (!failure.isEmpty()) return failure;
+        if (payload.command() instanceof SettlementManagementActionPayload.SaveStorageFilter filter) {
+            return SettlementStorageService.saveFilter(player, town, filter);
+        }
+        if (payload.command() instanceof SettlementManagementActionPayload.StorageFilter filter) {
+            return SettlementStorageService.configureFilter(player, town, filter);
+        }
+        if (payload.command() instanceof SettlementManagementActionPayload.SaveStorage storage) {
+            return SettlementStorageService.configure(player, town, storage);
+        }
         if (payload.command() instanceof SettlementManagementActionPayload.SaveRoute route) {
             return SettlementGuardService.configure(player, town, route);
         }
@@ -99,6 +108,9 @@ public final class SettlementManagementService {
             return false;
         }
         return switch (payload.command()) {
+            case SettlementManagementActionPayload.SaveStorageFilter filter -> SettlementStorageService.saveFilter(player, town, filter).isEmpty();
+            case SettlementManagementActionPayload.StorageFilter filter -> SettlementStorageService.configureFilter(player, town, filter).isEmpty();
+            case SettlementManagementActionPayload.SaveStorage storage -> SettlementStorageService.configure(player, town, storage).isEmpty();
             case SettlementManagementActionPayload.SaveRoute route -> SettlementGuardService.configure(player, town, route).isEmpty();
             case SettlementManagementActionPayload.ClaimPlot plot -> SettlementPlotService.claim(
                     player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price()).isEmpty();
@@ -183,6 +195,10 @@ public final class SettlementManagementService {
             header = assessment.header();
             var issues = assessment.issues();
             switch (request.page()) {
+                case STORAGE -> {
+                    var storage = SettlementStorageService.snapshot(player, town, request.query());
+                    if (storage != null) entries.add(storage);
+                }
                 case ISSUES -> entries.addAll(issues);
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
@@ -207,7 +223,7 @@ public final class SettlementManagementService {
                 }
             }
         }
-        String needle = request.page() == Page.STATIONS ? "" : request.query().strip().toLowerCase(Locale.ROOT);
+        String needle = request.page() == Page.STATIONS || request.page() == Page.STORAGE ? "" : request.query().strip().toLowerCase(Locale.ROOT);
         var matching = entries.stream().filter(entry -> searchable(entry).toLowerCase(Locale.ROOT).contains(needle));
         Comparator<Entry> order = Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(Entry::id);
         if (request.page() == Page.PROJECTS) order = Comparator.<Entry>comparingInt(entry ->
