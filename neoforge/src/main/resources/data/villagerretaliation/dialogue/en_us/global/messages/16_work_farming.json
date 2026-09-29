@@ -556,6 +556,26 @@
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.output_full_blocked.020"
     },
     {
+      "key": "interaction.work.farming.collecting_seeds",
+      "lines": ["I am collecting the selected crop's planting supplies."],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.collecting_seeds"
+    },
+    {
+      "key": "interaction.work.farming.gathered_seeds",
+      "lines": ["I have the planting supplies and am returning to the field."],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.gathered_seeds"
+    },
+    {
+      "key": "interaction.work.farming.seed_storage_unreachable",
+      "lines": ["I cannot reach the assigned storage with planting supplies."],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.seed_storage_unreachable"
+    },
+    {
+      "key": "interaction.work.farming.seed_inventory_full",
+      "lines": ["I need room for planting supplies in my job inventory."],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.seed_inventory_full"
+    },
+    {
       "key": "interaction.work.farming.missing_planting_item",
       "lines": [
         "I need the right seed or crop item before I can harvest and replant that.",

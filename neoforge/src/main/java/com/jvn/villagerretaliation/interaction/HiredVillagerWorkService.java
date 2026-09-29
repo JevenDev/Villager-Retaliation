@@ -1445,7 +1445,8 @@ public final class HiredVillagerWorkService {
         session.context().setProgressTicks(0);
         setStatus(state, "interaction.work.status.farming_option", Map.of(
                 "option", HiredFarmingOptions.label(result.optionId()),
-                "state", result.enabled() ? "enabled" : "disabled"));
+                "state", HiredFarmingOptions.CROP.equals(result.optionId()) ? HiredFarmingOptions.crop(state).label()
+                        : result.enabled() ? "enabled" : "disabled"));
         sendStatusNotice(player, villager, state);
     }
 
@@ -1526,7 +1527,8 @@ public final class HiredVillagerWorkService {
         HiredWorkSession session = HiredWorkSession.active(level, villager);
         HiredWorkPlan.clear(session.context());
         session.context().setProgressTicks(0);
-        setStatus(state, "interaction.work.status.animal_handling_config", animalHandlingReplacements(state));
+        setStatus(state, "interaction.work.status.animal_handling_option", Map.of(
+                "option", HiredAnimalHandlingOptions.label(result.optionId()), "state", result.enabled() ? "enabled" : "disabled"));
         sendStatusNotice(player, villager, state);
     }
 

@@ -290,6 +290,7 @@ public final class SettlementWorkerScreen extends Screen {
             case MINING_MODE -> SettlementManagementScreen.enumText("worker_mining", HiredMiningMode.values()[value]);
             case CRAFTING_MODE -> SettlementManagementScreen.enumText("worker_crafting", CraftsmanWorker.Mode.values()[value]);
             case GUARD_MODE -> SettlementManagementScreen.enumText("worker_guard", HiredCombatMode.values()[value]);
+            case CROP_SELECTION -> Component.literal(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.values()[value].label());
             case CULL_CAP -> value == 0 ? text("disabled") : Component.literal(Integer.toString(HiredAnimalCullSettings.capOptions()[value - 1]));
             default -> text(value == 0 ? "disabled" : "enabled");
         };

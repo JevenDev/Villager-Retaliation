@@ -1336,6 +1336,15 @@
       "id": "global.messages.12_work_status.messages.interaction.work.status.animal_breeding_target.040"
     },
     {
+      "key": "interaction.work.status.animal_handling_option",
+      "lines": [
+        "{option} is now {state}.",
+        "I have set {option} to {state}.",
+        "My {option} setting is {state}."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.animal_handling_option"
+    },
+    {
       "key": "interaction.work.status.animal_handling_config",
       "lines": [
         "I will handle {target}. Shearing is {shearing}. Culling is set to {cap}.",

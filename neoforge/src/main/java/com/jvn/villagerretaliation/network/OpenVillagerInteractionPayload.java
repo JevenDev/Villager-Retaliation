@@ -70,6 +70,9 @@ public record OpenVillagerInteractionPayload(
         boolean activeBuilderTask,
         boolean oneOffBuilderJob,
         boolean farmingTillSoil,
+        boolean farmingPlantCrops,
+        boolean farmingHarvestCrops,
+        com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop farmingCrop,
         boolean huntingAnimals,
         boolean huntingHostiles,
         boolean huntingPlayers,
@@ -82,6 +85,10 @@ public record OpenVillagerInteractionPayload(
         List<String> selectedAnimalBreedingTargets,
         int animalCullCap,
         boolean animalShearing,
+        boolean animalBreeding,
+        boolean animalMilking,
+        boolean animalCollection,
+        boolean animalCulling,
         List<DialogueOptionDefinition> dialogueOptions,
         List<GiftPreferenceView> giftPreferences,
         VillageAllegianceView allegiance,
@@ -158,6 +165,9 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.activeBuilderTask());
         buffer.writeBoolean(payload.oneOffBuilderJob());
         buffer.writeBoolean(payload.farmingTillSoil());
+        buffer.writeBoolean(payload.farmingPlantCrops());
+        buffer.writeBoolean(payload.farmingHarvestCrops());
+        buffer.writeEnum(payload.farmingCrop());
         buffer.writeBoolean(payload.huntingAnimals());
         buffer.writeBoolean(payload.huntingHostiles());
         buffer.writeBoolean(payload.huntingPlayers());
@@ -170,6 +180,10 @@ public record OpenVillagerInteractionPayload(
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.selectedAnimalBreedingTargets());
         buffer.writeVarInt(payload.animalCullCap());
         buffer.writeBoolean(payload.animalShearing());
+        buffer.writeBoolean(payload.animalBreeding());
+        buffer.writeBoolean(payload.animalMilking());
+        buffer.writeBoolean(payload.animalCollection());
+        buffer.writeBoolean(payload.animalCulling());
         DialogueOptionPayloadCodec.writeDialogueOptions(buffer, payload.dialogueOptions());
         DialogueOptionPayloadCodec.writeGiftPreferenceViews(buffer, payload.giftPreferences());
         VillageAllegianceView.encode(buffer, payload.allegiance());
@@ -233,6 +247,9 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
+                buffer.readEnum(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.class),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 DialogueOptionPayloadCodec.readStringList(buffer),
                 buffer.readBoolean(),
@@ -242,6 +259,10 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 DialogueOptionPayloadCodec.readStringList(buffer),
                 buffer.readVarInt(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 DialogueOptionPayloadCodec.readDialogueOptions(buffer),
                 DialogueOptionPayloadCodec.readGiftPreferenceViews(buffer),

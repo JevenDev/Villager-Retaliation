@@ -540,6 +540,14 @@ public final class SettlementViewClientSmoke {
             screen.onClose();
             phase = 100;
         } else if (phase == 100 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            for (var kind : java.util.List.of(SettlementAreaType.FARM, SettlementAreaType.ANIMAL_PEN)) {
+                var area = new com.jvn.villagerretaliation.network.SettlementManagementPayload.Area(
+                        UUID.randomUUID(), "Resource worksite", kind, fixture.center(), fixture.center().offset(3, 2, 3),
+                        5, true, 0, 0, 0);
+                var form = new SettlementWorkerScreen(screen, area, null);
+                form.init(minecraft, screen.width, screen.height);
+                requireButtonsFit(form);
+            }
             UUID player = minecraft.player.getUUID();
             projectFixture = minecraft.getSingleplayerServer().submit(() -> prepareProject(
                     minecraft.getSingleplayerServer().getPlayerList().getPlayer(player))).join();

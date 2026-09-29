@@ -332,6 +332,223 @@ public final class SettlementWorksiteGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worksite_settings")
+    public static void resourceOptionsMigrateOnlyLegacySettings(GameTestHelper helper) {
+        for (var role : List.of(HiredVillagerRole.FARMING, HiredVillagerRole.ANIMAL_HANDLING)) {
+            var defaults = SettlementWorksitePlan.defaults(role).settings();
+            var legacy = defaults.save();
+            legacy.remove("Version");
+            int added = 0;
+            for (var option : SettlementWorkerSetting.values()) {
+                if (option.ordinal() > SettlementWorkerSetting.GUARD_MODE.ordinal() && option.supports(role)) {
+                    legacy.getCompound("Options").remove(option.name());
+                    added |= 1 << option.ordinal();
+                }
+            }
+            legacy.putInt("Overrides", defaults.overrides() & ~added);
+            helper.assertValueEqual(SettlementWorkerSettings.load(legacy), defaults,
+                    "legacy complete settings preserve old behavior for new controls");
+            legacy.putInt("Overrides", 1 << SettlementWorkerSetting.ENABLED.ordinal());
+            var inherited = SettlementWorkerSettings.load(legacy);
+            helper.assertValueEqual(inherited.overrides(), 1 << SettlementWorkerSetting.ENABLED.ordinal(),
+                    "legacy partial overrides inherit newly added options");
+            helper.assertValueEqual(SettlementWorkerSettings.load(inherited.save()), inherited, "migration is durable");
+            var damaged = defaults.save();
+            damaged.getCompound("Options").remove(role == HiredVillagerRole.FARMING ? "PLANT_CROPS" : "BREED_ANIMALS");
+            boolean rejected = false;
+            try {
+                SettlementWorkerSettings.load(damaged);
+            } catch (IllegalArgumentException expected) {
+                rejected = true;
+            }
+            helper.assertTrue(rejected, "current records with missing controls remain damaged");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worksite_settings")
+    public static void personalFarmerControlsNeedOnlyTheContractOwner(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var owner = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "FarmOwner"));
+        var stranger = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "FarmVisitor"));
+        var villager = EntityType.VILLAGER.create(level);
+        var center = helper.absolutePos(new BlockPos(2, 2, 2));
+        var crop = center.east();
+        villager.setPos(center.getCenter());
+        villager.setNoAi(true);
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        helper.assertTrue(level.addFreshEntity(villager), "the personal farmer is loaded");
+        try {
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.HiredVillagerContractService.startHireContract(
+                    level, villager, owner, 2, 8, HiredVillagerRole.FARMING), "the farmer accepts a standalone contract");
+            var state = HiredWorkStateStore.state(villager);
+            state.putBoolean("Enabled", true);
+            state.putBoolean("FarmingTillSoil", false);
+            var inventory = HiredJobInventory.getJobInventory(villager);
+            inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+            inventory.insertPlainSupply(new ItemStack(Items.WHEAT_SEEDS, 2));
+            inventory.insertPlainSupply(new ItemStack(Items.CARROT, 2));
+            var context = new com.jvn.villagerretaliation.interaction.work.HiredWorkContext(inventory, state, center,
+                    center, center.offset(2, 1, 1), 3, 2, true, 100, false, false);
+            var work = new com.jvn.villagerretaliation.interaction.work.FarmingWorker();
+            level.setBlockAndUpdate(crop.below(), net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState());
+            level.setBlockAndUpdate(crop, net.minecraft.world.level.block.Blocks.WHEAT.defaultBlockState());
+            com.jvn.villagerretaliation.interaction.HiredVillagerWorkService.toggleFarmingOption(stranger, level, villager, "crop");
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.crop(state),
+                    com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.ANY, "another player cannot change crop selection");
+            com.jvn.villagerretaliation.interaction.HiredVillagerWorkService.toggleFarmingOption(owner, level, villager, "crop");
+            com.jvn.villagerretaliation.interaction.HiredVillagerWorkService.toggleFarmingOption(owner, level, villager, "crop");
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.crop(state),
+                    com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.CARROT, "the owner selects carrots");
+            work.tick(level, villager, owner, context);
+            helper.assertTrue(level.getBlockState(crop).is(net.minecraft.world.level.block.Blocks.WHEAT), "selection leaves immature wheat growing");
+            level.setBlockAndUpdate(crop, ((net.minecraft.world.level.block.CropBlock) net.minecraft.world.level.block.Blocks.WHEAT).getStateForAge(7));
+            com.jvn.villagerretaliation.interaction.HiredVillagerWorkService.toggleFarmingOption(owner, level, villager, "harvest_crops");
+            state.remove("NextFarmingFieldScanGameTime");
+            work.tick(level, villager, owner, context);
+            helper.assertValueEqual(level.getBlockState(crop).getValue(net.minecraft.world.level.block.CropBlock.AGE), 7,
+                    "disabled harvest leaves mature crops intact");
+            helper.assertFalse(com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge.permitsVanillaHarvest(level, villager),
+                    "vanilla harvesting cannot bypass the worker setting");
+            com.jvn.villagerretaliation.interaction.HiredVillagerWorkService.toggleFarmingOption(owner, level, villager, "harvest_crops");
+            state.remove("NextFarmingFieldScanGameTime");
+            work.tick(level, villager, owner, context);
+            helper.assertTrue(level.getBlockState(crop).is(net.minecraft.world.level.block.Blocks.CARROTS),
+                    "the selected crop replaces wheat only after harvest");
+            com.jvn.villagerretaliation.interaction.HiredVillagerWorkService.toggleFarmingOption(owner, level, villager, "plant_crops");
+            helper.assertFalse(com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge.hasJobPlantingItem(villager, context),
+                    "disabled planting hides otherwise available seeds from native planting");
+            helper.assertTrue(SettlementWorkforceService.duty(villager).isEmpty(), "the farmer remains outside civic administration");
+        } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worksite_settings")
+    public static void backgroundFarmerChangesCropOnlyAfterAllowedHarvest(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.FARM, false);
+        var level = helper.getLevel();
+        var position = fixture.area().min();
+        var chunk = new net.minecraft.world.level.chunk.LevelChunk(level, new net.minecraft.world.level.ChunkPos(position));
+        chunk.getSection(chunk.getSectionIndex(position.getY())).setBlockState(position.getX() & 15, position.getY() & 15,
+                position.getZ() & 15, net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState());
+        chunk.getSection(chunk.getSectionIndex(position.above().getY())).setBlockState(position.getX() & 15,
+                position.above().getY() & 15, position.getZ() & 15,
+                ((net.minecraft.world.level.block.CropBlock) net.minecraft.world.level.block.Blocks.WHEAT).getStateForAge(7));
+        var savedPlot = SettlementFieldPlot.capture(level, fixture.area().id(), position, chunk, 0L).save();
+        savedPlot.putInt("BlockLight", 15);
+        var plot = SettlementFieldPlot.load(savedPlot);
+        fixture.town().recordField(plot);
+        var worker = fixture.town().workers().get(fixture.villager().getUUID());
+        var items = worker.items(level.registryAccess());
+        items.set(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        items.set(worker.supplySlots().getFirst(), new ItemStack(Items.CARROT, 2));
+        worker.updateInventory(level.registryAccess(), items);
+        worker.settings().putBoolean("AutoDepositOutputs", false);
+        worker.settings().putBoolean("FarmingHarvestCrops", false);
+        worker.settings().putString("FarmingCrop", "CARROT");
+        SettlementBackgroundFarming.tick(level, fixture.town(), worker, 200, 1.0D);
+        helper.assertTrue(plot.harvestable(), "a disabled background harvest leaves mature wheat");
+        worker.settings().putBoolean("FarmingHarvestCrops", true);
+        SettlementBackgroundFarming.tick(level, fixture.town(), worker, 200, 1.0D);
+        helper.assertTrue(plot.crop().is(net.minecraft.world.level.block.Blocks.CARROTS), "background work plants the selected crop");
+        helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.CARROT))
+                .mapToInt(ItemStack::getCount).sum(), 1, "replanting consumes exactly one selected carrot");
+        helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.WHEAT))
+                .mapToInt(ItemStack::getCount).sum(), 1, "harvesting produces one native wheat yield");
+        worker.settings().putBoolean("FarmingPlantCrops", false);
+        plot.change(plot.soil(), ((net.minecraft.world.level.block.CropBlock) net.minecraft.world.level.block.Blocks.WHEAT).getStateForAge(7));
+        SettlementBackgroundFarming.tick(level, fixture.town(), worker, 200, 1.0D);
+        helper.assertTrue(plot.crop().isAir(), "harvesting without planting leaves a vacant plot");
+        helper.assertFalse(level.hasChunkAt(position), "crop controls do not load the field");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worksite_settings")
+    public static void backgroundAnimalControlsKeepBreedingProductsAndCollectionIndependent(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.ANIMAL_PEN, false);
+        var level = helper.getLevel();
+        var worker = fixture.town().workers().get(fixture.villager().getUUID());
+        var position = fixture.area().min().east().south();
+        var cow = EntityType.COW.create(level);
+        cow.setPos(position.getCenter());
+        var livestock = SettlementLivestock.capture(cow, fixture.area().id(), 0L);
+        livestock.access(worker.id(), worker.position(), 0);
+        fixture.town().recordLivestock(livestock);
+        var egg = new net.minecraft.world.entity.item.ItemEntity(level, position.getX(), position.getY(), position.getZ(), new ItemStack(Items.EGG, 3));
+        var drop = SettlementItemDrop.create(egg, fixture.area().id(), 0L);
+        drop.access(worker, 0);
+        fixture.town().recordItemDrop(drop);
+        var items = worker.items(level.registryAccess());
+        items.set(worker.supplySlots().getFirst(), new ItemStack(Items.BUCKET, 2));
+        worker.updateInventory(level.registryAccess(), items);
+        worker.settings().putBoolean("AutoDepositOutputs", false);
+        for (String option : List.of("breed", "milk", "collect", "cull", "shear_sheep")) {
+            com.jvn.villagerretaliation.interaction.work.HiredAnimalHandlingOptions.toggle(worker.settings(), option);
+        }
+        for (int step = 0; step < 8; step++) SettlementBackgroundAnimalHandling.tick(level, fixture.town(), worker, 200, 1.0D);
+        helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.BUCKET))
+                .mapToInt(ItemStack::getCount).sum(), 2, "disabled milking preserves buckets");
+        helper.assertTrue(fixture.town().itemDrops().containsKey(drop.id()), "disabled collection leaves observed eggs");
+        com.jvn.villagerretaliation.interaction.work.HiredAnimalHandlingOptions.toggle(worker.settings(), "milk");
+        for (int step = 0; step < 8; step++) SettlementBackgroundAnimalHandling.tick(level, fixture.town(), worker, 200, 1.0D);
+        helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.MILK_BUCKET))
+                .mapToInt(ItemStack::getCount).sum(), 2, "milking resumes using only the two real buckets");
+        helper.assertTrue(fixture.town().itemDrops().containsKey(drop.id()), "milking does not enable collection");
+        com.jvn.villagerretaliation.interaction.work.HiredAnimalHandlingOptions.toggle(worker.settings(), "collect");
+        for (int step = 0; step < 8; step++) SettlementBackgroundAnimalHandling.tick(level, fixture.town(), worker, 200, 1.0D);
+        helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.EGG))
+                .mapToInt(ItemStack::getCount).sum(), 3, "collection consumes the one observed egg stack");
+        helper.assertFalse(level.hasChunkAt(position), "animal controls do not load the pen");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worksite_settings")
+    public static void selectedCropFetchesOnlyLinkedSeeds(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.FARM, true);
+        var level = helper.getLevel();
+        try {
+            var town = fixture.town();
+            var source = town.registerDepot(town.leader(), fixture.area().id(), fixture.area().min(), SettlementDepotPurpose.GENERAL);
+            var other = town.registerDepot(town.leader(), fixture.area().id(), fixture.area().min().south(), SettlementDepotPurpose.GENERAL);
+            for (var depot : List.of(source, other)) {
+                level.setBlockAndUpdate(depot.position(), com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+                ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(depot.position())).bind(town.id(), depot.id());
+            }
+            fixture.villager().setPos(fixture.area().min().east().south().getCenter());
+            source.observeRules(List.of());
+            other.observeRules(List.of());
+            other.setItem(0, new ItemStack(Items.CARROT, 8));
+            var settings = SettlementWorksitePlan.defaults(HiredVillagerRole.FARMING).settings()
+                    .with(SettlementWorkerSetting.CROP_SELECTION, 2).with(SettlementWorkerSetting.TILL_SOIL, 0);
+            helper.assertTrue(SettlementWorksiteService.configure(fixture.leader(), town, fixture.area().id(),
+                    new SettlementWorksitePlan(settings, 1, new SettlementWorksiteLinks(Set.of(source.id()), Set.of(), Set.of())), true),
+                    "the farmer adopts a selected crop and source");
+            SettlementWorksiteService.reset(fixture.leader(), town, fixture.villager().getUUID(), fixture.area().id(),
+                    SettlementWorkerSettings.allOverrides(HiredVillagerRole.FARMING));
+            var context = com.jvn.villagerretaliation.interaction.HiredWorkSession.active(level, fixture.villager()).context();
+            context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+            var crop = fixture.area().min().east();
+            level.setBlockAndUpdate(crop.below(), net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState());
+            var work = new com.jvn.villagerretaliation.interaction.work.FarmingWorker();
+            var missing = work.tick(level, fixture.villager(), fixture.leader(), context);
+            helper.assertValueEqual(missing.status(), "interaction.work.farming.missing_planting_item",
+                    "seeds in an unlinked depot do not satisfy the selected crop");
+            source.setItem(0, new ItemStack(Items.CARROT, 3));
+            var fetched = work.tick(level, fixture.villager(), fixture.leader(), context);
+            helper.assertValueEqual(fetched.status(), "interaction.work.farming.gathered_seeds", "the farmer collects real linked seeds");
+            helper.assertValueEqual(source.count(stack -> stack.is(Items.CARROT)), 0, "fetching consumes the finite linked supply");
+            helper.assertValueEqual(other.count(stack -> stack.is(Items.CARROT)), 8, "unlinked seeds remain untouched");
+            work.tick(level, fixture.villager(), fixture.leader(), context);
+            helper.assertTrue(level.getBlockState(crop).is(net.minecraft.world.level.block.Blocks.CARROTS),
+                    "the farmer returns and plants the selected crop");
+        } finally {
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
     private static SettlementWorkerSettings snapshot(GameTestHelper helper, Fixture fixture) {
         return SettlementWorkerConfigurationService.snapshot(helper.getLevel(), fixture.town(), fixture.villager().getUUID());
     }

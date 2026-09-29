@@ -38,13 +38,14 @@ final class SettlementBackgroundFarming {
                         && area.type() == SettlementAreaType.FARM && SettlementFieldService.serves(area, plot))
                 .sorted(Comparator.comparingInt(SettlementBackgroundFarming::priority)
                         .thenComparingDouble(plot -> plot.position().distSqr(worker.position()))).toList();
+        boolean missingSeeds = false;
         for (var plot : plots) {
             if (!SettlementFieldService.available(level, plot)) {
                 continue;
             }
             BlockState crop = plot.crop();
-            boolean harvest = plot.harvestable();
-            boolean plant = plot.canPlant();
+            boolean harvest = plot.harvestable() && HiredFarmingOptions.harvestCrops(worker.settings());
+            boolean plant = plot.canPlant() && HiredFarmingOptions.plantCrops(worker.settings());
             boolean till = crop.isAir() && !plot.soil().is(Blocks.FARMLAND) && SettlementFieldPlot.supportedSoil(plot.soil())
                     && HiredFarmingOptions.tillSoil(worker.settings());
             if (!harvest && !plant && !till) {
@@ -71,10 +72,11 @@ final class SettlementBackgroundFarming {
             var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
             int selected = -1;
             ItemStack seed = ItemStack.EMPTY;
-            boolean replant = plot.canReplant() && (!harvest || crop.getBlock() instanceof CropBlock);
+            boolean replant = HiredFarmingOptions.plantCrops(worker.settings()) && plot.canReplant()
+                    && (!harvest || crop.getBlock() instanceof CropBlock);
             if (harvest && replant) {
                 for (ItemStack drop : drops) {
-                    if (plantFor(drop) != null) {
+                    if (plantFor(drop) != null && HiredFarmingOptions.permitsSeed(worker.settings(), drop)) {
                         seed = drop.copyWithCount(1);
                         drop.shrink(1);
                         break;
@@ -85,7 +87,7 @@ final class SettlementBackgroundFarming {
                 List<Integer> consumed = new ArrayList<>(java.util.Collections.nCopies(supplies.size(), 0));
                 for (int index = 0; index < supplies.size(); index++) {
                     var source = supplies.get(index);
-                    if (plantFor(source.available()) == null) {
+                    if (plantFor(source.available()) == null || !HiredFarmingOptions.permitsSeed(worker.settings(), source.available())) {
                         continue;
                     }
                     consumed.set(index, 1);
@@ -103,6 +105,7 @@ final class SettlementBackgroundFarming {
                 }
             }
             if (!harvest && seed.isEmpty()) {
+                missingSeeds |= HiredFarmingOptions.crop(worker.settings()) != HiredFarmingOptions.Crop.ANY;
                 continue;
             }
             if (!storeDrops(worker, updated, drops)) {
@@ -127,7 +130,7 @@ final class SettlementBackgroundFarming {
             return;
         }
         if (autoDeposit && depositBatch(level, town, worker, elapsed, multiplier, depots)) return;
-        worker.status(plots.isEmpty() ? "no_observed_field" : "waiting_for_crops");
+        worker.status(missingSeeds ? "missing_planting_item" : plots.isEmpty() ? "no_observed_field" : "waiting_for_crops");
     }
 
     private static boolean depositBatch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,

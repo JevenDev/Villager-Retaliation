@@ -37,7 +37,8 @@ final class SettlementBackgroundAnimalHandling {
         var inventory = HiredJobInventory.getJobInventory(owner);
         var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
         try {
-            if (SettlementItemDropService.collect(level, town, worker, owner, inventory, budget,
+            if (HiredAnimalHandlingOptions.collect(worker.settings())
+                    && SettlementItemDropService.collect(level, town, worker, owner, inventory, budget,
                     stack -> stack.is(Items.EGG) || AnimalBreedingWorker.isAnimalDrop(stack))) return;
             if (SettlementBackgroundCulling.tick(level, town, worker, owner, inventory, depots, budget)) return;
             var feeding = SettlementBackgroundBreeding.feed(level, town, worker, inventory, depots, budget);
@@ -53,7 +54,7 @@ final class SettlementBackgroundAnimalHandling {
                     var current = candidate.context(level);
                     if (current != null && current.isAlive() && !current.isBaby() && HiredAnimalBreedingTargets.matches(current, selected)
                             && (current instanceof Sheep sheep && HiredAnimalHandlingOptions.shearSheep(worker.settings())
-                                    && sheep.readyForShearing() || AnimalBreedingWorker.isMilkable(current))) {
+                                    && sheep.readyForShearing() || HiredAnimalHandlingOptions.milk(worker.settings()) && AnimalBreedingWorker.isMilkable(current))) {
                         target = candidate;
                         animal = current;
                         break;

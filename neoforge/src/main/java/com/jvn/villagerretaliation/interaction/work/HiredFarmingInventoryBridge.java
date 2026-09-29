@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
+import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.ArrayList;
@@ -125,12 +126,12 @@ public final class HiredFarmingInventoryBridge {
     }
 
     public static boolean hasJobPlantingItem(Villager villager, HiredWorkContext context) {
-        return hasPlantingItem(villager, context.inventory());
+        return !plantingSlots(villager, context.inventory(), context.state()).isEmpty();
     }
 
     public static boolean hasPlantingItem(ServerLevel level, Villager villager) {
         HiredWorkSession session = activeFarmingSession(level, villager);
-        return session == null ? villager.hasFarmSeeds() : hasPlantingItem(villager, session.inventory());
+        return session == null ? villager.hasFarmSeeds() : hasJobPlantingItem(villager, session.context());
     }
 
     public static SimpleContainer plantingInventory(ServerLevel level, Villager villager) {
@@ -138,7 +139,7 @@ public final class HiredFarmingInventoryBridge {
         if (session == null) {
             return villager.getInventory();
         }
-        JobPlantingContainer container = new JobPlantingContainer(session.inventory(), plantingSlots(villager, session.inventory()));
+        JobPlantingContainer container = new JobPlantingContainer(session.inventory(), plantingSlots(villager, session.inventory(), session.state()).stream().mapToInt(Integer::intValue).toArray());
         ACTIVE_PLANTING_CONTAINER.set(container);
         return container;
     }
@@ -169,7 +170,7 @@ public final class HiredFarmingInventoryBridge {
             HiredWorkContext context,
             BlockPos cropPos) {
         HiredJobInventory inventory = context.inventory();
-        for (int slot : plantingSlots(villager, inventory)) {
+        for (int slot : plantingSlots(villager, inventory, context.state())) {
             ItemStack stack = inventory.getItem(slot);
             if (stack.isEmpty()) {
                 continue;
@@ -183,7 +184,7 @@ public final class HiredFarmingInventoryBridge {
     }
 
     public static ItemStack plantingItem(Villager villager, HiredWorkContext context) {
-        for (int slot : plantingSlots(villager, context.inventory())) {
+        for (int slot : plantingSlots(villager, context.inventory(), context.state())) {
             ItemStack stack = context.inventory().getItem(slot);
             if (!stack.isEmpty()) {
                 return stack.copyWithCount(1);
@@ -277,11 +278,6 @@ public final class HiredFarmingInventoryBridge {
         return inventory.canStorePlainOutputs(List.of(sample));
     }
 
-    private static boolean hasPlantingItem(Villager villager, HiredJobInventory inventory) {
-        return countPlantingItems(villager, inventory.supplySlots(), inventory) > 0
-                || countPlantingItems(villager, inventory.outputSlots(), inventory) > 0;
-    }
-
     private static int countPlantingItems(Villager villager, List<Integer> slots, HiredJobInventory inventory) {
         int count = 0;
         for (int slot : slots) {
@@ -293,22 +289,26 @@ public final class HiredFarmingInventoryBridge {
         return count;
     }
 
-    private static boolean isPlantingItem(Villager villager, ItemStack stack) {
+    static boolean isPlantingItem(Villager villager, ItemStack stack) {
         return !stack.isEmpty()
                 && (stack.is(ItemTags.VILLAGER_PLANTABLE_SEEDS)
                 || stack.getItem() instanceof SpecialPlantable specialPlantable
                 && specialPlantable.villagerCanPlantItem(villager));
     }
 
-    private static int[] plantingSlots(Villager villager, HiredJobInventory inventory) {
+    private static List<Integer> plantingSlots(Villager villager, HiredJobInventory inventory, net.minecraft.nbt.CompoundTag state) {
         ArrayList<Integer> slots = new ArrayList<>();
         addPlantingSlots(villager, inventory, inventory.supplySlots(), slots);
         addPlantingSlots(villager, inventory, inventory.outputSlots(), slots);
-        int[] result = new int[slots.size()];
-        for (int i = 0; i < slots.size(); i++) {
-            result[i] = slots.get(i);
-        }
-        return result;
+        slots.removeIf(slot -> !HiredFarmingOptions.permitsSeed(state, inventory.getItem(slot)));
+        return slots;
+    }
+
+    public static boolean permitsVanillaHarvest(ServerLevel level, Villager villager) {
+        if (!com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(villager)
+                || HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.FARMING) return true;
+        var state = HiredWorkStateStore.state(villager);
+        return state.getBoolean("Enabled") && HiredFarmingOptions.harvestCrops(state);
     }
 
     private static void addPlantingSlots(

@@ -20,9 +20,14 @@ public abstract class HarvestFarmlandMixin {
             ServerLevel level,
             Villager owner,
             CallbackInfoReturnable<Boolean> cir) {
-        if (!FarmerHoeRequirement.hasHoe(owner)) {
+        if (!FarmerHoeRequirement.hasHoe(owner) || !HiredFarmingInventoryBridge.permitsVanillaHarvest(level, owner)) {
             cir.setReturnValue(false);
         }
+    }
+
+    @Inject(method = "tick(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/npc/Villager;J)V", at = @At("HEAD"), cancellable = true)
+    private void villagerretaliation$respectHarvestControl(ServerLevel level, Villager owner, long gameTime, CallbackInfo ci) {
+        if (!HiredFarmingInventoryBridge.permitsVanillaHarvest(level, owner)) ci.cancel();
     }
 
     @Redirect(

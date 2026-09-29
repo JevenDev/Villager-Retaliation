@@ -29,7 +29,14 @@ public enum SettlementWorkerSetting {
     MINING_MODE(HiredMiningMode.STATE_TAG, 0, HiredVillagerRole.MINING),
     PATCH_FLOOR(MiningHorizontalOptions.PATCH_FLOOR_TAG, 1, HiredVillagerRole.MINING),
     CRAFTING_MODE("CraftsmanMode", 0, HiredVillagerRole.CRAFTSMAN),
-    GUARD_MODE(HiredCombatMode.STATE_TAG, 0, HiredVillagerRole.COMBAT);
+    GUARD_MODE(HiredCombatMode.STATE_TAG, 0, HiredVillagerRole.COMBAT),
+    PLANT_CROPS(HiredFarmingOptions.PLANT_CROPS_TAG, 1, HiredVillagerRole.FARMING),
+    HARVEST_CROPS(HiredFarmingOptions.HARVEST_CROPS_TAG, 1, HiredVillagerRole.FARMING),
+    CROP_SELECTION(HiredFarmingOptions.CROP_TAG, 0, HiredVillagerRole.FARMING),
+    BREED_ANIMALS(HiredAnimalHandlingOptions.BREED_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING),
+    MILK_ANIMALS(HiredAnimalHandlingOptions.MILK_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING),
+    COLLECT_ANIMAL_DROPS(HiredAnimalHandlingOptions.COLLECT_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING),
+    CULL_ANIMALS(HiredAnimalHandlingOptions.CULL_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING);
 
     private final String tag;
     private final int defaultValue;
@@ -54,6 +61,7 @@ public enum SettlementWorkerSetting {
             case MINING_MODE -> HiredMiningMode.values().length;
             case CRAFTING_MODE -> CraftsmanWorker.Mode.values().length;
             case GUARD_MODE -> 2;
+            case CROP_SELECTION -> HiredFarmingOptions.Crop.values().length;
             default -> 2;
         };
     }
@@ -72,6 +80,7 @@ public enum SettlementWorkerSetting {
                 }
                 yield value;
             }
+            case CROP_SELECTION -> HiredFarmingOptions.crop(state).ordinal();
             case MINING_MODE -> HiredMiningMode.fromState(state).ordinal();
             case CRAFTING_MODE -> CraftsmanWorker.mode(state).ordinal();
             case GUARD_MODE -> HiredCombatMode.fromState(state) == HiredCombatMode.GUARD ? 0 : 1;
@@ -87,6 +96,7 @@ public enum SettlementWorkerSetting {
         }
         switch (this) {
             case CULL_CAP -> HiredAnimalCullSettings.setCap(state, value == 0 ? 0 : HiredAnimalCullSettings.capOptions()[value - 1]);
+            case CROP_SELECTION -> state.putString(this.tag, HiredFarmingOptions.Crop.values()[value].name());
             case MINING_MODE -> state.putString(this.tag, HiredMiningMode.values()[value].serializedName());
             case CRAFTING_MODE -> {
                 if (read(state) != value) {

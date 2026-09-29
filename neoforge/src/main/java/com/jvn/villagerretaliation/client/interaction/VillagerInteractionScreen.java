@@ -342,6 +342,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean activeBuilderTask;
     private boolean oneOffBuilderJob;
     private boolean farmingTillSoil;
+    private boolean farmingPlantCrops;
+    private boolean farmingHarvestCrops;
+    private HiredFarmingOptions.Crop farmingCrop;
     private boolean huntingAnimals;
     private boolean huntingHostiles;
     private boolean huntingPlayers;
@@ -354,6 +357,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final Set<String> selectedAnimalBreedingTargets = new LinkedHashSet<>();
     private int animalCullCap;
     private boolean animalShearing;
+    private boolean animalBreeding;
+    private boolean animalMilking;
+    private boolean animalCollection;
+    private boolean animalCulling;
     private boolean forceCameraTowardsVillager;
     private OpenVillagerDuelPayload duelStatus;
     private ResourceLocation duelKitId = DuelLoadout.BARE_HANDED.id();
@@ -500,6 +507,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean activeBuilderTask,
             boolean oneOffBuilderJob,
             boolean farmingTillSoil,
+            boolean farmingPlantCrops,
+            boolean farmingHarvestCrops,
+            com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop farmingCrop,
             boolean huntingAnimals,
             boolean huntingHostiles,
             boolean huntingPlayers,
@@ -512,6 +522,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             List<String> selectedAnimalBreedingTargets,
             int animalCullCap,
             boolean animalShearing,
+            boolean animalBreeding,
+            boolean animalMilking,
+            boolean animalCollection,
+            boolean animalCulling,
             List<DialogueOptionDefinition> dialogueOptions,
             List<GiftPreferenceView> giftPreferences,
             VillageAllegianceView allegiance,
@@ -567,6 +581,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.activeBuilderTask = activeBuilderTask;
         this.oneOffBuilderJob = oneOffBuilderJob;
         this.farmingTillSoil = farmingTillSoil;
+        this.farmingPlantCrops = farmingPlantCrops;
+        this.farmingHarvestCrops = farmingHarvestCrops;
+        this.farmingCrop = farmingCrop;
         this.huntingAnimals = huntingAnimals;
         this.huntingHostiles = huntingHostiles;
         this.huntingPlayers = huntingPlayers;
@@ -585,6 +602,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 ? animalCullCap
                 : HiredAnimalCullSettings.DISABLED_CAP;
         this.animalShearing = animalShearing;
+        this.animalBreeding = animalBreeding;
+        this.animalMilking = animalMilking;
+        this.animalCollection = animalCollection;
+        this.animalCulling = animalCulling;
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.giftPreferences.addAll(giftPreferences);
@@ -1811,6 +1832,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addFarmingOptions() {
         addFarmingOption(HiredFarmingOptions.TILL_SOIL, "recruit.farming_till_soil", this.farmingTillSoil);
+        addFarmingOption(HiredFarmingOptions.PLANT_CROPS, "recruit.farming_plant_crops", this.farmingPlantCrops);
+        addFarmingOption(HiredFarmingOptions.HARVEST_CROPS, "recruit.farming_harvest_crops", this.farmingHarvestCrops);
+        this.options.add(DialogueOption.enabled(translate("recruit.farming_crop", this.farmingCrop.label()),
+                () -> requestFarmingOption(HiredFarmingOptions.CROP)));
         addOption("recruit.nevermind", this::openWorkPage);
     }
 
@@ -1828,6 +1853,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate("recruit.animal_shearing"),
                 this.animalShearing,
                 () -> requestAnimalHandlingOption(HiredAnimalHandlingOptions.SHEAR_SHEEP)));
+        this.options.add(DialogueOption.checkbox(translate("recruit.animal_breeding"), this.animalBreeding,
+                () -> requestAnimalHandlingOption(HiredAnimalHandlingOptions.BREED)));
+        this.options.add(DialogueOption.checkbox(translate("recruit.animal_milking"), this.animalMilking,
+                () -> requestAnimalHandlingOption(HiredAnimalHandlingOptions.MILK)));
+        this.options.add(DialogueOption.checkbox(translate("recruit.animal_collection"), this.animalCollection,
+                () -> requestAnimalHandlingOption(HiredAnimalHandlingOptions.COLLECT)));
+        this.options.add(DialogueOption.checkbox(translate("recruit.animal_culling"), this.animalCulling,
+                () -> requestAnimalHandlingOption(HiredAnimalHandlingOptions.CULL)));
         this.options.add(DialogueOption.enabled(
                 translate("recruit.animal_cull_cap", animalCullCapLabel(this.animalCullCap)),
                 this::openAnimalCullCapsPage));
@@ -2976,10 +3009,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void requestFarmingOption(String optionId) {
         sendToServer(new HiredFarmingOptionPayload(this.villagerEntityId, optionId));
-        if (HiredFarmingOptions.TILL_SOIL.equals(optionId)) {
-            this.farmingTillSoil = !this.farmingTillSoil;
-            rebuildOptionsKeepingListPosition();
+        switch (optionId) {
+            case HiredFarmingOptions.TILL_SOIL -> this.farmingTillSoil = !this.farmingTillSoil;
+            case HiredFarmingOptions.PLANT_CROPS -> this.farmingPlantCrops = !this.farmingPlantCrops;
+            case HiredFarmingOptions.HARVEST_CROPS -> this.farmingHarvestCrops = !this.farmingHarvestCrops;
+            case HiredFarmingOptions.CROP -> this.farmingCrop = HiredFarmingOptions.Crop.values()[(this.farmingCrop.ordinal() + 1) % HiredFarmingOptions.Crop.values().length];
+            default -> { return; }
         }
+        rebuildOptionsKeepingListPosition();
     }
 
     private void requestHuntingTarget(String targetId) {
@@ -3010,11 +3047,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void requestAnimalHandlingOption(String optionId) {
-        if (!HiredAnimalHandlingOptions.SHEAR_SHEEP.equals(optionId)) {
-            return;
+        switch (optionId) {
+            case HiredAnimalHandlingOptions.SHEAR_SHEEP -> this.animalShearing = !this.animalShearing;
+            case HiredAnimalHandlingOptions.BREED -> this.animalBreeding = !this.animalBreeding;
+            case HiredAnimalHandlingOptions.MILK -> this.animalMilking = !this.animalMilking;
+            case HiredAnimalHandlingOptions.COLLECT -> this.animalCollection = !this.animalCollection;
+            case HiredAnimalHandlingOptions.CULL -> this.animalCulling = !this.animalCulling;
+            default -> { return; }
         }
         sendToServer(new HiredAnimalHandlingOptionPayload(this.villagerEntityId, optionId));
-        this.animalShearing = !this.animalShearing;
         rebuildOptionsKeepingListPosition();
     }
 

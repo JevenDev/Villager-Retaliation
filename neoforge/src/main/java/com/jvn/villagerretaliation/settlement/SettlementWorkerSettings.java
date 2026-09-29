@@ -168,6 +168,7 @@ public final class SettlementWorkerSettings {
 
     private CompoundTag encode() {
         CompoundTag tag = new CompoundTag();
+        tag.putInt("Version", 2);
         tag.putString("Role", this.role.name());
         CompoundTag settings = new CompoundTag();
         this.options.forEach((key, value) -> settings.putInt(key.name(), value));
@@ -182,6 +183,9 @@ public final class SettlementWorkerSettings {
         if (tag.contains("Overrides") && !tag.contains("Overrides", Tag.TAG_INT)) {
             throw new IllegalArgumentException("Worker overrides must be an integer");
         }
+        if (tag.contains("Version") && (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 2)) {
+            throw new IllegalArgumentException("Unsupported worker settings version");
+        }
         var role = HiredVillagerRole.valueOf(tag.getString("Role"));
         var options = new EnumMap<SettlementWorkerSetting, Integer>(SettlementWorkerSetting.class);
         CompoundTag values = tag.getCompound("Options");
@@ -191,9 +195,20 @@ public final class SettlementWorkerSettings {
             }
             options.put(SettlementWorkerSetting.valueOf(key), values.getInt(key));
         }
+        int overrides = tag.contains("Overrides", Tag.TAG_INT) ? tag.getInt("Overrides") : allOverrides(role);
+        if (!tag.contains("Version")) {
+            int added = 0;
+            for (var setting : SettlementWorkerSetting.values()) {
+                if (setting.ordinal() > SettlementWorkerSetting.GUARD_MODE.ordinal() && setting.supports(role)) {
+                    if (options.containsKey(setting)) throw new IllegalArgumentException("Unversioned worker option");
+                    options.put(setting, setting.read(new CompoundTag()));
+                    added |= 1 << setting.ordinal();
+                }
+            }
+            if ((overrides | added) == allOverrides(role)) overrides |= added;
+        }
         return new SettlementWorkerSettings(role, options, readFilters(tag.getList("Logs", Tag.TAG_STRING)),
-                readFilters(tag.getList("Animals", Tag.TAG_STRING)),
-                tag.contains("Overrides", Tag.TAG_INT) ? tag.getInt("Overrides") : allOverrides(role));
+                readFilters(tag.getList("Animals", Tag.TAG_STRING)), overrides);
     }
 
     private static ListTag filters(Set<ResourceLocation> values) {

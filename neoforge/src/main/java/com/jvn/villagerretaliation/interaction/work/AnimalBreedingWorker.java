@@ -120,22 +120,23 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             }
         }
 
-        WorkResult cullResult = cullExcessAnimals(level, villager, context);
+        WorkResult cullResult = HiredAnimalHandlingOptions.cull(context.state()) ? cullExcessAnimals(level, villager, context) : null;
         if (cullResult != null) {
             return cullResult;
         }
 
-        WorkResult eggResult = collectGroundEggs(level, villager, context);
+        WorkResult eggResult = HiredAnimalHandlingOptions.collect(context.state()) ? collectGroundEggs(level, villager, context) : null;
         if (eggResult != null) {
             return eggResult;
         }
 
-        WorkResult animalDropResult = collectAnimalDrops(level, villager, context);
+        WorkResult animalDropResult = HiredAnimalHandlingOptions.collect(context.state()) ? collectAnimalDrops(level, villager, context) : null;
         if (animalDropResult != null) {
             return animalDropResult;
         }
 
-        BreedingSearch search = findBreedingPair(level, villager, context);
+        BreedingSearch search = HiredAnimalHandlingOptions.breed(context.state())
+                ? findBreedingPair(level, villager, context) : new BreedingSearch(null, false, false);
         if (search.pair() == null) {
             AnimalProductTarget productTarget = findAnimalProductTarget(level, villager, context);
             if (productTarget != null) {
@@ -839,7 +840,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             if (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing()) {
                 return AnimalProductTarget.shearing(sheep);
             }
-            if (isMilkable(animal)) {
+            if (HiredAnimalHandlingOptions.milk(context.state()) && isMilkable(animal)) {
                 return AnimalProductTarget.milking(animal);
             }
         }
@@ -868,7 +869,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && context.isLoaded(level, animal.blockPosition())
                 && !HiredPathMemory.isAvoided(level, villager, animal.blockPosition())
                 && HiredAnimalBreedingTargets.matches(animal, selectedTargets)
-                && (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing() || isMilkable(animal));
+                && (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing()
+                        || HiredAnimalHandlingOptions.milk(context.state()) && isMilkable(animal));
     }
 
     public static void rememberHandledAnimals(CompoundTag state, long gameTime, Animal first, Animal second) {

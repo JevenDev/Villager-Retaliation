@@ -18,6 +18,7 @@ final class SettlementBackgroundBreeding {
 
     static Result feed(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory,
                        List<SettlementDepot> depots, SettlementWorkBudget budget) {
+        if (!com.jvn.villagerretaliation.interaction.work.HiredAnimalHandlingOptions.breed(worker.settings())) return Result.NONE;
         var area = town.areas().get(worker.area());
         var selected = HiredAnimalBreedingTargets.selectedTargetIds(worker.settings());
         var animals = new ArrayList<Candidate>();

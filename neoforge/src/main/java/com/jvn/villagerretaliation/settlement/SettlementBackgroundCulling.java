@@ -22,6 +22,7 @@ final class SettlementBackgroundCulling {
 
     static boolean tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, Villager owner,
                         HiredJobInventory inventory, List<SettlementDepot> depots, SettlementWorkBudget budget) {
+        if (!com.jvn.villagerretaliation.interaction.work.HiredAnimalHandlingOptions.cull(worker.settings())) return false;
         int cap = HiredAnimalCullSettings.cap(worker.settings());
         if (cap <= HiredAnimalCullSettings.DISABLED_CAP) return false;
         var area = town.areas().get(worker.area());
