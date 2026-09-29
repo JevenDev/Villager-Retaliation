@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.settlement;
 
-import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
+import com.jvn.villagerretaliation.interaction.HiredWorkerFacts;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
@@ -13,8 +13,6 @@ record SettlementWorkStatus(String status, String diagnostic) {
     static SettlementWorkStatus observe(ServerLevel level, Villager villager) {
         var session = HiredWorkSession.active(level, villager);
         var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
-        if (brain.failureReason().startsWith("temporary_task_") || brain.failureReason().startsWith("fishing_") || brain.failureReason().startsWith("transfer_")) return new SettlementWorkStatus(brain.failureReason(),
-                SettlementWorkerDiagnostics.describe(brain.failureReason()));
         if (villager.isSleeping() || brain.status().equals("interaction.work.status.sleeping")
                 || brain.status().equals("interaction.work.status.tired")) return new SettlementWorkStatus("resting", "");
         if (brain.taskState() == HiredWorkerTaskState.MOVING_TO_TARGET || brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA)
@@ -28,11 +26,16 @@ record SettlementWorkStatus(String status, String diagnostic) {
         if (brain.status().endsWith(".no_crafting_table") || brain.status().equals("interaction.work.craftsman.no_table")) return new SettlementWorkStatus("no_crafting_table", "");
         if (brain.status().equals("interaction.work.cooking.no_station")) return new SettlementWorkStatus("no_furnace", "");
         if (brain.failureReason().endsWith("_profession_required")) return new SettlementWorkStatus("profession_required", "");
-        var preview = ClipboardWorkforceService.workPreview(session, brain);
-        String status = !preview.diagnostic().isBlank() && (brain.taskState() == HiredWorkerTaskState.SELECTING_TARGET
-                || preview.status() == WorkerStatus.WAITING
-                || preview.status() == WorkerStatus.UNKNOWN)
-                ? "needs_attention" : "workforce." + preview.status().name().toLowerCase(Locale.ROOT);
-        return new SettlementWorkStatus(status, preview.diagnostic());
+        var facts = HiredWorkerFacts.observe(session, brain);
+        String diagnostic = SettlementWorkerDiagnostics.describe(facts);
+        if (facts.canBeBlocked() && (facts.blocker().startsWith("temporary_task_")
+                || facts.blocker().startsWith("fishing_") || facts.blocker().startsWith("transfer_"))) {
+            return new SettlementWorkStatus(facts.blocker(), diagnostic);
+        }
+        String status = !diagnostic.isBlank() && (brain.taskState() == HiredWorkerTaskState.SELECTING_TARGET
+                || facts.status() == WorkerStatus.WAITING
+                || facts.status() == WorkerStatus.UNKNOWN)
+                ? "needs_attention" : "workforce." + facts.status().name().toLowerCase(Locale.ROOT);
+        return new SettlementWorkStatus(status, diagnostic);
     }
 }

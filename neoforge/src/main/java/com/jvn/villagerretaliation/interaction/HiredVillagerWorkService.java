@@ -1938,7 +1938,13 @@ public final class HiredVillagerWorkService {
         replacements.put("work_area", describeWorkArea(player, level, villager, session.area()));
         replacements.put("target", targetDescription);
         replacements.put("role", session.role().label());
-        return resolveWorkMessage(player, level, villager, status, replacements);
+        String detail = resolveWorkMessage(player, level, villager, status, replacements);
+        var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
+        var facts = HiredWorkerFacts.observe(session, brain);
+        String diagnostic = VillagerWorkAuthority.resolve(level, villager).civic()
+                ? com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.describe(facts)
+                : PersonalWorkerDiagnostics.preview(session, brain, facts);
+        return diagnostic.isBlank() ? detail : detail + " " + diagnostic;
     }
 
     private static String describeWorkArea(ServerPlayer player, ServerLevel level, Villager villager, HiredWorkArea area) {

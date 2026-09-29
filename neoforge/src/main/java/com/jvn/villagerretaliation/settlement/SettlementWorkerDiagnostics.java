@@ -23,6 +23,25 @@ public final class SettlementWorkerDiagnostics {
         return new Diagnostic(severity, recovery);
     }
 
+    public static String describe(com.jvn.villagerretaliation.interaction.HiredWorkerFacts facts) {
+        if (!facts.canBeBlocked()) return "";
+        String status = "workforce." + facts.status().name().toLowerCase(java.util.Locale.ROOT);
+        if (facts.materialStorageUnreachable() || facts.materialInventoryFull() || facts.inventoryFull()
+                || facts.buildSiteUnreachable() || facts.noStorage()) return describe(status);
+        String detail = describe(facts.blocker());
+        if (!detail.isBlank()) return detail;
+        detail = describe(status);
+        if (!detail.isBlank() || facts.blocker().isBlank()) return detail;
+        if (facts.blocker().contains("storage") && (facts.blocker().contains("unreachable") || facts.blocker().contains("path_failed"))) {
+            return "Clear a safe route to the worksite's linked depots and check their access rules.";
+        }
+        if (facts.blocker().contains("inventory_full")) return describe("workforce.inventory_full");
+        if (facts.blocker().contains("unreachable") || facts.blocker().contains("path_failed")) {
+            return "Clear a safe route to the worksite's selected target or workstation.";
+        }
+        return describe("needs_attention");
+    }
+
     public static String describe(String status) {
         return switch (status) {
             case "temporary_task_unloaded" -> "Temporary work waits for the worker and task area to be loaded.";
@@ -39,7 +58,7 @@ public final class SettlementWorkerDiagnostics {
             case "tree_claimed" -> "Another worker is finishing this tree.";
             case "missing_hoe" ->
                     "Farmer needs a hoe in job gear or a supply depot.";
-            case "missing_rod" ->
+            case "missing_rod", "missing_fishing_rod" ->
                     "Fisher needs a fishing rod in job gear or a supply depot.";
             case "missing_axe" ->
                     "Worker needs an axe in job gear or a supply depot.";
@@ -74,9 +93,9 @@ public final class SettlementWorkerDiagnostics {
             case "missing_safe_fill", "missing_backing", "missing_ladders" ->
                     "Supply suitable blocks for safe mining access and support.";
             case "no_filter" ->
-                    "Choose the recipes to produce with a filter in the worker's job inventory.";
+                    "Choose recipes in the worksite production settings. Legacy workers can use a job inventory filter.";
             case "choose_brewing_order" ->
-                    "Choose a potion order in the resident's brewing settings.";
+                    "Choose a potion order in the worksite's production queue.";
             case "no_crafting_table" ->
                     "Worker needs a crafting table inside the assigned work area.";
             case "no_furnace" ->
@@ -143,7 +162,7 @@ public final class SettlementWorkerDiagnostics {
             case "workforce.too_far", "workforce.material_storage_unreachable", "workforce.build_site_unreachable" ->
                     "Check the assigned area and clear a safe route between the worker, supplies and work site.";
             case "workforce.unpaid" ->
-                    "Review the worker's contract and outstanding payment.";
+                    "Review this worker's assignment and any pending transfer from personal employment.";
             case "project.world_conflict" ->
                     "World blocks conflict with pending construction. Visit the site and resolve the changed blocks.";
             case "project.pending_world", "project.site_unloaded" ->

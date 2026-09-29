@@ -450,6 +450,54 @@ public final class SettlementManagementGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
+    public static void diagnosticFactsKeepPersonalAndCivicRecoveryAdviceSeparate(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var villager = EntityType.VILLAGER.create(level);
+        var session = com.jvn.villagerretaliation.interaction.HiredWorkSession.create(level, villager,
+                com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER);
+        var state = session.state();
+        state.putString("WorkerTaskState", "awaiting_instruction");
+        for (String failure : List.of("transfer_storage_changed", "transfer_worker_changed", "transfer_contract_changed")) {
+            state.putString("WorkerFailureReason", failure);
+            var brain = com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(state, level.getGameTime());
+            var facts = com.jvn.villagerretaliation.interaction.HiredWorkerFacts.observe(session, brain);
+            var personal = com.jvn.villagerretaliation.interaction.ClipboardWorkforceService.workPreview(session, brain);
+            String civic = SettlementWorkerDiagnostics.describe(facts);
+            helper.assertValueEqual(personal.status(), facts.status(), "both views use the same factual classification");
+            helper.assertFalse(personal.diagnostic().contains("worksite") || personal.diagnostic().contains("depot"),
+                    "personal recovery never requires civic administration");
+            helper.assertTrue(personal.diagnostic().contains(failure.equals("transfer_storage_changed") ? "assigned" : "contract"),
+                    "personal recovery identifies the personal storage or contract");
+            helper.assertFalse(civic.contains("personal contract"), "civic recovery never directs the leader to personal hiring");
+            helper.assertFalse(civic.isBlank(), "civic transfers retain their recovery advice");
+        }
+        session = com.jvn.villagerretaliation.interaction.HiredWorkSession.create(level, villager,
+                com.jvn.villagerretaliation.interaction.HiredVillagerRole.COOK);
+        state.putString("WorkerTaskState", "waiting_for_materials");
+        state.putString("WorkerFailureReason", "missing_cooking_crafting_materials");
+        var brain = com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(state, level.getGameTime());
+        var facts = com.jvn.villagerretaliation.interaction.HiredWorkerFacts.observe(session, brain);
+        helper.assertTrue(SettlementWorkerDiagnostics.describe(facts).contains("depot"), "civic supplies advice uses depot stock");
+        helper.assertTrue(com.jvn.villagerretaliation.interaction.PersonalWorkerDiagnostics.preview(session, brain, facts).contains("assigned"),
+                "interaction reports use the same personal assigned-storage advice");
+        session = com.jvn.villagerretaliation.interaction.HiredWorkSession.create(level, villager,
+                com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER);
+        state.putString("WorkerTaskState", "failed_cooldown");
+        state.putString("WorkerFailureReason", "missing_builder_materials_storage_unreachable");
+        brain = com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(state, level.getGameTime());
+        facts = com.jvn.villagerretaliation.interaction.HiredWorkerFacts.observe(session, brain);
+        helper.assertTrue(facts.materialStorageUnreachable() && !facts.missingMaterials(), "known stock behind a blocked path is not a material shortage");
+        helper.assertTrue(SettlementWorkerDiagnostics.describe(facts).contains("route"), "civic advice preserves the factual access blocker");
+        state.putString("WorkerTaskState", "moving_to_target");
+        brain = com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(state, level.getGameTime());
+        facts = com.jvn.villagerretaliation.interaction.HiredWorkerFacts.observe(session, brain);
+        helper.assertTrue(SettlementWorkerDiagnostics.describe(facts).isBlank()
+                && com.jvn.villagerretaliation.interaction.PersonalWorkerDiagnostics.preview(session, brain, facts).isBlank(),
+                "successful travel hides stale blockers in both views");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
     public static void staffingActionsRejectForeignResidentsAndRequireLeaderRelease(GameTestHelper helper) {
         Fixture fixture = fixture(helper);
         var staff = player(helper, "TownStaff");
