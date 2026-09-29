@@ -13,6 +13,13 @@ final class SettlementViewBrowser {
     int scroll;
     java.util.Set<java.util.UUID> attention = java.util.Set.of();
 
+    void updateAttention(List<SettlementManagementPayload.Entry> issues) {
+        this.attention = issues.stream().filter(SettlementManagementPayload.Issue.class::isInstance)
+                .map(SettlementManagementPayload.Issue.class::cast).filter(SettlementManagementPayload.Issue::needsAttention)
+                .map(SettlementManagementPayload.Issue::resident).filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
     List<String> filters(List<SettlementManagementPayload.Entry> entries) {
         var values = new ArrayList<String>();
         values.add("All");

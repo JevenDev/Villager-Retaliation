@@ -95,6 +95,7 @@ public final class SettlementViewScreen extends Screen {
     private int panelLeft;
     private int panelWidth;
     private boolean plotPending;
+    private final SettlementManagementTracker plotSubmission = new SettlementManagementTracker();
     private net.minecraft.world.level.ChunkPos selectedPlot;
     private com.jvn.villagerretaliation.network.SettlementPlotSnapshot plotSnapshot;
     private Button claimFree;
@@ -247,8 +248,7 @@ public final class SettlementViewScreen extends Screen {
     void acceptOverview(com.jvn.villagerretaliation.network.SettlementViewOverviewPayload payload) {
         if (!this.snapshots.accept(payload, Util.getMillis())) return;
         this.header = this.snapshots.header();
-        this.browser.attention = this.snapshots.entries(Page.ISSUES).stream().map(SettlementManagementPayload.Issue.class::cast)
-                .map(SettlementManagementPayload.Issue::resident).filter(java.util.Objects::nonNull).collect(java.util.stream.Collectors.toSet());
+        this.browser.updateAttention(this.snapshots.entries(Page.ISSUES));
         this.roster.clear();
         for (var entry : this.snapshots.entries(Page.RESIDENTS)) {
             var row = (SettlementManagementPayload.Resident) entry;
@@ -293,10 +293,18 @@ public final class SettlementViewScreen extends Screen {
         updateActions();
     }
 
+    void refreshManagement() {
+        this.snapshots.refresh();
+        this.residentRefreshAt = 0;
+        this.moved = true;
+    }
+
     void acceptResult(SettlementManagementActionResultPayload payload) {
-        if (this.plotPending && this.header.id().equals(payload.town())) {
+        if (this.parent.validSession() && this.plotSubmission.accept(payload)) {
             this.plotPending = false;
-            this.plotFeedback = text(payload.applied() ? "plot_claimed" : "plot_" + payload.failure());
+            this.plotFeedback = payload.applied() ? text("plot_claimed") : Component.translatableWithFallback(
+                    "villagerretaliation.gui.settlement_view.plot_" + payload.failure(),
+                    SettlementManagementScreen.resultMessage(payload).getString());
             this.moved = true;
             updatePlotActions();
         }
@@ -517,6 +525,12 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public void tick() {
+        if (this.plotSubmission.timeout(Util.getMillis())) {
+            this.plotPending = false;
+            this.plotFeedback = SettlementManagementScreen.text("acknowledgement_timeout");
+            this.moved = true;
+            updatePlotActions();
+        }
         long now = Util.getMillis();
         var overviewRequest = this.snapshots.request(now);
         if (overviewRequest != null) PacketDistributor.sendToServer(overviewRequest);
@@ -1412,9 +1426,11 @@ public final class SettlementViewScreen extends Screen {
         var offer = plotOffer();
         if (offer == null || this.plotPending || !(free ? offer.freeFailure() : offer.paidFailure()).isEmpty()) return;
         this.plotPending = true;
-        PacketDistributor.sendToServer(new SettlementManagementActionPayload(this.header.id(),
+        var payload = new SettlementManagementActionPayload(this.header.id(),
                 new SettlementManagementActionPayload.ClaimPlot(offer.chunk().x, offer.chunk().z, free,
-                        this.plotSnapshot.totals().revision(), offer.price())));
+                        this.plotSnapshot.totals().revision(), offer.price()));
+        this.plotSubmission.sent(payload, Util.getMillis());
+        PacketDistributor.sendToServer(payload);
         updatePlotActions();
     }
 

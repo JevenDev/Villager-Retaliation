@@ -137,6 +137,41 @@ public final class SettlementAutonomyGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_autonomy")
+    public static void restoredStaffingStillRespectsPersonalCommitmentsDeparturesAndAvailability(GameTestHelper helper) {
+        var town = fixture(helper, 1);
+        var level = helper.getLevel();
+        var id = town.residents().keySet().iterator().next();
+        var saved = town.residents().get(id).save();
+        saved.putBoolean("PersonalCommitment", true);
+        town.recordResident(SettlementResidentState.load(saved));
+        town.rememberManualDuty(id);
+        town.returnToAutomaticStaffing(town.leader(), id);
+        SettlementAutonomyService.update(level, town);
+        helper.assertFalse(town.duties().containsKey(id), "returning authority cannot override a personal commitment");
+        saved.putBoolean("PersonalCommitment", false);
+        saved.putBoolean("Present", false);
+        town.recordResident(SettlementResidentState.load(saved));
+        SettlementAutonomyService.update(level, town);
+        helper.assertFalse(town.duties().containsKey(id), "unavailable residents wait for a usable observation");
+        saved.putBoolean("Present", true);
+        town.recordResident(SettlementResidentState.load(saved));
+        town.recordDeparture(new SettlementDeparture(id, "Departing", level.getGameTime(), SettlementDeparture.Reason.FOOD,
+                town.residents().get(id)));
+        SettlementAutonomyService.update(level, town);
+        helper.assertFalse(town.duties().containsKey(id), "returning authority cannot cancel a departure");
+        town.removeDeparture(id);
+        SettlementAutonomyService.update(level, town);
+        helper.assertTrue(town.duties().containsKey(id), "the resident becomes eligible when their commitment and availability allow");
+        var successor = UUID.randomUUID();
+        town.rememberManualDuty(id);
+        var offer = town.offerLeadership(town.leader(), successor, level.getGameTime());
+        helper.assertTrue(town.acceptLeadership(successor, offer.id(), level.getGameTime()), "leadership can change normally");
+        helper.assertTrue(town.manuallyStaffed(id), "leadership changes preserve deliberate staffing choices");
+        helper.assertTrue(town.returnToAutomaticStaffing(successor, id), "the new leader can explicitly return staffing authority");
+        helper.succeed();
+    }
+
     private static SettlementRecord fixture(GameTestHelper helper, int population) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(BlockPos.ZERO);

@@ -112,11 +112,11 @@ public final class SettlementEditScreen extends Screen {
         if (this.parent.snapshot().header() == null || !this.parent.snapshot().header().id().equals(payload.town())) {
             return;
         }
-        if (payload.applied()) {
+        if (payload.applied() && !this.parent.resultWasLate()) {
             if (this.view != null) this.view.areaSaved(this.id);
             onClose();
         } else {
-            this.error = text("not_applied");
+            this.error = SettlementManagementScreen.resultMessage(payload);
         }
     }
 
@@ -324,6 +324,7 @@ public final class SettlementEditScreen extends Screen {
 
     @Override
     public void tick() {
+        if (this.parent.unconfirmed()) this.error = text("acknowledgement_timeout");
         this.save.active = !this.parent.submitting();
         if (this.parent.snapshot().header() == null) {
             onClose();
@@ -363,7 +364,7 @@ public final class SettlementEditScreen extends Screen {
         for (Label label : this.labels) {
             graphics.drawString(this.font, this.font.plainSubstrByWidth(label.text().getString(), this.panelWidth), label.x(), label.y(), 0xD0D0D0);
         }
-        graphics.drawString(this.font, this.error, this.left, this.top + this.panelHeight - 36, 0xFFFFFF);
+        SettlementManagementScreen.renderFeedback(graphics, this.font, this.error, this.left, this.top + this.panelHeight - 36, this.panelWidth, mouseX, mouseY);
     }
 
     private static MutableComponent text(String key, Object... arguments) {

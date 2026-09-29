@@ -69,10 +69,6 @@ final class SettlementBuildingDraft {
             this.dirty = true;
             this.failure = "timeout";
         }
-        if (this.submitting && now - this.sentAt > 5_000L) {
-            this.submitting = false;
-            this.failure = "timeout";
-        }
         if (!this.submitting && !this.pending && now - this.sentAt >= 200L && (this.dirty || now >= this.refreshAt)) {
             this.pending = true;
             this.dirty = false;

@@ -51,10 +51,10 @@ public final class SettlementBrewingScreen extends Screen {
         if (parent().snapshot().header() == null || !parent().snapshot().header().id().equals(payload.town())) {
             return;
         }
-        if (payload.applied()) {
+        if (payload.applied() && !parent().resultWasLate()) {
             this.minecraft.setScreen(parent());
         } else {
-            this.feedback = text("not_applied");
+            this.feedback = SettlementManagementScreen.resultMessage(payload);
             updateActions();
         }
     }
@@ -128,6 +128,12 @@ public final class SettlementBrewingScreen extends Screen {
         this.mode.active = allowed;
         this.mode.setMessage(text(this.continuous ? "brewing_continuous" : "brewing_fixed"));
         this.amount.active = allowed && !this.continuous;
+    }
+
+    @Override
+    public void tick() {
+        if (parent().unconfirmed()) this.feedback = text("acknowledgement_timeout");
+        updateActions();
     }
 
     @Override

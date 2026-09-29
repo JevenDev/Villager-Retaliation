@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
@@ -62,18 +63,24 @@ public final class SettlementManagementGameTests {
         roundTrip(helper, SettlementManagementRequestPayload.STREAM_CODEC,
                 new SettlementManagementRequestPayload(town.id().value(), Page.ISSUES, 0, "", 3, false));
         for (String status : List.of("resting", "workforce.pathing", "workforce.depositing", "no_demand", "paused",
-                "awaiting_worker_observation", "no_observed_field", "construction_needs_observation",
                 "waiting_for_crops", "waiting_for_bite", "workforce.no_targets", "no_construction_project")) {
             worker.status(status);
             helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 0, worker.id().toString()).total(), 0,
-                    "normal or unobserved work is not an issue: " + status);
+                    "ordinary waiting or paused work is not an issue: " + status);
         }
         for (String status : List.of("no_filter", "no_furnace", "profession_required", "storage_full", "missing_materials",
                 "construction_conflict", "workforce.missing_tools", "workforce.material_storage_unreachable",
-                "workforce.inventory_full", "needs_attention")) {
+                "workforce.inventory_full", "needs_attention", "unsafe", "awaiting_worker_observation", "no_observed_field",
+                "no_observed_fishery", "no_observed_forest", "no_observed_mine", "no_observed_hunting_target",
+                "construction_needs_observation", "excavation_needs_observation", "tree_needs_observation",
+                "tree_needs_native_growth", "animal_unreachable", "animal_drop_unreachable", "hunting_visibility_unobserved",
+                "hunting_projectile_needs_world", "hunting_combat_unavailable", "hunting_loot_unreachable",
+                "mining_support_unreachable", "hazard_unreachable", "excavation_blocked")) {
             worker.status(status);
             var current = (SettlementManagementPayload.Issue) snapshot(fixture, Page.ISSUES, 0, worker.id().toString()).entries().getFirst();
             helper.assertValueEqual(current.cause(), status, "the latest blocker replaces the old cause");
+            helper.assertTrue(current.needsAttention(), "the browser can derive attention from the same issue");
+            helper.assertFalse(current.diagnostic().recovery().isBlank(), "every actionable issue has recovery guidance");
             helper.assertValueEqual(current.id(), issue.id(), "refresh preserves the selected worker issue");
         }
         var saved = town.save(level.registryAccess());
@@ -103,7 +110,7 @@ public final class SettlementManagementGameTests {
         var second = snapshot(fixture, Page.ISSUES, 1, "");
         helper.assertValueEqual(first.entries().size(), SettlementManagementRequestPayload.PAGE_SIZE, "issues obey the existing packet limit");
         helper.assertTrue(second.total() > 30, "progression shortages appear alongside worker issues");
-        helper.assertValueEqual(snapshot(fixture, Page.SUMMARY, 0, "").header().issues(), first.total(), "summary counts all issues across pages");
+        helper.assertValueEqual(snapshot(fixture, Page.SUMMARY, 0, "").header().issues(), 30, "summary counts actionable issues across pages without treating progression as a failure");
         helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 99, "missing_hoe").total(), 30, "search matches causes across the complete town");
         helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 99, "missing_hoe").index(), 1, "stale page indices are clamped");
         var seen = new HashSet<UUID>();
@@ -341,7 +348,7 @@ public final class SettlementManagementGameTests {
                 "mine_conflict", "construction_needs_observation", "hunting_storage_unreachable",
                 "missing_breeding_food", "awaiting_worker_observation", "missing_ladders", "missing_backing",
                 "fill_supply_full", "mining_support_unreachable", "hazard_unreachable", "excavation_blocked",
-                "tree_needs_native_growth", "sapling_blocked")) {
+                "tree_needs_native_growth", "sapling_blocked", "no_observed_hunting_target")) {
             worker.status(status);
             var row = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
             helper.assertValueEqual(row.presence(), Presence.UNLOADED, "the resident has no loaded entity");
@@ -350,7 +357,7 @@ public final class SettlementManagementGameTests {
         }
         for (String status : java.util.List.of("resting", "active", "idle", "no_demand", "no_construction_project",
                 "waiting_for_crops", "waiting_for_bite", "waiting_for_furnace", "waiting_for_brewing_stand",
-                "waiting_for_ore", "waiting_for_trees", "no_animal_products", "no_observed_hunting_target",
+                "waiting_for_ore", "waiting_for_trees", "no_animal_products",
                 "crafted", "delivered", "caught_fish", "built_block", "equipped_hoe", "unknown_future_status")) {
             worker.status(status);
             var row = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
@@ -657,6 +664,149 @@ public final class SettlementManagementGameTests {
         helper.assertTrue(SettlementManagementService.snapshot(viewer, request) != null, "delegated view permission includes history");
         helper.assertFalse(helper.getLevel().hasChunkAt(town.center()), "history does not load the settlement");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_management")
+    public static void managementFailuresIdentifyPermissionStaleStateAndMissingRequirements(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        var leader = fixture.leader();
+        var viewer = player(helper, "FailureViewer");
+        town.setPermissions(leader.getUUID(), viewer.getUUID(), Set.of(SettlementPermission.VIEW));
+        var missing = UUID.randomUUID();
+        helper.assertValueEqual(failure(viewer, town, new SettlementManagementActionPayload.AutomaticStaffing(null)),
+                "permission_staff", "view permission cannot restore staffing");
+        helper.assertValueEqual(failure(viewer, town, new SettlementManagementActionPayload.Management(false)),
+                "leader_required", "town policy requires current leadership");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.Release(missing)),
+                "duty_changed", "stale release reports the missing duty");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.AutomaticStaffing(missing)),
+                "resident_missing", "unknown residents are identified");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.Treasury(true, 10)),
+                "player_funds", "deposit reports actual missing currency");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.Treasury(false, 10)),
+                "treasury_funds", "withdrawal reports the treasury shortage");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.RemoveArea(missing)),
+                "area_missing", "stale areas are identified");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.RemoveOrder(missing)),
+                "order_missing", "stale orders are identified");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.CancelProject(missing)),
+                "project_missing", "stale projects are identified");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.Inventory(missing)),
+                "resident_unloaded", "inventory explains that the resident must be loaded");
+        helper.assertValueEqual(failure(leader, town, new SettlementManagementActionPayload.Advance()),
+                "advancement_requirements", "advancement explains unmet requirements");
+        var request = new SettlementManagementActionPayload(town.id().value(), new SettlementManagementActionPayload.AutomaticStaffing(null));
+        roundTrip(helper, SettlementManagementActionPayload.STREAM_CODEC, request);
+        var response = new SettlementManagementActionResultPayload(town.id().value(), false, request.request(), "permission_staff");
+        roundTrip(helper, SettlementManagementActionResultPayload.STREAM_CODEC, response);
+        helper.assertFalse(request.request().equals(new SettlementManagementActionPayload(town.id().value(), request.command()).request()),
+                "distinct attempts receive distinct correlation identities");
+        helper.assertValueEqual(town.economy().balance(), CurrencyAmount.ZERO, "rejected financial actions do not move currency");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_management")
+    public static void tradeAndResidentCareIssuesUseEvidenceAndExcludeOrdinaryWaiting(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        var level = helper.getLevel();
+        var farm = area(town, SettlementAreaType.FARM, 0);
+        town.putArea(town.leader(), farm);
+        var worker = issueWorker(helper, fixture, farm, "Care resident", "waiting_for_crops");
+        var resident = EntityType.VILLAGER.create(level);
+        resident.setUUID(worker.id());
+        resident.setPos(farm.center().getCenter());
+        var state = SettlementResidentState.capture(resident, town, level.getGameTime()).save();
+        state.putInt("Food", 0);
+        state.putFloat("Health", 4);
+        state.putLong("ShortageTicks", 2_400L);
+        town.recordResident(SettlementResidentState.load(state));
+        var care = snapshot(fixture, Page.ISSUES, 0, worker.id().toString());
+        helper.assertValueEqual(care.total(), 2, "persistent hunger and low health are visible without a worker failure");
+        helper.assertTrue(care.entries().stream().map(SettlementManagementPayload.Issue.class::cast).allMatch(
+                issue -> issue.kind() == SettlementManagementPayload.IssueKind.RESIDENT && issue.needsAttention()),
+                "resident problems link to the resident and attention filter");
+        roundTrip(helper, SettlementManagementPayload.STREAM_CODEC, care);
+        state.putInt("Food", 20);
+        state.putFloat("Health", 20);
+        town.recordResident(SettlementResidentState.load(state));
+        helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 0, worker.id().toString()).total(), 0, "recovered residents stop reporting old problems");
+        UUID orderId = UUID.randomUUID();
+        var order = new SettlementTradeOrder(orderId, SettlementTradeOrder.Direction.BUY,
+                ResourceLocation.withDefaultNamespace("bread"), 64, CurrencyAmount.of(4, 1), CurrencyAmount.of(64, 1), true);
+        town.economy().putOrder(order);
+        for (var status : SettlementTradeService.Status.values()) {
+            town.economy().recordResults(java.util.Map.of(orderId, SettlementTradeService.Result.blocked(status)));
+            int expected = switch (status) {
+                case STAGE_LOCKED, NO_STAFF, UNAVAILABLE, PRICE_LIMIT, NO_SPACE, BUDGET_LIMIT -> 1;
+                default -> 0;
+            };
+            var page = snapshot(fixture, Page.ISSUES, 0, orderId.toString());
+            helper.assertValueEqual(page.total(), expected, "trade status classification: " + status);
+            if (expected > 0) roundTrip(helper, SettlementManagementPayload.STREAM_CODEC, page);
+        }
+        helper.assertFalse(level.hasChunkAt(town.center()), "diagnostics do not load the remote town");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_management")
+    public static void persistentProblemNotificationsDeduplicateAndRespectCooldown(GameTestHelper helper) {
+        var tracker = new SettlementNotifications.Problems();
+        var problem = Set.of("worker:missing_hoe");
+        helper.assertValueEqual(tracker.update(problem, 0), 0, "one transient observation stays quiet");
+        helper.assertValueEqual(tracker.update(problem, 200), 1, "a persistent new problem is reported once");
+        helper.assertValueEqual(tracker.update(problem, 1_600), 0, "unchanged problems never repeat");
+        helper.assertValueEqual(tracker.update(Set.of("worker:missing_rod"), 1_800), 0, "a changed cause must persist");
+        helper.assertValueEqual(tracker.update(Set.of("worker:missing_rod"), 2_000), 1, "a new persistent cause can be reported");
+        tracker.update(Set.of(), 2_200);
+        helper.assertValueEqual(tracker.update(problem, 2_400), 0, "reappearing problems wait for confirmation");
+        helper.assertValueEqual(tracker.update(problem, 2_600), 0, "cooldown prevents bursts");
+        helper.assertValueEqual(tracker.update(problem, 3_200), 1, "a recurring persistent problem reports after cooldown");
+        helper.assertValueEqual(SettlementWorkerDiagnostics.diagnostic("simulation_capped").severity(),
+                SettlementWorkerDiagnostics.Severity.INFO, "normal cap waiting is informational");
+        helper.assertValueEqual(SettlementWorkerDiagnostics.diagnostic("construction_needs_observation").severity(),
+                SettlementWorkerDiagnostics.Severity.OBSERVATION, "observation needs are distinct from errors");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_management")
+    public static void simulationDiagnosticsExplainDisabledCappedAndSuspendedTowns(GameTestHelper helper) {
+        var town = fixture(helper).town();
+        var level = helper.getLevel();
+        var cap = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES;
+        int original = cap.get();
+        try {
+            cap.set(0);
+            helper.assertValueEqual(SettlementSimulationService.suspension(level, town), "simulation_disabled",
+                    "disabled background work has a distinct explanation");
+            var issues = SettlementIssueService.issues(level, town, SettlementProgressionService.assess(level, town));
+            helper.assertTrue(issues.stream().anyMatch(issue -> issue.kind() == SettlementManagementPayload.IssueKind.SIMULATION
+                    && issue.cause().equals("simulation_disabled") && !issue.needsAttention()), "disabled simulation is informational");
+            cap.set(1);
+            var towns = SettlementSavedData.get(level).settlements().stream().filter(value -> value.territory().active()).toList();
+            var selected = SettlementSimulationService.select(towns, Math.floorDiv(level.getServer().overworld().getGameTime(), 24_000L), 1);
+            for (var candidate : towns) {
+                String expected = selected.contains(candidate) ? "" : "simulation_capped";
+                helper.assertValueEqual(SettlementSimulationService.suspension(level, candidate), expected,
+                        "diagnostics match the actual daily scheduler");
+            }
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            helper.assertValueEqual(SettlementSimulationService.suspension(level, restored),
+                    SettlementSimulationService.suspension(level, town), "reload preserves simulation identity");
+            var inactive = new SettlementRecord(VillageAllegianceId.random(), level.dimension().location(), BlockPos.ZERO,
+                    town.leader(), 0L, () -> {});
+            inactive.migrateTerritory(Set.of(), "ownership_conflict");
+            helper.assertValueEqual(SettlementSimulationService.suspension(level, inactive), "simulation_suspended",
+                    "inactive territory has a distinct explanation");
+        } finally {
+            cap.set(original);
+        }
+        helper.succeed();
+    }
+
+    private static String failure(ServerPlayer player, SettlementRecord town, SettlementManagementActionPayload.Command command) {
+        return SettlementManagementService.executeFailure(player, new SettlementManagementActionPayload(town.id().value(), command));
     }
 
     private static <T> void roundTrip(GameTestHelper helper, StreamCodec<RegistryFriendlyByteBuf, T> codec, T value) {

@@ -142,6 +142,24 @@ public final class SettlementProjectReservationGameTests {
             helper.assertValueEqual(fixture.project().status(), status, "the fixture reaches its requested terminal state");
             helper.assertTrue(fixture.site().pending(), "actual paid construction is awaiting world delivery");
             helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "the original site remains unloaded");
+            var issues = SettlementIssueService.issues(helper.getLevel(), fixture.town(),
+                    SettlementProgressionService.assess(helper.getLevel(), fixture.town()));
+            helper.assertTrue(issues.stream().anyMatch(issue -> fixture.project().id().equals(issue.targetId())
+                    && issue.cause().equals("pending_world") && issue.needsAttention()),
+                    "finished pending world work remains visible with observation guidance");
+            var saved = fixture.town().save(helper.getLevel().registryAccess());
+            var projects = saved.getList("Projects", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (var raw : projects) {
+                var project = (CompoundTag) raw;
+                if (!project.getUUID("Id").equals(fixture.project().id())) continue;
+                var placements = project.getCompound("Site").getList("Placements", net.minecraft.nbt.Tag.TAG_COMPOUND);
+                placements.getCompound(0).putBoolean("Conflict", true);
+            }
+            var restored = load(helper, saved);
+            helper.assertTrue(SettlementIssueService.issues(helper.getLevel(), restored,
+                    SettlementProgressionService.assess(helper.getLevel(), restored)).stream().anyMatch(issue ->
+                            fixture.project().id().equals(issue.targetId()) && issue.cause().equals("world_conflict") && issue.needsAttention()),
+                    "completed and cancelled world conflicts remain visible after reload");
             check.accept(fixture);
         });
     }

@@ -35,41 +35,51 @@ final class SettlementIssueService {
             var entity = level.getEntity(member.id());
             Villager villager = entity instanceof Villager loaded && loaded.isAlive() ? loaded : null;
             var work = SettlementManagementService.residentWork(level, town, member.id(), villager, town.workers().get(member.id()));
+            var care = town.residents().get(member.id());
+            String name = villager == null ? social.knownName(member.id()).orElse("")
+                    : VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+            if (care != null && care.shortageTicks() >= 1_200L && (villager == null ? care.food()
+                    : com.jvn.villagerretaliation.villager.VillagerRecoveryService.captureRecoveryState(villager).food()) < 6) {
+                issues.add(new Issue(identity(town, "food:" + member.id()), bounded(name, 128), IssueKind.RESIDENT,
+                        "resident_hungry", "", Page.RESIDENTS, member.id(), member.id(), null, false));
+            }
+            if (villager != null ? villager.getHealth() <= villager.getMaxHealth() / 2
+                    : care != null && care.needsRecovery()) {
+                issues.add(new Issue(identity(town, "health:" + member.id()), bounded(name, 128), IssueKind.RESIDENT,
+                        "resident_injured", "", Page.RESIDENTS, member.id(), member.id(), null, false));
+            }
             if (!blockedWorker(work.status())) continue;
             var area = town.duties().get(member.id());
             if (area == null) continue;
-            String name = villager == null ? social.knownName(member.id()).orElse("")
-                    : VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
             issues.add(new Issue(identity(town, "worker:" + member.id()), bounded(name, 128), IssueKind.WORKER,
                     bounded(work.status(), 128), bounded(work.diagnostic(), 512), Page.RESIDENTS, member.id(), member.id(), area, true));
         }
         for (var project : town.projects().values()) {
-            if (!project.active()) continue;
+            if (!project.reservesFootprint()) continue;
             String cause = project.blocker().replace("interaction.work.builder.", "");
             if (cause.isBlank() && !project.missingMaterials().isBlank()) cause = "missing_materials";
-            if (cause.isBlank() || cause.equals("site_unloaded") || cause.equals("pending_world")) continue;
+            if (cause.isBlank()) continue;
             issues.add(new Issue(identity(town, "project:" + project.id()), bounded(project.label(), 128), IssueKind.PROJECT,
                     bounded(cause, 128), bounded(project.missingMaterials(), 512), Page.PROJECTS, project.id(), project.builder(), project.area(), false));
+        }
+        for (var order : town.economy().orders().values()) {
+            var result = town.economy().lastResults().get(order.id());
+            if (!order.enabled() || result == null) continue;
+            String cause = result.status().name().toLowerCase(Locale.ROOT);
+            if (!SettlementWorkerDiagnostics.diagnostic("trade." + cause).severity().attention()) continue;
+            issues.add(new Issue(identity(town, "trade:" + order.id()), bounded(order.sample().getHoverName().getString(), 128),
+                    IssueKind.TRADE, cause, "", Page.TRADE, order.id(), null, null, false));
+        }
+        String simulation = SettlementSimulationService.suspension(level, town);
+        if (!simulation.isEmpty()) {
+            issues.add(new Issue(identity(town, "simulation"), "", IssueKind.SIMULATION,
+                    simulation, "", Page.SUMMARY, null, null, null, false));
         }
         return List.copyOf(issues);
     }
 
     static boolean blockedWorker(String status) {
-        if (status.startsWith("missing_")) return true;
-        return switch (status) {
-            case "needs_attention", "profession_required", "no_filter", "no_crafting_table", "no_furnace",
-                    "no_brewing_stand", "choose_brewing_order", "storage_full", "output_full", "supply_full",
-                    "forest_conflict", "mine_conflict", "sapling_blocked", "no_safe_mining_route", "floor_unreachable",
-                    "mining_support_blocked", "no_excavation_shaft", "support_inventory_full", "fill_supply_full", "animal_cull_failed",
-                    "hunting_path_blocked", "hunting_storage_unreachable", "construction_conflict",
-                    "construction_outside_world", "construction_plan_changed", "construction_unsafe",
-                    "construction_unreachable", "construction_blocked_existing", "construction_blocked_support",
-                    "workforce.output_backpressure", "workforce.no_work_area", "workforce.no_storage",
-                    "workforce.storage_full", "workforce.inventory_full", "workforce.missing_tools",
-                    "workforce.too_far", "workforce.missing_materials", "workforce.material_storage_unreachable",
-                    "workforce.material_inventory_full", "workforce.build_site_unreachable" -> true;
-            default -> false;
-        };
+        return SettlementWorkerDiagnostics.diagnostic(status).severity().attention();
     }
 
     private static UUID identity(SettlementRecord town, String subject) {

@@ -371,7 +371,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     }
 
     public enum IssueKind {
-        PROGRESSION, WORKER, PROJECT
+        PROGRESSION, WORKER, PROJECT, TRADE, RESIDENT, SIMULATION
     }
 
     public record Issue(UUID id, String name, IssueKind kind, String cause, String detail,
@@ -383,10 +383,24 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         case PROGRESSION -> target != Page.RESIDENTS && target != Page.AREAS && target != Page.DEPOTS;
                         case WORKER -> target != Page.RESIDENTS || targetId == null || !targetId.equals(resident) || area == null;
                         case PROJECT -> target != Page.PROJECTS || targetId == null || resident == null || area == null;
+                        case TRADE -> target != Page.TRADE || targetId == null;
+                        case RESIDENT -> target != Page.RESIDENTS || resident == null || !resident.equals(targetId);
+                        case SIMULATION -> target != Page.SUMMARY;
                     }) {
                 throw new IllegalArgumentException("Invalid settlement issue");
             }
         }
+
+        public com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Diagnostic diagnostic() {
+            if (this.kind == IssueKind.PROGRESSION) {
+                return new com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Diagnostic(
+                        com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Severity.INFO, "");
+            }
+            return com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.diagnostic(
+                    (this.kind == IssueKind.PROJECT ? "project." : this.kind == IssueKind.TRADE ? "trade." : "") + this.cause);
+        }
+
+        public boolean needsAttention() { return diagnostic().severity().attention(); }
     }
 
     public record Bed(UUID id, String name, BlockPos position, UUID resident, String residentName, boolean available) implements Entry {

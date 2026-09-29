@@ -9,7 +9,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class SettlementBuildingScreen extends Screen {
     private final SettlementManagementScreen parent;
@@ -34,7 +33,6 @@ public final class SettlementBuildingScreen extends Screen {
     }
 
     void result(SettlementManagementActionResultPayload payload) {
-        if (!this.draft.request.equals(payload.request())) return;
         this.draft.submitting = false;
         this.draft.failure = payload.failure();
         if (payload.applied()) {
@@ -58,17 +56,20 @@ public final class SettlementBuildingScreen extends Screen {
         addRenderableWidget(Button.builder(SettlementManagementScreen.text("change_prefab"), ignored -> this.parent.newBuilding())
                 .bounds(this.left + third + 6, this.height - 28, third, 20).build());
         this.request = addRenderableWidget(Button.builder(SettlementManagementScreen.text("request_build"), ignored -> {
-            if (!this.draft.ready()) return;
+            if (!this.draft.ready() || this.parent.submitting()) return;
             this.draft.submitting();
-            PacketDistributor.sendToServer(new SettlementManagementActionPayload(this.parent.snapshot().header().id(),
-                    new SettlementManagementActionPayload.CommissionBuilding(this.draft.request, this.draft.structure,
-                            this.draft.anchor, this.draft.rotation, this.draft.builder)));
+            this.parent.submit(new SettlementManagementActionPayload.CommissionBuilding(this.draft.request, this.draft.structure,
+                    this.draft.anchor, this.draft.rotation, this.draft.builder));
         }).bounds(this.left + (third + 6) * 2, this.height - 28, third, 20).build());
         refresh();
     }
 
     @Override
     public void tick() {
+        if (this.parent.snapshot().header() == null) {
+            this.minecraft.setScreen(this.parent);
+            return;
+        }
         this.draft.tick(this.parent.snapshot().header().id());
         refresh();
     }
@@ -86,7 +87,7 @@ public final class SettlementBuildingScreen extends Screen {
                 this.materials.refresh();
             }
         }
-        this.request.active = this.draft.ready();
+        this.request.active = this.draft.ready() && !this.parent.submitting();
     }
 
     @Override
@@ -113,7 +114,8 @@ public final class SettlementBuildingScreen extends Screen {
         String failure = this.draft.failure.isEmpty() && this.draft.preview != null ? this.draft.preview.failure() : this.draft.failure;
         if (failure.isEmpty() && this.draft.preview != null && this.draft.preview.funds().compareTo(com.jvn.villagerretaliation.sell.CurrencyAmount.of(this.draft.preview.price(), 1)) < 0) failure = "funds";
         Component hint = this.draft.submitting ? SettlementManagementScreen.text("saving") : failure.isEmpty()
-                ? SettlementManagementScreen.text("building_supply_hint") : SettlementManagementScreen.text("building_failure_" + failure);
+                ? SettlementManagementScreen.text("building_supply_hint") : Component.translatableWithFallback("villagerretaliation.gui.settlement.failure." + failure,
+                        SettlementManagementScreen.text("building_failure_" + failure).getString());
         graphics.drawWordWrap(this.font, hint, this.left, this.height - 63, this.panelWidth, failure.isEmpty() ? 0xB8B8B8 : 0xFF9999);
     }
 

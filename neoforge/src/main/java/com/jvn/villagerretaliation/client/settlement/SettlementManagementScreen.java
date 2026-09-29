@@ -34,6 +34,11 @@ public final class SettlementManagementScreen extends Screen {
     private long refreshAt;
     private long nextRequestAt;
     private boolean submitting;
+    private final SettlementManagementTracker submission = new SettlementManagementTracker();
+    private Screen submittedFrom;
+    private boolean resultLate;
+    private final net.minecraft.client.multiplayer.ClientPacketListener connection = net.minecraft.client.Minecraft.getInstance().getConnection();
+    private final net.minecraft.client.multiplayer.ClientLevel level = net.minecraft.client.Minecraft.getInstance().level;
     private boolean viewRequested;
     private Button worldView;
     private UUID selected;
@@ -118,25 +123,67 @@ public final class SettlementManagementScreen extends Screen {
         }
     }
 
-    public void result(SettlementManagementActionResultPayload payload) {
-        if (this.snapshot.header() == null || !this.snapshot.header().id().equals(payload.town())) {
-            return;
-        }
+    public boolean result(SettlementManagementActionResultPayload payload) {
+        if (!validSession()) return false;
+        boolean timely = this.submission.busy();
+        if (!this.submission.accept(payload)) return false;
         this.submitting = false;
         this.viewRequested = false;
-        this.feedback = text(payload.applied() ? "applied" : "not_applied");
-        this.feedbackUntil = Util.getMillis() + 4_000L;
+        this.resultLate = !timely;
+        this.feedback = resultMessage(payload);
+        this.feedbackUntil = Util.getMillis() + 8_000L;
         this.refreshAt = Util.getMillis();
+        if (this.buildingDraft != null) this.buildingDraft.submitting = false;
         updateActions();
+        return this.minecraft.screen == this.submittedFrom;
     }
 
-    public void submit(SettlementManagementActionPayload.Command command) {
-        if (this.submitting || this.snapshot.header() == null) {
+    static Component resultMessage(SettlementManagementActionResultPayload payload) {
+        return payload.applied() ? text("applied") : Component.translatableWithFallback(
+                "villagerretaliation.gui.settlement.failure." + payload.failure(),
+                text("failure.state_changed").getString());
+    }
+
+    boolean validSession() {
+        var client = net.minecraft.client.Minecraft.getInstance();
+        return client.getConnection() == this.connection && client.level != null && client.level == this.level
+                && client.player != null && client.player.isAlive() && !client.player.isSpectator()
+                && client.level.dimension().location().equals(this.snapshot.dimension());
+    }
+
+    void updateSubmission() {
+        if (!validSession()) {
+            this.submission.clear();
+            this.submitting = false;
             return;
         }
+        if (this.submission.timeout(Util.getMillis())) {
+            this.submitting = false;
+            this.viewRequested = false;
+            this.feedback = text("acknowledgement_timeout");
+            this.feedbackUntil = Util.getMillis() + 15_000L;
+            this.refreshAt = Util.getMillis();
+            if (this.minecraft.screen instanceof SettlementViewScreen view) view.refreshManagement();
+            if (this.buildingDraft != null) {
+                this.buildingDraft.submitting = false;
+                this.buildingDraft.failure = "timeout";
+            }
+            updateActions();
+        }
+    }
+
+    boolean resultWasLate() { return this.resultLate; }
+
+    boolean unconfirmed() { return this.submission.unconfirmed(); }
+
+    public void submit(SettlementManagementActionPayload.Command command) {
+        if (this.submitting || this.snapshot.header() == null || !validSession()) return;
+        var payload = new SettlementManagementActionPayload(this.snapshot.header().id(), command);
+        this.submission.sent(payload, Util.getMillis());
+        this.submittedFrom = this.minecraft.screen;
         this.submitting = true;
         this.feedback = text("saving");
-        PacketDistributor.sendToServer(new SettlementManagementActionPayload(this.snapshot.header().id(), command));
+        PacketDistributor.sendToServer(payload);
         updateActions();
     }
 
@@ -609,6 +656,7 @@ public final class SettlementManagementScreen extends Screen {
 
     @Override
     public void tick() {
+        updateSubmission();
         long now = Util.getMillis();
         if (!this.submitting && now >= this.feedbackUntil) {
             this.feedback = Component.empty();
@@ -660,9 +708,19 @@ public final class SettlementManagementScreen extends Screen {
             fitted(graphics, text("summary_hint"), this.contentLeft, this.top + 34, this.contentWidth, 0xD0D0D0);
         }
         int pages = Math.max(1, (this.snapshot.total() + SettlementManagementRequestPayload.PAGE_SIZE - 1) / SettlementManagementRequestPayload.PAGE_SIZE);
-        fitted(graphics, this.feedback.getString().isEmpty() ? text("page_count", this.desiredIndex + 1, pages) : this.feedback,
+        renderFeedback(graphics, this.font, this.feedback.getString().isEmpty() ? text("page_count", this.desiredIndex + 1, pages) : this.feedback,
                 this.contentLeft + 60, this.top + this.panelHeight - 40 - extraActionHeight(),
-                this.contentWidth - 132, 0xD0D0D0);
+                this.contentWidth - 132, mouseX, mouseY);
+    }
+
+    static void renderFeedback(GuiGraphics graphics, net.minecraft.client.gui.Font font, Component message,
+                               int x, int y, int width, int mouseX, int mouseY) {
+        String value = message.getString();
+        if (font.width(value) > width) value = font.plainSubstrByWidth(value, Math.max(0, width - font.width("..."))) + "...";
+        graphics.drawString(font, value, x, y, 0xD0D0D0);
+        if (mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + 12 && !message.getString().isEmpty()) {
+            graphics.renderTooltip(font, font.split(message, Math.max(100, Math.min(320, width))), mouseX, mouseY);
+        }
     }
 
     private void fitted(GuiGraphics graphics, Component value, int x, int y, int width, int color) {
@@ -683,9 +741,12 @@ public final class SettlementManagementScreen extends Screen {
 
     static Component name(Entry entry) {
         if (entry instanceof SettlementManagementPayload.Issue issue) {
-            return issue.kind() == SettlementManagementPayload.IssueKind.PROGRESSION ? text("issue_progression")
-                    : text(issue.kind() == SettlementManagementPayload.IssueKind.WORKER ? "issue_worker" : "issue_project",
-                            issue.name().isBlank() ? text("unnamed_resident") : Component.literal(issue.name()));
+            return switch (issue.kind()) {
+                case PROGRESSION -> text("issue_progression");
+                case SIMULATION -> text("issue_simulation");
+                case WORKER, PROJECT, TRADE, RESIDENT -> text("issue_" + issue.kind().name().toLowerCase(Locale.ROOT),
+                        issue.name().isBlank() ? text("unnamed_resident") : Component.literal(issue.name()));
+            };
         }
         if (entry instanceof SettlementManagementPayload.History history) {
             Component subject = history.kind() == com.jvn.villagerretaliation.settlement.SettlementEvent.Type.STAGE_ADVANCED
@@ -715,6 +776,7 @@ public final class SettlementManagementScreen extends Screen {
                 String key = switch (issue.kind()) {
                     case PROGRESSION -> "villagerretaliation.gui.settlement.requirement." + issue.cause();
                     case PROJECT -> "villagerretaliation.gui.settlement.project_blocker." + issue.cause();
+                    case TRADE, RESIDENT, SIMULATION -> "villagerretaliation.gui.settlement.issue." + issue.cause();
                     case WORKER -> issue.cause().startsWith("workforce.")
                             ? "villagerretaliation.gui.clipboard_workforce.status." + issue.cause().substring("workforce.".length())
                             : "villagerretaliation.gui.settlement.work." + issue.cause();
@@ -827,12 +889,16 @@ public final class SettlementManagementScreen extends Screen {
             if (hovered) {
                 List<Component> lines = new ArrayList<>(List.of(this.primary, this.secondary));
                 if (this.entry instanceof SettlementManagementPayload.Issue issue) {
+                    lines.add(enumText("severity", issue.diagnostic().severity()));
+                    if (!issue.diagnostic().recovery().isBlank()) lines.add(Component.literal(issue.diagnostic().recovery()));
                     if (!issue.detail().isBlank() && issue.kind() != SettlementManagementPayload.IssueKind.WORKER) lines.add(issue.kind() == SettlementManagementPayload.IssueKind.PROJECT
                             ? text("project_missing", issue.detail()) : Component.literal(issue.detail()));
                     lines.add(text("issue_destination", enumText("page", issue.target())));
                 } else if (this.entry instanceof SettlementManagementPayload.Resident resident) {
                     lines.add(text("automatic_staffing_hint"));
                     if (!resident.diagnostic().isBlank()) lines.add(Component.literal(resident.diagnostic()));
+                    var diagnosis = com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.diagnostic(resident.status());
+                    if (!diagnosis.recovery().isBlank() && !diagnosis.recovery().equals(resident.diagnostic())) lines.add(Component.literal(diagnosis.recovery()));
                     lines.add(text("resident_care", resident.food() < 0 ? "?" : resident.food(),
                             resident.health() < 0 ? "?" : decimal(resident.health())));
                 } else if (this.entry instanceof SettlementManagementPayload.Depot depot) {
@@ -846,6 +912,7 @@ public final class SettlementManagementScreen extends Screen {
                         }
                         if (!project.blocker().isBlank()) {
                             String reason = project.blocker().replace("interaction.work.builder.", "");
+                            lines.add(Component.literal(com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.describe("project." + reason)));
                             lines.add(Component.translatableWithFallback("villagerretaliation.gui.settlement.project_blocker." + reason,
                                     text("project_blocked").getString()));
                         }

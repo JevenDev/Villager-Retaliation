@@ -19,18 +19,24 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record SettlementManagementActionPayload(UUID town, Command command) implements CustomPacketPayload {
+public record SettlementManagementActionPayload(UUID town, Command command, UUID request) implements CustomPacketPayload {
     public static final Type<SettlementManagementActionPayload> TYPE = VillagerPayloads.type("settlement_management_action");
     public static final StreamCodec<RegistryFriendlyByteBuf, SettlementManagementActionPayload> STREAM_CODEC =
             VillagerPayloads.codec(SettlementManagementActionPayload::encode, SettlementManagementActionPayload::decode);
 
+    public SettlementManagementActionPayload(UUID town, Command command) {
+        this(town, command, UUID.randomUUID());
+    }
+
     public SettlementManagementActionPayload {
+        Objects.requireNonNull(request);
         Objects.requireNonNull(town);
         Objects.requireNonNull(command);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, SettlementManagementActionPayload payload) {
         buffer.writeUUID(payload.town());
+        buffer.writeUUID(payload.request());
         switch (payload.command()) {
             case ClaimPlot plot -> {
                 buffer.writeEnum(Kind.CLAIM_PLOT);
@@ -194,6 +200,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private static SettlementManagementActionPayload decode(RegistryFriendlyByteBuf buffer) {
         UUID town = buffer.readUUID();
+        UUID request = buffer.readUUID();
         Command command = switch (buffer.readEnum(Kind.class)) {
             case CLAIM_PLOT -> new ClaimPlot(buffer.readInt(), buffer.readInt(), buffer.readBoolean(), buffer.readVarLong(), buffer.readVarLong());
             case HOME -> new Home(buffer.readUUID(), buffer.readBlockPos(), buffer.readBoolean());
@@ -239,7 +246,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case TRANSFER -> new Transfer(buffer.readUUID());
             case INVENTORY -> new Inventory(buffer.readUUID());
         };
-        return new SettlementManagementActionPayload(town, command);
+        return new SettlementManagementActionPayload(town, command, request);
     }
 
     static void writeWorkerSettings(RegistryFriendlyByteBuf buffer, SettlementWorkerSettings settings) {

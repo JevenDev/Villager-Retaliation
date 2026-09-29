@@ -50,28 +50,37 @@ public final class SettlementManagementService {
     }
 
     public static void action(ServerPlayer player, SettlementManagementActionPayload payload) {
-        if (payload.command() instanceof SettlementManagementActionPayload.ClaimPlot plot) {
-            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town()))
-                    .filter(value -> value.id().value().equals(payload.town())).orElse(null);
-            String failure = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
-                    ? SettlementPlotService.claim(player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price()) : "busy";
-            PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), failure.isEmpty(), null, failure));
-            return;
-        }
-        if (payload.command() instanceof SettlementManagementActionPayload.CommissionBuilding build) {
-            var town = SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(payload.town()))
-                    .filter(value -> value.id().value().equals(payload.town())).orElse(null);
-            String failure = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
-                    ? SettlementConstructionService.commission(player, town, build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()) : "busy";
-            PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), failure.isEmpty(), build.request(), failure));
-            return;
-        }
-        boolean applied = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
-                && execute(player, payload);
-        PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(payload.town(), applied));
+        String failure = ServerboundRequestLimiter.tryAcquire(player, SettlementManagementActionPayload.TYPE.id(), 5L)
+                ? executeFailure(player, payload) : "busy";
+        PacketDistributor.sendToPlayer(player, new SettlementManagementActionResultPayload(
+                payload.town(), failure.isEmpty(), payload.request(), failure));
     }
 
     static boolean execute(ServerPlayer player, SettlementManagementActionPayload payload) {
+        return executeFailure(player, payload).isEmpty();
+    }
+
+    static String executeFailure(ServerPlayer player, SettlementManagementActionPayload payload) {
+        if (player == null || !player.isAlive() || player.isSpectator()) return "player_unavailable";
+        var data = SettlementSavedData.get(player.serverLevel());
+        if (data.readOnly()) return "recovery_read_only";
+        var town = data.get(new VillageAllegianceId(payload.town())).orElse(null);
+        if (town == null || !town.id().value().equals(payload.town())) return "town_missing";
+        if (!town.dimension().equals(player.serverLevel().dimension().location())) return "wrong_dimension";
+        String failure = SettlementManagementValidation.permission(player, town, payload.command());
+        if (!failure.isEmpty()) return failure;
+        if (payload.command() instanceof SettlementManagementActionPayload.ClaimPlot plot) {
+            return SettlementPlotService.claim(player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price());
+        }
+        if (payload.command() instanceof SettlementManagementActionPayload.CommissionBuilding build) {
+            return SettlementConstructionService.commission(player, town, build.request(), build.structure(), build.anchor(), build.rotation(), build.builder());
+        }
+        failure = SettlementManagementValidation.selection(player, town, payload.command());
+        if (!failure.isEmpty()) return failure;
+        return apply(player, payload) ? "" : SettlementManagementValidation.rejected(payload.command());
+    }
+
+    private static boolean apply(ServerPlayer player, SettlementManagementActionPayload payload) {
         if (player == null || !player.isAlive() || player.isSpectator()) {
             return false;
         }
@@ -219,7 +228,7 @@ public final class SettlementManagementService {
                 SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
                 status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
                 status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
-                town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size(), town.manualManagement(), SettlementPlotService.totals(town));
+                town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), (int) issues.stream().filter(SettlementManagementPayload.Issue::needsAttention).count(), town.manualManagement(), SettlementPlotService.totals(town));
         return new Assessment(header, issues);
     }
 

@@ -77,6 +77,8 @@ public final class SettlementResidentState {
         return this.food;
     }
 
+    boolean needsRecovery() { return this.downed || this.health <= this.maxHealth / 2; }
+
     public float health() {
         return this.health;
     }

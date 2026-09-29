@@ -88,8 +88,13 @@ public final class SettlementConstructionGameTests {
             helper.assertValueEqual(builderPage.entries().getFirst().id(), fixture.builder().getUUID(), "the builder link resolves exactly");
             BuilderTaskState.setBlocked(state, "site_unloaded");
             SettlementConstructionService.observe(fixture.builder(), state);
-            helper.assertValueEqual(SettlementManagementService.snapshot(fixture.leader(), request).total(), 0,
-                    "awaiting site observation suppresses retained material warnings");
+            var observationPage = SettlementManagementService.snapshot(fixture.leader(), request);
+            helper.assertValueEqual(observationPage.total(), 1, "awaiting site observation remains visible");
+            var observationIssue = (SettlementManagementPayload.Issue) observationPage.entries().getFirst();
+            helper.assertValueEqual(observationIssue.cause(), "site_unloaded", "observation replaces retained material warnings");
+            helper.assertValueEqual(observationIssue.diagnostic().severity(), SettlementWorkerDiagnostics.Severity.OBSERVATION,
+                    "unloaded sites explain missing observation");
+            helper.assertTrue(observationIssue.needsAttention(), "unobserved projects remain actionable");
             BuilderTaskState.setBlocked(state, "blocked_existing");
             SettlementConstructionService.observe(fixture.builder(), state);
             helper.assertValueEqual(SettlementManagementService.snapshot(fixture.leader(), request).total(), 1, "a real obstruction reappears");

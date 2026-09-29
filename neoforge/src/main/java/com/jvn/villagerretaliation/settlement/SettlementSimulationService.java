@@ -42,6 +42,15 @@ public final class SettlementSimulationService {
         simulation.update(server);
     }
 
+    static String suspension(ServerLevel level, SettlementRecord town) {
+        if (!town.territory().active()) return "simulation_suspended";
+        int cap = VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.get();
+        if (cap <= 0) return "simulation_disabled";
+        var towns = SettlementSavedData.get(level).settlements().stream().filter(value -> value.territory().active()).toList();
+        return select(towns, Math.floorDiv(level.getServer().overworld().getGameTime(), 24_000L), cap).stream().anyMatch(value -> value.id().equals(town.id()))
+                ? "" : "simulation_capped";
+    }
+
     static List<SettlementRecord> select(List<SettlementRecord> towns, long day, int limit) {
         if (limit <= 0 || towns.isEmpty()) return List.of();
         var ordered = towns.stream().sorted(Comparator.comparing(SettlementRecord::id)).toList();
@@ -137,6 +146,7 @@ public final class SettlementSimulationService {
                 jobs.add(() -> SettlementProgressionService.update(this.level, this.town, cycleAt));
                 jobs.add(() -> SettlementPopulationService.update(this.level, this.town, cycleAt));
                 jobs.add(() -> SettlementTradeService.process(this.level, this.town, cycleAt));
+                jobs.add(() -> SettlementNotifications.update(this.level, this.town, cycleAt));
                 this.work = jobs;
             }
             SettlementSimulationClock.run(this.town, this.work.get(this.index++));

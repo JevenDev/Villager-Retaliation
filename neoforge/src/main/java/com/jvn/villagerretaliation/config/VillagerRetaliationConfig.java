@@ -19,6 +19,8 @@ public final class VillagerRetaliationConfig {
 
     public static final ConfigWrapper<?> CONFIG = loadConfig();
 
+    public static final ConfigValue<Boolean> SETTLEMENT_STATE_NOTIFICATIONS = bind("settlements.stateNotifications", Boolean.class);
+    public static final ConfigValue<Boolean> SETTLEMENT_PROBLEM_NOTIFICATIONS = bind("settlements.problemNotifications", Boolean.class);
     public static final ConfigValue<Integer> SETTLEMENT_MAX_BACKGROUND_VILLAGES = bind("settlements.maxBackgroundVillages", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_DAILY_NUTRITION = bind("settlements.dailyNutrition", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_ADVANCEMENT_DAYS = bind("settlements.advancementDays", Integer.class);

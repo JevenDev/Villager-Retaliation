@@ -64,10 +64,10 @@ public final class SettlementWorkerScreen extends Screen {
         if (this.parent.snapshot().header() == null || !this.parent.snapshot().header().id().equals(payload.town())) {
             return;
         }
-        if (payload.applied()) {
+        if (payload.applied() && !this.parent.resultWasLate()) {
             onClose();
         } else {
-            this.feedback = text("not_applied");
+            this.feedback = SettlementManagementScreen.resultMessage(payload);
             updateRows();
         }
     }
@@ -229,6 +229,7 @@ public final class SettlementWorkerScreen extends Screen {
 
     @Override
     public void tick() {
+        if (this.parent.unconfirmed()) this.feedback = text("acknowledgement_timeout");
         updateRows();
     }
 
@@ -258,8 +259,8 @@ public final class SettlementWorkerScreen extends Screen {
         Component status = !this.feedback.getString().isEmpty() ? this.feedback
                 : this.filtering ? text(selectedFilters().isEmpty() ? "worker_all_hint" : "worker_selected", selectedFilters().size())
                 : text("worker_schedule_hint");
-        graphics.drawString(this.font, this.font.plainSubstrByWidth(status.getString(), this.panelWidth - 60),
-                this.left + 60, this.top + this.panelHeight - 42, 0xD0D0D0);
+        SettlementManagementScreen.renderFeedback(graphics, this.font, status,
+                this.left + 60, this.top + this.panelHeight - 42, this.panelWidth - 60, mouseX, mouseY);
     }
 
     private static Component text(String key, Object... arguments) {

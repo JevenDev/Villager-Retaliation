@@ -205,6 +205,7 @@ public final class SettlementLifecycleGameTests {
             var level = helper.getLevel();
             var town = fixture.town();
             town.economy().credit(CurrencyAmount.of(20, 1));
+            town.rememberManualDuty(fixture.builder().getUUID());
             fixture.project().reservePayment(5);
             fixture.project().earnPayment();
             var placement = new SettlementConstructionPlacement(List.of(new SettlementConstructionPlacement.Part(
@@ -225,6 +226,10 @@ public final class SettlementLifecycleGameTests {
             helper.assertTrue(merged.workers().containsKey(fixture.builder().getUUID()), "unloaded worker state is preserved");
             var restored = SettlementRecord.load(merged.save(level.registryAccess()), level.registryAccess(), () -> {});
             helper.assertTrue(restored.projects().get(project.id()).site().pending(), "pending receipts remain after restart");
+            helper.assertTrue(restored.manuallyStaffed(fixture.builder().getUUID()), "manual staffing survives merger and reload");
+            helper.assertTrue(restored.returnToAutomaticStaffing(restored.leader(), fixture.builder().getUUID()),
+                    "the merged town can restore automatic staffing");
+            helper.assertFalse(restored.manuallyStaffed(fixture.builder().getUUID()), "the merged override is reversible");
             SettlementWorkforceService.reconcile(level, fixture.builder());
             helper.assertValueEqual(SettlementWorkforceService.duty(fixture.builder()).orElseThrow().town().id(), target.id(),
                     "an unloaded source worker returns to the transferred duty");

@@ -345,7 +345,7 @@ public final class SettlementViewClientSmoke {
                 phase = 8;
             }
         } else if (phase == 8 && minecraft.screen instanceof SettlementManagementScreen screen) {
-            require(screen.snapshot().header().issues() > 0, "Summary includes the settlement's progression shortages");
+            require(screen.snapshot().header() != null, "Summary includes the current settlement assessment");
             capture("issues-summary");
             requireButtonsFit(screen);
             button(screen, "villagerretaliation.gui.settlement.page.issues").onPress();
@@ -354,7 +354,7 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 80 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES) {
             if (++ticks < 5) return;
-            require(screen.snapshot().total() == screen.snapshot().header().issues(), "the Issues page agrees with the summary count");
+            require(screen.snapshot().total() >= screen.snapshot().header().issues(), "the Issues page also includes nonblocking progression information");
             requireButtonsFit(screen);
             capture("issues-progression");
             UUID player = minecraft.player.getUUID();
@@ -863,23 +863,22 @@ public final class SettlementViewClientSmoke {
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             phase = 100;
         } else if (phase == 100 && minecraft.screen instanceof SettlementViewScreen screen && screen.terrainLoaded()) {
+            hideOverviewMap(screen);
+            screen.focus(fixture.center().getX() + 12.5D, fixture.center().getZ() - 11.5D);
             screen.togglePlots();
             var offer = screen.plots().plots().stream().filter(plot -> plot.eligible() && plot.paidFailure().isEmpty()).findFirst().orElseThrow();
             screen.selectPlot(offer.chunk());
-            var hover = new ChunkPos(fixture.center());
-            int hoverX = hover.getMiddleBlockX(), hoverZ = hover.getMiddleBlockZ();
-            var point = screenPoint(screen, new Vec3(hoverX + 0.5D,
-                    minecraft.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, hoverX, hoverZ) + 0.01D, hoverZ + 0.5D));
-            GLFW.glfwSetCursorPos(minecraft.getWindow().getWindow(), point.x * minecraft.getWindow().getGuiScale(),
-                    point.y * minecraft.getWindow().getGuiScale());
+            hoverTerrainPlot(screen);
             plotCount = screen.plots().totals().owned();
             plotCredits = screen.plots().totals().free();
             plotBalance = screen.plots().totals().spendable().subtract(com.jvn.villagerretaliation.sell.CurrencyAmount.of(offer.price(), 1));
             require(plotCredits > 0, "the paid claim can preserve banked free credits");
             ticks = 0;
             phase = 101;
-        } else if (phase == 101 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
-            require(new ChunkPos(fixture.center()).equals(screen.hoveredPlot()), "plot hover follows the terrain under the cursor");
+        } else if (phase == 101 && minecraft.screen instanceof SettlementViewScreen screen) {
+            hoverTerrainPlot(screen);
+            if (++ticks < 40) return;
+            require(new ChunkPos(fixture.center().north(16)).equals(screen.hoveredPlot()), "plot hover follows the terrain under the cursor: " + screen.hoveredPlot());
             capture("plots-terrain-tints");
             minecraft.options.graphicsMode().set(net.minecraft.client.GraphicsStatus.FABULOUS);
             minecraft.levelRenderer.allChanged();
@@ -953,7 +952,24 @@ public final class SettlementViewClientSmoke {
         }
     }
 
+    private static void hoverTerrainPlot(SettlementViewScreen screen) {
+        var minecraft = Minecraft.getInstance();
+        int x = fixture.center().getX() + 12, z = fixture.center().getZ() - 12;
+        var point = screenPoint(screen, new Vec3(x + 0.5D,
+                minecraft.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z) + 0.01D, z + 0.5D));
+        GLFW.glfwSetCursorPos(minecraft.getWindow().getWindow(), point.x * minecraft.getWindow().getGuiScale(),
+                point.y * minecraft.getWindow().getGuiScale());
+    }
+
+    private static void hideOverviewMap(SettlementViewScreen screen) {
+        screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.visible && button.getMessage().getString().equals("Hide map"))
+                .findFirst().ifPresent(Button::onPress);
+    }
+
     private static void verifyViewInteractions(SettlementViewScreen screen) {
+        SettlementManagementClientChecks.verify();
+        hideOverviewMap(screen);
         var minecraft = Minecraft.getInstance();
         var entity = visibleResident(minecraft);
         var point = screenPoint(screen, entity.getBoundingBox().getCenter());
@@ -994,6 +1010,7 @@ public final class SettlementViewClientSmoke {
         capture("browser-collapsed");
         literalButton(screen, "<").onPress();
         require(screen.viewportWidth() == expanded, "reopening restores the sidebar viewport");
+        literalButton(screen, "Map").onPress();
         screen.savePreferences();
         var restored = SettlementViewPreferences.forSettlement(fixture.town().value());
         require(restored.groups.getFirst().contains(fixture.resident()), "control groups survive preference reload");

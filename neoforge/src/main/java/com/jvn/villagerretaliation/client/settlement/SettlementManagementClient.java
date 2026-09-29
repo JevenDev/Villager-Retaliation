@@ -31,6 +31,15 @@ public final class SettlementManagementClient {
                         SettlementManagementRequestPayload.Page.TOWNS, 0, "", 0, true));
             }
         }
+        var management = current();
+        if (management != null) {
+            management.updateSubmission();
+            if (!management.validSession()) {
+                minecraft.setScreen(null);
+                return;
+            }
+            if (minecraft.screen != management && !(minecraft.screen instanceof SettlementViewScreen)) management.tick();
+        }
         if (current() != null && (minecraft.player == null || !minecraft.player.isAlive() || minecraft.player.hurtTime > 0)) {
             minecraft.setScreen(null);
         }
@@ -60,7 +69,7 @@ public final class SettlementManagementClient {
         if (current == null) {
             return;
         }
-        current.result(payload);
+        if (!current.result(payload)) return;
         if (Minecraft.getInstance().screen instanceof SettlementEditScreen form) {
             form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementWorkerScreen form) {
