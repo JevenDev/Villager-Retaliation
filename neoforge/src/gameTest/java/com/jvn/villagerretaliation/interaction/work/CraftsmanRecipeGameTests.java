@@ -15,6 +15,9 @@ import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -26,6 +29,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -199,6 +207,142 @@ public final class CraftsmanRecipeGameTests {
             fixture.worker().discard();
         }
         helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "craftsman_recipe")
+    public static void recursivePlanningAndFullOutputFailuresLeaveEveryInputUntouched(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            var inventory = fixture.context().inventory();
+            inventory.insertSupply(new ItemStack(Items.OAK_LOG, 64));
+            var impossible = new ShapelessRecipe("", CraftingBookCategory.MISC, new ItemStack(Items.PAPER),
+                    NonNullList.of(Ingredient.EMPTY, Ingredient.of(Items.OAK_PLANKS), Ingredient.of(Items.DIAMOND)));
+            var before = inventory.captureSnapshot();
+            helper.assertFalse(HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(
+                    helper.getLevel(), fixture.context(), impossible), "a missing final ingredient rejects recursive planning");
+            helper.assertValueEqual(inventory.captureSnapshot(), before, "failed planning never crafts intermediate planks");
+            for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+                if (inventory.getItem(slot).isEmpty()) inventory.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+            }
+            var sticks = helper.getLevel().getRecipeManager().byKey(ResourceLocation.withDefaultNamespace("stick")).orElseThrow();
+            before = inventory.captureSnapshot();
+            helper.assertFalse(HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(
+                    helper.getLevel(), fixture.context(), (CraftingRecipe) sticks.value()), "full output rejects the recursive craft");
+            helper.assertValueEqual(inventory.captureSnapshot(), before, "capacity failure preserves logs and slot classifications");
+            inventory.setItem(HiredJobInventory.MAIN_GRID_START + 1, ItemStack.EMPTY);
+            inventory.setItem(HiredJobInventory.MAIN_GRID_START + 2, ItemStack.EMPTY);
+            helper.assertTrue(HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(
+                    helper.getLevel(), fixture.context(), (CraftingRecipe) sticks.value()), "available space permits one recursive batch");
+            helper.assertValueEqual(count(fixture, Items.OAK_LOG), 63, "one log funds the recursive craft");
+            helper.assertValueEqual(count(fixture, Items.OAK_PLANKS), 2, "unused intermediate planks survive");
+            helper.assertValueEqual(count(fixture, Items.STICK), 4, "the exact stick recipe produces one batch");
+        } finally {
+            fixture.worker().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "craftsman_recipe")
+    public static void craftingUsesSelectedComponentsAndRecipeDefinedRemainders(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            var input = new ItemStack(Items.PAPER);
+            input.set(DataComponents.CUSTOM_NAME, Component.literal("Selected survey"));
+            var recipe = componentRecipe();
+            fixture.context().inventory().insertSupply(input.copy());
+            var planned = WorkCraftingPlan.prepare(helper.getLevel(), recipe, java.util.List.of(input),
+                    java.util.Map.of(), true);
+            helper.assertTrue(planned != null, "the common planner evaluates the same supported recipe for civic inventories");
+            helper.assertTrue(HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(
+                    helper.getLevel(), fixture.context(), recipe), "personal execution assembles the actual selected input");
+            helper.assertValueEqual(count(fixture, Items.PAPER), 0, "the selected input is consumed once");
+            helper.assertValueEqual(count(fixture, Items.MAP), 2, "assembly determines the output count rather than the advertised result");
+            helper.assertValueEqual(count(fixture, Items.GLASS_BOTTLE), 1, "the recipe defines its own nonstandard remainder");
+            for (ItemStack expected : planned.outputs()) {
+                helper.assertTrue(fixture.context().inventory().outputSlots().stream()
+                                .map(fixture.context().inventory()::getItem).anyMatch(stack -> ItemStack.matches(stack, expected)),
+                        "personal execution agrees with civic planning on output counts and components");
+            }
+        } finally {
+            fixture.worker().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "craftsman_recipe")
+    public static void craftingRejectsMismatchedInputsAndStaleComponentPlans(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            var inventory = fixture.context().inventory();
+            inventory.insertSupply(new ItemStack(Items.PAPER));
+            var before = inventory.captureSnapshot();
+            helper.assertFalse(HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(
+                    helper.getLevel(), fixture.context(), componentRecipe()), "advertised ingredients do not bypass recipe matching");
+            helper.assertValueEqual(inventory.captureSnapshot(), before, "a mismatched input consumes nothing");
+            int slot = inventory.supplySlots().stream().filter(index -> inventory.getItem(index).is(Items.PAPER)).findFirst().orElseThrow();
+            var named = new ItemStack(Items.PAPER);
+            named.set(DataComponents.CUSTOM_NAME, Component.literal("Selected survey"));
+            inventory.setItem(slot, named);
+            var plan = HiredSupplyCrafting.prepareCarriedRecipe(helper.getLevel(), fixture.context(), componentRecipe(), java.util.Map.of());
+            helper.assertTrue(plan != null, "the matching component input produces a plan");
+            inventory.setItem(slot, new ItemStack(Items.PAPER));
+            before = inventory.captureSnapshot();
+            helper.assertFalse(HiredSupplyCrafting.applyCarriedRecipe(fixture.context(), plan, true, true),
+                    "a different component variant cannot pay for a stale plan");
+            helper.assertValueEqual(inventory.captureSnapshot(), before, "stale planning preserves inventory exactly");
+            helper.assertFalse(HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(
+                    helper.getLevel(), fixture.context(), componentRecipe(), java.util.Map.of(0, Items.DIRT)),
+                    "narrowing cannot introduce an ingredient outside the recipe");
+        } finally {
+            fixture.worker().discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "craftsman_recipe")
+    public static void craftingReconsidersOverlappingIngredientAlternatives(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            fixture.context().inventory().insertSupply(new ItemStack(Items.OAK_PLANKS));
+            fixture.context().inventory().insertSupply(new ItemStack(Items.BIRCH_PLANKS));
+            var recipe = new ShapelessRecipe("", CraftingBookCategory.MISC, new ItemStack(Items.PAPER),
+                    NonNullList.of(Ingredient.EMPTY, Ingredient.of(Items.OAK_PLANKS, Items.BIRCH_PLANKS), Ingredient.of(Items.OAK_PLANKS)));
+            var materials = new java.util.LinkedHashMap<Item, Integer>();
+            helper.assertTrue(new HiredSupplyCrafting.MaterialPlanner(helper.getLevel(), fixture.worker(), fixture.context())
+                    .planRecipe(recipe, 1, materials), "material selection can reserve oak for the constrained ingredient");
+            helper.assertTrue(HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(
+                    helper.getLevel(), fixture.context(), recipe), "execution retries the alternative after the first choice fails");
+            helper.assertValueEqual(count(fixture, Items.PAPER), 1, "one complete recipe is assembled");
+            helper.assertValueEqual(count(fixture, Items.OAK_PLANKS) + count(fixture, Items.BIRCH_PLANKS), 0,
+                    "only the selected two planks are consumed");
+        } finally {
+            fixture.worker().discard();
+        }
+        helper.succeed();
+    }
+
+    private static CraftingRecipe componentRecipe() {
+        return new ShapelessRecipe("", CraftingBookCategory.MISC, new ItemStack(Items.MAP),
+                NonNullList.of(Ingredient.EMPTY, Ingredient.of(Items.PAPER))) {
+            @Override
+            public boolean matches(CraftingInput input, net.minecraft.world.level.Level level) {
+                return super.matches(input, level) && input.getItem(0).has(DataComponents.CUSTOM_NAME);
+            }
+
+            @Override
+            public ItemStack assemble(CraftingInput input, net.minecraft.core.HolderLookup.Provider registries) {
+                ItemStack output = new ItemStack(Items.MAP, 2);
+                output.set(DataComponents.CUSTOM_NAME, input.getItem(0).get(DataComponents.CUSTOM_NAME));
+                return output;
+            }
+
+            @Override
+            public NonNullList<ItemStack> getRemainingItems(CraftingInput input) {
+                var remainder = new ItemStack(Items.GLASS_BOTTLE);
+                remainder.set(DataComponents.CUSTOM_NAME, input.getItem(0).get(DataComponents.CUSTOM_NAME));
+                return NonNullList.of(ItemStack.EMPTY, remainder);
+            }
+        };
     }
 
     private static HiredProductionOrder order(GameTestHelper helper, String recipe, int amount) {

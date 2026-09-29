@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -54,171 +53,61 @@ public final class HiredSupplyCrafting {
     }
 
     public static boolean craftCarriedSupplyItem(ServerLevel level, HiredWorkContext context, Item item) {
-        return craftCarriedSupplyItem(level, context, item, new HashSet<>(), true);
+        return craftCarriedSupplyItem(level, context, item, true);
     }
 
     public static boolean craftCarriedSupplyItemWithStations(
-            ServerLevel level,
-            HiredWorkContext context,
-            Item item) {
-        return craftCarriedSupplyItem(level, context, item, new HashSet<>(), hasCraftingTable(level, context));
+            ServerLevel level, HiredWorkContext context, Item item) {
+        return craftCarriedSupplyItem(level, context, item, hasCraftingTable(level, context));
     }
 
-    /** Crafts one exact recipe into supply slots while honoring configured ingredient alternatives. */
     public static boolean craftCarriedRecipeWithStations(
-            ServerLevel level,
-            HiredWorkContext context,
-            CraftingRecipe recipe,
-            Map<Integer, Item> narrowedIngredients) {
-        boolean hasCraftingTable = hasCraftingTable(level, context);
-        if (recipe == null || recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)) {
-            return false;
-        }
-        ItemStack result = recipe.getResultItem(level.registryAccess());
-        if (result.isEmpty()) {
-            return false;
-        }
-        Map<Item, Integer> ingredients = new LinkedHashMap<>();
-        if (!prepareRecipeIngredients(
-                level, context, recipe, ingredients, narrowedIngredients, new HashSet<>(), hasCraftingTable)) {
-            return false;
-        }
-        List<ItemStack> produced = craftingRemainders(ingredients);
-        produced.add(0, result.copy());
-        return context.inventory().tryTransformSupplies(ingredients, produced);
+            ServerLevel level, HiredWorkContext context, CraftingRecipe recipe, Map<Integer, Item> narrowedIngredients) {
+        return craftRecipe(level, context, recipe, narrowedIngredients, hasCraftingTable(level, context), false);
     }
 
-    /** Crafts one exact recipe, placing its result in job-output slots. */
     public static boolean craftCarriedRecipeToOutputsWithStations(
-            ServerLevel level,
-            HiredWorkContext context,
-            CraftingRecipe recipe) {
+            ServerLevel level, HiredWorkContext context, CraftingRecipe recipe) {
         return craftCarriedRecipeToOutputsWithStations(level, context, recipe, Map.of());
     }
 
     public static boolean craftCarriedRecipeToOutputsWithStations(
-            ServerLevel level,
-            HiredWorkContext context,
-            CraftingRecipe recipe,
-            Map<Integer, Item> narrowedIngredients) {
-        boolean hasCraftingTable = hasCraftingTable(level, context);
-        if (recipe == null || recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)) {
-            return false;
-        }
-        ItemStack result = recipe.getResultItem(level.registryAccess());
-        if (result.isEmpty()) {
-            return false;
-        }
-        Map<Item, Integer> ingredients = new LinkedHashMap<>();
-        if (!prepareRecipeIngredients(level, context, recipe, ingredients, narrowedIngredients, new HashSet<>(), hasCraftingTable)) {
-            return false;
-        }
-        List<ItemStack> produced = craftingRemainders(ingredients);
-        produced.add(0, result.copy());
-        return context.inventory().tryTransformSuppliesToOutputs(ingredients, produced);
-
+            ServerLevel level, HiredWorkContext context, CraftingRecipe recipe, Map<Integer, Item> narrowedIngredients) {
+        return craftRecipe(level, context, recipe, narrowedIngredients, hasCraftingTable(level, context), true);
     }
+
+    public static WorkCraftingPlan.Result prepareCarriedRecipe(ServerLevel level, HiredWorkContext context,
+            CraftingRecipe recipe, Map<Integer, Item> narrowedIngredients) {
+        return WorkCraftingPlan.prepare(level, recipe, carriedSupplies(context), narrowedIngredients,
+                hasCraftingTable(level, context));
+    }
+
+    public static boolean applyCarriedRecipe(HiredWorkContext context, WorkCraftingPlan.Result plan, boolean toOutputs, boolean commit) {
+        if (plan == null) return false;
+        return context.inventory().transformSupplyStacks(plan.consumedStacks(),
+                toOutputs ? plan.surplus() : plan.outputs(), toOutputs ? plan.products() : List.of(), commit);
+    }
+
+    private static List<ItemStack> carriedSupplies(HiredWorkContext context) {
+        return context.inventory().supplySlots().stream().map(context.inventory()::getItem).map(ItemStack::copy).toList();
+    }
+
+    private static boolean craftRecipe(ServerLevel level, HiredWorkContext context, CraftingRecipe recipe,
+            Map<Integer, Item> narrowedIngredients, boolean hasCraftingTable, boolean toOutputs) {
+        var plan = WorkCraftingPlan.prepare(level, recipe, carriedSupplies(context), narrowedIngredients, hasCraftingTable);
+        return applyCarriedRecipe(context, plan, toOutputs, true);
+    }
+
     private static boolean craftCarriedSupplyItem(
-            ServerLevel level,
-            HiredWorkContext context,
-            Item item,
-            Set<Item> visiting,
-            boolean hasCraftingTable) {
-        if (!visiting.add(item)) {
-            return false;
-        }
+            ServerLevel level, HiredWorkContext context, Item item, boolean hasCraftingTable) {
         for (RecipeHolder<CraftingRecipe> holder : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
             CraftingRecipe recipe = holder.value();
-            if (recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)) {
-                continue;
-            }
-            ItemStack result = recipe.getResultItem(level.registryAccess());
-            if (result.isEmpty() || !result.is(item)) {
-                continue;
-            }
-            Map<Item, Integer> ingredients = new HashMap<>();
-            if (!prepareRecipeIngredients(level, context, recipe, ingredients, visiting, hasCraftingTable)) {
-                continue;
-            }
-            List<ItemStack> produced = craftingRemainders(ingredients);
-            produced.add(0, result.copy());
-            boolean crafted = context.inventory().tryTransformSupplies(ingredients, produced);
-            visiting.remove(item);
-            return crafted;
+            if (recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)
+                    || !recipe.getResultItem(level.registryAccess()).is(item)) continue;
+            var plan = WorkCraftingPlan.prepare(level, recipe, carriedSupplies(context), Map.of(), hasCraftingTable);
+            if (plan != null && plan.result().is(item) && applyCarriedRecipe(context, plan, false, true)) return true;
         }
-        visiting.remove(item);
         return false;
-    }
-
-    private static boolean prepareRecipeIngredients(
-            ServerLevel level,
-            HiredWorkContext context,
-            CraftingRecipe recipe,
-            Map<Item, Integer> ingredients,
-            Set<Item> visiting,
-            boolean hasCraftingTable) {
-        return prepareRecipeIngredients(
-                level, context, recipe, ingredients, Map.of(), visiting, hasCraftingTable);
-    }
-
-    private static boolean prepareRecipeIngredients(
-            ServerLevel level,
-            HiredWorkContext context,
-            CraftingRecipe recipe,
-            Map<Item, Integer> ingredients,
-            Map<Integer, Item> narrowedIngredients,
-            Set<Item> visiting,
-            boolean hasCraftingTable) {
-        List<Ingredient> recipeIngredients = recipe.getIngredients();
-        for (int slot = 0; slot < recipeIngredients.size(); slot++) {
-            Ingredient ingredient = recipeIngredients.get(slot);
-            if (ingredient.isEmpty()) {
-                continue;
-            }
-            Item selected = null;
-            Item narrowed = narrowedIngredients.get(slot);
-            ItemStack[] options = narrowed == null
-                    ? ingredient.getItems()
-                    : new ItemStack[]{new ItemStack(narrowed)};
-            for (ItemStack option : options) {
-                if (option.isEmpty()) {
-                    continue;
-                }
-                Item optionItem = option.getItem();
-                int needed = ingredients.getOrDefault(optionItem, 0) + 1;
-                while (countCarried(context, optionItem) < needed) {
-                    if (!craftCarriedSupplyItem(level, context, optionItem, visiting, hasCraftingTable)) {
-                        break;
-                    }
-                }
-                if (countCarried(context, optionItem) >= needed) {
-                    selected = optionItem;
-                    break;
-                }
-            }
-            if (selected == null) {
-                return false;
-            }
-            ingredients.merge(selected, 1, Integer::sum);
-        }
-        return true;
-    }
-
-    private static List<ItemStack> craftingRemainders(Map<Item, Integer> ingredients) {
-        List<ItemStack> remainders = new ArrayList<>();
-        for (Map.Entry<Item, Integer> entry : ingredients.entrySet()) {
-            ItemStack ingredient = new ItemStack(entry.getKey());
-            if (!ingredient.hasCraftingRemainingItem()) {
-                continue;
-            }
-            for (int count = 0; count < entry.getValue(); count++) {
-                ItemStack craftingRemainder = ingredient.getCraftingRemainingItem();
-                if (!craftingRemainder.isEmpty()) {
-                    remainders.add(craftingRemainder.copy());
-                }
-            }
-        }
-        return remainders;
     }
 
     public static boolean requiresCraftingTable(CraftingRecipe recipe) {
@@ -324,6 +213,17 @@ public final class HiredSupplyCrafting {
             ItemStack result = recipe.getResultItem(this.level.registryAccess());
             if (result.isEmpty()) {
                 return false;
+            }
+            if (planned.isEmpty() && this.surplus.isEmpty()) {
+                var carried = WorkCraftingPlan.prepare(this.level, recipe, carriedSupplies(this.context),
+                        narrowedIngredients, this.hasCraftingTable);
+                if (carried != null && carried.result().getCount() >= desiredCount) {
+                    carried.consumedStacks().forEach(stack -> planned.merge(stack.getItem(), stack.getCount(), Integer::sum));
+                    carried.surplus().forEach(stack -> this.surplus.merge(stack.getItem(), stack.getCount(), Integer::sum));
+                    int extra = carried.result().getCount() - desiredCount;
+                    if (extra > 0) this.surplus.merge(carried.result().getItem(), extra, Integer::sum);
+                    return true;
+                }
             }
             Map<Item, Integer> trial = new LinkedHashMap<>(planned);
             Map<Item, Integer> trialSurplus = new LinkedHashMap<>(this.surplus);

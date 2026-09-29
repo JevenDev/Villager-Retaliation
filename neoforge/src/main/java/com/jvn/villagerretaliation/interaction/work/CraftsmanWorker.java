@@ -122,11 +122,21 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             return WorkResult.progressed("interaction.work.craftsman.crafting");
         }
         context.setProgressTicks(0);
+        var plan = HiredSupplyCrafting.prepareCarriedRecipe(level, context, selection.recipe(), selection.narrowedIngredients());
+        if (plan == null || queue != null && (!queue.order(allocation.order()).matches(plan.result())
+                || plan.result().getCount() > allocation.remaining())) {
+            if (queue != null) {
+                queue.blocker(allocation.order(), "recipe_unavailable");
+                releaseProduction(villager, context, queue);
+            }
+            HiredWorkerBrain.setFailure(context, "missing_craftsman_materials", level.getGameTime() + 100L);
+            return WorkResult.idle("interaction.work.craftsman.missing_materials");
+        }
         if (queue != null && !queue.start(allocation.id())) {
             releaseProduction(villager, context, queue);
             return WorkResult.idle("interaction.work.craftsman.no_filter");
         }
-        if (!HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(level, context, selection.recipe(), selection.narrowedIngredients())) {
+        if (!HiredSupplyCrafting.applyCarriedRecipe(context, plan, true, true)) {
             if (queue != null) {
                 queue.lost(allocation.id());
                 queue.blocker(allocation.order(), "output_full");
@@ -136,7 +146,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setFailure(context, "craftsman_output_full", level.getGameTime() + 100L);
             return WorkResult.idle("interaction.work.craftsman.output_full");
         }
-        ItemStack result = selection.recipe().getResultItem(level.registryAccess());
+        ItemStack result = plan.result();
         if (queue == null) advanceCursor(context.state(), targets, selection.target().slot());
         else {
             if (!queue.complete(allocation.id(), result)) throw new IllegalStateException("Crafted output did not match its production allocation");

@@ -1069,10 +1069,26 @@ public final class HiredJobInventory implements Container {
             List<ItemStack> produced,
             boolean produceAsOutput,
             boolean commit) {
-        if (consumed == null || consumed.isEmpty() || produced == null || produced.isEmpty()) {
-            return false;
-        }
-        boolean hasProducedItem = produced.stream().anyMatch(stack -> stack != null && !stack.isEmpty());
+        if (consumed == null || consumed.entrySet().stream().anyMatch(entry ->
+                entry.getKey() == null || entry.getValue() == null || entry.getValue() <= 0)) return false;
+        return transformSupplies(consumed.entrySet().stream()
+                        .map(entry -> new SupplyRequirement(stack -> stack.is(entry.getKey()), entry.getValue())).toList(),
+                produceAsOutput ? List.of() : produced, produceAsOutput ? produced : List.of(), commit);
+    }
+
+    public boolean transformSupplyStacks(List<ItemStack> consumed, List<ItemStack> supplies,
+                                         List<ItemStack> outputs, boolean commit) {
+        if (consumed == null || consumed.stream().anyMatch(stack -> stack == null || stack.isEmpty())) return false;
+        return transformSupplies(consumed.stream().map(stack -> new SupplyRequirement(
+                candidate -> ItemStack.isSameItemSameComponents(stack, candidate), stack.getCount())).toList(),
+                supplies, outputs, commit);
+    }
+
+    private boolean transformSupplies(List<SupplyRequirement> consumed, List<ItemStack> supplies,
+                                      List<ItemStack> outputs, boolean commit) {
+        if (consumed.isEmpty() || supplies == null || outputs == null) return false;
+        boolean hasProducedItem = java.util.stream.Stream.concat(supplies.stream(), outputs.stream())
+                .anyMatch(stack -> stack != null && !stack.isEmpty());
         if (!hasProducedItem) {
             return false;
         }
@@ -1083,19 +1099,14 @@ public final class HiredJobInventory implements Container {
             simulatedTypes[slot] = slotType(slot);
         }
 
-        for (Map.Entry<Item, Integer> entry : consumed.entrySet()) {
-            Item item = entry.getKey();
-            Integer requested = entry.getValue();
-            if (item == null || requested == null || requested <= 0) {
-                return false;
-            }
-            int remaining = requested;
+        for (SupplyRequirement requirement : consumed) {
+            int remaining = requirement.count();
             for (int slot = 0; slot < SLOT_COUNT && remaining > 0; slot++) {
                 if (simulatedTypes[slot] != HiredJobInventorySlotType.SUPPLY) {
                     continue;
                 }
                 ItemStack stack = simulatedItems.get(slot);
-                if (stack.isEmpty() || ProtectedVillagerProperty.isProtected(stack) || !stack.is(item)) {
+                if (stack.isEmpty() || ProtectedVillagerProperty.isProtected(stack) || !requirement.matches().test(stack)) {
                     continue;
                 }
                 int removed = Math.min(remaining, stack.getCount());
@@ -1111,16 +1122,11 @@ public final class HiredJobInventory implements Container {
             }
         }
 
-        for (ItemStack stack : produced) {
-            if (stack == null) {
-                continue;
-            }
-            ItemStack remainder = produceAsOutput
-                    ? simulateOutputInsert(simulatedItems, simulatedTypes, stack.copy(), true)
-                    : simulateSupplyInsert(simulatedItems, simulatedTypes, stack.copy());
-            if (!remainder.isEmpty()) {
-                return false;
-            }
+        for (ItemStack stack : supplies) {
+            if (stack != null && !simulateSupplyInsert(simulatedItems, simulatedTypes, stack.copy()).isEmpty()) return false;
+        }
+        for (ItemStack stack : outputs) {
+            if (stack != null && !simulateOutputInsert(simulatedItems, simulatedTypes, stack.copy(), true).isEmpty()) return false;
         }
 
         if (commit) {
@@ -1131,6 +1137,9 @@ public final class HiredJobInventory implements Container {
             setChanged();
         }
         return true;
+    }
+
+    private record SupplyRequirement(Predicate<ItemStack> matches, int count) {
     }
 
     public void returnSupplyOrDrop(ItemStack stack) {

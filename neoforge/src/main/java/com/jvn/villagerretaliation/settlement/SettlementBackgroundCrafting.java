@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.CraftsmanWorker;
+import com.jvn.villagerretaliation.interaction.work.WorkCraftingPlan;
 import com.jvn.villagerretaliation.interaction.work.CookingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
@@ -106,9 +107,14 @@ final class SettlementBackgroundCrafting {
                     if (order != null) queue.blocker(order.id(), "no_crafting_table");
                     continue;
                 }
-                var plan = SettlementCraftingPlan.prepare(level, recipe, supplies.stream().map(SettlementProductionInventory.Supply::available).toList(),
-                        HiredProcessingRecipeFilter.narrowedCraftingIngredients(level, filter, recipe));
+                var plan = WorkCraftingPlan.prepare(level, recipe.value(), supplies.stream().map(SettlementProductionInventory.Supply::available).toList(),
+                        HiredProcessingRecipeFilter.narrowedCraftingIngredients(level, filter, recipe), table != null);
                 if (plan == null || !SettlementProductionInventory.allowed(level, supplies, plan.consumed())) {
+                    continue;
+                }
+                output = plan.result();
+                if (order != null && (!order.matches(output) || output.getCount() != order.output().getCount())) {
+                    queue.blocker(order.id(), "recipe_unavailable");
                     continue;
                 }
                 NonNullList<ItemStack> updated = NonNullList.withSize(items.size(), ItemStack.EMPTY);

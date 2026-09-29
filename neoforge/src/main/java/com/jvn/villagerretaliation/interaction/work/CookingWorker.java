@@ -636,40 +636,39 @@ public final class CookingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.WORKING);
         }
 
+        var plan = HiredSupplyCrafting.prepareCarriedRecipe(level, context, selection.recipe(), selection.narrowedIngredients());
+        if (plan == null || queue != null && (!queue.order(allocation.order()).matches(plan.result())
+                || plan.result().getCount() > allocation.remaining())) {
+            if (queue != null) {
+                queue.release(allocation.id());
+                queue.blocker(allocation.order(), "recipe_unavailable");
+                AssignedStorageService.releaseProductionInputs(villager);
+            }
+            return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
+        }
+        ItemStack crafted = plan.result();
         if (queue != null) {
             if (!queue.start(allocation.id())) return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
-            if (!HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(level, context, selection.recipe(), selection.narrowedIngredients())) {
+            if (!HiredSupplyCrafting.applyCarriedRecipe(context, plan, true, true)) {
                 queue.lost(allocation.id());
                 queue.blocker(allocation.order(), "output_full");
                 AssignedStorageService.releaseProductionInputs(villager);
                 return WorkResult.idle("interaction.work.cooking.output_full");
             }
-            if (!queue.complete(allocation.id(), selection.result())) throw new IllegalStateException("Cooked output did not match its production allocation");
+            if (!queue.complete(allocation.id(), crafted)) throw new IllegalStateException("Cooked output did not match its production allocation");
             AssignedStorageService.releaseProductionInputs(villager);
             HiredWorkerBrain.clearFailure(context);
             HiredStorageNavigationGoal.clearStorageTarget(context);
-            useWorkItem(level, villager, selection.result());
-            return WorkResult.completedWithPractice("interaction.work.cooking.crafted_food", itemReplacements(selection.result()),
-                    HiredWorkPractice.batch(VillagerSkill.COOKING, "hired:cooking:craft", selection.result().getCount(), selection.result().getItem().hashCode()));
+            useWorkItem(level, villager, crafted);
+            return WorkResult.completedWithPractice("interaction.work.cooking.crafted_food", itemReplacements(crafted),
+                    HiredWorkPractice.batch(VillagerSkill.COOKING, "hired:cooking:craft", crafted.getCount(), crafted.getItem().hashCode()));
         }
-        if (!HiredSupplyCrafting.craftCarriedRecipeWithStations(
-                level, context, selection.recipe(), selection.narrowedIngredients())) {
+        List<ItemStack> supplies = new ArrayList<>(plan.surplus());
+        supplies.addAll(plan.products().subList(0, plan.products().size() - 1));
+        if (!context.inventory().transformSupplyStacks(plan.consumedStacks(), supplies, List.of(crafted), true)) {
             HiredWorkerBrain.setFailure(context, "missing_cooking_crafting_materials", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, craftingTable);
             return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
-        }
-        int craftedCount = context.inventory().consumeSupply(
-                sameStackPredicate(selection.result()),
-                selection.result().getCount());
-        if (craftedCount <= 0) {
-            HiredWorkerBrain.setFailure(context, "cooking_craft_failed", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, craftingTable);
-            return WorkResult.idle("interaction.work.cooking.craft_failed");
-        }
-        ItemStack crafted = selection.result().copyWithCount(craftedCount);
-        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, crafted.copy());
-        if (!remainder.isEmpty()) {
-            context.inventory().returnSupplyOrDrop(remainder);
         }
         HiredWorkerBrain.clearFailure(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
