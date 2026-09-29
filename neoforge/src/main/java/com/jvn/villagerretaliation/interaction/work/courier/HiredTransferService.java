@@ -30,10 +30,13 @@ public final class HiredTransferService {
         }
         var state = HiredWorkStateStore.state(villager);
         if (!state.contains(STATE_TAG)) return new Access(false, null, "");
+        if (!com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(level).available(villager.getUUID())) {
+            return new Access(true, null, "production_stock_recovery_required");
+        }
         try {
             if (!state.contains(STATE_TAG, Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid personal transfer queue");
             var queue = HiredTransferQueue.load(state.getCompound(STATE_TAG), level.registryAccess(),
-                    updated -> state.put(STATE_TAG, updated.save(level.registryAccess())));
+                    updated -> savePersonal(level, villager, updated));
             if (queue.scope() != HiredTransferQueue.Scope.PERSONAL) return new Access(true, null, "transfer_ownership_changed");
             if (HiredVillagerContractService.currentContractId(villager).filter(queue.owner()::equals).isEmpty()) {
                 return new Access(true, null, "transfer_contract_changed");
@@ -54,6 +57,9 @@ public final class HiredTransferService {
 
     public static String appendPersonal(ServerPlayer player, Villager villager, long revision, HiredTransferQueue.Order requested) {
         if (!owns(player, villager)) return "Courier permission changed";
+        if (!com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(player.serverLevel()).available(villager.getUUID())) {
+            return "Production stock data requires recovery";
+        }
         if (requested.source().depot() != null || requested.destination().depot() != null
                 || !personalEndpoint(player.serverLevel(), villager, requested.source(), true)
                 || !personalEndpoint(player.serverLevel(), villager, requested.destination(), false)) return "Choose assigned source and destination storage";
@@ -66,11 +72,16 @@ public final class HiredTransferService {
             if (contract == null) return "Courier contract changed";
             var state = HiredWorkStateStore.state(villager);
             queue = new HiredTransferQueue(contract, HiredTransferQueue.Scope.PERSONAL,
-                    updated -> state.put(STATE_TAG, updated.save(player.registryAccess())));
+                    updated -> savePersonal(player.serverLevel(), villager, updated));
         } else if (queue.revision() != revision) return "Transfer orders changed";
         if (!queue.append(requested)) return "Transfer queue is full or the order is invalid";
         HiredWorkSession.invalidate(villager);
         return "";
+    }
+
+    private static void savePersonal(ServerLevel level, Villager villager, HiredTransferQueue queue) {
+        HiredWorkStateStore.state(villager).put(STATE_TAG, queue.save(level.registryAccess()));
+        com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.observe(villager);
     }
 
     public static String editPersonal(ServerPlayer player, Villager villager, long revision, UUID id, HiredTransferQueue.Edit edit, int index) {

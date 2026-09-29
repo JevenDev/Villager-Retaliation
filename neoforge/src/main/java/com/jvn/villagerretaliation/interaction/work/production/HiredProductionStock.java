@@ -66,8 +66,16 @@ public final class HiredProductionStock {
         if (order.mode() != HiredProductionOrder.Mode.MAINTAIN_STOCK) return 0L;
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         if (duty != null) return SettlementProductionStock.count(level, duty.town(), queue, order);
-        long stored = AssignedStorageService.productionStockAt(villager, order.storage(), stack -> matches(order.output(), stack));
+        var commitments = HiredProductionCommitments.get(level);
+        HiredProductionCommitments.observe(villager);
+        commitments.refresh(level, order.storage());
+        long incoming = commitments.count(order.storage(), order.output(), villager.getUUID());
+        if (incoming < 0L) return -1L;
+        var contributors = commitments.contributors(order.storage(), order.output());
+        contributors.add(villager.getUUID());
+        long stored = AssignedStorageService.productionStockAt(villager, order.storage(), stack -> matches(order.output(), stack), contributors);
         if (stored < 0L) return -1L;
+        stored += incoming;
         var inventory = HiredJobInventory.getJobInventory(villager);
         if (order.storage().equals(destination(HiredWorkStateStore.state(villager)))) {
             for (int slot : inventory.outputSlots()) {

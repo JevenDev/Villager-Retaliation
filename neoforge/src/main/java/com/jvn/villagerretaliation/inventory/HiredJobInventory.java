@@ -1606,6 +1606,7 @@ public final class HiredJobInventory implements Container {
 
     private void save() {
         this.modificationVersion++;
+        com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.observe(this.villager, this);
         CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), this.items, true, this.villager.level().registryAccess());
         tag.putInt(LAYOUT_VERSION_TAG, CURRENT_LAYOUT_VERSION);
         ListTag slotTypesTag = new ListTag();

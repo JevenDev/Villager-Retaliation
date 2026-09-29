@@ -582,6 +582,7 @@ public final class VillagerRetaliationEvents {
                 com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onActive(regular);
                 com.jvn.villagerretaliation.settlement.SettlementDepartureService.onActive(regular);
                 com.jvn.villagerretaliation.settlement.SettlementCareService.onActive(regular);
+                com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.observe(regular);
                 com.jvn.villagerretaliation.duel.DuelService.recoverPendingVillager(regular);
             }
         }
@@ -1036,6 +1037,7 @@ public final class VillagerRetaliationEvents {
             com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerUnloaded(villager);
             com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onUnloaded(villager);
             com.jvn.villagerretaliation.settlement.SettlementCareService.onUnloaded(villager);
+            com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.observe(villager);
             com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerUnloaded(villager);
             if (removalReason == Entity.RemovalReason.DISCARDED || removalReason == Entity.RemovalReason.KILLED) {
                 PartyVillagerContractService.onVillagerPermanentlyRemoved(villager);

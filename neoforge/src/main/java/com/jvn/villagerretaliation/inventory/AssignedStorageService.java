@@ -642,12 +642,16 @@ public final class AssignedStorageService {
     }
 
     public static long productionStockAt(Villager villager, BlockPos position, Predicate<ItemStack> matches) {
+        return productionStockAt(villager, position, matches, java.util.Set.of(villager.getUUID()));
+    }
+
+    public static long productionStockAt(Villager villager, BlockPos position, Predicate<ItemStack> matches, java.util.Set<UUID> excludedOwners) {
         if (!(villager.level() instanceof ServerLevel level) || position == null) return -1L;
         for (var candidate : liveContainerCandidates(level, villager, record -> purposeMatchesUse(record.purpose(), StorageUse.OUTPUT))) {
             if (!candidate.matches(position)) continue;
             var resolution = ContainerFilterResolver.resolve(level, candidate);
             if (!resolution.live()) return -1L;
-            long count = ContainerTransferClaimLedger.count(level, candidate, villager.getUUID(),
+            long count = ContainerTransferClaimLedger.countExcluding(level, candidate, excludedOwners,
                     VillagerFilterPolicy.TransferOperation.RECEIVE, matches);
             for (int slot = 0; slot < candidate.container().getContainerSize(); slot++) {
                 var stack = candidate.container().getItem(slot);

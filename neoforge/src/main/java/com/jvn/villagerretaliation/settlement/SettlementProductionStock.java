@@ -21,7 +21,12 @@ public final class SettlementProductionStock {
                 && links.permitsOutput(candidate.id()) && candidate.rulesObserved()).findFirst().orElse(null);
         if (depot == null) return -1L;
         long count = depot.count(stack -> HiredProductionStock.matches(order.output(), stack));
-        var transferWorkers = new java.util.HashSet<java.util.UUID>();
+        var commitments = com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(level);
+        commitments.refresh(level, order.storage());
+        long incoming = commitments.count(order.storage(), order.output(), null);
+        if (incoming < 0L) return -1L;
+        count += incoming;
+        var transferWorkers = new java.util.HashSet<>(commitments.contributors(order.storage(), order.output()));
         for (var transfers : town.transferQueues().values()) {
             count += transfers.pending(order.output(), order.storage());
             for (var allocation : transfers.allocations()) transferWorkers.add(allocation.worker());

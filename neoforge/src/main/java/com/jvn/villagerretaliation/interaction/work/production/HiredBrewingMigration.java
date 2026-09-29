@@ -59,6 +59,7 @@ final class HiredBrewingMigration {
         }
         state.put(HiredProductionService.STATE_TAG, queue.save(level.registryAccess()));
         BrewingWorker.clearOrder(state);
+        HiredProductionCommitments.observe(villager);
         HiredWorkSession.invalidate(villager);
         return "";
     }

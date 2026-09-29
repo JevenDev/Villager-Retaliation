@@ -29,10 +29,11 @@ public final class HiredProductionService {
         }
         var state = HiredWorkStateStore.state(villager);
         if (!state.contains(STATE_TAG)) return new Access(false, null, "");
+        if (!HiredProductionCommitments.get(level).available(villager.getUUID())) return new Access(true, null, "production_stock_recovery_required");
         try {
             if (!state.contains(STATE_TAG, Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid personal production queue");
             var queue = HiredProductionQueue.load(state.getCompound(STATE_TAG), level.registryAccess(),
-                    updated -> state.put(STATE_TAG, updated.save(level.registryAccess())));
+                    updated -> savePersonal(level, villager, updated));
             if (queue.scope() != HiredProductionQueue.Scope.PERSONAL) return new Access(true, null, "invalid_production_queue");
             if (HiredVillagerContractService.currentContractId(villager).filter(queue.owner()::equals).isEmpty()) {
                 return new Access(true, null, "production_contract_changed");
@@ -46,6 +47,7 @@ public final class HiredProductionService {
     public static String appendPersonal(ServerPlayer player, Villager villager, long revision, HiredProductionOrder requested) {
         if (!owns(player, villager)) return "Worker permission changed";
         var level = player.serverLevel();
+        if (!HiredProductionCommitments.get(level).available(villager.getUUID())) return "Production stock data requires recovery";
         var authority = VillagerWorkAuthority.resolve(level, villager);
         var error = validate(level, authority.role(), requested);
         if (!error.isEmpty()) return error;
@@ -64,11 +66,16 @@ public final class HiredProductionService {
                 return HiredBrewingMigration.append(level, villager, contract, requested);
             }
             queue = new HiredProductionQueue(contract, HiredProductionQueue.Scope.PERSONAL, authority.role(),
-                    updated -> state.put(STATE_TAG, updated.save(level.registryAccess())));
+                    updated -> savePersonal(level, villager, updated));
         } else if (queue.configurationRevision() != revision) return "Production orders changed";
         if (!queue.append(requested)) return "Production queue is full or the order already exists";
         HiredWorkSession.invalidate(villager);
         return "";
+    }
+
+    private static void savePersonal(ServerLevel level, Villager villager, HiredProductionQueue queue) {
+        HiredWorkStateStore.state(villager).put(STATE_TAG, queue.save(level.registryAccess()));
+        HiredProductionCommitments.observe(villager);
     }
 
     public static String editPersonal(ServerPlayer player, Villager villager, long revision, UUID order, Edit edit, int index) {
