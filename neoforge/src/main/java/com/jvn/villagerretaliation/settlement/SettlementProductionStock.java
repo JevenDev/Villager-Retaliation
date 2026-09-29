@@ -21,8 +21,13 @@ public final class SettlementProductionStock {
                 && links.permitsOutput(candidate.id()) && candidate.rulesObserved()).findFirst().orElse(null);
         if (depot == null) return -1L;
         long count = depot.count(stack -> HiredProductionStock.matches(order.output(), stack));
-        count += AssignedStorageService.reservedItemCount(level, depot.position(), null,
-                VillagerFilterPolicy.TransferOperation.RECEIVE, order.output());
+        var transferWorkers = new java.util.HashSet<java.util.UUID>();
+        for (var transfers : town.transferQueues().values()) {
+            count += transfers.pending(order.output(), order.storage());
+            for (var allocation : transfers.allocations()) transferWorkers.add(allocation.worker());
+        }
+        count += AssignedStorageService.reservedItemsExcluding(level, depot.position(), transferWorkers,
+                VillagerFilterPolicy.TransferOperation.RECEIVE, stack -> HiredProductionStock.matches(order.output(), stack));
         for (var other : town.productionQueues().values()) {
             if (other != queue) count += other.pending(order.output(), order.storage());
         }

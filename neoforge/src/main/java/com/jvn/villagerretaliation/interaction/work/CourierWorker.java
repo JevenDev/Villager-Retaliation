@@ -37,6 +37,8 @@ public final class CourierWorker implements HiredRoleWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        WorkResult transfer = HiredTransferWorker.tick(level, villager, context);
+        if (transfer != null) return transfer;
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         if (duty != null && duty.area().type() == SettlementAreaType.DEPOT) {
             return SettlementHaulingWorker.tick(level, villager, context, duty);
@@ -74,6 +76,12 @@ public final class CourierWorker implements HiredRoleWorker {
             case PHASE_RETURN -> traverseRoute(level, villager, context, route, false);
             default -> pickup(level, villager, context, route);
         };
+    }
+
+    @Override
+    public void pause(ServerLevel level, Villager villager, HiredWorkContext context) {
+        com.jvn.villagerretaliation.interaction.work.courier.HiredTransferService.releasePlanned(level, villager);
+        HiredRoleWorker.super.pause(level, villager, context);
     }
 
     private WorkResult pickup(

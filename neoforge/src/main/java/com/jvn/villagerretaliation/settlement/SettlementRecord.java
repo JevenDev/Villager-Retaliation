@@ -307,7 +307,7 @@ public final class SettlementRecord {
     void removeWorker(UUID worker) {
         this.productionQueues.values().forEach(queue -> queue.detach(worker));
         this.transferQueues.values().forEach(queue -> queue.detach(worker));
-        com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseProductionInputs(worker);
+        com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseCourierClaims(worker);
         if (this.workers.remove(worker) != null) {
             changed();
         }
@@ -828,7 +828,7 @@ public final class SettlementRecord {
             if (queue != null) queue.detach(resident);
             var transfers = this.transferQueues.get(previous);
             if (transfers != null) transfers.detach(resident);
-            com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseProductionInputs(resident);
+            com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseCourierClaims(resident);
             cancelProjects(resident);
             cancelBrewing(resident);
             this.guardOrders.remove(resident);
@@ -847,7 +847,7 @@ public final class SettlementRecord {
         if (queue != null) queue.detach(resident);
         var transfers = this.transferQueues.get(previous);
         if (transfers != null) transfers.detach(resident);
-        com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseProductionInputs(resident);
+        com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseCourierClaims(resident);
         cancelProjects(resident);
         cancelBrewing(resident);
         this.guardOrders.remove(resident);

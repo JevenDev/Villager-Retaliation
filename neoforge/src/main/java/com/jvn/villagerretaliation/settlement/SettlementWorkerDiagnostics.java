@@ -119,6 +119,15 @@ public final class SettlementWorkerDiagnostics {
                     "Inspect this worker's current task and job settings for the reported blocker.";
             case "profession_required" ->
                     "Assign a resident with the profession required by this job.";
+            case "transfer_supply_or_capacity" -> "Supply the selected exact item and free space at the transfer destination.";
+            case "transfer_destination_full" -> "Free space or adjust the destination's framed filters.";
+            case "transfer_storage_changed" -> "Restore the selected storage and the worksite's supply and output links.";
+            case "transfer_storage_unloaded", "transfer_storage_unobserved" -> "Visit the selected storage to observe its current contents and rules.";
+            case "transfer_unreachable" -> "Clear a safe route to the selected transfer storage.";
+            case "transfer_cargo_missing" -> "Restore the collected cargo to this courier's output inventory.";
+            case "transfer_worker_changed" -> "Return the courier to this worksite to finish its recorded delivery.";
+            case "transfer_queue_invalid", "transfer_ownership_changed", "transfer_contract_changed", "transfer_role_changed" ->
+                    "The saved transfer belongs to a different assignment or needs recovery.";
             case "workforce.output_backpressure", "workforce.no_storage", "workforce.storage_full" ->
                     "Provide an accessible depot that accepts the worker's output.";
             case "workforce.inventory_full", "workforce.material_inventory_full" ->

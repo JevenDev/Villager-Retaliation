@@ -13,7 +13,7 @@ record SettlementWorkStatus(String status, String diagnostic) {
     static SettlementWorkStatus observe(ServerLevel level, Villager villager) {
         var session = HiredWorkSession.active(level, villager);
         var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
-        if (brain.failureReason().startsWith("temporary_task_") || brain.failureReason().startsWith("fishing_")) return new SettlementWorkStatus(brain.failureReason(),
+        if (brain.failureReason().startsWith("temporary_task_") || brain.failureReason().startsWith("fishing_") || brain.failureReason().startsWith("transfer_")) return new SettlementWorkStatus(brain.failureReason(),
                 SettlementWorkerDiagnostics.describe(brain.failureReason()));
         if (villager.isSleeping() || brain.status().equals("interaction.work.status.sleeping")
                 || brain.status().equals("interaction.work.status.tired")) return new SettlementWorkStatus("resting", "");

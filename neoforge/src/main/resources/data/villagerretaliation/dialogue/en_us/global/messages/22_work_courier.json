@@ -10,6 +10,14 @@
   },
   "messages": [
     {
+      "key": "interaction.work.transfer.waiting",
+      "lines": ["My transfer orders are complete or paused."]
+    },
+    {
+      "key": "interaction.work.transfer.blocked",
+      "lines": ["My transfer needs attention. Check the selected storage, supplies and route."]
+    },
+    {
       "key": "interaction.work.courier.missing_route",
       "lines": [
         "I need an assigned route before I can carry deliveries.",

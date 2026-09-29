@@ -95,6 +95,16 @@ public final class HiredTransferQueue {
         return allocation;
     }
 
+    public boolean resizePlanned(UUID id, int amount) {
+        var allocation = this.allocations.get(id);
+        if (allocation == null || allocation.started() || amount < 1 || amount > allocation.amount()) return false;
+        if (amount != allocation.amount()) {
+            this.allocations.put(id, new Allocation(id, allocation.worker(), allocation.order(), amount, false));
+            this.changed.accept(this);
+        }
+        return true;
+    }
+
     public boolean picked(UUID id, int amount) {
         var allocation = this.allocations.get(id);
         if (allocation == null || allocation.started() || amount < 1 || amount > allocation.amount()) return false;

@@ -252,6 +252,12 @@ public final class SettlementLogisticsService {
         return (int) Math.min(4_096L, (needed + perItem - 1L) / perItem);
     }
 
+    static void bind(Villager villager, SettlementHaulTask task) {
+        if (villager.level() instanceof ServerLevel level) {
+            HiredWorkStateStore.state(villager).put(TASK_TAG, task.save(level.registryAccess()));
+        }
+    }
+
     public static List<AssignedContainerRecord> assignments(ServerLevel level, Villager villager, SettlementRecord town) {
         SettlementHaulTask task = task(villager);
         if (task == null) {

@@ -258,7 +258,7 @@ public final class SettlementBackgroundHaulingGameTests {
         return courier;
     }
 
-    private static void fixture(GameTestHelper helper, Consumer<Fixture> check) {
+    static void fixture(GameTestHelper helper, Consumer<Fixture> check) {
         var level = helper.getLevel();
         BlockPos origin = helper.absolutePos(new BlockPos(2, 2, 2));
         BlockPos center = new BlockPos(8_000_000 + origin.getX() * 8, 64, 8_000_000 + origin.getZ() * 8);
@@ -285,7 +285,7 @@ public final class SettlementBackgroundHaulingGameTests {
         helper.succeed();
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, SettlementDepot source, SettlementDepot destination,
+    record Fixture(SettlementRecord town, SettlementArea area, SettlementDepot source, SettlementDepot destination,
                            Villager courier, SettlementWorkerState worker) {
     }
 }

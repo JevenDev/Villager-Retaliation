@@ -1102,6 +1102,7 @@ public final class ClipboardWorkforceService {
             boolean inventoryFull,
             boolean noStorage) {
         String reason = lower(brain.failureReason());
+        if (reason.startsWith("transfer_")) return com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.describe(reason);
         if (reason.contains("courier_missing_route")) {
             return "Courier needs an assigned route before deliveries can begin.";
         }

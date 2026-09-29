@@ -249,7 +249,7 @@ public final class SettlementHaulingGameTests {
         return depot;
     }
 
-    private static Villager courier(GameTestHelper helper, SettlementRecord town, SettlementArea area, ServerPlayer leader) {
+    static Villager courier(GameTestHelper helper, SettlementRecord town, SettlementArea area, ServerPlayer leader) {
         Villager courier = EntityType.VILLAGER.create(helper.getLevel());
         courier.setPos(helper.absolutePos(new BlockPos(2, 2, 1)).getCenter());
         courier.setNoAi(true);

@@ -626,6 +626,21 @@ public final class AssignedStorageService {
                 stack -> ItemStack.isSameItemSameComponents(stack, sample));
     }
 
+    public static int unreservedOutputCapacity(ServerLevel level, BlockPos position, ItemStack sample) {
+        if (!level.hasChunkAt(position)) return -1;
+        var candidate = VillagerInventoryOverflowService.ContainerCandidate.resolve(level, position);
+        if (candidate == null) return 0;
+        var rules = ContainerFilterResolver.resolve(level, candidate);
+        return rules.live() ? outputContainerCapacity(level, candidate, rules.rules(), sample, Integer.MAX_VALUE) : 0;
+    }
+
+    public static int reservedItemsExcluding(ServerLevel level, BlockPos position, java.util.Set<UUID> excludedOwners,
+                                            VillagerFilterPolicy.TransferOperation operation, Predicate<ItemStack> matches) {
+        if (!level.hasChunkAt(position)) return 0;
+        var candidate = VillagerInventoryOverflowService.ContainerCandidate.resolve(level, position);
+        return candidate == null ? 0 : ContainerTransferClaimLedger.countExcluding(level, candidate, excludedOwners, operation, matches);
+    }
+
     public static long productionStockAt(Villager villager, BlockPos position, Predicate<ItemStack> matches) {
         if (!(villager.level() instanceof ServerLevel level) || position == null) return -1L;
         for (var candidate : liveContainerCandidates(level, villager, record -> purposeMatchesUse(record.purpose(), StorageUse.OUTPUT))) {
@@ -716,6 +731,10 @@ public final class AssignedStorageService {
 
     public static void releaseProductionInputs(UUID worker) {
         ContainerTransferClaimLedger.release(worker, VillagerFilterPolicy.TransferOperation.PROVIDE);
+    }
+
+    public static void releaseCourierClaims(UUID worker) {
+        ContainerTransferClaimLedger.release(worker);
     }
 
     public static void releaseCourierClaims(Villager villager) {
@@ -908,30 +927,39 @@ public final class AssignedStorageService {
         if (container instanceof SellBoxBlockEntity) {
             return allowance;
         }
-        int locallyReserved = countMatchingStacks(additionalReservations,
-                reserved -> ItemStack.isSameItemSameComponents(reserved, stack));
-        int capacityGoal = (int) Math.min(Integer.MAX_VALUE, (long) allowance + locallyReserved);
+        var reservations = new ArrayList<>(ContainerTransferClaimLedger.incoming(level, candidate, excludedOwner));
+        reservations.addAll(additionalReservations);
         if (container instanceof ItemHandlerContainerAdapter adapter) {
-            int physical = adapter.insertionCapacity(stack, capacityGoal);
-            return Math.min(allowance, Math.max(0, physical - locallyReserved));
+            long reserved = 0L;
+            for (var incoming : reservations) {
+                reserved += ItemStack.isSameItemSameComponents(incoming, stack) ? incoming.getCount()
+                        : (long) ((incoming.getCount() + incoming.getMaxStackSize() - 1) / incoming.getMaxStackSize()) * stack.getMaxStackSize();
+            }
+            int goal = (int) Math.min(Integer.MAX_VALUE, (long) allowance + reserved);
+            return (int) Math.min(allowance, Math.max(0L, adapter.insertionCapacity(stack, goal) - reserved));
+        }
+        var contents = new ArrayList<ItemStack>(container.getContainerSize());
+        for (int slot = 0; slot < container.getContainerSize(); slot++) contents.add(container.getItem(slot));
+        for (var incoming : reservations) {
+            int remaining = incoming.getCount();
+            for (int slot = 0; slot < contents.size() && remaining > 0; slot++) {
+                var existing = contents.get(slot);
+                if (!container.canPlaceItem(slot, incoming) || !existing.isEmpty() && !ItemStack.isSameItemSameComponents(existing, incoming)) continue;
+                int room = Math.min(incoming.getMaxStackSize(), container.getMaxStackSize()) - existing.getCount();
+                int accepted = Math.min(remaining, Math.max(0, room));
+                if (accepted > 0) contents.set(slot, incoming.copyWithCount(existing.getCount() + accepted));
+                remaining -= accepted;
+            }
         }
         int capacity = 0;
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            ItemStack existing = container.getItem(slot);
-            if (existing.isEmpty()) {
-                if (container.canPlaceItem(slot, stack)) {
-                    capacity += Math.min(stack.getMaxStackSize(), container.getMaxStackSize());
-                }
-            } else if (ItemStack.isSameItemSameComponents(existing, stack)
-                    && container.canPlaceItem(slot, stack)
-                    && existing.getCount() < Math.min(existing.getMaxStackSize(), container.getMaxStackSize())) {
-                capacity += Math.min(existing.getMaxStackSize(), container.getMaxStackSize()) - existing.getCount();
+        for (int slot = 0; slot < contents.size(); slot++) {
+            var existing = contents.get(slot);
+            if (container.canPlaceItem(slot, stack) && (existing.isEmpty() || ItemStack.isSameItemSameComponents(existing, stack))) {
+                capacity += Math.max(0, Math.min(stack.getMaxStackSize(), container.getMaxStackSize()) - existing.getCount());
             }
-            if (capacity >= capacityGoal) {
-                break;
-            }
+            if (capacity >= allowance) return allowance;
         }
-        return Math.min(allowance, Math.max(0, capacity - locallyReserved));
+        return capacity;
     }
 
     private static int outputAllowance(
@@ -1029,6 +1057,14 @@ public final class AssignedStorageService {
                     claims = saturatingAdd(claims, countMatchingStacks(additionalClaims, matcher));
                     return new ContainerFilterEvaluator.StockState(currentStock, claims);
                 });
+        if (excludedOwner != null && level.getEntity(excludedOwner) instanceof Villager courier) {
+            int transfer = com.jvn.villagerretaliation.interaction.work.courier.HiredTransferService.allowance(
+                    level, courier, candidate.pos(), stack, operation, additionalClaims);
+            if (transfer != Integer.MAX_VALUE) {
+                return new ContainerFilterEvaluator.Evaluation(evaluation.permitted(), Math.min(evaluation.allowance(), transfer),
+                        evaluation.applicableAllowRules(), evaluation.matchingAllowRules(), evaluation.matchingDenyRules(), evaluation.valid());
+            }
+        }
         if (excludedOwner == null || !(level.getEntity(excludedOwner) instanceof Villager worker)
                 || !com.jvn.villagerretaliation.settlement.SettlementLogisticsService.isHauler(worker)) {
             return evaluation;

@@ -73,6 +73,7 @@ public final class HiredTransferService {
         if (!access.blocker().isEmpty()) return access.blocker();
         if (access.queue() == null || access.queue().revision() != revision) return "Transfer orders changed";
         if (!access.queue().edit(id, edit, index)) return "Transfer has undelivered cargo or is unavailable";
+        if (access.queue().allocation(villager.getUUID()) == null) AssignedStorageService.releaseCourierClaims(villager);
         return "";
     }
 
@@ -89,6 +90,23 @@ public final class HiredTransferService {
                         && (record.purpose().equals(source ? AssignedStorageService.SUPPLY_PURPOSE : AssignedStorageService.OUTPUT_PURPOSE)
                                 || record.purpose().equals(AssignedStorageService.GENERAL_PURPOSE))
                         && SettlementDepotService.permittedForWorker(level, villager, record));
+    }
+
+    public static int allowance(ServerLevel level, Villager villager, net.minecraft.core.BlockPos position,
+                                net.minecraft.world.item.ItemStack sample,
+                                com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation operation,
+                                java.util.List<net.minecraft.world.item.ItemStack> additional) {
+        if (VillagerWorkAuthority.resolve(level, villager).role() != HiredVillagerRole.COURIER) return Integer.MAX_VALUE;
+        var access = access(level, villager);
+        if (!access.blocker().isEmpty()) return 0;
+        var allocation = access.queue() == null ? null : access.queue().allocation(villager.getUUID());
+        if (allocation == null) return Integer.MAX_VALUE;
+        var order = access.queue().order(allocation.order());
+        boolean providing = operation == com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation.PROVIDE;
+        if (providing && allocation.started() || !order.matches(sample)
+                || !(providing ? order.source() : order.destination()).position().equals(position)) return 0;
+        return Math.max(0, allocation.amount() - additional.stream().filter(order::matches)
+                .mapToInt(net.minecraft.world.item.ItemStack::getCount).sum());
     }
 
     public static void releasePlanned(ServerLevel level, Villager villager) {

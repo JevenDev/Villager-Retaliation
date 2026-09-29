@@ -24,13 +24,41 @@ public final class SettlementTransferService {
         if (!permits(player, town, area)) return "Courier worksite permission changed";
         var queue = town.transferQueues().get(area);
         if (queue == null || queue.revision() != revision) return "Transfer orders changed";
-        return queue.edit(id, edit, index) ? "" : "Transfer has undelivered cargo or is unavailable";
+        var allocated = queue.allocations();
+        if (!queue.edit(id, edit, index)) return "Transfer has undelivered cargo or is unavailable";
+        for (var allocation : allocated) {
+            if (!allocation.started() && queue.allocation(allocation.worker()) == null) {
+                com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseCourierClaims(allocation.worker());
+            }
+        }
+        return "";
     }
 
     public static SettlementDepot depot(SettlementRecord town, HiredTransferQueue.Endpoint endpoint) {
         var depot = endpoint.depot() == null ? null : town.depots().get(endpoint.depot());
         var area = depot == null ? null : town.areas().get(depot.area());
         return area == null || !area.enabled() || !depot.position().equals(endpoint.position()) ? null : depot;
+    }
+
+    public static boolean destination(SettlementRecord town, UUID area, HiredTransferQueue.Order order) {
+        var destination = depot(town, order.destination());
+        return destination != null && destination.purpose().accepts(order.sample())
+                && SettlementWorksiteService.links(town, area).permitsOutput(destination.id());
+    }
+
+    public static boolean endpoints(SettlementRecord town, UUID area, HiredTransferQueue.Order order) {
+        var links = SettlementWorksiteService.links(town, area);
+        var destination = depot(town, order.destination());
+        return depot(town, order.source()) != null && destination != null
+                && links.permitsSupply(order.source().depot()) && links.permitsOutput(order.destination().depot())
+                && destination.purpose().accepts(order.sample());
+    }
+
+    public static void bind(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.Villager villager,
+                            SettlementRecord town, HiredTransferQueue.Order order) {
+        SettlementLogisticsService.bind(villager, new SettlementHaulTask(
+                order.source().depot(), order.destination().depot(), order.sample(), order.amount(), false));
+        SettlementDepotService.synchronizeStorage(level, villager, town);
     }
 
     public static boolean permits(ServerPlayer player, SettlementRecord town, UUID area) {

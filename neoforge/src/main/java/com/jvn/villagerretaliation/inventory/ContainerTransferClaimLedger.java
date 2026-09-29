@@ -99,6 +99,33 @@ final class ContainerTransferClaimLedger {
         return (int) count;
     }
 
+    static List<ItemStack> incoming(ServerLevel level, VillagerInventoryOverflowService.ContainerCandidate candidate, UUID excludedOwner) {
+        cleanup(level);
+        var stacks = new ArrayList<ItemStack>();
+        for (var entry : CLAIMS.entrySet()) {
+            var key = entry.getKey();
+            if (key.dimension().equals(level.dimension()) && key.pos().equals(candidate.pos())
+                    && key.operation() == VillagerFilterPolicy.TransferOperation.RECEIVE && !key.owner().equals(excludedOwner)) {
+                stacks.addAll(copyNonEmpty(entry.getValue().stacks()));
+            }
+        }
+        return stacks;
+    }
+
+    static int countExcluding(ServerLevel level, VillagerInventoryOverflowService.ContainerCandidate candidate,
+                              java.util.Set<UUID> excludedOwners, VillagerFilterPolicy.TransferOperation operation,
+                              Predicate<ItemStack> matcher) {
+        cleanup(level);
+        long count = 0L;
+        for (var entry : CLAIMS.entrySet()) {
+            var key = entry.getKey();
+            if (!key.dimension().equals(level.dimension()) || !key.pos().equals(candidate.pos())
+                    || key.operation() != operation || excludedOwners.contains(key.owner())) continue;
+            for (var stack : entry.getValue().stacks()) if (matcher.test(stack)) count += stack.getCount();
+        }
+        return (int) Math.min(Integer.MAX_VALUE, count);
+    }
+
     static void release(UUID owner) {
         if (owner != null) {
             CLAIMS.keySet().removeIf(key -> key.owner().equals(owner));
