@@ -30,9 +30,9 @@ final class SettlementBackgroundConstruction {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
-        var project = town.activeProject(worker.id());
-        var area = town.workplace(worker.area());
-        if (project == null || !town.owns(project) || area == null || !area.enabled() || !project.area().equals(worker.area()) || !project.within(area)) {
+        var project = town.assignedProject(worker.id());
+        var area = project == null ? null : town.workplace(project.area());
+        if (project == null || !town.owns(project) || area == null || !area.enabled() || !project.within(area)) {
             worker.status("no_construction_project");
             return;
         }
@@ -70,6 +70,11 @@ final class SettlementBackgroundConstruction {
             return;
         }
         var state = worker.settings();
+        var previous = BuilderTaskState.jobId(state).map(town.projects()::get).orElse(null);
+        if (previous != null && previous != project) {
+            if (previous.crew() != null) previous.crew().release(worker.id());
+            state.remove(POSITION);
+        }
         project.restore(state);
         var before = state.copy();
         var inventory = HiredJobInventory.getJobInventory(owner);
@@ -93,8 +98,15 @@ final class SettlementBackgroundConstruction {
                 int index = BuilderTaskState.placedIndex(state);
                 while (index < plan.blocks().size() && BuilderStructureScanner.sameSchematicState(
                         site.getBlockState(plan.worldPos(project.origin(), plan.blocks().get(index))), plan.blocks().get(index).state())) index++;
-                BuilderTaskState.setPlacedIndex(state, index);
                 var obstructions = obstructions(site, view, plan, project);
+                if (project.crew() != null && obstructions.isEmpty()) {
+                    index = SettlementConstructionCoordination.select(town, project, worker.id(), plan, view, level.getGameTime(), inventory);
+                    if (index < 0) {
+                        blocked(worker, "construction_crew_waiting", "crew_waiting");
+                        return;
+                    }
+                }
+                BuilderTaskState.setPlacedIndex(state, index);
                 if (index >= plan.blocks().size() && obstructions.isEmpty()) {
                     if (depositLeftovers(level, town, worker, inventory, plan, budget)) return;
                     project.observe(state);
@@ -118,6 +130,10 @@ final class SettlementBackgroundConstruction {
                 }
                 double travel = (route.steps().size() - 1) * 16.0D;
                 if (clearing) {
+                    if (project.crew() != null && !project.crew().acquire(worker.id(), -1, List.of(route.target()), level.getGameTime())) {
+                        blocked(worker, "construction_crew_waiting", "crew_waiting");
+                        return;
+                    }
                     if (!clear(level, worker, site, owner, inventory, depots, budget, route.target(), route.steps().getLast(), travel)) return;
                     state.putLong(POSITION, route.steps().getLast().asLong());
                     continue;
@@ -169,6 +185,10 @@ final class SettlementBackgroundConstruction {
                 }
                 if (consumes && !inventory.consumeSupplyExactly(material::materialMatches, 1)) throw new IllegalStateException("Verified construction material disappeared");
                 site.queue(new SettlementConstructionPlacement(level, changes));
+                if (project.crew() != null) {
+                    SettlementConstructionCoordination.refresh(town, project, plan, view);
+                    project.crew().release(worker.id());
+                }
                 SettlementConstructionService.worked(town, project, owner);
                 for (var part : group.parts()) {
                     if (part.block().requiresToolAction() && changes.stream().anyMatch(change -> change.position().equals(part.worldPos()))) {
@@ -186,6 +206,7 @@ final class SettlementBackgroundConstruction {
         } catch (SettlementConstructionView.Unavailable unavailable) {
             blocked(worker, "construction_needs_observation", "site_unloaded");
         } finally {
+            if (project.crew() != null && !BuilderTaskState.blockedReason(state).isEmpty()) project.crew().release(worker.id());
             project.observe(state);
             var snapshot = inventory.captureSnapshot();
             if (!snapshot.equals(worker.inventory()) || !before.equals(state)) worker.changed();
@@ -235,7 +256,7 @@ final class SettlementBackgroundConstruction {
         }
         site.queue(new SettlementConstructionPlacement(level, List.of(new SettlementConstructionPlacement.Part(pos, block, block.getFluidState().createLegacyBlock(), null))));
         SettlementWorkforceService.home(level, owner).ifPresent(town -> {
-            var project = town.activeProject(owner.getUUID());
+            var project = BuilderTaskState.jobId(worker.settings()).map(town.projects()::get).orElse(null);
             if (project != null) SettlementConstructionService.worked(town, project, owner);
         });
         drops.forEach(inventory::insertOutput);
@@ -249,7 +270,8 @@ final class SettlementBackgroundConstruction {
     private static void fetch(ServerLevel level, SettlementWorkerState worker, HiredJobInventory inventory, List<SettlementDepot> depots,
                               BuilderStructureScanner.BuildBlock material, SettlementConstructionSite site, SettlementProject project,
                               BuilderStructureScanner.StructurePlan plan, int startIndex, SettlementWorkBudget budget) {
-        var batch = BuilderWorker.nextMaterialBatch(site, inventory, plan, project.origin(), startIndex);
+        var batch = project.crew() == null ? BuilderWorker.nextMaterialBatch(site, inventory, plan, project.origin(), startIndex)
+                : BuilderWorker.singleMaterialBatch(site, plan, project.origin(), startIndex);
         BuilderTaskState.setMaterialBatchEndIndex(worker.settings(), batch.endIndex());
         var supplies = SettlementProductionInventory.supplies(level, worker, SettlementBackgroundTools.items(inventory), depots);
         for (var depot : depots) {

@@ -195,6 +195,7 @@ public final class SettlementProject {
         return this.crew == null ? this.task.getInt("PlacedIndex") : this.crew.placed();
     }
 
+    long startedAt() { return this.task.getLong("StartedGameTime"); }
     public int priority() { return this.crew == null ? 5 : this.crew.priority(); }
     public long crewRevision() { return this.crew == null ? 0L : this.crew.revision(); }
     public java.util.List<UUID> assistants() { return this.crew == null ? java.util.List.of() : this.crew.assistants(); }

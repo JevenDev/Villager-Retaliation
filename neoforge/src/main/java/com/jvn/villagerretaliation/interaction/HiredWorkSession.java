@@ -47,6 +47,7 @@ public record HiredWorkSession(
         CachedMetadata metadata = metadata(level, villager, safeRole, state, inventory);
         HiredJobSite jobSite = HiredTemporaryWorkService.jobSite(state, safeRole, metadata.jobSite);
         jobSite = com.jvn.villagerretaliation.interaction.work.HiredTemporaryEntities.jobSite(level, villager, state, jobSite);
+        if (safeRole == HiredVillagerRole.BUILDER) jobSite = com.jvn.villagerretaliation.settlement.SettlementConstructionService.jobSite(villager, state, jobSite);
         HiredWorkArea area = jobSite.workArea();
         HiredRoute route = com.jvn.villagerretaliation.settlement.SettlementGuardService.route(villager, HiredRoute.fromState(state));
         if (HiredTemporaryWorkService.queue(state) != null) route = HiredRoute.empty();

@@ -119,8 +119,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         BlockPos origin = BuilderTaskState.origin(context.state());
-        HiredWorkArea area = SettlementWorkforceService.duty(villager)
-                .map(duty -> HiredWorkArea.fromBounds(duty.area().min(), duty.area().max(), true)).orElse(null);
+        HiredWorkArea area = SettlementConstructionService.workArea(villager, context.state());
         if (!SettlementConstructionService.prepare(villager, context.state())) {
             if (SettlementConstructionService.allows(villager, context.state(), plan.get())) {
                 var positions = placementCollisionPositions(level, plan.get(), origin);
@@ -153,7 +152,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.idle(siteResult.statusKey(), siteResult.replacements());
         }
 
-        int index = skipAlreadyPlaced(level, context.state(), plan.get(), origin);
+        int index = SettlementConstructionService.cooperative(villager, context.state()) ? 0
+                : skipAlreadyPlaced(level, context.state(), plan.get(), origin);
         BlockPos buildCenter = origin.offset(plan.get().localCenter());
         PlacementGroup reachableObstruction = reachablePlacementObstructionGroup(
                 level,
@@ -163,6 +163,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 index,
                 area,
                 buildCenter);
+        if (reachableObstruction != null && !SettlementConstructionService.claimClearing(villager, context.state(), reachableObstruction)) {
+            BuilderTaskState.setBlocked(context.state(), "crew_waiting");
+            return WorkResult.idle("interaction.work.builder.crew_waiting");
+        }
         WorkResult clearingResult = reachableObstruction == null ? null : clearPlacementObstruction(
                 level,
                 villager,
@@ -188,6 +192,11 @@ public final class BuilderWorker extends AbstractBlockWorker {
                     "structure", BuilderTaskState.structureLabel(context.state())));
         }
 
+        index = SettlementConstructionService.selectPlacement(villager, context.state(), plan.get(), index);
+        if (index < 0) {
+            BuilderTaskState.setBlocked(context.state(), "crew_waiting");
+            return WorkResult.idle("interaction.work.builder.crew_waiting");
+        }
         if (index >= plan.get().blocks().size()) {
             return finishBuild(level, villager, hirer, context, plan.get());
         }
@@ -359,6 +368,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
 
     @Override
     public void pause(ServerLevel level, Villager villager, HiredWorkContext context) {
+        SettlementConstructionService.release(villager, context.state());
         clearActiveBreakingTarget(level, context, villager);
         clearBuildSiteIntermediateNavigation(context);
         super.pause(level, villager, context);
@@ -514,7 +524,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin,
             int startIndex) {
-        MaterialBatch batch = currentMaterialBatch(level, context, plan, origin, startIndex);
+        MaterialBatch batch = SettlementConstructionService.cooperative(villager, context.state())
+                ? singleMaterialBatch(level, plan, origin, startIndex) : currentMaterialBatch(level, context, plan, origin, startIndex);
         if (batch.materials().isEmpty()) {
             HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.clearFailure(context);
@@ -559,6 +570,12 @@ public final class BuilderWorker extends AbstractBlockWorker {
         MaterialBatch batch = nextMaterialBatch(level, context.inventory(), plan, origin, startIndex);
         BuilderTaskState.setMaterialBatchEndIndex(context.state(), batch.endIndex());
         return batch;
+    }
+
+    public static MaterialBatch singleMaterialBatch(net.minecraft.world.level.BlockGetter level,
+                                                     BuilderStructureScanner.StructurePlan plan, BlockPos origin, int index) {
+        int end = Math.min(plan.blocks().size(), index + 1);
+        return new MaterialBatch(end, remainingMaterials(level, plan, origin, index, end));
     }
 
     public static MaterialBatch nextMaterialBatch(
@@ -1242,7 +1259,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     private static List<BuilderStructureScanner.MaterialRequirement> remainingMaterials(
-            ServerLevel level,
+            net.minecraft.world.level.BlockGetter level,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin,
             int startIndex,

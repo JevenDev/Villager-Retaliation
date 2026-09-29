@@ -111,6 +111,8 @@ public final class SettlementWorkerDiagnostics {
                     "Review or cancel the construction project before work can continue.";
             case "construction_blocked_existing" ->
                     "Clear the blocks obstructing the construction project.";
+            case "construction_crew_waiting", "project.crew_waiting" ->
+                    "Wait for the other crew members or provide support for the remaining placements.";
             case "construction_blocked_support" ->
                     "Provide support beneath the next construction block.";
             case "unsafe", "construction_unsafe" ->

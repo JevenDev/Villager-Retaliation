@@ -307,6 +307,7 @@ public final class SettlementRecord {
     void removeWorker(UUID worker) {
         this.productionQueues.values().forEach(queue -> queue.detach(worker));
         this.transferQueues.values().forEach(queue -> queue.detach(worker));
+        cancelProjects(worker);
         com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseCourierClaims(worker);
         if (this.workers.remove(worker) != null) {
             changed();
@@ -686,9 +687,13 @@ public final class SettlementRecord {
     }
 
     public SettlementProject assignedProject(UUID worker) {
-        return this.projects.values().stream().filter(project -> project.active() && project.includes(worker))
+        var home = workplace(this.duties.get(worker));
+        if (home == null || !home.enabled() || home.type() != SettlementAreaType.CONSTRUCTION) return null;
+        return this.projects.values().stream().filter(project -> project.active() && project.includes(worker) && owns(project)
+                        && workplace(project.area()) != null && workplace(project.area()).enabled()
+                        && (project.builder().equals(worker) || this.worksitePlans.containsKey(home.id())))
                 .sorted(java.util.Comparator.comparingInt(SettlementProject::priority).reversed()
-                        .thenComparingLong(project -> project.state().getCompound(com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState.TASK_TAG).getLong("StartedGameTime"))
+                        .thenComparingLong(SettlementProject::startedAt)
                         .thenComparing(SettlementProject::id)).findFirst().orElse(null);
     }
 

@@ -2568,6 +2568,7 @@
   "villagerretaliation.gui.settlement.project_blocker.pending_world": "Waiting to apply construction to the world",
   "villagerretaliation.gui.settlement.project_blocker.world_conflict": "Construction conflicts with changed terrain",
   "interaction.work.builder.pending_world": "Waiting to apply settlement construction",
+  "interaction.work.builder.crew_waiting": "Waiting for an available supported placement",
   "villagerretaliation.gui.settlement.work.unassigned": "Unassigned",
   "villagerretaliation.gui.settlement.work.awaiting_arrival": "Awaiting arrival",
   "villagerretaliation.gui.settlement.work.feeding_animals": "Feeding breeding pairs",
