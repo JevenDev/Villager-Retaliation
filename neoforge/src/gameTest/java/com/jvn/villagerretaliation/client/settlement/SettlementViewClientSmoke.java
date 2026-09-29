@@ -348,6 +348,9 @@ public final class SettlementViewClientSmoke {
             }
         } else if (phase == 8 && minecraft.screen instanceof SettlementManagementScreen screen) {
             require(screen.snapshot().header() != null, "Summary includes the current settlement assessment");
+            require(screen.snapshot().header().populations().size() == 5 && screen.snapshot().header().populations().get(4) == 75,
+                    "Summary receives effective stage populations from the server");
+            require(screen.snapshot().header().growthTarget() == 100, "Summary receives the natural growth cap");
             capture("issues-summary");
             requireButtonsFit(screen);
             button(screen, "villagerretaliation.gui.settlement.page.issues").onPress();

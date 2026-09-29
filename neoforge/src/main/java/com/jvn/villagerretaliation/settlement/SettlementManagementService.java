@@ -231,7 +231,9 @@ public final class SettlementManagementService {
                 SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
                 status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
                 status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
-                town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), (int) issues.stream().filter(SettlementManagementPayload.Issue::needsAttention).count(), town.manualManagement(), SettlementPlotService.totals(town));
+                town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), (int) issues.stream().filter(SettlementManagementPayload.Issue::needsAttention).count(), town.manualManagement(), SettlementPlotService.totals(town),
+                SettlementPopulationRequirements.growthTarget(), SettlementPopulationRequirements.effective(),
+                SettlementPopulationRequirements.adjusted(), SettlementPopulationRequirements.problem());
         return new Assessment(header, issues);
     }
 

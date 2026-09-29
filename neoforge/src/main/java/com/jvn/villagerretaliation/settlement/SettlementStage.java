@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.settlement;
 
-import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.Optional;
 
 public enum SettlementStage {
@@ -17,14 +16,7 @@ public enum SettlementStage {
     }
 
     public int population() {
-        int configured = switch (this) {
-            case CAMP -> 0;
-            case HAMLET -> VillagerRetaliationConfig.SETTLEMENT_HAMLET_POPULATION.get();
-            case VILLAGE -> VillagerRetaliationConfig.SETTLEMENT_VILLAGE_POPULATION.get();
-            case TOWN -> VillagerRetaliationConfig.SETTLEMENT_TOWN_POPULATION.get();
-            case CITY -> VillagerRetaliationConfig.SETTLEMENT_CITY_POPULATION.get();
-        };
-        return this == CAMP ? 0 : Math.max(values()[ordinal() - 1].population() + 1, configured);
+        return SettlementPopulationRequirements.effective().get(ordinal());
     }
 
     public int radius() {

@@ -340,6 +340,7 @@ public final class VillagerRetaliationConfig {
     }
 
     public static void init() {
+        com.jvn.villagerretaliation.settlement.SettlementPopulationRequirements.effective();
         // beta.12 used -750 as the default. Move only that exact legacy value so
         // deliberately customized thresholds remain untouched.
         if (FEARED_THRESHOLD.get() == -750) {

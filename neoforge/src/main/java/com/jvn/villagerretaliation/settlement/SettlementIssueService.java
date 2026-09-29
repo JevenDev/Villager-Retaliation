@@ -30,6 +30,15 @@ final class SettlementIssueService {
             issues.add(new Issue(identity(town, "progression:" + cause), "", IssueKind.PROGRESSION,
                     cause, "", target, null, null, null, false));
         }
+        if (SettlementPopulationRequirements.capped(town.stage(), progression.population())) {
+            issues.add(new Issue(identity(town, "population_cap"), "", IssueKind.PROGRESSION,
+                    "population_cap", net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.population_cap_detail",
+                            SettlementPopulationRequirements.growthTarget(), progression.target().name(), progression.target().population()).getString(), Page.RESIDENTS, null, null, null, false));
+        }
+        if (!SettlementPopulationRequirements.problem().isEmpty()) {
+            issues.add(new Issue(identity(town, "population_configuration"), "", IssueKind.PROGRESSION,
+                    "population_configuration", SettlementPopulationRequirements.problem(), Page.RESIDENTS, null, null, null, false));
+        }
         var social = VillagerSocialGraphSavedData.get(level);
         for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime())) {
             var entity = level.getEntity(member.id());

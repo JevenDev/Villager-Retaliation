@@ -281,6 +281,10 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         buffer.writeVarInt(header.issues());
         buffer.writeBoolean(header.manualManagement());
         SettlementPlotSnapshot.Totals.write(buffer, header.plots());
+        buffer.writeVarInt(header.growthTarget());
+        header.populations().forEach(buffer::writeVarInt);
+        buffer.writeBoolean(header.populationAdjusted());
+        buffer.writeUtf(header.populationProblem(), 512);
     }
 
     static Header readHeader(RegistryFriendlyByteBuf buffer) {
@@ -310,7 +314,9 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         return new Header(id, name, center, leader, permissions, stage, radius, projects, depots, supply, demand,
                 population, housing, food, shortage, support, required,
                 ready, missing, CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer),
-                buffer.readVarInt(), buffer.readBoolean(), SettlementPlotSnapshot.Totals.read(buffer));
+                buffer.readVarInt(), buffer.readBoolean(), SettlementPlotSnapshot.Totals.read(buffer), buffer.readVarInt(),
+                List.of(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt()),
+                buffer.readBoolean(), buffer.readUtf(512));
     }
 
     static void writeOptionalId(RegistryFriendlyByteBuf buffer, UUID id) {
@@ -352,9 +358,20 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                          SettlementStage stage, int radius, int projectLimit, int depotLimit, int marketSupply, int marketDemand,
                          int population, int housing, double foodDays, long shortageTicks,
                          long supportTicks, long requiredTicks, boolean ready, List<SettlementProgressionService.Requirement> missing,
-                         CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent, int issues, boolean manualManagement, SettlementPlotSnapshot.Totals plots) {
+                         CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent, int issues, boolean manualManagement, SettlementPlotSnapshot.Totals plots,
+                         int growthTarget, List<Integer> populations, boolean populationAdjusted, String populationProblem) {
         public Header {
             java.util.Objects.requireNonNull(plots);
+            populations = List.copyOf(populations);
+            if (growthTarget < 1 || growthTarget > 1000 || populations.size() != SettlementStage.values().length
+                    || populations.getFirst() != 0 || populationProblem == null || populationProblem.length() > 512) {
+                throw new IllegalArgumentException("Invalid settlement population requirements");
+            }
+            for (int index = 1; index < populations.size(); index++) {
+                if (populations.get(index) <= populations.get(index - 1) || populations.get(index) > 1000) {
+                    throw new IllegalArgumentException("Invalid effective settlement population threshold");
+                }
+            }
             if (radius < 1 || radius > 60_000_000) throw new IllegalArgumentException("Invalid camera envelope");
             if (issues < 0) throw new IllegalArgumentException("Invalid settlement issue count");
             new com.jvn.villagerretaliation.settlement.SettlementStageRules.Limits(
@@ -394,7 +411,9 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         public com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Diagnostic diagnostic() {
             if (this.kind == IssueKind.PROGRESSION) {
                 return new com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Diagnostic(
-                        com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Severity.INFO, "");
+                        this.cause.equals("population_cap") || this.cause.equals("population_configuration")
+                                ? com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Severity.WARNING
+                                : com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Severity.INFO, "");
             }
             return com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.diagnostic(
                     (this.kind == IssueKind.PROJECT ? "project." : this.kind == IssueKind.TRADE ? "trade." : "") + this.cause);

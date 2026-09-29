@@ -157,16 +157,17 @@ public final class SettlementStageRulesGameTests {
                         SettlementDepotPurpose.GENERAL);
                 depot.setItem(0, new ItemStack(Items.BREAD, index + 1));
             }
+            int earnedRadius = fixture.town().radius();
             var smaller = rules();
             smaller.put(SettlementStage.CAMP, new SettlementStageRules.Limits(32, 0, 1, 0, 0, Set.of()));
             SettlementStageRules.apply(smaller);
-            helper.assertValueEqual(fixture.town().radius(), 96, "lower limits never retract earned territory");
+            helper.assertValueEqual(fixture.town().radius(), earnedRadius, "lower limits never retract earned territory");
             helper.assertTrue(SettlementGuardOrder.within(fixture.town(), post.min()), "existing defense routes remain inside town authority");
             helper.assertTrue(fixture.town().registerDepot(fixture.leader().getUUID(), post.id(), post.min().south(3),
                     SettlementDepotPurpose.GENERAL) == null, "an over-capacity town cannot register additional depots");
             var restored = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()),
                     helper.getLevel().registryAccess(), () -> {});
-            helper.assertValueEqual(restored.radius(), 96, "earned expansion survives a save under smaller rules");
+            helper.assertValueEqual(restored.radius(), earnedRadius, "earned expansion survives a save under smaller rules");
             helper.assertValueEqual(restored.areas().get(post.id()), post, "the remote designation survives reload");
             helper.assertValueEqual(restored.guardOrders().get(guard), fixture.town().guardOrders().get(guard), "guard authority survives reload");
             helper.assertValueEqual(restored.depots().size(), 3, "lower capacity does not delete existing depots");
@@ -290,6 +291,56 @@ public final class SettlementStageRulesGameTests {
             }
         } finally {
             SettlementStageRules.apply(previous);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_stage_rules")
+    public static void effectivePopulationRequirementsRejectImpossibleSettingsAndRespectCaps(GameTestHelper helper) {
+        helper.assertValueEqual(SettlementPopulationRequirements.calculate(List.of(1, 1, 1, 1)), List.of(0, 1, 2, 3, 4), "equal thresholds remain strictly increasing");
+        helper.assertValueEqual(SettlementPopulationRequirements.calculate(List.of(40, 30, 20, 10)), List.of(0, 40, 41, 42, 43), "reversed thresholds use the same monotonic rule");
+        helper.assertValueEqual(SettlementPopulationRequirements.calculate(List.of(997, 998, 999, 1000)), List.of(0, 997, 998, 999, 1000), "the highest reachable thresholds are valid");
+        expectInvalid(helper, () -> SettlementPopulationRequirements.calculate(List.of(1000, 1000, 1000, 1000)));
+        expectInvalid(helper, () -> SettlementPopulationRequirements.calculate(List.of(Integer.MAX_VALUE, 1, 1, 1)));
+        expectInvalid(helper, () -> SettlementPopulationRequirements.calculate(List.of(0, 1, 1, 1)));
+        var fixture = fixture(helper);
+        var config = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.CONFIG;
+        var options = List.of("hamletPopulation", "villagePopulation", "townPopulation", "cityPopulation", "populationTarget")
+                .stream().map(key -> config.<Integer>optionForKey(new io.wispforest.owo.config.Option.Key("settlements." + key))).toList();
+        var saved = options.stream().map(io.wispforest.owo.config.Option::value).toList();
+        try {
+            for (int index = 0; index < 4; index++) options.get(index).set(10);
+            options.get(4).set(9);
+            helper.assertValueEqual(SettlementStage.CITY.population(), 13, "live requirements include monotonic adjustments");
+            helper.assertTrue(SettlementPopulationRequirements.capped(SettlementStage.CAMP, 0), "a deliberate low cap warns");
+            helper.assertFalse(SettlementPopulationRequirements.capped(SettlementStage.CAMP, 10), "existing sufficient population does not warn");
+            helper.assertFalse(SettlementPopulationRequirements.capped(SettlementStage.CITY, 0), "advanced towns are not demoted");
+            var snapshot = SettlementManagementService.snapshot(fixture.leader(), new SettlementManagementRequestPayload(
+                    fixture.town().id().value(), SettlementManagementRequestPayload.Page.SUMMARY, 0, "", 8, false));
+            helper.assertValueEqual(snapshot.header().populations(), List.of(0, 10, 11, 12, 13), "management displays server effective thresholds");
+            helper.assertValueEqual(snapshot.header().growthTarget(), 9, "management preserves the chosen cap");
+            helper.assertTrue(snapshot.header().populationAdjusted(), "management explains adjustments");
+            helper.assertTrue(SettlementIssueService.issues(helper.getLevel(), fixture.town(), SettlementProgressionService.assess(helper.getLevel(), fixture.town()))
+                    .stream().anyMatch(issue -> issue.cause().equals("population_cap") && issue.needsAttention()), "cap warning uses persistent diagnostics");
+            options.get(4).set(10);
+            helper.assertFalse(SettlementPopulationRequirements.capped(SettlementStage.CAMP, 0), "a target exactly at the next requirement is reachable");
+            for (int index = 0; index < 4; index++) options.get(index).set(1000);
+            helper.assertValueEqual(SettlementPopulationRequirements.effective(), snapshot.header().populations(), "invalid reload retains the last valid requirements atomically");
+            helper.assertFalse(SettlementPopulationRequirements.problem().isBlank(), "invalid reload has actionable feedback");
+            helper.assertValueEqual(SettlementPopulationRequirements.growthTarget(), 10, "invalid thresholds never raise the player's cap");
+            for (int index = 0; index < 4; index++) options.get(index).set(index + 20);
+            helper.assertValueEqual(SettlementStage.CITY.population(), 23, "a corrected reload takes effect");
+            helper.assertTrue(SettlementPopulationRequirements.problem().isEmpty(), "correcting the settings clears the warning");
+            var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+            try {
+                SettlementManagementPayload.STREAM_CODEC.encode(buffer, snapshot);
+                helper.assertValueEqual(SettlementManagementPayload.STREAM_CODEC.decode(buffer), snapshot, "displayed thresholds survive different client settings");
+            } finally {
+                buffer.release();
+            }
+        } finally {
+            for (int index = 0; index < options.size(); index++) options.get(index).set(saved.get(index));
+            SettlementPopulationRequirements.effective();
         }
         helper.succeed();
     }

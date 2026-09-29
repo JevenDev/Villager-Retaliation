@@ -319,6 +319,19 @@ public final class SettlementManagementScreen extends Screen {
         this.rows.add(null, text("issues_count", header.issues()), text("issues_hint"));
         this.rows.add(null, text(header.manualManagement() ? "manual_management" : "autonomous_management"), text("management_hint"));
         this.rows.add(null, text("population", header.population(), header.housing()), text("housing_hint"));
+        this.rows.add(null, text("growth_target", header.growthTarget()), text("growth_target_hint"));
+        for (var stage : com.jvn.villagerretaliation.settlement.SettlementStage.values()) {
+            if (stage.ordinal() == 0) continue;
+            this.rows.add(null, text("effective_population", enumText("stage", stage), header.populations().get(stage.ordinal())),
+                    text(header.populationAdjusted() ? "population_adjusted" : "population_requirement_hint"));
+        }
+        header.stage().next().filter(next -> header.population() < header.populations().get(next.ordinal())
+                && header.growthTarget() < header.populations().get(next.ordinal())).ifPresent(next ->
+                this.rows.add(null, text("requirement.population_cap"), text("population_cap_detail", header.growthTarget(),
+                        enumText("stage", next), header.populations().get(next.ordinal()))));
+        if (!header.populationProblem().isBlank()) {
+            this.rows.add(null, text("requirement.population_configuration"), Component.literal(header.populationProblem()));
+        }
         this.rows.add(null, text("food", decimal(header.foodDays())), text("food_hint"));
         this.rows.add(null, text("stage", enumText("stage", header.stage())),
                 Component.translatable("villagerretaliation.gui.settlement_view.plot_totals",
