@@ -32,7 +32,10 @@ public final class SettlementGuardService {
     public static boolean command(ServerPlayer player, SettlementRecord town, UUID resident, SettlementGuardOrder order) {
         if (player == null || !player.isAlive() || player.isSpectator()
                 || !town.dimension().equals(player.level().dimension().location())
-                || order != null && order.points().stream().anyMatch(player.serverLevel()::isOutsideBuildHeight)
+                || SettlementSavedData.get(player.serverLevel()).readOnly()
+                || order != null && order.positions().anyMatch(position -> player.serverLevel().isOutsideBuildHeight(position)
+                        || !player.serverLevel().getWorldBorder().isWithinBounds(position))
+                || player.serverLevel().getEntity(resident) instanceof Villager worker && SettlementWorkforceService.hasPersonalCommitment(worker)
                 || !town.setGuardOrder(player.getUUID(), resident, order)) {
             return false;
         }
@@ -111,7 +114,7 @@ public final class SettlementGuardService {
         var plan = town.worksitePlans().get(area.id());
         var order = town.guardOrders().get(resident);
         if (order == null && plan != null) order = plan.route();
-        return order != null && order.within(town) ? order : null;
+        return order;
     }
 
     private static Optional<SettlementGuardOrder> routeOrder(Villager villager) {

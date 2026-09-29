@@ -15,7 +15,8 @@ public final class SettlementRouteDraft {
     private SettlementGuardOrder.Mode mode;
     private boolean loop;
     private int selected = -1;
-    private BlockPos dragOrigin;
+    private List<BlockPos> dragNodes;
+    private List<HiredRoute.Branch> dragBranches;
     private boolean insert;
     private boolean branch;
 
@@ -33,7 +34,7 @@ public final class SettlementRouteDraft {
     public List<HiredRoute.Branch> branches() { return List.copyOf(this.branches); }
     public int selected() { return this.selected; }
     public boolean loop() { return this.loop; }
-    public boolean dragging() { return this.dragOrigin != null; }
+    public boolean dragging() { return this.dragNodes != null; }
     public boolean inserting() { return this.insert; }
     public boolean branching() { return this.branch; }
 
@@ -48,6 +49,7 @@ public final class SettlementRouteDraft {
     }
 
     public String validation() {
+        if (this.mode != SettlementGuardOrder.Mode.PATROL && !this.branches.isEmpty()) return "Add a second route node before branching";
         if (this.nodes.size() == 1 && this.mode == SettlementGuardOrder.Mode.PATROL) return "Place at least two route nodes";
         if (new java.util.HashSet<>(this.nodes).size() != this.nodes.size()) return "Route nodes must have different positions";
         if (this.loop && (this.nodes.size() < 2 || !HiredRoute.canConnect(this.nodes.getLast(), this.nodes.getFirst())))
@@ -59,29 +61,45 @@ public final class SettlementRouteDraft {
     }
 
     public void select(int index) {
+        cancelDrag();
         if (index >= 0 && index < handles().size()) this.selected = index;
     }
 
     public void beginDrag(int index) {
         select(index);
-        if (this.selected >= 0) this.dragOrigin = handles().get(this.selected);
+        if (index >= 0 && index < handles().size()) {
+            this.dragNodes = List.copyOf(this.nodes);
+            this.dragBranches = List.copyOf(this.branches);
+        }
     }
 
     public void dragTo(BlockPos position) {
-        if (dragging() && position != null) replace(this.selected, position.immutable());
+        if (dragging() && position != null) {
+            restoreDrag();
+            replace(this.selected, position.immutable());
+        }
     }
 
     public boolean finishDrag(Predicate<BlockPos> permitted) {
         if (!dragging()) return true;
         boolean valid = validation().isEmpty() && handles().stream().allMatch(permitted);
-        if (!valid) replace(this.selected, this.dragOrigin);
-        this.dragOrigin = null;
+        if (!valid) restoreDrag();
+        this.dragNodes = null;
+        this.dragBranches = null;
         return valid;
     }
 
     public void cancelDrag() {
-        if (dragging()) replace(this.selected, this.dragOrigin);
-        this.dragOrigin = null;
+        if (dragging()) restoreDrag();
+        this.dragNodes = null;
+        this.dragBranches = null;
+    }
+
+    private void restoreDrag() {
+        this.nodes.clear();
+        this.nodes.addAll(this.dragNodes);
+        this.branches.clear();
+        this.branches.addAll(this.dragBranches);
     }
 
     private void replace(int index, BlockPos position) {
@@ -144,7 +162,8 @@ public final class SettlementRouteDraft {
         this.nodes.clear();
         this.branches.clear();
         this.selected = -1;
-        this.dragOrigin = null;
+        this.dragNodes = null;
+        this.dragBranches = null;
         this.mode = SettlementGuardOrder.Mode.PATROL;
         this.loop = false;
         this.insert = false;

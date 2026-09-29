@@ -307,6 +307,36 @@ public final class SettlementWorksiteRouteGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "worksite_routes")
+    public static void routeDraggingAcrossAnotherAnchorPreservesIndependentBranches(GameTestHelper helper) {
+        var start = new BlockPos(0, 70, 0);
+        var other = start.east(8);
+        var route = new SettlementGuardOrder(SettlementGuardOrder.Mode.PATROL, List.of(start, other), false,
+                List.of(new HiredRoute.Branch(start, start.south(4)), new HiredRoute.Branch(other, other.south(4))));
+        var draft = new com.jvn.villagerretaliation.client.settlement.SettlementRouteDraft(HiredVillagerRole.COURIER, route);
+        draft.beginDrag(0);
+        draft.dragTo(other);
+        helper.assertFalse(draft.finishDrag(position -> true), "dropping on another anchor is invalid");
+        helper.assertValueEqual(draft.route(), route, "invalid drops restore every original branch attachment");
+        draft.beginDrag(0);
+        draft.dragTo(other);
+        draft.dragTo(start.north());
+        helper.assertTrue(draft.finishDrag(position -> true), "moving past another anchor can end on a valid point");
+        helper.assertValueEqual(draft.branches().getLast(), route.branches().getLast(), "crossing an anchor never moves the other node's branch");
+        draft.beginDrag(0);
+        draft.dragTo(start.south());
+        draft.select(1);
+        helper.assertFalse(draft.dragging(), "changing the selected handle cancels its previous drag");
+        helper.assertValueEqual(draft.nodes().getFirst(), start.north(), "selection changes restore the previous node location");
+        var defend = new com.jvn.villagerretaliation.client.settlement.SettlementRouteDraft(HiredVillagerRole.COMBAT,
+                new SettlementGuardOrder(SettlementGuardOrder.Mode.DEFEND, List.of(start)));
+        defend.select(0);
+        defend.branchFromSelection();
+        defend.place(start.south());
+        helper.assertFalse(defend.validation().isEmpty(), "defend points cannot save an unsupported branch graph");
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper, SettlementAreaType type, boolean remote) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(1, 2, 1));

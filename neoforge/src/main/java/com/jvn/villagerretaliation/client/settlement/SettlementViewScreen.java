@@ -133,6 +133,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private SettlementGuardOrder routeExpected;
     private boolean routeInherited;
     private boolean routeSubmitted;
+    private boolean routeUncertain;
+    private boolean routeReloading;
     private boolean routeDragHit;
     private final List<Button> routeButtons = new ArrayList<>();
     private final SettlementViewCommandTracker commands = new SettlementViewCommandTracker();
@@ -289,6 +291,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             var project = (SettlementManagementPayload.Project) entry;
             if (project.status() != SettlementProject.Status.CANCELLED || project.blocker().equals("pending_world")
                     || project.blocker().equals("world_conflict")) this.projects.put(project.id(), project);
+        }
+        if (this.routeReloading && this.routeDraft != null) {
+            this.routeReloading = false;
+            beginPersistentRoute(this.routeArea, this.routeResident);
         }
         updateBrowserRows();
         updateActions();
@@ -560,6 +566,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public void tick() {
+        if (this.routeSubmitted && !this.parent.submitting()) {
+            this.routeSubmitted = false;
+            this.routeUncertain = true;
+            this.guardFeedback = Component.literal("Outcome unconfirmed. Reload the saved route before resubmitting.");
+            updateRouteButtons();
+        }
         if (this.plotSubmission.timeout(Util.getMillis())) {
             this.plotPending = false;
             this.plotFeedback = SettlementManagementScreen.text("acknowledgement_timeout");
@@ -661,7 +673,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             var handles = this.routeDraft.handles();
             for (int index = 0; index < handles.size(); index++) {
                 var point = project(Vec3.atCenterOf(handles.get(index)));
-                if (point != null && point[0] >= 0 && point[0] < this.panelLeft && point[1] > 124 && point[1] < this.height - 40)
+                if (point != null && point[0] >= 0 && point[0] < this.panelLeft && point[1] > (this.panelLeft < 300 ? 140 : 118) && point[1] < this.height - 40)
                     graphics.drawString(this.font, Integer.toString(index + 1), (int) point[0] + 5, (int) point[1] - 5, index == this.routeDraft.selected() ? 0xFFDD55 : 0xFFFFFF);
             }
         }
@@ -969,15 +981,17 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             button.setWidth(width);
             button.active = this.routeDraft != null && !this.parent.submitting() && !this.commands.busy();
             if (this.routeDraft == null) continue;
-            if (index == 0) button.active &= this.routeDraft.validation().isEmpty() && !this.routeDraft.dragging();
+            button.active &= !this.routeReloading && (!this.routeDraft.dragging() || index == 1);
+            if (index == 0 || index == 3) button.active &= !this.routeUncertain;
+            if (index == 0) button.active &= this.routeDraft.validation().isEmpty();
             if (index == 3) button.setMessage(Component.literal(this.routeResident == null ? "Automatic" : "Inherit"));
             if (index == 4) button.setMessage(Component.literal(this.routeDraft.inserting() ? "Insert: on" : "Insert"));
             if (index >= 4 && index <= 7 || index == 9) button.active &= this.routeDraft.selected() >= 0;
             if (index == 8) button.setMessage(Component.literal(this.routeDraft.loop() ? "Loop: on" : "Loop: off"));
             if (index == 9) button.setMessage(Component.literal(this.routeDraft.branching() ? "Branch: on" : "Branch"));
             button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(switch (index) {
-                case 0 -> "Commit this draft. Dragging and editing do not send saved changes.";
-                case 2 -> "Discard this draft and reload the latest authoritative route.";
+                case 0 -> "Save this route. Changes stay in the draft until saved.";
+                case 2 -> "Discard this draft and reload the latest saved route.";
                 case 3 -> this.routeResident == null ? "Remove the worksite route and restore automatic behavior." : "Remove only this worker's route override.";
                 case 4 -> "Place the next node after the selected node.";
                 case 5 -> "Remove the selected node or branch.";
@@ -993,7 +1007,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         switch (action) {
             case 0 -> savePersistentRoute(false);
             case 1 -> enterMode(Mode.SELECT);
-            case 2 -> beginPersistentRoute(this.routeArea, this.routeResident);
+            case 2 -> {
+                this.routeReloading = true;
+                refreshManagement();
+                this.guardFeedback = Component.literal("Reloading the saved route...");
+            }
             case 3 -> savePersistentRoute(true);
             case 4 -> this.routeDraft.insertAfterSelection();
             case 5 -> this.routeDraft.remove();
@@ -1021,7 +1039,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.minecraft.setScreen(new SettlementWorkerScreen(management(), area, this));
             return;
         }
-        var resident = this.resident != null && this.resident.id().equals(residentId) ? this.resident : this.roster.get(residentId);
+        var resident = this.roster.get(residentId);
         if (residentId != null && (resident == null || !areaId.equals(resident.area()))) return;
         var expected = residentId == null ? area.plan().route() : resident.guardOrder();
         var initial = expected != null ? expected : area.plan() == null ? null : area.plan().route();
@@ -1031,12 +1049,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.routeExpected = residentId == null ? expected : initial;
         this.routeInherited = residentId != null && expected == null;
         this.routeDraft = new SettlementRouteDraft(area.kind().role(), initial);
+        this.routeUncertain = false;
+        this.routeReloading = false;
         this.guardFeedback = Component.empty();
         updateActions();
     }
 
     private void savePersistentRoute(boolean inherit) {
-        if (this.routeDraft == null || this.routeDraft.dragging() || this.parent.submitting() || this.commands.busy()) return;
+        if (this.routeDraft == null || this.routeDraft.dragging() || this.routeUncertain || this.routeReloading || this.parent.submitting() || this.commands.busy()) return;
         if (!inherit && !this.routeDraft.validation().isEmpty()) {
             this.guardFeedback = Component.literal(this.routeDraft.validation());
             return;
@@ -1134,6 +1154,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (mode != Mode.EDIT_ROUTE) {
             this.routeDraft = null;
             this.routeSubmitted = false;
+            this.routeReloading = false;
+            this.routeUncertain = false;
             this.routeDragHit = false;
         }
         this.guardMode = null;
@@ -1594,7 +1616,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.routeDraft != null && this.routeDraft.dragging()) {
             boolean valid = this.routeDraft.finishDrag(position -> this.routeDragHit && x >= 0 && x < this.panelLeft
                     && y >= 0 && y < this.height && !this.minecraft.level.isOutsideBuildHeight(position));
-            this.guardFeedback = Component.literal(valid ? "Draft updated. Save commits the route." : "Invalid drop. Original node restored.");
+            this.guardFeedback = Component.literal(valid ? "Draft updated. Save applies the route." : "Invalid drop. Original node restored.");
             updateRouteButtons();
             return true;
         }
