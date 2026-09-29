@@ -74,15 +74,16 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
             }
         }
         if (allocation != null && allocation.started()) return workBatch(level, villager, context, queue, allocation, ItemStack.EMPTY);
-        if (allocation == null && role() == HiredVillagerRole.SMELTER) {
-            var legacy = new com.jvn.villagerretaliation.interaction.work.SmeltingWorker().finishExisting(level, villager, hirer, context);
-            if (legacy != null) return legacy;
+        if (allocation == null) {
+            var legacy = role() == HiredVillagerRole.SMELTER
+                    ? new com.jvn.villagerretaliation.interaction.work.SmeltingWorker().finishExisting(level, villager, hirer, context)
+                    : new com.jvn.villagerretaliation.interaction.work.CookingWorker().finishExisting(level, villager, hirer, context);
+            if (legacy != null && legacy.progressed()) return legacy;
         }
         var positions = stationPositions(level, villager, context);
         for (var order : queue.orders()) {
             if (!order.runnable()) continue;
-            if (!order.recipe().supports(level, role()) || !ItemStack.matches(order.output(), order.recipe().output(level))
-                    || !(level.getRecipeManager().byKey(order.recipe().recipe()).orElseThrow().value() instanceof AbstractCookingRecipe)) {
+            if (!order.recipe().supports(level, role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
                 queue.blocker(order.id(), "recipe_unavailable");
                 continue;
             }
@@ -95,6 +96,14 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
             if (context.inventory().hasOutput(ignored -> true)
                     && !Objects.equals(HiredProductionStock.destination(context.state()), order.storage())) {
                 queue.blocker(order.id(), "awaiting_output_delivery");
+                continue;
+            }
+            if (role() == HiredVillagerRole.COOK
+                    && level.getRecipeManager().byKey(order.recipe().recipe()).orElseThrow().value() instanceof net.minecraft.world.item.crafting.CraftingRecipe) {
+                var result = new com.jvn.villagerretaliation.interaction.work.CookingWorker().tickProductionCraft(level, villager, context, queue, order, stock);
+                if (result.progressed()) return result;
+                releasePlanned(level, villager, queue);
+                allocation = null;
                 continue;
             }
             boolean foundStation = false;

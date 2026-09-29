@@ -69,13 +69,12 @@ final class SettlementBackgroundProductionFurnace {
             }
             return serviceBatch(level, town, worker, queue, allocation, machine, depots, elapsed, multiplier);
         }
-        if (allocation == null && worker.role() == HiredVillagerRole.SMELTER
-                && SettlementBackgroundSmelting.finishExisting(level, town, worker, elapsed, multiplier)) return true;
+        if (allocation == null && SettlementBackgroundSmelting.finishExisting(level, town, worker, elapsed, multiplier)) return true;
         var carried = worker.items(level.registryAccess());
         var supplies = SettlementProductionInventory.supplies(level, worker, carried, depots);
         for (var order : queue.orders()) {
-            if (!order.runnable() || !order.recipe().supports(level, worker.role())) continue;
-            if (!ItemStack.matches(order.output(), order.recipe().output(level))) {
+            if (!order.runnable()) continue;
+            if (!order.recipe().supports(level, worker.role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
                 queue.blocker(order.id(), "recipe_unavailable");
                 continue;
             }
@@ -88,6 +87,12 @@ final class SettlementBackgroundProductionFurnace {
             boolean carrying = worker.outputSlots().stream().anyMatch(slot -> !carried.get(slot).isEmpty());
             if (carrying && !Objects.equals(HiredProductionStock.destination(worker.settings()), order.storage())) {
                 queue.blocker(order.id(), "awaiting_output_delivery");
+                continue;
+            }
+            if (worker.role() == HiredVillagerRole.COOK
+                    && level.getRecipeManager().byKey(order.recipe().recipe()).orElseThrow().value() instanceof net.minecraft.world.item.crafting.CraftingRecipe) {
+                if (SettlementBackgroundCrafting.tickOrder(level, town, worker, elapsed, multiplier, order)) return true;
+                allocation = queue.allocation(worker.id());
                 continue;
             }
             for (var machine : machines) {
@@ -150,7 +155,7 @@ final class SettlementBackgroundProductionFurnace {
         }
         releasePlanned(level, queue, worker);
         worker.status("waiting_for_furnace");
-        return worker.role() == HiredVillagerRole.SMELTER;
+        return true;
     }
 
     private static boolean serviceBatch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,

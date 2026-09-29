@@ -190,13 +190,103 @@ public final class HiredQueuedFurnaceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "queued_furnace")
+    public static void personalCookingQueueSkipsBlockedCraftsAndKeepsMixedRecipePriority(GameTestHelper helper) {
+        var fixture = fixture(helper, HiredVillagerRole.COOK);
+        try {
+            var cake = order(helper, "cake", 1);
+            var bread = order(helper, "bread", 1);
+            var potato = order(helper, "baked_potato", 2);
+            for (var order : java.util.List.of(cake, bread, potato)) {
+                helper.assertTrue(HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(),
+                        queue(helper, fixture) == null ? 0L : queue(helper, fixture).configurationRevision(), order).isEmpty(), "the personal cook accepts an exact food recipe");
+            }
+            tick(helper, fixture);
+            helper.assertValueEqual(fixture.context().inventory().countItem(Items.BREAD), 1, "a runnable craft ahead of a furnace recipe finishes with its native timing");
+            helper.assertFalse(queue(helper, fixture).order(cake.id()).blocker().isEmpty(), "the missing cake ingredients have a visible blocker");
+            helper.assertTrue(furnace(helper, fixture).getItem(0).isEmpty(), "later furnace work does not bypass the runnable bread order");
+            tick(helper, fixture);
+            helper.assertValueEqual(furnace(helper, fixture).getItem(0).getCount(), 2, "the next runnable entry loads only two potatoes");
+            cook(helper, fixture, 399);
+            helper.assertValueEqual(furnace(helper, fixture).getItem(2).getCount(), 1, "the second potato still needs its last native cooking tick");
+            cook(helper, fixture, 1);
+            tick(helper, fixture);
+            tick(helper, fixture);
+            helper.assertValueEqual(queue(helper, fixture).order(potato.id()).produced(), 2L, "the exact finite cooked quantity settles once");
+            helper.assertValueEqual(fixture.context().inventory().countItem(Items.WHEAT), 9, "one bread consumes exactly three wheat");
+            helper.assertValueEqual(fixture.context().inventory().countItem(Items.POTATO), 8, "the remaining raw potatoes stay carried");
+        } finally {
+            cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "queued_furnace")
+    public static void cookingQueueFinishesPausedNativeBatchBeforeLaterCrafting(GameTestHelper helper) {
+        var fixture = fixture(helper, HiredVillagerRole.COOK);
+        try {
+            var potato = order(helper, "baked_potato", 1);
+            var bread = order(helper, "bread", 1);
+            HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, potato);
+            HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), queue(helper, fixture).configurationRevision(), bread);
+            tick(helper, fixture);
+            helper.assertValueEqual(fixture.context().inventory().countItem(Items.BREAD), 0, "a later craft cannot jump ahead of native processing");
+            queue(helper, fixture).pause(potato.id(), true);
+            cook(helper, fixture, 200);
+            tick(helper, fixture);
+            helper.assertValueEqual(queue(helper, fixture).order(potato.id()).produced(), 1L, "pausing preserves and finishes the loaded batch");
+            tick(helper, fixture);
+            helper.assertValueEqual(queue(helper, fixture).order(bread.id()).produced(), 1L, "later crafting runs after the existing batch is collected");
+        } finally {
+            cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "queued_furnace")
+    public static void unrelatedLegacyFurnaceContentsDoNotBlockQueuedFoodCrafting(GameTestHelper helper) {
+        var fixture = fixture(helper, HiredVillagerRole.COOK);
+        try {
+            furnace(helper, fixture).setItem(0, new ItemStack(Items.RAW_IRON));
+            furnace(helper, fixture).setItem(1, new ItemStack(Items.COAL));
+            var bread = order(helper, "bread", 1);
+            HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, bread);
+            tick(helper, fixture);
+            helper.assertValueEqual(queue(helper, fixture).order(bread.id()).produced(), 1L, "incompatible legacy contents do not block a runnable craft");
+            helper.assertTrue(furnace(helper, fixture).getItem(0).is(Items.RAW_IRON), "unrelated native input stays in its furnace");
+        } finally {
+            cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "queued_furnace")
+    public static void cookingQueuePreservesIndivisibleCraftedBatches(GameTestHelper helper) {
+        var fixture = fixture(helper, HiredVillagerRole.COOK);
+        try {
+            fixture.context().inventory().insertSupply(new ItemStack(Items.COCOA_BEANS, 3));
+            var cookies = order(helper, "cookie", 1);
+            HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, cookies);
+            tick(helper, fixture);
+            tick(helper, fixture);
+            helper.assertValueEqual(queue(helper, fixture).order(cookies.id()).produced(), 8L, "a one-cookie goal completes one indivisible eight-cookie recipe");
+            helper.assertValueEqual(fixture.context().inventory().countItem(Items.COOKIE), 8, "the whole output batch is preserved without a second craft");
+            helper.assertValueEqual(fixture.context().inventory().countItem(Items.WHEAT), 10, "one batch consumes two wheat");
+            helper.assertValueEqual(fixture.context().inventory().countItem(Items.COCOA_BEANS), 2, "one batch consumes one cocoa bean");
+        } finally {
+            cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
     private static HiredProductionOrder order(GameTestHelper helper, String recipe, int amount) {
         return HiredProductionOrder.create(helper.getLevel(), HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace(recipe), Map.of()),
                 HiredProductionOrder.Mode.BATCH, amount, null);
     }
 
     private static void tick(GameTestHelper helper, Fixture fixture) {
-        new com.jvn.villagerretaliation.interaction.work.SmeltingWorker().tick(helper.getLevel(), fixture.villager(), fixture.owner(), fixture.context());
+        if (fixture.role() == HiredVillagerRole.COOK) new com.jvn.villagerretaliation.interaction.work.CookingWorker().tick(helper.getLevel(), fixture.villager(), fixture.owner(), fixture.context());
+        else new com.jvn.villagerretaliation.interaction.work.SmeltingWorker().tick(helper.getLevel(), fixture.villager(), fixture.owner(), fixture.context());
     }
 
     private static void cook(GameTestHelper helper, Fixture fixture, int ticks) {
@@ -210,7 +300,7 @@ public final class HiredQueuedFurnaceGameTests {
     }
 
     private static HiredProductionQueue queue(GameTestHelper helper, Fixture fixture) {
-        return HiredProductionService.access(helper.getLevel(), fixture.villager(), HiredVillagerRole.SMELTER).queue();
+        return HiredProductionService.access(helper.getLevel(), fixture.villager(), fixture.role()).queue();
     }
 
     private static void cleanup(GameTestHelper helper, Fixture fixture) {
@@ -219,6 +309,10 @@ public final class HiredQueuedFurnaceGameTests {
     }
 
     private static Fixture fixture(GameTestHelper helper) {
+        return fixture(helper, HiredVillagerRole.SMELTER);
+    }
+
+    private static Fixture fixture(GameTestHelper helper, HiredVillagerRole role) {
         var level = helper.getLevel();
         for (int x = 0; x <= 6; x++) for (int z = 0; z <= 6; z++) {
             level.setBlock(helper.absolutePos(new BlockPos(x, 1, z)), Blocks.STONE.defaultBlockState(), 3);
@@ -227,24 +321,26 @@ public final class HiredQueuedFurnaceGameTests {
         }
         var station = helper.absolutePos(new BlockPos(3, 2, 3));
         level.setBlock(station, Blocks.FURNACE.defaultBlockState(), 3);
+        if (role == HiredVillagerRole.COOK) level.setBlock(helper.absolutePos(new BlockPos(3, 2, 1)), Blocks.CRAFTING_TABLE.defaultBlockState(), 3);
         var villager = EntityType.VILLAGER.create(level);
         villager.setPos(helper.absolutePos(new BlockPos(2, 2, 2)).getBottomCenter());
         villager.setNoAi(true);
         villager.setNoGravity(true);
         helper.assertTrue(level.addFreshEntity(villager), "the producer is loaded");
         var owner = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "FurnaceOwner"));
-        HireContractStore.save(villager, HireContract.regular(owner.getUUID(), level.getGameTime(), 1, 1, 1, HiredVillagerRole.SMELTER));
+        HireContractStore.save(villager, HireContract.regular(owner.getUUID(), level.getGameTime(), 1, 1, 1, role));
         var state = HiredWorkStateStore.state(villager);
         HiredWorkerBrain.initialize(state);
         var area = HiredWorkArea.fromBounds(helper.absolutePos(new BlockPos(1, 2, 1)), helper.absolutePos(new BlockPos(5, 4, 5)), true);
         var inventory = HiredJobInventory.getJobInventory(villager);
-        inventory.insertSupply(new ItemStack(Items.RAW_IRON, 10));
+        inventory.insertSupply(new ItemStack(role == HiredVillagerRole.COOK ? Items.POTATO : Items.RAW_IRON, 10));
+        if (role == HiredVillagerRole.COOK) inventory.insertSupply(new ItemStack(Items.WHEAT, 12));
         inventory.insertSupply(new ItemStack(Items.COAL));
         var context = new HiredWorkContext(inventory, state, area.center(), area.min(), area.max(), area.horizontalRadius(), area.verticalRadius(),
                 true, 100, false, false);
-        return new Fixture(villager, owner, station, context);
+        return new Fixture(villager, owner, station, context, role);
     }
 
-    private record Fixture(Villager villager, ServerPlayer owner, BlockPos station, HiredWorkContext context) {
+    private record Fixture(Villager villager, ServerPlayer owner, BlockPos station, HiredWorkContext context, HiredVillagerRole role) {
     }
 }

@@ -432,6 +432,94 @@ public final class SettlementBackgroundCraftingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void sharedKitchenQueueKeepsFurnacePriorityAcrossBlockedCrafts(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.KITCHEN, Items.BREAD, fixture -> {
+            var level = helper.getLevel();
+            var queue = production(fixture);
+            var cake = HiredProductionOrder.create(level, HiredProductionRecipe.exact(id("cake"), Map.of()), HiredProductionOrder.Mode.BATCH, 1, null);
+            var potato = HiredProductionOrder.create(level, HiredProductionRecipe.exact(id("baked_potato_from_smoking"), Map.of()), HiredProductionOrder.Mode.BATCH, 2, null);
+            var bread = HiredProductionOrder.create(level, HiredProductionRecipe.exact(id("bread"), Map.of()), HiredProductionOrder.Mode.BATCH, 1, null);
+            queue.append(cake);
+            queue.append(potato);
+            queue.append(bread);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            fixture.supply().setItem(0, new ItemStack(Items.POTATO, 5));
+            fixture.supply().setItem(1, new ItemStack(Items.COAL));
+            fixture.supply().setItem(2, new ItemStack(Items.WHEAT, 6));
+            var entity = new net.minecraft.world.level.block.entity.SmokerBlockEntity(fixture.area().min().east(), Blocks.SMOKER.defaultBlockState());
+            var machine = SettlementFurnaceState.capture(level, fixture.area().id(), entity, 0L);
+            fixture.town().recordFurnace(machine);
+            for (int tick = 0; tick < 60; tick++) SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 3, 1.0D);
+            helper.assertValueEqual(machine.items(level.registryAccess()).getFirst().getCount(), 2, "blocked earlier crafts do not repeatedly reset the runnable furnace trip");
+            helper.assertValueEqual(carried(helper, fixture, Items.BREAD), 0, "a later craft cannot bypass the first runnable furnace order");
+            helper.assertFalse(queue.order(cake.id()).blocker().isEmpty(), "the blocked crafting order remains visible");
+            machine.advance(level, 99L);
+            helper.assertTrue(machine.items(level.registryAccess()).get(2).isEmpty(), "the smoker keeps its native duration");
+            machine.advance(level, 100L);
+            SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(queue.order(potato.id()).produced(), 1L, "the first actual meal settles once");
+            machine.advance(level, 200L);
+            SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(queue.order(potato.id()).produced(), 2L, "the finite smoking entry completes");
+            helper.assertValueEqual(queue.order(bread.id()).produced(), 1L, "the later craft runs after native processing finishes");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 3, "only the two requested potatoes are consumed");
+            helper.assertFalse(level.hasChunkAt(fixture.town().center()), "mixed production leaves the worksite unloaded");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void sharedMealStockIncludesWholeBatchesCarriedByOtherCooks(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.KITCHEN, Items.COOKIE, fixture -> {
+            var level = helper.getLevel();
+            var queue = production(fixture);
+            var order = HiredProductionOrder.create(level, HiredProductionRecipe.exact(id("cookie"), Map.of()),
+                    HiredProductionOrder.Mode.MAINTAIN_STOCK, 5, fixture.output().position());
+            queue.append(order);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            fixture.supply().setItem(0, new ItemStack(Items.WHEAT, 8));
+            fixture.supply().setItem(1, new ItemStack(Items.COCOA_BEANS, 4));
+            var saved = fixture.worker().save();
+            var secondId = UUID.randomUUID();
+            saved.putUUID("Id", secondId);
+            var second = SettlementWorkerState.load(saved);
+            fixture.town().assignDuty(secondId, fixture.area().id());
+            fixture.town().recordWorker(second);
+            SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            SettlementBackgroundSmelting.tick(level, fixture.town(), second, 200, 1.0D);
+            helper.assertValueEqual(queue.order(order.id()).produced(), 8L, "the kitchen completes one indivisible batch for the five-meal target");
+            helper.assertValueEqual(SettlementProductionStock.count(level, fixture.town(), queue, order), 8L, "carried meals count toward shared stock before delivery");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 6, "another cook cannot duplicate meals already on their way to storage");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void queuedSmallFoodRecipeKeepsItsNativeStationRequirements(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.KITCHEN, Items.PUMPKIN_PIE, fixture -> {
+            var level = helper.getLevel();
+            var queue = production(fixture);
+            var order = HiredProductionOrder.create(level, HiredProductionRecipe.exact(id("pumpkin_pie"), Map.of()), HiredProductionOrder.Mode.BATCH, 1, null);
+            queue.append(order);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            fixture.town().recordSurvey(fixture.area().id(), new SettlementBuildingSurvey.Survey(0L, List.of(), List.of(), true));
+            fixture.supply().setItem(0, new ItemStack(Items.PUMPKIN));
+            fixture.supply().setItem(1, new ItemStack(Items.EGG));
+            fixture.supply().setItem(2, new ItemStack(Items.SUGAR));
+            var furnace = new net.minecraft.world.level.block.entity.FurnaceBlockEntity(fixture.area().min(), Blocks.FURNACE.defaultBlockState());
+            furnace.setLevel(level);
+            furnace.setItem(0, new ItemStack(Items.RAW_IRON));
+            furnace.setItem(1, new ItemStack(Items.COAL));
+            var machine = SettlementFurnaceState.capture(level, fixture.area().id(), furnace, 0L);
+            fixture.town().recordFurnace(machine);
+            SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(machine.items(level.registryAccess()).getFirst().is(Items.RAW_IRON), "unrelated legacy furnace contents remain untouched");
+            helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "a small native recipe does not gain a new crafting-table requirement");
+            helper.assertValueEqual(carried(helper, fixture, Items.PUMPKIN_PIE), 1, "the actual ingredients become one carried meal");
+            helper.assertTrue(fixture.supply().isEmpty(), "only real supplies are consumed");
+        });
+    }
+
     private static HiredProductionQueue production(Fixture fixture) {
         fixture.town().setWorksitePlan(fixture.town().leader(), fixture.area().id(), SettlementWorksitePlan.defaults(fixture.area().type().role()));
         return fixture.town().beginProduction(fixture.town().leader(), fixture.area().id());

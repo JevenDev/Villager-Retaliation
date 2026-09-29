@@ -431,7 +431,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         for (BlockPos raw : context.workAreaPositions()) {
             BlockPos pos = raw.immutable();
             if (!isValidSmeltingStation(level, context, pos)
-                    || finishExisting && !hasExistingBatch(level, pos)
+                    || finishExisting && (!hasExistingBatch(level, pos) || !stationContentsCompatible(level, pos, processingFilter, desiredOutput))
                     || HiredPathMemory.isAvoided(level, villager, pos)) {
                 continue;
             }

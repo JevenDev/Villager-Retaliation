@@ -1,6 +1,12 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionService;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
+import com.jvn.villagerretaliation.interaction.work.production.HiredQueuedFurnaceWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
@@ -52,6 +58,17 @@ public final class CookingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if (HiredProductionService.access(level, villager, role()).managed()) {
+            return new HiredQueuedFurnaceWorker(role()).tick(level, villager, hirer, context);
+        }
+        return tickLegacy(level, villager, hirer, context, false);
+    }
+
+    public WorkResult finishExisting(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        return tickLegacy(level, villager, hirer, context, true);
+    }
+
+    private WorkResult tickLegacy(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context, boolean finishExisting) {
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
         }
@@ -67,12 +84,13 @@ public final class CookingWorker extends AbstractBlockWorker {
 
         ItemStack foodFilter = VillagerItemFilterService.assignedFilter(villager);
         Predicate<ItemStack> desiredFood = desiredFoodPredicate(level, foodFilter);
-        BlockPos station = nearestCookingStation(level, villager, context, foodFilter, desiredFood);
+        BlockPos station = nearestCookingStation(level, villager, context, foodFilter, desiredFood, finishExisting);
+        if (station == null && finishExisting) return null;
         CraftingAssessment crafting = CraftingAssessment.NONE;
-        if (!stationHasCollectibleOutput(level, station, desiredFood)) {
+        if (!finishExisting && !stationHasCollectibleOutput(level, station, desiredFood)) {
             crafting = assessCraftingTargets(level, villager, context, foodFilter);
             if (crafting.selection() != null) {
-                return tickCraftingFood(level, villager, context, crafting.selection());
+                return tickCraftingFood(level, villager, context, crafting.selection(), null, null);
             }
         }
 
@@ -519,11 +537,52 @@ public final class CookingWorker extends AbstractBlockWorker {
         return new CraftingAssessment(null, hasRecipe, missingCraftingTable);
     }
 
+    public WorkResult tickProductionCraft(ServerLevel level, Villager villager, HiredWorkContext context,
+            HiredProductionQueue queue, HiredProductionOrder order, long stock) {
+        var assessment = assessCraftingTargets(level, villager, context, order.recipe().filter(level));
+        var selection = assessment.selection();
+        if (selection == null) {
+            queue.blocker(order.id(), assessment.missingCraftingTable() ? "no_crafting_table" : "missing_materials");
+            return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
+        }
+        var missing = new LinkedHashMap<Item, Integer>();
+        selection.materials().forEach((item, count) -> {
+            int needed = count - HiredSupplyCrafting.countCarried(context, item);
+            if (needed > 0) missing.put(item, needed);
+        });
+        if (missing.isEmpty() && !context.inventory().canTransformSuppliesToOutputs(selection.materials(), List.of(order.output()))) {
+            queue.blocker(order.id(), "output_full");
+            return WorkResult.idle("interaction.work.cooking.output_full");
+        }
+        if (!AssignedStorageService.reserveProductionInputs(villager, missing)) {
+            queue.blocker(order.id(), "materials_reserved");
+            return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
+        }
+        var allocation = queue.allocation(villager.getUUID());
+        if (allocation != null && !allocation.order().equals(order.id())) {
+            HiredProductionStations.get(level).release(allocation.id());
+            queue.release(allocation.id());
+            allocation = null;
+            context.setProgressTicks(0);
+        }
+        if (allocation == null) allocation = queue.reserve(villager.getUUID(), order.id(), order.output().getCount(), 1, stock, null);
+        if (allocation == null) {
+            AssignedStorageService.releaseProductionInputs(villager);
+            queue.blocker(order.id(), "quantity_reserved");
+            return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
+        }
+        HiredProductionStock.prepareDestination(context.state(), context.inventory().hasOutput(ignored -> true), order);
+        queue.blocker(order.id(), "");
+        var result = tickCraftingFood(level, villager, context, selection, queue, allocation);
+        if (!result.progressed() && queue.order(order.id()).blocker().isEmpty()) queue.blocker(order.id(), result.status());
+        return result;
+    }
+
     private WorkResult tickCraftingFood(
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
-            CraftingSelection selection) {
+            CraftingSelection selection, HiredProductionQueue queue, HiredProductionQueue.Allocation allocation) {
         BlockPos craftingTable = HiredSupplyCrafting.requiresCraftingTable(selection.recipe())
                 ? nearestCraftingTable(level, villager, context)
                 : null;
@@ -539,7 +598,8 @@ public final class CookingWorker extends AbstractBlockWorker {
             return gathering;
         }
 
-        if (!context.canStoreOutputs(List.of(selection.result()))) {
+        if (!context.canStoreOutputs(List.of(selection.result()))
+                && (queue == null || !context.inventory().canTransformSuppliesToOutputs(selection.materials(), List.of(selection.result())))) {
             OutputFullHandling handling = handleOutputFullInventory(
                     level,
                     context,
@@ -576,6 +636,22 @@ public final class CookingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.WORKING);
         }
 
+        if (queue != null) {
+            if (!queue.start(allocation.id())) return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
+            if (!HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(level, context, selection.recipe(), selection.narrowedIngredients())) {
+                queue.lost(allocation.id());
+                queue.blocker(allocation.order(), "output_full");
+                AssignedStorageService.releaseProductionInputs(villager);
+                return WorkResult.idle("interaction.work.cooking.output_full");
+            }
+            if (!queue.complete(allocation.id(), selection.result())) throw new IllegalStateException("Cooked output did not match its production allocation");
+            AssignedStorageService.releaseProductionInputs(villager);
+            HiredWorkerBrain.clearFailure(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            useWorkItem(level, villager, selection.result());
+            return WorkResult.completedWithPractice("interaction.work.cooking.crafted_food", itemReplacements(selection.result()),
+                    HiredWorkPractice.batch(VillagerSkill.COOKING, "hired:cooking:craft", selection.result().getCount(), selection.result().getItem().hashCode()));
+        }
         if (!HiredSupplyCrafting.craftCarriedRecipeWithStations(
                 level, context, selection.recipe(), selection.narrowedIngredients())) {
             HiredWorkerBrain.setFailure(context, "missing_cooking_crafting_materials", level.getGameTime() + 100L);
@@ -738,10 +814,11 @@ public final class CookingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             ItemStack foodFilter,
-            Predicate<ItemStack> desiredFood) {
+            Predicate<ItemStack> desiredFood, boolean finishExisting) {
         CompoundTag state = context.state();
         BlockPos cached = cachedPos(state);
         if (isValidCookingStation(level, context, cached)
+                && (!finishExisting || hasExistingBatch(level, cached))
                 && !HiredPathMemory.isAvoided(level, villager, cached)
                 && stationContentsCompatible(level, cached, foodFilter, desiredFood)
                 && stationHasCollectibleOutput(level, cached, desiredFood)) {
@@ -756,6 +833,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         for (BlockPos raw : context.workAreaPositions()) {
             BlockPos pos = raw.immutable();
             if (!isValidCookingStation(level, context, pos)
+                    || finishExisting && (!hasExistingBatch(level, pos) || !stationContentsCompatible(level, pos, foodFilter, desiredFood))
                     || HiredPathMemory.isAvoided(level, villager, pos)) {
                 continue;
             }
@@ -814,6 +892,11 @@ public final class CookingWorker extends AbstractBlockWorker {
         state.putLong(CACHED_STATION_POS_TAG, best.asLong());
         state.remove(NEXT_STATION_SCAN_GAME_TIME_TAG);
         return best;
+    }
+
+    private static boolean hasExistingBatch(ServerLevel level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace
+                && (!furnace.getItem(INPUT_SLOT).isEmpty() || !furnace.getItem(RESULT_SLOT).isEmpty() || isFuelRemainder(furnace.getItem(FUEL_SLOT)));
     }
 
     private static boolean stationNeedsAttention(ServerLevel level, BlockPos pos) {

@@ -23,7 +23,7 @@ final class SettlementBackgroundSmelting {
     }
 
     static boolean tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
-        if (worker.role() == HiredVillagerRole.SMELTER && town.productionQueues().containsKey(worker.area())) {
+        if (town.productionQueues().containsKey(worker.area())) {
             return SettlementBackgroundProductionFurnace.tick(level, town, worker, elapsed, multiplier);
         }
         return tickLegacy(level, town, worker, elapsed, multiplier, false);
@@ -54,12 +54,12 @@ final class SettlementBackgroundSmelting {
             }
             var items = machine.items(level.registryAccess());
             if (finishExisting && items.getFirst().isEmpty() && items.get(2).isEmpty() && !items.get(1).is(Items.BUCKET)) continue;
-            processing = true;
             if (!items.getFirst().isEmpty() && !inputAllowed(level, worker, machine, filter, items.getFirst())
                     || !items.get(2).isEmpty() && !outputAllowed(level, worker, filter, items.get(2))
                     || !items.get(1).isEmpty() && !items.get(1).is(Items.BUCKET) && items.get(1).getBurnTime(machine.recipeType()) <= 0) {
                 continue;
             }
+            processing |= !items.getFirst().isEmpty() && (machine.burnTime() > 0 || !items.get(1).isEmpty());
             int collectSlot = !items.get(2).isEmpty() ? 2 : items.get(1).is(Items.BUCKET) ? 1 : -1;
             if (collectSlot >= 0) {
                 if (!SettlementProductionInventory.insertOutputs(worker, carried, List.of(items.get(collectSlot)))) {
