@@ -381,6 +381,12 @@ public final class SettlementManagementScreen extends Screen {
         rebuildWidgets();
     }
 
+    void restoreSelection(UUID selection) {
+        this.selected = selection;
+        populateRows();
+        updateActions();
+    }
+
     private Entry selectedEntry() {
         return this.snapshot.entries().stream().filter(entry -> entry.id().equals(this.selected)).findFirst().orElse(null);
     }
@@ -431,6 +437,8 @@ public final class SettlementManagementScreen extends Screen {
                 action(1, "cancel_project", permits(SettlementPermission.BUILD)
                         && selected instanceof SettlementManagementPayload.Project project && project.status() == SettlementProject.Status.ACTIVE);
                 action(2, "project_builder", selected != null);
+                action(3, "project_crew", selected instanceof SettlementManagementPayload.Project);
+                this.actions[3].setMessage(Component.literal("Crew and priority"));
 
             }
             case TOWNS -> action(0, "open", selected != null);
@@ -561,7 +569,8 @@ public final class SettlementManagementScreen extends Screen {
                 } else if (action == 1 && selected != null) {
                     confirm("cancel_project", selected, () -> submit(new SettlementManagementActionPayload.CancelProject(selected.id())));
                 } else if (selected instanceof SettlementManagementPayload.Project project) {
-                    navigate(Page.RESIDENTS, 0, project.builder().toString());
+                    if (action == 3) this.minecraft.setScreen(new SettlementProjectScreen(this, project, null));
+                    else navigate(Page.RESIDENTS, 0, project.builder().toString());
                 }
             }
             case TOWNS -> {
@@ -928,6 +937,8 @@ public final class SettlementManagementScreen extends Screen {
                     depot.targets().forEach(target -> lines.add(text("target_row", target.name(), target.count())));
                 } else if (this.entry instanceof SettlementManagementPayload.Project project) {
                     lines.add(text("project_site", project.origin().toShortString()));
+                    lines.add(Component.literal("Priority " + project.priority() + " / crew " + (project.assistants().size() + 1)));
+                    lines.add(Component.literal("Lead: " + project.builderName()));
                     lines.add(text("project_materials", project.materials()));
                     if (project.status() == SettlementProject.Status.ACTIVE || !project.blocker().isBlank()) {
                         if (!project.missingMaterials().isBlank()) {

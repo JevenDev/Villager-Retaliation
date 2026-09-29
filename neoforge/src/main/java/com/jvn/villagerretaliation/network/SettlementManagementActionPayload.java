@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
 import com.jvn.villagerretaliation.settlement.SettlementWorksitePlan;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -81,6 +82,14 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 buffer.writeEnum(Kind.START_PROJECT);
                 buffer.writeUUID(start.resident());
                 buffer.writeUUID(start.blueprint());
+            }
+            case ConfigureProject project -> {
+                buffer.writeEnum(Kind.CONFIGURE_PROJECT);
+                buffer.writeUUID(project.project());
+                buffer.writeVarLong(project.revision());
+                buffer.writeVarInt(project.priority());
+                buffer.writeVarInt(project.assistants().size());
+                project.assistants().forEach(buffer::writeUUID);
             }
             case CancelProject cancel -> {
                 buffer.writeEnum(Kind.CANCEL_PROJECT);
@@ -236,6 +245,15 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             case COMMISSION_BUILDING -> new CommissionBuilding(buffer.readUUID(), buffer.readResourceLocation(), buffer.readBlockPos(),
                     buffer.readEnum(net.minecraft.world.level.block.Rotation.class), buffer.readUUID());
             case START_PROJECT -> new StartProject(buffer.readUUID(), buffer.readUUID());
+            case CONFIGURE_PROJECT -> {
+                var project = buffer.readUUID();
+                long revision = buffer.readVarLong();
+                int priority = buffer.readVarInt();
+                int count = VillagerPayloads.readCollectionSize(buffer, 15, "construction assistants");
+                var assistants = new java.util.ArrayList<UUID>(count);
+                for (int index = 0; index < count; index++) assistants.add(buffer.readUUID());
+                yield new ConfigureProject(project, revision, priority, assistants);
+            }
             case CANCEL_PROJECT -> new CancelProject(buffer.readUUID());
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
             case AUTOMATIC_STAFFING -> new AutomaticStaffing(buffer.readBoolean() ? buffer.readUUID() : null);
@@ -403,11 +421,11 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject {
     }
 
     public record SaveWorksite(UUID area, SettlementWorksitePlan plan, boolean adopt) implements Command {
@@ -493,6 +511,15 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         public StartProject {
             Objects.requireNonNull(resident);
             Objects.requireNonNull(blueprint);
+        }
+    }
+
+    public record ConfigureProject(UUID project, long revision, int priority, List<UUID> assistants) implements Command {
+        public ConfigureProject {
+            Objects.requireNonNull(project);
+            assistants = List.copyOf(assistants);
+            if (revision < 0L || priority < 0 || priority > 9 || assistants.size() > 15
+                    || new java.util.HashSet<>(assistants).size() != assistants.size()) throw new IllegalArgumentException("Invalid construction crew command");
         }
     }
 

@@ -109,6 +109,8 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.CommissionBuilding build -> SettlementConstructionService.commission(player, town,
                     build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()).isEmpty();
             case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
+            case SettlementManagementActionPayload.ConfigureProject project -> SettlementConstructionService.configureCrew(player, town,
+                    project.project(), project.revision(), project.priority(), project.assistants());
             case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
             case SettlementManagementActionPayload.Brew brew -> SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order());
             case SettlementManagementActionPayload.SaveWorksite save -> SettlementWorksiteService.configure(
@@ -185,7 +187,7 @@ public final class SettlementManagementService {
                 case HISTORY -> town.history().reversed().forEach(event -> entries.add(new SettlementManagementPayload.History(
                         event.id(), event.subject(), event.gameTime(), event.type())));
                 case DEPOTS -> depots(town, entries);
-                case PROJECTS -> projects(town, entries);
+                case PROJECTS -> projects(level, town, entries);
                 case APPLICANTS -> {
                     for (var applicant : town.applicants().values()) {
                         ResourceLocation profession = ResourceLocation.tryParse(applicant.entity().getCompound("VillagerData").getString("profession"));
@@ -203,8 +205,12 @@ public final class SettlementManagementService {
         }
         String needle = request.page() == Page.STATIONS ? "" : request.query().strip().toLowerCase(Locale.ROOT);
         var matching = entries.stream().filter(entry -> searchable(entry).toLowerCase(Locale.ROOT).contains(needle));
-        var filtered = (request.page() == Page.HISTORY ? matching
-                : matching.sorted(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(Entry::id))).toList();
+        Comparator<Entry> order = Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(Entry::id);
+        if (request.page() == Page.PROJECTS) order = Comparator.<Entry>comparingInt(entry ->
+                ((SettlementManagementPayload.Project) entry).status() == SettlementProject.Status.ACTIVE ? 0 : 1)
+                .thenComparing(Comparator.<Entry>comparingInt(entry -> ((SettlementManagementPayload.Project) entry).priority()).reversed())
+                .thenComparing(order);
+        var filtered = (request.page() == Page.HISTORY ? matching : matching.sorted(order)).toList();
         int size = SettlementManagementRequestPayload.PAGE_SIZE;
         int index = Math.min(request.index(), Math.max(0, (filtered.size() - 1) / size));
         int start = index * size;
@@ -243,7 +249,7 @@ public final class SettlementManagementService {
         var areas = new ArrayList<Entry>();
         areas(town, areas);
         var projects = new ArrayList<Entry>();
-        projects(town, projects);
+        projects(player.serverLevel(), town, projects);
         result.put(Page.RESIDENTS, residents);
         result.put(Page.AREAS, areas);
         result.put(Page.PROJECTS, projects);
@@ -265,12 +271,20 @@ public final class SettlementManagementService {
         }
     }
 
-    private static void projects(SettlementRecord town, List<Entry> entries) {
+    private static void projects(ServerLevel level, SettlementRecord town, List<Entry> entries) {
         java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream()).forEach(project -> entries.add(new SettlementManagementPayload.Project(
                         project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.min(), project.max(), project.status(),
                         project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
                         project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),
-                        project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())))));
+                        project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())),
+                        project.priority(), project.crewRevision(), project.workplace() != null || town.worksitePlans().containsKey(project.area()),
+                        constructionName(level, project.builder()), project.assistants().stream()
+                                .map(id -> new SettlementManagementPayload.CrewMember(id, constructionName(level, id))).toList())));
+    }
+
+    private static String constructionName(ServerLevel level, UUID id) {
+        return display(level.getEntity(id) instanceof Villager member ? VillagerPresetNameRegistry.resolveDisplayName(member).getString()
+                : VillagerSocialGraphSavedData.get(level).knownName(id).orElse("Unknown builder"));
     }
 
     private static void residents(ServerLevel level, VillageAllegianceRegistrySavedData registry,

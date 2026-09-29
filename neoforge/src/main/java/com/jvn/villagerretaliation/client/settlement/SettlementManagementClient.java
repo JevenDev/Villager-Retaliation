@@ -74,6 +74,8 @@ public final class SettlementManagementClient {
             view.acceptManagementResult(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementEditScreen form) {
             form.result(payload);
+        } else if (Minecraft.getInstance().screen instanceof SettlementProjectScreen form) {
+            form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementWorkerScreen form) {
             form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementBrewingScreen form) {
@@ -97,6 +99,7 @@ public final class SettlementManagementClient {
             case SettlementViewScreen view -> view.parent();
             case SettlementEditScreen form -> form.parent();
             case SettlementWorkerScreen form -> form.parent();
+            case SettlementProjectScreen form -> form.parent();
             case SettlementWorksiteAdoptionScreen form -> form.previous().parent();
             case SettlementTemporaryTaskScreen form -> form.parent();
             case SettlementWorksiteLinksScreen form -> form.parent().parent();

@@ -69,6 +69,12 @@ public final class SettlementViewClientSmoke {
     private static UUID brewer;
     private static UUID productionArea;
     private static UUID transferArea;
+    private static UUID crewAssistant;
+    private static SettlementViewScreen crewView;
+    private static double crewX;
+    private static double crewZ;
+    private static float crewHeight;
+    private static float crewYaw;
     private static SettlementViewScreen productionView;
     private static Villager issueFarmer;
     private static long started;
@@ -1085,12 +1091,71 @@ public final class SettlementViewClientSmoke {
                     && screen.selectionGizmo().bounds().equals(new SettlementViewBounds(projectSnapshot.min(), projectSnapshot.max()).box()),
                     "the new designation starts at the exact construction footprint");
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            crewAssistant = minecraft.getSingleplayerServer().submit(() -> prepareCrewAssistant(
+                    minecraft.getSingleplayerServer().getPlayerList().getPlayer(minecraft.player.getUUID()))).join();
+            screen.inspect(projectSnapshot);
+            crewView = screen;
+            crewX = screen.focusX();
+            crewZ = screen.focusZ();
+            crewHeight = screen.viewHeight();
+            crewYaw = screen.cameraYaw();
+            ticks = 0;
+            phase = 162;
+        } else if (phase == 162 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            button(screen, "Staff").onPress();
+            capture("inspector-construction-crew");
+            button(screen, "Crew and priority").onPress();
+            ticks = 0;
+            phase = 163;
+        } else if (phase == 163 && minecraft.screen instanceof SettlementProjectScreen screen && ++ticks >= 5) {
+            for (int width : new int[] {320, 426, minecraft.getWindow().getGuiScaledWidth()}) {
+                screen.init(minecraft, width, minecraft.getWindow().getGuiScaledHeight());
+                requireButtonsFit(screen);
+            }
+            button(screen, "Priority: 5").onPress();
+            button(screen, "Add builders").onPress();
+            screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow().setValue("Morgan");
+            ticks = 0;
+            phase = 164;
+        } else if (phase == 164 && minecraft.screen instanceof SettlementProjectScreen screen && ++ticks >= 5
+                && screen.parent().snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS
+                && screen.parent().snapshot().query().equals("Morgan") && !screen.parent().snapshot().entries().isEmpty()) {
+            require(button(screen, "[ ] Morgan").active, "the adopted civic builder can join the crew");
+            capture("construction-builder-picker");
+            button(screen, "[ ] Morgan").onPress();
+            button(screen, "Current crew").onPress();
+            ticks = 0;
+            phase = 165;
+        } else if (phase == 165 && minecraft.screen instanceof SettlementProjectScreen screen && ++ticks >= 5) {
+            require(button(screen, "[x] Morgan").active && button(screen, "Priority: 6").active,
+                    "the crew and priority draft survive the resident picker");
+            require(minecraft.getCameraEntity() != minecraft.player, "crew editing preserves the map camera");
+            capture("construction-crew-editor");
+            button(screen, "Apply crew").onPress();
+            ticks = 0;
+            phase = 166;
+        } else if (phase == 166 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 20
+                && screen.inspectorSelection() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Project visibleProject
+                && visibleProject.priority() == 6 && visibleProject.assistants().stream().anyMatch(member -> member.id().equals(crewAssistant))) {
+            require(screen == crewView && screen.focusX() == crewX && screen.focusZ() == crewZ
+                            && screen.viewHeight() == crewHeight && screen.cameraYaw() == crewYaw,
+                    "crew controls restore the original map camera and project selection");
+            minecraft.getSingleplayerServer().submit(() -> {
+                var town = SettlementSavedData.get(minecraft.getSingleplayerServer().overworld()).get(fixture.town()).orElseThrow();
+                var project = town.project(projectFixture.project());
+                require(project.priority() == 6 && project.assistants().equals(java.util.List.of(crewAssistant)),
+                        "the authorized crew edit reaches the project ledger once");
+                require(!town.duties().get(crewAssistant).equals(project.area()), "crew assignment retains the assistant's home");
+            }).join();
+            capture("inspector-construction-crew-saved");
             openOverview(screen);
             phase = 114;
         } else if (phase == 114 && minecraft.screen instanceof SettlementManagementScreen screen) {
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
             phase = 112;
         } else if (phase == 112 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().query().isEmpty()
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS
                 && screen.snapshot().entries().stream().anyMatch(entry -> entry.id().equals(projectFixture.project()))) {
             selectFirstRow(screen);
@@ -1590,6 +1655,30 @@ public final class SettlementViewClientSmoke {
         com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onUnloaded(villager);
         SettlementManagementService.open(player, fixture.town());
         return villager.getUUID();
+    }
+
+    private static UUID prepareCrewAssistant(ServerPlayer player) {
+        var level = player.serverLevel();
+        var town = SettlementSavedData.get(level).get(fixture.town()).orElseThrow();
+        var origin = fixture.center().offset(-24, 0, 20);
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Builder home",
+                origin, origin.offset(3, 3, 3), 5, true);
+        com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, town, area.min(), area.max());
+        require(SettlementBuildingService.register(player, fixture.town(), area), "the assistant's home worksite registers");
+        require(com.jvn.villagerretaliation.settlement.SettlementWorksiteService.configure(player, town, area.id(),
+                com.jvn.villagerretaliation.settlement.SettlementWorksitePlan.defaults(com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER), true),
+                "the assistant's home explicitly adopts shared controls");
+        var builder = EntityType.VILLAGER.create(level);
+        builder.setPos(town.project(projectFixture.project()).origin().offset(-2, 0, 1).getBottomCenter());
+        builder.setNoAi(true);
+        builder.setCustomName(Component.literal("Morgan"));
+        builder.setVillagerData(builder.getVillagerData().setProfession(VillagerProfession.MASON));
+        VillageAllegianceApi.assignKnown(level, builder, fixture.town(), AllegianceAssignmentSource.EXPLICIT_API);
+        com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get(level).ensureProfile(level, builder);
+        require(SettlementWorkforceService.assign(level, player, fixture.town(), builder, area.id()), "the civic builder keeps a construction home");
+        SettlementCareService.onUnloaded(builder);
+        com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onUnloaded(builder);
+        return builder.getUUID();
     }
 
     private static ProjectFixture prepareProject(ServerPlayer player) {

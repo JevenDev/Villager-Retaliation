@@ -159,6 +159,15 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.writeUtf(project.materials(), 512);
                 buffer.writeEnum(project.phase());
                 buffer.writeUtf(project.missingMaterials(), 512);
+                buffer.writeVarInt(project.priority());
+                buffer.writeVarLong(project.crewRevision());
+                buffer.writeBoolean(project.crewAvailable());
+                buffer.writeUtf(project.builderName(), 128);
+                buffer.writeVarInt(project.assistants().size());
+                for (var assistant : project.assistants()) {
+                    buffer.writeUUID(assistant.id());
+                    buffer.writeUtf(assistant.name(), 128);
+                }
             }
             case Issue issue -> {
                 buffer.writeEnum(issue.kind());
@@ -254,7 +263,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
                     buffer.readBlockPos(), buffer.readBlockPos(),
                     buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
-                    buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512));
+                    buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512),
+                    buffer.readVarInt(), buffer.readVarLong(), buffer.readBoolean(), buffer.readUtf(128), readCrew(buffer));
             case ISSUES -> new Issue(id, name, buffer.readEnum(IssueKind.class), buffer.readUtf(128), buffer.readUtf(512),
                     buffer.readEnum(Page.class), readOptionalId(buffer), readOptionalId(buffer), readOptionalId(buffer),
                     buffer.readBoolean());
@@ -530,14 +540,32 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         CurrencyAmount price, CurrencyAmount budget, boolean enabled, String result) implements Entry {
     }
 
+    private static List<CrewMember> readCrew(RegistryFriendlyByteBuf buffer) {
+        int count = VillagerPayloads.readCollectionSize(buffer, 15, "construction assistants");
+        var crew = new ArrayList<CrewMember>(count);
+        for (int index = 0; index < count; index++) crew.add(new CrewMember(buffer.readUUID(), buffer.readUtf(128)));
+        return List.copyOf(crew);
+    }
+
+    public record CrewMember(UUID id, String name) {
+        public CrewMember {
+            if (id == null || name == null || name.length() > 128) throw new IllegalArgumentException("Invalid construction crew member");
+        }
+    }
+
     public record Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, BlockPos min, BlockPos max, SettlementProject.Status status,
                           int placed, int total, String blocker, String materials,
-                          com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials) implements Entry {
+                          com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials,
+                          int priority, long crewRevision, boolean crewAvailable, String builderName, List<CrewMember> assistants) implements Entry {
         public Project {
+            assistants = List.copyOf(assistants);
             if (id == null || area == null || builder == null || origin == null || status == null || name == null || name.length() > 128
                     || min == null || max == null || min.getX() > max.getX() || min.getY() > max.getY() || min.getZ() > max.getZ()
                     || placed < 0 || total <= 0 || placed > total || blocker == null || blocker.length() > 128
-                    || materials == null || materials.length() > 512 || phase == null || missingMaterials == null || missingMaterials.length() > 512) {
+                    || materials == null || materials.length() > 512 || phase == null || missingMaterials == null || missingMaterials.length() > 512
+                    || priority < 0 || priority > 9 || crewRevision < 0L || builderName == null || builderName.length() > 128 || assistants.size() > 15
+                    || assistants.stream().map(CrewMember::id).distinct().count() != assistants.size()
+                    || assistants.stream().anyMatch(member -> member.id().equals(builder))) {
                 throw new IllegalArgumentException("Invalid construction project snapshot");
             }
         }

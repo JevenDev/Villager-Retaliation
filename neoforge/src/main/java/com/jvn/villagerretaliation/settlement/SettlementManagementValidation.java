@@ -29,6 +29,7 @@ final class SettlementManagementValidation {
             case CommissionBuilding ignored -> SettlementPermission.BUILD;
             case StartProject ignored -> SettlementPermission.BUILD;
             case CancelProject ignored -> SettlementPermission.BUILD;
+            case ConfigureProject ignored -> SettlementPermission.BUILD;
             case SaveArea ignored -> SettlementPermission.BUILD;
             case RemoveArea ignored -> SettlementPermission.BUILD;
             case ClaimPlot ignored -> SettlementPermission.BUILD;
@@ -74,6 +75,10 @@ final class SettlementManagementValidation {
             case Applicant applicant -> town.applicants().containsKey(applicant.id()) ? "" : "applicant_missing";
             case CancelProject cancel -> !town.knowsProject(cancel.project()) ? "project_missing"
                     : town.project(cancel.project()) == null || !town.project(cancel.project()).active() ? "project_finished" : "";
+            case ConfigureProject project -> !town.permits(player.getUUID(), SettlementPermission.STAFF) ? "permission_staff"
+                    : town.project(project.project()) == null ? "project_missing"
+                    : !town.project(project.project()).active() ? "project_finished"
+                    : town.project(project.project()).crewRevision() != project.revision() ? "state_changed" : "";
             case Treasury treasury -> treasury.amount() <= 0 || treasury.amount() > 4_096 ? "invalid_amount"
                     : treasury.deposit() && com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(player) < treasury.amount()
                             ? "player_funds" : !treasury.deposit() && town.economy().balance().compareTo(

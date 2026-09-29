@@ -130,7 +130,7 @@ final class SettlementSelectionInspector {
     private boolean available(Section section) {
         return switch (section) {
             case OVERVIEW -> true;
-            case STAFF -> !this.staff.isEmpty() || this.worksite != null;
+            case STAFF -> !this.staff.isEmpty() || this.worksite != null || this.selected instanceof Project;
             case ORDERS -> this.worksite != null || this.selected instanceof Resident;
             case SETTINGS -> this.worksite != null || this.selected instanceof Resident resident && resident.settings() != null;
             case STORAGE -> this.worksite != null;
@@ -149,7 +149,8 @@ final class SettlementSelectionInspector {
         this.back.visible = this.visible;
         String label = switch (this.section) {
             case OVERVIEW -> "Focus selection";
-            case STAFF -> this.selected instanceof Area && this.worksite != null && this.worksite.plan() != null ? "Fill staffing" : "Staff actions";
+            case STAFF -> this.selected instanceof Project ? "Crew and priority"
+                    : this.selected instanceof Area && this.worksite != null && this.worksite.plan() != null ? "Fill staffing" : "Staff actions";
             case ORDERS -> this.transfers != null ? "Edit transfers" : this.production != null ? "Edit production" : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST
                     ? "Trade orders" : this.worksite != null && this.worksite.kind() == SettlementAreaType.FISHERY ? "Fishing settings"
                     : this.selected instanceof Resident ? "Worker actions"
@@ -166,6 +167,7 @@ final class SettlementSelectionInspector {
                 || this.header.permissions().contains(this.section == Section.STORAGE ? SettlementPermission.STAFF
                 : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST && this.section == Section.ORDERS
                 ? SettlementPermission.VIEW : SettlementPermission.STAFF);
+        if (this.section == Section.STAFF && this.selected instanceof Project) this.primary.active = this.header.permissions().contains(SettlementPermission.VIEW);
         if (this.section == Section.SETTINGS && this.selected instanceof Resident resident && resident.settings() == null) this.primary.active = false;
         if (this.section == Section.ORDERS && this.production == null && this.worksite != null
                 && this.worksite.kind() != SettlementAreaType.TRADING_POST && this.worksite.kind() != SettlementAreaType.CONSTRUCTION
@@ -217,6 +219,8 @@ final class SettlementSelectionInspector {
             if (!resident.temporary().isEmpty()) line("Temporary: " + resident.temporary());
             if (!resident.diagnostic().isEmpty()) line(resident.diagnostic());
         } else if (this.selected instanceof Project project) {
+            line("Project priority: " + project.priority() + " / crew: " + (project.assistants().size() + 1));
+            line("Lead: " + project.builderName());
             line("Materials: " + project.materials());
             if (!project.missingMaterials().isEmpty()) line("Missing: " + project.missingMaterials());
             if (!project.blocker().isEmpty()) line(project.blocker().replace('_', ' '));
@@ -226,6 +230,13 @@ final class SettlementSelectionInspector {
     }
 
     private void staffing() {
+        if (this.selected instanceof Project project) {
+            line("Lead: " + project.builderName() + " / project payment");
+            for (var member : project.assistants()) this.lines.add(new Line(Component.literal(member.name() + " / assistant"), member.id()));
+            if (project.assistants().isEmpty()) line("No assistants");
+            line("Assistants retain their home assignments.");
+            return;
+        }
         line(this.worksite == null ? this.staff.size() + " selected" : "Assigned: " + this.worksite.workers()
                 + (this.worksite.plan() == null ? " / no shared staffing target" : " / desired: " + this.worksite.plan().desiredStaff()));
         if (this.staff.isEmpty()) line("No assigned residents");

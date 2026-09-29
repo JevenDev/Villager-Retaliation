@@ -1986,7 +1986,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     SettlementSelectionInspector inspector() { return this.inspector; }
 
-    private SettlementManagementPayload.Entry inspectorSelection() {
+    SettlementManagementPayload.Entry inspectorSelection() {
         if (this.inspected != null) return this.inspected;
         if (this.selectedResident != null) return this.resident == null ? this.roster.get(this.selectedResident) : this.resident;
         if (this.projects.containsKey(this.selectedArea)) return this.projects.get(this.selectedArea);
@@ -2034,7 +2034,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         switch (section) {
             case OVERVIEW -> focusSelection();
             case STAFF -> {
-                if (selected instanceof SettlementManagementPayload.Area && area != null && area.plan() != null) {
+                if (selected instanceof SettlementManagementPayload.Project project) {
+                    this.minecraft.setScreen(new SettlementProjectScreen(management(), project, this));
+                } else if (selected instanceof SettlementManagementPayload.Area && area != null && area.plan() != null) {
                     this.parent.submit(new SettlementManagementActionPayload.FillStaffing(area.id()));
                 } else {
                     this.selection.select(inspectorStaff().stream().map(SettlementManagementPayload.Resident::id).toList(), false);
