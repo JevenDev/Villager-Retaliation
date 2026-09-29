@@ -77,7 +77,9 @@ public final class SettlementBackgroundService {
             return;
         }
         double multiplier = care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D);
-        if (worker.role() == HiredVillagerRole.COURIER) {
+        if (SettlementTransferService.pending(town, worker.id()) != null) {
+            SettlementBackgroundTransfers.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.COURIER) {
             SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);
         } else if (worker.role() == HiredVillagerRole.SMELTER) {
             SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier);

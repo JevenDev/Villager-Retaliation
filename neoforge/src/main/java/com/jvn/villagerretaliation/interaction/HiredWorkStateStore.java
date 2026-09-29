@@ -187,6 +187,7 @@ public final class HiredWorkStateStore {
         } else {
             session.context().setProgressTicks(0);
         }
+        com.jvn.villagerretaliation.interaction.work.courier.HiredTransferService.releasePlanned(level, villager);
         session.state().remove("NextWorkGameTime");
         setStatus(session.state(), status, replacements);
     }

@@ -34,6 +34,13 @@ public final class SettlementTransferService {
         return "";
     }
 
+    public static HiredTransferQueue pending(SettlementRecord town, UUID worker) {
+        return town.transferQueues().values().stream().filter(queue -> {
+            var allocation = queue.allocation(worker);
+            return allocation != null && allocation.started();
+        }).findFirst().orElse(null);
+    }
+
     public static SettlementDepot depot(SettlementRecord town, HiredTransferQueue.Endpoint endpoint) {
         var depot = endpoint.depot() == null ? null : town.depots().get(endpoint.depot());
         var area = depot == null ? null : town.areas().get(depot.area());

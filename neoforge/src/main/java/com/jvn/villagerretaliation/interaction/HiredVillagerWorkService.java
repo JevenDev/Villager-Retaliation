@@ -193,6 +193,14 @@ public final class HiredVillagerWorkService {
         }
         VillagerTaskNavigationUtil.moveInWaterTowardNavigationTarget(level, villager, WORK_AREA_RETURN_WALK_SPEED);
         HiredVillagerFocusService.suppressNonWorkAi(level, villager, session.context());
+        if (com.jvn.villagerretaliation.interaction.work.courier.HiredTransferService.pendingCivic(villager)) {
+            if (decisionTick) {
+                WorkResult delivery = com.jvn.villagerretaliation.interaction.work.CourierWorker.resumePending(level, villager, session.context());
+                setStatus(session.state(), delivery.status(), delivery.replacements());
+                HiredWorkSkillGrowthService.onPractice(level, villager, hirer, HiredVillagerRole.COURIER, session.state(), delivery.practice());
+            }
+            return;
+        }
         if (shouldReturnToWorkArea(session) && returnVillagerToWorkArea(level, villager, session, decisionTick)) {
             return;
         }

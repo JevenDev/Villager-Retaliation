@@ -30,6 +30,11 @@ public final class CourierWorker implements HiredRoleWorker {
     private static final double MAX_STORAGE_TETHER_DISTANCE_SQR = 16.0D * 16.0D;
     private static final long ROUTE_RECOVERY_TICKS = 20L * 30L;
 
+    public static WorkResult resumePending(ServerLevel level, Villager villager, HiredWorkContext context) {
+        return com.jvn.villagerretaliation.interaction.work.courier.HiredTransferService.pendingCivic(villager)
+                ? HiredTransferWorker.tick(level, villager, context) : null;
+    }
+
     @Override
     public HiredVillagerRole role() {
         return HiredVillagerRole.COURIER;

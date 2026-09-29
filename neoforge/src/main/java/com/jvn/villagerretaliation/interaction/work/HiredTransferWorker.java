@@ -28,7 +28,7 @@ final class HiredTransferWorker {
             for (var order : queue.orders()) {
                 if (queue.available(order.id()) <= 0) continue;
                 if (context.state().getCompound("TransferRetryAfter").getLong(order.id().toString()) > level.getGameTime()) continue;
-                String invalid = validate(level, villager, order, false);
+                String invalid = validate(level, villager, queue, order, false);
                 if (!invalid.isEmpty()) {
                     queue.blocker(order.id(), invalid);
                     continue;
@@ -64,7 +64,7 @@ final class HiredTransferWorker {
             return WorkResult.idle("interaction.work.transfer.waiting");
         }
         var order = queue.order(allocation.order());
-        String invalid = validate(level, villager, order, allocation.started());
+        String invalid = validate(level, villager, queue, order, allocation.started());
         if (!invalid.isEmpty()) return blocked(level, villager, context, queue, order, invalid);
         bind(level, villager, order);
         if (allocation.started()) {
@@ -116,20 +116,24 @@ final class HiredTransferWorker {
         if (moved <= 0) return blocked(level, villager, context, queue, order, "transfer_destination_full");
         AssignedStorageService.reconcileCourierClaims(villager, context.inventory().collectOutputItems().stream()
                 .map(output -> output.stack()).filter(order::matches).toList());
-        if (queue.allocation(villager.getUUID()) == null && duty != null) SettlementLogisticsService.clear(villager);
+        if (queue.allocation(villager.getUUID()) == null && duty != null) {
+            SettlementLogisticsService.clear(villager);
+            com.jvn.villagerretaliation.settlement.SettlementDepotService.synchronizeStorage(level, villager, duty.town());
+        }
         HiredWorkAnimation.useItem(level, villager, order.sample());
         return WorkResult.completedWithPractice("interaction.work.courier.delivered_items",
                 HiredWorkPractice.courier(moved, Math.sqrt(order.source().position().distSqr(order.destination().position()))));
     }
 
-    private static String validate(ServerLevel level, Villager villager, HiredTransferQueue.Order order, boolean delivering) {
+    private static String validate(ServerLevel level, Villager villager, HiredTransferQueue queue, HiredTransferQueue.Order order, boolean delivering) {
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         boolean permitted;
         if (duty == null) {
             permitted = HiredTransferService.personalEndpoint(level, villager, order.destination(), false)
                     && (delivering || HiredTransferService.personalEndpoint(level, villager, order.source(), true));
         } else if (delivering) {
-            permitted = SettlementTransferService.destination(duty.town(), duty.area().id(), order);
+            permitted = SettlementTransferService.destination(duty.town(), duty.area().id(), order)
+                    && SettlementTransferService.destination(duty.town(), queue.owner(), order);
         } else permitted = SettlementTransferService.endpoints(duty.town(), duty.area().id(), order);
         if (!permitted) return "transfer_storage_changed";
         return !delivering && !level.hasChunkAt(order.source().position()) || !level.hasChunkAt(order.destination().position())

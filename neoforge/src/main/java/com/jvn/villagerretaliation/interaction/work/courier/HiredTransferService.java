@@ -24,7 +24,8 @@ public final class HiredTransferService {
     public static Access access(ServerLevel level, Villager villager) {
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         if (duty != null) {
-            var queue = duty.town().transferQueues().get(duty.area().id());
+            var queue = com.jvn.villagerretaliation.settlement.SettlementTransferService.pending(duty.town(), villager.getUUID());
+            if (queue == null) queue = duty.town().transferQueues().get(duty.area().id());
             return new Access(queue != null, queue, "");
         }
         var state = HiredWorkStateStore.state(villager);
@@ -44,6 +45,11 @@ public final class HiredTransferService {
         } catch (IllegalArgumentException invalid) {
             return new Access(true, null, "transfer_queue_invalid");
         }
+    }
+
+    public static boolean pendingCivic(Villager villager) {
+        return SettlementWorkforceService.duty(villager).map(duty ->
+                com.jvn.villagerretaliation.settlement.SettlementTransferService.pending(duty.town(), villager.getUUID()) != null).orElse(false);
     }
 
     public static String appendPersonal(ServerPlayer player, Villager villager, long revision, HiredTransferQueue.Order requested) {
@@ -96,7 +102,7 @@ public final class HiredTransferService {
                                 net.minecraft.world.item.ItemStack sample,
                                 com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation operation,
                                 java.util.List<net.minecraft.world.item.ItemStack> additional) {
-        if (VillagerWorkAuthority.resolve(level, villager).role() != HiredVillagerRole.COURIER) return Integer.MAX_VALUE;
+        if (VillagerWorkAuthority.resolve(level, villager).role() != HiredVillagerRole.COURIER && !pendingCivic(villager)) return Integer.MAX_VALUE;
         var access = access(level, villager);
         if (!access.blocker().isEmpty()) return 0;
         var allocation = access.queue() == null ? null : access.queue().allocation(villager.getUUID());

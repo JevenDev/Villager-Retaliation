@@ -110,7 +110,7 @@ public final class SettlementDepotService {
             };
             if (!permitted) return false;
         }
-        if (duty != null && duty.area().type() == SettlementAreaType.DEPOT) {
+        if (duty != null && SettlementLogisticsService.isHauler(villager)) {
             return SettlementLogisticsService.permitsStorage(villager, depot, AssignedStorageService.normalizePurpose(record.purpose()));
         }
         return switch (AssignedStorageService.normalizePurpose(record.purpose())) {

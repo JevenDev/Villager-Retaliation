@@ -14,7 +14,8 @@ final class SettlementBackgroundTransfers {
     }
 
     static boolean tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
-        var queue = town.transferQueues().get(worker.area());
+        var queue = SettlementTransferService.pending(town, worker.id());
+        if (queue == null) queue = town.transferQueues().get(worker.area());
         if (queue == null) return false;
         AssignedStorageService.releaseCourierClaims(worker.id());
         queue.releasePlanned(worker.id());
@@ -80,8 +81,8 @@ final class SettlementBackgroundTransfers {
                                 HiredTransferQueue queue, HiredTransferQueue.Allocation allocation, int elapsed, double multiplier) {
         var order = queue.order(allocation.order());
         var destination = SettlementTransferService.depot(town, order.destination());
-        if (destination == null || !SettlementWorksiteService.links(town, worker.area()).permitsOutput(destination.id())
-                || !destination.purpose().accepts(order.sample())) {
+        if (destination == null || !SettlementTransferService.destination(town, worker.area(), order)
+                || !SettlementTransferService.destination(town, queue.owner(), order)) {
             block(worker, queue, order, "transfer_storage_changed");
             return;
         }
@@ -117,7 +118,9 @@ final class SettlementBackgroundTransfers {
         if (moved > 0) {
             worker.updateInventory(level.registryAccess(), items);
             queue.delivered(allocation.id(), moved);
-            worker.practice(level, HiredWorkPractice.courier(moved, Math.sqrt(order.source().position().distSqr(destination.position()))));
+            com.jvn.villagerretaliation.skill.HiredWorkSkillGrowthService.onBackgroundPractice(level, worker.id(),
+                    com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER,
+                    HiredWorkPractice.courier(moved, Math.sqrt(order.source().position().distSqr(destination.position()))));
         }
         worker.status(moved > 0 ? "delivered" : "transfer_destination_full");
     }

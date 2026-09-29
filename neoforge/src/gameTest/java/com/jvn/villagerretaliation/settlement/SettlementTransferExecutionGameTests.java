@@ -244,6 +244,77 @@ public final class SettlementTransferExecutionGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "transfer_execution")
+    public static void reassignedWorkersFinishOriginalCargoBeforeTheirNewRole(GameTestHelper helper) {
+        SettlementHaulingGameTests.withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            fixture.source().setItem(0, new ItemStack(Items.IRON_INGOT, 20));
+            var queue = adopt(fixture);
+            var order = order(fixture.source(), fixture.destination(), new ItemStack(Items.IRON_INGOT), 7);
+            queue.append(order);
+            tick(helper, fixture, HiredWorkSession.active(level, fixture.courier()));
+            fixture.town().workers().get(fixture.courier().getUUID()).observe(level, fixture.courier(),
+                    SettlementWorkforceService.duty(fixture.courier()).orElseThrow(), level.getGameTime());
+            var workshop = fixture.town().areas().values().stream().filter(area -> area.type() == SettlementAreaType.WORKSHOP).findFirst().orElseThrow();
+            helper.assertTrue(SettlementWorkforceService.assign(level, fixture.leader(), fixture.town().id(), fixture.courier(), workshop.id()),
+                    "an explicit role change preserves the collected shipment");
+            var session = HiredWorkSession.active(level, fixture.courier());
+            helper.assertValueEqual(session.role(), HiredVillagerRole.CRAFTSMAN, "the new assignment stays in place");
+            helper.assertTrue(HiredTransferService.access(level, fixture.courier()).queue() == queue, "the old worksite retains receipt ownership");
+            fixture.courier().setPos(fixture.destination().position().north().getCenter());
+            var result = com.jvn.villagerretaliation.interaction.work.CourierWorker.resumePending(level, fixture.courier(), session.context());
+            helper.assertTrue(result != null && result.completed(), "the original delivery runs before new production");
+            helper.assertValueEqual(queue.order(order.id()).delivered(), 7, "the original order receives the delivery credit");
+            helper.assertValueEqual(fixture.destination().count(order::matches), 7, "all original cargo arrives once");
+            helper.assertValueEqual(fixture.source().getItem(0).getCount(), 13, "recovery never repeats pickup");
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.work.CourierWorker.resumePending(level, fixture.courier(), session.context()) == null,
+                    "completed receipts return control to the new job");
+            helper.assertValueEqual(fixture.town().duties().get(fixture.courier().getUUID()), workshop.id(), "delivery does not undo the explicit assignment");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "transfer_background")
+    public static void savedReassignedCargoRespectsBothWorksitesAndFinishesOnce(GameTestHelper helper) {
+        SettlementBackgroundHaulingGameTests.fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            town.setWorksitePlan(town.leader(), fixture.area().id(), SettlementWorksitePlan.defaults(HiredVillagerRole.COURIER));
+            var queue = town.beginTransfers(town.leader(), fixture.area().id());
+            var order = order(fixture.source(), fixture.destination(), new ItemStack(Items.IRON_INGOT), 7);
+            queue.append(order);
+            queue.picked(queue.reserve(fixture.worker().id(), order.id(), 7).id(), 7);
+            com.jvn.villagerretaliation.inventory.HiredJobInventory.getJobInventory(fixture.courier()).insertOutput(new ItemStack(Items.IRON_INGOT, 7));
+            var workshop = new SettlementArea(UUID.randomUUID(), SettlementAreaType.WORKSHOP, "New workshop",
+                    town.center().east(6), town.center().offset(9, 2, 3), 5, true);
+            town.putArea(town.leader(), workshop);
+            town.assignDuty(fixture.worker().id(), workshop.id());
+            SettlementWorkforceService.reconcile(level, fixture.courier());
+            town.recordWorker(SettlementWorkerState.capture(level, fixture.courier(), SettlementWorkforceService.duty(fixture.courier()).orElseThrow(), 0L));
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            var worker = restored.workers().get(fixture.worker().id());
+            var receipts = restored.transferQueues().get(fixture.area().id());
+            var blockedLinks = new SettlementWorksiteLinks(java.util.Set.of(), java.util.Set.of(fixture.source().id()), java.util.Set.of());
+            restored.setWorksitePlan(restored.leader(), workshop.id(),
+                    new SettlementWorksitePlan(SettlementWorksitePlan.defaults(HiredVillagerRole.CRAFTSMAN).settings(), 1, blockedLinks));
+            SettlementBackgroundService.update(level, restored, 200L);
+            helper.assertValueEqual(receipts.order(order.id()).delivered(), 0, "new worksite permissions still apply to old cargo");
+            helper.assertValueEqual(worker.status(), "transfer_storage_changed", "revoked delivery access is visible");
+            restored.setWorksitePlan(restored.leader(), workshop.id(), SettlementWorksitePlan.defaults(HiredVillagerRole.CRAFTSMAN));
+            restored.setWorksitePlan(restored.leader(), fixture.area().id(),
+                    new SettlementWorksitePlan(SettlementWorksitePlan.defaults(HiredVillagerRole.COURIER).settings(), 1, blockedLinks));
+            SettlementBackgroundService.update(level, restored, 400L);
+            helper.assertValueEqual(receipts.order(order.id()).delivered(), 0, "original worksite permissions still apply");
+            restored.setWorksitePlan(restored.leader(), fixture.area().id(), SettlementWorksitePlan.defaults(HiredVillagerRole.COURIER));
+            SettlementBackgroundService.update(level, restored, 600L);
+            helper.assertValueEqual(receipts.order(order.id()).delivered(), 7, "the restored worker settles the original shipment");
+            helper.assertValueEqual(restored.depots().get(fixture.destination().id()).count(order::matches), 7, "real goods reach their original destination");
+            SettlementBackgroundService.update(level, restored, 800L);
+            helper.assertValueEqual(receipts.order(order.id()).delivered(), 7, "subsequent production cannot replay delivery credit");
+            helper.assertTrue(worker.items(level.registryAccess()).stream().noneMatch(order::matches), "the saved inventory no longer carries delivered goods");
+            helper.assertFalse(level.hasChunkAt(town.center()), "recovery does not load the settlement");
+        });
+    }
+
     private static HiredTransferQueue adopt(SettlementHaulingGameTests.Fixture fixture) {
         if (!SettlementWorksiteService.configure(fixture.leader(), fixture.town(), fixture.area().id(),
                 SettlementWorksitePlan.defaults(HiredVillagerRole.COURIER), true)) throw new IllegalStateException("Cannot adopt courier worksite");
