@@ -1461,6 +1461,8 @@ public final class VillagerInteractionService {
             case RESET_CENTER_TO_VILLAGER -> HiredVillagerWorkService.resetWorkCenterToVillager(player, level, villager);
             case APPLY_HELD_DRAFT -> HiredStorageClipboardItem.assignHeldWorkAreaDraft(player, level, villager);
             case TEMPORARY_TASK -> HiredStorageClipboardItem.assignHeldTemporaryTask(player, level, villager, stepCount > 1, quantity);
+            case BREED_TASK, SHEAR_TASK, MILK_TASK, CULL_TASK, COLLECT_TASK ->
+                    HiredStorageClipboardItem.assignHeldTemporaryTask(player, level, villager, stepCount > 1, 1, action.taskKind());
             case CANCEL_TASKS -> player.displayClientMessage(Component.literal(
                     HiredTemporaryWorkService.submit(player, villager, null, false).isEmpty() ? "Temporary tasks cancelled" : "Unable to cancel temporary tasks"), true);
             case PREVIEW -> HiredVillagerWorkService.previewWorkArea(player, level, villager);
@@ -1507,7 +1509,8 @@ public final class VillagerInteractionService {
                     EXPAND_DOWN,
                     CONTRACT_UP,
                     CONTRACT_DOWN -> true;
-            case APPLY_HELD_DRAFT, PREVIEW, CONFIGURE_ROLE, TEMPORARY_TASK, CANCEL_TASKS -> false;
+            case APPLY_HELD_DRAFT, PREVIEW, CONFIGURE_ROLE, TEMPORARY_TASK, CANCEL_TASKS,
+                    BREED_TASK, SHEAR_TASK, MILK_TASK, CULL_TASK, COLLECT_TASK -> false;
         };
     }
 

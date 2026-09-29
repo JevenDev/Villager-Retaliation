@@ -63,6 +63,22 @@ public record ClipboardWorkAreaActionPayload(UUID villagerId, Action action, int
         CONTRACT_UP,
         CONTRACT_DOWN,
         TEMPORARY_TASK,
-        CANCEL_TASKS
+        CANCEL_TASKS,
+        BREED_TASK,
+        SHEAR_TASK,
+        MILK_TASK,
+        CULL_TASK,
+        COLLECT_TASK;
+
+        public com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind taskKind() {
+            return switch (this) {
+                case BREED_TASK -> com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.BREED;
+                case SHEAR_TASK -> com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.SHEAR;
+                case MILK_TASK -> com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.MILK;
+                case CULL_TASK -> com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.CULL;
+                case COLLECT_TASK -> com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.COLLECT;
+                default -> null;
+            };
+        }
     }
 }

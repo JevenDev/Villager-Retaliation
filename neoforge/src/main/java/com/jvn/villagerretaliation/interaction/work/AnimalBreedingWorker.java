@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService;
+import com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.villager.VillagerWorkExperience;
@@ -109,33 +111,45 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return cullCleanupResult;
         }
 
+        if (HiredTemporaryEntities.handled(context.state())) {
+            HiredTemporaryWorkService.finishAction(context.state(), Kind.CULL);
+            return WorkResult.idle("interaction.work.temporary.completed");
+        }
         WorkResult shearingDepositResult = continuePeriodicShearingDeposit(level, villager, context);
         if (shearingDepositResult != null) {
             return shearingDepositResult;
         }
-        if (HiredAnimalHandlingOptions.shearSheep(context.state())) {
+        if (HiredAnimalHandlingOptions.shearSheep(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.SHEAR)) {
             shearingDepositResult = startPeriodicShearingDepositIfDue(level, villager, context);
             if (shearingDepositResult != null) {
                 return shearingDepositResult;
             }
         }
 
-        WorkResult cullResult = HiredAnimalHandlingOptions.cull(context.state()) ? cullExcessAnimals(level, villager, context) : null;
+        WorkResult cullResult = HiredAnimalHandlingOptions.cull(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.CULL) ? cullExcessAnimals(level, villager, context) : null;
         if (cullResult != null) {
             return cullResult;
         }
 
-        WorkResult eggResult = HiredAnimalHandlingOptions.collect(context.state()) ? collectGroundEggs(level, villager, context) : null;
+        WorkResult eggResult = HiredAnimalHandlingOptions.collect(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.COLLECT) ? collectGroundEggs(level, villager, context) : null;
         if (eggResult != null) {
             return eggResult;
         }
 
-        WorkResult animalDropResult = HiredAnimalHandlingOptions.collect(context.state()) ? collectAnimalDrops(level, villager, context) : null;
+        WorkResult animalDropResult = HiredAnimalHandlingOptions.collect(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.COLLECT) ? collectAnimalDrops(level, villager, context) : null;
         if (animalDropResult != null) {
             return animalDropResult;
         }
 
-        BreedingSearch search = HiredAnimalHandlingOptions.breed(context.state())
+        if (HiredTemporaryWorkService.active(context.state(), Kind.COLLECT)) {
+            if (!HiredAnimalHandlingOptions.collect(context.state())) return WorkResult.idle("interaction.work.temporary.target_blocked");
+            if (HiredItemPickup.hasOutputItems(level, context, stack -> stack.is(Items.EGG) || isAnimalDrop(stack))) {
+                return WorkResult.idle("interaction.work.temporary.target_blocked");
+            }
+            HiredTemporaryWorkService.finishAction(context.state(), Kind.COLLECT);
+            return WorkResult.idle("interaction.work.temporary.completed");
+        }
+        BreedingSearch search = HiredAnimalHandlingOptions.breed(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.BREED)
                 ? findBreedingPair(level, villager, context) : new BreedingSearch(null, false, false);
         if (search.pair() == null) {
             AnimalProductTarget productTarget = findAnimalProductTarget(level, villager, context);
@@ -153,6 +167,10 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
                 return WorkResult.idle("interaction.work.animal_breeding.missing_food");
             }
+            if (HiredTemporaryEntities.current(context.state()) != null) {
+                HiredWorkerBrain.setFailure(context, "temporary_animal_unavailable", 0L);
+                return WorkResult.idle("interaction.work.temporary.target_blocked");
+            }
             if (roamInsideWorkArea(level, villager, context, 0.35D)) {
                 return WorkResult.progressed("interaction.work.animal_breeding.roaming");
             }
@@ -161,6 +179,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         }
 
         BreedingPair pair = search.pair();
+        if (!HiredEntityClaims.reserve(level, villager, pair.first(), pair.second())) return WorkResult.idle("interaction.work.temporary.target_blocked");
         WorkResult gatheredFood = gatherBreedingFood(level, villager, context, pair);
         if (gatheredFood != null) {
             return gatheredFood;
@@ -213,8 +232,10 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         pair.first().setInLove(hirer);
         pair.second().setInLove(hirer);
         rememberHandledAnimals(context.state(), level.getGameTime(), pair.first(), pair.second());
+        HiredTemporaryWorkService.finishAction(context.state(), Kind.BREED);
         setTaskState(context, HiredWorkerTaskState.IDLE, pair.first().blockPosition());
         useWorkItem(level, villager, breedingFood);
+        HiredEntityClaims.release(villager);
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.completed",
                 java.util.Map.of("target", HiredAnimalBreedingTargets.label(pair.typeId())),
@@ -231,6 +252,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         if (target == null) {
             return null;
         }
+        if (!HiredEntityClaims.reserve(level, villager, target.animal())) return WorkResult.idle("interaction.work.temporary.target_blocked");
 
         ToolStorageResult weaponResult = equipBestToolOrCollectFromStorage(
                 level,
@@ -310,6 +332,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         damageTool(context, villager, weaponResult.tool());
         swingWorkTool(villager);
         beginCullCleanup(level, context);
+        HiredTemporaryEntities.markHandled(context.state(), Kind.CULL, animal.getUUID());
+        HiredEntityClaims.release(villager);
         setTaskState(context, HiredWorkerTaskState.IDLE, animal.blockPosition());
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.culled_animal",
@@ -340,7 +364,9 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 continue;
             }
             sameTypeAnimals.sort(Comparator.comparingDouble(villager::distanceToSqr));
-            Animal candidate = sameTypeAnimals.get(0);
+            Animal candidate = sameTypeAnimals.stream().filter(animal -> HiredEntityClaims.available(level, villager, animal)
+                    && HiredTemporaryEntities.matches(context.state(), animal)).findFirst().orElse(null);
+            if (candidate == null) continue;
             double score = villager.distanceToSqr(candidate);
             if (score < bestScore) {
                 bestScore = score;
@@ -357,7 +383,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         AnimalScan scan = animalsInWorkArea(level, context);
         List<Animal> animals = new ArrayList<>();
         for (Animal animal : scan.animals()) {
-            if (isEligibleAnimal(level, context, villager, animal, selectedTargets)) {
+            if (isEligibleAnimal(level, context, villager, animal, selectedTargets) && HiredEntityClaims.available(level, villager, animal)) {
                 animals.add(animal);
             }
         }
@@ -377,7 +403,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 Animal first = sameTypeAnimals.get(firstIndex);
                 for (int secondIndex = firstIndex + 1; secondIndex < sameTypeAnimals.size(); secondIndex++) {
                     Animal second = sameTypeAnimals.get(secondIndex);
-                    if (first.distanceToSqr(second) > MAX_BREEDING_PAIR_DISTANCE_SQR) {
+                    if ((!HiredTemporaryEntities.matches(context.state(), first) && !HiredTemporaryEntities.matches(context.state(), second))
+                            || first.distanceToSqr(second) > MAX_BREEDING_PAIR_DISTANCE_SQR) {
                         continue;
                     }
                     Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
@@ -466,6 +493,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             AnimalProductTarget target) {
+        if (!HiredEntityClaims.reserve(level, villager, target.animal())) return WorkResult.idle("interaction.work.temporary.target_blocked");
         if (target.kind() == AnimalProductKind.MILK) {
             WorkResult gatheredSupply = gatherAnimalHandlingSupply(level, villager, context, target);
             if (gatheredSupply != null) {
@@ -728,10 +756,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
         }
         sheep.setSheared(true);
+        HiredTemporaryWorkService.finishAction(context.state(), Kind.SHEAR);
         level.playSound(null, sheep, SoundEvents.SHEEP_SHEAR, SoundSource.NEUTRAL, 1.0F, 1.0F);
         damageTool(context, villager, shears);
         useWorkItem(level, villager, shears);
         setTaskState(context, HiredWorkerTaskState.IDLE, sheep.blockPosition());
+        HiredEntityClaims.release(villager);
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.sheared_sheep",
                 java.util.Map.of("count", Integer.toString(wool.getCount())),
@@ -758,9 +788,11 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, animal.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
         }
+        HiredTemporaryWorkService.finishAction(context.state(), Kind.MILK);
         level.playSound(null, animal, milkingSound(animal), SoundSource.NEUTRAL, 1.0F, 1.0F);
         useWorkItem(level, villager, new ItemStack(Items.BUCKET));
         setTaskState(context, HiredWorkerTaskState.IDLE, animal.blockPosition());
+        HiredEntityClaims.release(villager);
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.milked_animal",
                 java.util.Map.of("target", HiredAnimalBreedingTargets.label(typeId(animal))),
@@ -828,10 +860,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
     private AnimalProductTarget findAnimalProductTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
         Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
-        boolean shearSheep = HiredAnimalHandlingOptions.shearSheep(context.state());
+        boolean shearSheep = HiredAnimalHandlingOptions.shearSheep(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.SHEAR);
         List<Animal> animals = new ArrayList<>();
         for (Animal animal : animalsInWorkArea(level, context).animals()) {
-            if (isEligibleProductAnimal(level, context, villager, animal, selectedTargets, shearSheep)) {
+            if (isEligibleProductAnimal(level, context, villager, animal, selectedTargets, shearSheep)
+                    && HiredTemporaryEntities.matches(context.state(), animal)
+                    && HiredEntityClaims.available(level, villager, animal)) {
                 animals.add(animal);
             }
         }
@@ -840,7 +874,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             if (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing()) {
                 return AnimalProductTarget.shearing(sheep);
             }
-            if (HiredAnimalHandlingOptions.milk(context.state()) && isMilkable(animal)) {
+            if (HiredAnimalHandlingOptions.milk(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.MILK) && isMilkable(animal)) {
                 return AnimalProductTarget.milking(animal);
             }
         }
@@ -870,7 +904,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && !HiredPathMemory.isAvoided(level, villager, animal.blockPosition())
                 && HiredAnimalBreedingTargets.matches(animal, selectedTargets)
                 && (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing()
-                        || HiredAnimalHandlingOptions.milk(context.state()) && isMilkable(animal));
+                        || HiredAnimalHandlingOptions.milk(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.MILK) && isMilkable(animal));
     }
 
     public static void rememberHandledAnimals(CompoundTag state, long gameTime, Animal first, Animal second) {

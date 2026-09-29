@@ -2639,6 +2639,10 @@ public final class ClipboardWorkforceScreen extends Screen {
             this.minecraft.setScreen(new ClipboardFishingTaskScreen(this, worker.villagerId(), hasShiftDown()));
             return;
         }
+        if (action == ClipboardWorkAreaActionPayload.Action.TEMPORARY_TASK && worker.role() == HiredVillagerRole.ANIMAL_HANDLING) {
+            this.minecraft.setScreen(new ClipboardAnimalTaskScreen(this, worker.villagerId(), hasShiftDown()));
+            return;
+        }
         PacketDistributor.sendToServer(new ClipboardWorkAreaActionPayload(worker.villagerId(), action, hasShiftDown() ? 5 : 1));
     }
 

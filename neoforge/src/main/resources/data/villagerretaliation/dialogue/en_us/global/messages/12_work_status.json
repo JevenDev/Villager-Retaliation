@@ -10,6 +10,48 @@
   },
   "messages": [
     {
+      "key": "interaction.work.temporary.target_missing",
+      "lines": [
+        "waiting for the selected target to be loaded"
+      ],
+      "id": "global.messages.12_work_status.temporary.target_missing"
+    },
+    {
+      "key": "interaction.work.temporary.target_outside",
+      "lines": [
+        "waiting for the selected target to return to the work bounds"
+      ],
+      "id": "global.messages.12_work_status.temporary.target_outside"
+    },
+    {
+      "key": "interaction.work.temporary.target_changed",
+      "lines": [
+        "waiting because the selected target no longer meets my job rules"
+      ],
+      "id": "global.messages.12_work_status.temporary.target_changed"
+    },
+    {
+      "key": "interaction.work.temporary.target_claimed",
+      "lines": [
+        "waiting while another worker handles that target"
+      ],
+      "id": "global.messages.12_work_status.temporary.target_claimed"
+    },
+    {
+      "key": "interaction.work.temporary.target_blocked",
+      "lines": [
+        "waiting for the selected target, supplies, or herd conditions"
+      ],
+      "id": "global.messages.12_work_status.temporary.target_blocked"
+    },
+    {
+      "key": "interaction.work.temporary.completed",
+      "lines": [
+        "finished the temporary task"
+      ],
+      "id": "global.messages.12_work_status.temporary.completed"
+    },
+    {
       "key": "interaction.work.logging.selected_tree_blocked",
       "lines": [
         "The selected tree changed, is unreachable, or is claimed by another worker."

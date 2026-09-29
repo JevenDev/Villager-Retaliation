@@ -578,6 +578,11 @@ public final class SettlementViewClientSmoke {
             phase = 109;
         } else if (phase == 109 && minecraft.screen instanceof SettlementTemporaryTaskScreen screen && ++ticks >= 2) {
             capture("selected-tree-picker");
+            button(screen, "Harvest selected tree").onPress();
+            require(screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).noneMatch(field -> field.active), "pursuits use server-derived bounds");
+            button(screen, "Apply to 1 worker").onPress();
+            require(minecraft.screen == screen, "an entity task without a selected entity stays open");
             screen.onClose();
             ticks = 0;
             phase = 108;
@@ -803,6 +808,21 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 23;
         } else if (phase == 23 && minecraft.screen == null && ++ticks >= 20) {
+            var personal = new com.jvn.villagerretaliation.client.inventory.ClipboardAnimalTaskScreen(null, fixture.resident(), true);
+            minecraft.setScreen(personal);
+            requireButtonsFit(personal);
+            for (String label : java.util.List.of("Breed selected animal", "Shear selected sheep", "Milk selected animal", "Cull selected excess animal", "Collect animal products")) {
+                button(personal, label).onPress();
+                requireButtonsFit(personal);
+            }
+            ticks = 0;
+            phase = 123;
+        } else if (phase == 123 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ClipboardAnimalTaskScreen screen && ++ticks >= 2) {
+            capture("personal-animal-task-picker");
+            screen.onClose();
+            ticks = 0;
+            phase = 124;
+        } else if (phase == 124 && minecraft.screen == null && ++ticks >= 2) {
             require(minecraft.getCameraEntity() == minecraft.player, "closing linked management restores the player's camera");
             require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) == null,
                     "closing linked management releases remote client chunks");

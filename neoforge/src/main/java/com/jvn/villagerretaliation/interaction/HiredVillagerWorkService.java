@@ -155,6 +155,10 @@ public final class HiredVillagerWorkService {
             return;
         }
         session.state().remove(DESPISED_HIRER_WORK_PAUSED_TAG);
+        if (!HiredTemporaryWorkService.ready(level, villager, session)) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            return;
+        }
         if (VillagerRetaliationVillagerBrainUtil.hasThreatMemories(villager.getBrain())) {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             return;
@@ -182,10 +186,6 @@ public final class HiredVillagerWorkService {
             return;
         }
         session.state().remove(DISABLED_WORK_PAUSED_TAG);
-        if (!HiredTemporaryWorkService.ready(level, session)) {
-            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
-            return;
-        }
         if (session.role() == HiredVillagerRole.FARMING) {
             VillagerTaskNavigationUtil.enableHiredFarmingWaterTraversal(villager);
         } else {

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue;
+import com.jvn.villagerretaliation.interaction.work.HiredTemporaryEntities;
 import com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
@@ -65,7 +66,17 @@ public final class HiredTemporaryWorkService {
             var taskId = task.id();
             var repeated = previous.tasks().stream().filter(existing -> existing.id().equals(taskId)).findFirst().orElse(null);
             if (repeated != null) return repeated.equals(task) || task.kind() == HiredTemporaryTask.Kind.TREE
-                    && repeated.kind() == task.kind() && Objects.equals(repeated.target(), task.target()) ? "" : "Task identifier is already in use";
+                    && repeated.kind() == task.kind() && Objects.equals(repeated.target(), task.target())
+                    || task.kind().entityTarget() && repeated.kind() == task.kind() && Objects.equals(repeated.entity(), task.entity())
+                    ? "" : "Task identifier is already in use";
+        }
+        if (task != null && task.kind().entityTarget()) {
+            var target = level.getEntity(task.entity());
+            if (!(target instanceof net.minecraft.world.entity.LivingEntity living)) return "Selected target is unavailable";
+            if (!HiredTemporaryEntities.authorized(villager, living.blockPosition())) return "Selected target leaves work bounds";
+            if (!HiredTemporaryEntities.eligible(villager, living, task)) return "Selected target is not eligible for this work";
+            task = HiredTemporaryEntities.normalize(level, villager, task, living);
+            if (!task.area().contains(living.blockPosition())) return "Selected target leaves task bounds";
         }
         if (task != null && task.kind() == HiredTemporaryTask.Kind.TREE) {
             if (!level.hasChunkAt(task.target()) || authority.civic() && !duty.town().contains(task.target())
@@ -162,13 +173,13 @@ public final class HiredTemporaryWorkService {
                 && queue.tasks().stream().allMatch(task -> home.contains(task.min()) && home.contains(task.max()));
     }
 
-    public static boolean ready(ServerLevel level, HiredWorkSession session) {
+    public static boolean ready(ServerLevel level, Villager villager, HiredWorkSession session) {
         var queue = queue(session.state());
-        String blocker = session.state().getBoolean(INVALID) ? "invalid" : null;
+        String blocker = session.state().getBoolean(INVALID) ? "invalid" : HiredTemporaryEntities.blocker(level, villager, session.state());
         if (queue != null) {
-            var task = queue.current();
-            for (int x = task.min().getX() >> 4; x <= task.max().getX() >> 4 && blocker == null; x++) {
-                for (int z = task.min().getZ() >> 4; z <= task.max().getZ() >> 4; z++) {
+            var area = session.area();
+            for (int x = area.min().getX() >> 4; x <= area.max().getX() >> 4 && blocker == null; x++) {
+                for (int z = area.min().getZ() >> 4; z <= area.max().getZ() >> 4; z++) {
                     if (!level.hasChunk(x, z)) {
                         blocker = "unloaded";
                         break;
@@ -177,6 +188,7 @@ public final class HiredTemporaryWorkService {
             }
         }
         if (blocker == null) return true;
+        if (session.worker() != null) session.worker().stop(level, villager, session.context());
         HiredWorkerBrain.setFailure(session.context(), "temporary_task_" + blocker, 0L);
         HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.AWAITING_INSTRUCTION);
         HiredWorkStateStore.setStatus(session.state(), "interaction.work.temporary." + blocker);
@@ -200,6 +212,10 @@ public final class HiredTemporaryWorkService {
 
     public static void finishTree(CompoundTag state) {
         if (active(state, HiredTemporaryTask.Kind.TREE)) state.putBoolean(FINISHED, true);
+    }
+
+    public static void finishAction(CompoundTag state, HiredTemporaryTask.Kind kind) {
+        if (active(state, kind)) state.putBoolean(FINISHED, true);
     }
 
     public static void caught(CompoundTag state) {
@@ -234,6 +250,7 @@ public final class HiredTemporaryWorkService {
         session.state().remove(FINISHED);
         session.state().remove("NextWorkGameTime");
         session.state().remove(MINING_SCAN);
+        HiredTemporaryEntities.clear(session.state());
     }
 
     private static void write(CompoundTag state, HiredTemporaryQueue queue) {
@@ -246,6 +263,7 @@ public final class HiredTemporaryWorkService {
     }
 
     public static void copyState(CompoundTag source, CompoundTag destination) {
+        HiredTemporaryEntities.copy(source, destination);
         for (String key : List.of(HiredTemporaryQueue.STATE_TAG, HiredTemporaryQueue.PENDING_TAG, FINISHED, PREVIOUS_CATCH, INVALID, MINING_SCAN)) {
             destination.remove(key);
             if (source.contains(key)) destination.put(key, source.get(key).copy());

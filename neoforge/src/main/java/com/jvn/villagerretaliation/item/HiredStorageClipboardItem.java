@@ -55,6 +55,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class HiredStorageClipboardItem extends Item {
     private static final String TAG = "VillagerRetaliationClipboard";
     private static final String SELECTED_TAG = "Selected";
+    private static final String ENTITY_SELECTION_TAG = "EntitySelection";
     private static final String WORK_AREA_SELECTION_TAG = "WorkAreaSelection";
     private static final String ROUTE_SELECTION_TAG = "RouteSelection";
     private static final String DIMENSION_TAG = "Dimension";
@@ -111,6 +112,20 @@ public final class HiredStorageClipboardItem extends Item {
 
     @Override
     public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand usedHand) {
+        if (player instanceof ServerPlayer serverPlayer && !(target instanceof Villager) && player.isShiftKeyDown()) {
+            CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
+                var clipboard = tag.getCompound(TAG);
+                var selection = new CompoundTag();
+                selection.putUUID("Entity", target.getUUID());
+                selection.putString(DIMENSION_TAG, target.level().dimension().location().toString());
+                clipboard.put(ENTITY_SELECTION_TAG, selection);
+                tag.put(TAG, clipboard);
+            });
+            syncClipboardStack(serverPlayer);
+            serverPlayer.displayClientMessage(Component.literal("Selected ").append(target.getDisplayName())
+                    .append(" for a personal worker task"), true);
+            return InteractionResult.SUCCESS;
+        }
         if (!(player instanceof ServerPlayer serverPlayer) || !(target instanceof Villager villager)) {
             return InteractionResult.PASS;
         }
@@ -196,6 +211,7 @@ public final class HiredStorageClipboardItem extends Item {
             String key = count == 1 ? "selected_container" : "selected_containers";
             tooltip.add(Component.translatable("item.villagerretaliation.clipboard." + key, count).withStyle(ChatFormatting.AQUA));
         }
+        tooltip.add(Component.literal("Shift-click an animal to select a task target").withStyle(ChatFormatting.GRAY));
         WorkAreaDraft draft = selectedWorkArea(stack);
         if (draft.first() != null || draft.second() != null) {
             Component draftText = draft.complete()
@@ -1040,9 +1056,36 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public static void assignHeldTemporaryTask(ServerPlayer player, ServerLevel level, Villager villager, boolean append, int quantity) {
-        WorkAreaDraft draft = selectedWorkArea(heldClipboard(player));
-        var kind = com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.forRole(
-                HiredVillagerContractService.activeRole(level, villager));
+        assignHeldTemporaryTask(player, level, villager, append, quantity,
+                com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.forRole(HiredVillagerContractService.activeRole(level, villager)));
+    }
+
+    public static void assignHeldTemporaryTask(ServerPlayer player, ServerLevel level, Villager villager, boolean append, int quantity,
+                                               com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind kind) {
+        if (kind == null) return;
+        var stack = heldClipboard(player);
+        if (stack.isEmpty()) return;
+        if (kind.entityTarget()) {
+            var selection = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getCompound(TAG).getCompound(ENTITY_SELECTION_TAG);
+            var target = selection.hasUUID("Entity") && level.dimension().location().toString().equals(selection.getString(DIMENSION_TAG))
+                    ? level.getEntity(selection.getUUID("Entity")) : null;
+            if (!(target instanceof LivingEntity)) {
+                player.displayClientMessage(Component.literal("Shift-click a visible animal or hunting target with the Clipboard first"), true);
+                return;
+            }
+            var home = HiredWorkArea.fromState(com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager), villager.blockPosition());
+            var min = kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.HUNT ? target.blockPosition() : home.min();
+            var max = kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.HUNT ? target.blockPosition() : home.max();
+            if ((long) max.getX() - min.getX() >= 64 || (long) max.getY() - min.getY() >= 64 || (long) max.getZ() - min.getZ() >= 64) {
+                min = target.blockPosition();
+                max = target.blockPosition();
+            }
+            var task = new com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask(java.util.UUID.randomUUID(), kind, min, max, 1, null, target.getUUID());
+            String reason = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.submit(player, villager, task, append);
+            player.displayClientMessage(Component.literal(reason.isEmpty() ? (append ? "Task queued" : "Task started") : reason), true);
+            return;
+        }
+        WorkAreaDraft draft = selectedWorkArea(stack);
         boolean tree = kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TREE;
         if (draft.first() == null || !tree && draft.second() == null || !level.dimension().equals(draft.dimension()) || kind == null) {
             player.displayClientMessage(Component.literal("Select task corners, or a tree as the first corner, in this dimension"), true);
@@ -1205,6 +1248,7 @@ public final class HiredStorageClipboardItem extends Item {
         CompoundTag tag = customData.copyTag();
         CompoundTag clipboardTag = tag.getCompound(TAG);
         clipboardTag.remove(SELECTED_TAG);
+        clipboardTag.remove(ENTITY_SELECTION_TAG);
         clipboardTag.remove(WORK_AREA_SELECTION_TAG);
         clipboardTag.remove(ROUTE_SELECTION_TAG);
         if (clipboardTag.isEmpty()) {

@@ -27,6 +27,12 @@ public final class SettlementWorkerDiagnostics {
         return switch (status) {
             case "temporary_task_unloaded" -> "Temporary work waits for the worker and task area to be loaded.";
             case "temporary_task_invalid" -> "Cancel the damaged temporary queue before issuing another task.";
+            case "temporary_task_target_missing" -> "The selected animal or hunting target is not loaded.";
+            case "temporary_task_target_outside" -> "The selected target left the authorized task bounds.";
+            case "temporary_task_target_changed" -> "The selected target no longer meets this job's rules.";
+            case "temporary_task_target_claimed" -> "Another worker is handling the selected target.";
+            case "temporary_target_unreachable" -> "The selected target is not reachable under the current combat rules.";
+            case "temporary_animal_unavailable" -> "The selected animal needs a ready partner, product, or excess herd count.";
             case "tree_claimed" -> "Another worker is finishing this tree.";
             case "missing_hoe" ->
                     "Farmer needs a hoe in job gear or a supply depot.";

@@ -86,7 +86,10 @@ public record HiredTemporaryQueue(UUID owner, UUID issuer, UUID worksite, HiredV
     }
 
     public static HiredTemporaryQueue load(CompoundTag state) {
-        if (!state.contains(STATE_TAG)) return null;
+        if (!state.contains(STATE_TAG)) {
+            HiredTemporaryEntities.validate(state, null);
+            return null;
+        }
         if (!state.contains(STATE_TAG, Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid temporary queue tag");
         CompoundTag tag = state.getCompound(STATE_TAG);
         if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 1 || !tag.hasUUID("Owner")
@@ -99,6 +102,7 @@ public record HiredTemporaryQueue(UUID owner, UUID issuer, UUID worksite, HiredV
         if (entries.isEmpty() || entries.size() > MAX_TASKS) throw new IllegalArgumentException("Invalid temporary queue size");
         List<HiredTemporaryTask> tasks = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) tasks.add(HiredTemporaryTask.load(entries.getCompound(i)));
+        HiredTemporaryEntities.validate(state, tasks.getFirst());
         return new HiredTemporaryQueue(tag.getUUID("Owner"), tag.getUUID("Issuer"),
                 tag.hasUUID("Worksite") ? tag.getUUID("Worksite") : null, HiredVillagerRole.valueOf(tag.getString("Role")),
                 BlockPos.of(tag.getLong("HomeMin")), BlockPos.of(tag.getLong("HomeMax")), tasks);

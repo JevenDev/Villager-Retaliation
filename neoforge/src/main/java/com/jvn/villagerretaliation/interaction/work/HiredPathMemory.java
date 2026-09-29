@@ -65,6 +65,7 @@ public final class HiredPathMemory {
     }
 
     public static void clear() {
+        HiredEntityClaims.clear();
         AVOIDED_TARGETS.clear();
         PATH_FAILURES.clear();
         UNREACHABLE_APPROACHES.clear();
@@ -81,6 +82,7 @@ public final class HiredPathMemory {
     }
 
     public static void clear(Villager villager) {
+        HiredEntityClaims.release(villager);
         UUID villagerId = villager.getUUID();
         AVOIDED_TARGETS.remove(villagerId);
         PATH_FAILURES.remove(villagerId);
@@ -102,6 +104,7 @@ public final class HiredPathMemory {
             return;
         }
         LAST_EXPIRE_GAME_TIME.put(dimension, now);
+        HiredEntityClaims.expire(level);
 
         flushPendingChangedPathMemory(level);
         AVOIDED_TARGETS.values().forEach(targets -> targets.entrySet().removeIf(entry -> entry.getValue() <= now));
@@ -424,6 +427,7 @@ public final class HiredPathMemory {
     }
 
     public static void releaseAll(Villager villager) {
+        HiredEntityClaims.release(villager);
         UUID villagerId = villager.getUUID();
         TARGET_RESERVATIONS.values().forEach(targets -> targets.entrySet().removeIf(entry -> entry.getValue().villagerId().equals(villagerId)));
         TARGET_RESERVATIONS.entrySet().removeIf(entry -> entry.getValue().isEmpty());

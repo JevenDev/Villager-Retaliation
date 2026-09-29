@@ -24,6 +24,7 @@ public final class SettlementTemporaryTaskScreen extends Screen {
     private EditBox quantity;
     private final java.util.List<EditBox> bounds = new java.util.ArrayList<>();
     private final BlockPos selectedTarget;
+    private final UUID selectedEntity;
 
     SettlementTemporaryTaskScreen(SettlementViewScreen view, List<SettlementViewBatchPayload.Target> targets,
                                   HiredTemporaryTask.Kind kind, BlockPos min, BlockPos max, boolean append) {
@@ -32,7 +33,13 @@ public final class SettlementTemporaryTaskScreen extends Screen {
 
     SettlementTemporaryTaskScreen(SettlementViewScreen view, List<SettlementViewBatchPayload.Target> targets,
                                   HiredTemporaryTask.Kind kind, BlockPos min, BlockPos max, boolean append, BlockPos selectedTarget) {
+        this(view, targets, kind, min, max, append, selectedTarget, null);
+    }
+
+    SettlementTemporaryTaskScreen(SettlementViewScreen view, List<SettlementViewBatchPayload.Target> targets,
+                                  HiredTemporaryTask.Kind kind, BlockPos min, BlockPos max, boolean append, BlockPos selectedTarget, UUID selectedEntity) {
         super(Component.literal("Temporary task"));
+        this.selectedEntity = selectedEntity;
         this.selectedTarget = selectedTarget.immutable();
         this.view = view;
         this.targets = List.copyOf(targets);
@@ -54,7 +61,7 @@ public final class SettlementTemporaryTaskScreen extends Screen {
             this.kind = HiredTemporaryTask.Kind.values()[(this.kind.ordinal() + 1) % HiredTemporaryTask.Kind.values().length];
             button.setMessage(Component.literal(this.kind.label()));
             this.quantity.active = this.kind == HiredTemporaryTask.Kind.FISH;
-            this.bounds.forEach(field -> field.active = this.kind != HiredTemporaryTask.Kind.TREE);
+            this.bounds.forEach(field -> field.active = editableBounds());
         }).bounds(this.left, this.top + 22, this.panelWidth, 20).build());
         int cell = (this.panelWidth - 44) / 3;
         for (int i = 0; i < 6; i++) {
@@ -64,7 +71,7 @@ public final class SettlementTemporaryTaskScreen extends Screen {
             field.setMaxLength(10);
             field.setValue(this.values[i]);
             field.setResponder(value -> this.values[index] = value);
-            field.active = this.kind != HiredTemporaryTask.Kind.TREE;
+            field.active = editableBounds();
             this.bounds.add(field);
             addRenderableWidget(field);
         }
@@ -84,14 +91,20 @@ public final class SettlementTemporaryTaskScreen extends Screen {
                 .bounds(this.left + this.panelWidth / 2 + 2, this.top + 180, this.panelWidth / 2 - 2, 20).build());
     }
 
+    private boolean editableBounds() { return this.kind != HiredTemporaryTask.Kind.TREE && this.kind != HiredTemporaryTask.Kind.HUNT; }
+
     private void submit() {
+        if (this.kind.entityTarget() && this.selectedEntity == null) {
+            this.feedback = "Select a visible animal or eligible hunting target";
+            return;
+        }
         try {
             var min = new BlockPos(Integer.parseInt(this.values[0]), Integer.parseInt(this.values[1]), Integer.parseInt(this.values[2]));
             var max = new BlockPos(Integer.parseInt(this.values[3]), Integer.parseInt(this.values[4]), Integer.parseInt(this.values[5]));
             int quantity = this.kind == HiredTemporaryTask.Kind.FISH ? Integer.parseInt(this.values[6]) : 1;
             var task = this.kind == HiredTemporaryTask.Kind.TREE
                     ? new HiredTemporaryTask(UUID.randomUUID(), this.kind, this.selectedTarget, this.selectedTarget, 1, this.selectedTarget)
-                    : new HiredTemporaryTask(UUID.randomUUID(), this.kind, min, max, quantity);
+                    : new HiredTemporaryTask(UUID.randomUUID(), this.kind, min, max, quantity, null, this.kind.entityTarget() ? this.selectedEntity : null);
             this.view.submitTemporaryTask(this.targets, task, this.append);
             onClose();
         } catch (IllegalArgumentException exception) {
@@ -115,6 +128,7 @@ public final class SettlementTemporaryTaskScreen extends Screen {
         graphics.drawString(this.font, "Max", this.left, this.top + 90, 0xBBC5D0, false);
         graphics.drawString(this.font, "Catches for fishing", this.left, this.top + 118, 0xBBC5D0, false);
         String notice = this.feedback.isEmpty() && this.kind == HiredTemporaryTask.Kind.TREE ? "Tree bounds include branches and leaves" : this.feedback;
+        if (notice.isEmpty() && this.kind.entityTarget()) notice = this.selectedEntity == null ? "Select an animal on the map first" : "Selected target, current job rules apply";
         graphics.drawString(this.font, this.font.plainSubstrByWidth(notice, this.panelWidth), this.left, this.top + 166, 0xE6B86C, false);
     }
 

@@ -9,7 +9,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
-public record HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max, int remaining, BlockPos target) {
+public record HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max, int remaining, BlockPos target, UUID entity) {
+    public HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max, int remaining, BlockPos target) {
+        this(id, kind, min, max, remaining, target, null);
+    }
+
     public HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max, int remaining) {
         this(id, kind, min, max, remaining, null);
     }
@@ -30,6 +34,7 @@ public record HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max,
                 || (long) max.getZ() - min.getZ() >= MAX_SPAN || remaining < 1
                 || remaining > (kind == Kind.FISH ? MAX_CATCHES : 1)
                 || (kind == Kind.TREE) != (target != null)
+                || kind.entityTarget() != (entity != null)
                 || target != null && (target.getX() < min.getX() || target.getY() < min.getY() || target.getZ() < min.getZ()
                         || target.getX() > max.getX() || target.getY() > max.getY() || target.getZ() > max.getZ())) {
             throw new IllegalArgumentException("Invalid temporary task bounds or quantity");
@@ -41,31 +46,33 @@ public record HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max,
     }
 
     public HiredTemporaryTask consume() {
-        return remaining == 1 ? null : new HiredTemporaryTask(id, kind, min, max, remaining - 1, target);
+        return remaining == 1 ? null : new HiredTemporaryTask(id, kind, min, max, remaining - 1, target, entity);
     }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("Version", 2);
+        tag.putInt("Version", 3);
         tag.putUUID("Id", id);
         tag.putString("Kind", kind.name());
         tag.putLong("Min", min.asLong());
         tag.putLong("Max", max.asLong());
         tag.putInt("Remaining", remaining);
         if (target != null) tag.putLong("Target", target.asLong());
+        if (entity != null) tag.putUUID("Entity", entity);
         return tag;
     }
 
     public static HiredTemporaryTask load(CompoundTag tag) {
-        if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 2) || !tag.hasUUID("Id")
+        if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 3) || !tag.hasUUID("Id")
                 || !tag.contains("Kind", Tag.TAG_STRING) || !tag.contains("Min", Tag.TAG_LONG)
                 || !tag.contains("Max", Tag.TAG_LONG) || !tag.contains("Remaining", Tag.TAG_INT)
-                || tag.contains("Target") && !tag.contains("Target", Tag.TAG_LONG)) {
+                || tag.contains("Target") && !tag.contains("Target", Tag.TAG_LONG)
+                || tag.contains("Entity") && !tag.hasUUID("Entity")) {
             throw new IllegalArgumentException("Invalid temporary task");
         }
         return new HiredTemporaryTask(tag.getUUID("Id"), Kind.valueOf(tag.getString("Kind")),
                 BlockPos.of(tag.getLong("Min")), BlockPos.of(tag.getLong("Max")), tag.getInt("Remaining"),
-                tag.contains("Target") ? BlockPos.of(tag.getLong("Target")) : null);
+                tag.contains("Target") ? BlockPos.of(tag.getLong("Target")) : null, tag.hasUUID("Entity") ? tag.getUUID("Entity") : null);
     }
 
     public void write(RegistryFriendlyByteBuf buffer) {
@@ -76,18 +83,27 @@ public record HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max,
         buffer.writeVarInt(remaining);
         buffer.writeBoolean(target != null);
         if (target != null) buffer.writeBlockPos(target);
+        buffer.writeBoolean(entity != null);
+        if (entity != null) buffer.writeUUID(entity);
     }
 
     public static HiredTemporaryTask read(RegistryFriendlyByteBuf buffer) {
         return new HiredTemporaryTask(buffer.readUUID(), buffer.readEnum(Kind.class),
-                buffer.readBlockPos(), buffer.readBlockPos(), buffer.readVarInt(), buffer.readBoolean() ? buffer.readBlockPos() : null);
+                buffer.readBlockPos(), buffer.readBlockPos(), buffer.readVarInt(), buffer.readBoolean() ? buffer.readBlockPos() : null,
+                buffer.readBoolean() ? buffer.readUUID() : null);
     }
 
     public enum Kind {
         FARM_PATCH(HiredVillagerRole.FARMING, "Work farm patch"),
         EXCAVATE(HiredVillagerRole.MINING, "Excavate area"),
         FISH(HiredVillagerRole.FISHING, "Catch fish"),
-        TREE(HiredVillagerRole.LOGGING, "Harvest selected tree");
+        TREE(HiredVillagerRole.LOGGING, "Harvest selected tree"),
+        HUNT(HiredVillagerRole.HUNTING, "Pursue selected target"),
+        BREED(HiredVillagerRole.ANIMAL_HANDLING, "Breed selected animal"),
+        SHEAR(HiredVillagerRole.ANIMAL_HANDLING, "Shear selected sheep"),
+        MILK(HiredVillagerRole.ANIMAL_HANDLING, "Milk selected animal"),
+        CULL(HiredVillagerRole.ANIMAL_HANDLING, "Cull selected excess animal"),
+        COLLECT(HiredVillagerRole.ANIMAL_HANDLING, "Collect animal products");
 
         private final HiredVillagerRole role;
         private final String label;
@@ -99,6 +115,7 @@ public record HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max,
 
         public HiredVillagerRole role() { return this.role; }
         public String label() { return this.label; }
+        public boolean entityTarget() { return this == HUNT || this == BREED || this == SHEAR || this == MILK || this == CULL; }
 
         public static Kind forRole(HiredVillagerRole role) {
             for (Kind kind : values()) if (kind.role == role) return kind;

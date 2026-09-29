@@ -133,6 +133,7 @@ public final class SettlementViewScreen extends Screen {
     private UUID selectedArea;
     private BlockPos selectedBlock;
     private BlockPos dragStart;
+    private UUID dragEntity;
     private BlockPos dragEnd;
     private final SettlementViewInteraction interaction = new SettlementViewInteraction();
     private int managementRequestId;
@@ -830,10 +831,15 @@ public final class SettlementViewScreen extends Screen {
                 .filter(java.util.Objects::nonNull).findFirst().orElse(null);
         boolean append = shiftDown();
         var selectedTarget = this.dragStart;
+        var selectedEntity = this.dragEntity;
+        if (selectedEntity != null && this.dragStart.equals(this.dragEnd)) {
+            min = selectedTarget;
+            max = selectedTarget;
+        }
         enterMode(Mode.SELECT);
         if (kind == null || targets.isEmpty()) return;
         SettlementViewClient.openPanels(this);
-        this.minecraft.setScreen(new SettlementTemporaryTaskScreen(this, targets, kind, min, max, append, selectedTarget));
+        this.minecraft.setScreen(new SettlementTemporaryTaskScreen(this, targets, kind, min, max, append, selectedTarget, selectedEntity));
     }
 
     private void sendBatch(SettlementViewBatchPayload request) {
@@ -1213,6 +1219,7 @@ public final class SettlementViewScreen extends Screen {
         if (this.gizmo != null && (draft == null || draft.placed) && this.gizmo.begin(ray(x, y))) return true;
         var hit = pick(x, y);
         if (this.interaction.is(Mode.TASK_AREA)) {
+            this.dragEntity = hit.entity();
             this.dragStart = hit.position();
             this.dragEnd = hit.position();
             return true;
@@ -1346,17 +1353,22 @@ public final class SettlementViewScreen extends Screen {
                 ClipContext.Fluid.NONE, camera.getEntity()));
         double distance = block.getType() == HitResult.Type.MISS ? 256.0D * 256.0D : start.distanceToSqr(block.getLocation());
         UUID residentId = null;
+        UUID targetId = null;
+        BlockPos targetPosition = null;
         for (Entity entity : this.minecraft.level.entitiesForRendering()) {
-            if (entity instanceof Villager && this.roster.containsKey(entity.getUUID()) && this.window.contains(entity.blockPosition())) {
+            if (this.window.contains(entity.blockPosition()) && (entity instanceof Villager && this.roster.containsKey(entity.getUUID())
+                    || this.interaction.is(Mode.TASK_AREA) && entity instanceof net.minecraft.world.entity.LivingEntity)) {
                 var hit = entity.getBoundingBox().inflate(0.2D).clip(start, end);
                 if (hit.isPresent() && hit.get().distanceToSqr(start) < distance) {
                     distance = hit.get().distanceToSqr(start);
-                    residentId = entity.getUUID();
+                    residentId = this.roster.containsKey(entity.getUUID()) ? entity.getUUID() : null;
+                    targetId = entity.getUUID();
+                    targetPosition = entity.blockPosition();
                 }
             }
         }
         BlockPos position = block.getType() != HitResult.Type.MISS && this.window.contains(block.getBlockPos()) ? block.getBlockPos() : null;
-        return new Pick(position, residentId);
+        return new Pick(this.interaction.is(Mode.TASK_AREA) && targetPosition != null ? targetPosition : position, residentId, targetId);
     }
 
     void renderWorldSelection(RenderLevelStageEvent event) {
@@ -1960,6 +1972,7 @@ public final class SettlementViewScreen extends Screen {
         return Component.translatable("villagerretaliation.gui.settlement_view." + key, arguments);
     }
 
-    private record Pick(BlockPos position, UUID resident) {
+    private record Pick(BlockPos position, UUID resident, UUID entity) {
+        Pick(BlockPos position, UUID resident) { this(position, resident, null); }
     }
 }

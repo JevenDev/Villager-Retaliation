@@ -101,6 +101,11 @@ public final class HiredItemPickup {
         return item == null ? null : item.blockPosition();
     }
 
+    public static boolean hasOutputItems(ServerLevel level, HiredWorkContext context, Predicate<ItemStack> filter) {
+        return HiredEntitySearch.nearest(level, ItemEntity.class, context.assignment().entitySearchBounds(),
+                item -> item.isAlive() && filter.test(item.getItem()) && context.isInsideWorkAreaOrRoute(item.blockPosition()), null) != null;
+    }
+
     private static ItemEntity findNearestOutputItem(
             ServerLevel level,
             Villager villager,

@@ -95,6 +95,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return;
         }
 
+        if (com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.HUNT)) return;
         if (context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
             return;
         }
@@ -134,6 +135,11 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return lootResult;
         }
 
+        if (HiredTemporaryEntities.handled(context.state())) {
+            if (HiredItemPickup.hasOutputItems(level, context, HuntingWorker::isHuntingLoot)) return WorkResult.idle("interaction.work.temporary.target_blocked");
+            com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.finishAction(context.state(), HiredTemporaryTask.Kind.HUNT);
+            return WorkResult.idle("interaction.work.temporary.completed");
+        }
         WorkResult ammoResult = HiredRangedAmmo.ensureReady(level, villager, context, PATROL_SPEED);
         if (ammoResult != null) {
             return ammoResult;
@@ -144,6 +150,10 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return WorkResult.progressed(activeStatusKey(targets), activeStatusReplacements(villager, targets));
         }
 
+        if (com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.HUNT)) {
+            HiredWorkerBrain.setFailure(context, "temporary_target_unreachable", 0L);
+            return WorkResult.idle("interaction.work.temporary.target_blocked");
+        }
         if (context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "route_patrol");
             return WorkResult.idle(passiveStatusKey(targets), passiveStatusReplacements(targets));
@@ -152,6 +162,14 @@ public final class HuntingWorker extends AbstractBlockWorker {
         HiredWorkerBrain.setLastTargetScanResult(context, "no_targets");
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, context.workCenter());
         return WorkResult.idle(passiveStatusKey(targets), passiveStatusReplacements(targets));
+    }
+
+    @Override
+    public void pause(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (activeTarget(villager).isPresent() || context.state().hasUUID(ACTIVE_TARGET_ID_TAG) && villager.getTarget() != null
+                && context.state().getUUID(ACTIVE_TARGET_ID_TAG).equals(villager.getTarget().getUUID())) clearActiveHuntingTarget(villager, context);
+        com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.releaseClaim(villager);
+        super.pause(level, villager, context);
     }
 
     @Override
@@ -227,11 +245,18 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return false;
         }
         state.putLong(NEXT_TARGET_SCAN_GAME_TIME_TAG, gameTime + TARGET_SCAN_INTERVAL_TICKS);
-        return com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.requestedNativeTarget(villager,
-                        target -> isEligibleTarget(villager, target, context, targets))
-                .or(() -> findNearestTarget(level, villager, context, targets))
-                .filter(target -> {
-                    if (!VillagerRetaliationHandler.engageCustomTarget(villager, target, false)) return false;
+        var task = HiredTemporaryEntities.current(state);
+        Optional<LivingEntity> selected = task != null && task.kind() == HiredTemporaryTask.Kind.HUNT
+                ? Optional.ofNullable(level.getEntity(task.entity())).filter(LivingEntity.class::isInstance).map(LivingEntity.class::cast)
+                        .filter(target -> isEligibleTarget(villager, target, context, targets))
+                : com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.requestedNativeTarget(villager,
+                        target -> isEligibleTarget(villager, target, context, targets)).or(() -> findNearestTarget(level, villager, context, targets));
+        return selected.filter(target -> {
+                    if (!HiredEntityClaims.reserve(level, villager, target)) return false;
+                    if (!VillagerRetaliationHandler.engageCustomTarget(villager, target, false)) {
+                        HiredEntityClaims.release(villager);
+                        return false;
+                    }
                     state.putUUID(ACTIVE_TARGET_ID_TAG, target.getUUID());
                     return true;
                 }).isPresent();
@@ -304,7 +329,9 @@ public final class HuntingWorker extends AbstractBlockWorker {
             HiredHuntingTargets.Selection targets,
             boolean requireLineOfSight) {
         return isEligibleTarget(villager, target, targets)
+                && HiredTemporaryEntities.matches(context.state(), target)
                 && context.isInsideWorkAreaOrRoute(target.blockPosition())
+                && (!(villager.level() instanceof ServerLevel level) || HiredEntityClaims.available(level, villager, target))
                 && (!requireLineOfSight || VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target));
     }
 
@@ -314,12 +341,16 @@ public final class HuntingWorker extends AbstractBlockWorker {
     }
 
     public static boolean isEligibleTarget(Villager villager, LivingEntity target, HiredHuntingTargets.Selection targets) {
+        return canOrderTarget(villager, target, targets)
+                && VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target);
+    }
+
+    public static boolean canOrderTarget(Villager villager, LivingEntity target, HiredHuntingTargets.Selection targets) {
         if (target == villager
                 || targets.none()
                 || !matchesSelectedCategory(villager, target, targets)
                 || !target.isAlive()
                 || !villager.canAttack(target)
-                || !VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)
                 || target.isAlliedTo(villager)
                 || target instanceof AbstractVillager
                 || target instanceof IronGolem
@@ -353,11 +384,14 @@ public final class HuntingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             HiredHuntingTargets.Selection targets) {
         LivingEntity target = villager.getTarget();
+        if (target == null) target = activeTarget(villager).orElse(null);
         if (target == null) {
+            HiredEntityClaims.release(villager);
             clearActiveTargetTracking(context);
             return;
         }
 
+        if (target.isDeadOrDying()) HiredTemporaryEntities.markHandled(context.state(), HiredTemporaryTask.Kind.HUNT, target.getUUID());
         if (!isEligibleTarget(villager, target, context, targets, false)) {
             clearActiveHuntingTarget(villager, context);
             return;
@@ -368,10 +402,13 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return;
         }
 
+        HiredEntityClaims.reserve(level, villager, target);
         context.state().putUUID(ACTIVE_TARGET_ID_TAG, target.getUUID());
     }
 
     private static void clearActiveHuntingTarget(Villager villager, HiredWorkContext context) {
+        HiredEntityClaims.release(villager);
+        com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.releaseClaim(villager);
         clearActiveTargetTracking(context);
         context.state().remove(NEXT_TARGET_SCAN_GAME_TIME_TAG);
         VillagerRetaliationHandler.clearCustomTarget(villager);

@@ -156,7 +156,7 @@ public final class HiredTemporaryWorkGameTests {
         helper.assertTrue(HiredTemporaryWorkService.submit(delegate, villager, task, false).isEmpty(), "staff can order temporary work elsewhere in town");
         helper.assertValueEqual(town.duties().get(villager.getUUID()), area.id(), "temporary work retains civic assignment");
         helper.assertFalse(level.hasChunkAt(outside), "the remote task starts unloaded");
-        helper.assertFalse(HiredTemporaryWorkService.ready(level, HiredWorkSession.active(level, villager)), "unloaded targets block work");
+        helper.assertFalse(HiredTemporaryWorkService.ready(level, villager, HiredWorkSession.active(level, villager)), "unloaded targets block work");
         helper.assertFalse(level.hasChunkAt(outside), "checking a task never loads its chunk");
         var worker = SettlementWorkerState.capture(level, villager, SettlementWorkforceService.duty(villager).orElseThrow(), 0);
         town.recordWorker(worker);
@@ -468,7 +468,7 @@ public final class HiredTemporaryWorkGameTests {
         com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.begin(session.context(), center, center.east(),
                 List.of(center, center.above()), List.of(), List.of(), ItemStack.EMPTY, false, "minecraft:oak");
         helper.assertTrue(SettlementTreeClaims.claimedByOther(level, outsider, List.of(center)), "a paused loaded harvest keeps its saved work reserved");
-        villager.discard();
+        villager.setRemoved(net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK);
         var duplicateTag = worker.save();
         var secondId = UUID.randomUUID();
         duplicateTag.putUUID("Id", secondId);
@@ -483,6 +483,64 @@ public final class HiredTemporaryWorkGameTests {
         town.removeDuty(secondId);
         helper.assertFalse(SettlementTreeClaims.claimedByOther(level, outsider, List.of(center)), "reassignment releases saved tree claims");
         helper.assertFalse(level.hasChunkAt(center), "claim checks never load the tree");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "temporary_work")
+    public static void huntingClaimsSurviveBackgroundHandoffsAndReleaseOnPause(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var origin = helper.absolutePos(BlockPos.ZERO);
+        var center = new BlockPos(15_000_000 + origin.getX() * 8, 64, 15_000_000 + origin.getZ() * 8);
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var id = registry.create(0, level.dimension().location(), center, "");
+        var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, 0).orElseThrow();
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HUNTING_GROUNDS, "Shared hunting", center, center.offset(5, 4, 5), 5, true);
+        town.putArea(town.leader(), area);
+        var hunter = EntityType.VILLAGER.create(level);
+        hunter.setPos(center.getCenter());
+        hunter.setVillagerData(hunter.getVillagerData().setProfession(VillagerProfession.FLETCHER));
+        VillageAllegianceApi.assignKnown(level, hunter, id, AllegianceAssignmentSource.EXPLICIT_API);
+        town.assignDuty(hunter.getUUID(), area.id());
+        SettlementWorkforceService.reconcile(level, hunter);
+        var target = EntityType.COW.create(level);
+        target.setPos(origin.getCenter());
+        level.addFreshEntity(target);
+        try {
+            var worker = SettlementWorkerState.capture(level, hunter, SettlementWorkforceService.duty(hunter).orElseThrow(), 0);
+            worker.huntingTarget(target.getUUID());
+            var restored = SettlementWorkerState.load(worker.save());
+            town.recordWorker(restored);
+            var outsider = EntityType.VILLAGER.create(level);
+            helper.assertFalse(com.jvn.villagerretaliation.interaction.work.HiredEntityClaims.available(level, outsider, target),
+                    "a background hunter's target remains reserved after reload");
+            var second = EntityType.VILLAGER.create(level);
+            second.setPos(center.getCenter());
+            second.setVillagerData(second.getVillagerData().setProfession(VillagerProfession.FLETCHER));
+            VillageAllegianceApi.assignKnown(level, second, id, AllegianceAssignmentSource.EXPLICIT_API);
+            var secondId = second.getUUID();
+            town.assignDuty(secondId, area.id());
+            SettlementWorkforceService.reconcile(level, second);
+            var duplicate = SettlementWorkerState.capture(level, second, SettlementWorkforceService.duty(second).orElseThrow(), 0);
+            duplicate.huntingTarget(target.getUUID());
+            town.recordWorker(SettlementWorkerState.load(duplicate.save()));
+            var winner = worker.id().compareTo(secondId) < 0 ? worker.id() : secondId;
+            var loser = winner.equals(worker.id()) ? secondId : worker.id();
+            helper.assertFalse(SettlementHuntingTargetService.claimedByOther(level, winner, target.getUUID()),
+                    "overlapping legacy pursuits choose one owner");
+            helper.assertTrue(SettlementHuntingTargetService.claimedByOther(level, loser, target.getUUID()),
+                    "the other pursuit waits");
+            town.removeDuty(secondId);
+            var session = HiredWorkSession.create(level, hunter, HiredVillagerRole.HUNTING);
+            session.worker().pause(level, hunter, session.context());
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.work.HiredEntityClaims.available(level, outsider, target),
+                    "pausing releases the saved claim as well as the native claim");
+            helper.assertTrue(restored.huntingTarget() == null, "the released claim cannot return on a later unload");
+            helper.assertFalse(level.hasChunkAt(center), "claim inspection does not load remote work areas");
+        } finally {
+            HiredPathMemory.clear(hunter);
+            town.removeDuty(hunter.getUUID());
+            target.discard();
+        }
         helper.succeed();
     }
 
