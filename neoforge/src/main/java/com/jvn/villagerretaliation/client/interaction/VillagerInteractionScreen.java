@@ -1764,6 +1764,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addWorkOptions() {
+        if (this.hiredByPlayer && com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService.supports(this.activeHiredRole)) {
+            this.options.add(DialogueOption.enabled("Production orders", () -> {
+                if (this.minecraft.level.getEntity(this.villagerEntityId) instanceof Villager villager) {
+                    this.minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen(null,
+                            new com.jvn.villagerretaliation.network.ProductionTarget(null, villager.getUUID())));
+                }
+            }));
+        }
         addOption("recruit.work_status", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_WORK_STATUS));
         addOption("recruit.work_toggle", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED));
         addOption("recruit.work_assigned_supplies", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES));

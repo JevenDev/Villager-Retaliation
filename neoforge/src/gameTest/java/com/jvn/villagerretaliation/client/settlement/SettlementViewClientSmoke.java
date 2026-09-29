@@ -67,6 +67,8 @@ public final class SettlementViewClientSmoke {
     private static ProjectFixture projectFixture;
     private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
     private static UUID brewer;
+    private static UUID productionArea;
+    private static SettlementViewScreen productionView;
     private static Villager issueFarmer;
     private static long started;
     private static int phase;
@@ -138,7 +140,8 @@ public final class SettlementViewClientSmoke {
             if (screen.viewHeight() != SettlementViewWindow.MAX_HEIGHT) screen.mouseScrolled(40, 80, 0, -100);
             if (ticks < 120 && (screen.viewHeight() != SettlementViewWindow.MAX_HEIGHT
                     || Math.abs(screen.cameraHeight() - screen.viewHeight()) >= 0.1D
-                    || !maxZoomResidentRendered || !screen.terrainLoaded())) return;
+                    || !maxZoomResidentRendered || !screen.terrainLoaded()
+                    || screen.getNarrationMessage().getString().contains("Remote terrain queued:"))) return;
             require(screen.viewHeight() == SettlementViewWindow.MAX_HEIGHT, "the rendering check reaches maximum town zoom");
             require(Math.abs(screen.cameraHeight() - screen.viewHeight()) < 0.1D, "the camera eases into maximum zoom");
             require(screen.terrainLoaded(), "the maximum zoom capture includes the streamed terrain");
@@ -574,14 +577,105 @@ public final class SettlementViewClientSmoke {
             phase = 126;
         } else if (phase == 126 && minecraft.screen instanceof SettlementViewScreen screen && !screen.parent().submitting() && ++ticks >= 15) {
             UUID player = minecraft.player.getUUID();
-            minecraft.getSingleplayerServer().submit(() -> {
+            productionArea = minecraft.getSingleplayerServer().submit(() -> {
                 var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
                 var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
                 var plan = town.worksitePlans().get(town.duties().get(fixture.resident()));
                 require(plan.route() != null && plan.route().mode() == SettlementGuardOrder.Mode.PATROL && plan.route().points().size() == 2,
                         "drawing and Enter save the shared worksite route");
+                var area = town.areas().values().stream().filter(value -> value.type() == SettlementAreaType.WORKSHOP).findFirst().orElseThrow();
+                require(com.jvn.villagerretaliation.settlement.SettlementWorksiteService.configure(serverPlayer, town, area.id(),
+                        com.jvn.villagerretaliation.settlement.SettlementWorksitePlan.defaults(com.jvn.villagerretaliation.interaction.HiredVillagerRole.CRAFTSMAN), true),
+                        "the production fixture explicitly adopts its workshop");
+                return area.id();
             }).join();
             require(minecraft.getCameraEntity() != minecraft.player, "saving the route preserves the map camera");
+            originalX = screen.focusX();
+            originalZ = screen.focusZ();
+            originalHeight = screen.viewHeight();
+            originalYaw = screen.cameraYaw();
+            productionView = screen;
+            SettlementViewClient.openPanels(screen);
+            minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen(screen,
+                    new com.jvn.villagerretaliation.network.ProductionTarget(fixture.town().value(), productionArea),
+                    () -> SettlementViewClient.resume(screen.parent())));
+            ticks = 0;
+            phase = 127;
+        } else if (phase == 127 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
+                && screen.state().editable() && ++ticks >= 5) {
+            requireButtonsFit(screen);
+            require(minecraft.getCameraEntity() != minecraft.player, "production orders keep the map camera active");
+            capture("production-orders-empty");
+            button(screen, "Add order").onPress();
+            ticks = 0;
+            phase = 128;
+        } else if (phase == 128 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionRecipeScreen screen
+                && screen.previous().state().editable() && ++ticks >= 5) {
+            screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getY() == 34).findFirst().orElseThrow().setValue("minecraft:stick");
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            rows.children().getFirst().mouseClicked(0, 0, 0);
+            button(screen, "1: Any").onPress();
+            screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getY() != 34).findFirst().orElseThrow().setValue("5");
+            requireButtonsFit(screen);
+            capture("production-exact-recipe");
+            button(screen, "Batch").onPress();
+            button(screen, "Continuous").onPress();
+            require(!button(screen, "Add order").active, "maintain-stock orders require an explicit storage destination");
+            button(screen, "Output storage: automatic").onPress();
+            ticks = 0;
+            phase = 129;
+        } else if (phase == 129 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionStorageScreen screen && ++ticks >= 5) {
+            requireButtonsFit(screen);
+            capture("production-storage-picker");
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            rows.children().getFirst().mouseClicked(0, 0, 0);
+            ticks = 0;
+            phase = 130;
+        } else if (phase == 130 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionRecipeScreen screen
+                && screen.previous().state().editable() && ++ticks >= 5) {
+            button(screen, "Maintain stock").onPress();
+            require(button(screen, "Add order").active, "a finite batch keeps the selected recipe and ingredient choice after closing storage");
+            button(screen, "Add order").onPress();
+            ticks = 0;
+            phase = 131;
+        } else if (phase == 131 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
+                && screen.state().editable() && screen.state().queue() != null && screen.state().queue().orders().size() == 1 && ++ticks >= 5) {
+            var order = screen.state().queue().orders().getFirst();
+            require(order.amount() == 5 && order.output().getCount() == 4 && !order.recipe().alternatives().isEmpty(),
+                    "the server retains the exact recipe, narrowed ingredient and whole-batch output");
+            requireButtonsFit(screen);
+            capture("production-queue");
+            button(screen, "Pause").onPress();
+            ticks = 0;
+            phase = 132;
+        } else if (phase == 132 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
+                && screen.state().editable() && screen.state().queue().orders().getFirst().paused() && ++ticks >= 5) {
+            button(screen, "Resume").onPress();
+            ticks = 0;
+            phase = 133;
+        } else if (phase == 133 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
+                && screen.state().editable() && !screen.state().queue().orders().getFirst().paused() && ++ticks >= 5) {
+            button(screen, "Cancel").onPress();
+            ticks = 0;
+            phase = 134;
+        } else if (phase == 134 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
+                && screen.state().editable() && screen.state().queue().orders().getFirst().cancelled() && ++ticks >= 5) {
+            button(screen, "Remove").onPress();
+            ticks = 0;
+            phase = 135;
+        } else if (phase == 135 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
+                && screen.state().editable() && screen.state().queue().orders().isEmpty() && ++ticks >= 5) {
+            screen.onClose();
+            ticks = 0;
+            phase = 136;
+        } else if (phase == 136 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen == productionView && screen.focusX() == originalX && screen.focusZ() == originalZ
+                            && screen.viewHeight() == originalHeight && screen.cameraYaw() == originalYaw,
+                    "production screens preserve the exact map selection and camera instance");
             var targets = java.util.List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(fixture.resident(), null));
             var form = new SettlementTemporaryTaskScreen(screen, targets,
                     com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FARM_PATCH,

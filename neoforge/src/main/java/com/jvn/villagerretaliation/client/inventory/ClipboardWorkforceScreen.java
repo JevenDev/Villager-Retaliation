@@ -1824,6 +1824,12 @@ public final class ClipboardWorkforceScreen extends Screen {
             }
             if (this.page == Page.JOB_SITE) {
                 for (RowAction row : this.rowActions) {
+                    if (row.kind() == RowKind.PRODUCTION && row.contains(panelMouseX, panelMouseY)) {
+                        this.minecraft.setScreen(new ProductionOrdersScreen(this,
+                                new com.jvn.villagerretaliation.network.ProductionTarget(null, row.worker().villagerId())));
+                        playPageSound();
+                        return true;
+                    }
                     if (row.kind() == RowKind.JOB_SITE_ACTION && row.contains(panelMouseX, panelMouseY)) {
                         requestWorkAreaAction(row.worker(), row.workAreaAction());
                         playPageSound();
@@ -2261,6 +2267,9 @@ public final class ClipboardWorkforceScreen extends Screen {
                 this.selectedWorker.noWorkArea() ? WARNING : MUTED,
                 false);
         y += JOB_SITE_ROW_STEP;
+        if (com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService.supports(this.selectedWorker.role())) {
+            y = drawJobSiteActionRow(graphics, mouseX, mouseY, y, Component.literal("Production orders"), null, RowKind.PRODUCTION);
+        }
         y = drawJobSiteActionRow(
                 graphics,
                 mouseX,
@@ -2419,6 +2428,11 @@ public final class ClipboardWorkforceScreen extends Screen {
             int y,
             Component label,
             ClipboardWorkAreaActionPayload.Action action) {
+        return drawJobSiteActionRow(graphics, mouseX, mouseY, y, label, action, RowKind.JOB_SITE_ACTION);
+    }
+
+    private int drawJobSiteActionRow(GuiGraphics graphics, double mouseX, double mouseY, int y, Component label,
+                                    ClipboardWorkAreaActionPayload.Action action, RowKind kind) {
         int rowBottom = y + this.font.lineHeight;
         boolean hovered = contains(mouseX, mouseY, JOB_DETAIL_BAND_LEFT, y - 2, JOB_DETAIL_BAND_RIGHT, rowBottom);
         if (hovered) {
@@ -2436,13 +2450,8 @@ public final class ClipboardWorkforceScreen extends Screen {
                 ROW_ARROW_HEIGHT,
                 ROW_ARROW_WIDTH,
                 ROW_ARROW_HEIGHT);
-        this.rowActions.add(RowAction.jobSiteAction(
-                this.selectedWorker,
-                action,
-                JOB_DETAIL_BAND_LEFT,
-                y - 2,
-                JOB_DETAIL_BAND_RIGHT,
-                rowBottom));
+        this.rowActions.add(new RowAction(kind, null, this.selectedWorker, action, List.of(),
+                JOB_DETAIL_BAND_LEFT, y - 2, JOB_DETAIL_BAND_RIGHT, rowBottom));
         return y + JOB_SITE_ROW_STEP;
     }
 
@@ -3019,6 +3028,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         STORAGE,
         PAYMENT,
         WORKER,
+        PRODUCTION,
         JOB_SITE_ACTION
     }
 

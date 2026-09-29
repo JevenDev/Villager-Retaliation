@@ -50,6 +50,35 @@ final class SettlementManagementClientChecks {
         require(browser.rows(List.of(row)).size() == 1, "observation blockers appear in the browser attention filter");
         browser.updateAttention(List.of());
         require(browser.rows(List.of(row)).isEmpty(), "resolved issues leave the attention filter");
+        verifyProductionTracking();
+    }
+
+    private static void verifyProductionTracking() {
+        var target = new com.jvn.villagerretaliation.network.ProductionTarget(null, UUID.randomUUID());
+        var state = new com.jvn.villagerretaliation.client.inventory.ProductionClientState(target);
+        var first = state.poll(0L);
+        require(first != null && !state.editable(), "production controls wait for their authorized snapshot");
+        var snapshot = new com.jvn.villagerretaliation.network.ProductionSnapshotPayload(ResourceLocation.withDefaultNamespace("overworld"),
+                target, first.request(), false, com.jvn.villagerretaliation.interaction.HiredVillagerRole.CRAFTSMAN,
+                "Personal hire", true, "", "", null, 0, List.of(), List.of(), java.util.Map.of());
+        require(state.accept(snapshot, null) && state.editable(), "an authorized snapshot enables private production");
+        var refresh = state.poll(1_000L);
+        require(refresh != null && state.editable(), "a background refresh leaves the current controls usable");
+        var recipe = com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe.exact(
+                ResourceLocation.withDefaultNamespace("stick"), java.util.Map.of());
+        var command = new com.jvn.villagerretaliation.network.ProductionRequestPayload.Append(recipe,
+                com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.Mode.BATCH, 4, null);
+        var edit = state.request(command, 1_050L);
+        require(edit != null && state.busy(), "a mutation supersedes an older refresh and waits for acknowledgement");
+        require(!state.accept(snapshot, null) && state.busy(), "a stale reply cannot release a pending action");
+        require(state.request(command, 1_060L) == null, "an unanswered action cannot be submitted twice");
+        require(state.poll(11_049L) == null && state.busy(), "actions retain their full acknowledgement window");
+        var recovery = state.poll(11_050L);
+        require(recovery != null && recovery.command() instanceof com.jvn.villagerretaliation.network.ProductionRequestPayload.View,
+                "a timeout refreshes authoritative state without replaying the mutation");
+        var reply = new com.jvn.villagerretaliation.network.ProductionSnapshotPayload(snapshot.dimension(), target, edit.request(), true,
+                snapshot.role(), snapshot.title(), true, "", "", null, 0, List.of(), List.of(), java.util.Map.of());
+        require(!state.accept(reply, null), "a late action reply cannot replace the newer recovery snapshot");
     }
 
     private static void require(boolean condition, String message) {

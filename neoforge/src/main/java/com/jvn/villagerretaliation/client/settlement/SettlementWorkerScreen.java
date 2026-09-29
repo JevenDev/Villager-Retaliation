@@ -52,6 +52,7 @@ public final class SettlementWorkerScreen extends Screen {
     private Button save;
     private Button all;
     private Button brewing;
+    private Button productionOrders;
     private Component feedback = Component.empty();
     private int left;
     private int top;
@@ -116,17 +117,27 @@ public final class SettlementWorkerScreen extends Screen {
             addRenderableWidget(Button.builder(text(this.draft.role() == HiredVillagerRole.LOGGING ? "worker_logs" : "worker_animals"),
                     ignored -> switchPage(true)).bounds(this.left + half + 4, this.top + 22, half, 20).build());
         }
+        boolean production = com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService.supports(this.draft.role());
         if (this.worksite != null) {
             this.connections = addRenderableWidget(Button.builder(text("worksite_links"), ignored ->
                     this.minecraft.setScreen(new SettlementWorksiteLinksScreen(this)))
                     .bounds(this.filters.isEmpty() ? this.left : this.left + this.panelWidth - 100,
-                            this.top + 22, this.filters.isEmpty() ? this.panelWidth : 100, 20).build());
+                            this.top + 22, this.filters.isEmpty() ? (production ? (this.panelWidth - 4) / 2 : this.panelWidth) : 100, 20).build());
         }
-        if (this.resident != null && this.draft.role() == HiredVillagerRole.BREWING) {
+        if (this.resident != null && !this.resident.worksitePlan() && this.draft.role() == HiredVillagerRole.BREWING) {
             this.brewing = addRenderableWidget(Button.builder(text("brewing_orders"), ignored ->
                     this.minecraft.setScreen(new SettlementBrewingScreen(this, this.resident)))
-                    .bounds(this.left, this.top + 22, this.panelWidth, 20).build());
+                    .bounds(this.left, this.top + 22, (this.panelWidth - 4) / 2, 20).build());
             this.brewing.setTooltip(Tooltip.create(text("brewing_open_hint")));
+        }
+        if (production) {
+            boolean split = this.worksite != null || this.brewing != null;
+            this.productionOrders = addRenderableWidget(Button.builder(Component.literal("Production orders"), ignored ->
+                    this.minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen(this,
+                            new com.jvn.villagerretaliation.network.ProductionTarget(this.parent.snapshot().header().id(),
+                                    this.worksite == null ? this.resident.area() : this.worksite.id()))))
+                    .bounds(split ? this.left + (this.panelWidth + 4) / 2 : this.left, this.top + 22,
+                            split ? (this.panelWidth - 4) / 2 : this.panelWidth, 20).build());
         }
         this.search = addRenderableWidget(new EditBox(this.font, this.left, this.top + 48, this.panelWidth - 100, 20, text("search")));
         this.search.setMaxLength(64);
@@ -248,6 +259,7 @@ public final class SettlementWorkerScreen extends Screen {
         }
         if (this.reset != null) this.reset.active = allowed && this.draft.overrides() != 0;
         if (this.connections != null) this.connections.active = allowed;
+        if (this.productionOrders != null) this.productionOrders.active = this.parent.permits(SettlementPermission.VIEW);
         List<ResourceLocation> visible = this.filtering ? visibleFilters() : List.of();
         int total = this.filtering ? visible.size() : this.settings.size();
         this.page = Math.clamp(this.page, 0, Math.max(0, (total - 1) / this.rows.size()));

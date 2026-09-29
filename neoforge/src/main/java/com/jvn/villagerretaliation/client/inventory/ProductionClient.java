@@ -14,6 +14,15 @@ public final class ProductionClient {
         if (minecraft.screen instanceof Receiver receiver) receiver.acceptProduction(payload);
     }
 
+    public static net.minecraft.client.gui.screens.Screen rootScreen(net.minecraft.client.gui.screens.Screen screen) {
+        while (true) {
+            if (screen instanceof ProductionOrdersScreen orders) screen = orders.previous();
+            else if (screen instanceof ProductionRecipeScreen recipes) screen = recipes.previous();
+            else if (screen instanceof ProductionStorageScreen storage) screen = storage.previous();
+            else return screen;
+        }
+    }
+
     public interface Receiver {
         void acceptProduction(ProductionSnapshotPayload payload);
     }

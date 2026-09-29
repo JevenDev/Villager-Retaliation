@@ -35,7 +35,9 @@ public final class ProductionManagementService {
     }
 
     public static void handle(ServerPlayer player, ProductionRequestPayload request) {
-        if (!ServerboundRequestLimiter.tryAcquire(player, ProductionRequestPayload.TYPE.id(), 3L)) {
+        var limit = request.command() instanceof ProductionRequestPayload.View
+                ? com.jvn.villagerretaliation.VillagerRetaliation.id("production_view") : ProductionRequestPayload.TYPE.id();
+        if (!ServerboundRequestLimiter.tryAcquire(player, limit, 3L)) {
             PacketDistributor.sendToPlayer(player, unavailable(player, request, "Please wait before changing production again"));
             return;
         }

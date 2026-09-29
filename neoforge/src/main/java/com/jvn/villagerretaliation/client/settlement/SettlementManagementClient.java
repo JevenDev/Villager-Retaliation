@@ -90,7 +90,7 @@ public final class SettlementManagementClient {
     }
 
     static SettlementManagementScreen current() {
-        return switch (Minecraft.getInstance().screen) {
+        return switch (com.jvn.villagerretaliation.client.inventory.ProductionClient.rootScreen(Minecraft.getInstance().screen)) {
             case SettlementManagementScreen screen -> screen;
             case SettlementViewScreen view -> view.parent();
             case SettlementEditScreen form -> form.parent();
