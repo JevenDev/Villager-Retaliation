@@ -8,7 +8,7 @@ public enum SettlementViewAction {
     MOVE("Move", SettlementGuardOrder.Mode.MOVE),
     PATROL("Patrol", SettlementGuardOrder.Mode.PATROL),
     DEFEND("Defend", SettlementGuardOrder.Mode.DEFEND),
-    RETURN("Return to post", null),
+    RETURN("Return to assignment", null),
     ENABLE("Enable work", null),
     PAUSE("Pause work", null),
     ASSIGN("Assign to area", null),
@@ -38,7 +38,7 @@ public enum SettlementViewAction {
 
     boolean execute(ServerPlayer player, SettlementRecord town, UUID resident, UUID area, SettlementGuardOrder order) {
         return switch (this) {
-            case MOVE, PATROL, DEFEND, RETURN -> SettlementGuardService.command(player, town, resident, order);
+            case MOVE, PATROL, DEFEND, RETURN -> SettlementGuardService.temporaryCommand(player, town, resident, order);
             case ENABLE, PAUSE -> SettlementWorkerConfigurationService.setEnabled(player, town, resident, town.duties().get(resident), this == ENABLE);
             case ASSIGN -> SettlementWorkforceService.assignResident(player.serverLevel(), player, town.id(), resident, area);
             case TEMPORARY_TASK, CANCEL_TASKS -> false;

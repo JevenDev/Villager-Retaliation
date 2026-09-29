@@ -42,6 +42,7 @@ public final class SettlementLogisticsService {
     public static boolean isHauler(Villager villager) {
         return SettlementWorkforceService.duty(villager)
                 .map(duty -> duty.area().type() == SettlementAreaType.DEPOT
+                        && SettlementGuardService.configuredRoute(duty.town(), duty.area(), villager.getUUID()) == null
                         || SettlementTransferService.pending(duty.town(), villager.getUUID()) != null).orElse(false);
     }
 

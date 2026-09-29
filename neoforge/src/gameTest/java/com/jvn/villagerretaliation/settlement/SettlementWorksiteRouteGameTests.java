@@ -194,6 +194,119 @@ public final class SettlementWorksiteRouteGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "worksite_routes")
+    public static void routeEditsRejectStaleInheritanceAndResetOnlyTheSelectedOverride(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.HUNTING_GROUNDS, false);
+        var town = fixture.town();
+        var worker = fixture.worker();
+        var area = fixture.area();
+        var first = new SettlementGuardOrder(SettlementGuardOrder.Mode.PATROL, List.of(town.center(), town.center().east(8)));
+        var second = new SettlementGuardOrder(SettlementGuardOrder.Mode.PATROL, List.of(town.center(), town.center().south(8)), true,
+                List.of(new HiredRoute.Branch(town.center(), town.center().west(4))));
+        try {
+            town.setWorksitePlan(town.leader(), area.id(), SettlementWorksitePlan.defaults(HiredVillagerRole.HUNTING).withRoute(first));
+            helper.assertValueEqual(SettlementGuardService.configure(fixture.leader(), town,
+                    new SettlementManagementActionPayload.SaveRoute(area.id(), worker.getUUID(), null, second)), "state_changed", "stale inherited edits are rejected");
+            helper.assertValueEqual(SettlementGuardService.configure(fixture.leader(), town,
+                    new SettlementManagementActionPayload.SaveRoute(area.id(), worker.getUUID(), first, second)), "", "hunter overrides are editable");
+            helper.assertValueEqual(HiredWorkSession.active(helper.getLevel(), worker).route(), second.sharedRoute(), "native execution receives loops and branches");
+            helper.assertValueEqual(town.worksitePlans().get(area.id()).route(), first, "individual edits preserve the worksite default");
+            var saved = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+            helper.assertValueEqual(saved.guardOrders().get(worker.getUUID()), second, "individual hunter routes survive reload");
+            helper.assertValueEqual(SettlementGuardService.configure(fixture.leader(), town,
+                    new SettlementManagementActionPayload.SaveRoute(area.id(), worker.getUUID(), second, null)), "", "reset removes only the route override");
+            helper.assertValueEqual(HiredWorkSession.active(helper.getLevel(), worker).route(), first.sharedRoute(), "reset restores inheritance");
+            var cleared = new SettlementGuardOrder(SettlementGuardOrder.Mode.PATROL, List.of());
+            helper.assertValueEqual(SettlementGuardService.configure(fixture.leader(), town,
+                    new SettlementManagementActionPayload.SaveRoute(area.id(), worker.getUUID(), first, cleared)), "", "explicit empty routes can override an inherited route");
+            helper.assertTrue(HiredWorkSession.active(helper.getLevel(), worker).route().isEmpty(), "clearing does not accidentally inherit the shared route");
+            var packet = new SettlementManagementActionPayload(town.id().value(), new SettlementManagementActionPayload.SaveRoute(area.id(), worker.getUUID(), cleared, second));
+            var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+            try {
+                SettlementManagementActionPayload.STREAM_CODEC.encode(buffer, packet);
+                helper.assertValueEqual(SettlementManagementActionPayload.STREAM_CODEC.decode(buffer), packet, "route edits preserve scope and expected state on the wire");
+                helper.assertValueEqual(buffer.readableBytes(), 0, "all route fields are consumed");
+            } finally { buffer.release(); }
+        } finally { worker.discard(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "worksite_routes")
+    public static void temporaryMapOrdersPreservePersistentRoutesAcrossReloadAndReturn(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.GUARD_POST, false);
+        var town = fixture.town();
+        var guard = fixture.worker();
+        var route = new SettlementGuardOrder(SettlementGuardOrder.Mode.PATROL, List.of(town.center(), town.center().east(8)));
+        var move = new SettlementGuardOrder(SettlementGuardOrder.Mode.MOVE, List.of(town.center().south(3)));
+        try {
+            town.setGuardOrder(town.leader(), guard.getUUID(), route);
+            helper.assertTrue(SettlementViewAction.MOVE.execute(fixture.leader(), town, guard.getUUID(), fixture.area().id(), move), "map move accepts a temporary command");
+            helper.assertValueEqual(town.guardOrders().get(guard.getUUID()), route, "temporary commands preserve the persistent override");
+            helper.assertValueEqual(SettlementGuardService.order(guard).orElseThrow(), move, "temporary commands take execution precedence");
+            var saved = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+            helper.assertValueEqual(saved.temporaryGuardOrders().get(guard.getUUID()), move, "temporary commands survive reload independently");
+            helper.assertValueEqual(saved.guardOrders().get(guard.getUUID()), route, "the persistent route also survives reload");
+            helper.assertTrue(SettlementViewAction.RETURN.execute(fixture.leader(), town, guard.getUUID(), fixture.area().id(), null), "return cancels the temporary command");
+            helper.assertValueEqual(SettlementGuardService.order(guard).orElseThrow(), route, "return restores the individual persistent assignment");
+            town.removeDuty(guard.getUUID());
+            helper.assertTrue(town.guardOrders().isEmpty() && town.temporaryGuardOrders().isEmpty(), "release removes both route scopes");
+        } finally { guard.discard(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "worksite_routes")
+    public static void courierRoutesUseNativeTraversalWithoutBackgroundDepotFallback(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.DEPOT, false);
+        var town = fixture.town();
+        var courier = fixture.worker();
+        var route = new SettlementGuardOrder(SettlementGuardOrder.Mode.PATROL, List.of(town.center(), town.center().east(8)), true,
+                List.of(new HiredRoute.Branch(town.center(), town.center().south(4))));
+        try {
+            town.setWorksitePlan(town.leader(), fixture.area().id(), SettlementWorksitePlan.defaults(HiredVillagerRole.COURIER));
+            helper.assertValueEqual(SettlementGuardService.configure(fixture.leader(), town,
+                    new SettlementManagementActionPayload.SaveRoute(fixture.area().id(), null, null, route)), "", "courier worksite routes are accepted");
+            helper.assertValueEqual(HiredWorkSession.active(helper.getLevel(), courier).route(), route.sharedRoute(), "couriers use the same branch traversal as personal hires");
+            helper.assertFalse(SettlementLogisticsService.isHauler(courier), "explicit courier routes replace automatic depot hauling");
+            var distant = new SettlementGuardOrder(SettlementGuardOrder.Mode.PATROL, List.of(town.center(), town.center().east(20)));
+            helper.assertValueEqual(SettlementGuardService.configure(fixture.leader(), town,
+                    new SettlementManagementActionPayload.SaveRoute(fixture.area().id(), null, route, distant)), "guard_order", "couriers retain the shared connection limit");
+            var worker = SettlementWorkerState.capture(helper.getLevel(), courier, SettlementWorkforceService.duty(courier).orElseThrow(), 0L);
+            SettlementBackgroundHauling.tick(helper.getLevel(), town, worker, 200, 1.0D);
+            helper.assertValueEqual(worker.status(), "route_requires_loaded_worker", "unobserved routes never fall back to unrelated simulated depot transfers");
+            helper.assertValueEqual(SettlementGuardService.configure(fixture.leader(), town,
+                    new SettlementManagementActionPayload.SaveRoute(fixture.area().id(), null, route, null)), "", "automatic hauling can be restored");
+            helper.assertTrue(SettlementLogisticsService.isHauler(courier), "legacy automatic behavior resumes when the explicit route is removed");
+        } finally { courier.discard(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "worksite_routes")
+    public static void routeDraftDraggingInsertionAndCancellationPreserveRecoverableState(GameTestHelper helper) {
+        var start = new BlockPos(-8, 70, -4);
+        var original = new SettlementGuardOrder(SettlementGuardOrder.Mode.PATROL, List.of(start, start.east(8)));
+        var draft = new com.jvn.villagerretaliation.client.settlement.SettlementRouteDraft(HiredVillagerRole.COURIER, original);
+        draft.beginDrag(1);
+        draft.dragTo(start.east(30));
+        helper.assertFalse(draft.finishDrag(position -> true), "invalid long connections reject the drag");
+        helper.assertValueEqual(draft.route(), original, "invalid drops restore the exact previous position");
+        draft.beginDrag(1);
+        draft.dragTo(start.east(10));
+        draft.cancelDrag();
+        helper.assertValueEqual(draft.route(), original, "escape restores the node without discarding the route");
+        draft.select(0);
+        draft.insertAfterSelection();
+        draft.place(start.east(4));
+        helper.assertValueEqual(draft.nodes(), List.of(start, start.east(4), start.east(8)), "insertion retains node order");
+        draft.reorder(1);
+        helper.assertValueEqual(draft.nodes(), List.of(start, start.east(8), start.east(4)), "reordering changes traversal order");
+        draft.remove();
+        helper.assertValueEqual(draft.route(), original, "removing the inserted node restores the original route");
+        draft.clear();
+        helper.assertTrue(draft.route().points().isEmpty(), "clear is an explicit empty draft");
+        helper.assertValueEqual(original.points(), List.of(start, start.east(8)), "draft changes never mutate authoritative state");
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper, SettlementAreaType type, boolean remote) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(1, 2, 1));

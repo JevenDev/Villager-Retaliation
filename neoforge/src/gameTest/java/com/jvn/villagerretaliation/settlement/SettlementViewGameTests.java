@@ -453,9 +453,9 @@ public final class SettlementViewGameTests {
             roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewBatchPayload.STREAM_CODEC, request);
             session.commands.submit(session, request);
             helper.assertValueEqual(session.commands.tick(session, 16), 16, "one tick processes at most its budget");
-            helper.assertValueEqual(town.guardOrders().size(), 16, "remaining residents wait for the next tick");
+            helper.assertValueEqual(town.temporaryGuardOrders().size(), 16, "remaining residents wait for the next tick");
             helper.assertValueEqual(session.commands.tick(session, 16), 2, "the next tick completes the batch");
-            helper.assertValueEqual(town.guardOrders().size(), 17, "unloaded guards accept orders while civilians are skipped");
+            helper.assertValueEqual(town.temporaryGuardOrders().size(), 17, "unloaded guards accept orders while civilians are skipped");
             long revision = town.revision();
             session.commands.submit(session, request);
             helper.assertValueEqual(session.commands.tick(session, 16), 0, "duplicate operations never execute again");

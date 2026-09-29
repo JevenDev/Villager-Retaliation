@@ -80,6 +80,9 @@ public final class SettlementManagementService {
         }
         failure = SettlementManagementValidation.selection(player, town, payload.command());
         if (!failure.isEmpty()) return failure;
+        if (payload.command() instanceof SettlementManagementActionPayload.SaveRoute route) {
+            return SettlementGuardService.configure(player, town, route);
+        }
         return apply(player, payload) ? "" : SettlementManagementValidation.rejected(payload.command());
     }
 
@@ -96,6 +99,7 @@ public final class SettlementManagementService {
             return false;
         }
         return switch (payload.command()) {
+            case SettlementManagementActionPayload.SaveRoute route -> SettlementGuardService.configure(player, town, route).isEmpty();
             case SettlementManagementActionPayload.ClaimPlot plot -> SettlementPlotService.claim(
                     player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price()).isEmpty();
             case SettlementManagementActionPayload.Home home -> home.assign()
@@ -316,6 +320,9 @@ public final class SettlementManagementService {
                     : com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.summary(villager != null
                     ? com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager)
                     : worker == null ? new net.minecraft.nbt.CompoundTag() : worker.settings());
+            var guardCommand = town.temporaryGuardOrders().get(member.id());
+            if (!personal && guardCommand != null) temporary = "Temporary " + guardCommand.mode().name().toLowerCase(Locale.ROOT)
+                    + " / Return to assignment resumes the saved route";
             String diagnostic = temporary.isEmpty() ? work.diagnostic() : temporary + (work.diagnostic().isEmpty() ? "" : " | " + work.diagnostic());
             diagnostic = diagnostic.substring(0, Math.min(180, diagnostic.length()));
             var settings = personal ? null : SettlementWorkerConfigurationService.snapshot(level, town, member.id());

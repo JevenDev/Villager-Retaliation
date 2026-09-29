@@ -287,7 +287,7 @@ public final class SettlementViewClientSmoke {
                 phase = 7;
             }
         } else if (phase == 7 && minecraft.screen instanceof SettlementViewScreen screen
-                && screen.getNarrationMessage().getString().contains("\nMove")) {
+                && screen.getNarrationMessage().getString().contains("Temporary move")) {
             capture("guard-order");
             UUID player = minecraft.player.getUUID();
             serverCheck = minecraft.getSingleplayerServer().submit(() -> {
@@ -296,7 +296,7 @@ public final class SettlementViewClientSmoke {
                         .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "the viewed settlement is actively ticking");
                 require(serverPlayer.getCamera() == serverPlayer && !serverPlayer.isSpectator(), "the server retains the vulnerable body");
                 var order = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow()
-                        .guardOrders().get(fixture.resident());
+                        .temporaryGuardOrders().get(fixture.resident());
                 require(order != null && order.mode() == SettlementGuardOrder.Mode.MOVE
                         && order.points().equals(java.util.List.of(fixture.center().offset(4, 0, 3))),
                         "the world-view click applies the exact guard destination");
@@ -584,6 +584,7 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 125;
         } else if (phase == 125 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            exerciseRouteEditor(screen);
             capture("shared-worksite-patrol");
             screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
             ticks = 0;
@@ -1792,6 +1793,37 @@ public final class SettlementViewClientSmoke {
                 return true;
             }
         };
+    }
+
+    private static void exerciseRouteEditor(SettlementViewScreen screen) {
+        var draft = screen.routeDraft();
+        require(draft != null && draft.nodes().size() == 2, "the shared route opens in an editable draft");
+        var original = draft.nodes();
+        var from = screenPoint(screen, original.getLast().getCenter());
+        var destination = screenPoint(screen, fixture.center().offset(9, 0, 9).getBottomCenter());
+        double focusX = screen.focusX(), focusZ = screen.focusZ();
+        screen.mouseClicked(from.x, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseDragged(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, destination.x - from.x, destination.y - from.y);
+        require(draft.dragging() && !draft.nodes().equals(original), "holding and dragging a node updates the live route preview");
+        require(screen.focusX() == focusX && screen.focusZ() == focusZ, "node dragging does not pan the map");
+        require(!screen.parent().submitting(), "pointer movement does not send a persistent edit");
+        screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+        screen.mouseReleased(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(screen.routeDraft() == draft && draft.nodes().equals(original), "escape cancels only the active drag");
+        screen.mouseClicked(from.x, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseDragged(screen.viewportWidth() + 10, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, 20, 0);
+        screen.mouseReleased(screen.viewportWidth() + 10, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(draft.nodes().equals(original), "dropping outside the map restores the node");
+        screen.mouseClicked(from.x, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseDragged(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, destination.x - from.x, destination.y - from.y);
+        screen.mouseReleased(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(!draft.dragging() && !draft.nodes().equals(original), "a valid drop remains in the draft until Save");
+        var moved = draft.nodes();
+        screen.mouseClicked(40, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+        screen.mouseDragged(46, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 6, 0);
+        screen.mouseReleased(46, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+        require(screen.focusX() != focusX || screen.focusZ() != focusZ, "middle dragging still pans during route editing");
+        require(draft.nodes().equals(moved), "panning leaves route nodes unchanged");
     }
 
     private static Vec3 gizmoPivot(AABB bounds) {

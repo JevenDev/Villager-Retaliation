@@ -30,6 +30,7 @@ final class SettlementSelectionInspector {
 
     private final Consumer<Section> action;
     private final Runnable browse;
+    private final Runnable editRoute;
     private final List<Button> tabs = new ArrayList<>();
     private final List<Line> lines = new ArrayList<>();
     private final List<Hit> hits = new ArrayList<>();
@@ -45,6 +46,7 @@ final class SettlementSelectionInspector {
     private ProductionClientState production;
     private com.jvn.villagerretaliation.client.inventory.TransferClientState transfers;
     private Button primary;
+    private Button routeEditor;
     private Button back;
     private int left;
     private int width;
@@ -55,10 +57,11 @@ final class SettlementSelectionInspector {
     private boolean suppressed;
     private boolean visible;
 
-    SettlementSelectionInspector(Consumer<Section> action, Runnable browse, Consumer<UUID> selectResident) {
+    SettlementSelectionInspector(Consumer<Section> action, Runnable browse, Consumer<UUID> selectResident, Runnable editRoute) {
         this.action = action;
         this.browse = browse;
         this.selectResident = selectResident;
+        this.editRoute = editRoute;
     }
 
     void init(int left, int width, int height, Consumer<AbstractWidget> add) {
@@ -82,6 +85,9 @@ final class SettlementSelectionInspector {
         }
         this.primary = Button.builder(Component.empty(), ignored -> this.action.accept(this.section))
                 .bounds(this.left, height - 114, this.width, 18).build();
+        this.routeEditor = Button.builder(Component.literal("Edit persistent route"), ignored -> this.editRoute.run())
+                .bounds(this.left, height - 136, this.width, 18).build();
+        add.accept(this.routeEditor);
         add.accept(this.primary);
         this.back = Button.builder(Component.literal("Browse settlement"), ignored -> {
             this.suppressed = true;
@@ -125,6 +131,7 @@ final class SettlementSelectionInspector {
         }
         update();
         this.primary.active &= !busy;
+        this.routeEditor.active &= !busy;
     }
 
     private boolean available(Section section) {
@@ -146,6 +153,11 @@ final class SettlementSelectionInspector {
             button.active = available(section) && section != this.section;
         }
         this.primary.visible = this.visible;
+        this.routeEditor.visible = this.visible && this.worksite != null
+                && com.jvn.villagerretaliation.settlement.SettlementGuardOrder.supports(this.worksite.kind().role());
+        this.routeEditor.active = this.header.permissions().contains(SettlementPermission.STAFF);
+        this.routeEditor.setTooltip(Tooltip.create(Component.literal(this.selected instanceof Resident
+                ? "Edit this worker's route override. Reset restores worksite inheritance." : "Edit the default route for this worksite.")));
         this.back.visible = this.visible;
         String label = switch (this.section) {
             case OVERVIEW -> "Focus selection";
@@ -384,7 +396,7 @@ final class SettlementSelectionInspector {
         var wrapped = new ArrayList<Wrapped>();
         for (var line : this.lines) for (var part : font.split(line.text(), this.width - 6)) wrapped.add(new Wrapped(part, line));
         this.totalLines = wrapped.size();
-        this.visibleLines = Math.max(1, (this.height - 204) / (font.lineHeight + 2));
+        this.visibleLines = Math.max(1, (this.height - (this.routeEditor.visible ? 226 : 204)) / (font.lineHeight + 2));
         this.scroll = Math.clamp(this.scroll, 0, Math.max(0, this.totalLines - this.visibleLines));
         this.hits.clear();
         for (int row = 0; row < this.visibleLines && this.scroll + row < wrapped.size(); row++) {

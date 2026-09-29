@@ -18,6 +18,7 @@ final class SettlementManagementValidation {
             case Assign ignored -> SettlementPermission.STAFF;
             case Applicant ignored -> SettlementPermission.STAFF;
             case Guard ignored -> SettlementPermission.STAFF;
+            case SaveRoute ignored -> SettlementPermission.STAFF;
             case Brew ignored -> SettlementPermission.STAFF;
             case SaveWorker ignored -> SettlementPermission.STAFF;
             case SaveWorksite ignored -> SettlementPermission.STAFF;

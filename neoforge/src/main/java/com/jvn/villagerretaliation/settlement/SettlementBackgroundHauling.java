@@ -15,6 +15,10 @@ final class SettlementBackgroundHauling {
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         if (SettlementBackgroundTransfers.tick(level, town, worker, elapsed, multiplier)) return;
+        if (SettlementGuardService.configuredRoute(town, town.workplace(worker.area()), worker.id()) != null) {
+            worker.status("route_requires_loaded_worker");
+            return;
+        }
         List<SettlementDepot> depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
         if (depositCarried(level, town, worker, elapsed, multiplier, depots, true)) {
             return;

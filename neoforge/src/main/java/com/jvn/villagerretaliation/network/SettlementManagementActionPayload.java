@@ -40,6 +40,14 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         buffer.writeUUID(payload.town());
         buffer.writeUUID(payload.request());
         switch (payload.command()) {
+            case SaveRoute route -> {
+                buffer.writeEnum(Kind.SAVE_ROUTE);
+                buffer.writeUUID(route.area());
+                buffer.writeBoolean(route.resident() != null);
+                if (route.resident() != null) buffer.writeUUID(route.resident());
+                writeGuardOrder(buffer, route.expected());
+                writeGuardOrder(buffer, route.route());
+            }
             case ClaimPlot plot -> {
                 buffer.writeEnum(Kind.CLAIM_PLOT);
                 buffer.writeInt(plot.x());
@@ -236,6 +244,8 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case BREW -> new Brew(buffer.readUUID(), buffer.readUUID(), readBrewingOrder(buffer));
             case SAVE_WORKSITE -> new SaveWorksite(buffer.readUUID(), readWorksitePlan(buffer), buffer.readBoolean());
+            case SAVE_ROUTE -> new SaveRoute(buffer.readUUID(), buffer.readBoolean() ? buffer.readUUID() : null,
+                    readGuardOrder(buffer), readGuardOrder(buffer));
             case RESET_WORKER -> new ResetWorker(buffer.readUUID(), buffer.readUUID(), buffer.readInt());
             case FILL_STAFFING -> new FillStaffing(buffer.readUUID());
             case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
@@ -383,6 +393,9 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             buffer.writeEnum(order.mode());
             buffer.writeVarInt(order.points().size());
             order.points().forEach(buffer::writeBlockPos);
+            buffer.writeBoolean(order.loop());
+            buffer.writeVarInt(order.branches().size());
+            order.branches().forEach(branch -> { buffer.writeBlockPos(branch.anchor()); buffer.writeBlockPos(branch.end()); });
         }
     }
 
@@ -396,7 +409,11 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         for (int index = 0; index < count; index++) {
             points.add(buffer.readBlockPos());
         }
-        return new SettlementGuardOrder(mode, points);
+        boolean loop = buffer.readBoolean();
+        int branches = VillagerPayloads.readCollectionSize(buffer, com.jvn.villagerretaliation.interaction.HiredRoute.MAX_BRANCHES, "route branches");
+        var branchList = new java.util.ArrayList<com.jvn.villagerretaliation.interaction.HiredRoute.Branch>();
+        for (int index = 0; index < branches; index++) branchList.add(new com.jvn.villagerretaliation.interaction.HiredRoute.Branch(buffer.readBlockPos(), buffer.readBlockPos()));
+        return new SettlementGuardOrder(mode, points, loop, branchList);
     }
 
     @Override
@@ -421,11 +438,15 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute {
+    }
+
+    public record SaveRoute(UUID area, UUID resident, SettlementGuardOrder expected, SettlementGuardOrder route) implements Command {
+        public SaveRoute { Objects.requireNonNull(area); }
     }
 
     public record SaveWorksite(UUID area, SettlementWorksitePlan plan, boolean adopt) implements Command {

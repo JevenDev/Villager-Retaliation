@@ -42,6 +42,56 @@ public final class SettlementGuardService {
         return true;
     }
 
+    public static String configure(ServerPlayer player, SettlementRecord town,
+                                   com.jvn.villagerretaliation.network.SettlementManagementActionPayload.SaveRoute request) {
+        if (player == null || !player.isAlive() || player.isSpectator()
+                || !town.dimension().equals(player.level().dimension().location())
+                || SettlementSavedData.get(player.serverLevel()).readOnly()
+                || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return "permission_staff";
+        var area = town.areas().get(request.area());
+        var plan = town.worksitePlans().get(request.area());
+        if (area == null || !SettlementGuardOrder.supports(area.type().role())) return "area_missing";
+        if (request.resident() == null && plan == null) return "state_changed";
+        if (request.resident() != null && !request.area().equals(town.duties().get(request.resident()))) return "duty_changed";
+        if (request.resident() != null && player.serverLevel().getEntity(request.resident()) instanceof Villager villager
+                && (SettlementWorkforceService.hasPersonalCommitment(villager) || !villager.isAlive() || villager.isBaby())) return "personal_commitment";
+        var previous = request.resident() == null ? plan.route() : configuredRoute(town, area, request.resident());
+        if (!java.util.Objects.equals(previous, request.expected())) return "state_changed";
+        var route = request.route();
+        if (route != null && (!route.validFor(area.type().role()) || !route.within(town)
+                || route.positions().anyMatch(position -> player.serverLevel().isOutsideBuildHeight(position)
+                        || !player.serverLevel().getWorldBorder().isWithinBounds(position)))) return "guard_order";
+        boolean changed = request.resident() == null ? town.setWorksitePlan(player.getUUID(), area.id(), plan.withRoute(route))
+                : town.setGuardOrder(player.getUUID(), request.resident(), route);
+        if (!changed) return "state_changed";
+        for (var duty : town.duties().entrySet()) {
+            if (!duty.getValue().equals(area.id()) || request.resident() != null && !request.resident().equals(duty.getKey())) continue;
+            if (player.serverLevel().getEntity(duty.getKey()) instanceof Villager villager
+                    && !SettlementWorkforceService.hasPersonalCommitment(villager)) {
+                SettlementBackgroundService.onActive(villager);
+                HiredWorkStateStore.pauseWork(player.serverLevel(), villager, area.type().role(),
+                        "interaction.work.status.waiting_tick", java.util.Map.of());
+                reset(villager);
+                SettlementDepotService.synchronizeStorage(player.serverLevel(), villager, town);
+                SettlementBackgroundService.onUnloaded(villager);
+            }
+        }
+        return "";
+    }
+
+    public static boolean temporaryCommand(ServerPlayer player, SettlementRecord town, UUID resident, SettlementGuardOrder order) {
+        if (player == null || !player.isAlive() || player.isSpectator()
+                || !town.dimension().equals(player.level().dimension().location())
+                || SettlementSavedData.get(player.serverLevel()).readOnly()
+                || order != null && order.positions().anyMatch(position -> player.serverLevel().isOutsideBuildHeight(position)
+                        || !player.serverLevel().getWorldBorder().isWithinBounds(position))) return false;
+        var entity = player.serverLevel().getEntity(resident);
+        if (entity instanceof Villager villager && SettlementWorkforceService.hasPersonalCommitment(villager)) return false;
+        if (!town.setTemporaryGuardOrder(player.getUUID(), resident, order)) return false;
+        if (entity instanceof Villager villager) reset(villager);
+        return true;
+    }
+
     public static Optional<SettlementGuardOrder> order(Villager villager) {
         return SettlementWorkforceService.duty(villager)
                 .filter(duty -> duty.area().type() == SettlementAreaType.GUARD_POST)
@@ -49,9 +99,17 @@ public final class SettlementGuardService {
     }
 
     public static SettlementGuardOrder effectiveOrder(SettlementRecord town, SettlementArea area, UUID resident) {
-        if (area == null || area.type() != SettlementAreaType.GUARD_POST && area.type() != SettlementAreaType.HUNTING_GROUNDS) return null;
+        if (area == null || !SettlementGuardOrder.supports(area.type().role())) return null;
+        var temporary = town.temporaryGuardOrders().get(resident);
+        if (temporary != null && temporary.within(town)) return temporary;
+        var order = configuredRoute(town, area, resident);
+        return order != null && !order.points().isEmpty() && order.within(town) ? order : null;
+    }
+
+    public static SettlementGuardOrder configuredRoute(SettlementRecord town, SettlementArea area, UUID resident) {
+        if (area == null || !SettlementGuardOrder.supports(area.type().role())) return null;
         var plan = town.worksitePlans().get(area.id());
-        var order = area.type() == SettlementAreaType.GUARD_POST ? town.guardOrders().get(resident) : null;
+        var order = town.guardOrders().get(resident);
         if (order == null && plan != null) order = plan.route();
         return order != null && order.within(town) ? order : null;
     }
@@ -63,7 +121,7 @@ public final class SettlementGuardService {
 
     public static HiredRoute route(Villager villager, HiredRoute fallback) {
         return SettlementWorkforceService.duty(villager).isEmpty() ? fallback
-                : routeOrder(villager).map(order -> new HiredRoute(order.points(), false)).orElseGet(HiredRoute::empty);
+                : routeOrder(villager).map(SettlementGuardOrder::sharedRoute).orElseGet(HiredRoute::empty);
     }
 
     public static HiredCombatMode mode(Villager villager, HiredCombatMode fallback) {
@@ -89,12 +147,13 @@ public final class SettlementGuardService {
             state.put(ORDER_TAG, saved);
         }
         var cursor = new RouteTraversalCursor(state, CURSOR);
-        int index = cursor.index(order.points(), 0);
-        BlockPos destination = order.points().get(index);
+        var points = order.traversal();
+        int index = cursor.index(points, 0);
+        BlockPos destination = points.get(index);
         if (villager.blockPosition().distSqr(destination) <= 4.0D) {
             if (order.mode() == SettlementGuardOrder.Mode.PATROL) {
                 cursor.markNodeReached(level.getGameTime());
-                destination = order.points().get(cursor.advancePatrol(index, order.points().size(), false));
+                destination = points.get(cursor.advancePatrol(index, points.size(), order.loop()));
             } else {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                 HiredWorkerBrain.clearFailure(context);
@@ -126,12 +185,13 @@ public final class SettlementGuardService {
             state.put(ORDER_TAG, order.save());
         }
         var cursor = new RouteTraversalCursor(state, CURSOR);
-        int index = cursor.index(order.points(), 0);
-        if (position.distSqr(order.points().get(index)) <= 4.0D) {
+        var points = order.traversal();
+        int index = cursor.index(points, 0);
+        if (position.distSqr(points.get(index)) <= 4.0D) {
             cursor.markNodeReached(now);
-            index = cursor.advancePatrol(index, order.points().size(), false);
+            index = cursor.advancePatrol(index, points.size(), order.loop());
         }
-        return order.points().get(index);
+        return points.get(index);
     }
 
     static void copyProgress(net.minecraft.nbt.CompoundTag source, net.minecraft.nbt.CompoundTag destination) {

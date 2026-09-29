@@ -21,6 +21,7 @@ final class SettlementHaulingWorker {
         if (!com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.resolve(level, villager).civic()) return null;
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         if (duty == null || duty.area().type() != com.jvn.villagerretaliation.settlement.SettlementAreaType.DEPOT) return null;
+        if (com.jvn.villagerretaliation.settlement.SettlementGuardService.configuredRoute(duty.town(), duty.area(), villager.getUUID()) != null) return null;
         return tick(level, villager, context, duty);
     }
 

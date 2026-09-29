@@ -20,7 +20,8 @@ public final class SettlementWorksiteService {
                 || !HiredLoggingFilters.options().containsAll(plan.settings().logs())
                 || !HiredAnimalBreedingTargets.options().containsAll(plan.settings().animals())) return false;
         if (plan.route() != null && (!plan.route().within(town)
-                || plan.route().points().stream().anyMatch(player.serverLevel()::isOutsideBuildHeight))) return false;
+                || plan.route().positions().anyMatch(position -> player.serverLevel().isOutsideBuildHeight(position)
+                        || !player.serverLevel().getWorldBorder().isWithinBounds(position)))) return false;
         var previous = town.worksitePlans().get(areaId);
         if (!validFishingSpots(player.serverLevel(), town, area, previous == null
                 ? com.jvn.villagerretaliation.interaction.work.HiredFishingSpots.AUTOMATIC : previous.settings().fishingSpots(),

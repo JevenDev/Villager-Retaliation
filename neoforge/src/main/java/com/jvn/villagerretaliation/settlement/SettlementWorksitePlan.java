@@ -21,8 +21,7 @@ public record SettlementWorksitePlan(SettlementWorkerSettings settings, int desi
         Objects.requireNonNull(links);
         if (desiredStaff < 0 || desiredStaff > MAX_STAFF
                 || settings.overrides() != SettlementWorkerSettings.allOverrides(settings.role())
-                || route != null && settings.role() != HiredVillagerRole.COMBAT && settings.role() != HiredVillagerRole.HUNTING
-                || route != null && settings.role() == HiredVillagerRole.HUNTING && route.mode() != SettlementGuardOrder.Mode.PATROL) {
+                || route != null && !route.validFor(settings.role())) {
             throw new IllegalArgumentException("Invalid worksite settings or staffing target");
         }
     }

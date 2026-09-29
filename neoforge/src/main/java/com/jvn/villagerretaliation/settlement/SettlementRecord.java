@@ -33,6 +33,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementArea> areas = new LinkedHashMap<>();
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private final Map<UUID, SettlementGuardOrder> guardOrders = new LinkedHashMap<>();
+    private final Map<UUID, SettlementGuardOrder> temporaryGuardOrders = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerSettings> workerSettings = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorksitePlan> worksitePlans = new LinkedHashMap<>();
     private final Map<UUID, HiredProductionQueue> productionQueues = new LinkedHashMap<>();
@@ -624,10 +625,23 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.guardOrders);
     }
 
-    boolean setGuardOrder(UUID actor, UUID resident, SettlementGuardOrder order) {
+    public Map<UUID, SettlementGuardOrder> temporaryGuardOrders() {
+        return Collections.unmodifiableMap(this.temporaryGuardOrders);
+    }
+
+    boolean setTemporaryGuardOrder(UUID actor, UUID resident, SettlementGuardOrder order) {
         var area = workplace(this.duties.get(resident));
         if (!permits(actor, SettlementPermission.STAFF) || area == null || area.type() != SettlementAreaType.GUARD_POST
-                || order != null && !order.within(this)) {
+                || order != null && (order.points().isEmpty() || !order.within(this))) return false;
+        var previous = order == null ? this.temporaryGuardOrders.remove(resident) : this.temporaryGuardOrders.put(resident, order);
+        if (!Objects.equals(previous, order)) changed();
+        return true;
+    }
+
+    boolean setGuardOrder(UUID actor, UUID resident, SettlementGuardOrder order) {
+        var area = workplace(this.duties.get(resident));
+        if (!permits(actor, SettlementPermission.STAFF) || area == null || !SettlementGuardOrder.supports(area.type().role())
+                || order != null && (!order.within(this) || !order.validFor(area.type().role()))) {
             return false;
         }
         var previous = order == null ? this.guardOrders.remove(resident) : this.guardOrders.put(resident, order);
@@ -845,6 +859,7 @@ public final class SettlementRecord {
             cancelProjects(resident);
             cancelBrewing(resident);
             this.guardOrders.remove(resident);
+            this.temporaryGuardOrders.remove(resident);
             this.workerSettings.remove(resident);
             changed();
         }
@@ -864,6 +879,7 @@ public final class SettlementRecord {
         cancelProjects(resident);
         cancelBrewing(resident);
         this.guardOrders.remove(resident);
+        this.temporaryGuardOrders.remove(resident);
         this.workerSettings.remove(resident);
         changed();
         return true;
@@ -1085,6 +1101,7 @@ public final class SettlementRecord {
                 .forEach(project -> finishProject(project.id(), SettlementProject.Status.CANCELLED));
         this.duties.entrySet().stream().filter(duty -> duty.getValue().equals(area)).map(Map.Entry::getKey).toList().forEach(this::removeDuty);
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
+        this.temporaryGuardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.surveys.remove(area);
         this.worksitePlans.remove(area);
@@ -1166,6 +1183,13 @@ public final class SettlementRecord {
             guardTags.add(entry);
         });
         tag.put("GuardOrders", guardTags);
+        ListTag temporaryGuardTags = new ListTag();
+        this.temporaryGuardOrders.forEach((resident, order) -> {
+            CompoundTag entry = order.save();
+            entry.putUUID("Resident", resident);
+            temporaryGuardTags.add(entry);
+        });
+        tag.put("TemporaryGuardOrders", temporaryGuardTags);
         ListTag settingsTags = new ListTag();
         this.workerSettings.forEach((resident, settings) -> {
             CompoundTag entry = settings.save();
@@ -1566,7 +1590,7 @@ public final class SettlementRecord {
             UUID resident = entry.getUUID("Resident");
             var area = record.workplace(record.duties.get(resident));
             var order = SettlementGuardOrder.load(entry);
-            if (area == null || area.type() != SettlementAreaType.GUARD_POST || !record.territory.migrated() && !order.points().stream().allMatch(point ->
+            if (area == null || !order.validFor(area.type().role()) || !record.territory.migrated() && !order.positions().allMatch(point ->
                             Math.abs((long) point.getX() - record.center.getX()) <= record.radius
                                     && Math.abs((long) point.getZ() - record.center.getZ()) <= record.radius)
                     || record.guardOrders.putIfAbsent(resident, order) != null) {
@@ -1575,6 +1599,19 @@ public final class SettlementRecord {
         }
         if (tag.contains("WorksitePlans") && !tag.contains("WorksitePlans", Tag.TAG_LIST)) {
             throw new IllegalArgumentException("Worksite plans must be a list");
+        }
+        if (tag.contains("TemporaryGuardOrders") && (!(tag.get("TemporaryGuardOrders") instanceof ListTag list)
+                || !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND)) {
+            throw new IllegalArgumentException("Invalid temporary guard orders");
+        }
+        for (Tag raw : tag.getList("TemporaryGuardOrders", Tag.TAG_COMPOUND)) {
+            var entry = (CompoundTag) raw;
+            if (!entry.hasUUID("Resident")) throw new IllegalArgumentException("Temporary guard order has no resident");
+            var resident = entry.getUUID("Resident");
+            var area = record.workplace(record.duties.get(resident));
+            var order = SettlementGuardOrder.load(entry);
+            if (area == null || area.type() != SettlementAreaType.GUARD_POST || order.points().isEmpty() || !order.within(record)
+                    || record.temporaryGuardOrders.putIfAbsent(resident, order) != null) throw new IllegalArgumentException("Invalid temporary guard order");
         }
         if (tag.get("WorksitePlans") instanceof ListTag list && !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND) {
             throw new IllegalArgumentException("Worksite plan entries must be compounds");
