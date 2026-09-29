@@ -46,8 +46,20 @@ public final class SettlementHuntingTargetService {
                 && !(target instanceof Player || target instanceof AbstractVillager || target instanceof IronGolem);
     }
 
+    static com.jvn.villagerretaliation.interaction.work.HiredWorkAssignment assignment(SettlementRecord town, SettlementArea area) {
+        var plan = town.worksitePlans().get(area.id());
+        var route = plan == null || plan.route() == null ? com.jvn.villagerretaliation.interaction.HiredRoute.empty()
+                : new com.jvn.villagerretaliation.interaction.HiredRoute(plan.route().points(), false);
+        return com.jvn.villagerretaliation.interaction.work.HiredWorkAssignment.of(
+                com.jvn.villagerretaliation.interaction.HiredJobSite.fromWorkArea(HiredWorkArea.fromBounds(area.min(), area.max(), true)), route);
+    }
+
+    static boolean contains(SettlementRecord town, SettlementArea area, BlockPos position) {
+        return area != null && town.contains(position) && assignment(town, area).isInsideWorkAreaOrRoute(position);
+    }
+
     private static boolean contains(SettlementRecord town, BlockPos position) {
-        return town.areas().values().stream().anyMatch(area -> area.type() == SettlementAreaType.HUNTING_GROUNDS && area.contains(position));
+        return town.areas().values().stream().anyMatch(area -> area.type() == SettlementAreaType.HUNTING_GROUNDS && contains(town, area, position));
     }
 
     private static void observe(ServerLevel level, SettlementRecord town, LivingEntity target, boolean stopped) {
@@ -106,12 +118,12 @@ public final class SettlementHuntingTargetService {
 
     static java.util.UUID observeEngagement(ServerLevel level, SettlementWorkforceService.Duty duty, Villager villager) {
         var area = duty.area();
-        if (area.type() != SettlementAreaType.HUNTING_GROUNDS || !area.enabled() || !area.contains(villager.blockPosition())) return null;
+        if (area.type() != SettlementAreaType.HUNTING_GROUNDS || !area.enabled() || !contains(duty.town(), area, villager.blockPosition())) return null;
         var target = HuntingWorker.activeTarget(villager, id -> {
             var observed = duty.town().huntingTargets().get(id);
             return observed == null ? null : observed.context(level);
         }).orElse(null);
-        if (target == null || target.level() != level || !recordable(target) || !area.contains(target.blockPosition())
+        if (target == null || target.level() != level || !recordable(target) || !contains(duty.town(), area, target.blockPosition())
                 || villager.getHealth() <= 0.0F || villager.isRemoved() && villager.getRemovalReason() != Entity.RemovalReason.UNLOADED_TO_CHUNK) return null;
         var owner = villager;
         if (villager.isRemoved()) {
@@ -160,10 +172,16 @@ public final class SettlementHuntingTargetService {
 
     static LivingEntity select(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, Villager owner) {
         var area = town.areas().get(worker.area());
-        if (area == null || !area.enabled() || area.type() != SettlementAreaType.HUNTING_GROUNDS || !area.contains(worker.position())) return null;
+        if (area == null || !area.enabled() || area.type() != SettlementAreaType.HUNTING_GROUNDS || !contains(town, area, worker.position())) return null;
         var selection = HiredHuntingTargets.fromState(worker.settings());
         if (selection.none()) return null;
         observeArea(level, town, area);
+        var work = assignment(town, area);
+        if (work.hasRoute()) {
+            var nearby = HuntingWorker.targetSearchBounds(owner, work.workArea().horizontalRadius(), work.workArea().verticalRadius());
+            level.getEntitiesOfClass(LivingEntity.class, nearby, target -> recordable(target) && contains(town, area, target.blockPosition()))
+                    .stream().limit(16).forEach(target -> observe(level, town, target, false));
+        }
         var candidates = new ArrayList<LivingEntity>();
         for (var state : town.huntingTargets().values()) {
             if (town.entityDeaths().containsKey(state.id())) continue;
@@ -186,7 +204,7 @@ public final class SettlementHuntingTargetService {
         var terrain = new SettlementExperienceTerrain(level, town);
         LivingEntity nearest = null;
         for (var target : candidates) {
-            if (!area.contains(target.blockPosition()) || !bounds.intersects(target.getBoundingBox())
+            if (!contains(town, area, target.blockPosition()) || !bounds.intersects(target.getBoundingBox())
                     || !com.jvn.villagerretaliation.interaction.work.HiredEntityClaims.available(level, owner, target)
                     || !HuntingWorker.isEligibleTarget(owner, target, selection)
                     || !VillagerRetaliationHandler.canEngageCustomTarget(owner, target)

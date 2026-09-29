@@ -96,7 +96,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
         }
 
         if (com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.HUNT)) return;
-        if (context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
+        if (context.hasRoute() && maintainRoute(level, villager, context)) {
             return;
         }
 
@@ -154,7 +154,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setFailure(context, "temporary_target_unreachable", 0L);
             return WorkResult.idle("interaction.work.temporary.target_blocked");
         }
-        if (context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
+        if (context.hasRoute() && maintainRoute(level, villager, context)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "route_patrol");
             return WorkResult.idle(passiveStatusKey(targets), passiveStatusReplacements(targets));
         }
@@ -162,6 +162,11 @@ public final class HuntingWorker extends AbstractBlockWorker {
         HiredWorkerBrain.setLastTargetScanResult(context, "no_targets");
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, context.workCenter());
         return WorkResult.idle(passiveStatusKey(targets), passiveStatusReplacements(targets));
+    }
+
+    private static boolean maintainRoute(ServerLevel level, Villager villager, HiredWorkContext context) {
+        return com.jvn.villagerretaliation.settlement.SettlementGuardService.maintain(level, villager, context)
+                || HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED);
     }
 
     @Override
@@ -330,6 +335,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
             boolean requireLineOfSight) {
         return isEligibleTarget(villager, target, targets)
                 && HiredTemporaryEntities.matches(context.state(), target)
+                && com.jvn.villagerretaliation.settlement.SettlementGuardService.allowsTarget(villager, target.blockPosition())
                 && context.isInsideWorkAreaOrRoute(target.blockPosition())
                 && (!(villager.level() instanceof ServerLevel level) || HiredEntityClaims.available(level, villager, target))
                 && (!requireLineOfSight || VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target));

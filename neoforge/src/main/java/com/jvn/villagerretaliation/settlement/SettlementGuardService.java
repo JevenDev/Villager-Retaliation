@@ -45,13 +45,25 @@ public final class SettlementGuardService {
     public static Optional<SettlementGuardOrder> order(Villager villager) {
         return SettlementWorkforceService.duty(villager)
                 .filter(duty -> duty.area().type() == SettlementAreaType.GUARD_POST)
-                .flatMap(duty -> Optional.ofNullable(duty.town().guardOrders().get(villager.getUUID()))
-                        .filter(order -> order.within(duty.town())));
+                .flatMap(duty -> Optional.ofNullable(effectiveOrder(duty.town(), duty.area(), villager.getUUID())));
+    }
+
+    public static SettlementGuardOrder effectiveOrder(SettlementRecord town, SettlementArea area, UUID resident) {
+        if (area == null || area.type() != SettlementAreaType.GUARD_POST && area.type() != SettlementAreaType.HUNTING_GROUNDS) return null;
+        var plan = town.worksitePlans().get(area.id());
+        var order = area.type() == SettlementAreaType.GUARD_POST ? town.guardOrders().get(resident) : null;
+        if (order == null && plan != null) order = plan.route();
+        return order != null && order.within(town) ? order : null;
+    }
+
+    private static Optional<SettlementGuardOrder> routeOrder(Villager villager) {
+        return SettlementWorkforceService.duty(villager)
+                .flatMap(duty -> Optional.ofNullable(effectiveOrder(duty.town(), duty.area(), villager.getUUID())));
     }
 
     public static HiredRoute route(Villager villager, HiredRoute fallback) {
         return SettlementWorkforceService.duty(villager).isEmpty() ? fallback
-                : order(villager).map(order -> new HiredRoute(order.points(), false)).orElseGet(HiredRoute::empty);
+                : routeOrder(villager).map(order -> new HiredRoute(order.points(), false)).orElseGet(HiredRoute::empty);
     }
 
     public static HiredCombatMode mode(Villager villager, HiredCombatMode fallback) {
@@ -61,13 +73,13 @@ public final class SettlementGuardService {
 
     public static boolean allowsTarget(Villager villager, BlockPos position) {
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
-        return duty == null || duty.area().type() != SettlementAreaType.GUARD_POST
+        return duty == null || duty.area().type() != SettlementAreaType.GUARD_POST && duty.area().type() != SettlementAreaType.HUNTING_GROUNDS
                 || SettlementGuardOrder.within(duty.town(), position);
     }
 
     public static boolean maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
-        var order = order(villager).orElse(null);
-        if (order == null) {
+        var order = routeOrder(villager).orElse(null);
+        if (order == null || com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.queue(context.state()) != null) {
             return false;
         }
         var state = context.state();
@@ -108,6 +120,34 @@ public final class SettlementGuardService {
         return true;
     }
 
+    static BlockPos patrolDestination(net.minecraft.nbt.CompoundTag state, SettlementGuardOrder order, BlockPos position, long now) {
+        if (!order.save().equals(state.getCompound(ORDER_TAG))) {
+            resetProgress(state);
+            state.put(ORDER_TAG, order.save());
+        }
+        var cursor = new RouteTraversalCursor(state, CURSOR);
+        int index = cursor.index(order.points(), 0);
+        if (position.distSqr(order.points().get(index)) <= 4.0D) {
+            cursor.markNodeReached(now);
+            index = cursor.advancePatrol(index, order.points().size(), false);
+        }
+        return order.points().get(index);
+    }
+
+    static void copyProgress(net.minecraft.nbt.CompoundTag source, net.minecraft.nbt.CompoundTag destination) {
+        for (String key : java.util.List.of(ORDER_TAG, RETRY_TAG, CURSOR.index(), CURSOR.direction(), CURSOR.lastNodeReachedGameTime())) {
+            destination.remove(key);
+            if (source.contains(key)) destination.put(key, source.get(key).copy());
+        }
+    }
+
+    private static void resetProgress(net.minecraft.nbt.CompoundTag state) {
+        state.remove(ORDER_TAG);
+        state.remove(RETRY_TAG);
+        new RouteTraversalCursor(state, CURSOR).clear();
+        HiredRouteNavigator.clearProgress(state);
+    }
+
     static BlockPos nextStep(ServerLevel level, Villager villager, BlockPos destination) {
         if (villager.blockPosition().distSqr(destination) <= 256.0D) {
             return level.hasChunkAt(destination) ? destination : null;
@@ -136,10 +176,7 @@ public final class SettlementGuardService {
 
     private static void reset(Villager villager) {
         var state = HiredWorkStateStore.state(villager);
-        state.remove(ORDER_TAG);
-        state.remove(RETRY_TAG);
-        new RouteTraversalCursor(state, CURSOR).clear();
-        HiredRouteNavigator.clearProgress(state);
+        resetProgress(state);
         HiredWorkSession.invalidate(villager);
         if (villager.getTarget() == null && villager.getLastHurtByMob() == null) {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);

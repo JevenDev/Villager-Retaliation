@@ -19,7 +19,7 @@ final class SettlementBackgroundHunting {
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var area = town.areas().get(worker.area());
-        if (area == null || !area.enabled() || !area.contains(worker.position())) return;
+        if (area == null || !area.enabled() || !SettlementHuntingTargetService.contains(town, area, worker.position())) return;
         var owner = worker.context(level, town);
         if (owner == null) {
             worker.status("awaiting_worker_observation");
@@ -80,11 +80,41 @@ final class SettlementBackgroundHunting {
             worker.huntingTarget(target == null ? null : target.getUUID());
             worker.status(target == null ? "no_observed_hunting_target" : "tracking_hunting_target");
             if (target != null) SettlementHuntingCombat.tick(level, town, worker, owner, target, elapsed);
+            else patrol(level, town, worker, owner, elapsed);
             town.changed();
         } finally {
             var snapshot = inventory.captureSnapshot();
             if (!snapshot.equals(worker.inventory())) worker.changed();
             worker.inventorySnapshot(snapshot);
+        }
+    }
+
+    private static void patrol(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,
+                               net.minecraft.world.entity.npc.Villager owner, int elapsed) {
+        var order = SettlementGuardService.effectiveOrder(town, town.areas().get(worker.area()), worker.id());
+        long now = level.getGameTime();
+        if (order == null || elapsed <= 0 || now <= worker.huntingCombatAt()) return;
+        long at = Math.max(worker.huntingCombatAt() + 1L, Math.max(0L, now - Math.clamp(elapsed, 0, 200) + 1L));
+        var movement = new SettlementHuntingPursuit(level, town, worker);
+        try {
+            while (at <= now) {
+                var destination = SettlementGuardService.patrolDestination(worker.settings(), order, owner.blockPosition(), at);
+                var before = owner.saveWithoutId(new net.minecraft.nbt.CompoundTag());
+                if (!movement.walk(owner, destination.getBottomCenter(),
+                        com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER)) {
+                    worker.status("hunting_path_blocked");
+                    break;
+                }
+                worker.huntingMoved(owner, before, at++);
+                var care = town.residents().get(worker.id());
+                if (care != null) care.combat(owner);
+                worker.status("patrolling_hunting_route");
+            }
+        } catch (SettlementExperienceTerrain.Unobserved unavailable) {
+            worker.status("hunting_visibility_unobserved");
+        } finally {
+            worker.huntingCombat(now, worker.huntingAttackAt());
+            worker.changed();
         }
     }
 

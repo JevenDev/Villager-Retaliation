@@ -121,6 +121,7 @@ public final class SettlementViewScreen extends Screen {
     private SettlementManagementPayload.Area editingArea;
     private AABB areaBounds;
     private SettlementGuardOrder.Mode guardMode;
+    private UUID guardWorksite;
     private final List<BlockPos> guardPoints = new ArrayList<>();
     private final SettlementViewCommandTracker commands = new SettlementViewCommandTracker();
     private SettlementViewBatchPayload assignmentReview;
@@ -347,7 +348,7 @@ public final class SettlementViewScreen extends Screen {
         updatePlotActions();
         for (var mode : SettlementGuardOrder.Mode.values()) {
             this.guardButtons[mode.ordinal()] = addRenderableWidget(Button.builder(text("guard_" + mode.name().toLowerCase(java.util.Locale.ROOT)),
-                    ignored -> beginGuardOrder(mode)).bounds(8 + mode.ordinal() * 76, 52, 72, 20).build());
+                    ignored -> beginGuardOrder(mode, this.guardWorksite)).bounds(8 + mode.ordinal() * 76, 52, 72, 20).build());
         }
         this.returnToPost = addRenderableWidget(Button.builder(text("guard_post"), ignored -> submitGuardOrder(null))
                 .bounds(8, 76, 148, 20).build());
@@ -656,6 +657,9 @@ public final class SettlementViewScreen extends Screen {
                 : !this.guardFeedback.getString().isEmpty() ? this.guardFeedback : this.interaction.is(Mode.DRAW_AREA) ? text("draw_hint")
                 : Component.literal(this.panelLeft < 360 ? "Drag selects. Shift adds. F focus. Home center."
                         : "Drag selects. Shift adds. Right-click actions. F focus. Home center. Ctrl+1-9 save, 1-9 recall.");
+        if (this.guardMode == SettlementGuardOrder.Mode.PATROL) hint = Component.literal(
+                (this.guardWorksite == null ? "Patrol" : "Shared patrol") + ": " + this.guardPoints.size() + "/"
+                        + SettlementGuardOrder.MAX_POINTS + " points. Enter finishes. Right-click cancels.");
         if (this.snapshots.stale(now)) hint = Component.literal("Overview stale / loading").append("\n").append(hint);
         else if (this.snapshots.loading()) hint = Component.literal("Refreshing overview").append("\n").append(hint);
         if (this.queuedChunks > 0) hint = Component.translatable("villagerretaliation.gui.settlement.view_queue",
@@ -725,8 +729,9 @@ public final class SettlementViewScreen extends Screen {
             this.dragStart = null;
             this.dragEnd = null;
         }
-        if (!selectedGuard()) {
+        if (!selectedGuard() && !sharedRouteAvailable(this.areas.get(this.guardWorksite))) {
             this.guardMode = null;
+            this.guardWorksite = null;
             if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
             this.guardPoints.clear();
         }
@@ -774,17 +779,20 @@ public final class SettlementViewScreen extends Screen {
         }
         for (var button : this.guardButtons) {
             if (button != null) {
-                button.visible = this.panelLeft >= 240 && selectedGuard() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
+                boolean shared = sharedRouteAvailable(this.areas.get(this.guardWorksite));
+                button.visible = this.panelLeft >= 240 && (shared || selectedGuard()) && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
                 button.active = !this.commands.busy();
                 button.setWidth(Math.min(72, Math.max(36, (this.panelLeft - 24) / 3)));
                 int ordinal = java.util.Arrays.asList(this.guardButtons).indexOf(button);
                 button.setX(8 + ordinal * (button.getWidth() + 4));
-                button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(
-                        eligibleCount(SettlementViewAction.MOVE, null) + "/" + this.selection.size() + " eligible guards")));
+                if (shared && this.areas.get(this.guardWorksite).kind() == SettlementAreaType.HUNTING_GROUNDS
+                        && ordinal != SettlementGuardOrder.Mode.PATROL.ordinal()) button.visible = false;
+                button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(shared ? "Shared worksite route"
+                        : eligibleCount(SettlementViewAction.MOVE, null) + "/" + this.selection.size() + " eligible guards")));
             }
         }
         if (this.returnToPost != null) {
-            this.returnToPost.visible = this.panelLeft >= 240 && selectedGuard() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
+            this.returnToPost.visible = this.guardWorksite == null && this.panelLeft >= 240 && selectedGuard() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
             this.returnToPost.active = !this.commands.busy();
             this.guardButtons[SettlementGuardOrder.Mode.PATROL.ordinal()].setMessage(text(
                     this.guardMode == SettlementGuardOrder.Mode.PATROL ? "guard_finish_patrol" : "guard_patrol"));
@@ -889,8 +897,18 @@ public final class SettlementViewScreen extends Screen {
         return actions;
     }
 
+    private boolean sharedRouteAvailable(SettlementManagementPayload.Area area) {
+        return area != null && area.plan() != null && permits(SettlementPermission.STAFF)
+                && (area.kind() == SettlementAreaType.GUARD_POST || area.kind() == SettlementAreaType.HUNTING_GROUNDS);
+    }
+
     private void beginGuardOrder(SettlementGuardOrder.Mode mode) {
-        if (this.guardMode == SettlementGuardOrder.Mode.PATROL && mode == this.guardMode) {
+        beginGuardOrder(mode, null);
+    }
+
+    private void beginGuardOrder(SettlementGuardOrder.Mode mode, UUID worksite) {
+        if (this.guardMode == SettlementGuardOrder.Mode.PATROL && mode == this.guardMode
+                && java.util.Objects.equals(worksite, this.guardWorksite)) {
             if (this.guardPoints.size() >= 2) {
                 submitGuardOrder(new SettlementGuardOrder(mode, this.guardPoints));
             }
@@ -899,6 +917,7 @@ public final class SettlementViewScreen extends Screen {
         cancelGizmo();
         enterMode(Mode.GUARD_TARGET);
         this.guardMode = mode;
+        this.guardWorksite = worksite;
         this.guardPoints.clear();
         this.guardFeedback = Component.empty();
         if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
@@ -908,15 +927,21 @@ public final class SettlementViewScreen extends Screen {
     }
 
     private void submitGuardOrder(SettlementGuardOrder order) {
-        if (!selectedGuard() || this.commands.busy()) {
-            return;
+        if (this.commands.busy() || this.parent.submitting()) return;
+        if (this.guardWorksite != null) {
+            var area = this.areas.get(this.guardWorksite);
+            if (!sharedRouteAvailable(area)) return;
+            this.parent.submit(new SettlementManagementActionPayload.SaveWorksite(area.id(), area.plan().withRoute(order), false));
+        } else {
+            if (!selectedGuard()) return;
+            submitBatch(order == null ? SettlementViewAction.RETURN : switch (order.mode()) {
+                case MOVE -> SettlementViewAction.MOVE;
+                case PATROL -> SettlementViewAction.PATROL;
+                case DEFEND -> SettlementViewAction.DEFEND;
+            }, null, order);
         }
-        submitBatch(order == null ? SettlementViewAction.RETURN : switch (order.mode()) {
-            case MOVE -> SettlementViewAction.MOVE;
-            case PATROL -> SettlementViewAction.PATROL;
-            case DEFEND -> SettlementViewAction.DEFEND;
-        }, null, order);
         this.guardMode = null;
+        this.guardWorksite = null;
         if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
         this.guardPoints.clear();
         this.guardFeedback = text("guard_sending");
@@ -930,6 +955,7 @@ public final class SettlementViewScreen extends Screen {
         this.dragStart = null;
         this.dragEnd = null;
         this.guardMode = null;
+        this.guardWorksite = null;
         this.guardPoints.clear();
         if (mode != Mode.PLACE_BUILDING) this.parent.clearBuildingDraft();
         if (mode != Mode.EDIT_BOUNDS) {
@@ -1115,6 +1141,10 @@ public final class SettlementViewScreen extends Screen {
             updatePlotActions();
             return true;
         }
+        if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) && this.guardMode == SettlementGuardOrder.Mode.PATROL) {
+            if (this.guardPoints.size() >= 2) submitGuardOrder(new SettlementGuardOrder(this.guardMode, this.guardPoints));
+            return true;
+        }
         if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) && this.editingArea != null) {
             confirmDraft();
             return true;
@@ -1199,6 +1229,7 @@ public final class SettlementViewScreen extends Screen {
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.guardMode != null) {
             this.guardMode = null;
+            this.guardWorksite = null;
             if (this.interaction.is(Mode.GUARD_TARGET)) this.interaction.enter(Mode.SELECT);
             this.guardPoints.clear();
             updateActions();
@@ -1416,8 +1447,13 @@ public final class SettlementViewScreen extends Screen {
         for (var id : this.selection.residents()) {
             var r = this.roster.get(id);
             var order = this.resident != null && this.resident.id().equals(id) ? this.resident.guardOrder() : r == null ? null : r.guardOrder();
+            var assigned = r == null ? null : this.areas.get(r.area());
+            if (order == null && assigned != null && assigned.plan() != null) order = assigned.plan().route();
             if (order != null) routes.add(order.points());
         }
+        var selectedWorksite = this.areas.get(this.selectedArea);
+        if (selectedWorksite != null && selectedWorksite.plan() != null && selectedWorksite.plan().route() != null)
+            routes.add(selectedWorksite.plan().route().points());
         for (var points : routes) {
             for (int i = 0; i < points.size(); i++) {
                 BlockPos point = points.get(i);
@@ -1766,8 +1802,11 @@ public final class SettlementViewScreen extends Screen {
                     var assigned = this.areas.get(current.area());
                     details.add(text("assigned_area", current.area() == null ? text("unassigned")
                             : assigned == null ? text("details_loading") : Component.literal(assigned.name())));
-                    details.add(text("guard_order", text(current.guardOrder() == null ? "guard_order_none"
-                            : "guard_" + current.guardOrder().mode().name().toLowerCase(java.util.Locale.ROOT))));
+                    var route = current.guardOrder() != null ? current.guardOrder()
+                            : assigned == null || assigned.plan() == null ? null : assigned.plan().route();
+                    details.add(text("guard_order", text(route == null ? "guard_order_none"
+                            : "guard_" + route.mode().name().toLowerCase(java.util.Locale.ROOT))));
+                    if (route != null) details.add(Component.literal(current.guardOrder() == null ? "Inherited from worksite" : "Individual override"));
                     actions.add(contextAction("manage_selection", ready, () -> openManagement(Page.RESIDENTS, target.id().toString())));
                     actions.addAll(selectionActions());
                 }
@@ -1859,6 +1898,18 @@ public final class SettlementViewScreen extends Screen {
                         }));
                         if (area.plan() != null) actions.add(new SettlementViewPopup.Action(SettlementManagementScreen.text("worksite_fill"),
                                 ready && !this.parent.submitting(), () -> this.parent.submit(new SettlementManagementActionPayload.FillStaffing(area.id()))));
+                        if (sharedRouteAvailable(area)) {
+                            if (area.plan().route() != null) details.add(Component.literal("Shared " + area.plan().route().mode().name().toLowerCase(java.util.Locale.ROOT)
+                                    + " / " + area.plan().route().points().size() + " points"));
+                            actions.add(new SettlementViewPopup.Action(Component.literal("Set shared patrol"), ready && !this.parent.submitting(),
+                                    () -> beginGuardOrder(SettlementGuardOrder.Mode.PATROL, area.id())));
+                            if (area.kind() == SettlementAreaType.GUARD_POST)
+                                actions.add(new SettlementViewPopup.Action(Component.literal("Set shared defend"), ready && !this.parent.submitting(),
+                                        () -> beginGuardOrder(SettlementGuardOrder.Mode.DEFEND, area.id())));
+                            if (area.plan().route() != null) actions.add(new SettlementViewPopup.Action(Component.literal("Clear shared route"),
+                                    ready && !this.parent.submitting(), () -> this.parent.submit(
+                                            new SettlementManagementActionPayload.SaveWorksite(area.id(), area.plan().withRoute(null), false))));
+                        }
                     }
                     if (permits(SettlementPermission.BUILD)) {
                         actions.add(contextAction("configure", ready, () -> {

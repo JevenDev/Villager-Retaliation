@@ -35,6 +35,7 @@ public final class SettlementWorkerScreen extends Screen {
     private final SettlementManagementPayload.Area worksite;
     private final SettlementViewScreen view;
     private int desiredStaff;
+    private com.jvn.villagerretaliation.settlement.SettlementGuardOrder route;
     private com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks links;
     private Button connections;
     private EditBox staff;
@@ -76,6 +77,7 @@ public final class SettlementWorkerScreen extends Screen {
         this.draft = plan.settings();
         this.desiredStaff = plan.desiredStaff();
         this.links = plan.links();
+        this.route = plan.route();
     }
 
     public SettlementManagementScreen parent() {
@@ -180,7 +182,7 @@ public final class SettlementWorkerScreen extends Screen {
             this.parent.submit(this.worksite == null
                     ? new SettlementManagementActionPayload.SaveWorker(this.resident.id(), this.resident.area(), this.draft)
                     : new SettlementManagementActionPayload.SaveWorksite(this.worksite.id(),
-                            new SettlementWorksitePlan(this.draft, this.desiredStaff, this.links), this.worksite.plan() == null));
+                            new SettlementWorksitePlan(this.draft, this.desiredStaff, this.links, this.route), this.worksite.plan() == null));
             this.feedback = text("saving");
             updateRows();
         }).bounds(this.left + this.panelWidth - 94, bottom - 20, 94, 20).build());

@@ -275,11 +275,12 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             writeWorkerSettings(buffer, plan.settings());
             buffer.writeVarInt(plan.desiredStaff());
             writeWorksiteLinks(buffer, plan.links());
+            writeGuardOrder(buffer, plan.route());
         }
     }
 
     static SettlementWorksitePlan readWorksitePlan(RegistryFriendlyByteBuf buffer) {
-        return buffer.readBoolean() ? new SettlementWorksitePlan(readWorkerSettings(buffer), buffer.readVarInt(), readWorksiteLinks(buffer)) : null;
+        return buffer.readBoolean() ? new SettlementWorksitePlan(readWorkerSettings(buffer), buffer.readVarInt(), readWorksiteLinks(buffer), readGuardOrder(buffer)) : null;
     }
 
     private static void writeWorksiteLinks(RegistryFriendlyByteBuf buffer, com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks links) {

@@ -32,7 +32,7 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("villagerretaliation")
 @PrefixGameTestTemplate(false)
 public final class SettlementWorkerConfigurationGameTests {
     private SettlementWorkerConfigurationGameTests() {
@@ -151,6 +151,19 @@ public final class SettlementWorkerConfigurationGameTests {
             fixture.villager().discard();
         }
         helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_settings")
+    public static void unloadedSettingsHandoffSurvivesAnotherRemoteTestSettlement(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var origin = helper.absolutePos(new BlockPos(1, 2, 1));
+        var center = new BlockPos(10_000_000 + origin.getX() * 8 + SettlementAreaType.FARM.ordinal() * 256,
+                64, 10_000_000 + origin.getZ() * 8);
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var id = registry.create(level.getGameTime(), level.dimension().location(), center, "");
+        helper.assertTrue(SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, level.getGameTime()).isPresent(),
+                "another test owns the original remote location");
+        unloadedSettingsRestoreWithoutOverwritingNewerInventory(helper);
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_settings")
@@ -285,10 +298,15 @@ public final class SettlementWorkerConfigurationGameTests {
         var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(1, 2, 1));
         var center = loaded ? origin : new BlockPos(10_000_000 + origin.getX() * 8 + type.ordinal() * 256, 64, 10_000_000 + origin.getZ() * 8);
+        for (int attempt = 0; !loaded && attempt < 32
+                && !SettlementSavedData.get(level).canEstablish(level.dimension().location(), center); attempt++) {
+            center = center.offset(0, 0, 128);
+        }
         var leader = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "WorkerLeader"));
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(level.getGameTime(), level.dimension().location(), center, "");
-        var town = SettlementSavedData.get(level).establish(registry, id, leader.getUUID(), center, level.getGameTime()).orElseThrow();
+        var town = SettlementSavedData.get(level).establish(registry, id, leader.getUUID(), center, level.getGameTime())
+                .orElseThrow(() -> new IllegalStateException("Test workplace overlaps another settlement"));
         if (type == SettlementAreaType.CONSTRUCTION) {
             town.advance();
         }
@@ -305,7 +323,8 @@ public final class SettlementWorkerConfigurationGameTests {
         }
         town.assignDuty(villager.getUUID(), area.id());
         SettlementWorkforceService.reconcile(level, villager);
-        town.recordWorker(SettlementWorkerState.capture(level, villager, SettlementWorkforceService.duty(villager).orElseThrow(), 0L));
+        town.recordWorker(SettlementWorkerState.capture(level, villager, SettlementWorkforceService.duty(villager)
+                .orElseThrow(() -> new IllegalStateException("Test resident has no civic duty")), 0L));
         SettlementCareService.onUnloaded(villager);
         return new Fixture(town, area, leader, villager);
     }

@@ -19,6 +19,8 @@ public final class SettlementWorksiteService {
                 || adopt == town.worksitePlans().containsKey(areaId)
                 || !HiredLoggingFilters.options().containsAll(plan.settings().logs())
                 || !HiredAnimalBreedingTargets.options().containsAll(plan.settings().animals())) return false;
+        if (plan.route() != null && (!plan.route().within(town)
+                || plan.route().points().stream().anyMatch(player.serverLevel()::isOutsideBuildHeight))) return false;
         var previous = town.worksitePlans().get(areaId);
         var previousLinks = previous == null ? SettlementWorksiteLinks.AUTOMATIC : previous.links();
         if ((!plan.links().supplies().equals(previousLinks.supplies()) || !plan.links().outputs().equals(previousLinks.outputs()))

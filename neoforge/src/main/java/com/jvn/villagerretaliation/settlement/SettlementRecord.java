@@ -752,7 +752,7 @@ public final class SettlementRecord {
     boolean setWorksitePlan(UUID actor, UUID areaId, SettlementWorksitePlan plan) {
         var area = this.areas.get(areaId);
         if (!permits(actor, SettlementPermission.STAFF) || area == null || plan == null
-                || area.type().role() != plan.settings().role()) return false;
+                || area.type().role() != plan.settings().role() || plan.route() != null && !plan.route().within(this)) return false;
         if (!plan.equals(this.worksitePlans.put(areaId, plan))) changed();
         return true;
     }
@@ -1493,6 +1493,7 @@ public final class SettlementRecord {
             var area = record.areas.get(entry.getUUID("Area"));
             var plan = SettlementWorksitePlan.load(entry);
             if (area == null || area.type().role() != plan.settings().role()
+                    || plan.route() != null && !plan.route().within(record)
                     || record.worksitePlans.putIfAbsent(area.id(), plan) != null) {
                 throw new IllegalArgumentException("Worksite plan is duplicated or has no matching area");
             }

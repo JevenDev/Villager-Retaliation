@@ -555,6 +555,33 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 14;
         } else if (phase == 14 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30) {
+            clickWorld(screen, fixture.center().getCenter().add(0, 0.5D, 0), GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+            require(screen.contextPopup() != null, "the shared worksite has context actions");
+            if (screen.contextPopup().target().kind() == SettlementViewPopup.Kind.CHOOSER) {
+                screen.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().contains("Guard post"))
+                        .findFirst().orElseThrow().onPress();
+            }
+            screen.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals("Set shared patrol"))
+                    .findFirst().orElseThrow().onPress();
+            clickWorld(screen, fixture.center().offset(6, 0, 6).getBottomCenter());
+            clickWorld(screen, fixture.center().offset(9, 0, 6).getBottomCenter());
+            ticks = 0;
+            phase = 125;
+        } else if (phase == 125 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            capture("shared-worksite-patrol");
+            screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
+            ticks = 0;
+            phase = 126;
+        } else if (phase == 126 && minecraft.screen instanceof SettlementViewScreen screen && !screen.parent().submitting() && ++ticks >= 15) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                var plan = town.worksitePlans().get(town.duties().get(fixture.resident()));
+                require(plan.route() != null && plan.route().mode() == SettlementGuardOrder.Mode.PATROL && plan.route().points().size() == 2,
+                        "drawing and Enter save the shared worksite route");
+            }).join();
+            require(minecraft.getCameraEntity() != minecraft.player, "saving the route preserves the map camera");
             var targets = java.util.List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(fixture.resident(), null));
             var form = new SettlementTemporaryTaskScreen(screen, targets,
                     com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FARM_PATCH,

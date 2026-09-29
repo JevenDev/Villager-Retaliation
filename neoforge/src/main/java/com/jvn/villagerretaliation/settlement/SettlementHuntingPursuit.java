@@ -18,7 +18,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 final class SettlementHuntingPursuit {
     private final ServerLevel level;
-    private final SettlementArea area;
+    private final java.util.function.Predicate<BlockPos> allowed;
     private final SettlementFamilyRoutes routes;
     private final SettlementExperienceTerrain terrain;
     private List<BlockPos> path;
@@ -27,7 +27,9 @@ final class SettlementHuntingPursuit {
 
     SettlementHuntingPursuit(ServerLevel level, SettlementRecord town, SettlementWorkerState worker) {
         this.level = level;
-        this.area = town.areas().get(worker.area());
+        var area = town.areas().get(worker.area());
+        var assignment = area == null ? null : SettlementHuntingTargetService.assignment(town, area);
+        this.allowed = position -> assignment != null && town.contains(position) && assignment.isInsideWorkAreaOrRoute(position);
         this.routes = new SettlementFamilyRoutes(level, town);
         this.terrain = new SettlementExperienceTerrain(level, town);
     }
@@ -37,11 +39,16 @@ final class SettlementHuntingPursuit {
     }
 
     boolean step(Villager owner, LivingEntity target, double movementSpeed) {
-        if (this.area == null || !this.area.contains(owner.blockPosition()) || !this.area.contains(target.blockPosition())
-                || !VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(owner, target)) return false;
-        if (this.path == null || this.path.isEmpty() || !target.blockPosition().equals(this.targetPosition)) {
-            this.targetPosition = target.blockPosition().immutable();
-            this.path = this.routes.route(owner.blockPosition(), this.targetPosition, this.area::contains);
+        return VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(owner, target)
+                && walk(owner, target.position(), movementSpeed);
+    }
+
+    boolean walk(Villager owner, Vec3 target, double movementSpeed) {
+        var targetBlock = BlockPos.containing(target);
+        if (!this.allowed.test(owner.blockPosition()) || !this.allowed.test(targetBlock)) return false;
+        if (this.path == null || this.path.isEmpty() || !targetBlock.equals(this.targetPosition)) {
+            this.targetPosition = targetBlock;
+            this.path = this.routes.route(owner.blockPosition(), this.targetPosition, this.allowed);
             this.cursor = 0;
         }
         if (this.path.isEmpty()) return coast(owner);
@@ -49,16 +56,16 @@ final class SettlementHuntingPursuit {
                 && owner.position().distanceToSqr(this.path.get(this.cursor).getBottomCenter()) < 0.25D) this.cursor++;
         var destination = this.path.get(this.cursor).getBottomCenter();
         if (this.cursor == this.path.size() - 1 && owner.position().distanceToSqr(destination) < 0.25D) {
-            destination = target.position();
+            destination = target;
         }
-        return move(owner, destination.subtract(owner.position()), target, movementSpeed);
+        return move(owner, destination.subtract(owner.position()), true, movementSpeed);
     }
 
     boolean coast(Villager owner) {
-        return this.area != null && this.area.contains(owner.blockPosition()) && move(owner, Vec3.ZERO, null, 0.0D);
+        return this.allowed.test(owner.blockPosition()) && move(owner, Vec3.ZERO, false, 0.0D);
     }
 
-    private boolean move(Villager owner, Vec3 offset, LivingEntity target, double movementSpeed) {
+    private boolean move(Villager owner, Vec3 offset, boolean walking, double movementSpeed) {
         if (!ordinary(owner.getBoundingBox())) return false;
         var floorPosition = BlockPos.containing(owner.getX(), owner.getY() - 0.500001D, owner.getZ());
         var floor = this.terrain.getBlockState(floorPosition);
@@ -67,10 +74,10 @@ final class SettlementHuntingPursuit {
         double friction = floor.getFriction(this.terrain, floorPosition, owner);
         if (!Double.isFinite(friction) || friction <= 0.0D) return false;
         boolean grounded = this.terrain.getBlockCollisions(owner, owner.getBoundingBox().move(0.0D, -0.01D, 0.0D)).iterator().hasNext();
-        double speed = target == null ? 0.0D
+        double speed = !walking ? 0.0D
                 : movementSpeed * owner.getAttributeValue(Attributes.MOVEMENT_SPEED);
-        if (!Double.isFinite(speed) || target != null && speed <= 0.0D) return false;
-        double acceleration = target == null ? 0.0D : grounded ? speed * 0.21600002D / (friction * friction * friction) : 0.02D;
+        if (!Double.isFinite(speed) || walking && speed <= 0.0D) return false;
+        double acceleration = !walking ? 0.0D : grounded ? speed * 0.21600002D / (friction * friction * friction) : 0.02D;
         var velocity = owner.getDeltaMovement();
         velocity = new Vec3(small(velocity.x), small(velocity.y), small(velocity.z));
         if (grounded && offset.y > owner.maxUpStep() && offset.horizontalDistanceSqr() < 2.0D) {
@@ -87,7 +94,7 @@ final class SettlementHuntingPursuit {
         var resolved = EntityCollisionAccessor.villagerretaliation$collide(requested, owner.getBoundingBox(), shapes);
         var position = owner.position().add(resolved);
         var moved = owner.getBoundingBox().move(resolved);
-        if (!this.area.contains(BlockPos.containing(position)) || !ordinary(moved)) return false;
+        if (!this.allowed.test(BlockPos.containing(position)) || !ordinary(moved)) return false;
         if (resolved.lengthSqr() < 1.0E-10D) return false;
         boolean landed = requested.y < 0.0D && requested.y != resolved.y;
         double vertical = requested.y == resolved.y ? requested.y : 0.0D;
@@ -110,7 +117,7 @@ final class SettlementHuntingPursuit {
         owner.horizontalCollision = !Mth.equal(requested.x, resolved.x) || !Mth.equal(requested.z, resolved.z);
         owner.verticalCollision = requested.y != resolved.y;
         owner.verticalCollisionBelow = landed;
-        if (target != null) owner.setYRot((float) (Mth.atan2(offset.z, offset.x) * 180.0D / Math.PI) - 90.0F);
+        if (walking) owner.setYRot((float) (Mth.atan2(offset.z, offset.x) * 180.0D / Math.PI) - 90.0F);
         return true;
     }
 

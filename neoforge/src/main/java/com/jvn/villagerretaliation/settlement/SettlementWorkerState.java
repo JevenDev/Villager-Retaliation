@@ -260,6 +260,7 @@ public final class SettlementWorkerState {
         if (this.role == HiredVillagerRole.MINING) {
             com.jvn.villagerretaliation.interaction.work.mining.MiningWorkerState.copyState(this.settings, HiredWorkStateStore.state(villager));
         }
+        if (this.role == HiredVillagerRole.HUNTING) SettlementGuardService.copyProgress(this.settings, HiredWorkStateStore.state(villager));
         HiredWorkSession.invalidate(villager);
         return true;
     }
