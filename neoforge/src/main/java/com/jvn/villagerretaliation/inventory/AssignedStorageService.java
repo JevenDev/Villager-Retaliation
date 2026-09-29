@@ -643,6 +643,21 @@ public final class AssignedStorageService {
         return -1L;
     }
 
+    public static ItemStack findProductionSupply(Villager villager, Predicate<ItemStack> predicate) {
+        if (!(villager.level() instanceof ServerLevel level)) return ItemStack.EMPTY;
+        for (var source : liveInputContainerCandidates(level, villager)) {
+            var resolution = ContainerFilterResolver.resolve(level, source);
+            if (!resolution.live()) continue;
+            for (int slot = 0; slot < source.container().getContainerSize(); slot++) {
+                var stack = source.container().getItem(slot);
+                if (stack.isEmpty() || !predicate.test(stack)) continue;
+                int count = Math.min(stack.getCount(), sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), List.of()));
+                if (count > 0) return stack.copyWithCount(count);
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
     public static boolean reserveProductionInputs(Villager villager, Map<net.minecraft.world.item.Item, Integer> needs) {
         if (!(villager.level() instanceof ServerLevel level)) return false;
         var remaining = new LinkedHashMap<>(needs);

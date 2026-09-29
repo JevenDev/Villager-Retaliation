@@ -863,6 +863,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                 && context.isInsideWorkArea(pos)
                 && context.permitsStation(pos)
                 && context.isLoaded(level, pos)
+                && com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations.get(level).available(level, pos)
                 && (level.getBlockEntity(pos) instanceof FurnaceBlockEntity
                 || level.getBlockEntity(pos) instanceof SmokerBlockEntity);
     }

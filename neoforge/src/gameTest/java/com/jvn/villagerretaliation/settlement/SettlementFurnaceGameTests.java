@@ -4,6 +4,9 @@ import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -28,7 +31,7 @@ import net.minecraft.world.level.block.entity.SmokerBlockEntity;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("villagerretaliation")
 @PrefixGameTestTemplate(false)
 public final class SettlementFurnaceGameTests {
     private SettlementFurnaceGameTests() {
@@ -342,6 +345,70 @@ public final class SettlementFurnaceGameTests {
                     new net.minecraft.world.level.block.entity.BlastFurnaceBlockEntity(kitchen.min(), Blocks.BLAST_FURNACE.defaultBlockState()), 0L);
             helper.assertFalse(SettlementFurnaceService.serves(kitchen, blast), "a blast furnace cannot serve kitchen work");
             helper.assertTrue(SettlementFurnaceService.serves(smeltery, blast), "the blast furnace still serves its matching workplace");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
+    public static void unloadedProductionFinishesCancelledFurnaceInputsWithoutAddingMore(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var level = helper.getLevel();
+            var area = fixture.town().areas().get(fixture.worker().area());
+            fixture.town().setWorksitePlan(fixture.town().leader(), area.id(), SettlementWorksitePlan.defaults(area.type().role()));
+            var queue = fixture.town().beginProduction(fixture.town().leader(), area.id());
+            var order = HiredProductionOrder.create(level, HiredProductionRecipe.exact(
+                    net.minecraft.resources.ResourceLocation.withDefaultNamespace("iron_ingot_from_smelting_raw_iron"), java.util.Map.of()),
+                    HiredProductionOrder.Mode.BATCH, 3, null);
+            queue.append(order);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            fixture.supply().setItem(0, new ItemStack(Items.RAW_IRON, 8));
+            fixture.supply().setItem(1, new ItemStack(Items.COAL, 8));
+            SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(fixture.machine().items(level.registryAccess()).getFirst().getCount(), 3, "only the finite shared batch is loaded");
+            helper.assertTrue(queue.cancel(order.id()), "future production is cancelled");
+            fixture.machine().advance(level, 200L);
+            SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "one native output is collected after its cooking interval");
+            helper.assertValueEqual(queue.pending(order.id()), 2, "remaining native input stays reserved");
+            fixture.machine().advance(level, 400L);
+            fixture.machine().advance(level, 600L);
+            SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(queue.order(order.id()).produced(), 3L, "the cancelled in-progress batch finishes once");
+            helper.assertValueEqual(queue.pending(order.id()), 0, "completion releases the shared quantity");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 5, "unneeded raw materials stay in storage");
+            helper.assertValueEqual(fixture.supply().getItem(1).getCount(), 7, "one real coal supplies this batch");
+            helper.assertFalse(level.hasChunkAt(fixture.town().center()), "production does not load the furnace chunk");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
+    public static void anotherWorkerCanCollectTheSameCivicFurnaceBatchAfterDeath(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var level = helper.getLevel();
+            var area = fixture.town().areas().get(fixture.worker().area());
+            fixture.town().setWorksitePlan(fixture.town().leader(), area.id(), SettlementWorksitePlan.defaults(area.type().role()));
+            var queue = fixture.town().beginProduction(fixture.town().leader(), area.id());
+            var order = HiredProductionOrder.create(level, HiredProductionRecipe.exact(
+                    net.minecraft.resources.ResourceLocation.withDefaultNamespace("iron_ingot_from_smelting_raw_iron"), java.util.Map.of()),
+                    HiredProductionOrder.Mode.BATCH, 1, null);
+            queue.append(order);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            fixture.supply().setItem(0, new ItemStack(Items.RAW_IRON, 2));
+            fixture.supply().setItem(1, new ItemStack(Items.COAL));
+            SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            var saved = fixture.worker().save();
+            fixture.town().removeWorker(fixture.worker().id());
+            var nextId = UUID.randomUUID();
+            saved.putUUID("Id", nextId);
+            var replacement = SettlementWorkerState.load(saved);
+            fixture.town().assignDuty(nextId, area.id());
+            fixture.town().recordWorker(replacement);
+            fixture.machine().advance(level, 200L);
+            SettlementBackgroundProductionFurnace.tick(level, fixture.town(), replacement, 200, 1.0D);
+            helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "replacement staff complete the existing receipt");
+            helper.assertValueEqual(queue.pending(order.id()), 0, "handoff releases the original allocation");
+            helper.assertTrue(HiredProductionStations.get(level).available(level, fixture.machine().position()), "the shared station is released once");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 1, "handoff does not load another input");
         });
     }
 

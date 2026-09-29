@@ -46,8 +46,17 @@ public final class SettlementFurnaceState {
         this.block = block;
     }
 
-    UUID id() {
+    public UUID id() {
         return this.id;
+    }
+
+    public static UUID identity(AbstractFurnaceBlockEntity entity) {
+        var persistent = entity.getPersistentData();
+        if (!persistent.hasUUID(ID_TAG)) {
+            persistent.putUUID(ID_TAG, UUID.randomUUID());
+            entity.setChanged();
+        }
+        return persistent.getUUID(ID_TAG);
     }
 
     static void bindConstruction(AbstractFurnaceBlockEntity entity, UUID id) {
@@ -98,8 +107,7 @@ public final class SettlementFurnaceState {
 
     static SettlementFurnaceState capture(ServerLevel level, UUID area, AbstractFurnaceBlockEntity furnace, long now) {
         var persistent = furnace.getPersistentData();
-        UUID id = persistent.hasUUID(ID_TAG) ? persistent.getUUID(ID_TAG) : UUID.randomUUID();
-        persistent.putUUID(ID_TAG, id);
+        UUID id = identity(furnace);
         var result = new SettlementFurnaceState(id, area, furnace.getBlockPos(),
                 BuiltInRegistries.BLOCK.getKey(furnace.getBlockState().getBlock()));
         result.observe(level.registryAccess(), furnace, now);

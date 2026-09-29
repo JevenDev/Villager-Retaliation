@@ -83,7 +83,10 @@ public final class HiredProductionService {
         var access = access(level, villager, role);
         if (access.queue() != null) {
             var allocation = access.queue().allocation(villager.getUUID());
-            if (allocation != null && !allocation.started()) access.queue().release(allocation.id());
+            if (allocation != null && !allocation.started()) {
+                HiredProductionStations.get(level).release(allocation.id());
+                access.queue().release(allocation.id());
+            }
         }
         AssignedStorageService.releaseProductionInputs(villager);
     }

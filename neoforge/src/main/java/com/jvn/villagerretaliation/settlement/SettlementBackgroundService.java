@@ -134,6 +134,7 @@ public final class SettlementBackgroundService {
             return;
         }
         if (villager.getRemovalReason() == Entity.RemovalReason.KILLED || villager.getRemovalReason() == Entity.RemovalReason.DISCARDED) {
+            com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations.get(level).workerRemoved(villager.getUUID());
             SettlementWorkforceService.home(level, villager).ifPresent(town -> town.removeWorker(villager.getUUID()));
         } else {
             observe(level, villager, level.getGameTime());

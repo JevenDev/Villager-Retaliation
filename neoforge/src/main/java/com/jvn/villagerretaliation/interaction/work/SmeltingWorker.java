@@ -46,6 +46,17 @@ public final class SmeltingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if (com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.access(level, villager, role()).managed()) {
+            return new com.jvn.villagerretaliation.interaction.work.production.HiredQueuedFurnaceWorker(role()).tick(level, villager, hirer, context);
+        }
+        return tickLegacy(level, villager, hirer, context, false);
+    }
+
+    public WorkResult finishExisting(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        return tickLegacy(level, villager, hirer, context, true);
+    }
+
+    private WorkResult tickLegacy(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context, boolean finishExisting) {
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
         }
@@ -61,7 +72,8 @@ public final class SmeltingWorker extends AbstractBlockWorker {
 
         ItemStack processingFilter = VillagerItemFilterService.assignedFilter(villager);
         Predicate<ItemStack> desiredOutput = stack -> isDesiredSmeltedOutput(level, processingFilter, stack);
-        BlockPos station = nearestSmeltingStation(level, villager, context, processingFilter, desiredOutput);
+        BlockPos station = nearestSmeltingStation(level, villager, context, processingFilter, desiredOutput, finishExisting);
+        if (station == null && finishExisting) return null;
         if (station == null) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "no_smelting_station", level.getGameTime() + 100L);
@@ -400,10 +412,11 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             ItemStack processingFilter,
-            Predicate<ItemStack> desiredOutput) {
+            Predicate<ItemStack> desiredOutput, boolean finishExisting) {
         CompoundTag state = context.state();
         BlockPos cached = cachedPos(state);
         if (isValidSmeltingStation(level, context, cached)
+                && (!finishExisting || hasExistingBatch(level, cached))
                 && !HiredPathMemory.isAvoided(level, villager, cached)
                 && stationContentsCompatible(level, cached, processingFilter, desiredOutput)
                 && stationNeedsAttention(level, cached)) {
@@ -418,6 +431,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         for (BlockPos raw : context.workAreaPositions()) {
             BlockPos pos = raw.immutable();
             if (!isValidSmeltingStation(level, context, pos)
+                    || finishExisting && !hasExistingBatch(level, pos)
                     || HiredPathMemory.isAvoided(level, villager, pos)) {
                 continue;
             }
@@ -476,6 +490,11 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         return best;
     }
 
+    private static boolean hasExistingBatch(ServerLevel level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace
+                && (!furnace.getItem(INPUT_SLOT).isEmpty() || !furnace.getItem(RESULT_SLOT).isEmpty() || isFuelRemainder(furnace.getItem(FUEL_SLOT)));
+    }
+
     private static boolean stationNeedsAttention(ServerLevel level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace)) {
             return false;
@@ -508,6 +527,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 && context.isInsideWorkArea(pos)
                 && context.permitsStation(pos)
                 && context.isLoaded(level, pos)
+                && com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations.get(level).available(level, pos)
                 && (level.getBlockEntity(pos) instanceof FurnaceBlockEntity
                 || level.getBlockEntity(pos) instanceof BlastFurnaceBlockEntity);
     }

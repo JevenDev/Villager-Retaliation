@@ -23,6 +23,17 @@ final class SettlementBackgroundSmelting {
     }
 
     static boolean tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
+        if (worker.role() == HiredVillagerRole.SMELTER && town.productionQueues().containsKey(worker.area())) {
+            return SettlementBackgroundProductionFurnace.tick(level, town, worker, elapsed, multiplier);
+        }
+        return tickLegacy(level, town, worker, elapsed, multiplier, false);
+    }
+
+    static boolean finishExisting(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
+        return tickLegacy(level, town, worker, elapsed, multiplier, true);
+    }
+
+    private static boolean tickLegacy(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier, boolean finishExisting) {
         List<SettlementDepot> depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
         if ((!worker.settings().contains("AutoDepositOutputs") || worker.settings().getBoolean("AutoDepositOutputs"))
                 && SettlementBackgroundHauling.depositCarried(level, town, worker, elapsed, multiplier, depots, false)) {
@@ -35,11 +46,15 @@ final class SettlementBackgroundSmelting {
                 .sorted(Comparator.comparingDouble(state -> state.position().distSqr(worker.position()))).toList();
         var carried = worker.items(level.registryAccess());
         ItemStack filter = carried.get(HiredJobInventory.FILTER_SLOT);
+        boolean processing = false;
         for (SettlementFurnaceState machine : machines) {
-            if (!SettlementFurnaceService.available(level, machine, construction)) {
+            if (!SettlementFurnaceService.available(level, machine, construction)
+                    || !com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations.get(level).available(level, machine.position())) {
                 continue;
             }
             var items = machine.items(level.registryAccess());
+            if (finishExisting && items.getFirst().isEmpty() && items.get(2).isEmpty() && !items.get(1).is(Items.BUCKET)) continue;
+            processing = true;
             if (!items.getFirst().isEmpty() && !inputAllowed(level, worker, machine, filter, items.getFirst())
                     || !items.get(2).isEmpty() && !outputAllowed(level, worker, filter, items.get(2))
                     || !items.get(1).isEmpty() && !items.get(1).is(Items.BUCKET) && items.get(1).getBurnTime(machine.recipeType()) <= 0) {
@@ -149,7 +164,7 @@ final class SettlementBackgroundSmelting {
             return true;
         }
         worker.status(machines.isEmpty() ? "no_furnace" : "waiting_for_furnace");
-        return worker.role() == HiredVillagerRole.SMELTER;
+        return finishExisting ? processing : worker.role() == HiredVillagerRole.SMELTER;
     }
 
     private static boolean inputAllowed(ServerLevel level, SettlementWorkerState worker, SettlementFurnaceState machine,
