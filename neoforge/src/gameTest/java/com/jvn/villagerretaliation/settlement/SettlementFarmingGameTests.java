@@ -941,7 +941,7 @@ public final class SettlementFarmingGameTests {
         for (int now = from; now <= until; now += 200) SettlementBackgroundService.update(helper.getLevel(), fixture.town(), now);
     }
 
-    private static void fixture(GameTestHelper helper, Consumer<Fixture> check) {
+    static void fixture(GameTestHelper helper, Consumer<Fixture> check) {
         var level = helper.getLevel();
         BlockPos origin = helper.absolutePos(BlockPos.ZERO);
         var chunk = new LevelChunk(level, new ChunkPos(640_000 + origin.getX() * 4, 640_000 + origin.getZ() * 4));
@@ -991,7 +991,7 @@ public final class SettlementFarmingGameTests {
         helper.succeed();
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, LevelChunk chunk, SettlementFieldPlot plot,
+    record Fixture(SettlementRecord town, SettlementArea area, LevelChunk chunk, SettlementFieldPlot plot,
                            SettlementDepot supply, SettlementDepot output, SettlementWorkerState worker, Villager villager) {
     }
 }
