@@ -36,6 +36,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementWorkerSettings> workerSettings = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorksitePlan> worksitePlans = new LinkedHashMap<>();
     private final Map<UUID, HiredProductionQueue> productionQueues = new LinkedHashMap<>();
+    private final Map<UUID, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue> transferQueues = new LinkedHashMap<>();
     private final Map<UUID, SettlementProject> projects = new LinkedHashMap<>();
     private final Map<UUID, SettlementProject> projectHistory = new LinkedHashMap<>();
     private final Set<UUID> retiredProjects = new java.util.LinkedHashSet<>();
@@ -305,6 +306,7 @@ public final class SettlementRecord {
 
     void removeWorker(UUID worker) {
         this.productionQueues.values().forEach(queue -> queue.detach(worker));
+        this.transferQueues.values().forEach(queue -> queue.detach(worker));
         com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseProductionInputs(worker);
         if (this.workers.remove(worker) != null) {
             changed();
@@ -751,6 +753,24 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.productionQueues);
     }
 
+    public Map<UUID, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue> transferQueues() {
+        return Collections.unmodifiableMap(this.transferQueues);
+    }
+
+    com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue beginTransfers(UUID actor, UUID areaId) {
+        var area = workplace(areaId);
+        if (!permits(actor, SettlementPermission.STAFF) || !permits(actor, SettlementPermission.LOGISTICS)
+                || area == null || area.type() != SettlementAreaType.DEPOT || !this.worksitePlans.containsKey(areaId)) return null;
+        var queue = this.transferQueues.get(areaId);
+        if (queue == null) {
+            queue = new com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue(areaId,
+                    com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Scope.WORKSITE, ignored -> changed());
+            this.transferQueues.put(areaId, queue);
+            changed();
+        }
+        return queue;
+    }
+
     HiredProductionQueue beginProduction(UUID actor, UUID areaId) {
         var area = workplace(areaId);
         if (!permits(actor, SettlementPermission.STAFF) || area == null || !this.worksitePlans.containsKey(areaId)
@@ -806,6 +826,8 @@ public final class SettlementRecord {
         if (!area.equals(previous)) {
             var queue = this.productionQueues.get(previous);
             if (queue != null) queue.detach(resident);
+            var transfers = this.transferQueues.get(previous);
+            if (transfers != null) transfers.detach(resident);
             com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseProductionInputs(resident);
             cancelProjects(resident);
             cancelBrewing(resident);
@@ -823,6 +845,8 @@ public final class SettlementRecord {
         }
         var queue = this.productionQueues.get(previous);
         if (queue != null) queue.detach(resident);
+        var transfers = this.transferQueues.get(previous);
+        if (transfers != null) transfers.detach(resident);
         com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseProductionInputs(resident);
         cancelProjects(resident);
         cancelBrewing(resident);
@@ -1011,10 +1035,14 @@ public final class SettlementRecord {
                         !existing.id().equals(area.id()) && existing.conflictsWith(area))) {
             return false;
         }
+        var transfers = this.transferQueues.get(area.id());
+        if (transfers != null && this.areas.get(area.id()) != null && this.areas.get(area.id()).type() != area.type()
+                && transfers.allocations().stream().anyMatch(com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Allocation::started)) return false;
         SettlementArea previous = this.areas.put(area.id(), area);
         if (previous != null && previous.type() != area.type()) {
             this.worksitePlans.remove(area.id());
             this.productionQueues.remove(area.id());
+            this.transferQueues.remove(area.id());
         }
         this.cachedHousingCapacity = -1;
         if (!area.equals(previous)) {
@@ -1030,6 +1058,8 @@ public final class SettlementRecord {
     boolean removeArea(UUID actor, UUID area) {
         if (!permits(actor, SettlementPermission.BUILD)
                 || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area))
+                || this.transferQueues.containsKey(area) && this.transferQueues.get(area).allocations().stream()
+                        .anyMatch(com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Allocation::started)
                 || this.areas.remove(area) == null) {
             return false;
         }
@@ -1042,6 +1072,7 @@ public final class SettlementRecord {
         this.surveys.remove(area);
         this.worksitePlans.remove(area);
         this.productionQueues.remove(area);
+        this.transferQueues.remove(area);
         this.cachedHousingCapacity = -1;
         changed();
         return true;
@@ -1135,6 +1166,9 @@ public final class SettlementRecord {
         var productionTags = new ListTag();
         this.productionQueues.values().forEach(queue -> productionTags.add(queue.save(provider)));
         tag.put("ProductionQueues", productionTags);
+        var transferTags = new ListTag();
+        this.transferQueues.values().forEach(queue -> transferTags.add(queue.save(provider)));
+        tag.put("TransferQueues", transferTags);
         ListTag projectTags = new ListTag();
         this.projects.values().forEach(project -> projectTags.add(project.save()));
         tag.put("Projects", projectTags);
@@ -1554,6 +1588,19 @@ public final class SettlementRecord {
                     || queue.allocations().stream().anyMatch(allocation -> allocation.worker() != null
                         && !area.id().equals(record.duties.get(allocation.worker())))) {
                 throw new IllegalArgumentException("Worksite production has invalid ownership");
+            }
+        }
+        if (tag.contains("TransferQueues") && (!(tag.get("TransferQueues") instanceof ListTag list) || list.size() > MAX_AREAS
+                || !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid transfer queues");
+        for (Tag raw : tag.getList("TransferQueues", Tag.TAG_COMPOUND)) {
+            var queue = com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.load(
+                    (CompoundTag) raw, provider, ignored -> record.changed());
+            var area = record.areas.get(queue.owner());
+            if (queue.scope() != com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Scope.WORKSITE
+                    || area == null || area.type() != SettlementAreaType.DEPOT || !record.worksitePlans.containsKey(area.id())
+                    || record.transferQueues.putIfAbsent(area.id(), queue) != null
+                    || queue.allocations().stream().anyMatch(allocation -> !allocation.started() && !area.id().equals(record.duties.get(allocation.worker())))) {
+                throw new IllegalArgumentException("Transfer queue has invalid ownership");
             }
         }
         for (Tag raw : tag.getList("WorkerSettings", Tag.TAG_COMPOUND)) {

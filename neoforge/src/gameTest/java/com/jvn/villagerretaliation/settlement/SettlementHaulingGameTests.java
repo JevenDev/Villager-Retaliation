@@ -260,7 +260,7 @@ public final class SettlementHaulingGameTests {
         return courier;
     }
 
-    private static void withFixture(GameTestHelper helper, Consumer<Fixture> check) {
+    static void withFixture(GameTestHelper helper, Consumer<Fixture> check) {
         var level = helper.getLevel();
         long dayTime = level.getDayTime();
         BlockPos center = helper.absolutePos(new BlockPos(1, 2, 1));
@@ -294,7 +294,7 @@ public final class SettlementHaulingGameTests {
         helper.succeed();
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, SettlementDepot source, SettlementDepot destination,
+    record Fixture(SettlementRecord town, SettlementArea area, SettlementDepot source, SettlementDepot destination,
                            ServerPlayer leader, Villager courier) {
     }
 }
