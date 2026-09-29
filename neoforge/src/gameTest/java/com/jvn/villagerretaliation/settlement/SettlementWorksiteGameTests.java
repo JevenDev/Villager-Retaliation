@@ -198,6 +198,10 @@ public final class SettlementWorksiteGameTests {
             var source = town.registerDepot(town.leader(), fixture.area().id(), fixture.area().min(), SettlementDepotPurpose.GENERAL);
             var output = town.registerDepot(town.leader(), fixture.area().id(), fixture.area().min().east(), SettlementDepotPurpose.GENERAL);
             helper.assertTrue(source != null && output != null, "the worksite has two communal depots");
+            for (var depot : List.of(source, output)) {
+                level.setBlockAndUpdate(depot.position(), com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+                ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(depot.position())).bind(town.id(), depot.id());
+            }
             source.observeRules(List.of());
             output.observeRules(List.of());
             source.setItem(0, new ItemStack(Items.WHEAT, 9));

@@ -245,6 +245,41 @@ public final class SettlementTransferExecutionGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "transfer_execution")
+    public static void backgroundHaulersRespectAnotherItemsReservedDestinationSlot(GameTestHelper helper) {
+        SettlementHaulingGameTests.withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            fixture.source().setItem(0, new ItemStack(Items.IRON_INGOT, 7));
+            for (int slot = 1; slot < fixture.destination().getContainerSize(); slot++) fixture.destination().setItem(slot, new ItemStack(Items.STONE, 64));
+            var queue = adopt(fixture);
+            var order = order(fixture.source(), fixture.destination(), new ItemStack(Items.IRON_INGOT), 7);
+            queue.append(order);
+            tick(helper, fixture, HiredWorkSession.active(level, fixture.courier()));
+            helper.assertValueEqual(queue.order(order.id()).picked(), 7, "a native courier reserves the last empty slot");
+            var other = SettlementHaulingGameTests.courier(helper, fixture.town(), fixture.area(), fixture.leader());
+            try {
+                fixture.destination().observeRules(List.of());
+                fixture.town().setDepotStockTarget(fixture.leader().getUUID(), fixture.destination().id(), new ItemStack(Items.GOLD_INGOT), 1);
+                var worker = fixture.town().workers().get(other.getUUID());
+                var items = worker.items(level.registryAccess());
+                items.set(worker.outputSlots().getFirst(), new ItemStack(Items.GOLD_INGOT));
+                worker.updateInventory(level.registryAccess(), items);
+                SettlementBackgroundHauling.depositCarried(level, fixture.town(), worker, 1000, 1.0D, List.of(fixture.destination()), true);
+                helper.assertValueEqual(worker.status(), "storage_full", "different cargo waits for the claimed slot");
+                helper.assertTrue(fixture.destination().getItem(0).isEmpty(), "background delivery cannot consume another shipment's reserved capacity");
+                helper.assertValueEqual(worker.items(level.registryAccess()).get(worker.outputSlots().getFirst()).getCount(), 1,
+                        "the waiting cargo remains with its worker");
+                AssignedStorageService.releaseCourierClaims(fixture.courier());
+                SettlementBackgroundHauling.depositCarried(level, fixture.town(), worker, 1000, 1.0D, List.of(fixture.destination()), true);
+                helper.assertValueEqual(fixture.destination().getItem(0).getCount(), 1, "released capacity becomes usable");
+                helper.assertTrue(fixture.destination().getItem(0).is(Items.GOLD_INGOT), "the background shipment preserves its product");
+            } finally {
+                AssignedStorageService.releaseCourierClaims(other);
+                other.discard();
+            }
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "transfer_execution")
     public static void reassignedWorkersFinishOriginalCargoBeforeTheirNewRole(GameTestHelper helper) {
         SettlementHaulingGameTests.withFixture(helper, fixture -> {
             var level = helper.getLevel();

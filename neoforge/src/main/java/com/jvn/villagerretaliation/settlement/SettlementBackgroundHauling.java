@@ -113,7 +113,8 @@ final class SettlementBackgroundHauling {
     }
 
     private static int receiveAllowance(ServerLevel level, SettlementDepot depot, ItemStack sample) {
-        return Math.min(SettlementStock.capacity(List.of(depot), sample),
+        int loaded = AssignedStorageService.unreservedOutputCapacity(level, depot.position(), sample);
+        return Math.min(loaded >= 0 ? loaded : SettlementStock.capacity(List.of(depot), sample),
                 SettlementLogisticsService.framedAllowance(level, depot, sample, VillagerFilterPolicy.TransferOperation.RECEIVE, true));
     }
 
