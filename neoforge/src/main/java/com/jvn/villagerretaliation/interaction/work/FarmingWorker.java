@@ -96,7 +96,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 || pending.taskState() == HiredWorkerTaskState.DEPOSITING
                 || pending.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL);
         boolean harvestBatch = context.autoDepositOutputs()
-                && com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()
+                && com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.resolve(level, villager).civic()
                 && context.inventory().hasOutput(stack -> stack.getCount() >= stack.getMaxStackSize());
         if (context.hasOutputToDeposit() && (delivering || harvestBatch)) {
             DepositResult deposit = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
@@ -119,11 +119,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
     }
 
     @Override
-    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+    public void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
         clearFieldScanState(context);
         context.state().remove(NEXT_FIELD_SCAN_GAME_TIME_TAG);
         clearSecondaryJobSite(villager);
-        super.stop(level, villager, context);
+        super.cancel(level, villager, context);
     }
 
     private WorkResult guideFieldWork(ServerLevel level, Villager villager, HiredWorkContext context) {

@@ -102,7 +102,7 @@ public final class HiredTemporaryWorkService {
             return "";
         }
         state.remove(HiredTemporaryQueue.PENDING_TAG);
-        if (!append || previous == null || task == null) reset(level, villager, authority.role());
+        if (!append || previous == null || task == null) reset(level, villager, authority.role(), false);
         write(state, next);
         if ((!append || previous == null) && task != null && task.kind() == HiredTemporaryTask.Kind.FISH
                 && (state.getBoolean("FishingCatchCompleted") || com.jvn.villagerretaliation.settlement.SettlementBackgroundFishing.hasPendingCatch(state))) {
@@ -150,7 +150,7 @@ public final class HiredTemporaryWorkService {
         var pending = state.getBoolean(INVALID) ? null : HiredTemporaryQueue.pending(state);
         if (queue != null && !valid(level, villager, authority, queue) || pending != null && !valid(level, villager, authority, pending)
                 || state.contains(HiredTemporaryQueue.PENDING_TAG) && (!authority.active() || authority.role() != HiredVillagerRole.LOGGING)) {
-            reset(level, villager, queue != null ? queue.role() : HiredVillagerRole.LOGGING);
+            reset(level, villager, queue != null ? queue.role() : HiredVillagerRole.LOGGING, false);
             state.remove(HiredTemporaryQueue.PENDING_TAG);
             write(state, null);
         } else if (queue != null && queue.current().kind() == HiredTemporaryTask.Kind.FISH && state.getBoolean(FINISHED)) {
@@ -188,7 +188,7 @@ public final class HiredTemporaryWorkService {
             }
         }
         if (blocker == null) return true;
-        if (session.worker() != null) session.worker().stop(level, villager, session.context());
+        if (session.worker() != null) session.worker().pause(level, villager, session.context());
         HiredWorkerBrain.setFailure(session.context(), "temporary_task_" + blocker, 0L);
         HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.AWAITING_INSTRUCTION);
         HiredWorkStateStore.setStatus(session.state(), "interaction.work.temporary." + blocker);
@@ -230,7 +230,7 @@ public final class HiredTemporaryWorkService {
                 && !unfinishedTree(level, villager)) {
             var pending = HiredTemporaryQueue.pending(session.state());
             session.state().remove(HiredTemporaryQueue.PENDING_TAG);
-            reset(level, villager, session.role());
+            reset(level, villager, session.role(), true);
             write(session.state(), pending);
             HiredWorkSession.invalidate(villager);
             return;
@@ -238,14 +238,17 @@ public final class HiredTemporaryWorkService {
         if (queue == null) return;
         if (!session.state().getBoolean(FINISHED)) return;
         var next = queue.advance();
-        if (next == null || !Objects.equals(next.current().id(), queue.current().id())) reset(level, villager, session.role());
+        if (next == null || !Objects.equals(next.current().id(), queue.current().id())) reset(level, villager, session.role(), true);
         write(session.state(), next);
         HiredWorkSession.invalidate(villager);
     }
 
-    private static void reset(ServerLevel level, Villager villager, HiredVillagerRole role) {
+    private static void reset(ServerLevel level, Villager villager, HiredVillagerRole role, boolean completed) {
         var session = HiredWorkSession.create(level, villager, role);
-        if (session.worker() != null) session.worker().stop(level, villager, session.context());
+        if (session.worker() != null) {
+            if (completed) session.worker().complete(level, villager, session.context());
+            else session.worker().cancel(level, villager, session.context());
+        }
         com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         session.state().remove(FINISHED);
         session.state().remove("NextWorkGameTime");
@@ -260,6 +263,13 @@ public final class HiredTemporaryWorkService {
         } else queue.store(state);
         state.remove(INVALID);
         state.remove(FINISHED);
+    }
+
+    public static void clearOrders(CompoundTag state) {
+        state.remove(HiredTemporaryQueue.PENDING_TAG);
+        state.remove(MINING_SCAN);
+        HiredTemporaryEntities.clear(state);
+        write(state, null);
     }
 
     public static void copyState(CompoundTag source, CompoundTag destination) {

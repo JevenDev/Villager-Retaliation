@@ -31,6 +31,22 @@ public record VillagerWorkAuthority(boolean active, HiredVillagerRole role, Opti
                 || SettlementWorkforceService.duty(villager).isPresent();
     }
 
+    public HiredJobSite effectiveJobSite(Villager villager, net.minecraft.nbt.CompoundTag state,
+            HiredVillagerRole requestedRole, HiredJobSite fallback) {
+        return this.civic && this.role == requestedRole && requestedRole == HiredVillagerRole.BUILDER
+                ? com.jvn.villagerretaliation.settlement.SettlementConstructionService.jobSite(villager, state, fallback)
+                : fallback;
+    }
+
+    public HiredRoute effectiveRoute(Villager villager, HiredRoute fallback) {
+        return this.civic ? com.jvn.villagerretaliation.settlement.SettlementGuardService.route(villager, fallback) : fallback;
+    }
+
+    public HiredCombatMode effectiveCombatMode(Villager villager, HiredCombatMode fallback) {
+        return this.civic && this.role == HiredVillagerRole.COMBAT
+                ? com.jvn.villagerretaliation.settlement.SettlementGuardService.mode(villager, fallback) : fallback;
+    }
+
     public ServerPlayer onlineOwner(ServerLevel level) {
         return this.owner.map(id -> level.getServer().getPlayerList().getPlayer(id)).orElse(null);
     }

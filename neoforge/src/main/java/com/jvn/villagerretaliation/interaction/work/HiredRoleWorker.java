@@ -29,8 +29,20 @@ public interface HiredRoleWorker {
         HiredPathMemory.clear(villager);
     }
 
-    default void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+    default void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
         pause(level, villager, context);
+    }
+
+    default void complete(ServerLevel level, Villager villager, HiredWorkContext context) {
+        cancel(level, villager, context);
+    }
+
+    default void transfer(ServerLevel level, Villager villager, HiredWorkContext context) {
+        cancel(level, villager, context);
+    }
+
+    default void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+        cancel(level, villager, context);
     }
 
 }

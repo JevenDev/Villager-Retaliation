@@ -375,13 +375,30 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     @Override
-    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+    public void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
         SettlementConstructionService.finish(villager, context.state(), SettlementProject.Status.CANCELLED);
+        clearAssignment(level, villager, context);
+    }
+
+    @Override
+    public void complete(ServerLevel level, Villager villager, HiredWorkContext context) {
+        SettlementConstructionService.release(villager, context.state());
+        clearAssignment(level, villager, context);
+    }
+
+    @Override
+    public void transfer(ServerLevel level, Villager villager, HiredWorkContext context) {
+        SettlementConstructionService.observe(villager, context.state());
+        SettlementConstructionService.release(villager, context.state());
+        clearAssignment(level, villager, context);
+    }
+
+    private void clearAssignment(ServerLevel level, Villager villager, HiredWorkContext context) {
         clearActiveBreakingTarget(level, context, villager);
         clearBuildSiteIntermediateNavigation(context);
         BuilderTaskState.clearPendingStructure(context.state());
         BuilderTaskState.clearTask(context.state());
-        super.stop(level, villager, context);
+        super.cancel(level, villager, context);
     }
 
     public static int countAvailableMaterial(Villager villager, HiredJobInventory inventory, ItemStack required) {

@@ -778,6 +778,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
         }
     }
 
+    @Override
+    public void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
+        clearOrder(context.state());
+        super.cancel(level, villager, context);
+    }
+
     public static void clearOrder(CompoundTag state) {
         state.remove(TARGET_ITEM_TAG);
         state.remove(TARGET_POTION_TAG);

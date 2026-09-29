@@ -585,7 +585,7 @@ public final class HiredVillagerContractService {
                 return false;
             }
             clearContractScopedOrders(level, villager, currentRole);
-            HiredWorkStateStore.cancelWork(level, villager, currentRole, "Work stopped. Role changed.", Map.of());
+            HiredWorkStateStore.transferWork(level, villager, currentRole, "Work stopped. Role changed.", Map.of());
             HiredWorkStateStore.resetReportProgress(villager);
         }
         tag.putString(ROLE_TAG, role.serializedName());
@@ -778,7 +778,7 @@ public final class HiredVillagerContractService {
         HiredVillagerRole role = roleFromContract(level, villager, tag);
         UUID contractId = ensureContractId(tag);
         finalizeBuilderJobForContractEnd(level, villager, tag, role);
-        HiredWorkStateStore.finishWork(level, villager, role, workStatus, Map.of());
+        HiredWorkStateStore.cancelWork(level, villager, role, workStatus, Map.of());
         clearContractScopedOrders(level, villager, role);
         tag.putString(STATUS_TAG, contractStatus);
         HireContractLifecycle.unlockProfession(villager);

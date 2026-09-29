@@ -366,11 +366,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     @Override
-    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+    public void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
         LoggingHarvestPlan.clear(context);
         context.state().remove(TREE_DEPOSIT_PENDING_TAG);
         LoggingWorkerState.clear(context);
-        super.stop(level, villager, context);
+        super.cancel(level, villager, context);
     }
 
     @Override

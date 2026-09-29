@@ -47,9 +47,10 @@ public record HiredWorkSession(
         CachedMetadata metadata = metadata(level, villager, safeRole, state, inventory);
         HiredJobSite jobSite = HiredTemporaryWorkService.jobSite(state, safeRole, metadata.jobSite);
         jobSite = com.jvn.villagerretaliation.interaction.work.HiredTemporaryEntities.jobSite(level, villager, state, jobSite);
-        if (safeRole == HiredVillagerRole.BUILDER) jobSite = com.jvn.villagerretaliation.settlement.SettlementConstructionService.jobSite(villager, state, jobSite);
+        var authority = VillagerWorkAuthority.resolve(level, villager);
+        jobSite = authority.effectiveJobSite(villager, state, safeRole, jobSite);
         HiredWorkArea area = jobSite.workArea();
-        HiredRoute route = com.jvn.villagerretaliation.settlement.SettlementGuardService.route(villager, HiredRoute.fromState(state));
+        HiredRoute route = authority.effectiveRoute(villager, HiredRoute.fromState(state));
         if (HiredTemporaryWorkService.queue(state) != null) route = HiredRoute.empty();
         int skillWorkSpeedPercent = HiredVillagerRoles.roleActionSpeedPercent(safeRole, metadata.roleScore);
         int transferCapacityPercent = HiredVillagerRoles.roleTransferCapacityPercent(safeRole, metadata.roleScore);

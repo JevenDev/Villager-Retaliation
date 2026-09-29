@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -165,6 +166,37 @@ public final class HiredQueuedBrewingGameTests {
             helper.assertFalse(HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, requested).isEmpty(), "a mismatched active ingredient blocks conversion");
             helper.assertValueEqual(state, before, "a blocked conversion preserves legacy work and creates no queue");
             helper.assertTrue(fixture.stand().getItem(3).is(Items.DIRT), "a conflicting physical stack is preserved");
+        } finally {
+            cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "queued_brewing")
+    public static void lifecycleChangesPreserveNativeBrewingContentsAndElapsedTime(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            var level = helper.getLevel();
+            var state = fixture.context().state();
+            BrewingWorker.setOrder(state, ResourceLocation.withDefaultNamespace("potion"),
+                    ResourceLocation.withDefaultNamespace("healing"), 5, false);
+            state.putLong("BrewingCachedStandPos", fixture.stand().getBlockPos().asLong());
+            for (int slot = 0; slot < 3; slot++) fixture.stand().setItem(slot, PotionContents.createItemStack(Items.POTION, Potions.WATER));
+            fixture.stand().setItem(3, new ItemStack(Items.NETHER_WART));
+            fixture.stand().setItem(4, new ItemStack(Items.BLAZE_POWDER));
+            brew(helper, fixture, 120);
+            var before = fixture.stand().saveWithoutMetadata(level.registryAccess());
+            var worker = new BrewingWorker();
+            worker.pause(level, fixture.villager(), fixture.context());
+            helper.assertTrue(BrewingWorker.hasOrder(state) && state.getInt("BrewingRemaining") == 5, "pause preserves the remaining order");
+            worker.transfer(level, fixture.villager(), fixture.context());
+            worker.cancel(level, fixture.villager(), fixture.context());
+            helper.assertFalse(BrewingWorker.hasOrder(state), "transfer and cancellation clear only pending legacy intent");
+            helper.assertValueEqual(fixture.stand().saveWithoutMetadata(level.registryAccess()), before,
+                    "native contents, fuel and elapsed time survive repeated lifecycle cleanup");
+            brew(helper, fixture, 281);
+            helper.assertTrue(fixture.stand().getItem(0).get(DataComponents.POTION_CONTENTS).is(Potions.AWKWARD),
+                    "the committed native batch continues after the worker leaves");
         } finally {
             cleanup(helper, fixture);
         }

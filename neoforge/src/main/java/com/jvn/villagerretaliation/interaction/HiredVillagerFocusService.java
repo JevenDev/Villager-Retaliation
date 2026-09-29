@@ -89,9 +89,8 @@ public final class HiredVillagerFocusService {
     }
 
     public static boolean shouldUseVanillaRest(ServerLevel level, Villager villager) {
-        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()) {
-            return !com.jvn.villagerretaliation.settlement.SettlementWorkforceService.onDuty(level, villager);
-        }
+        var authority = VillagerWorkAuthority.resolve(level, villager);
+        if (authority.civic()) return !authority.canWork(level, villager);
         if (HiredStressGridService.isStressWorker(villager) || isOnDutyGuard(level, villager)) {
             return false;
         }
@@ -105,15 +104,12 @@ public final class HiredVillagerFocusService {
         if (level == null
                 || villager == null
                 || villager.isBaby()
-                || !villager.isAlive()
-                || !VillagerWorkAuthority.hasWork(villager)
-                || com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()
-                        && !com.jvn.villagerretaliation.settlement.SettlementWorkforceService.onDuty(level, villager)
-                || HiredVillagerContractService.isAwaitingAutoPayment(level, villager)
-                || VillagerWorkAuthority.activeRole(level, villager)
-                        != HiredVillagerRole.COMBAT) {
+                || !villager.isAlive()) {
             return false;
         }
+        var authority = VillagerWorkAuthority.resolve(level, villager);
+        if (!authority.active() || authority.awaitingAutoPayment() || authority.role() != HiredVillagerRole.COMBAT
+                || authority.civic() && !authority.canWork(level, villager)) return false;
         CompoundTag state = HiredWorkStateStore.state(villager);
         HiredWorkStateStore.initializeDefaults(state, villager);
         return state.getBoolean("Enabled");

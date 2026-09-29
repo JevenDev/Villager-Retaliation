@@ -238,7 +238,7 @@ public final class SettlementWorkforceService {
             SettlementScheduleService.reconcile(villager);
             if (before.state() == VillagerAssignmentState.CIVIC) {
                 SettlementLogisticsService.resetAssignment(villager);
-                HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.paused", Map.of());
+                HiredWorkStateStore.transferWork(level, villager, before.role(), "interaction.work.status.paused", Map.of());
                 HiredWorkStateStore.state(villager).remove(SettlementWorksiteLinks.STATE_TAG);
                 VillagerAssignmentStore.unassign(villager);
                 SettlementBrewingService.reconcile(villager);
@@ -267,7 +267,7 @@ public final class SettlementWorkforceService {
             if (!assignmentChanged && before.role() == HiredVillagerRole.BUILDER) {
                 HiredWorkStateStore.pauseWork(level, villager, before.role(), "interaction.work.status.waiting_tick", Map.of());
             } else {
-                HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.waiting_tick", Map.of());
+                HiredWorkStateStore.transferWork(level, villager, before.role(), "interaction.work.status.waiting_tick", Map.of());
             }
             if (before.state() != VillagerAssignmentState.CIVIC) {
                 AssignedStorageService.removeAllAssignedStorage(level, villager);

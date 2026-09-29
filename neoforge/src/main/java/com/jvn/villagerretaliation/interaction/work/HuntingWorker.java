@@ -178,8 +178,8 @@ public final class HuntingWorker extends AbstractBlockWorker {
     }
 
     @Override
-    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
-        super.stop(level, villager, context);
+    public void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
+        super.cancel(level, villager, context);
         context.state().remove(NEXT_PATROL_GAME_TIME_TAG);
         context.state().remove(NEXT_TARGET_SCAN_GAME_TIME_TAG);
         if (villager.getTarget() == null && villager.getLastHurtByMob() == null) {

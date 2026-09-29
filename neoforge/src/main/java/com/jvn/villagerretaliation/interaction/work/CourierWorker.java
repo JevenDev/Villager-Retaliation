@@ -6,8 +6,6 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
-import com.jvn.villagerretaliation.settlement.SettlementAreaType;
-import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,10 +42,8 @@ public final class CourierWorker implements HiredRoleWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         WorkResult transfer = HiredTransferWorker.tick(level, villager, context);
         if (transfer != null) return transfer;
-        var duty = SettlementWorkforceService.duty(villager).orElse(null);
-        if (duty != null && duty.area().type() == SettlementAreaType.DEPOT) {
-            return SettlementHaulingWorker.tick(level, villager, context, duty);
-        }
+        WorkResult hauling = SettlementHaulingWorker.tryTick(level, villager, context);
+        if (hauling != null) return hauling;
         HiredRoute route = context.route();
         if (route == null || !route.usableForNavigation()) {
             AssignedStorageService.releaseCourierClaims(villager);

@@ -390,6 +390,40 @@ public final class SettlementConstructionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction")
+    public static void workerLifecycleDoesNotConfuseProjectTransferCompletionAndCancellation(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            fixture.town().advance();
+            var project = begin(helper, fixture);
+            var level = helper.getLevel();
+            var builder = fixture.builder();
+            var state = HiredWorkStateStore.state(builder);
+            var task = BuilderTaskState.task(state).copy();
+            var balance = fixture.town().economy().balance();
+            HiredWorkStateStore.pauseWork(level, builder, HiredVillagerRole.BUILDER, "paused", java.util.Map.of());
+            helper.assertValueEqual(BuilderTaskState.task(state), task, "pause retains project identity and progress");
+            HiredWorkStateStore.transferWork(level, builder, HiredVillagerRole.BUILDER, "transferred", java.util.Map.of());
+            helper.assertTrue(project.active() && !BuilderTaskState.hasTask(state), "worker detachment does not cancel the settlement's order");
+            helper.assertValueEqual(fixture.town().economy().balance(), balance, "worker detachment cannot refund the project");
+            SettlementConstructionService.reconcile(builder);
+            helper.assertTrue(BuilderTaskState.hasTask(state), "the same valid assignment resumes the saved project");
+            HiredWorkStateStore.finishWork(level, builder, HiredVillagerRole.BUILDER, "completed", java.util.Map.of());
+            helper.assertTrue(project.active() && project.placed() == 0, "completion cleanup cannot invent committed placements");
+            SettlementConstructionService.reconcile(builder);
+            HiredWorkStateStore.cancelWork(level, builder, HiredVillagerRole.BUILDER, "cancelled", java.util.Map.of());
+            helper.assertValueEqual(project.status(), SettlementProject.Status.CANCELLED, "explicit cancellation reaches the project owner");
+            var refunded = fixture.town().economy().balance();
+            HiredWorkStateStore.cancelWork(level, builder, HiredVillagerRole.BUILDER, "cancelled", java.util.Map.of());
+            helper.assertValueEqual(fixture.town().economy().balance(), refunded, "replayed cancellation cannot refund twice");
+            helper.assertValueEqual(SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {})
+                    .projects().get(project.id()).status(), SettlementProject.Status.CANCELLED, "cancelled intent stays cancelled after reload");
+        } finally {
+            fixture.builder().discard();
+        }
+        helper.succeed();
+    }
+
     private static boolean rejects(GameTestHelper helper, CompoundTag tag) {
         try {
             SettlementRecord.load(tag, helper.getLevel().registryAccess(), () -> {});

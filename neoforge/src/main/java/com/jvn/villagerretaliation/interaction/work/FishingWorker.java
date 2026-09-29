@@ -293,11 +293,11 @@ public final class FishingWorker extends AbstractBlockWorker {
     }
 
     @Override
-    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+    public void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
         clearActiveFishing(level, villager, context);
         clearFishingSpotScan(context);
         context.state().remove(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG);
-        super.stop(level, villager, context);
+        super.cancel(level, villager, context);
     }
 
     private void clearActiveFishing(ServerLevel level, Villager villager, HiredWorkContext context) {

@@ -46,7 +46,8 @@ public final class CombatWorker implements HiredRoleWorker {
         if (brain.taskState().keepsStorageTarget() && brain.storageTargetPos() != null) {
             return;
         }
-        HiredCombatMode mode = SettlementGuardService.mode(villager, HiredCombatMode.fromState(context.state()));
+        HiredCombatMode mode = com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.resolve(level, villager)
+                .effectiveCombatMode(villager, HiredCombatMode.fromState(context.state()));
         if (villager.getTarget() != null || villager.getLastHurtByMob() != null) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING, villager.blockPosition());
             return;
@@ -82,7 +83,8 @@ public final class CombatWorker implements HiredRoleWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         context.setProgressTicks(0);
-        HiredCombatMode mode = SettlementGuardService.mode(villager, HiredCombatMode.fromState(context.state()));
+        HiredCombatMode mode = com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.resolve(level, villager)
+                .effectiveCombatMode(villager, HiredCombatMode.fromState(context.state()));
         if (hasActiveTarget(villager) && HiredRangedAmmo.isRangedAttackBlockedByAmmo(villager)) {
             VillagerRetaliationHandler.clearCustomTarget(villager);
         }
@@ -115,8 +117,8 @@ public final class CombatWorker implements HiredRoleWorker {
     }
 
     @Override
-    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
-        HiredRoleWorker.super.stop(level, villager, context);
+    public void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
+        HiredRoleWorker.super.cancel(level, villager, context);
         context.state().remove(NEXT_PATROL_GAME_TIME_TAG);
         context.state().remove(NEXT_TARGET_SCAN_GAME_TIME_TAG);
         if (villager.getTarget() == null && villager.getLastHurtByMob() == null) {

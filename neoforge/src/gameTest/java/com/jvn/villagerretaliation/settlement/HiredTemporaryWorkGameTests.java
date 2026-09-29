@@ -544,6 +544,79 @@ public final class HiredTemporaryWorkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "temporary_work")
+    public static void unloadedTemporaryTreeKeepsCommittedProgressUntilCancellation(GameTestHelper helper) {
+        var fixture = personal(helper, HiredVillagerRole.LOGGING);
+        var level = helper.getLevel();
+        var villager = fixture.villager();
+        try {
+            var remote = villager.blockPosition().offset(160000, 0, 160000);
+            helper.assertFalse(level.hasChunkAt(remote), "the temporary area is unloaded");
+            var state = HiredWorkStateStore.state(villager);
+            var task = new HiredTemporaryTask(UUID.randomUUID(), Kind.TREE, remote, remote.above(3), 1, remote);
+            new HiredTemporaryQueue(fixture.owner().getUUID(), fixture.owner().getUUID(), null, HiredVillagerRole.LOGGING,
+                    remote, remote.above(3), List.of(task)).store(state);
+            var session = HiredWorkSession.active(level, villager);
+            com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.begin(session.context(), remote, remote,
+                    List.of(remote, remote.above()), List.of(), List.of(), ItemStack.EMPTY, false, "oak");
+            com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.removeLog(session.context(), remote);
+            com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.incrementLogsCut(session.context());
+            session.inventory().insertPlainOutput(new ItemStack(Items.OAK_LOG));
+            helper.assertFalse(HiredTemporaryWorkService.ready(level, villager, session), "unloaded work pauses");
+            var saved = state.copy();
+            villager.getPersistentData().put("VillagerRetaliationHiredWork", saved);
+            HiredWorkSession.invalidate(villager);
+            session = HiredWorkSession.active(level, villager);
+            var plan = com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.read(session.context());
+            helper.assertTrue(plan != null, "pause and reload retain the bounded tree plan");
+            helper.assertValueEqual(plan.logsCut(), 1, "the committed cut survives reload exactly once");
+            helper.assertValueEqual(plan.logs().length, 1, "only the uncut log remains pending");
+            helper.assertValueEqual(HiredTemporaryWorkService.queue(session.state()).current().id(), task.id(), "pause retains task ownership");
+            HiredWorkStateStore.cancelWork(level, villager, HiredVillagerRole.LOGGING, "cancelled", java.util.Map.of());
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.read(session.context()) == null,
+                    "cancellation clears pending tree intent");
+            helper.assertTrue(HiredTemporaryWorkService.queue(session.state()) == null, "cancelled temporary intent cannot restart on the next tick");
+            helper.assertTrue(session.inventory().hasOutput(stack -> stack.is(Items.OAK_LOG) && stack.getCount() == 1),
+                    "cancellation retains the committed output");
+            helper.assertFalse(level.hasChunkAt(remote), "lifecycle operations never load the remote area");
+        } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "temporary_work")
+    public static void pausedFishingCatchCompletesItsQuantityAndPracticeOnlyOnce(GameTestHelper helper) {
+        var fixture = personal(helper, HiredVillagerRole.FISHING);
+        var level = helper.getLevel();
+        var villager = fixture.villager();
+        try {
+            var task = task(Kind.FISH, villager.blockPosition(), 2);
+            helper.assertTrue(HiredTemporaryWorkService.submit(fixture.owner(), villager, task, false).isEmpty(), "a catch order is accepted");
+            var session = HiredWorkSession.active(level, villager);
+            session.inventory().insertPlainOutput(new ItemStack(Items.COD));
+            session.state().putBoolean("FishingCatchCompleted", true);
+            session.state().putDouble("FishingCatchPracticeUnits", 1.0D);
+            session.state().putLong("FishingCatchRepetitionKey", 42L);
+            HiredWorkStateStore.pauseWork(level, villager, HiredVillagerRole.FISHING, "paused", java.util.Map.of());
+            villager.getPersistentData().put("VillagerRetaliationHiredWork", session.state().copy());
+            HiredWorkSession.invalidate(villager);
+            session = HiredWorkSession.active(level, villager);
+            helper.assertFalse(com.jvn.villagerretaliation.interaction.work.FishingWorker.takeCompletedPractice(session.state()).isEmpty(),
+                    "the committed catch still awards its practice after reload");
+            HiredTemporaryWorkService.completed(level, villager, session, WorkResult.completed(""));
+            helper.assertValueEqual(HiredTemporaryWorkService.queue(session.state()).current().remaining(), 1, "the caught fish reduces quantity once");
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.work.FishingWorker.takeCompletedPractice(session.state()).isEmpty(),
+                    "practice cannot replay after completion");
+            HiredTemporaryWorkService.completed(level, villager, session, WorkResult.completed(""));
+            helper.assertValueEqual(HiredTemporaryWorkService.queue(session.state()).current().remaining(), 1, "duplicate completion cannot consume another catch");
+            helper.assertTrue(session.inventory().hasOutput(stack -> stack.is(Items.COD) && stack.getCount() == 1), "the catch remains owned by the worker");
+        } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
     private static Personal logger(GameTestHelper helper) {
         var fixture = personal(helper, HiredVillagerRole.LOGGING);
         var villager = fixture.villager();

@@ -17,7 +17,14 @@ final class SettlementHaulingWorker {
     private SettlementHaulingWorker() {
     }
 
-    static WorkResult tick(ServerLevel level, Villager villager, HiredWorkContext context,
+    static WorkResult tryTick(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (!com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.resolve(level, villager).civic()) return null;
+        var duty = SettlementWorkforceService.duty(villager).orElse(null);
+        if (duty == null || duty.area().type() != com.jvn.villagerretaliation.settlement.SettlementAreaType.DEPOT) return null;
+        return tick(level, villager, context, duty);
+    }
+
+    private static WorkResult tick(ServerLevel level, Villager villager, HiredWorkContext context,
                            SettlementWorkforceService.Duty duty) {
         var task = SettlementLogisticsService.prepare(level, villager, duty.town());
         if (task == null) {

@@ -90,9 +90,9 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     @Override
-    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+    public void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
         clearActiveBreakingTarget(level, context, villager);
-        HiredRoleWorker.super.stop(level, villager, context);
+        HiredRoleWorker.super.cancel(level, villager, context);
     }
 
     protected boolean storeDrops(ServerLevel level, HiredWorkContext context, Villager villager, HiredPathTarget target, ItemStack tool) {
