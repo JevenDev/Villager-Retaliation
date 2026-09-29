@@ -77,6 +77,15 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 0, max = 10000)
         public int maxBackgroundVillages = 100;
 
+        @RangeConstraint(min = 1, max = 4096)
+        public int remoteViewChunks = 256;
+
+        @RangeConstraint(min = 1, max = 64)
+        public int remoteViewLoadsPerTick = 4;
+
+        @RangeConstraint(min = 1, max = 64)
+        public int remoteViewSendsPerTick = 4;
+
         @RangeConstraint(min = 1, max = 100)
         public int dailyNutrition = 12;
 

@@ -10,10 +10,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 
 public record SettlementViewStatePayload(UUID session, UUID town, ResourceLocation dimension, int requestId,
-                                         SettlementViewWindow window, boolean active, SettlementPlotSnapshot plots) implements CustomPacketPayload {
+                                         SettlementViewWindow window, boolean active, SettlementPlotSnapshot plots, int queuedChunks) implements CustomPacketPayload {
     public static final Type<SettlementViewStatePayload> TYPE = VillagerPayloads.type("settlement_view_state");
     public static final StreamCodec<RegistryFriendlyByteBuf, SettlementViewStatePayload> STREAM_CODEC =
             VillagerPayloads.codec(SettlementViewStatePayload::encode, SettlementViewStatePayload::decode);
+
+    public SettlementViewStatePayload(UUID session, UUID town, ResourceLocation dimension, int requestId,
+                                      SettlementViewWindow window, boolean active, SettlementPlotSnapshot plots) {
+        this(session, town, dimension, requestId, window, active, plots, 0);
+    }
 
     public SettlementViewStatePayload(UUID session, UUID town, ResourceLocation dimension, int requestId,
                                       SettlementViewWindow window, boolean active) {
@@ -27,7 +32,7 @@ public record SettlementViewStatePayload(UUID session, UUID town, ResourceLocati
         java.util.Objects.requireNonNull(dimension);
         java.util.Objects.requireNonNull(window);
         java.util.Objects.requireNonNull(plots);
-        if (requestId < 0) {
+        if (requestId < 0 || queuedChunks < 0 || queuedChunks > window.chunks().size()) {
             throw new IllegalArgumentException("Invalid settlement view request");
         }
     }
@@ -47,6 +52,7 @@ public record SettlementViewStatePayload(UUID session, UUID town, ResourceLocati
         buffer.writeVarInt(window.chunks().size());
         window.chunks().forEach(buffer::writeChunkPos);
         SettlementPlotSnapshot.write(buffer, payload.plots());
+        buffer.writeVarInt(payload.queuedChunks());
     }
 
     private static SettlementViewStatePayload decode(RegistryFriendlyByteBuf buffer) {
@@ -66,7 +72,7 @@ public record SettlementViewStatePayload(UUID session, UUID town, ResourceLocati
             chunks.add(buffer.readChunkPos());
         }
         return new SettlementViewStatePayload(session, town, dimension, requestId,
-                new SettlementViewWindow(center, radius, x, z, height, chunks), active, SettlementPlotSnapshot.read(buffer));
+                new SettlementViewWindow(center, radius, x, z, height, chunks), active, SettlementPlotSnapshot.read(buffer), buffer.readVarInt());
     }
 
     @Override

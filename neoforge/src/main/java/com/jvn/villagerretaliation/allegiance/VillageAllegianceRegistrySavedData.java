@@ -286,6 +286,11 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return true;
     }
 
+    public int residentCount(VillageAllegianceId id, long gameTime) {
+        var record = canonicalRecord(id).orElse(null);
+        return record == null ? 0 : isManaged(record.id()) ? record.residents().size() : record.activeResidents(gameTime).size();
+    }
+
     public List<ResidentRecord> residentRoster(VillageAllegianceId id, long gameTime) {
         AllegianceRecord record = canonicalRecord(id).orElse(null);
         if (record == null) {

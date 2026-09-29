@@ -82,76 +82,93 @@ public final class SettlementFurnaceService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
-        var construction = new SettlementConstructionMachines(level, town, null);
+        var jobs = new java.util.ArrayList<Runnable>();
+        schedule(level, town, now, jobs);
+        var work = new SettlementWork(jobs);
+        while (!SettlementWork.complete(work)) work.run();
+    }
+
+    static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
         for (var entry : town.surveys().entrySet()) {
-            var area = town.areas().get(entry.getKey());
-            if (area == null || !area.enabled()) {
-                continue;
-            }
-            for (BlockPos position : entry.getValue().fixtures().keySet()) {
-                var existing = town.furnaces().get(position);
-                var source = construction.source(position);
-                if (source != null && source.ready()
-                        && (existing == null || !existing.pending() && !existing.id().equals(source.id()))
-                        && source.create(level) instanceof AbstractFurnaceBlockEntity furnace && accepts(area, furnace)) {
-                    town.recordFurnace(SettlementFurnaceState.capture(level, area.id(), furnace, now));
-                } else if (source == null && existing == null
-                        && level.hasChunkAt(position) && level.getBlockEntity(position) instanceof AbstractFurnaceBlockEntity furnace
-                        && accepts(area, furnace)) {
-                    observe(level, town, area, furnace, now);
-                    level.getChunkAt(position).setUnsaved(true);
-                }
-            }
+            if (entry.getValue().fixtures().isEmpty()) continue;
+            var areaId = entry.getKey();
+            jobs.add(SettlementWork.each(List.copyOf(entry.getValue().fixtures().keySet()), position -> {
+                var area = town.areas().get(areaId);
+                if (area == null || !area.enabled()) return;
+                observeFixture(level, town, area, position, now);
+            }));
         }
-        for (SettlementFurnaceState state : List.copyOf(town.furnaces().values())) {
-            if (!town.contains(state.position()) || town.areas().values().stream().anyMatch(area -> !town.owns(area) && accepts(area, state.position(), state.block()))) continue;
-            boolean operating = town.areas().values().stream().anyMatch(area -> serves(area, state));
-            var source = construction.source(state.position(), state.id());
-            if (source != null) {
-                if (source.ready()) {
-                    state.constructionReady();
-                    if (operating) {
-                        state.advance(level, now);
-                    } else {
-                        state.pause(now);
-                    }
+        jobs.add(SettlementWork.lazy(() -> SettlementWork.each(List.copyOf(town.furnaces().keySet()), position -> {
+            var state = town.furnaces().get(position);
+            if (state != null) {
+                advance(level, town, state, now);
+                town.changed();
+            }
+        })));
+    }
+
+    private static void observeFixture(ServerLevel level, SettlementRecord town, SettlementArea area, BlockPos position, long now) {
+        var construction = new SettlementConstructionMachines(level, town, null);
+        var existing = town.furnaces().get(position);
+        var source = construction.source(position);
+        if (source != null && source.ready()
+                && (existing == null || !existing.pending() && !existing.id().equals(source.id()))
+                && source.create(level) instanceof AbstractFurnaceBlockEntity furnace && accepts(area, furnace)) {
+            town.recordFurnace(SettlementFurnaceState.capture(level, area.id(), furnace, now));
+        } else if (source == null && existing == null
+                && level.hasChunkAt(position) && level.getBlockEntity(position) instanceof AbstractFurnaceBlockEntity furnace
+                && accepts(area, furnace)) {
+            observe(level, town, area, furnace, now);
+            level.getChunkAt(position).setUnsaved(true);
+        }
+    }
+
+    private static void advance(ServerLevel level, SettlementRecord town, SettlementFurnaceState state, long now) {
+        var construction = new SettlementConstructionMachines(level, town, null);
+        if (!town.contains(state.position()) || town.areas().values().stream().anyMatch(area -> !town.owns(area) && accepts(area, state.position(), state.block()))) return;
+        boolean operating = town.areas().values().stream().anyMatch(area -> serves(area, state));
+        var source = construction.source(state.position(), state.id());
+        if (source != null) {
+            if (source.ready()) {
+                state.constructionReady();
+                if (operating) {
+                    state.advance(level, now);
                 } else {
-                    state.missing();
                     state.pause(now);
                 }
-                continue;
-            }
-            boolean pending = state.pending();
-            if (level.hasChunkAt(state.position())) {
-                if (!(level.getBlockEntity(state.position()) instanceof AbstractFurnaceBlockEntity furnace)
-                        || !state.reconcile(level.registryAccess(), furnace)) {
-                    if (state.pending()) {
-                        state.missing();
-                        state.pause(now);
-                    } else {
-                        town.removeFurnace(state.position());
-                    }
-                    continue;
-                }
-                if (pending) {
-                    applyLoaded(level, state);
-                }
-                if (level.getChunkSource().isPositionTicking(ChunkPos.asLong(state.position()))
-                        || !operating) {
-                    state.observe(level.registryAccess(), furnace, now);
-                } else {
-                    state.refresh(level.registryAccess(), furnace);
-                    state.advance(level, now);
-                    applyLoaded(level, state);
-                }
-            } else if (operating) {
-                state.advance(level, now);
             } else {
+                state.missing();
                 state.pause(now);
             }
+            return;
         }
-        if (!town.furnaces().isEmpty()) {
-            town.changed();
+        boolean pending = state.pending();
+        if (level.hasChunkAt(state.position())) {
+            if (!(level.getBlockEntity(state.position()) instanceof AbstractFurnaceBlockEntity furnace)
+                    || !state.reconcile(level.registryAccess(), furnace)) {
+                if (state.pending()) {
+                    state.missing();
+                    state.pause(now);
+                } else {
+                    town.removeFurnace(state.position());
+                }
+                return;
+            }
+            if (pending) {
+                applyLoaded(level, state);
+            }
+            if (level.getChunkSource().isPositionTicking(ChunkPos.asLong(state.position()))
+                    || !operating) {
+                state.observe(level.registryAccess(), furnace, now);
+            } else {
+                state.refresh(level.registryAccess(), furnace);
+                state.advance(level, now);
+                applyLoaded(level, state);
+            }
+        } else if (operating) {
+            state.advance(level, now);
+        } else {
+            state.pause(now);
         }
     }
 

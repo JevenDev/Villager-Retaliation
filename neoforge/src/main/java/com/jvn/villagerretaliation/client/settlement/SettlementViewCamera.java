@@ -59,8 +59,20 @@ public final class SettlementViewCamera {
     }
 
     public static double boundaryOffset(SettlementViewWindow window, double x, double z, double dx, double dz) {
-        return Math.max(0.0D, Math.min(axisLimit(x, window.center().getX(), window.radius(), dx),
-                axisLimit(z, window.center().getZ(), window.radius(), dz)));
+        double limit = Math.max(0.0D, Math.min(96.0D, Math.min(axisLimit(x, window.center().getX(), window.radius(), dx),
+                axisLimit(z, window.center().getZ(), window.radius(), dz))));
+        double distance = 0.0D;
+        while (distance < limit) {
+            var chunk = new net.minecraft.world.level.ChunkPos(net.minecraft.core.BlockPos.containing(
+                    x + dx * (distance + 0.0001D), 0, z + dz * (distance + 0.0001D)));
+            if (!window.chunks().contains(chunk)) return Math.max(0.0D, distance - 0.001D);
+            double endX = Math.abs(dx) < 1.0E-8D ? Double.POSITIVE_INFINITY
+                    : ((dx > 0 ? chunk.getMaxBlockX() + 1.0D : chunk.getMinBlockX()) - x) / dx;
+            double endZ = Math.abs(dz) < 1.0E-8D ? Double.POSITIVE_INFINITY
+                    : ((dz > 0 ? chunk.getMaxBlockZ() + 1.0D : chunk.getMinBlockZ()) - z) / dz;
+            distance = Math.max(distance + 0.0001D, Math.min(endX, endZ));
+        }
+        return limit;
     }
 
     private static double axisLimit(double focus, int center, int radius, double direction) {

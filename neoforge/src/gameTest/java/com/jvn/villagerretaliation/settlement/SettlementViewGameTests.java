@@ -84,8 +84,11 @@ public final class SettlementViewGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
     public static void cameraRotationTerrainAndBoundariesAreContinuous(GameTestHelper helper) {
-        var window = new SettlementViewWindow(new BlockPos(-100, 64, -200), 48, -100, -200, 8.0F,
-                List.of(new ChunkPos(-7, -13)));
+        var cameraChunks = new java.util.ArrayList<ChunkPos>();
+        for (int x = -10; x <= -4; x++) {
+            for (int z = -16; z <= -10; z++) cameraChunks.add(new ChunkPos(x, z));
+        }
+        var window = new SettlementViewWindow(new BlockPos(-100, 64, -200), 48, -100, -200, 8.0F, cameraChunks);
         for (int yaw = 0; yaw < 360; yaw += 15) {
             double dx = Math.sin(Math.toRadians(yaw));
             double dz = -Math.cos(Math.toRadians(yaw));
@@ -132,12 +135,12 @@ public final class SettlementViewGameTests {
             for (int direction : List.of(-1, 1)) {
                 var window = SettlementViewWindow.around(fixture.town(), direction * Double.MAX_VALUE,
                         -direction * Double.MAX_VALUE, Float.MAX_VALUE);
-                int radius = stage.radius() + SettlementViewWindow.BORDER;
-                helper.assertValueEqual(window.radius(), radius, "the small camera border follows the stage");
-                helper.assertValueEqual(window.x(), (double) fixture.town().center().getX() + direction * radius,
-                        "remote coordinates cannot exceed the east or west boundary");
-                helper.assertValueEqual(window.z(), (double) fixture.town().center().getZ() - direction * radius,
-                        "remote coordinates cannot exceed the north or south boundary");
+                int radius = fixture.town().territory().envelopeRadius(fixture.town().center()) + SettlementViewWindow.BORDER;
+                helper.assertValueEqual(window.radius(), radius, "the camera envelope follows claims rather than stage unlocks");
+                helper.assertTrue(SettlementViewWindow.nearTerritory(fixture.town(), new ChunkPos(BlockPos.containing(window.x(), 0, window.z()))),
+                        "remote camera coordinates project onto owned territory or its nearby border");
+                helper.assertTrue(window.chunks().stream().allMatch(chunk -> SettlementViewWindow.nearTerritory(fixture.town(), chunk)),
+                        "every streamed chunk is within one chunk of owned territory");
                 helper.assertValueEqual(window.height(), SettlementViewWindow.MAX_HEIGHT, "zoom has a finite upper limit");
                 helper.assertTrue(window.chunks().size() <= 121, "the camera requests a bounded chunk window");
                 helper.assertValueEqual(new HashSet<>(window.chunks()).size(), window.chunks().size(), "chunk tickets cannot be duplicated");
@@ -168,6 +171,14 @@ public final class SettlementViewGameTests {
                     new SettlementManagementActionPayload(fixture.town().id().value(), new SettlementManagementActionPayload.View())),
                     "view access opens the actual management action");
             var session = SettlementViewService.session(delegate.getUUID());
+            int cap = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.get();
+            try {
+                com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.set(0);
+                helper.assertValueEqual(SettlementSimulationService.suspension(helper.getLevel(), fixture.town()), "",
+                        "an actively viewed town remains eligible when background allocation is disabled");
+            } finally {
+                com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.set(cap);
+            }
             helper.assertTrue(session != null, "the server owns one view session");
             helper.assertValueEqual(delegate.position(), body, "opening does not teleport the body");
             helper.assertValueEqual(delegate.getCamera(), delegate, "the server camera remains the vulnerable player");
@@ -176,6 +187,8 @@ public final class SettlementViewGameTests {
             SettlementViewService.request(delegate, new SettlementViewRequestPayload(session.id, 1,
                     fixture.town().center().getX(), fixture.town().center().getZ(), 32.0F, false));
             helper.assertTrue(SettlementViewService.session(delegate.getUUID()) == null, "revoked access closes the session");
+            helper.assertFalse(SettlementSimulationService.foreground(helper.getLevel(), fixture.town()),
+                    "closing the last remote session relinquishes foreground eligibility");
         } finally {
             SettlementViewService.close(delegate.getUUID(), false);
             helper.getLevel().getChunkSource().removeEntity(delegate);
@@ -218,7 +231,7 @@ public final class SettlementViewGameTests {
             SettlementViewService.update(session);
             helper.assertValueEqual(session.held.size(), 2, "a frame adds only two chunk tickets");
             SettlementViewService.update(session);
-            helper.assertValueEqual(session.held.size(), 4, "later frames expand the window incrementally");
+            helper.assertValueEqual(session.held.size(), 2, "repeated updates cannot reset the per-tick allowance");
             var priorTickets = Set.copyOf(session.held);
             var distance = helper.getLevel().getChunkSource().chunkMap.getDistanceManager();
             var oldId = session.id;
@@ -257,7 +270,6 @@ public final class SettlementViewGameTests {
             helper.assertTrue(helper.getLevel().getChunkSource().chunkMap.getPlayers(resident.chunkPosition(), false).contains(fixture.player()),
                     "the native chunk broadcaster includes the remote viewer");
             resident.setPos(fixture.town().center().offset(fixture.town().stage().radius() + 17, 0, 0).getCenter());
-            session.sent.add(resident.chunkPosition());
             helper.assertFalse(SettlementViewService.tracks(fixture.player(), resident), "a ready chunk cannot bypass the exact town boundary");
             fixture.player().hurtTime = 10;
             helper.assertTrue(SettlementViewService.viewers(helper.getLevel(), new ChunkPos(fixture.town().center())).isEmpty(),
@@ -278,7 +290,8 @@ public final class SettlementViewGameTests {
         var window = SettlementViewWindow.around(fixture.town(), fixture.town().center().getX(), fixture.town().center().getZ(), 64);
         roundTrip(helper, SettlementViewRequestPayload.STREAM_CODEC, new SettlementViewRequestPayload(id, 42, -123.5, 82.25, 24, false));
         roundTrip(helper, SettlementViewStatePayload.STREAM_CODEC,
-                new SettlementViewStatePayload(id, fixture.town().id().value(), fixture.town().dimension(), 42, window, true));
+                new SettlementViewStatePayload(id, fixture.town().id().value(), fixture.town().dimension(), 42, window, true,
+                        SettlementPlotService.snapshot(fixture.player(), fixture.town(), window), 2));
         var chunk = helper.getLevel().getChunkAt(helper.absolutePos(BlockPos.ZERO));
         var packet = new SettlementViewChunkPayload(id,
                 new ClientboundLevelChunkWithLightPacket(chunk, helper.getLevel().getLightEngine(), null, null));
@@ -480,6 +493,151 @@ public final class SettlementViewGameTests {
                     SettlementViewAction.RETURN, List.of(targets.getFirst(), targets.getFirst()), null, null));
         } finally {
             SettlementViewService.close(fixture.player().getUUID(), false);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_view")
+    public static void concurrentViewsShareTicketsAndCannotResetTheAggregateBudget(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var peer = player(helper, "SharedViewer");
+        var server = helper.getLevel().getServer();
+        var config = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_LOADS;
+        int previous = config.get();
+        int sends = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_SENDS.get();
+        try {
+            config.set(2);
+            com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_SENDS.set(1);
+            fixture.town().setPermissions(fixture.player().getUUID(), peer.getUUID(), Set.of(SettlementPermission.VIEW));
+            SettlementViewService.open(fixture.player(), fixture.town().id());
+            SettlementViewService.open(peer, fixture.town().id());
+            var first = SettlementViewService.session(fixture.player().getUUID());
+            var second = SettlementViewService.session(peer.getUUID());
+            var budget = SettlementViewService.budget(server);
+            for (var chunk : first.window.chunks().subList(0, 2)) helper.getLevel().getChunk(chunk.x, chunk.z);
+            budget.begin(helper.getLevel().getGameTime() + 1000);
+            SettlementViewService.update(first, budget);
+            SettlementViewService.update(second, budget);
+            helper.assertValueEqual(first.held, second.held, "overlapping demand shares the same two resources");
+            helper.assertValueEqual(SettlementViewService.metrics(server).loads(), 2, "shared demand adds no duplicate tickets");
+            helper.assertValueEqual(SettlementViewService.metrics(server).sends(), 1, "ready overlapping chunks still obey the shared packet budget");
+            var positions = Set.copyOf(first.held);
+            SettlementViewService.close(fixture.player().getUUID(), false);
+            helper.assertTrue(positions.stream().allMatch(pos -> helper.getLevel().getChunkSource().chunkMap.getDistanceManager()
+                    .shouldForceTicks(pos.toLong())), "the remaining viewer retains the shared ticket");
+            SettlementViewService.open(fixture.player(), fixture.town().id());
+            var reopened = SettlementViewService.session(fixture.player().getUUID());
+            SettlementViewService.update(reopened, budget);
+            helper.assertValueEqual(SettlementViewService.metrics(server).loads(), 2, "reopening cannot replenish global admissions");
+            SettlementViewService.close(peer.getUUID(), false);
+            SettlementViewService.close(fixture.player().getUUID(), false);
+            helper.assertTrue(positions.stream().noneMatch(pos -> helper.getLevel().getChunkSource().chunkMap.getDistanceManager()
+                    .shouldForceTicks(pos.toLong())), "the last reference releases the actual ticket");
+            SettlementViewService.close(fixture.player().getUUID(), false);
+        } finally {
+            config.set(previous);
+            com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_SENDS.set(sends);
+            SettlementViewService.close(peer.getUUID(), false);
+            SettlementViewService.close(fixture.player().getUUID(), false);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_view")
+    public static void saturatedViewsRotateResourcesAndReleaseEveryLease(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var peer = player(helper, "QueuedViewer");
+        var server = helper.getLevel().getServer();
+        var config = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_CHUNKS;
+        int previous = config.get();
+        try {
+            config.set(1);
+            var registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+            var center = fixture.town().center().east(512);
+            var id = registry.create(helper.getLevel().getGameTime(), helper.getLevel().dimension().location(), center, "Second view");
+            var other = SettlementSavedData.get(helper.getLevel()).establish(registry, id, peer.getUUID(), center, helper.getLevel().getGameTime()).orElseThrow();
+            SettlementViewService.open(fixture.player(), fixture.town().id());
+            SettlementViewService.open(peer, other.id());
+            var first = SettlementViewService.session(fixture.player().getUUID());
+            var second = SettlementViewService.session(peer.getUUID());
+            var budget = SettlementViewService.budget(server);
+            var visited = new HashSet<ChunkPos>();
+            int firstTurns = 0;
+            int secondTurns = 0;
+            for (int tick = 0; tick < 500; tick++) {
+                budget.begin(helper.getLevel().getGameTime() + 2000 + tick);
+                SettlementViewService.stream(List.of(first, second), budget);
+                visited.addAll(first.held);
+                visited.addAll(second.held);
+                if (!first.held.isEmpty()) firstTurns++;
+                if (!second.held.isEmpty()) secondTurns++;
+                helper.assertTrue(SettlementViewService.metrics(server).chunks() <= 1, "all sessions share one aggregate ticket");
+                helper.assertTrue(SettlementViewService.metrics(server).sends() <= 4, "transmission remains globally bounded");
+            }
+            helper.assertTrue(firstTurns > 100 && secondTurns > 100, "disjoint viewers both receive service under a one-ticket cap");
+            helper.assertTrue(visited.size() >= 10, "pressure rotates through camera demand instead of repeatedly admitting the closest chunk");
+            SettlementViewService.close(fixture.player().getUUID(), false);
+            SettlementViewService.close(peer.getUUID(), false);
+            helper.assertValueEqual(SettlementViewService.metrics(server).chunks(), 0, "all leases are released");
+        } finally {
+            config.set(previous);
+            SettlementViewService.close(peer.getUUID(), false);
+            SettlementViewService.close(fixture.player().getUUID(), false);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_view")
+    public static void irregularClaimsDoNotExposeTheirEnvelopeOrAnotherTown(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var center = new ChunkPos(fixture.town().center());
+        var plots = new java.util.LinkedHashSet<Long>();
+        for (int x = 0; x <= 12; x++) plots.add(ChunkPos.asLong(center.x + x, center.z));
+        for (int z = 0; z <= 12; z++) plots.add(ChunkPos.asLong(center.x + 12, center.z + z));
+        var tag = fixture.town().save(helper.getLevel().registryAccess());
+        var territory = tag.getCompound("Territory");
+        territory.putLongArray("Plots", plots.stream().mapToLong(Long::longValue).toArray());
+        territory.putInt("GrandfatheredCapacity", plots.size());
+        var town = SettlementRecord.load(tag, helper.getLevel().registryAccess(), () -> {});
+        var gap = new ChunkPos(center.x + 6, center.z + 6);
+        var window = SettlementViewWindow.around(town, gap.getMiddleBlockX(), gap.getMiddleBlockZ(), 64);
+        helper.assertFalse(window.chunks().contains(gap), "the empty middle of a bent claim stays outside the stream");
+        helper.assertTrue(window.chunks().stream().allMatch(chunk -> SettlementViewWindow.nearTerritory(town, chunk)),
+                "every camera chunk belongs to the claim or the bounded border");
+        var focus = window.focus(gap.getMiddleBlockX(), gap.getMiddleBlockZ());
+        helper.assertTrue(window.contains(BlockPos.containing(focus)), "the client preview projects focus into the server window");
+        double offset = SettlementViewCamera.boundaryOffset(window, window.x(), window.z(), 1, 0);
+        helper.assertTrue(window.contains(BlockPos.containing(window.x() + offset, 0, window.z())),
+                "the camera orbit cannot cross a missing part of the territory window");
+        var distant = SettlementViewWindow.around(town, (center.x + 12) * 16.0D, (center.z + 12) * 16.0D, 32);
+        helper.assertTrue(distant.chunks().contains(new ChunkPos(center.x + 12, center.z + 12)),
+                "a distant legitimate claim remains reachable");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_view")
+    public static void bordersAndForeignClaimsRestrictServerWindows(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var neighborCenter = fixture.town().center().east(48);
+        var id = registry.create(level.getGameTime(), level.dimension().location(), neighborCenter, "Neighbor");
+        var neighbor = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), neighborCenter, level.getGameTime()).orElseThrow();
+        var window = SettlementViewWindow.around(level, fixture.town(), neighborCenter.getX(), neighborCenter.getZ(), 64);
+        helper.assertTrue(window.chunks().stream().noneMatch(chunk -> neighbor.territory().contains(chunk.x, chunk.z)),
+                "another town's claims are excluded even where they meet the nearby border");
+        var border = level.getWorldBorder();
+        double x = border.getCenterX(), z = border.getCenterZ(), size = border.getSize();
+        try {
+            border.setCenter(fixture.town().center().getX(), fixture.town().center().getZ());
+            border.setSize(20);
+            var clipped = SettlementViewWindow.around(level, fixture.town(), Double.MAX_VALUE, -Double.MAX_VALUE, 64);
+            helper.assertTrue(clipped.chunks().stream().allMatch(chunk -> SettlementViewWindow.intersects(border, chunk)), "no requested chunk lies wholly outside the world border");
+            helper.assertTrue(clipped.x() < border.getMaxX() && clipped.x() >= border.getMinX()
+                    && clipped.z() < border.getMaxZ() && clipped.z() >= border.getMinZ(), "camera focus stays inside the world border");
+        } finally {
+            border.setCenter(x, z);
+            border.setSize(size);
         }
         helper.succeed();
     }

@@ -163,6 +163,8 @@ public final class SettlementWorkerDiagnostics {
                     "Supply food in an accessible settlement depot and check the resident's access to it.";
             case "resident_injured" ->
                     "Visit this resident, resolve nearby danger and provide recovery food.";
+            case "simulation_queued" ->
+                    "Settlement work is queued behind the server work budget. Loaded and viewed towns share service fairly with allocated background towns.";
             case "simulation_disabled" ->
                     "Background settlement simulation is disabled by the server's Background Settlement Limit setting.";
             case "simulation_capped" ->

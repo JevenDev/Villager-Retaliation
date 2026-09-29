@@ -21,6 +21,45 @@ public final class SettlementSimulationGameTests {
     }
 
     @GameTest(template = "empty", batch = "settlement_simulation")
+    public static void auxiliaryWorkYieldsFairlyAndDeduplicatesRequests(GameTestHelper helper) {
+        var simulation = new SettlementSimulationService();
+        var seen = new ArrayList<Integer>();
+        simulation.enqueue("large", SettlementWork.each(java.util.stream.IntStream.range(0, 100).boxed().toList(), seen::add));
+        simulation.enqueue("small", () -> seen.add(-1));
+        simulation.enqueue("small", () -> seen.add(-2));
+        helper.assertTrue(simulation.runPending(), "one work unit is available");
+        helper.assertValueEqual(seen, java.util.List.of(0), "a large job advances only one element");
+        simulation.runPending();
+        helper.assertValueEqual(seen, java.util.List.of(0, -1), "short work receives a turn before the large job finishes");
+        for (int step = 0; step < 99; step++) simulation.runPending();
+        helper.assertValueEqual(seen.size(), 101, "each element runs exactly once and duplicate requests do not enter the queue");
+        helper.assertFalse(simulation.runPending(), "completed tasks leave no historical queue entries");
+        simulation.enqueue("cancelled", () -> seen.add(-3));
+        simulation.invalidate();
+        helper.assertFalse(simulation.runPending(), "lifecycle invalidation discards stale work");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_simulation")
+    public static void nestedWorkPreservesOrderAndCancelsOnlyAtSafePoints(GameTestHelper helper) {
+        var seen = new ArrayList<Integer>();
+        boolean[] valid = {true};
+        var work = SettlementWork.guard(new SettlementWork(java.util.List.of(
+                SettlementWork.each(java.util.List.of(1, 2), seen::add),
+                SettlementWork.lazy(() -> () -> seen.add(3)))), () -> valid[0]);
+        work.run();
+        helper.assertValueEqual(seen, java.util.List.of(1), "one call does not drain a nested sequence");
+        work.run();
+        work.run();
+        helper.assertValueEqual(seen, java.util.List.of(1, 2), "lazy planning is a separate work unit");
+        valid[0] = false;
+        work.run();
+        helper.assertTrue(SettlementWork.complete(work), "invalidated plans retire without applying later mutations");
+        helper.assertValueEqual(seen, java.util.List.of(1, 2), "completed atomic mutations are preserved");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_simulation")
     public static void capRotatesEveryManagedSettlementFairly(GameTestHelper helper) {
         var towns = new ArrayList<SettlementRecord>();
         for (int index = 0; index < 203; index++) {

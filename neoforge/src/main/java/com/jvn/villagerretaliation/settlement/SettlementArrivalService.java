@@ -28,6 +28,7 @@ final class SettlementArrivalService {
         VillagerSocialGraphSavedData.get(level).ensureProfile(level, resident);
         town.recordResident(SettlementResidentState.capture(resident, town, level.getGameTime()));
         town.recordArrival(new SettlementArrival(resident.getUUID(), resident.saveWithoutId(new CompoundTag())));
+        SettlementSavedData.get(level).simulation.arrival(level, town, resident.getUUID());
         town.recordEvent(level.getGameTime(), SettlementEvent.Type.RESIDENT_JOINED,
                 com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(resident).getString());
     }

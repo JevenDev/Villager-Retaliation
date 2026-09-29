@@ -12,8 +12,6 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 
 public final class SettlementBuildingService {
-    private static final int SURVEYS_PER_SECOND = 4;
-
     private SettlementBuildingService() {
     }
 
@@ -33,27 +31,74 @@ public final class SettlementBuildingService {
     }
 
     public static void tick(MinecraftServer server) {
-        if (server.overworld().getGameTime() % 20L != 0L) {
-            return;
-        }
-        var towns = SettlementSavedData.get(server.overworld()).settlements();
-        for (ServerLevel level : server.getAllLevels()) {
-            List<Site> sites = new ArrayList<>();
-            for (SettlementRecord town : towns) {
-                if (town.dimension().equals(level.dimension().location())) {
-                    town.workplaces().stream().filter(SettlementArea::enabled)
-                            .forEach(area -> sites.add(new Site(town, area)));
+        if (server.overworld().getGameTime() % 20L != 0L) return;
+        var data = SettlementSavedData.get(server.overworld());
+        data.simulation.enqueue("buildings", SettlementWork.each(data.settlements(), town -> {
+            var level = server.getLevel(net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.DIMENSION, town.dimension()));
+            if (level != null) {
+                for (var area : town.workplaces()) {
+                    if (area.enabled()) enqueue(level, town, area);
                 }
             }
-            if (sites.isEmpty()) {
-                continue;
-            }
-            int start = (int) Math.floorMod(level.getGameTime() / 20L * SURVEYS_PER_SECOND, sites.size());
-            for (int index = 0; index < Math.min(SURVEYS_PER_SECOND, sites.size()); index++) {
-                Site site = sites.get((start + index) % sites.size());
-                refresh(level, site.town(), site.area());
+        }));
+    }
+
+    static void enqueue(ServerLevel level, SettlementRecord town, SettlementArea area) {
+        SettlementSavedData.get(level).simulation.enqueue(new Site(town, area), work(level, town, area));
+    }
+
+    static Runnable work(ServerLevel level, SettlementRecord town, SettlementArea area) {
+        var jobs = new ArrayList<Runnable>();
+        var slices = new ArrayList<SettlementArea>();
+        for (int x = area.min().getX(); x <= area.max().getX(); x += 16) {
+            for (int y = area.min().getY(); y <= area.max().getY(); y += 16) {
+                for (int z = area.min().getZ(); z <= area.max().getZ(); z += 16) {
+                    slices.add(new SettlementArea(area.id(), area.type(), area.name(), new BlockPos(x, y, z),
+                            new BlockPos(Math.min(x + 15, area.max().getX()), Math.min(y + 15, area.max().getY()),
+                                    Math.min(z + 15, area.max().getZ())), area.priority(), area.enabled()));
+                }
             }
         }
+        if (area.type().usesFields()) jobs.add(SettlementWork.each(slices, slice -> SettlementFieldService.observeArea(level, town, slice, null)));
+        if (area.type() == SettlementAreaType.FISHERY) jobs.add(() -> SettlementFisheryService.observeArea(level, town, area, null));
+        if (area.type() == SettlementAreaType.FORESTRY) jobs.add(() -> SettlementForestService.observeArea(level, town, area, null));
+        if (area.type() == SettlementAreaType.MINE) jobs.add(() -> SettlementMineService.observeArea(level, town, area, null));
+        if (area.type() == SettlementAreaType.CONSTRUCTION) jobs.add(() -> SettlementConstructionSiteService.observeArea(level, town, area, null));
+        if (area.type() == SettlementAreaType.ANIMAL_PEN) jobs.add(() -> SettlementLivestockService.observeArea(level, town, area));
+        if (area.type() == SettlementAreaType.HUNTING_GROUNDS) jobs.add(() -> SettlementHuntingTargetService.observeArea(level, town, area));
+        if (area.type().role() != null) jobs.add(() -> SettlementGroundItemService.observeArea(level, town, area));
+        jobs.add(() -> SettlementGroundExperienceService.observeArea(level, town, area));
+        var results = new ArrayList<SettlementBuildingSurvey.Survey>();
+        long requestedAt = level.getGameTime();
+        var baseline = town.surveys().get(area.id());
+        jobs.add(SettlementWork.lazy(() -> {
+            var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, null, town);
+            return SettlementWork.each(slices, slice -> results.add(SettlementBuildingSurvey.inspect(blocks, area, slice)));
+        }));
+        jobs.add(() -> {
+            var previous = town.surveys().get(area.id());
+            if (previous != baseline) return;
+            var beds = new ArrayList<BlockPos>();
+            var stations = new ArrayList<BlockPos>();
+            var water = new ArrayList<BlockPos>();
+            var fixtures = new java.util.LinkedHashMap<BlockPos, net.minecraft.resources.ResourceLocation>();
+            var availability = new java.util.LinkedHashMap<BlockPos, Boolean>();
+            boolean loaded = true;
+            for (var result : results) {
+                beds.addAll(result.beds());
+                stations.addAll(result.workstations());
+                water.addAll(result.waterSources());
+                fixtures.putAll(result.fixtures());
+                availability.putAll(result.bedAvailability());
+                loaded &= result.fullyLoaded();
+            }
+            publish(level, town, area, new SettlementBuildingSurvey.ObservedBlocks(level, null, town),
+                    new SettlementBuildingSurvey.Survey(requestedAt, beds, stations, loaded, fixtures, water, availability));
+        });
+        // unfinished scans never publish a partial survey or survive an area replacement
+        return SettlementWork.guard(new SettlementWork(jobs),
+                () -> SettlementSavedData.get(level).get(town.id()).orElse(null) == town && area.equals(town.workplace(area.id())));
     }
 
     public static void onChunkLoad(ChunkEvent.Load event) {
@@ -77,6 +122,7 @@ public final class SettlementBuildingService {
                 int margin = area.type() == SettlementAreaType.FISHERY ? 11 : 2;
                 if (area.min().getX() <= position.getMaxBlockX() + margin && area.max().getX() >= position.getMinBlockX() - margin
                         && area.min().getZ() <= position.getMaxBlockZ() + margin && area.max().getZ() >= position.getMinBlockZ() - margin) {
+                    // supplied chunks are not safely queryable later, reconcile before native ticking or saving
                     refresh(level, town, area, chunk);
                 }
             }
@@ -88,6 +134,10 @@ public final class SettlementBuildingService {
     }
 
     private static void refresh(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
+        SettlementSimulationService.synchronous(level, () -> observe(level, town, area, supplied));
+    }
+
+    private static void observe(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
         SettlementFieldService.observeArea(level, town, area, supplied);
         SettlementFisheryService.observeArea(level, town, area, supplied);
         SettlementForestService.observeArea(level, town, area, supplied);
@@ -99,6 +149,11 @@ public final class SettlementBuildingService {
         SettlementGroundExperienceService.observeArea(level, town, area);
         var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, supplied, town);
         var observed = SettlementBuildingSurvey.inspect(blocks, area);
+        publish(level, town, area, blocks, observed);
+    }
+
+    private static void publish(ServerLevel level, SettlementRecord town, SettlementArea area,
+                                SettlementBuildingSurvey.ObservedBlocks blocks, SettlementBuildingSurvey.Survey observed) {
         var previous = town.surveys().get(area.id());
         if (previous != null && !observed.fullyLoaded()) {
             List<BlockPos> beds = new ArrayList<>(observed.beds());

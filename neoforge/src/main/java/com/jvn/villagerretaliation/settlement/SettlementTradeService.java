@@ -83,7 +83,7 @@ public final class SettlementTradeService {
                 || !town.economy().beginTradeCycle(gameTime)) {
             return Map.of();
         }
-        List<UUID> workers = activeClerks(level, town);
+        List<UUID> workers = activeClerks(level, town, true);
         Map<UUID, Result> results = new LinkedHashMap<>();
         List<SettlementTradeOrder> orders = new ArrayList<>(town.economy().orders().values());
         int capacity = workCapacity(level, town, workers);
@@ -112,17 +112,56 @@ public final class SettlementTradeService {
         return Map.copyOf(results);
     }
 
-    private static List<UUID> activeClerks(ServerLevel level, SettlementRecord town) {
+    static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
+        jobs.add(SettlementWork.lazy(() -> {
+            var surveys = new ArrayList<Runnable>();
+            if (town.stage().ordinal() >= SettlementStage.VILLAGE.ordinal()) {
+                for (var area : town.areas().values()) {
+                    if (area.enabled() && area.type() == SettlementAreaType.TRADING_POST) surveys.add(SettlementBuildingService.work(level, town, area));
+                }
+            }
+            return new SettlementWork(surveys);
+        }));
+        jobs.add(SettlementWork.lazy(() -> {
+            if (!town.dimension().equals(level.dimension().location()) || !town.economy().beginTradeCycle(now)) return () -> {};
+            var orders = new ArrayList<>(town.economy().orders().keySet());
+            if (!orders.isEmpty()) java.util.Collections.rotate(orders, -(int) Math.floorMod(now / 200L, orders.size()));
+            int[] remaining = {workCapacity(level, town, activeClerks(level, town, false))};
+            var results = new LinkedHashMap<UUID, Result>();
+            return SettlementWork.each(orders, id -> {
+                var order = town.economy().orders().get(id);
+                if (order == null) return;
+                Result result;
+                if (!order.enabled()) result = Result.blocked(Status.DISABLED);
+                else if (town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) result = Result.blocked(Status.STAGE_LOCKED);
+                else if (!SettlementWorkforceService.workingHours(level.getDayTime(), town.leader(), HiredVillagerRole.NITWIT))
+                    result = Result.blocked(Status.CLOSED);
+                else if (activeClerks(level, town, false).isEmpty()) result = Result.blocked(Status.NO_STAFF);
+                else if (remaining[0] == 0) result = Result.blocked(Status.BUSY);
+                else {
+                    result = order.direction() == SettlementTradeOrder.Direction.BUY
+                            ? buy(level, town, order, remaining[0]) : sell(level, town, order, remaining[0]);
+                    remaining[0] -= result.count();
+                }
+                results.put(id, result);
+                town.economy().recordResults(results);
+            });
+        }));
+    }
+
+    private static List<UUID> activeClerks(ServerLevel level, SettlementRecord town, boolean refresh) {
         if (town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()
                 || !SettlementWorkforceService.workingHours(level.getDayTime(), town.leader(), HiredVillagerRole.NITWIT)) {
             return List.of();
         }
         Map<UUID, SettlementArea> equipped = new LinkedHashMap<>();
+        var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, null, town);
         for (SettlementArea area : town.areas().values()) {
             if (area.enabled() && area.type() == SettlementAreaType.TRADING_POST) {
-                SettlementBuildingService.refresh(level, town, area);
+                if (refresh) SettlementBuildingService.refresh(level, town, area);
                 var survey = town.surveys().get(area.id());
-                if (survey != null && !survey.workstations().isEmpty()) {
+                if (survey != null && survey.workstations().stream().anyMatch(position -> SettlementBuildingSurvey.fixtureAvailable(
+                        blocks, position, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(net.minecraft.world.level.block.Blocks.LECTERN)))) {
                     equipped.put(area.id(), area);
                 }
             }
@@ -155,17 +194,18 @@ public final class SettlementTradeService {
     }
 
     private static int workCapacity(ServerLevel level, SettlementRecord town, List<UUID> workers) {
-        int population = VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime()).size();
+        int population = VillageAllegianceRegistrySavedData.get(level).residentCount(town.id(), level.getGameTime());
         double foodDays = SettlementFoodService.reserveDays(town, population);
         double backgroundMultiplier = foodDays <= 0.0D ? 0.4D : foodDays < 0.25D ? 0.7D : 1.0D;
-        if (population > town.housingCapacity()) {
+        int housing = town.housingCapacity();
+        if (population > housing) {
             backgroundMultiplier *= 0.75D;
         }
         double capacity = 0.0D;
         for (UUID worker : workers) {
             var resident = town.residents().get(worker);
             double multiplier = resident == null ? backgroundMultiplier
-                    : resident.workMultiplier() * (population > town.housingCapacity() ? 0.75D : 1.0D);
+                    : resident.workMultiplier() * (population > housing ? 0.75D : 1.0D);
             capacity += 8.0D * (level.getEntity(worker) instanceof Villager villager && level.isPositionEntityTicking(villager.blockPosition())
                     ? SettlementFoodService.workMultiplier(level, villager) : multiplier);
         }

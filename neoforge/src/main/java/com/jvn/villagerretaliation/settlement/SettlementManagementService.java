@@ -46,6 +46,8 @@ public final class SettlementManagementService {
         if (snapshot == null) {
             snapshot = snapshot(player, new SettlementManagementRequestPayload(null, Page.TOWNS, 0, "", request.requestId(), request.openScreen()));
         }
+        if (snapshot.header() != null) SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(snapshot.header().id()))
+                .ifPresent(town -> SettlementSimulationService.managed(player, town));
         PacketDistributor.sendToPlayer(player, snapshot);
     }
 
@@ -69,6 +71,7 @@ public final class SettlementManagementService {
         if (!town.dimension().equals(player.serverLevel().dimension().location())) return "wrong_dimension";
         String failure = SettlementManagementValidation.permission(player, town, payload.command());
         if (!failure.isEmpty()) return failure;
+        SettlementSimulationService.managed(player, town);
         if (payload.command() instanceof SettlementManagementActionPayload.ClaimPlot plot) {
             return SettlementPlotService.claim(player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price());
         }

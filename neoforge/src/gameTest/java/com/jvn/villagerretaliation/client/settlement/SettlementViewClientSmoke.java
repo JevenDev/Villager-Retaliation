@@ -142,6 +142,8 @@ public final class SettlementViewClientSmoke {
             require(screen.viewHeight() == SettlementViewWindow.MAX_HEIGHT, "the rendering check reaches maximum town zoom");
             require(Math.abs(screen.cameraHeight() - screen.viewHeight()) < 0.1D, "the camera eases into maximum zoom");
             require(screen.terrainLoaded(), "the maximum zoom capture includes the streamed terrain");
+            require(!screen.getNarrationMessage().getString().contains("Remote terrain queued:"),
+                    "server progress clears the remote terrain queue message");
             require(maxZoomResidentRendered, "the real resident model renders beyond vanilla distance at maximum zoom");
             zoomResident = visibleResident(minecraft);
             zoomCamera = minecraft.gameRenderer.getMainCamera().getPosition();
@@ -878,8 +880,11 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 101 && minecraft.screen instanceof SettlementViewScreen screen) {
             hoverTerrainPlot(screen);
             if (++ticks < 40) return;
-            require(new ChunkPos(fixture.center().north(16)).equals(screen.hoveredPlot()), "plot hover follows the terrain under the cursor: " + screen.hoveredPlot());
             capture("plots-terrain-tints");
+            require(new ChunkPos(fixture.center().north(16)).equals(screen.hoveredPlot()), "plot hover follows the terrain under the cursor: " + screen.hoveredPlot()
+                    + ", focus=" + screen.focusX() + "," + screen.focusZ()
+                    + ", camera=" + minecraft.gameRenderer.getMainCamera().getPosition()
+                    + ", cursor=" + minecraft.mouseHandler.xpos() + "," + minecraft.mouseHandler.ypos());
             minecraft.options.graphicsMode().set(net.minecraft.client.GraphicsStatus.FABULOUS);
             minecraft.levelRenderer.allChanged();
             ticks = 0;
@@ -955,10 +960,16 @@ public final class SettlementViewClientSmoke {
     private static void hoverTerrainPlot(SettlementViewScreen screen) {
         var minecraft = Minecraft.getInstance();
         int x = fixture.center().getX() + 12, z = fixture.center().getZ() - 12;
+        var chunk = minecraft.level.getChunkSource().getChunk(x >> 4, z >> 4, false);
+        require(chunk != null, "the plot hover target has streamed terrain");
         var point = screenPoint(screen, new Vec3(x + 0.5D,
-                minecraft.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z) + 0.01D, z + 0.5D));
-        GLFW.glfwSetCursorPos(minecraft.getWindow().getWindow(), point.x * minecraft.getWindow().getGuiScale(),
-                point.y * minecraft.getWindow().getGuiScale());
+                chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15) + 1.01D, z + 0.5D));
+        long window = minecraft.getWindow().getWindow();
+        var callback = GLFW.glfwSetCursorPosCallback(window, null);
+        GLFW.glfwSetCursorPosCallback(window, callback);
+        require(callback != null, "Minecraft has installed its cursor input callback");
+        // deliver cursor input even when the test window lacks desktop focus
+        callback.invoke(window, point.x * minecraft.getWindow().getGuiScale(), point.y * minecraft.getWindow().getGuiScale());
     }
 
     private static void hideOverviewMap(SettlementViewScreen screen) {

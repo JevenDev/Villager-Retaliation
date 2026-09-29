@@ -132,8 +132,8 @@ public final class SettlementTownProfile {
                 };
                 if (clientStageTicks % 120 == 60) screen.keyPressed(key, 0, 0);
                 if (clientStageTicks % 120 == 80) screen.keyReleased(key, 0, 0);
-                if (clientStageTicks == 240) screen.mouseScrolled(40, 80, 0, 1);
-                if (clientStageTicks == 360) screen.mouseScrolled(40, 80, 0, -1);
+                if (clientStageTicks == 240) screen.mouseScrolled(40, 80, 0, 100);
+                if (clientStageTicks == 360) screen.mouseScrolled(40, 80, 0, -100);
             }
         }
     }

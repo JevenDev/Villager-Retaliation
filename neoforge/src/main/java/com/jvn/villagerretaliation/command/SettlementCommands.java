@@ -81,6 +81,17 @@ final class SettlementCommands {
 
     static LiteralArgumentBuilder<CommandSourceStack> admin() {
         return literal("settlement").requires(source -> source.hasPermission(2))
+                .then(literal("performance").executes(context -> {
+                    var source = context.getSource();
+                    source.sendSuccess(() -> Component.literal("Simulation: "
+                            + com.jvn.villagerretaliation.settlement.SettlementSimulationService.metrics(source.getLevel())), false);
+                    source.sendSuccess(() -> Component.literal("Remote views: "
+                            + com.jvn.villagerretaliation.settlement.SettlementViewService.metrics(source.getServer())), false);
+                    source.sendSuccess(() -> Component.literal("Times are nanoseconds. The 3 ms simulation target yields between atomic operations."
+                            + " Synchronous observations include required unload handoffs and explicit management refreshes."
+                            + " Chunk counts are shared explicit tickets, Minecraft may load neighboring dependencies."), false);
+                    return 1;
+                }))
                 .then(literal("recoverOwner").then(argument("town", UuidArgument.uuid())
                         .then(argument("successor", UuidArgument.uuid()).executes(context ->
                                 result(context.getSource(), SettlementOwnershipService.previewRecovery(context.getSource(),

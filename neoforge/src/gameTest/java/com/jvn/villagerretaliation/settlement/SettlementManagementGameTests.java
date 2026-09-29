@@ -784,12 +784,14 @@ public final class SettlementManagementGameTests {
             helper.assertTrue(issues.stream().anyMatch(issue -> issue.kind() == SettlementManagementPayload.IssueKind.SIMULATION
                     && issue.cause().equals("simulation_disabled") && !issue.needsAttention()), "disabled simulation is informational");
             cap.set(1);
-            var towns = SettlementSavedData.get(level).settlements().stream().filter(value -> value.territory().active()).toList();
+            var towns = SettlementSavedData.get(level).settlements().stream().filter(value -> value.territory().active())
+                    .filter(value -> !SettlementSimulationService.foreground(level, value)).toList();
             var selected = SettlementSimulationService.select(towns, Math.floorDiv(level.getServer().overworld().getGameTime(), 24_000L), 1);
             for (var candidate : towns) {
                 String expected = selected.contains(candidate) ? "" : "simulation_capped";
-                helper.assertValueEqual(SettlementSimulationService.suspension(level, candidate), expected,
-                        "diagnostics match the actual daily scheduler");
+                String actual = SettlementSimulationService.suspension(level, candidate);
+                helper.assertTrue(actual.equals(expected) || selected.contains(candidate) && actual.equals("simulation_queued"),
+                        "diagnostics distinguish eligibility from a pending work queue");
             }
             var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
             helper.assertValueEqual(SettlementSimulationService.suspension(level, restored),

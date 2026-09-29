@@ -86,76 +86,93 @@ public final class SettlementBrewingStandService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
-        var construction = new SettlementConstructionMachines(level, town, null);
+        var jobs = new java.util.ArrayList<Runnable>();
+        schedule(level, town, now, jobs);
+        var work = new SettlementWork(jobs);
+        while (!SettlementWork.complete(work)) work.run();
+    }
+
+    static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
         for (var entry : town.surveys().entrySet()) {
-            var area = town.areas().get(entry.getKey());
-            if (area == null || !area.enabled() || area.type() != SettlementAreaType.BREWERY) {
-                continue;
-            }
-            for (BlockPos position : entry.getValue().fixtures().keySet()) {
-                var existing = town.brewingStands().get(position);
-                var source = construction.source(position);
-                if (source != null && source.ready()
-                        && (existing == null || !existing.pending() && (!existing.area().equals(area.id()) || !existing.id().equals(source.id())))
-                        && source.create(level) instanceof BrewingStandBlockEntity stand && accepts(area, stand)) {
-                    town.recordBrewingStand(SettlementBrewingStandState.capture(level, area.id(), stand, now));
-                } else if (source == null && (existing == null || !existing.pending() && !existing.area().equals(area.id()))
-                        && level.hasChunkAt(position) && level.getBlockEntity(position) instanceof BrewingStandBlockEntity stand
-                        && accepts(area, stand)) {
-                    observe(level, town, area, stand, now);
-                    level.getChunkAt(position).setUnsaved(true);
-                }
-            }
+            if (entry.getValue().fixtures().isEmpty()) continue;
+            var areaId = entry.getKey();
+            jobs.add(SettlementWork.each(List.copyOf(entry.getValue().fixtures().keySet()), position -> {
+                var area = town.areas().get(areaId);
+                if (area == null || !area.enabled() || area.type() != SettlementAreaType.BREWERY) return;
+                observeFixture(level, town, area, position, now);
+            }));
         }
-        for (var state : List.copyOf(town.brewingStands().values())) {
-            if (!town.contains(state.position()) || town.areas().containsKey(state.area()) && !town.owns(town.areas().get(state.area()))) continue;
-            var area = town.areas().get(state.area());
-            var source = construction.source(state.position(), state.id());
-            if (source != null) {
-                if (source.ready()) {
-                    state.constructionReady();
-                    if (area != null && area.enabled() && area.type() == SettlementAreaType.BREWERY && area.contains(state.position())) {
-                        state.advance(level, now);
-                    } else {
-                        state.pause(now);
-                    }
+        jobs.add(SettlementWork.lazy(() -> SettlementWork.each(List.copyOf(town.brewingStands().keySet()), position -> {
+            var state = town.brewingStands().get(position);
+            if (state != null) {
+                advance(level, town, state, now);
+                town.changed();
+            }
+        })));
+    }
+
+    private static void observeFixture(ServerLevel level, SettlementRecord town, SettlementArea area, BlockPos position, long now) {
+        var construction = new SettlementConstructionMachines(level, town, null);
+        var existing = town.brewingStands().get(position);
+        var source = construction.source(position);
+        if (source != null && source.ready()
+                && (existing == null || !existing.pending() && (!existing.area().equals(area.id()) || !existing.id().equals(source.id())))
+                && source.create(level) instanceof BrewingStandBlockEntity stand && accepts(area, stand)) {
+            town.recordBrewingStand(SettlementBrewingStandState.capture(level, area.id(), stand, now));
+        } else if (source == null && (existing == null || !existing.pending() && !existing.area().equals(area.id()))
+                && level.hasChunkAt(position) && level.getBlockEntity(position) instanceof BrewingStandBlockEntity stand
+                && accepts(area, stand)) {
+            observe(level, town, area, stand, now);
+            level.getChunkAt(position).setUnsaved(true);
+        }
+    }
+
+    private static void advance(ServerLevel level, SettlementRecord town, SettlementBrewingStandState state, long now) {
+        var construction = new SettlementConstructionMachines(level, town, null);
+        if (!town.contains(state.position()) || town.areas().containsKey(state.area()) && !town.owns(town.areas().get(state.area()))) return;
+        var area = town.areas().get(state.area());
+        var source = construction.source(state.position(), state.id());
+        if (source != null) {
+            if (source.ready()) {
+                state.constructionReady();
+                if (area != null && area.enabled() && area.type() == SettlementAreaType.BREWERY && area.contains(state.position())) {
+                    state.advance(level, now);
                 } else {
-                    state.missing();
                     state.pause(now);
                 }
-                continue;
-            }
-            boolean pending = state.pending();
-            if (level.hasChunkAt(state.position())) {
-                if (!(level.getBlockEntity(state.position()) instanceof BrewingStandBlockEntity stand)
-                        || !state.reconcile(level.registryAccess(), stand)) {
-                    if (state.pending()) {
-                        state.missing();
-                        state.pause(now);
-                    } else {
-                        town.removeBrewingStand(state.position());
-                    }
-                    continue;
-                }
-                if (pending) {
-                    applyLoaded(level, state);
-                }
-                if (level.getChunkSource().isPositionTicking(ChunkPos.asLong(state.position()))
-                        || area == null || !area.enabled() || !accepts(area, stand)) {
-                    state.observe(level.registryAccess(), stand, now);
-                } else {
-                    state.refresh(level.registryAccess(), stand);
-                    state.advance(level, now);
-                    applyLoaded(level, state);
-                }
-            } else if (area != null && area.enabled() && area.type() == SettlementAreaType.BREWERY && area.contains(state.position())) {
-                state.advance(level, now);
             } else {
+                state.missing();
                 state.pause(now);
             }
+            return;
         }
-        if (!town.brewingStands().isEmpty()) {
-            town.changed();
+        boolean pending = state.pending();
+        if (level.hasChunkAt(state.position())) {
+            if (!(level.getBlockEntity(state.position()) instanceof BrewingStandBlockEntity stand)
+                    || !state.reconcile(level.registryAccess(), stand)) {
+                if (state.pending()) {
+                    state.missing();
+                    state.pause(now);
+                } else {
+                    town.removeBrewingStand(state.position());
+                }
+                return;
+            }
+            if (pending) {
+                applyLoaded(level, state);
+            }
+            if (level.getChunkSource().isPositionTicking(ChunkPos.asLong(state.position()))
+                    || area == null || !area.enabled() || !accepts(area, stand)) {
+                state.observe(level.registryAccess(), stand, now);
+            } else {
+                state.refresh(level.registryAccess(), stand);
+                state.advance(level, now);
+                applyLoaded(level, state);
+            }
+        } else if (area != null && area.enabled() && area.type() == SettlementAreaType.BREWERY && area.contains(state.position())) {
+            state.advance(level, now);
+        } else {
+            state.pause(now);
         }
     }
 

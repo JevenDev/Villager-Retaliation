@@ -196,6 +196,36 @@ public final class SettlementBuildingGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_building")
+    public static void incrementalSurveysPublishAtomicallyAndCancelReplacedAreas(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var center = helper.absolutePos(new BlockPos(2, 2, 2));
+        var leader = player(helper, center);
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var id = registry.create(level.getGameTime(), level.dimension().location(), center, "Survey queue");
+        var town = SettlementSavedData.get(level).establish(registry, id, leader.getUUID(), center, level.getGameTime()).orElseThrow();
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.WORKSHOP, "Workshop",
+                center, center.offset(1, 31, 1), 5, true);
+        town.putArea(leader.getUUID(), area);
+        level.setBlockAndUpdate(center, Blocks.CRAFTING_TABLE.defaultBlockState());
+        var work = SettlementBuildingService.work(level, town, area);
+        work.run();
+        helper.assertFalse(town.surveys().containsKey(area.id()), "the first work unit cannot publish a partial survey");
+        int steps = 1;
+        while (!SettlementWork.complete(work) && steps++ < 30) work.run();
+        helper.assertTrue(SettlementWork.complete(work), "bounded sections complete without draining the queue in one step");
+        helper.assertTrue(town.surveys().get(area.id()).workstations().contains(center), "the complete survey contains the observed fixture");
+        var prior = town.surveys().get(area.id());
+        var cancelled = SettlementBuildingService.work(level, town, area);
+        cancelled.run();
+        var replacement = new SettlementArea(area.id(), area.type(), area.name(), area.min(), area.max(), 6, true);
+        town.putArea(leader.getUUID(), replacement);
+        cancelled.run();
+        helper.assertTrue(SettlementWork.complete(cancelled), "editing an area cancels its pending scan");
+        helper.assertValueEqual(town.surveys().get(area.id()), prior, "a cancelled scan cannot replace the last complete survey");
+        helper.succeed();
+    }
+
     private static ServerPlayer player(GameTestHelper helper, BlockPos center) {
         ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "TownBuilder"));
         player.setPos(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D);

@@ -20,8 +20,11 @@ public final class SettlementCareService {
 
     static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
         jobs.add(() -> SettlementHousingService.update(level, town));
-        for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now)) {
-            jobs.add(() -> updateResident(level, town, member.id(), now));
+        var roster = VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now);
+        // housing and census are fixed for this care cycle, membership is checked at each safe point
+        boolean housingShortage = town.housingCapacity() < roster.size();
+        for (var member : roster) {
+            jobs.add(() -> updateResident(level, town, member.id(), now, housingShortage));
         }
         jobs.add(() -> {
             var members = new HashSet<java.util.UUID>();
@@ -32,12 +35,10 @@ public final class SettlementCareService {
         });
     }
 
-    private static void updateResident(ServerLevel level, SettlementRecord town, java.util.UUID id, long now) {
+    private static void updateResident(ServerLevel level, SettlementRecord town, java.util.UUID id, long now, boolean housingShortage) {
         var registry = VillageAllegianceRegistrySavedData.get(level);
-        var roster = registry.residentRoster(town.id(), now);
-        var member = roster.stream().filter(candidate -> candidate.id().equals(id)).findFirst().orElse(null);
+        var member = registry.canonicalRecord(town.id()).map(record -> record.residents().get(id)).orElse(null);
         if (member == null) return;
-        boolean housingShortage = town.housingCapacity() < roster.size();
         Villager resident = findResident(level.getServer(), id);
         SettlementResidentState state = town.residents().get(id);
         if (resident != null && resident.isAlive() && resident.level() instanceof ServerLevel residentLevel

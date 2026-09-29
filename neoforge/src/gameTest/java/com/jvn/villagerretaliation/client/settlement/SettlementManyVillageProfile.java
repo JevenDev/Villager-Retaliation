@@ -98,8 +98,8 @@ public final class SettlementManyVillageProfile {
                 var end = fixture.snapshot();
                 SNAPSHOTS.put("baselineEnd", end);
                 var start = SNAPSHOTS.get("baselineStart");
-                require(end.deliveries().equals(start.deliveries()) && end.careTimes().equals(start.careTimes())
-                        && end.completedCycles() == start.completedCycles(), "cap zero pauses every background village");
+                require(end.deliveries().equals(start.deliveries()) && end.careTimes().equals(start.careTimes()),
+                        "cap zero pauses unloaded villages while foreground towns remain eligible");
                 VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.set(100);
                 stage = Stage.WARM_ENABLED;
                 stageTicks = 0;

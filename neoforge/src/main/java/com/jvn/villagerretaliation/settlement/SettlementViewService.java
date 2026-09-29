@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.SettlementViewChunkPayload;
 import com.jvn.villagerretaliation.network.SettlementViewRequestPayload;
@@ -24,7 +25,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class SettlementViewService {
     private static final TicketType<UUID> TICKET = TicketType.create("villagerretaliation_settlement_view", Comparator.<UUID>naturalOrder());
-    private static final Map<UUID, Session> SESSIONS = new HashMap<>();
+    private static final Map<UUID, Session> SESSIONS = new java.util.LinkedHashMap<>();
+    private static final Map<MinecraftServer, Budget> BUDGETS = new java.util.IdentityHashMap<>();
     private static final int CHUNKS_PER_TICK = 2;
     private static final long SESSION_TIMEOUT = 400L;
 
@@ -37,7 +39,7 @@ public final class SettlementViewService {
             return false;
         }
         close(player.getUUID(), true);
-        var session = new Session(player, town, SettlementViewWindow.around(town, town.center().getX() + 0.5D,
+        var session = new Session(player, town, SettlementViewWindow.around(player.serverLevel(), town, town.center().getX() + 0.5D,
                 town.center().getZ() + 0.5D, 32.0F), player.serverLevel().getGameTime());
         SESSIONS.put(player.getUUID(), session);
         sendState(session, true);
@@ -63,16 +65,8 @@ public final class SettlementViewService {
         }
         session.requestId = payload.requestId();
         session.lastRequest = session.level.getGameTime();
-        SettlementViewWindow window = SettlementViewWindow.around(session.town, payload.x(), payload.z(), payload.height());
-        for (ChunkPos position : List.copyOf(session.held)) {
-            if (!window.chunks().contains(position)) {
-                session.level.getChunkSource().removeRegionTicket(TICKET, position, 2, session.id, true);
-                session.held.remove(position);
-                session.sent.remove(position);
-                session.remote.remove(position);
-            }
-        }
-        session.window = window;
+        SettlementViewWindow window = SettlementViewWindow.around(session.level, session.town, payload.x(), payload.z(), payload.height());
+        changeWindow(session, window);
         sendState(session, true);
         session.level.getChunkSource().move(player);
     }
@@ -92,82 +86,255 @@ public final class SettlementViewService {
     }
 
     public static void tick(MinecraftServer server) {
-        int commandBudget = 16;
-        for (Session session : List.copyOf(SESSIONS.values())) {
-            if (session.player.getServer() != server) {
-                continue;
-            }
+        var budget = budget(server);
+        budget.begin(server.overworld().getGameTime());
+        var sessions = new ArrayList<Session>();
+        for (var session : List.copyOf(SESSIONS.values())) {
+            if (session.player.getServer() != server) continue;
             if (server.getPlayerList().getPlayer(session.player.getUUID()) != session.player
                     || !eligible(session.player, session.town)
                     || session.level.getGameTime() - session.lastRequest > SESSION_TIMEOUT) {
                 close(session.player.getUUID(), true);
-                continue;
-            }
+            } else sessions.add(session);
+        }
+        stream(sessions, budget);
+    }
+
+    static void stream(List<Session> sessions, Budget budget) {
+        if (sessions.isEmpty()) return;
+        int commandBudget = 16;
+        int start = Math.floorMod(budget.cursor, sessions.size());
+        for (int index = 0; index < sessions.size(); index++) {
+            var session = sessions.get((start + index) % sessions.size());
+            prepare(session, budget);
+            int before = session.loads;
+            load(session, budget);
+            if (session.loads > before) budget.cursor = (start + index + 1) % sessions.size();
+        }
+        start = Math.floorMod(budget.sendCursor, sessions.size());
+        for (int index = 0; index < sessions.size(); index++) {
+            var session = sessions.get((start + index) % sessions.size());
+            int before = session.sends;
+            send(session, budget);
+            if (session.sends > before) budget.sendCursor = (start + index + 1) % sessions.size();
+        }
+        start = (int) Math.floorMod(budget.tick, sessions.size());
+        for (int index = 0; index < sessions.size(); index++) {
+            var session = sessions.get((start + index) % sessions.size());
             commandBudget -= session.commands.tick(session, commandBudget);
-            update(session);
         }
     }
 
     static void update(Session session) {
+        var budget = budget(session.level.getServer());
+        budget.begin(session.level.getServer().overworld().getGameTime());
+        update(session, budget);
+    }
+
+    static void update(Session session, Budget budget) {
+        prepare(session, budget);
+        load(session, budget);
+        send(session, budget);
+    }
+
+    private static void prepare(Session session, Budget budget) {
         if (session.level.getGameTime() % 10L == 0L) {
-            var plots = SettlementPlotService.snapshot(session.player, session.town, session.window);
-            if (!plots.equals(session.plots)) {
-                session.window = SettlementViewWindow.around(session.town, session.window.x(), session.window.z(), session.window.height());
+            var window = SettlementViewWindow.around(session.level, session.town, session.window.x(), session.window.z(), session.window.height());
+            var plots = SettlementPlotService.snapshot(session.player, session.town, window);
+            if (!window.equals(session.window) || !plots.equals(session.plots)) {
+                changeWindow(session, window);
                 sendState(session, true);
             }
         }
-        int tickets = 0;
-        for (ChunkPos position : session.window.chunks()) {
-            if (!session.held.contains(position)) {
-                session.level.getChunkSource().addRegionTicket(TICKET, position, 2, session.id, true);
-                session.held.add(position);
-                if (++tickets >= CHUNKS_PER_TICK) {
-                    break;
-                }
+        if (session.budgetTick != budget.tick) {
+            session.budgetTick = budget.tick;
+            session.loads = 0;
+            session.sends = 0;
+        }
+    }
+
+    private static void load(Session session, Budget budget) {
+        var chunks = session.window.chunks();
+        int start = Math.floorMod(session.chunkCursor, chunks.size());
+        for (int scanned = 0; scanned < chunks.size() && session.loads < CHUNKS_PER_TICK; scanned++) {
+            var position = chunks.get((start + scanned) % chunks.size());
+            if (session.held.contains(position) || !allowed(session, position)) continue;
+            if (budget.acquire(session, position)) {
+                session.loads++;
+                session.chunkCursor = (start + scanned + 1) % chunks.size();
             }
         }
+    }
+
+    private static void send(Session session, Budget budget) {
         int sent = 0;
         for (ChunkPos position : session.window.chunks()) {
+            if (!allowed(session, position)) continue;
             boolean normal = session.player.getChunkTrackingView().contains(position.x, position.z);
-            if (normal) {
-                session.remote.remove(position);
-            }
-            if (!session.held.contains(position) || session.sent.contains(position) && (normal || session.remote.contains(position))) {
-                continue;
-            }
+            if (normal) session.remote.remove(position);
+            if (!session.held.contains(position) || session.sent.contains(position) && (normal || session.remote.contains(position))) continue;
+            if (session.sends >= CHUNKS_PER_TICK || budget.sends >= sendLimit()) break;
             var chunk = session.level.getChunkSource().getChunkNow(position.x, position.z);
-            if (chunk == null) {
-                continue;
-            }
+            if (chunk == null) continue;
             if (!normal) {
                 PacketDistributor.sendToPlayer(session.player, new SettlementViewChunkPayload(session.id,
                         new ClientboundLevelChunkWithLightPacket(chunk, session.level.getLightEngine(), null, null)));
                 session.remote.add(position);
+                budget.sends++;
             }
             session.sent.add(position);
-            if (++sent >= CHUNKS_PER_TICK) {
-                break;
-            }
+            session.sends++;
+            sent++;
         }
         if (sent > 0 || session.level.getGameTime() % 20L == 0L) {
             session.level.getChunkSource().move(session.player);
+            sendState(session, true);
+        }
+    }
+
+    private static void changeWindow(Session session, SettlementViewWindow window) {
+        for (var position : List.copyOf(session.held)) {
+            if (!window.chunks().contains(position)) budget(session.level.getServer()).release(session, position);
+        }
+        session.sent.retainAll(window.chunks());
+        session.remote.retainAll(window.chunks());
+        session.window = window;
+    }
+
+    private static int chunkLimit() {
+        return Math.clamp(VillagerRetaliationConfig.SETTLEMENT_VIEW_CHUNKS.get(), 1, 4096);
+    }
+
+    private static int loadLimit() {
+        return Math.clamp(VillagerRetaliationConfig.SETTLEMENT_VIEW_LOADS.get(), 1, 64);
+    }
+
+    private static int sendLimit() {
+        return Math.clamp(VillagerRetaliationConfig.SETTLEMENT_VIEW_SENDS.get(), 1, 64);
+    }
+
+    static Budget budget(MinecraftServer server) {
+        return BUDGETS.computeIfAbsent(server, ignored -> new Budget());
+    }
+
+    public static Metrics metrics(MinecraftServer server) {
+        var budget = budget(server);
+        int viewers = 0;
+        int queued = 0;
+        for (var session : SESSIONS.values()) {
+            if (session.level.getServer() != server) continue;
+            viewers++;
+            queued += session.window.chunks().size() - session.sent.size();
+        }
+        return new Metrics(viewers, budget.leases.size(), queued, budget.loads, budget.sends);
+    }
+
+    public record Metrics(int viewers, int chunks, int queued, int loads, int sends) {
+    }
+
+    private record Resource(ServerLevel level, ChunkPos position) {
+    }
+
+    private static final class Lease {
+        final long createdAt;
+        final Set<UUID> viewers = new HashSet<>();
+
+        Lease(long now) {
+            this.createdAt = now;
+        }
+    }
+
+    static final class Budget {
+        final UUID id = UUID.randomUUID();
+        final Map<Resource, Lease> leases = new java.util.LinkedHashMap<>();
+        long tick = Long.MIN_VALUE;
+        int loads;
+        int sends;
+        int cursor;
+        int sendCursor;
+
+        void begin(long now) {
+            if (this.tick == now) return;
+            this.tick = now;
+            this.loads = 0;
+            this.sends = 0;
+            while (this.leases.size() > chunkLimit()) evict(this.leases.keySet().iterator().next());
+        }
+
+        boolean acquire(Session session, ChunkPos position) {
+            var key = new Resource(session.level, position);
+            var lease = this.leases.get(key);
+            if (lease == null) {
+                if (this.loads >= loadLimit()) return false;
+                if (this.leases.size() >= chunkLimit()) {
+                    var oldest = this.leases.entrySet().iterator().next();
+                    if (this.tick - oldest.getValue().createdAt < 40L) return false;
+                    evict(oldest.getKey());
+                }
+                session.level.getChunkSource().addRegionTicket(TICKET, position, 2, this.id, true);
+                lease = new Lease(this.tick);
+                this.leases.put(key, lease);
+                this.loads++;
+            }
+            lease.viewers.add(session.player.getUUID());
+            session.held.add(position);
+            return true;
+        }
+
+        void release(Session session, ChunkPos position) {
+            var key = new Resource(session.level, position);
+            var lease = this.leases.get(key);
+            session.held.remove(position);
+            session.sent.remove(position);
+            if (lease == null) return;
+            lease.viewers.remove(session.player.getUUID());
+            if (lease.viewers.isEmpty()) {
+                this.leases.remove(key);
+                session.level.getChunkSource().removeRegionTicket(TICKET, position, 2, this.id, true);
+            }
+        }
+
+        void evict(Resource key) {
+            var lease = this.leases.remove(key);
+            if (lease == null) return;
+            // leases rotate under pressure so a stationary or repeatedly reopened view cannot monopolize tickets
+            for (var viewer : lease.viewers) {
+                var session = SESSIONS.get(viewer);
+                if (session != null && session.level == key.level()) {
+                    session.held.remove(key.position());
+                    session.sent.remove(key.position());
+                }
+            }
+            key.level().getChunkSource().removeRegionTicket(TICKET, key.position(), 2, this.id, true);
         }
     }
 
     public static boolean tracks(ServerPlayer player, Entity entity) {
         Session session = SESSIONS.get(player.getUUID());
         return session != null && entity.level() == session.level && eligible(player, session.town)
-                && session.window.contains(entity.blockPosition()) && session.sent.contains(entity.chunkPosition());
+                && session.window.contains(entity.blockPosition()) && session.sent.contains(entity.chunkPosition())
+                && allowed(session, entity.chunkPosition()) && session.level.getWorldBorder().isWithinBounds(entity.blockPosition());
     }
 
     public static List<ServerPlayer> viewers(ServerLevel level, ChunkPos position) {
         List<ServerPlayer> players = new ArrayList<>();
         for (Session session : SESSIONS.values()) {
-            if (session.level == level && session.sent.contains(position) && eligible(session.player, session.town)) {
+            if (session.level == level && session.sent.contains(position) && session.window.chunks().contains(position)
+                    && allowed(session, position) && eligible(session.player, session.town)) {
                 players.add(session.player);
             }
         }
         return players;
+    }
+
+    private static boolean allowed(Session session, ChunkPos position) {
+        return SettlementViewWindow.nearTerritory(session.town, position) && SettlementViewWindow.intersects(session.level.getWorldBorder(), position)
+                && SettlementSavedData.get(session.level).owner(session.town.dimension(), position.x, position.z)
+                        .map(session.town.id()::equals).orElse(true);
+    }
+
+    static boolean active(SettlementRecord town) {
+        return SESSIONS.values().stream().anyMatch(session -> session.town == town);
     }
 
     static void closeTown(SettlementRecord town) {
@@ -181,9 +348,7 @@ public final class SettlementViewService {
         if (session == null) {
             return;
         }
-        for (ChunkPos position : session.held) {
-            session.level.getChunkSource().removeRegionTicket(TICKET, position, 2, session.id, true);
-        }
+        for (ChunkPos position : List.copyOf(session.held)) budget(session.level.getServer()).release(session, position);
         session.overview.clear();
         session.commands.clear();
         session.held.clear();
@@ -197,9 +362,11 @@ public final class SettlementViewService {
 
     public static void clear(MinecraftServer server) {
         for (Session session : List.copyOf(SESSIONS.values())) {
-            if (session.player.getServer() == server) {
-                close(session.player.getUUID(), false);
-            }
+            if (session.player.getServer() == server) close(session.player.getUUID(), false);
+        }
+        var budget = BUDGETS.remove(server);
+        if (budget != null) {
+            for (var key : List.copyOf(budget.leases.keySet())) budget.evict(key);
         }
     }
 
@@ -210,13 +377,18 @@ public final class SettlementViewService {
     static boolean eligible(ServerPlayer player, SettlementRecord town) {
         return player.isAlive() && !player.isRemoved() && !player.isSpectator() && player.hurtTime == 0
                 && player.level().dimension().location().equals(town.dimension())
+                && SettlementSavedData.get(player.serverLevel()).get(town.id()).orElse(null) == town
+                && town.territory().active()
+                && (player.level().getWorldBorder().isWithinBounds(town.center())
+                        || town.territory().plots().stream().anyMatch(position -> SettlementViewWindow.intersects(player.level().getWorldBorder(), new ChunkPos(position))))
                 && town.permits(player.getUUID(), SettlementPermission.VIEW);
     }
 
     private static void sendState(Session session, boolean active) {
         session.plots = SettlementPlotService.snapshot(session.player, session.town, session.window);
         PacketDistributor.sendToPlayer(session.player, new SettlementViewStatePayload(session.id, session.town.id().value(),
-                session.town.dimension(), session.requestId, session.window, active, session.plots));
+                session.town.dimension(), session.requestId, session.window, active, session.plots,
+                session.window.chunks().size() - session.sent.size()));
     }
 
     static final class Session {
@@ -233,6 +405,10 @@ public final class SettlementViewService {
         com.jvn.villagerretaliation.network.SettlementPlotSnapshot plots;
         int requestId;
         long lastRequest;
+        long budgetTick = Long.MIN_VALUE;
+        int loads;
+        int sends;
+        int chunkCursor;
 
         private Session(ServerPlayer player, SettlementRecord town, SettlementViewWindow window, long now) {
             this.player = player;

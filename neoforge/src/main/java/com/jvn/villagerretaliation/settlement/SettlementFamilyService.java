@@ -20,73 +20,93 @@ final class SettlementFamilyService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
-        if (!SettlementPopulationService.canGrow(level, town)) {
-            for (var id : List.copyOf(town.courtships().keySet())) town.removeCourtship(id);
-            return;
-        }
-        var members = new HashSet<UUID>();
-        VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now).forEach(member -> members.add(member.id()));
-        if (members.size() < 2) {
-            for (var id : List.copyOf(town.courtships().keySet())) town.removeCourtship(id);
-            return;
-        }
-        SettlementNavigationService.update(level, town, now);
-        var routes = new SettlementFamilyRoutes(level, town);
-        var parents = new java.util.LinkedHashMap<UUID, Villager>();
-        for (var id : members.stream().sorted().toList()) {
-            var parent = parent(level, town, id, routes);
-            if (parent != null) parents.put(id, parent);
-        }
-        var occupied = new HashSet<UUID>();
-        for (var attempt : List.copyOf(town.courtships().values())) {
-            var first = parents.get(attempt.first());
-            var second = parents.get(attempt.second());
-            var visit = visit(level, town, routes, first, second, attempt.bed());
-            if (visit == null || !town.residents().get(attempt.first()).position().equals(attempt.firstStart())
-                    || !town.residents().get(attempt.second()).position().equals(attempt.secondStart())) {
-                town.removeCourtship(attempt.first());
-                continue;
+        var work = cycle(level, town, now);
+        while (!SettlementWork.complete(work)) work.run();
+    }
+
+    static Runnable cycle(ServerLevel level, SettlementRecord town, long now) {
+        return SettlementWork.lazy(() -> {
+            if (!SettlementPopulationService.canGrow(level, town)) {
+                for (var id : List.copyOf(town.courtships().keySet())) town.removeCourtship(id);
+                return () -> {};
             }
-            occupied.add(attempt.first());
-            occupied.add(attempt.second());
-            var advanced = attempt.advance(now);
-            // visits include the return journey because unloaded parents retain their native anchors
-            int duration = attempt.courtshipTicks() + visit.steps() * 2 * 10;
-            if (advanced.progress() < duration) {
-                town.recordCourtship(advanced);
-            } else {
-                town.removeCourtship(attempt.first());
-                birth(level, town, first, second, visit.origin(), attempt.bed());
+            var members = VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now).stream()
+                    .map(VillageAllegianceRegistrySavedData.ResidentRecord::id).sorted().toList();
+            if (members.size() < 2) {
+                for (var id : List.copyOf(town.courtships().keySet())) town.removeCourtship(id);
+                return () -> {};
             }
-        }
-        var available = new ArrayList<>(parents.entrySet().stream().filter(entry -> !occupied.contains(entry.getKey())).toList());
-        if (available.size() < 2 || !SettlementPopulationService.canGrow(level, town)) return;
-        java.util.Collections.rotate(available, (int) Math.floorMod(now / 200L, available.size()));
-        int started = 0;
-        int checked = 0;
-        for (var entry : available) {
-            if (occupied.contains(entry.getKey())) continue;
-            var partners = available.stream().filter(other -> !other.getKey().equals(entry.getKey()) && !occupied.contains(other.getKey()))
-                    .sorted(java.util.Comparator.comparingDouble(other -> other.getValue().distanceToSqr(entry.getValue()))).toList();
-            for (var other : partners) {
-                if (++checked > 64 || started >= 4) return;
-                var first = entry.getValue();
-                var second = other.getValue();
-                if (first.distanceToSqr(second) > 48.0D * 48.0D || !VillagerBreedingPolicy.evaluatePair(level, first, second).allowed()) continue;
-                BlockPos bed = bed(level, town, routes, first, second);
-                if (bed == null) continue;
-                town.recordCourtship(new SettlementCourtship(entry.getKey(), other.getKey(),
-                        town.residents().get(entry.getKey()).position(), town.residents().get(other.getKey()).position(),
-                        bed, 275 + first.getRandom().nextInt(50), 0, now));
-                occupied.add(entry.getKey());
-                occupied.add(other.getKey());
-                started++;
-                break;
-            }
-        }
+            var jobs = new ArrayList<Runnable>();
+            jobs.add(() -> SettlementNavigationService.update(level, town, now));
+            var parents = new java.util.LinkedHashMap<UUID, Villager>();
+            jobs.add(SettlementWork.each(members, id -> {
+                var parent = parent(level, town, id, new SettlementFamilyRoutes(level, town));
+                if (parent != null) parents.put(id, parent);
+            }));
+            var occupied = new HashSet<UUID>();
+            jobs.add(SettlementWork.each(List.copyOf(town.courtships().values()), attempt -> {
+                if (!attempt.equals(town.courtships().get(attempt.first()))) return;
+                var routes = new SettlementFamilyRoutes(level, town);
+                var first = parent(level, town, attempt.first(), routes);
+                var second = parent(level, town, attempt.second(), routes);
+                var visit = visit(level, town, routes, first, second, attempt.bed());
+                if (visit == null || !town.residents().get(attempt.first()).position().equals(attempt.firstStart())
+                        || !town.residents().get(attempt.second()).position().equals(attempt.secondStart())) {
+                    town.removeCourtship(attempt.first());
+                    return;
+                }
+                occupied.add(attempt.first());
+                occupied.add(attempt.second());
+                var advanced = attempt.advance(now);
+                // visits include the return journey because unloaded parents retain their native anchors
+                int duration = attempt.courtshipTicks() + visit.steps() * 2 * 10;
+                if (advanced.progress() < duration) town.recordCourtship(advanced);
+                else {
+                    town.removeCourtship(attempt.first());
+                    birth(level, town, first, second, visit.origin(), attempt.bed());
+                }
+            }));
+            jobs.add(SettlementWork.lazy(() -> {
+                var available = new ArrayList<>(parents.keySet().stream().filter(id -> !occupied.contains(id)).toList());
+                if (available.size() < 2) return () -> {};
+                java.util.Collections.rotate(available, (int) Math.floorMod(now / 200L, available.size()));
+                int[] started = {0};
+                int[] checked = {0};
+                var attempts = new ArrayList<Runnable>();
+                for (var id : available) {
+                    attempts.add(SettlementWork.lazy(() -> {
+                        if (occupied.contains(id) || checked[0] >= 64 || started[0] >= 4) return () -> {};
+                        var partners = available.stream().filter(other -> !other.equals(id) && !occupied.contains(other))
+                                .sorted(java.util.Comparator.comparingDouble(other -> parents.get(other).distanceToSqr(parents.get(id)))).toList();
+                        return SettlementWork.guard(SettlementWork.each(partners, other -> {
+                            if (occupied.contains(id) || occupied.contains(other) || checked[0] >= 64 || started[0] >= 4
+                                    || !SettlementPopulationService.canGrow(level, town)) return;
+                            checked[0]++;
+                            var routes = new SettlementFamilyRoutes(level, town);
+                            var first = parent(level, town, id, routes);
+                            var second = parent(level, town, other, routes);
+                            if (first == null || second == null || first.distanceToSqr(second) > 48.0D * 48.0D
+                                    || !VillagerBreedingPolicy.evaluatePair(level, first, second).allowed()) return;
+                            var bed = bed(level, town, routes, first, second);
+                            if (bed == null) return;
+                            town.recordCourtship(new SettlementCourtship(id, other,
+                                    town.residents().get(id).position(), town.residents().get(other).position(),
+                                    bed, 275 + first.getRandom().nextInt(50), 0, now));
+                            occupied.add(id);
+                            occupied.add(other);
+                            started[0]++;
+                        }), () -> !occupied.contains(id) && checked[0] < 64 && started[0] < 4);
+                    }));
+                }
+                return SettlementWork.guard(new SettlementWork(attempts), () -> checked[0] < 64 && started[0] < 4);
+            }));
+            return new SettlementWork(jobs);
+        });
     }
 
     private static Villager parent(ServerLevel level, SettlementRecord town, UUID id, SettlementFamilyRoutes routes) {
+        if (!VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
+                .map(record -> record.residents().containsKey(id)).orElse(false)) return null;
         var care = town.residents().get(id);
         if (care == null) return null;
         for (var dimension : level.getServer().getAllLevels()) {

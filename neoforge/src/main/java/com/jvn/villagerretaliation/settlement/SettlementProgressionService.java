@@ -20,7 +20,8 @@ public final class SettlementProgressionService {
         town.support().observe(now, status.missing().isEmpty(),
                 status.population() > 0 && (status.housing() < status.population() || status.foodDays() < 0.25D));
         town.changed();
-        if (!town.manualManagement() && assess(level, town).ready()) advance(town, now);
+        if (!town.manualManagement() && town.stage().next().isPresent() && status.missing().isEmpty()
+                && town.support().sustainedTicks() >= status.requiredTicks()) advance(town, now);
     }
 
     public static Status assess(ServerLevel level, SettlementRecord town) {
@@ -31,6 +32,11 @@ public final class SettlementProgressionService {
         var residents = registry.residentRoster(town.id(), gameTime);
         Set<UUID> adults = residents.stream().filter(VillageAllegianceRegistrySavedData.ResidentRecord::adult)
                 .map(VillageAllegianceRegistrySavedData.ResidentRecord::id).collect(Collectors.toSet());
+        Set<UUID> staffedAreas = town.duties().entrySet().stream()
+                .filter(duty -> adults.contains(duty.getKey())
+                        && (!town.workers().containsKey(duty.getKey()) || town.workers().get(duty.getKey()).supportsService())
+                        && (!town.workerSettings().containsKey(duty.getKey()) || town.workerSettings().get(duty.getKey()).enabled()))
+                .map(java.util.Map.Entry::getValue).collect(Collectors.toSet());
         int population = residents.size();
         int housing = town.housingCapacity();
         double foodDays = SettlementFoodService.reserveDays(town, population);
@@ -53,11 +59,11 @@ public final class SettlementProgressionService {
             if (!services.contains(requirement)) continue;
             boolean operating = switch (requirement) {
                 case FOOD_PRODUCTION -> town.areas().values().stream()
-                        .anyMatch(area -> area.type().foodProduction() && staffed(town, area, adults));
-                case KITCHEN -> staffed(town, SettlementAreaType.KITCHEN, adults);
-                case GUARD_POST -> staffed(town, SettlementAreaType.GUARD_POST, adults);
-                case WORKSHOP -> staffed(town, SettlementAreaType.WORKSHOP, adults);
-                case TRADING_POST -> staffed(town, SettlementAreaType.TRADING_POST, adults);
+                        .anyMatch(area -> area.type().foodProduction() && staffed(town, area, staffedAreas));
+                case KITCHEN -> staffed(town, SettlementAreaType.KITCHEN, staffedAreas);
+                case GUARD_POST -> staffed(town, SettlementAreaType.GUARD_POST, staffedAreas);
+                case WORKSHOP -> staffed(town, SettlementAreaType.WORKSHOP, staffedAreas);
+                case TRADING_POST -> staffed(town, SettlementAreaType.TRADING_POST, staffedAreas);
                 default -> false;
             };
             if (!operating) missing.add(requirement);
@@ -94,18 +100,15 @@ public final class SettlementProgressionService {
         town.recordEvent(now, SettlementEvent.Type.STAGE_ADVANCED, town.stage().name());
     }
 
-    private static boolean staffed(SettlementRecord town, SettlementAreaType type, Set<UUID> adults) {
-        return town.areas().values().stream().anyMatch(area -> area.type() == type && staffed(town, area, adults));
+    private static boolean staffed(SettlementRecord town, SettlementAreaType type, Set<UUID> staffedAreas) {
+        return town.areas().values().stream().anyMatch(area -> area.type() == type && staffed(town, area, staffedAreas));
     }
 
-    private static boolean staffed(SettlementRecord town, SettlementArea area, Set<UUID> adults) {
+    private static boolean staffed(SettlementRecord town, SettlementArea area, Set<UUID> staffedAreas) {
         var survey = town.surveys().get(area.id());
         boolean equipped = !SettlementBuildingSurvey.requiresFixture(area.type())
                 || survey != null && !survey.workstations().isEmpty();
-        return area.enabled() && equipped && town.duties().entrySet().stream()
-                .anyMatch(duty -> duty.getValue().equals(area.id()) && adults.contains(duty.getKey())
-                        && (!town.workers().containsKey(duty.getKey()) || town.workers().get(duty.getKey()).supportsService())
-                        && (!town.workerSettings().containsKey(duty.getKey()) || town.workerSettings().get(duty.getKey()).enabled()));
+        return area.enabled() && equipped && staffedAreas.contains(area.id());
     }
 
     public static long requiredTicks() {

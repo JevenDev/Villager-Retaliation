@@ -37,6 +37,10 @@ public final class SettlementBuildingSurvey {
     }
 
     static Survey inspect(ObservedBlocks blocks, SettlementArea area) {
+        return inspect(blocks, area, area);
+    }
+
+    static Survey inspect(ObservedBlocks blocks, SettlementArea area, SettlementArea bounds) {
         var level = blocks.level();
         List<BlockPos> beds = new ArrayList<>();
         Map<BlockPos, Boolean> bedAvailability = new LinkedHashMap<>();
@@ -44,23 +48,23 @@ public final class SettlementBuildingSurvey {
         List<BlockPos> waterSources = new ArrayList<>();
         Map<BlockPos, ResourceLocation> fixtures = new LinkedHashMap<>();
         boolean fullyLoaded = true;
-        for (int chunkX = Math.floorDiv(area.min().getX(), 16); chunkX <= Math.floorDiv(area.max().getX(), 16); chunkX++) {
-            for (int chunkZ = Math.floorDiv(area.min().getZ(), 16); chunkZ <= Math.floorDiv(area.max().getZ(), 16); chunkZ++) {
+        for (int chunkX = Math.floorDiv(bounds.min().getX(), 16); chunkX <= Math.floorDiv(bounds.max().getX(), 16); chunkX++) {
+            for (int chunkZ = Math.floorDiv(bounds.min().getZ(), 16); chunkZ <= Math.floorDiv(bounds.max().getZ(), 16); chunkZ++) {
                 LevelChunk chunk = blocks.chunk(chunkX, chunkZ);
                 var candidates = new java.util.LinkedHashSet<BlockPos>();
                 if (chunk != null) {
-                    candidates.addAll(points(level, area, chunk));
+                    candidates.addAll(points(level, bounds, chunk));
                 } else {
                     if (!blocks.terrain.observedChunk(chunkX, chunkZ)) {
                         fullyLoaded = false;
                         continue;
                     }
-                    int minX = Math.max(area.min().getX(), chunkX << 4);
-                    int maxX = Math.min(area.max().getX(), (chunkX << 4) + 15);
-                    int minZ = Math.max(area.min().getZ(), chunkZ << 4);
-                    int maxZ = Math.min(area.max().getZ(), (chunkZ << 4) + 15);
-                    for (var pos : BlockPos.betweenClosed(minX, Math.max(area.min().getY(), level.getMinBuildHeight()), minZ,
-                            maxX, Math.min(area.max().getY(), level.getMaxBuildHeight() - 1), maxZ)) {
+                    int minX = Math.max(bounds.min().getX(), chunkX << 4);
+                    int maxX = Math.min(bounds.max().getX(), (chunkX << 4) + 15);
+                    int minZ = Math.max(bounds.min().getZ(), chunkZ << 4);
+                    int maxZ = Math.min(bounds.max().getZ(), (chunkZ << 4) + 15);
+                    for (var pos : BlockPos.betweenClosed(minX, Math.max(bounds.min().getY(), level.getMinBuildHeight()), minZ,
+                            maxX, Math.min(bounds.max().getY(), level.getMaxBuildHeight() - 1), maxZ)) {
                         if (!blocks.observed(pos)) {
                             fullyLoaded = false;
                         } else if (relevant(area.type(), blocks.getBlockState(pos))) {
@@ -70,7 +74,7 @@ public final class SettlementBuildingSurvey {
                 }
                 for (var entry : blocks.terrain.constructionChanges().entrySet()) {
                     var pos = entry.getKey();
-                    if (pos.getX() >> 4 == chunkX && pos.getZ() >> 4 == chunkZ && area.contains(pos)
+                    if (pos.getX() >> 4 == chunkX && pos.getZ() >> 4 == chunkZ && bounds.contains(pos)
                             && relevant(area.type(), entry.getValue())) candidates.add(pos);
                 }
                 for (BlockPos position : candidates) {

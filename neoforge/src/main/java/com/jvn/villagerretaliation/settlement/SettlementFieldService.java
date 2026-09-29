@@ -97,44 +97,49 @@ public final class SettlementFieldService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
-        for (var plot : List.copyOf(town.fields().values())) {
-            if (!town.contains(plot.position()) || town.areas().values().stream().anyMatch(area -> !town.owns(area) && area.type().usesFields() && area.contains(plot.position()))) {
-                plot.pause(now);
-                continue;
-            }
-            var areas = town.areas().values().stream().filter(area -> serves(area, plot)).toList();
-            var chunk = loaded(level, plot.position());
-            if (chunk != null && !plot.reconcile(chunk)) {
-                if (!plot.pending()) {
-                    town.removeField(plot.position());
-                }
-                plot.pause(now);
-                continue;
-            }
-            if (chunk != null) {
-                plot.refresh(chunk);
-            }
-            if (!plot.pending() && !SettlementFieldPlot.supportedPasture(plot.soil(), plot.crop())
-                    && !SettlementFieldPlot.supportedSite(plot.soil(), plot.crop())) {
-                town.removeField(plot.position());
-            } else if (areas.isEmpty()) {
-                if (!plot.pending()) {
-                    town.removeField(plot.position());
-                } else {
-                    plot.pause(now);
-                }
-            } else if (areas.stream().noneMatch(SettlementArea::enabled)) {
-                plot.pause(now);
-            } else if (chunk != null && level.getChunkSource().isPositionTicking(chunk.getPos().toLong())) {
-                plot.observe(level, chunk, now);
-            } else {
-                plot.observeEnvironment(level, chunk);
-                plot.advance(level, town, now);
-                applyLoaded(level, plot);
-            }
+        for (var plot : List.copyOf(town.fields().values())) updatePlot(level, town, plot, now);
+    }
+
+    static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
+        jobs.add(SettlementWork.each(List.copyOf(town.fields().values()), plot -> updatePlot(level, town, plot, now)));
+    }
+
+    private static void updatePlot(ServerLevel level, SettlementRecord town, SettlementFieldPlot plot, long now) {
+        if (town.fields().get(plot.position()) != plot) return;
+        town.changed();
+        if (!town.contains(plot.position()) || town.areas().values().stream().anyMatch(area -> !town.owns(area) && area.type().usesFields() && area.contains(plot.position()))) {
+            plot.pause(now);
+            return;
         }
-        if (!town.fields().isEmpty()) {
-            town.changed();
+        var areas = town.areas().values().stream().filter(area -> serves(area, plot)).toList();
+        var chunk = loaded(level, plot.position());
+        if (chunk != null && !plot.reconcile(chunk)) {
+            if (!plot.pending()) {
+                town.removeField(plot.position());
+            }
+            plot.pause(now);
+            return;
+        }
+        if (chunk != null) {
+            plot.refresh(chunk);
+        }
+        if (!plot.pending() && !SettlementFieldPlot.supportedPasture(plot.soil(), plot.crop())
+                && !SettlementFieldPlot.supportedSite(plot.soil(), plot.crop())) {
+            town.removeField(plot.position());
+        } else if (areas.isEmpty()) {
+            if (!plot.pending()) {
+                town.removeField(plot.position());
+            } else {
+                plot.pause(now);
+            }
+        } else if (areas.stream().noneMatch(SettlementArea::enabled)) {
+            plot.pause(now);
+        } else if (chunk != null && level.getChunkSource().isPositionTicking(chunk.getPos().toLong())) {
+            plot.observe(level, chunk, now);
+        } else {
+            plot.observeEnvironment(level, chunk);
+            plot.advance(level, town, now);
+            applyLoaded(level, plot);
         }
     }
 

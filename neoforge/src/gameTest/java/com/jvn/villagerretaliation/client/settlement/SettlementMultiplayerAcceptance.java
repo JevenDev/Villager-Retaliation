@@ -66,7 +66,7 @@ public final class SettlementMultiplayerAcceptance {
     private static Process peerProcess;
     private static long started;
     private static UUID leader;
-    private static String hostPhase = "";
+    private static volatile String hostPhase = "";
     private static String peerPhase = "";
     private static int ticks;
     private static int viewTicks;
@@ -75,6 +75,10 @@ public final class SettlementMultiplayerAcceptance {
     private static long phaseStarted;
     private static boolean reported;
     private static boolean configured;
+    private static boolean hostViewing;
+    private static int simultaneousTicks;
+    private static int peakTickets;
+    private static int peakSends;
 
     private SettlementMultiplayerAcceptance() {
     }
@@ -106,6 +110,18 @@ public final class SettlementMultiplayerAcceptance {
                 fixture = preparation.join();
                 launchPeer();
             }
+            if (fixture != null && hostPhase.equals("view_only")) {
+                if (!hostViewing) {
+                    PacketDistributor.sendToServer(new SettlementManagementRequestPayload(fixture.town(),
+                            SettlementManagementRequestPayload.Page.SUMMARY, 0, "", 0, true));
+                    hostViewing = true;
+                }
+                if (minecraft.screen instanceof SettlementManagementScreen screen && !screen.expectingView()
+                        && screen.snapshot().header() != null) button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            } else if (hostViewing && !hostPhase.equals("view_only")) {
+                if (minecraft.screen instanceof SettlementViewScreen screen) screen.onClose();
+                hostViewing = false;
+            }
             if (read("host-state.txt").equals("finished")) {
                 require(peerProcess != null && !peerProcess.isAlive(), "the second native client has exited");
                 write("result.txt", "Settlement multiplayer acceptance passed\n");
@@ -116,6 +132,9 @@ public final class SettlementMultiplayerAcceptance {
                                 "authorized guard selection and movement order", "stale camera request rejected",
                                 "remote body remains vulnerable and unmoved", "damage closes view and releases chunks",
                                 "normal close releases chunks", "disconnect releases server tickets"),
+                        "simultaneousTicks", simultaneousTicks,
+                        "peakSharedTickets", peakTickets,
+                        "peakChunkPacketsPerTick", peakSends,
                         "elapsedMilliseconds", Util.getMillis() - started)));
                 LogUtils.getLogger().info("Settlement multiplayer acceptance passed");
                 reported = true;
@@ -211,6 +230,13 @@ public final class SettlementMultiplayerAcceptance {
     public static void serverTick(ServerTickEvent.Post event) {
         if (System.getProperty(OUTPUT) == null || !host() || fixture == null || reported) return;
         var server = event.getServer();
+        var viewMetrics = SettlementViewService.metrics(server);
+        if (viewMetrics.viewers() >= 2) simultaneousTicks++;
+        peakTickets = Math.max(peakTickets, viewMetrics.chunks());
+        peakSends = Math.max(peakSends, viewMetrics.sends());
+        require(viewMetrics.loads() <= com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_LOADS.get()
+                && viewMetrics.sends() <= com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_SENDS.get(),
+                "concurrent clients respect aggregate chunk admission and transmission limits");
         var peer = server.getPlayerList().getPlayerByName("SettlementPeer");
         var town = SettlementSavedData.get(server.overworld()).get(new VillageAllegianceId(fixture.town())).orElseThrow();
         String ack = read("peer-state.txt");
@@ -226,6 +252,8 @@ public final class SettlementMultiplayerAcceptance {
             require(town.setPermissions(leader, peer.getUUID(), Set.of(SettlementPermission.VIEW)), "the leader grants view access");
             next("view_only", now);
         } else if (hostPhase.equals("view_only") && ack.equals("view_done")) {
+            require(simultaneousTicks >= 20, "both native clients receive the shared view concurrently");
+
             require(town.guardOrders().get(fixture.resident()) == null, "view access cannot order the guard");
             require(town.permits(peer.getUUID(), SettlementPermission.VIEW) && !town.permits(peer.getUUID(), SettlementPermission.STAFF),
                     "a viewing delegate cannot grant itself staffing authority");

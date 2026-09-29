@@ -44,13 +44,19 @@ final class SettlementOverviewMap {
         return closest;
     }
 
-    void render(GuiGraphics g, Font font, List<SettlementManagementPayload.Area> areas,
+    void render(GuiGraphics g, Font font, List<com.jvn.villagerretaliation.network.SettlementPlotSnapshot.Plot> plots,
+                List<SettlementManagementPayload.Area> areas,
                 List<SettlementManagementPayload.Project> projects, List<Marker> markers,
                 double cameraX, double cameraZ, float yaw, int mouseX, int mouseY) {
         this.markers = List.copyOf(markers);
         g.fill(this.left, this.top, this.left + this.size, this.top + this.size, 0xEE101010);
         g.renderOutline(this.left, this.top, this.size, this.size, 0xFF999999);
         g.enableScissor(this.left + 1, this.top + 1, this.left + this.size - 1, this.top + this.size - 1);
+        for (var plot : plots) {
+            var chunk = plot.chunk();
+            g.fill(x(chunk.getMinBlockX()), y(chunk.getMinBlockZ()), x(chunk.getMaxBlockX() + 1), y(chunk.getMaxBlockZ() + 1),
+                    plot.owned() ? 0xFF233D2B : 0xFF303030);
+        }
         for (var area : areas) footprint(g, area.min(), area.max(), 0xFF777777);
         for (var project : projects) footprint(g, project.min(), project.max(), 0xFFFFC740);
         for (var marker : markers) {
@@ -72,6 +78,7 @@ final class SettlementOverviewMap {
             var marker = marker(mouseX, mouseY);
             if (marker != null) g.renderTooltip(font, Component.literal(SettlementManagementScreen.name(marker.entry()).getString()
                     + (marker.lastKnown() ? " (last known)" : "")), mouseX, mouseY);
+            else g.renderTooltip(font, Component.translatable("villagerretaliation.gui.settlement.view_boundary"), mouseX, mouseY);
         }
     }
 

@@ -69,6 +69,10 @@ public final class SettlementRecord {
     private int radius = SettlementStage.CAMP.radius();
     private SettlementTerritory territory;
     private long revision;
+    private int cachedHousingCapacity = -1;
+    private long housingTerritoryRevision = -1L;
+    private Set<BlockPos> cachedHousingBeds = Set.of();
+    private Map<BlockPos, UUID> cachedHomeOwners;
     private long simulationResumedAt;
     private boolean manualManagement;
     private final Set<UUID> manualDuties = new java.util.HashSet<>();
@@ -178,6 +182,7 @@ public final class SettlementRecord {
     }
 
     void migrateTerritory(Set<Long> plots, String conflict) {
+        this.cachedHousingCapacity = -1;
         this.territory = new SettlementTerritory(this.center);
         this.territory.migrate(plots, this.stage, conflict);
         this.areas.replaceAll((id, area) -> effectiveArea(area));
@@ -333,6 +338,7 @@ public final class SettlementRecord {
         boolean removed = this.residents.remove(resident) != null;
         removed |= this.manualDuties.remove(resident);
         removed |= this.homes.remove(resident) != null;
+        this.cachedHomeOwners = null;
         removed |= this.courtships.values().removeIf(attempt -> attempt.involves(resident));
         if (!this.departures.containsKey(resident) && this.arrivals.remove(resident) != null) {
             removed = true;
@@ -376,12 +382,23 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.homes);
     }
 
+    UUID homeOwner(BlockPos bed) {
+        if (this.cachedHomeOwners == null) {
+            var owners = new java.util.HashMap<BlockPos, UUID>();
+            for (var home : this.homes.values()) {
+                if (home.bed() != null) owners.put(home.bed(), home.resident());
+            }
+            this.cachedHomeOwners = Map.copyOf(owners);
+        }
+        return this.cachedHomeOwners.get(bed);
+    }
+
     boolean assignHome(UUID resident, BlockPos bed) {
-        if (resident == null || bed != null && this.homes.values().stream()
-                .anyMatch(home -> bed.equals(home.bed()) && !resident.equals(home.resident()))) return false;
+        if (resident == null || bed != null && homeOwner(bed) != null && !resident.equals(homeOwner(bed))) return false;
         var previous = this.homes.get(resident);
         if (previous != null && Objects.equals(previous.bed(), bed)) return true;
         this.homes.put(resident, new SettlementHome(resident, bed, previous == null ? 1L : Math.incrementExact(previous.version())));
+        this.cachedHomeOwners = null;
         changed();
         return true;
     }
@@ -638,7 +655,10 @@ public final class SettlementRecord {
 
     void clearProjectSite(SettlementProject project) {
         project.clearSite();
-        if (project.workplace() != null) this.surveys.remove(project.area());
+        if (project.workplace() != null) {
+            this.surveys.remove(project.area());
+            this.cachedHousingCapacity = -1;
+        }
         changed();
     }
 
@@ -761,12 +781,26 @@ public final class SettlementRecord {
     }
 
     public int housingCapacity() {
-        return this.areas.values().stream()
-                .filter(area -> area.enabled() && owns(area) && area.type() == SettlementAreaType.HOME)
-                .map(area -> this.surveys.get(area.id()))
-                .filter(Objects::nonNull)
-                .mapToInt(survey -> survey.beds().size())
-                .sum();
+        if (this.cachedHousingCapacity >= 0 && this.housingTerritoryRevision == this.territory.revision()) return this.cachedHousingCapacity;
+        this.housingTerritoryRevision = this.territory.revision();
+        // only survey, area and territory changes invalidate capacity, resident care does not
+        var beds = new java.util.HashSet<BlockPos>();
+        int capacity = 0;
+        for (var area : this.areas.values()) {
+            var survey = this.surveys.get(area.id());
+            if (area.enabled() && owns(area) && area.type() == SettlementAreaType.HOME && survey != null) {
+                beds.addAll(survey.beds());
+                capacity += survey.beds().size();
+            }
+        }
+        this.cachedHousingBeds = Set.copyOf(beds);
+        this.cachedHousingCapacity = capacity;
+        return capacity;
+    }
+
+    boolean usableBed(BlockPos bed) {
+        housingCapacity();
+        return this.cachedHousingBeds.contains(bed);
     }
 
     void recordSurvey(UUID area, SettlementBuildingSurvey.Survey survey) {
@@ -782,6 +816,7 @@ public final class SettlementRecord {
             return;
         }
         this.surveys.put(area, survey);
+        this.cachedHousingCapacity = -1;
         changed();
     }
 
@@ -874,6 +909,7 @@ public final class SettlementRecord {
             return false;
         }
         SettlementArea previous = this.areas.put(area.id(), area);
+        this.cachedHousingCapacity = -1;
         if (!area.equals(previous)) {
             if (previous == null || previous.type() != area.type()
                     || !previous.min().equals(area.min()) || !previous.max().equals(area.max())) {
@@ -897,6 +933,7 @@ public final class SettlementRecord {
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.surveys.remove(area);
+        this.cachedHousingCapacity = -1;
         changed();
         return true;
     }

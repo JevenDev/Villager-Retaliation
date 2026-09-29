@@ -37,7 +37,8 @@ final class SettlementTerrainObservations {
             }
         }
         for (var plot : town.fields().values()) {
-            if (plot.pending() || town.areas().values().stream().anyMatch(area -> SettlementFieldService.serves(area, plot))) {
+            if (plot.pending() || SettlementFieldService.serves(town.areas().get(plot.area()), plot)
+                    || town.areas().values().stream().anyMatch(area -> SettlementFieldService.serves(area, plot))) {
                 this.plots.put(plot.position(), plot);
                 this.chunks.add(ChunkPos.asLong(plot.position()));
             }

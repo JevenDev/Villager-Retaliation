@@ -57,12 +57,12 @@ public final class SettlementManyVillageProfileScenario {
         var scenario = new SettlementManyVillageProfileScenario(level);
         for (int index = 0; index < TOWNS; index++) {
             var origin = index < LOADED_TOWNS
-                    ? new BlockPos(1_024 + index % 3 * 32, -60, 1_024 + index / 3 * 32)
+                    ? new BlockPos(1_024 + index % 3 * 64, -60, 1_024 + index / 3 * 64)
                     : new BlockPos(16_384 + index % 10 * 64, -60, 16_384 + index / 10 * 64);
             level.setChunkForced(origin.getX() >> 4, origin.getZ() >> 4, true);
             scenario.villages.add(scenario.prepareVillage(player, origin, index));
         }
-        player.connection.teleport(1_064.5D, -59.0D, 1_048.5D, 0.0F, 0.0F);
+        player.connection.teleport(1_096.5D, -59.0D, 1_064.5D, 0.0F, 0.0F);
         return scenario;
     }
 
@@ -187,7 +187,7 @@ public final class SettlementManyVillageProfileScenario {
         require(iron == TOWNS * IRON_PER_TOWN, "all depot and carried iron is conserved: " + iron);
         require(roster == TOWNS * RESIDENTS_PER_TOWN, "the census remains 1,000: " + roster);
         return new Snapshot(tickingResidents(), unloadedVillages(), roster, iron, SettlementSimulationService.completedCycles(this.level),
-                List.copyOf(deliveries), List.copyOf(careTimes));
+                List.copyOf(deliveries), List.copyOf(careTimes), SettlementSimulationService.metrics(this.level));
     }
 
     private SettlementArea area(ServerPlayer player, SettlementRecord town, SettlementAreaType type, BlockPos min, BlockPos max) {
@@ -213,6 +213,6 @@ public final class SettlementManyVillageProfileScenario {
     }
 
     public record Snapshot(int ticking, int unloadedVillages, int census, int iron, long completedCycles,
-                           List<Integer> deliveries, List<Long> careTimes) {
+                           List<Integer> deliveries, List<Long> careTimes, SettlementSimulationService.Metrics scheduler) {
     }
 }

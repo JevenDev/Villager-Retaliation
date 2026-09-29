@@ -90,7 +90,7 @@ public final class SettlementFoodService {
         int food = VillagerRecoveryService.foodLevel(villager);
         double multiplier = food <= 0 ? 0.4D : food < 6 ? 0.7D : 1.0D;
         int population = com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(level)
-                .residentRoster(town.id(), level.getGameTime()).size();
+                .residentCount(town.id(), level.getGameTime());
         return population > town.housingCapacity() ? multiplier * 0.75D : multiplier;
     }
 }

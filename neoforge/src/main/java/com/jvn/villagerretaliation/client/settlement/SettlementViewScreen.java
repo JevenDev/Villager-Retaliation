@@ -81,6 +81,7 @@ public final class SettlementViewScreen extends Screen {
     private SettlementViewWindow window;
     private double focusX;
     private double focusZ;
+    private Vec3 requestedFocus;
     private float viewHeight;
     private double cameraHeight;
     private double panVelocityX;
@@ -88,6 +89,7 @@ public final class SettlementViewScreen extends Screen {
     private Pick hovered = new Pick(null, null);
     private int requestId;
     private int acceptedRequestId;
+    private int queuedChunks;
     private long nextViewRequest;
     private long keepAliveAt;
     private long lastFrame;
@@ -147,6 +149,7 @@ public final class SettlementViewScreen extends Screen {
         this.session = payload.session();
         this.snapshots = new SettlementViewSnapshots(this.session, this.header.id());
         this.plotSnapshot = payload.plots();
+        this.queuedChunks = payload.queuedChunks();
         this.window = payload.window();
         this.focusX = this.window.x();
         this.focusZ = this.window.z();
@@ -231,7 +234,9 @@ public final class SettlementViewScreen extends Screen {
         }
         this.acceptedRequestId = payload.requestId();
         this.plotSnapshot = payload.plots();
+        this.queuedChunks = payload.queuedChunks();
         this.window = payload.window();
+        this.overviewMap.layout(this.panelLeft, this.height, this.window.center(), this.window.radius());
         updatePlotActions();
         SettlementViewChunks.update(this.window);
         if (payload.requestId() >= this.requestId && !this.moved) {
@@ -391,7 +396,7 @@ public final class SettlementViewScreen extends Screen {
             rebuildWidgets();
         }).bounds(this.panelLeft, 2, 18, 20)
                 .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Toggle settlement browser"))).build());
-        this.overviewMap.layout(this.panelLeft, this.height, this.header.center(), this.header.radius());
+        this.overviewMap.layout(this.panelLeft, this.height, this.window.center(), this.window.radius());
         addRenderableWidget(Button.builder(Component.literal(this.preferences.map ? "Hide map" : "Map"), ignored -> {
             this.preferences.map = !this.preferences.map;
             savePreferences();
@@ -518,7 +523,7 @@ public final class SettlementViewScreen extends Screen {
             BlockPos position = issuePosition(issue);
             if (position != null) markers.add(new SettlementOverviewMap.Marker(issue, position, false, 0xFFFF8840));
         }
-        this.overviewMap.render(graphics, this.font, List.copyOf(this.areas.values()), List.copyOf(this.projects.values()),
+        this.overviewMap.render(graphics, this.font, this.plotSnapshot.plots(), List.copyOf(this.areas.values()), List.copyOf(this.projects.values()),
                 markers, this.minecraft.gameRenderer.getMainCamera().getPosition().x,
                 this.minecraft.gameRenderer.getMainCamera().getPosition().z, this.camera.yaw(), mouseX, mouseY);
     }
@@ -562,7 +567,9 @@ public final class SettlementViewScreen extends Screen {
         long now = Util.getMillis();
         if (now >= this.nextViewRequest && (this.moved || now >= this.keepAliveAt)) {
             PacketDistributor.sendToServer(new SettlementViewRequestPayload(this.session, nextRequestId(),
-                    this.focusX, this.focusZ, this.viewHeight, false));
+                    this.requestedFocus == null ? this.focusX : this.requestedFocus.x,
+                    this.requestedFocus == null ? this.focusZ : this.requestedFocus.z, this.viewHeight, false));
+            this.requestedFocus = null;
             this.moved = false;
             this.nextViewRequest = now + 150L;
             this.keepAliveAt = now + 1_000L;
@@ -650,7 +657,9 @@ public final class SettlementViewScreen extends Screen {
                         : "Drag selects. Shift adds. Right-click actions. F focus. Home center. Ctrl+1-9 save, 1-9 recall.");
         if (this.snapshots.stale(now)) hint = Component.literal("Overview stale / loading").append("\n").append(hint);
         else if (this.snapshots.loading()) hint = Component.literal("Refreshing overview").append("\n").append(hint);
-        if (!terrainLoaded()) hint = text("loading");
+        if (this.queuedChunks > 0) hint = Component.translatable("villagerretaliation.gui.settlement.view_queue",
+                this.queuedChunks, this.window.chunks().size());
+        else if (!terrainLoaded()) hint = text("loading");
         this.modeHint = hint;
         var allLines = this.font.split(hint, Math.max(80, this.panelLeft - 16));
         var lines = allLines.subList(0, Math.min(3, allLines.size()));
@@ -979,14 +988,18 @@ public final class SettlementViewScreen extends Screen {
         this.panVelocityX = 0.0D;
         this.panVelocityZ = 0.0D;
         pan(x - this.focusX, z - this.focusZ);
+        this.requestedFocus = new Vec3(x, 0, z);
+        this.moved = true;
     }
 
     private void pan(double x, double z) {
-        double nextX = Math.clamp(this.focusX + x, this.window.center().getX() - this.window.radius(),
-                this.window.center().getX() + this.window.radius());
-        double nextZ = Math.clamp(this.focusZ + z, this.window.center().getZ() - this.window.radius(),
-                this.window.center().getZ() + this.window.radius());
-        this.moved |= nextX != this.focusX || nextZ != this.focusZ;
+        var target = this.window.focus(this.focusX + x, this.focusZ + z);
+        double nextX = target.x;
+        double nextZ = target.z;
+        if (nextX != this.focusX || nextZ != this.focusZ) {
+            this.requestedFocus = null;
+            this.moved = true;
+        }
         this.focusX = nextX;
         this.focusZ = nextZ;
     }

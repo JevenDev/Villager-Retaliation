@@ -164,6 +164,45 @@ public final class SettlementCareGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_care")
+    public static void careCensusUsesCycleHousingAndRejectsRemovedMembers(GameTestHelper helper) {
+        var fixture = fixture(helper, 20);
+        var town = fixture.town();
+        var level = helper.getLevel();
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var state = SettlementResidentState.capture(fixture.resident(), town, 0L);
+        town.recordResident(state);
+        var jobs = new java.util.ArrayList<Runnable>();
+        SettlementCareService.schedule(level, town, 200L, jobs);
+        var bed = town.center().east(8);
+        var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Home", bed, bed.offset(2, 2, 2), 5, true);
+        helper.assertTrue(town.putArea(town.leader(), home), "a housing area can be added between care steps");
+        helper.assertValueEqual(town.housingCapacity(), 0, "unsurveyed housing has no cached capacity");
+        town.recordSurvey(home.id(), new SettlementBuildingSurvey.Survey(0L, java.util.List.of(bed), java.util.List.of(), true));
+        helper.assertValueEqual(town.housingCapacity(), 1, "publishing a survey invalidates the capacity");
+        jobs.forEach(Runnable::run);
+        helper.assertValueEqual(state.shortageTicks(), 200L, "the care cycle consistently uses its original housing census");
+        SettlementCareService.update(level, town, 400L);
+        helper.assertValueEqual(state.shortageTicks(), 0L, "the next cycle sees the new capacity");
+        var paused = new SettlementArea(home.id(), home.type(), home.name(), home.min(), home.max(), home.priority(), false);
+        town.putArea(town.leader(), paused);
+        helper.assertValueEqual(town.housingCapacity(), 0, "disabling housing invalidates cached capacity");
+        town.putArea(town.leader(), home);
+        helper.assertValueEqual(town.housingCapacity(), 1, "reenabling housing restores capacity");
+        var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+        helper.assertValueEqual(restored.housingCapacity(), 1, "reload rebuilds capacity from durable surveys");
+        restored.migrateTerritory(java.util.Set.of(), "ownership_conflict");
+        helper.assertValueEqual(restored.housingCapacity(), 0, "replacement territory invalidates both capacity and usable beds");
+        helper.assertFalse(SettlementHousingService.usable(restored, bed), "housing outside owned territory cannot survive in the cache");
+        jobs.clear();
+        SettlementCareService.schedule(level, town, 600L, jobs);
+        registry.removeResident(town.id(), fixture.resident().getUUID());
+        jobs.forEach(Runnable::run);
+        helper.assertValueEqual(state.checkedAt(), 400L, "a departed member is not advanced from a stale census");
+        helper.assertFalse(town.residents().containsKey(fixture.resident().getUUID()), "pruning uses current membership");
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper, int food) {
         var level = helper.getLevel();
         BlockPos center = helper.absolutePos(new BlockPos(2, 2, 2));

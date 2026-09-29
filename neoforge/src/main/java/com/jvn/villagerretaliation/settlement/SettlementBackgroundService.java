@@ -13,13 +13,14 @@ public final class SettlementBackgroundService {
     static void update(ServerLevel level, SettlementRecord town, long now) {
         var jobs = new java.util.ArrayList<Runnable>();
         schedule(level, town, now, jobs);
-        jobs.forEach(Runnable::run);
+        var work = new SettlementWork(jobs);
+        while (!SettlementWork.complete(work)) work.run();
     }
 
     static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
-        jobs.add(() -> SettlementFurnaceService.update(level, town, now));
-        jobs.add(() -> SettlementBrewingStandService.update(level, town, now));
-        jobs.add(() -> SettlementFieldService.update(level, town, now));
+        SettlementFurnaceService.schedule(level, town, now, jobs);
+        SettlementBrewingStandService.schedule(level, town, now, jobs);
+        SettlementFieldService.schedule(level, town, now, jobs);
         jobs.add(() -> SettlementFisheryService.update(level, town));
         jobs.add(() -> SettlementForestService.update(level, town, now));
         jobs.add(() -> SettlementMineService.update(level, town, now));
@@ -27,10 +28,9 @@ public final class SettlementBackgroundService {
         jobs.add(() -> SettlementHuntingTargetService.update(level, town, now));
         jobs.add(() -> SettlementLivestockService.update(level, town, now));
         jobs.add(() -> SettlementGroundItemService.update(level, town, now));
-        jobs.add(() -> {
-            for (var worker : town.workers().values()) SettlementBackgroundFishing.migrateExperience(level, town, worker);
-            SettlementGroundExperienceService.update(level, town, now);
-        });
+        jobs.add(SettlementWork.each(List.copyOf(town.workers().values()),
+                worker -> SettlementBackgroundFishing.migrateExperience(level, town, worker)));
+        jobs.add(() -> SettlementGroundExperienceService.update(level, town, now));
         jobs.add(() -> SettlementConstructionSiteService.update(level, town));
         for (var depot : town.depots().values()) jobs.add(() -> SettlementDepotService.observeRules(level, depot));
         for (var resident : town.duties().keySet()) jobs.add(() -> updateWorker(level, town, resident, now));

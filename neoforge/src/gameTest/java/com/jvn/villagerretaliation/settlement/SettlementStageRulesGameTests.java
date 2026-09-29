@@ -173,7 +173,8 @@ public final class SettlementStageRulesGameTests {
             helper.assertValueEqual(restored.depots().values().stream().mapToInt(depot -> depot.count(stack -> stack.is(Items.BREAD))).sum(),
                     6, "lower capacity does not delete inventory");
             helper.assertValueEqual(SettlementViewWindow.around(restored, post.min().getX(), post.min().getZ(), 32).radius(),
-                    112, "RTS authority retains the earned boundary");
+                    restored.territory().envelopeRadius(restored.center()) + SettlementViewWindow.BORDER,
+                    "RTS authority follows retained claims with a bounded nearby border");
         } finally {
             SettlementStageRules.apply(previous);
         }

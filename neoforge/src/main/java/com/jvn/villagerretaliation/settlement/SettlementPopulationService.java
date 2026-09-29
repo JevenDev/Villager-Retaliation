@@ -27,37 +27,47 @@ public final class SettlementPopulationService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
+        var jobs = new java.util.ArrayList<Runnable>();
+        schedule(level, town, now, jobs);
+        var work = new SettlementWork(jobs);
+        while (!SettlementWork.complete(work)) work.run();
+    }
+
+    static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
         if (level.hasChunkAt(town.center()) && town.applicants().values().stream().anyMatch(applicant -> applicant.approvedBy().isPresent())) {
-            town.areas().values().forEach(area -> SettlementBuildingService.refresh(level, town, area));
+            for (var area : town.areas().values()) jobs.add(SettlementBuildingService.work(level, town, area));
         }
-        SettlementArrivalService.update(level, town);
-        for (SettlementApplicant applicant : List.copyOf(town.applicants().values())) {
+        jobs.add(SettlementWork.each(List.copyOf(town.arrivals().keySet()), id -> SettlementArrivalService.materialize(level, town, id)));
+        jobs.add(SettlementWork.each(List.copyOf(town.applicants().keySet()), id -> {
+            var applicant = town.applicants().get(id);
+            if (applicant == null) return;
             if (!town.manualManagement() && applicant.approvedBy().isEmpty() && canGrow(level, town)) {
                 applicant = applicant.approve(town.leader());
                 town.putApplicant(applicant);
             }
-            if (applicant.approvedBy().isPresent()) {
-                arrive(level, town, applicant);
-            } else if (now - applicant.createdAt() >= 7L * 24_000L) {
-                town.removeApplicant(applicant.id());
+            if (applicant.approvedBy().isPresent()) arrive(level, town, applicant);
+            else if (now - applicant.createdAt() >= 7L * 24_000L) town.removeApplicant(applicant.id());
+        }));
+        jobs.add(SettlementWork.lazy(() -> SettlementWork.each(
+                VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now),
+                member -> provideFamilyFood(level, town, member.id()))));
+        jobs.add(SettlementFamilyService.cycle(level, town, now));
+        jobs.add(() -> {
+            if (now >= town.nextApplicantAt() && canGrow(level, town)
+                    && town.applicants().size() < SettlementRecord.MAX_APPLICANTS) {
+                var applicant = propose(level, town).orElse(null);
+                if (!town.manualManagement() && applicant != null) {
+                    applicant = applicant.approve(town.leader());
+                    town.putApplicant(applicant);
+                    arrive(level, town, applicant);
+                }
+                town.scheduleApplicant(now + 24_000L);
             }
-        }
-        provideFamilyFood(level, town);
-        SettlementFamilyService.update(level, town, now);
-        if (now >= town.nextApplicantAt() && canGrow(level, town)
-                && town.applicants().size() < SettlementRecord.MAX_APPLICANTS) {
-            var applicant = propose(level, town).orElse(null);
-            if (!town.manualManagement() && applicant != null) {
-                applicant = applicant.approve(town.leader());
-                town.putApplicant(applicant);
-                arrive(level, town, applicant);
-            }
-            town.scheduleApplicant(now + 24_000L);
-        }
+        });
     }
 
     public static boolean canGrow(ServerLevel level, SettlementRecord town) {
-        int population = VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime()).size();
+        int population = VillageAllegianceRegistrySavedData.get(level).residentCount(town.id(), level.getGameTime());
         return population < Math.clamp(VillagerRetaliationConfig.SETTLEMENT_POPULATION_TARGET.get(), 1, 1000)
                 && town.housingCapacity() > population
                 && SettlementFoodService.nutrition(town) >= (long) (population + 1) * SettlementFoodService.dailyNutrition()
@@ -65,7 +75,7 @@ public final class SettlementPopulationService {
     }
 
     static Optional<SettlementApplicant> propose(ServerLevel level, SettlementRecord town) {
-        int population = VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime()).size();
+        int population = VillageAllegianceRegistrySavedData.get(level).residentCount(town.id(), level.getGameTime());
         int vacancies = Math.min(town.housingCapacity(),
                 Math.clamp(VillagerRetaliationConfig.SETTLEMENT_POPULATION_TARGET.get(), 1, 1000)) - population;
         if (!canGrow(level, town) || town.applicants().size() >= vacancies
@@ -156,21 +166,27 @@ public final class SettlementPopulationService {
 
     static void provideFamilyFood(ServerLevel level, SettlementRecord town) {
         for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime())) {
-            net.minecraft.world.entity.Entity existing = null;
-            for (var dimension : level.getServer().getAllLevels()) {
-                existing = dimension.getEntity(member.id());
-                if (existing != null) break;
-            }
-            if (existing != null && (!(existing instanceof Villager) || !existing.isAlive() || existing.level() != level
-                    || VillageAllegianceApi.canonicalPrimary(level, existing).filter(town.id()::equals).isEmpty())) continue;
-            if (existing instanceof Villager resident && level.isPositionEntityTicking(resident.blockPosition())) {
-                provideFamilyFood(level, town, resident);
-                continue;
-            }
-            var care = town.residents().get(member.id());
-            var resident = familyContext(level, town, care);
-            if (resident != null) provideFamilyFood(level, town, resident);
+            provideFamilyFood(level, town, member.id());
         }
+    }
+
+    private static void provideFamilyFood(ServerLevel level, SettlementRecord town, UUID id) {
+        if (!VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
+                .map(record -> record.residents().containsKey(id)).orElse(false)) return;
+        net.minecraft.world.entity.Entity existing = null;
+        for (var dimension : level.getServer().getAllLevels()) {
+            existing = dimension.getEntity(id);
+            if (existing != null) break;
+        }
+        if (existing != null && (!(existing instanceof Villager) || !existing.isAlive() || existing.level() != level
+                || VillageAllegianceApi.canonicalPrimary(level, existing).filter(town.id()::equals).isEmpty())) return;
+        if (existing instanceof Villager resident && level.isPositionEntityTicking(resident.blockPosition())) {
+            provideFamilyFood(level, town, resident);
+            return;
+        }
+        var care = town.residents().get(id);
+        var resident = familyContext(level, town, care);
+        if (resident != null) provideFamilyFood(level, town, resident);
     }
 
     static Villager familyContext(ServerLevel level, SettlementRecord town, SettlementResidentState care) {

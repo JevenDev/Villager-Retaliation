@@ -73,7 +73,8 @@ final class SettlementIssueService {
         String simulation = SettlementSimulationService.suspension(level, town);
         if (!simulation.isEmpty()) {
             issues.add(new Issue(identity(town, "simulation"), "", IssueKind.SIMULATION,
-                    simulation, "", Page.SUMMARY, null, null, null, false));
+                    simulation, "Scheduled towns: " + SettlementSimulationService.metrics(level).towns()
+                            + ", queued refresh jobs: " + SettlementSimulationService.metrics(level).queued(), Page.SUMMARY, null, null, null, false));
         }
         return List.copyOf(issues);
     }

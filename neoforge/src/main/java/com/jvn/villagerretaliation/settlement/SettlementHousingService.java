@@ -226,7 +226,7 @@ public final class SettlementHousingService {
     }
 
     public static UUID owner(SettlementRecord town, BlockPos bed) {
-        return town.homes().values().stream().filter(home -> bed.equals(home.bed())).map(SettlementHome::resident).findFirst().orElse(null);
+        return town.homeOwner(bed);
     }
 
     public static Boolean availability(SettlementRecord town, BlockPos bed) {
@@ -240,8 +240,7 @@ public final class SettlementHousingService {
     }
 
     static boolean usable(SettlementRecord town, BlockPos bed) {
-        return town.areas().values().stream().filter(area -> area.enabled() && town.owns(area) && area.type() == SettlementAreaType.HOME)
-                .map(area -> town.surveys().get(area.id())).filter(Objects::nonNull).anyMatch(survey -> survey.beds().contains(bed));
+        return town.usableBed(bed);
     }
 
     private static void refresh(ServerLevel level, SettlementRecord town, BlockPos bed) {
