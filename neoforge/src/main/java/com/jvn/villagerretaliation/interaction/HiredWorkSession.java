@@ -41,6 +41,9 @@ public record HiredWorkSession(
         HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
         HiredRoleWorker worker = HiredRoleWorkerRegistry.get(safeRole);
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        if (!inventory.hasOutput(ignored -> true)) {
+            com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.clearDestination(state);
+        }
         CachedMetadata metadata = metadata(level, villager, safeRole, state, inventory);
         HiredJobSite jobSite = HiredTemporaryWorkService.jobSite(state, safeRole, metadata.jobSite);
         jobSite = com.jvn.villagerretaliation.interaction.work.HiredTemporaryEntities.jobSite(level, villager, state, jobSite);

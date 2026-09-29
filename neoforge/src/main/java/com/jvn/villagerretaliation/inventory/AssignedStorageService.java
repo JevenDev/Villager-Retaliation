@@ -626,6 +626,74 @@ public final class AssignedStorageService {
                 stack -> ItemStack.isSameItemSameComponents(stack, sample));
     }
 
+    public static long productionStockAt(Villager villager, BlockPos position, Predicate<ItemStack> matches) {
+        if (!(villager.level() instanceof ServerLevel level) || position == null) return -1L;
+        for (var candidate : liveContainerCandidates(level, villager, record -> purposeMatchesUse(record.purpose(), StorageUse.OUTPUT))) {
+            if (!candidate.matches(position)) continue;
+            var resolution = ContainerFilterResolver.resolve(level, candidate);
+            if (!resolution.live()) return -1L;
+            long count = ContainerTransferClaimLedger.count(level, candidate, villager.getUUID(),
+                    VillagerFilterPolicy.TransferOperation.RECEIVE, matches);
+            for (int slot = 0; slot < candidate.container().getContainerSize(); slot++) {
+                var stack = candidate.container().getItem(slot);
+                if (matches.test(stack)) count += stack.getCount();
+            }
+            return count;
+        }
+        return -1L;
+    }
+
+    public static boolean reserveProductionInputs(Villager villager, Map<net.minecraft.world.item.Item, Integer> needs) {
+        if (!(villager.level() instanceof ServerLevel level)) return false;
+        var remaining = new LinkedHashMap<>(needs);
+        if (remaining.size() > 64 || remaining.values().stream().anyMatch(count -> count == null || count < 1 || count > 4096)) return false;
+        Map<BlockPos, List<ItemStack>> planned = new LinkedHashMap<>();
+        for (var source : liveInputContainerCandidates(level, villager)) {
+            if (remaining.isEmpty()) break;
+            var resolution = ContainerFilterResolver.resolve(level, source);
+            if (!resolution.live()) continue;
+            var reserved = new ArrayList<ItemStack>();
+            for (int slot = 0; slot < source.container().getContainerSize(); slot++) {
+                var stack = source.container().getItem(slot);
+                int needed = remaining.getOrDefault(stack.getItem(), 0);
+                if (stack.isEmpty() || needed <= 0) continue;
+                int count = Math.min(needed, Math.min(stack.getCount(),
+                        sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), reserved)));
+                if (count <= 0) continue;
+                reserved.add(stack.copyWithCount(count));
+                if (count == needed) remaining.remove(stack.getItem());
+                else remaining.put(stack.getItem(), needed - count);
+            }
+            if (!reserved.isEmpty()) planned.put(source.pos(), reserved);
+        }
+        ContainerTransferClaimLedger.replaceAll(level, villager.getUUID(), VillagerFilterPolicy.TransferOperation.PROVIDE,
+                remaining.isEmpty() ? planned : Map.of());
+        return remaining.isEmpty();
+    }
+
+    private static void consumeProductionInputClaim(ServerLevel level, UUID worker, BlockPos position, ItemStack consumed) {
+        var claims = ContainerTransferClaimLedger.snapshot(level, worker, VillagerFilterPolicy.TransferOperation.PROVIDE);
+        var stacks = claims.get(position);
+        if (stacks == null) return;
+        int remaining = consumed.getCount();
+        for (var stack : stacks) {
+            if (!ItemStack.isSameItemSameComponents(stack, consumed)) continue;
+            int count = Math.min(remaining, stack.getCount());
+            stack.shrink(count);
+            remaining -= count;
+            if (remaining == 0) break;
+        }
+        ContainerTransferClaimLedger.replaceAll(level, worker, VillagerFilterPolicy.TransferOperation.PROVIDE, claims);
+    }
+
+    public static void releaseProductionInputs(Villager villager) {
+        releaseProductionInputs(villager.getUUID());
+    }
+
+    public static void releaseProductionInputs(UUID worker) {
+        ContainerTransferClaimLedger.release(worker, VillagerFilterPolicy.TransferOperation.PROVIDE);
+    }
+
     public static void releaseCourierClaims(Villager villager) {
         if (villager != null) {
             ContainerTransferClaimLedger.release(villager.getUUID());
@@ -894,8 +962,16 @@ public final class AssignedStorageService {
                 excludedOwner,
                 additionalClaims);
         return evaluation.valid() && evaluation.permitted()
-                ? evaluation.allowance()
+                ? Math.min(evaluation.allowance(), unclaimedSourceCount(level, candidate, stack, excludedOwner, additionalClaims))
                 : 0;
+    }
+
+    private static int unclaimedSourceCount(ServerLevel level, VillagerInventoryOverflowService.ContainerCandidate candidate,
+            ItemStack stack, UUID excludedOwner, List<ItemStack> additionalClaims) {
+        Predicate<ItemStack> matches = stored -> ItemStack.isSameItemSameComponents(stored, stack);
+        int claims = saturatingAdd(ContainerTransferClaimLedger.count(level, candidate, excludedOwner,
+                VillagerFilterPolicy.TransferOperation.PROVIDE, matches), countMatchingStacks(additionalClaims, matches));
+        return Math.max(0, countMatchingContainer(candidate.container(), matches) - claims);
     }
 
     private static ContainerFilterEvaluator.Evaluation evaluateContainerRules(
@@ -1701,10 +1777,13 @@ public final class AssignedStorageService {
                 continue;
             }
             Container container = candidate.container();
+            var counted = new ArrayList<ItemStack>();
             for (int slot = 0; slot < container.getContainerSize(); slot++) {
                 ItemStack stack = container.getItem(slot);
                 if (!stack.isEmpty() && safePredicate.test(stack)) {
-                    count += stack.getCount();
+                    int available = Math.min(stack.getCount(), unclaimedSourceCount(level, candidate, stack, villager.getUUID(), counted));
+                    count += available;
+                    if (available > 0) counted.add(stack.copyWithCount(available));
                 }
             }
         }
@@ -1881,7 +1960,12 @@ public final class AssignedStorageService {
                 if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
-                int requested = Math.min(maxCount - movedTotal, stack.getCount());
+                int available = unclaimedSourceCount(level, candidate, stack, villager.getUUID(), List.of());
+                if (!ContainerTransferClaimLedger.snapshot(level, villager.getUUID(), VillagerFilterPolicy.TransferOperation.PROVIDE).isEmpty()) {
+                    var resolution = ContainerFilterResolver.resolve(level, candidate);
+                    available = resolution.live() ? sourceAllowance(level, candidate, resolution.rules(), stack, villager.getUUID(), List.of()) : 0;
+                }
+                int requested = Math.min(maxCount - movedTotal, Math.min(stack.getCount(), available));
                 ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
                         villager, container, slot, requested);
                 if (extracted.isEmpty()) {
@@ -1897,6 +1981,7 @@ public final class AssignedStorageService {
                 if (moved <= 0) {
                     continue;
                 }
+                consumeProductionInputClaim(level, villager.getUUID(), candidate.pos(), extracted.copyWithCount(moved));
                 movedTotal += moved;
                 if (!usedContainers.contains(candidate)) {
                     usedContainers.add(candidate);
@@ -2112,6 +2197,13 @@ public final class AssignedStorageService {
             StorageUse use) {
         List<VillagerInventoryOverflowService.ContainerCandidate> candidates =
                 liveContainerCandidates(level, villager, record -> purposeMatchesUse(record.purpose(), use));
+        if (use == StorageUse.OUTPUT) {
+            var destination = com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.destination(
+                    com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager));
+            if (destination != null && HiredJobInventory.getJobInventory(villager).hasOutput(ignored -> true)) {
+                candidates = candidates.stream().filter(candidate -> candidate.matches(destination)).toList();
+            }
+        }
         if (use != StorageUse.INPUT && use != StorageUse.TOOL) {
             return candidates;
         }

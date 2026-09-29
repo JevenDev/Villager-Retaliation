@@ -49,7 +49,7 @@ public final class HiredProductionService {
         var authority = VillagerWorkAuthority.resolve(level, villager);
         var error = validate(level, authority.role(), requested);
         if (!error.isEmpty()) return error;
-        if (requested.storage() != null && AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, requested.storage()::equals) == null) {
+        if (requested.storage() != null && AssignedStorageService.productionStockAt(villager, requested.storage(), ignored -> false) < 0L) {
             return "Choose an available assigned output storage";
         }
         var access = access(level, villager, authority.role());
@@ -79,6 +79,15 @@ public final class HiredProductionService {
         return "";
     }
 
+    public static void releasePlanned(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        var access = access(level, villager, role);
+        if (access.queue() != null) {
+            var allocation = access.queue().allocation(villager.getUUID());
+            if (allocation != null && !allocation.started()) access.queue().release(allocation.id());
+        }
+        AssignedStorageService.releaseProductionInputs(villager);
+    }
+
     public static boolean owns(ServerPlayer player, Villager villager) {
         if (player == null || villager == null || !player.isAlive() || player.isSpectator() || !villager.isAlive() || villager.isBaby()
                 || player.level() != villager.level() || player.serverLevel().getEntity(villager.getUUID()) != villager) return false;
@@ -100,13 +109,19 @@ public final class HiredProductionService {
 
     public static boolean edit(HiredProductionQueue queue, UUID order, Edit edit, int index) {
         if (edit == null || order == null) return false;
-        return switch (edit) {
+        var workers = queue.allocations().stream().filter(allocation -> !allocation.started() && allocation.order().equals(order))
+                .map(HiredProductionQueue.Allocation::worker).toList();
+        boolean changed = switch (edit) {
             case PAUSE -> queue.pause(order, true);
             case RESUME -> queue.pause(order, false);
             case CANCEL -> queue.cancel(order);
             case REMOVE -> queue.remove(order);
             case MOVE -> queue.reorder(order, index);
         };
+        if (changed) for (var worker : workers) {
+            if (queue.allocation(worker) == null) AssignedStorageService.releaseProductionInputs(worker);
+        }
+        return changed;
     }
 
     public record Access(boolean managed, HiredProductionQueue queue, String blocker) {

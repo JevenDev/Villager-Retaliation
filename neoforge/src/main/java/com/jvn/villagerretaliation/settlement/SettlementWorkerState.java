@@ -249,6 +249,7 @@ public final class SettlementWorkerState {
             return false;
         }
         HiredJobInventory.getJobInventory(villager).restoreSnapshot(this.inventory);
+        com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.copyDelivery(this.settings, HiredWorkStateStore.state(villager));
         villager.getPersistentData().putLong(VERSION_TAG, this.version);
         if (this.settings.contains("CraftsmanCursor", Tag.TAG_INT)) {
             HiredWorkStateStore.state(villager).putInt("CraftsmanCursor", this.settings.getInt("CraftsmanCursor"));
@@ -277,6 +278,10 @@ public final class SettlementWorkerState {
 
     double availableWork(int elapsed, double multiplier) {
         return Math.min(24_000.0D, this.progress + elapsed * multiplier);
+    }
+
+    void resetWork() {
+        this.progress = 0.0D;
     }
 
     void work(int elapsed, double multiplier) {

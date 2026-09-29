@@ -73,6 +73,7 @@ final class SettlementBackgroundHauling {
             }
             for (SettlementDepot destination : depots) {
                 if (!SettlementWorksiteLinks.permitsOutput(worker.settings(), destination.id())
+                        || !com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.permitsDestination(worker.settings(), destination.position())
                         || (courier ? !destination.purpose().providesSupplies() : !destination.purpose().acceptsOutputs())) {
                     continue;
                 }
@@ -95,6 +96,9 @@ final class SettlementBackgroundHauling {
                 int moved = count - remainder.getCount();
                 cargo.shrink(moved);
                 worker.updateInventory(level.registryAccess(), items);
+                if (worker.outputSlots().stream().allMatch(outputSlot -> items.get(outputSlot).isEmpty())) {
+                    com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.clearDestination(worker.settings());
+                }
                 if (courier && moved > 0) {
                     worker.practice(level, HiredWorkPractice.courier(moved, Math.sqrt(worker.position().distSqr(destination.position()))));
                 }

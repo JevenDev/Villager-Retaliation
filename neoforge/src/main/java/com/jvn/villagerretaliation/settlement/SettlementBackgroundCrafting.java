@@ -4,6 +4,9 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.CraftsmanWorker;
 import com.jvn.villagerretaliation.interaction.work.CookingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
@@ -24,6 +27,8 @@ final class SettlementBackgroundCrafting {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
+        var queue = town.productionQueues().get(worker.area());
+        if (queue != null) AssignedStorageService.releaseProductionInputs(worker.id());
         List<SettlementDepot> depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
         if ((!worker.settings().contains("AutoDepositOutputs") || worker.settings().getBoolean("AutoDepositOutputs"))
                 && SettlementBackgroundHauling.depositCarried(level, town, worker, elapsed, multiplier, depots, false)) {
@@ -37,26 +42,53 @@ final class SettlementBackgroundCrafting {
                         && SettlementBuildingSurvey.fixtureAvailable(blocks, entry.getKey(), entry.getValue())).map(Map.Entry::getKey)
                 .min(Comparator.comparingDouble(pos -> pos.distSqr(worker.position()))).orElse(null);
         if (table == null) {
+            releaseProduction(queue, worker);
+            if (queue != null) for (var order : queue.orders()) if (order.runnable()) queue.blocker(order.id(), "no_crafting_table");
             worker.status("no_crafting_table");
             return;
         }
         var items = worker.items(level.registryAccess());
         ItemStack filter = items.get(HiredJobInventory.FILTER_SLOT);
-        var targets = CraftsmanWorker.targets(level, filter);
+        var targets = queue == null ? CraftsmanWorker.targets(level, filter)
+                : java.util.stream.IntStream.range(0, queue.orders().size())
+                    .filter(index -> queue.orders().get(index).runnable())
+                    .mapToObj(index -> new CraftsmanWorker.Target(index, queue.orders().get(index).output())).toList();
         if (worker.role() == HiredVillagerRole.COOK) {
             targets = targets.stream().filter(target -> CookingWorker.isFood(target.stack())).toList();
         }
         if (targets.isEmpty()) {
+            releaseProduction(queue, worker);
             worker.status("no_filter");
             return;
         }
         List<SettlementProductionInventory.Supply> supplies = SettlementProductionInventory.supplies(level, worker, items, depots);
-        var mode = worker.role() == HiredVillagerRole.COOK ? CraftsmanWorker.Mode.PREFER_FIRST : CraftsmanWorker.mode(worker.settings());
+        var mode = queue != null || worker.role() == HiredVillagerRole.COOK ? CraftsmanWorker.Mode.PREFER_FIRST : CraftsmanWorker.mode(worker.settings());
         int start = mode == CraftsmanWorker.Mode.PREFER_FIRST ? 0
                 : CraftsmanWorker.indexAtOrAfter(targets, worker.settings().getInt("CraftsmanCursor"));
         int attempts = mode == CraftsmanWorker.Mode.FORCED_ROUND_ROBIN ? 1 : targets.size();
         for (int offset = 0; offset < attempts; offset++) {
             var target = targets.get((start + offset) % targets.size());
+            var order = queue == null ? null : queue.orders().get(target.slot());
+            long stock = 0L;
+            if (order != null) {
+                stock = SettlementProductionStock.count(level, town, queue, order);
+                var existing = queue.allocation(worker.id());
+                long pending = existing != null && existing.order().equals(order.id()) ? existing.remaining() : 0L;
+                if (stock < 0L || queue.available(order.id(), stock) + pending <= 0L) {
+                    queue.blocker(order.id(), stock < 0L ? "output_storage_unavailable" : "quantity_reserved_or_stock_met");
+                    continue;
+                }
+                boolean carrying = worker.outputSlots().stream().anyMatch(slot -> !items.get(slot).isEmpty());
+                if (carrying && !java.util.Objects.equals(HiredProductionStock.destination(worker.settings()), order.storage())) {
+                    queue.blocker(order.id(), "awaiting_output_delivery");
+                    continue;
+                }
+                if (!order.recipe().supports(level, worker.role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
+                    queue.blocker(order.id(), "recipe_unavailable");
+                    continue;
+                }
+                filter = order.recipe().filter(level);
+            }
             for (var recipe : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
                 ItemStack output = recipe.value().getResultItem(level.registryAccess());
                 if (output.isEmpty() || !output.is(target.stack().getItem())
@@ -78,6 +110,10 @@ final class SettlementBackgroundCrafting {
                     }
                 }
                 if (!SettlementProductionInventory.insertOutputs(worker, updated, plan.outputs())) {
+                    if (order != null) {
+                        queue.blocker(order.id(), "output_full");
+                        continue;
+                    }
                     worker.status("output_full");
                     return;
                 }
@@ -89,9 +125,34 @@ final class SettlementBackgroundCrafting {
                         cost += 16.0D * Math.sqrt(table.distSqr(depot.position()));
                     }
                 }
+                HiredProductionQueue.Allocation allocation = null;
+                if (order != null) {
+                    allocation = queue.allocation(worker.id());
+                    if (allocation != null && !allocation.order().equals(order.id())) {
+                        queue.release(allocation.id());
+                        allocation = null;
+                    }
+                    if (allocation == null) allocation = queue.reserve(worker.id(), order.id(), output.getCount(), 1, stock, null);
+                    if (allocation == null) {
+                        queue.blocker(order.id(), "quantity_reserved");
+                        continue;
+                    }
+                    if (!worker.settings().hasUUID("CraftsmanProductionAllocation")
+                            || !worker.settings().getUUID("CraftsmanProductionAllocation").equals(allocation.id())) {
+                        worker.resetWork();
+                        worker.settings().putUUID("CraftsmanProductionAllocation", allocation.id());
+                    }
+                    HiredProductionStock.prepareDestination(worker.settings(), false, order);
+                    queue.blocker(order.id(), "");
+                }
                 worker.work(elapsed, multiplier);
                 if (!worker.spend(cost)) {
                     worker.status("crafting");
+                    return;
+                }
+                if (allocation != null && !queue.start(allocation.id())) {
+                    releaseProduction(queue, worker);
+                    worker.status("production_changed");
                     return;
                 }
                 for (int index = 0; index < supplies.size(); index++) {
@@ -102,7 +163,10 @@ final class SettlementBackgroundCrafting {
                     }
                 }
                 worker.updateInventory(level.registryAccess(), updated);
-                if (worker.role() == HiredVillagerRole.CRAFTSMAN) {
+                if (allocation != null) {
+                    if (!queue.complete(allocation.id(), output)) throw new IllegalStateException("Crafted output did not match its production allocation");
+                    releaseProduction(queue, worker);
+                } else if (worker.role() == HiredVillagerRole.CRAFTSMAN) {
                     CraftsmanWorker.advanceCursor(worker.settings(), targets, target.slot());
                 }
                 boolean cooking = worker.role() == HiredVillagerRole.COOK;
@@ -111,7 +175,17 @@ final class SettlementBackgroundCrafting {
                 worker.status("crafted");
                 return;
             }
+            if (order != null && !queue.order(order.id()).blocker().equals("output_full")) queue.blocker(order.id(), "missing_materials");
         }
+        releaseProduction(queue, worker);
         worker.status("missing_materials");
+    }
+
+    private static void releaseProduction(HiredProductionQueue queue, SettlementWorkerState worker) {
+        if (queue == null) return;
+        var allocation = queue.allocation(worker.id());
+        if (allocation != null) queue.release(allocation.id());
+        worker.settings().remove("CraftsmanProductionAllocation");
+        worker.resetWork();
     }
 }

@@ -41,7 +41,7 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("villagerretaliation")
 @PrefixGameTestTemplate(false)
 public final class ContainerTransferPolicyGameTests {
     private static final String EMPTY_TEMPLATE = "empty";
@@ -813,6 +813,50 @@ public final class ContainerTransferPolicyGameTests {
         BlockPos spawn = level.getSharedSpawnPos();
         player.moveTo(spawn.getX() + 0.5D, spawn.getY() + 1.0D, spawn.getZ() + 0.5D, 0.0F, 0.0F);
         return player;
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void productionInputClaimsShareFiniteStockWithCouriers(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 4, 1);
+        var level = helper.getLevel();
+        var source = helper.absolutePos(new BlockPos(2, 2, 2));
+        var destination = helper.absolutePos(new BlockPos(6, 2, 2));
+        setBlock(helper, new BlockPos(2, 2, 2), Blocks.CHEST.defaultBlockState());
+        setBlock(helper, new BlockPos(6, 2, 2), Blocks.CHEST.defaultBlockState());
+        setItemCount(container(level, source), Items.WHEAT, 16);
+        var frame = attachRule(level, destination, configuredRule(new ItemStack(Items.WHEAT),
+                VillagerFilterPolicy.TransferDirection.RECEIVE, VillagerFilterPolicy.ListMode.ALLOW_MATCHING, 16), Direction.SOUTH);
+        var first = spawnVillager(helper, new BlockPos(4, 2, 2));
+        var second = spawnVillager(helper, new BlockPos(4, 2, 3));
+        var hirer = fakePlayer(level, "ProductionClaims");
+        assignStorage(helper, hirer, first, source, AssignedStorageService.SUPPLY_PURPOSE);
+        assignStorage(helper, hirer, first, destination, AssignedStorageService.OUTPUT_PURPOSE);
+        assignStorage(helper, hirer, second, source, AssignedStorageService.SUPPLY_PURPOSE);
+        assignStorage(helper, hirer, second, destination, AssignedStorageService.OUTPUT_PURPOSE);
+        try {
+            helper.assertTrue(AssignedStorageService.reserveProductionInputs(first, java.util.Map.of(Items.WHEAT, 12)),
+                    "a producer reserves the actual missing ingredients");
+            helper.assertFalse(AssignedStorageService.reserveProductionInputs(second, java.util.Map.of(Items.WHEAT, 8)),
+                    "another producer cannot reserve the same stock");
+            helper.assertValueEqual(countItem(container(level, source), Items.WHEAT), 16, "planning never removes real materials");
+            helper.assertValueEqual(AssignedStorageService.transferItemsAtAssignedStorageIgnoringFilter(first, source, stack -> stack.is(Items.WHEAT),
+                    4, stack -> ItemStack.EMPTY), 4, "collecting ingredients settles only the quantity actually removed");
+            helper.assertValueEqual(AssignedStorageService.reserveCourierTransferClaims(second, source, 16), 4,
+                    "couriers see the producer's ingredient reservation");
+            helper.assertValueEqual(AssignedStorageService.productionStockAt(first, destination, stack -> stack.is(Items.WHEAT)), 4L,
+                    "production stock counts incoming courier delivery");
+            AssignedStorageService.releaseProductionInputs(first);
+            AssignedStorageService.releaseCourierClaims(second);
+            helper.assertTrue(AssignedStorageService.reserveProductionInputs(second, java.util.Map.of(Items.WHEAT, 12)),
+                    "released stock is available to the next producer");
+        } finally {
+            AssignedStorageService.releaseCourierClaims(first);
+            AssignedStorageService.releaseCourierClaims(second);
+            first.discard();
+            second.discard();
+            frame.discard();
+        }
+        helper.succeed();
     }
 
     private record FixtureResult(int moved, int sourceRemaining, int accepted) {

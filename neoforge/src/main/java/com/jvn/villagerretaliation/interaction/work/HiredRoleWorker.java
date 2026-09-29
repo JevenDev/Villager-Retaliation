@@ -19,6 +19,7 @@ public interface HiredRoleWorker {
     }
 
     default void pause(ServerLevel level, Villager villager, HiredWorkContext context) {
+        com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.releasePlanned(level, villager, role());
         context.setProgressTicks(0);
         HiredWorkPlan.clear(context);
         HiredWorkerBrain.clearFailure(context);

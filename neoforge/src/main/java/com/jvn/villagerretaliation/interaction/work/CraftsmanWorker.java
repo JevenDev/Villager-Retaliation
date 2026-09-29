@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionService;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
@@ -25,10 +28,10 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Blocks;
 
-/** Crafts the ordered outputs configured in the villager's assigned item filter. */
 public final class CraftsmanWorker extends AbstractBlockWorker {
     private static final String MODE_TAG = "CraftsmanMode";
     private static final String CURSOR_TAG = "CraftsmanCursor";
+    private static final String ALLOCATION_TAG = "CraftsmanProductionAllocation";
     private static final int CRAFT_TICKS = 20;
     private static final int MAX_MATERIAL_PULL = 32;
 
@@ -51,6 +54,9 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 return WorkResult.idle(storageFullStatus(context));
             }
         }
+
+        var production = HiredProductionService.access(level, villager, role());
+        if (production.managed()) return tickProduction(level, villager, context, production);
 
         ItemStack filter = VillagerItemFilterService.assignedFilter(villager);
         List<Target> targets = targets(level, filter);
@@ -75,6 +81,11 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setFailure(context, "missing_craftsman_materials", level.getGameTime() + 100L);
             return WorkResult.idle("interaction.work.craftsman.missing_materials");
         }
+        return craft(level, villager, context, table, selection, targets, null, null);
+    }
+
+    private WorkResult craft(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos table,
+            Selection selection, List<Target> targets, HiredProductionQueue queue, HiredProductionQueue.Allocation allocation) {
         List<HiredProductionMaterials.Need> missing =
                 HiredProductionMaterials.missingItemNeeds(context, selection.materials());
         if (!missing.isEmpty()) {
@@ -109,13 +120,26 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             return WorkResult.progressed("interaction.work.craftsman.crafting");
         }
         context.setProgressTicks(0);
+        if (queue != null && !queue.start(allocation.id())) {
+            releaseProduction(villager, context, queue);
+            return WorkResult.idle("interaction.work.craftsman.no_filter");
+        }
         if (!HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(level, context, selection.recipe(), selection.narrowedIngredients())) {
+            if (queue != null) {
+                queue.lost(allocation.id());
+                queue.blocker(allocation.order(), "output_full");
+                releaseProduction(villager, context, queue);
+            }
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, table);
             HiredWorkerBrain.setFailure(context, "craftsman_output_full", level.getGameTime() + 100L);
             return WorkResult.idle("interaction.work.craftsman.output_full");
         }
-        advanceCursor(context.state(), targets, selection.target().slot());
         ItemStack result = selection.recipe().getResultItem(level.registryAccess());
+        if (queue == null) advanceCursor(context.state(), targets, selection.target().slot());
+        else {
+            if (!queue.complete(allocation.id(), result)) throw new IllegalStateException("Crafted output did not match its production allocation");
+            releaseProduction(villager, context, queue);
+        }
         useWorkItem(level, villager, result);
         HiredWorkerBrain.clearFailure(context);
         return WorkResult.completedWithPractice(
@@ -123,6 +147,92 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 itemReplacements(result),
                 HiredWorkPractice.batch(VillagerSkill.CRAFTING, "hired:craftsman:recipe",
                         result.getCount(), result.getItem().hashCode()));
+    }
+
+    private WorkResult tickProduction(ServerLevel level, Villager villager, HiredWorkContext context, HiredProductionService.Access access) {
+        var queue = access.queue();
+        if (!access.blocker().isEmpty()) {
+            AssignedStorageService.releaseProductionInputs(villager);
+            context.setProgressTicks(0);
+            HiredWorkerBrain.setFailure(context, access.blocker(), level.getGameTime() + 100L);
+            return WorkResult.idle("interaction.work.craftsman.no_filter");
+        }
+        var table = nearestCraftingTable(level, villager, context);
+        if (table == null) {
+            releaseProduction(villager, context, queue);
+            for (var order : queue.orders()) if (order.runnable()) queue.blocker(order.id(), "no_crafting_table");
+            return WorkResult.idle("interaction.work.craftsman.no_table");
+        }
+        var current = queue.allocation(villager.getUUID());
+        for (var order : queue.orders()) {
+            if (!order.runnable()) continue;
+            long stock = HiredProductionStock.count(level, villager, queue, order);
+            if (stock < 0L) {
+                queue.blocker(order.id(), "output_storage_unavailable");
+                continue;
+            }
+            long available = queue.available(order.id(), stock);
+            if (current != null && current.order().equals(order.id())) available += current.remaining();
+            if (available <= 0L) {
+                queue.blocker(order.id(), "quantity_reserved_or_stock_met");
+                continue;
+            }
+            if (context.inventory().hasOutput(ignored -> true)
+                    && !java.util.Objects.equals(HiredProductionStock.destination(context.state()), order.storage())) {
+                queue.blocker(order.id(), "awaiting_output_delivery");
+                continue;
+            }
+            if (!order.recipe().supports(level, role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
+                queue.blocker(order.id(), "recipe_unavailable");
+                continue;
+            }
+            var selection = select(level, villager, context, List.of(new Target(0, order.output())), order.recipe().filter(level));
+            if (selection == null) {
+                queue.blocker(order.id(), "missing_materials");
+                continue;
+            }
+            var missing = new LinkedHashMap<Item, Integer>();
+            selection.materials().forEach((item, count) -> {
+                int needed = count - HiredSupplyCrafting.countCarried(context, item);
+                if (needed > 0) missing.put(item, needed);
+            });
+            if (missing.isEmpty() && !context.inventory().canTransformSuppliesToOutputs(selection.materials(), List.of(order.output()))) {
+                queue.blocker(order.id(), "output_full");
+                continue;
+            }
+            if (!AssignedStorageService.reserveProductionInputs(villager, missing)) {
+                queue.blocker(order.id(), "materials_reserved");
+                continue;
+            }
+            if (current != null && !current.order().equals(order.id())) {
+                queue.release(current.id());
+                current = null;
+            }
+            if (current == null) current = queue.reserve(villager.getUUID(), order.id(), order.output().getCount(), 1, stock, null);
+            if (current == null) {
+                AssignedStorageService.releaseProductionInputs(villager);
+                queue.blocker(order.id(), "quantity_reserved");
+                continue;
+            }
+            if (!context.state().hasUUID(ALLOCATION_TAG) || !context.state().getUUID(ALLOCATION_TAG).equals(current.id())) {
+                context.setProgressTicks(0);
+                context.state().putUUID(ALLOCATION_TAG, current.id());
+            }
+            HiredProductionStock.prepareDestination(context.state(), context.inventory().hasOutput(ignored -> true), order);
+            queue.blocker(order.id(), "");
+            return craft(level, villager, context, table, selection, List.of(), queue, current);
+        }
+        releaseProduction(villager, context, queue);
+        setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+        return WorkResult.idle("interaction.work.craftsman.no_filter");
+    }
+
+    private static void releaseProduction(Villager villager, HiredWorkContext context, HiredProductionQueue queue) {
+        var allocation = queue.allocation(villager.getUUID());
+        if (allocation != null) queue.release(allocation.id());
+        AssignedStorageService.releaseProductionInputs(villager);
+        context.state().remove(ALLOCATION_TAG);
+        context.setProgressTicks(0);
     }
 
     private static Selection select(

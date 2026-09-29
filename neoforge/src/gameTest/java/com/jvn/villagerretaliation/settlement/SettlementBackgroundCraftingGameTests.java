@@ -4,6 +4,10 @@ import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
@@ -30,7 +34,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("villagerretaliation")
 @PrefixGameTestTemplate(false)
 public final class SettlementBackgroundCraftingGameTests {
     private SettlementBackgroundCraftingGameTests() {
@@ -350,6 +354,87 @@ public final class SettlementBackgroundCraftingGameTests {
             SettlementBackgroundService.onActive(fixture.villager());
             helper.assertValueEqual(inventory.countItem(Items.CHEST), 0, "the same recipe result cannot be returned twice");
         });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void sharedCraftQueueSurvivesReloadWithoutDuplicatingReservedQuantity(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            var queue = production(fixture);
+            var blocked = HiredProductionOrder.create(helper.getLevel(), HiredProductionRecipe.exact(id("diamond_block"), Map.of()),
+                    HiredProductionOrder.Mode.BATCH, 1, null);
+            var order = HiredProductionOrder.create(helper.getLevel(), HiredProductionRecipe.exact(id("stick"), Map.of()),
+                    HiredProductionOrder.Mode.BATCH, 4, null);
+            queue.append(blocked);
+            queue.append(order);
+            fixture.supply().setItem(0, new ItemStack(Items.OAK_PLANKS, 8));
+            var copy = fixture.worker().save();
+            var secondId = UUID.randomUUID();
+            copy.putUUID("Id", secondId);
+            var second = SettlementWorkerState.load(copy);
+            fixture.town().assignDuty(secondId, fixture.area().id());
+            fixture.town().recordWorker(second);
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 1, 1.0D);
+            helper.assertValueEqual(queue.pending(order.id()), 4, "the first worker reserves the shared batch while approaching supplies");
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), second, 200, 1.0D);
+            helper.assertValueEqual(queue.pending(order.id()), 4, "another worker cannot duplicate the worksite goal");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 8, "uncommitted work consumes nothing");
+            var restored = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+            var returned = restored.workers().get(fixture.worker().id());
+            SettlementBackgroundCrafting.tick(helper.getLevel(), restored, returned, 200, 1.0D);
+            var restoredQueue = restored.productionQueues().get(fixture.area().id());
+            helper.assertValueEqual(restoredQueue.order(order.id()).produced(), 4L, "reloaded production completes the original reserved quantity");
+            helper.assertValueEqual(restoredQueue.pending(order.id()), 0, "completed work releases its reservation");
+            helper.assertValueEqual(restored.depots().get(fixture.supply().id()).getItem(0).getCount(), 6, "one actual recipe batch is consumed");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.town().center()), "saved production never loads the worksite chunk");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void maintainedStockIncludesCarriedOutputsAndKeepsTheirDestinationOnReturn(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            var queue = production(fixture);
+            var order = HiredProductionOrder.create(helper.getLevel(), HiredProductionRecipe.exact(id("stick"), Map.of()),
+                    HiredProductionOrder.Mode.MAINTAIN_STOCK, 5, fixture.output().position());
+            queue.append(order);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            fixture.supply().setItem(0, new ItemStack(Items.OAK_PLANKS, 8));
+            fixture.output().setItem(0, new ItemStack(Items.STICK, 1));
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(carried(helper, fixture, Items.STICK), 4, "the missing stock is crafted once");
+            helper.assertValueEqual(SettlementProductionStock.count(helper.getLevel(), fixture.town(), queue, order), 5L,
+                    "stored and carried outputs count toward the same stock target");
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(carried(helper, fixture, Items.STICK), 4, "undelivered goods prevent redundant production");
+            helper.assertTrue(fixture.worker().restore(fixture.villager()), "the saved inventory returns to its villager");
+            helper.assertValueEqual(HiredProductionStock.destination(HiredWorkStateStore.state(fixture.villager())),
+                    fixture.output().position(), "the chosen destination returns with the goods");
+            helper.assertFalse(fixture.worker().restore(fixture.villager()), "the same handoff cannot restore goods twice");
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", true);
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 300, 1.0D);
+            helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.STICK)), 5, "the batch reaches only its selected output depot");
+            helper.assertTrue(HiredProductionStock.destination(fixture.worker().settings()) == null, "completed delivery clears the temporary destination");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void departingCrafterReleasesAnUnconsumedSharedBatch(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            var queue = production(fixture);
+            var order = HiredProductionOrder.create(helper.getLevel(), HiredProductionRecipe.exact(id("stick"), Map.of()),
+                    HiredProductionOrder.Mode.BATCH, 4, null);
+            queue.append(order);
+            fixture.supply().setItem(0, new ItemStack(Items.OAK_PLANKS, 2));
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 1, 1.0D);
+            helper.assertValueEqual(queue.pending(order.id()), 4, "travel has reserved the next batch");
+            fixture.town().removeWorker(fixture.worker().id());
+            helper.assertValueEqual(queue.pending(order.id()), 0, "a dead or removed worker cannot permanently hold the shared goal");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 2, "the abandoned craft leaves its materials intact");
+        });
+    }
+
+    private static HiredProductionQueue production(Fixture fixture) {
+        fixture.town().setWorksitePlan(fixture.town().leader(), fixture.area().id(), SettlementWorksitePlan.defaults(fixture.area().type().role()));
+        return fixture.town().beginProduction(fixture.town().leader(), fixture.area().id());
     }
 
     private static int carried(GameTestHelper helper, Fixture fixture, Item item) {
