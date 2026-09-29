@@ -34,7 +34,7 @@ public final class SettlementScheduleService {
         if (villager.isBaby() || !villager.isAlive() || (villager.getUUID().getLeastSignificantBits() & 1L) == 0L) return false;
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         if (duty == null || duty.area().type().role() != HiredVillagerRole.COMBAT || !duty.area().enabled()) return false;
-        var settings = duty.town().workerSettings().get(villager.getUUID());
+        var settings = duty.town().effectiveWorkerSettings(villager.getUUID());
         if (settings != null) return settings.enabled();
         var state = HiredWorkStateStore.state(villager);
         return !state.contains("Enabled") || state.getBoolean("Enabled");

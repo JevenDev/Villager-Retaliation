@@ -148,7 +148,7 @@ public final class SettlementConstructionService {
                 || !HiredVillagerRoles.availableRoles(level, builder).contains(HiredVillagerRole.BUILDER)
                 || town.activeProject(builder.getUUID()) != null || town.departures().containsKey(builder.getUUID())) return false;
         var area = town.workplace(town.duties().get(builder.getUUID()));
-        var settings = town.workerSettings().get(builder.getUUID());
+        var settings = town.effectiveWorkerSettings(builder.getUUID());
         return area == null || area.type() == SettlementAreaType.CONSTRUCTION && area.enabled() && (settings == null || settings.options().get(SettlementWorkerSetting.ENABLED) == 1);
     }
 

@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementTradeOrder;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSetting;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
+import com.jvn.villagerretaliation.settlement.SettlementWorksitePlan;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.EnumSet;
 import java.util.Objects;
@@ -96,6 +97,22 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 buffer.writeUUID(enabled.resident());
                 buffer.writeUUID(enabled.area());
                 buffer.writeBoolean(enabled.enabled());
+            }
+            case SaveWorksite save -> {
+                buffer.writeEnum(Kind.SAVE_WORKSITE);
+                buffer.writeUUID(save.area());
+                writeWorksitePlan(buffer, save.plan());
+                buffer.writeBoolean(save.adopt());
+            }
+            case ResetWorker reset -> {
+                buffer.writeEnum(Kind.RESET_WORKER);
+                buffer.writeUUID(reset.resident());
+                buffer.writeUUID(reset.area());
+                buffer.writeInt(reset.mask());
+            }
+            case FillStaffing fill -> {
+                buffer.writeEnum(Kind.FILL_STAFFING);
+                buffer.writeUUID(fill.area());
             }
             case SaveWorker save -> {
                 buffer.writeEnum(Kind.SAVE_WORKER);
@@ -209,6 +226,9 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             case VIEW -> new View();
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case BREW -> new Brew(buffer.readUUID(), buffer.readUUID(), readBrewingOrder(buffer));
+            case SAVE_WORKSITE -> new SaveWorksite(buffer.readUUID(), readWorksitePlan(buffer), buffer.readBoolean());
+            case RESET_WORKER -> new ResetWorker(buffer.readUUID(), buffer.readUUID(), buffer.readInt());
+            case FILL_STAFFING -> new FillStaffing(buffer.readUUID());
             case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
             case WORKER_ENABLED -> new WorkerEnabled(buffer.readUUID(), buffer.readUUID(), buffer.readBoolean());
             case DRAFT_BLUEPRINT -> new DraftBlueprint(buffer.readResourceLocation());
@@ -249,6 +269,18 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         return new SettlementManagementActionPayload(town, command, request);
     }
 
+    static void writeWorksitePlan(RegistryFriendlyByteBuf buffer, SettlementWorksitePlan plan) {
+        buffer.writeBoolean(plan != null);
+        if (plan != null) {
+            writeWorkerSettings(buffer, plan.settings());
+            buffer.writeVarInt(plan.desiredStaff());
+        }
+    }
+
+    static SettlementWorksitePlan readWorksitePlan(RegistryFriendlyByteBuf buffer) {
+        return buffer.readBoolean() ? new SettlementWorksitePlan(readWorkerSettings(buffer), buffer.readVarInt()) : null;
+    }
+
     static void writeWorkerSettings(RegistryFriendlyByteBuf buffer, SettlementWorkerSettings settings) {
         buffer.writeEnum(settings.role());
         for (var setting : SettlementWorkerSetting.values()) {
@@ -260,6 +292,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         settings.logs().stream().sorted().forEach(buffer::writeResourceLocation);
         buffer.writeVarInt(settings.animals().size());
         settings.animals().stream().sorted().forEach(buffer::writeResourceLocation);
+        buffer.writeInt(settings.overrides());
     }
 
     static SettlementWorkerSettings readWorkerSettings(RegistryFriendlyByteBuf buffer) {
@@ -270,7 +303,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 options.put(setting, buffer.readVarInt());
             }
         }
-        return new SettlementWorkerSettings(role, options, readWorkerFilters(buffer), readWorkerFilters(buffer));
+        return new SettlementWorkerSettings(role, options, readWorkerFilters(buffer), readWorkerFilters(buffer), buffer.readInt());
     }
 
     private static Set<net.minecraft.resources.ResourceLocation> readWorkerFilters(RegistryFriendlyByteBuf buffer) {
@@ -328,11 +361,31 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing {
+    }
+
+    public record SaveWorksite(UUID area, SettlementWorksitePlan plan, boolean adopt) implements Command {
+        public SaveWorksite {
+            Objects.requireNonNull(area);
+            Objects.requireNonNull(plan);
+        }
+    }
+
+    public record ResetWorker(UUID resident, UUID area, int mask) implements Command {
+        public ResetWorker {
+            Objects.requireNonNull(resident);
+            Objects.requireNonNull(area);
+        }
+    }
+
+    public record FillStaffing(UUID area) implements Command {
+        public FillStaffing {
+            Objects.requireNonNull(area);
+        }
     }
 
     public record Home(UUID resident, net.minecraft.core.BlockPos bed, boolean assign) implements Command {

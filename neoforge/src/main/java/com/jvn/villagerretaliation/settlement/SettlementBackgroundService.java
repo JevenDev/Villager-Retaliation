@@ -55,7 +55,7 @@ public final class SettlementBackgroundService {
         }
         var area = town.workplace(assignedArea);
         var care = town.residents().get(worker.id());
-        var settings = town.workerSettings().get(worker.id());
+        var settings = town.effectiveWorkerSettings(worker.id());
         if (area != null && settings != null) {
             settings.apply(worker.settings(), area.enabled());
         }

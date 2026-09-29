@@ -278,7 +278,7 @@ public final class SettlementManagementScreen extends Screen {
     private int extraActionHeight() {
         int count = switch (this.desiredPage) {
             case RESIDENTS -> 7;
-            case SUMMARY -> 5;
+            case SUMMARY, AREAS -> 5;
             case PROJECTS, ISSUES -> 4;
             default -> 3;
         };
@@ -459,6 +459,10 @@ public final class SettlementManagementScreen extends Screen {
                 action(0, "add", permits(SettlementPermission.BUILD));
                 action(1, "edit", selected != null && permits(SettlementPermission.BUILD));
                 action(2, "remove", selected != null && permits(SettlementPermission.BUILD));
+                action(3, "worksite_settings", permits(SettlementPermission.STAFF)
+                        && selected instanceof SettlementManagementPayload.Area area && area.kind().role() != null);
+                action(4, "worksite_fill", permits(SettlementPermission.STAFF)
+                        && selected instanceof SettlementManagementPayload.Area area && area.plan() != null);
             }
             case DEPOTS -> {
                 action(0, "edit", selected != null && permits(SettlementPermission.LOGISTICS));
@@ -598,7 +602,11 @@ public final class SettlementManagementScreen extends Screen {
                 }
             }
             case AREAS -> {
-                if (action == 2 && selected != null) {
+                if (action == 3 && selected instanceof SettlementManagementPayload.Area area) {
+                    this.minecraft.setScreen(new SettlementWorkerScreen(this, area, null));
+                } else if (action == 4 && selected instanceof SettlementManagementPayload.Area area) {
+                    submit(new SettlementManagementActionPayload.FillStaffing(area.id()));
+                } else if (action == 2 && selected != null) {
                     confirm("remove_area", selected, () -> submit(new SettlementManagementActionPayload.RemoveArea(selected.id())));
                 } else {
                     edit(SettlementEditScreen.Mode.AREA, action == 0 ? null : selected);

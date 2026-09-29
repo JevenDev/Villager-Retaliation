@@ -35,7 +35,7 @@ public final class SettlementProgressionService {
         Set<UUID> staffedAreas = town.duties().entrySet().stream()
                 .filter(duty -> adults.contains(duty.getKey())
                         && (!town.workers().containsKey(duty.getKey()) || town.workers().get(duty.getKey()).supportsService())
-                        && (!town.workerSettings().containsKey(duty.getKey()) || town.workerSettings().get(duty.getKey()).enabled()))
+                        && (town.effectiveWorkerSettings(duty.getKey()) == null || town.effectiveWorkerSettings(duty.getKey()).enabled()))
                 .map(java.util.Map.Entry::getValue).collect(Collectors.toSet());
         int population = residents.size();
         int housing = town.housingCapacity();

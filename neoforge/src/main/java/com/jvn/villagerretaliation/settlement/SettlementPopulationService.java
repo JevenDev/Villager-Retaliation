@@ -196,7 +196,7 @@ public final class SettlementPopulationService {
         var area = town.workplace(town.duties().get(care.id()));
         var worker = town.workers().get(care.id());
         if (area != null) {
-            var settings = town.workerSettings().get(care.id());
+            var settings = town.effectiveWorkerSettings(care.id());
             boolean enabled = settings == null || settings.enabled();
             if (settings == null && worker != null && worker.settings().contains("Enabled")) enabled = worker.settings().getBoolean("Enabled");
             if (worker == null || worker.unsafe() || area.enabled() && enabled

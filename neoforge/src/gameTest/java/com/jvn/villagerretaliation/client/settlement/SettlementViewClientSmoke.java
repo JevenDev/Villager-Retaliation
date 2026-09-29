@@ -477,6 +477,55 @@ public final class SettlementViewClientSmoke {
                         "saving the native settings form pauses the authoritative civic worker");
             }).join();
             capture("worker-settings-saved");
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.AREAS, "Guard post");
+            phase = 95;
+        } else if (phase == 95 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.AREAS
+                && screen.snapshot().entries().size() == 1) {
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            rows.children().getFirst().mouseClicked(0, 0, 0);
+            requireButtonsFit(screen);
+            button(screen, "villagerretaliation.gui.settlement.worksite_settings").onPress();
+            phase = 96;
+        } else if (phase == 96 && minecraft.screen instanceof SettlementWorkerScreen screen) {
+            requireButtonsFit(screen);
+            screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.visible).findFirst().orElseThrow().setValue("2");
+            capture("worksite-adoption");
+            require(button(screen, "villagerretaliation.gui.settlement.worksite_adopt").active, "a valid plan can be adopted");
+            button(screen, "villagerretaliation.gui.settlement.worksite_adopt").onPress();
+            ticks = 0;
+            phase = 97;
+        } else if (phase == 97 && minecraft.screen instanceof SettlementManagementScreen screen && ++ticks >= 10) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                var plan = town.worksitePlans().get(town.duties().get(fixture.resident()));
+                require(plan != null && plan.desiredStaff() == 2, "the worksite form saves its staffing target");
+                require(plan.settings().enabled() && !town.effectiveWorkerSettings(fixture.resident()).enabled(),
+                        "adopting the plan preserves the paused resident's override");
+            }).join();
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, fixture.resident().toString());
+            phase = 98;
+        } else if (phase == 98 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS
+                && screen.snapshot().entries().size() == 1) {
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            rows.children().getFirst().mouseClicked(0, 0, 0);
+            button(screen, "villagerretaliation.gui.settlement.worker_settings").onPress();
+            phase = 99;
+        } else if (phase == 99 && minecraft.screen instanceof SettlementWorkerScreen screen) {
+            requireButtonsFit(screen);
+            button(screen, "villagerretaliation.gui.settlement.worksite_reset").onPress();
+            require(button(screen, "villagerretaliation.gui.settlement.save").active, "resetting overrides enables Save");
+            capture("worksite-inheritance");
+            screen.onClose();
+            phase = 100;
+        } else if (phase == 100 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            UUID player = minecraft.player.getUUID();
             projectFixture = minecraft.getSingleplayerServer().submit(() -> prepareProject(
                     minecraft.getSingleplayerServer().getPlayerList().getPlayer(player))).join();
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
@@ -1086,7 +1135,7 @@ public final class SettlementViewClientSmoke {
         rows.children().getFirst().mouseClicked(0, 0, 0);
     }
 
-    private static void requireButtonsFit(SettlementManagementScreen screen) {
+    private static void requireButtonsFit(net.minecraft.client.gui.screens.Screen screen) {
         int width = screen.width;
         int height = screen.height;
         for (var size : java.util.List.of(new int[]{320, 240}, new int[]{426, 240}, new int[]{width, height})) {
@@ -1095,7 +1144,7 @@ public final class SettlementViewClientSmoke {
         }
     }
 
-    private static void checkButtonsFit(SettlementManagementScreen screen) {
+    private static void checkButtonsFit(net.minecraft.client.gui.screens.Screen screen) {
         var buttons = screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast).filter(button -> button.visible).toList();
         for (var button : buttons) {
             require(button.getX() >= 0 && button.getY() >= 0 && button.getRight() <= screen.width

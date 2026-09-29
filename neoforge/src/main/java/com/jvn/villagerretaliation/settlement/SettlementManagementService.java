@@ -111,6 +111,11 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
             case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
             case SettlementManagementActionPayload.Brew brew -> SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order());
+            case SettlementManagementActionPayload.SaveWorksite save -> SettlementWorksiteService.configure(
+                    player, town, save.area(), save.plan(), save.adopt());
+            case SettlementManagementActionPayload.ResetWorker reset -> SettlementWorksiteService.reset(
+                    player, town, reset.resident(), reset.area(), reset.mask());
+            case SettlementManagementActionPayload.FillStaffing fill -> SettlementWorksiteService.fill(player, town, fill.area());
             case SettlementManagementActionPayload.SaveWorker save -> SettlementWorkerConfigurationService.configure(
                     player, town, save.resident(), save.area(), save.settings());
             case SettlementManagementActionPayload.WorkerEnabled enabled -> SettlementWorkerConfigurationService.setEnabled(
@@ -290,7 +295,8 @@ public final class SettlementManagementService {
                     work.status(),
                     villager == null ? care == null ? List.of() : care.availableRoles(level) : HiredVillagerRoles.availableRoles(level, villager),
                     town.guardOrders().get(member.id()), detailed ? SettlementWorkerConfigurationService.snapshot(level, town, member.id()) : null,
-                    detailed ? SettlementBrewingService.snapshot(level, town, member.id()) : null, work.diagnostic(), town.manuallyStaffed(member.id())));
+                    detailed ? SettlementBrewingService.snapshot(level, town, member.id()) : null, work.diagnostic(), town.manuallyStaffed(member.id()),
+                    town.worksitePlans().containsKey(town.duties().get(member.id()))));
         }
     }
 
@@ -299,7 +305,7 @@ public final class SettlementManagementService {
         if (town.arrivals().containsKey(id)) return new SettlementWorkStatus("awaiting_arrival", "");
         var area = town.workplace(town.duties().get(id));
         if (area == null) return new SettlementWorkStatus("unassigned", "");
-        var settings = town.workerSettings().get(id);
+        var settings = town.effectiveWorkerSettings(id);
         if (settings != null && !settings.enabled()) return new SettlementWorkStatus("paused", "");
         if (!area.enabled()) return new SettlementWorkStatus("area_paused", "");
         if (worker != null && (!worker.area().equals(area.id()) || worker.role() != area.type().role())) worker = null;
@@ -337,7 +343,7 @@ public final class SettlementManagementService {
             entries.add(new SettlementManagementPayload.Area(area.id(), display(area.name()), area.type(), area.min(), area.max(),
                     area.priority(), area.enabled(), survey == null ? 0 : survey.beds().size(),
                     survey == null ? 0 : survey.workstations().size(),
-                    (int) town.duties().values().stream().filter(area.id()::equals).count()));
+                    (int) town.duties().values().stream().filter(area.id()::equals).count(), town.worksitePlans().get(area.id())));
         }
     }
 

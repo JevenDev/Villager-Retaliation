@@ -20,6 +20,9 @@ final class SettlementManagementValidation {
             case Guard ignored -> SettlementPermission.STAFF;
             case Brew ignored -> SettlementPermission.STAFF;
             case SaveWorker ignored -> SettlementPermission.STAFF;
+            case SaveWorksite ignored -> SettlementPermission.STAFF;
+            case ResetWorker ignored -> SettlementPermission.STAFF;
+            case FillStaffing ignored -> SettlementPermission.STAFF;
             case WorkerEnabled ignored -> SettlementPermission.STAFF;
             case DraftBlueprint ignored -> SettlementPermission.BUILD;
             case PlaceBlueprint ignored -> SettlementPermission.BUILD;
@@ -47,6 +50,9 @@ final class SettlementManagementValidation {
             case Release release -> town.duties().containsKey(release.resident()) ? "" : "duty_changed";
             case WorkerEnabled worker -> duty(town, worker.resident(), worker.area());
             case SaveWorker worker -> duty(town, worker.resident(), worker.area());
+            case ResetWorker worker -> duty(town, worker.resident(), worker.area());
+            case SaveWorksite worksite -> town.areas().containsKey(worksite.area()) ? "" : "area_missing";
+            case FillStaffing worksite -> town.worksitePlans().containsKey(worksite.area()) ? "" : "area_missing";
             case Brew worker -> duty(town, worker.resident(), worker.area());
             case DraftBlueprint ignored -> town.stage().projects() == 0 ? "stage_required"
                     : java.util.stream.IntStream.range(0, player.getInventory().getContainerSize()).noneMatch(

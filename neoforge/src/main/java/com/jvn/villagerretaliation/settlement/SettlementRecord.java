@@ -33,6 +33,7 @@ public final class SettlementRecord {
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private final Map<UUID, SettlementGuardOrder> guardOrders = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerSettings> workerSettings = new LinkedHashMap<>();
+    private final Map<UUID, SettlementWorksitePlan> worksitePlans = new LinkedHashMap<>();
     private final Map<UUID, SettlementProject> projects = new LinkedHashMap<>();
     private final Map<UUID, SettlementProject> projectHistory = new LinkedHashMap<>();
     private final Set<UUID> retiredProjects = new java.util.LinkedHashSet<>();
@@ -738,9 +739,28 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.workerSettings);
     }
 
+    public Map<UUID, SettlementWorksitePlan> worksitePlans() {
+        return Collections.unmodifiableMap(this.worksitePlans);
+    }
+
+    public SettlementWorkerSettings effectiveWorkerSettings(UUID resident) {
+        var settings = this.workerSettings.get(resident);
+        var plan = this.worksitePlans.get(this.duties.get(resident));
+        return plan == null ? settings : settings == null ? plan.settings().withOverrides(0) : settings.resolve(plan.settings());
+    }
+
+    boolean setWorksitePlan(UUID actor, UUID areaId, SettlementWorksitePlan plan) {
+        var area = this.areas.get(areaId);
+        if (!permits(actor, SettlementPermission.STAFF) || area == null || plan == null
+                || area.type().role() != plan.settings().role()) return false;
+        if (!plan.equals(this.worksitePlans.put(areaId, plan))) changed();
+        return true;
+    }
+
     boolean setWorkerSettings(UUID actor, UUID resident, SettlementWorkerSettings settings) {
         var area = workplace(this.duties.get(resident));
-        if (!permits(actor, SettlementPermission.STAFF) || area == null || settings == null || area.type().role() != settings.role()) {
+        if (!permits(actor, SettlementPermission.STAFF) || area == null || settings == null || area.type().role() != settings.role()
+                || !this.worksitePlans.containsKey(area.id()) && settings.overrides() != SettlementWorkerSettings.allOverrides(settings.role())) {
             return false;
         }
         if (!settings.equals(this.workerSettings.put(resident, settings))) {
@@ -956,6 +976,7 @@ public final class SettlementRecord {
             return false;
         }
         SettlementArea previous = this.areas.put(area.id(), area);
+        if (previous != null && previous.type() != area.type()) this.worksitePlans.remove(area.id());
         this.cachedHousingCapacity = -1;
         if (!area.equals(previous)) {
             if (previous == null || previous.type() != area.type()
@@ -980,6 +1001,7 @@ public final class SettlementRecord {
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.surveys.remove(area);
+        this.worksitePlans.remove(area);
         this.cachedHousingCapacity = -1;
         changed();
         return true;
@@ -1063,6 +1085,13 @@ public final class SettlementRecord {
             settingsTags.add(entry);
         });
         tag.put("WorkerSettings", settingsTags);
+        ListTag planTags = new ListTag();
+        this.worksitePlans.forEach((area, plan) -> {
+            CompoundTag entry = plan.save();
+            entry.putUUID("Area", area);
+            planTags.add(entry);
+        });
+        tag.put("WorksitePlans", planTags);
         ListTag projectTags = new ListTag();
         this.projects.values().forEach(project -> projectTags.add(project.save()));
         tag.put("Projects", projectTags);
@@ -1450,6 +1479,24 @@ public final class SettlementRecord {
                 throw new IllegalArgumentException("Guard order is duplicated or outside its settlement");
             }
         }
+        if (tag.contains("WorksitePlans") && !tag.contains("WorksitePlans", Tag.TAG_LIST)) {
+            throw new IllegalArgumentException("Worksite plans must be a list");
+        }
+        if (tag.get("WorksitePlans") instanceof ListTag list && !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND) {
+            throw new IllegalArgumentException("Worksite plan entries must be compounds");
+        }
+        ListTag planTags = tag.getList("WorksitePlans", Tag.TAG_COMPOUND);
+        if (planTags.size() > MAX_AREAS) throw new IllegalArgumentException("Too many worksite plans");
+        for (Tag raw : planTags) {
+            CompoundTag entry = (CompoundTag) raw;
+            if (!entry.hasUUID("Area")) throw new IllegalArgumentException("Worksite plan has no area");
+            var area = record.areas.get(entry.getUUID("Area"));
+            var plan = SettlementWorksitePlan.load(entry);
+            if (area == null || area.type().role() != plan.settings().role()
+                    || record.worksitePlans.putIfAbsent(area.id(), plan) != null) {
+                throw new IllegalArgumentException("Worksite plan is duplicated or has no matching area");
+            }
+        }
         for (Tag raw : tag.getList("WorkerSettings", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) raw;
             if (!entry.hasUUID("Resident")) {
@@ -1459,6 +1506,7 @@ public final class SettlementRecord {
             var area = record.workplace(record.duties.get(resident));
             var settings = SettlementWorkerSettings.load(entry);
             if (area == null || area.type().role() != settings.role()
+                    || !record.worksitePlans.containsKey(area.id()) && settings.overrides() != SettlementWorkerSettings.allOverrides(settings.role())
                     || record.workerSettings.putIfAbsent(resident, settings) != null) {
                 throw new IllegalArgumentException("Worker settings are duplicated or have no matching duty");
             }

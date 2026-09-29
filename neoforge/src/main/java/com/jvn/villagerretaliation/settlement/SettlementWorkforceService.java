@@ -64,6 +64,11 @@ public final class SettlementWorkforceService {
                 && !town.duties().containsKey(villager.getUUID()) && assign(level, town, villager, areaId);
     }
 
+    static boolean fillAssignment(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
+        return villager != null && !town.manuallyStaffed(villager.getUUID())
+                && !town.duties().containsKey(villager.getUUID()) && assign(level, town, villager, areaId);
+    }
+
     private static boolean assign(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
         if (villager == null || villager.level() != level || !villager.isAlive() || villager.isBaby()
                 || !town.dimension().equals(level.dimension().location())
@@ -167,7 +172,7 @@ public final class SettlementWorkforceService {
 
     public static boolean onDuty(ServerLevel level, Villager villager) {
         return duty(villager).map(duty -> duty.area().enabled()
-                && (!duty.town().workerSettings().containsKey(villager.getUUID()) || duty.town().workerSettings().get(villager.getUUID()).enabled())
+                && (duty.town().effectiveWorkerSettings(villager.getUUID()) == null || duty.town().effectiveWorkerSettings(villager.getUUID()).enabled())
                 && workingHours(level.getDayTime(), villager.getUUID(), duty.area().type().role())).orElse(false);
     }
 

@@ -13,10 +13,15 @@ final class SettlementAutonomyService {
 
     static void update(ServerLevel level, SettlementRecord town) {
         if (town.manualManagement()) return;
+        fill(level, town, null);
+    }
+
+    static void fill(ServerLevel level, SettlementRecord town, java.util.UUID selectedArea) {
         var missing = SettlementProgressionService.assess(level, town).missing();
         var areas = town.areas().values().stream()
                 .filter(area -> area.enabled() && area.type().role() != null && area.type() != SettlementAreaType.CONSTRUCTION)
-                .filter(area -> !town.duties().containsValue(area.id()))
+                .filter(area -> selectedArea == null || area.id().equals(selectedArea))
+                .filter(area -> staffingNeeded(town, area) > 0)
                 .filter(area -> !SettlementBuildingSurvey.requiresFixture(area.type())
                         || town.surveys().containsKey(area.id()) && !town.surveys().get(area.id()).workstations().isEmpty())
                 .sorted(Comparator.comparingInt((SettlementArea area) -> priority(area, missing))
@@ -44,15 +49,28 @@ final class SettlementAutonomyService {
                     && !SettlementWorkforceService.hasPersonalCommitment(candidate)) candidates.add(candidate);
         }
         for (var area : areas) {
-            var candidate = candidates.stream()
-                    .filter(resident -> HiredVillagerRoles.availableRoles(level, resident).contains(area.type().role()))
-                    .min(Comparator.comparingInt((Villager resident) -> HiredVillagerRoles.roleScore(level, resident, area.type().role())).reversed()
-                            .thenComparingDouble(resident -> resident.blockPosition().distSqr(area.center()))
-                            .thenComparing(Villager::getUUID)).orElse(null);
-            if (candidate != null && SettlementWorkforceService.assignAutonomously(level, town, candidate, area.id())) {
-                candidates.remove(candidate);
+            int needed = staffingNeeded(town, area);
+            for (int index = 0; index < needed && !candidates.isEmpty(); index++) {
+                var candidate = candidates.stream()
+                        .filter(resident -> HiredVillagerRoles.availableRoles(level, resident).contains(area.type().role()))
+                        .min(Comparator.comparingInt((Villager resident) -> HiredVillagerRoles.roleScore(level, resident, area.type().role())).reversed()
+                                .thenComparingDouble(resident -> resident.blockPosition().distSqr(area.center()))
+                                .thenComparing(Villager::getUUID)).orElse(null);
+                if (candidate == null) break;
+                if (SettlementWorkforceService.fillAssignment(level, town, candidate, area.id())) {
+                    candidates.remove(candidate);
+                } else {
+                    break;
+                }
             }
         }
+    }
+
+    private static int staffingNeeded(SettlementRecord town, SettlementArea area) {
+        var plan = town.worksitePlans().get(area.id());
+        if (plan != null && !plan.settings().enabled()) return 0;
+        int target = plan == null ? 1 : plan.desiredStaff();
+        return Math.max(0, target - (int) town.duties().values().stream().filter(area.id()::equals).count());
     }
 
     private static int priority(SettlementArea area, List<SettlementProgressionService.Requirement> missing) {

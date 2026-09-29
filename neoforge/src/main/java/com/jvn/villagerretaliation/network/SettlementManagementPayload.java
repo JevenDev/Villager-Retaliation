@@ -103,6 +103,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 SettlementManagementActionPayload.writeBrewingOrder(buffer, resident.brewingOrder());
                 buffer.writeUtf(resident.diagnostic(), 180);
                 buffer.writeBoolean(resident.manualStaffing());
+                buffer.writeBoolean(resident.worksitePlan());
             }
             case Area area -> {
                 buffer.writeEnum(area.kind());
@@ -113,6 +114,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.writeVarInt(area.beds());
                 buffer.writeVarInt(area.fixtures());
                 buffer.writeVarInt(area.workers());
+                SettlementManagementActionPayload.writeWorksitePlan(buffer, area.plan());
             }
             case Depot depot -> {
                 buffer.writeUUID(depot.area());
@@ -217,10 +219,11 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 yield new Resident(id, name, profession, baby, presence, position, area, food, health, status, available,
                         SettlementManagementActionPayload.readGuardOrder(buffer),
                         buffer.readBoolean() ? SettlementManagementActionPayload.readWorkerSettings(buffer) : null,
-                        SettlementManagementActionPayload.readBrewingOrder(buffer), buffer.readUtf(180), buffer.readBoolean());
+                        SettlementManagementActionPayload.readBrewingOrder(buffer), buffer.readUtf(180), buffer.readBoolean(), buffer.readBoolean());
             }
             case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
-                    buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
+                    buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
+                    SettlementManagementActionPayload.readWorksitePlan(buffer));
             case DEPOTS -> {
                 UUID area = buffer.readUUID();
                 BlockPos position = buffer.readBlockPos();
@@ -437,7 +440,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
 
     public record Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
                            BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
-                           SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder, String diagnostic, boolean manualStaffing) implements Entry {
+                           SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder, String diagnostic, boolean manualStaffing, boolean worksitePlan) implements Entry {
         public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
                         BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles) {
             this(id, name, profession, baby, presence, position, area, food, health, status, roles, null, null);
@@ -467,6 +470,14 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             this(id, name, profession, baby, presence, position, area, food, health, status, roles, guardOrder, settings, brewingOrder, diagnostic, false);
         }
 
+        public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
+                        BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
+                        SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder,
+                        String diagnostic, boolean manualStaffing) {
+            this(id, name, profession, baby, presence, position, area, food, health, status, roles, guardOrder, settings,
+                    brewingOrder, diagnostic, manualStaffing, false);
+        }
+
         public Resident {
             if (diagnostic == null || diagnostic.length() > 180) throw new IllegalArgumentException("Invalid resident work diagnostic");
             roles = List.copyOf(roles);
@@ -474,7 +485,12 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     }
 
     public record Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
-                       int priority, boolean enabled, int beds, int fixtures, int workers) implements Entry {
+                       int priority, boolean enabled, int beds, int fixtures, int workers,
+                       com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan) implements Entry {
+        public Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
+                    int priority, boolean enabled, int beds, int fixtures, int workers) {
+            this(id, name, kind, min, max, priority, enabled, beds, fixtures, workers, null);
+        }
     }
 
     public record Depot(UUID id, String name, UUID area, BlockPos position, SettlementDepotPurpose purpose, int priority,

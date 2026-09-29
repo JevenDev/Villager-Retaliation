@@ -1788,6 +1788,17 @@ public final class SettlementViewScreen extends Screen {
                     details.add(boundsDetails(new SettlementViewBounds(area.min(), area.max())));
                     details.add(SettlementManagementScreen.text(area.enabled() ? "enabled" : "disabled"));
                     details.add(text("area_counts", area.workers(), area.beds(), area.fixtures()));
+                    if (area.plan() != null) details.add(SettlementManagementScreen.text("worksite_staff_count", area.workers(), area.plan().desiredStaff()));
+                    if (area.kind().role() != null && permits(SettlementPermission.STAFF)) {
+                        actions.add(new SettlementViewPopup.Action(SettlementManagementScreen.text(
+                                area.plan() == null ? "worksite_adopt" : "worksite_settings"), ready, () -> {
+                            var screen = management();
+                            this.minecraft.setScreen(screen);
+                            this.minecraft.setScreen(new SettlementWorkerScreen(screen, area, this));
+                        }));
+                        if (area.plan() != null) actions.add(new SettlementViewPopup.Action(SettlementManagementScreen.text("worksite_fill"),
+                                ready && !this.parent.submitting(), () -> this.parent.submit(new SettlementManagementActionPayload.FillStaffing(area.id()))));
+                    }
                     if (permits(SettlementPermission.BUILD)) {
                         actions.add(contextAction("configure", ready, () -> {
                             beginBoundsEdit(area);

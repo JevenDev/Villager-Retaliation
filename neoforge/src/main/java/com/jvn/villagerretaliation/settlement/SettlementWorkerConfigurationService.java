@@ -22,7 +22,7 @@ public final class SettlementWorkerConfigurationService {
         if (area == null || area.type().role() == null) {
             return null;
         }
-        var settings = town.workerSettings().get(resident);
+        var settings = town.effectiveWorkerSettings(resident);
         if (settings != null) {
             return settings;
         }
@@ -50,7 +50,7 @@ public final class SettlementWorkerConfigurationService {
         if (player == null || !player.isAlive() || player.isSpectator()
                 || !town.dimension().equals(player.level().dimension().location())
                 || !town.permits(player.getUUID(), SettlementPermission.STAFF)
-                || !areaId.equals(town.duties().get(resident))
+                || settings == null || areaId == null || !areaId.equals(town.duties().get(resident))
                 || !settings.logs().isEmpty() && !HiredLoggingFilters.options().containsAll(settings.logs())
                 || !settings.animals().isEmpty() && !HiredAnimalBreedingTargets.options().containsAll(settings.animals())) {
             return false;
@@ -75,7 +75,7 @@ public final class SettlementWorkerConfigurationService {
         } else {
             var worker = town.workers().get(resident);
             if (worker != null && worker.area().equals(areaId)) {
-                settings.apply(worker.settings(), area.enabled());
+                town.effectiveWorkerSettings(resident).apply(worker.settings(), area.enabled());
             }
         }
         return true;
@@ -85,7 +85,7 @@ public final class SettlementWorkerConfigurationService {
         if (SettlementWorkforceService.hasPersonalCommitment(villager)) {
             return;
         }
-        var settings = town.workerSettings().get(villager.getUUID());
+        var settings = town.effectiveWorkerSettings(villager.getUUID());
         var state = HiredWorkStateStore.state(villager);
         if (settings == null) {
             state.putBoolean("Enabled", area.enabled());

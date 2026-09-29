@@ -3065,5 +3065,15 @@
   "villagerretaliation.gui.settlement.issue.budget_limit": "Trade funds or budget limit",
   "villagerretaliation.gui.settlement.issue_trade": "Trade: %s",
   "villagerretaliation.gui.settlement.issue_resident": "Resident: %s",
-  "villagerretaliation.gui.settlement.issue_simulation": "Background simulation"
+  "villagerretaliation.gui.settlement.issue_simulation": "Background simulation",
+  "villagerretaliation.gui.settlement.worksite_title": "Worksite: %s",
+  "villagerretaliation.gui.settlement.worksite_staff": "Desired staff (0-32)",
+  "villagerretaliation.gui.settlement.worksite_staff_count": "Staff: %s / %s",
+  "villagerretaliation.gui.settlement.worksite_adopt": "Adopt plan",
+  "villagerretaliation.gui.settlement.worksite_settings": "Worksite settings",
+  "villagerretaliation.gui.settlement.worksite_fill": "Fill staffing",
+  "villagerretaliation.gui.settlement.worksite_reset": "Inherit all",
+  "villagerretaliation.gui.settlement.worksite_inherit": "Inherit from worksite",
+  "villagerretaliation.gui.settlement.worksite_inherit_hint": "Shift-click to inherit this setting. Save to apply.",
+  "villagerretaliation.gui.settlement.worksite_adopt_hint": "Preview: new staff inherit these settings. Keep all %s current workers' settings as individual overrides."
 }

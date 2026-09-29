@@ -170,7 +170,7 @@ public final class SettlementTradeService {
         for (var resident : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime())) {
             SettlementArea area = equipped.get(town.duties().get(resident.id()));
             if (!resident.adult() || area == null
-                    || town.workerSettings().containsKey(resident.id()) && !town.workerSettings().get(resident.id()).enabled()) {
+                    || town.effectiveWorkerSettings(resident.id()) != null && !town.effectiveWorkerSettings(resident.id()).enabled()) {
                 continue;
             }
             var entity = level.getEntity(resident.id());
