@@ -71,7 +71,8 @@ public final class SettlementBackgroundService {
             worker.status("unsafe");
             return;
         }
-        if (worker.settings().contains(com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue.STATE_TAG)) {
+        if (worker.settings().contains(com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue.STATE_TAG)
+                || worker.settings().contains(com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue.PENDING_TAG)) {
             worker.status("temporary_task_unloaded");
             return;
         }

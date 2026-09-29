@@ -96,6 +96,8 @@ final class SettlementBackgroundLogging {
                     position -> forest.observed(position) && forest.getBlockState(position).is(BlockTags.LOGS)
                             && HiredLoggingFilters.matches(forest.getBlockState(position), filters));
             var roots = trees.distinctRoots(candidates.candidates()).stream()
+                    .filter(root -> com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeClaims.available(level, owner,
+                            LoggingTreeGeometry.connectedTreeLogs(forest, forest::observed, root, filters)))
                     .sorted(Comparator.comparingDouble(position -> position.distSqr(worker.position()))).toList();
             if (roots.isEmpty()) {
                 if (bonemeal(level, worker, forest, context, depots, budget)) return;
@@ -115,6 +117,11 @@ final class SettlementBackgroundLogging {
             plan = LoggingHarvestPlan.read(context);
         }
         if (plan == null) return;
+        if (!com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeClaims.reserve(level, owner,
+                java.util.Arrays.stream(plan.logs()).mapToObj(BlockPos::of).toList())) {
+            worker.status("tree_claimed");
+            return;
+        }
         if (!context.state().getBoolean(APPROACHED)) {
             if (!budget.spend(40.0D + 16.0D * Math.sqrt(worker.position().distSqr(plan.origin())))) {
                 worker.status("approaching_tree");
@@ -184,6 +191,7 @@ final class SettlementBackgroundLogging {
             } else {
                 int cut = plan.logsCut();
                 LoggingHarvestPlan.clear(context);
+                com.jvn.villagerretaliation.interaction.work.HiredPathMemory.releaseAll(owner);
                 context.state().remove(APPROACHED);
                 context.state().putBoolean(DEPOSIT, true);
                 if (cut > 0) worker.practice(level, HiredWorkPractice.logging(cut));

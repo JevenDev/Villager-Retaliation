@@ -10,6 +10,13 @@
   },
   "messages": [
     {
+      "key": "interaction.work.logging.selected_tree_blocked",
+      "lines": [
+        "The selected tree changed, is unreachable, or is claimed by another worker."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.logging.selected_tree_blocked"
+    },
+    {
       "key": "interaction.work.temporary.unloaded",
       "lines": [
         "My temporary task is waiting for the area to be loaded.",

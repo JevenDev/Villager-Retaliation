@@ -13,6 +13,7 @@ import net.minecraft.nbt.Tag;
 public record HiredTemporaryQueue(UUID owner, UUID issuer, UUID worksite, HiredVillagerRole role,
                                   BlockPos homeMin, BlockPos homeMax, List<HiredTemporaryTask> tasks) {
     public static final String STATE_TAG = "TemporaryWork";
+    public static final String PENDING_TAG = "TemporaryWorkAfterTree";
     public static final int MAX_TASKS = 16;
 
     public HiredTemporaryQueue {
@@ -63,6 +64,25 @@ public record HiredTemporaryQueue(UUID owner, UUID issuer, UUID worksite, HiredV
         tasks.forEach(task -> entries.add(task.save()));
         tag.put("Tasks", entries);
         state.put(STATE_TAG, tag);
+    }
+
+    public static HiredTemporaryQueue pending(CompoundTag state) {
+        if (!state.contains(PENDING_TAG)) return null;
+        if (!state.contains(PENDING_TAG, Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid pending temporary queue");
+        var pending = state.getCompound(PENDING_TAG);
+        if (!pending.contains("Cancel", Tag.TAG_BYTE)) throw new IllegalArgumentException("Missing pending temporary action");
+        var queue = load(pending);
+        if (pending.getBoolean("Cancel") != (queue == null) || queue != null && queue.role() != HiredVillagerRole.LOGGING) {
+            throw new IllegalArgumentException("Invalid pending tree task change");
+        }
+        return queue;
+    }
+
+    public static void storePending(CompoundTag state, HiredTemporaryQueue queue) {
+        var pending = new CompoundTag();
+        pending.putBoolean("Cancel", queue == null);
+        if (queue != null) queue.store(pending);
+        state.put(PENDING_TAG, pending);
     }
 
     public static HiredTemporaryQueue load(CompoundTag state) {

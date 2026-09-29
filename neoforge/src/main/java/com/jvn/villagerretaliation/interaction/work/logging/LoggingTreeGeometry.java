@@ -55,6 +55,21 @@ public final class LoggingTreeGeometry {
         return new DiscoveryCache(new TreeView(blocks, observed), filters == null ? Set.of() : Set.copyOf(filters));
     }
 
+    public static List<BlockPos> selectedTreeLogs(ServerLevel level, BlockPos selected, Set<ResourceLocation> filters) {
+        if (!level.hasChunkAt(selected)) return List.of();
+        if (!isNaturalLeaf(level.getBlockState(selected))) return connectedTreeLogs(level, selected, filters);
+        List<BlockPos> candidates = new ArrayList<>();
+        for (var position : BlockPos.betweenClosed(selected.offset(-3, -4, -3), selected.offset(3, 2, 3))) {
+            if (level.hasChunkAt(position) && isMatchingLog(level.getBlockState(position), filters)) candidates.add(position.immutable());
+        }
+        candidates.sort(java.util.Comparator.comparingDouble(position -> position.distSqr(selected)));
+        for (var candidate : candidates) {
+            var logs = connectedTreeLogs(level, candidate, filters);
+            if (!logs.isEmpty()) return logs;
+        }
+        return List.of();
+    }
+
     static List<BlockPos> connectedTreeLogs(ServerLevel level, BlockPos origin, Set<ResourceLocation> filters) {
         return connectedTreeLogs(level, level::hasChunkAt, origin, filters);
     }

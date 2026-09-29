@@ -352,6 +352,166 @@ public final class HiredTemporaryWorkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "temporary_work")
+    public static void selectedTreeTaskHonorsClaimsAndLeavesTheNextTree(GameTestHelper helper) {
+        var fixture = logger(helper);
+        var villager = fixture.villager();
+        var level = helper.getLevel();
+        var state = HiredWorkStateStore.state(villager);
+        var root = villager.blockPosition().east(2);
+        var neighbor = root.west(6);
+        try {
+            var canopy = root.above(3).north();
+            var task = new HiredTemporaryTask(UUID.randomUUID(), Kind.TREE, canopy, canopy, 1, canopy);
+            helper.assertTrue(HiredTemporaryWorkService.submit(fixture.owner(), villager, task, false).isEmpty(), "a personal logger accepts a selected canopy");
+            var saved = HiredTemporaryWorkService.queue(state);
+            helper.assertTrue(saved.current().area().contains(root.above(3)), "the server includes the canopy in the tree task");
+            helper.assertValueEqual(HiredTemporaryTask.load(saved.current().save()), saved.current(), "selected tree identity survives reload");
+            var other = EntityType.VILLAGER.create(level);
+            HiredPathMemory.reserveTarget(level, other, root.above(2));
+            var session = HiredWorkSession.active(level, villager);
+            helper.assertValueEqual(session.worker().tick(level, villager, fixture.owner(), session.context()).status(),
+                    "interaction.work.logging.selected_tree_blocked", "a claim on a branch blocks the whole selected tree");
+            helper.assertTrue(level.getBlockState(root).is(Blocks.OAK_LOG), "a competing claim preserves the trunk");
+            HiredPathMemory.clear(other);
+            for (int i = 0; i < 800 && HiredTemporaryWorkService.queue(state) != null; i++) {
+                session = HiredWorkSession.active(level, villager);
+                var result = session.worker().tick(level, villager, fixture.owner(), session.context());
+                HiredTemporaryWorkService.completed(level, villager, session, result);
+            }
+            helper.assertTrue(HiredTemporaryWorkService.queue(state) == null, "finishing the native tree sequence completes the task");
+            helper.assertTrue(level.getBlockState(root).isAir(), "the selected tree is harvested");
+            helper.assertTrue(level.getBlockState(neighbor).is(Blocks.OAK_LOG), "the neighboring tree remains untouched");
+            helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).collectOutputItems().stream()
+                    .filter(entry -> entry.stack().is(Items.OAK_LOG)).mapToInt(entry -> entry.stack().getCount()).sum(), 4,
+                    "the tree produces exactly its four native logs");
+        } finally {
+            HiredPathMemory.clear(villager);
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "temporary_work")
+    public static void replacingOrCancellingTreeTasksPreservesAnUnfinishedHarvest(GameTestHelper helper) {
+        var fixture = logger(helper);
+        var villager = fixture.villager();
+        var level = helper.getLevel();
+        var state = HiredWorkStateStore.state(villager);
+        var root = villager.blockPosition().east(2);
+        try {
+            var task = new HiredTemporaryTask(UUID.randomUUID(), Kind.TREE, root, root, 1, root);
+            HiredTemporaryWorkService.submit(fixture.owner(), villager, task, false);
+            var session = HiredWorkSession.active(level, villager);
+            var logs = com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeGeometry.connectedTreeLogs(level, level::hasChunkAt, root, Set.of());
+            com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.begin(session.context(), root, villager.blockPosition(),
+                    logs, List.of(), List.of(), ItemStack.EMPTY, false, "minecraft:oak");
+            var neighbor = root.west(6);
+            var next = new HiredTemporaryTask(UUID.randomUUID(), Kind.TREE, neighbor, neighbor, 1, neighbor);
+            helper.assertTrue(HiredTemporaryWorkService.submit(fixture.owner(), villager, next, true).isEmpty(), "Shift queues the next selected tree");
+            helper.assertValueEqual(HiredTemporaryQueue.pending(state).tasks().size(), 1, "the pending queue does not repeat the current tree");
+            helper.assertValueEqual(HiredTemporaryQueue.pending(state).current().id(), next.id(), "the next tree keeps its identity");
+            var restored = state.copy();
+            helper.assertValueEqual(HiredTemporaryQueue.pending(restored), HiredTemporaryQueue.pending(state), "a deferred task change survives reload");
+            helper.assertTrue(HiredTemporaryWorkService.submit(fixture.owner(), villager, null, false).isEmpty(), "cancellation is accepted during harvesting");
+            helper.assertTrue(state.contains(HiredTemporaryQueue.PENDING_TAG), "cancellation waits for a safe tree boundary");
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.read(session.context()) != null,
+                    "cancellation preserves the unfinished native harvest");
+            for (int i = 0; i < 800 && state.contains(HiredTemporaryQueue.PENDING_TAG); i++) {
+                session = HiredWorkSession.active(level, villager);
+                var result = session.worker().tick(level, villager, fixture.owner(), session.context());
+                HiredTemporaryWorkService.completed(level, villager, session, result);
+            }
+            helper.assertFalse(state.contains(HiredTemporaryQueue.PENDING_TAG), "the cancellation applies after native work completes");
+            helper.assertTrue(HiredTemporaryWorkService.queue(state) == null, "cancellation removes queued work");
+            helper.assertTrue(level.getBlockState(neighbor).is(Blocks.OAK_LOG), "cancellation never starts the next tree");
+            helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).collectOutputItems().stream()
+                    .filter(entry -> entry.stack().is(Items.OAK_LOG)).mapToInt(entry -> entry.stack().getCount()).sum(), 4,
+                    "cancellation preserves every earned log");
+        } finally {
+            HiredPathMemory.clear(villager);
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "temporary_work")
+    public static void savedTreeClaimsSurviveReloadAndReleaseOnReassignment(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var origin = helper.absolutePos(BlockPos.ZERO);
+        var center = new BlockPos(14_000_000 + origin.getX() * 8, 64, 14_000_000 + origin.getZ() * 8);
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var id = registry.create(0, level.dimension().location(), center, "");
+        var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, 0).orElseThrow();
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FORESTRY, "Claimed forest", center, center.offset(5, 6, 5), 5, true);
+        town.putArea(town.leader(), area);
+        var villager = EntityType.VILLAGER.create(level);
+        villager.setPos(center.getCenter());
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.TOOLSMITH));
+        VillageAllegianceApi.assignKnown(level, villager, id, AllegianceAssignmentSource.EXPLICIT_API);
+        town.assignDuty(villager.getUUID(), area.id());
+        SettlementWorkforceService.reconcile(level, villager);
+        var worker = SettlementWorkerState.capture(level, villager, SettlementWorkforceService.duty(villager).orElseThrow(), 0);
+        town.recordWorker(worker);
+        var session = HiredWorkSession.create(level, villager, HiredVillagerRole.LOGGING);
+        com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.begin(session.context(), center, center.east(),
+                List.of(center, center.above()), List.of(), List.of(), ItemStack.EMPTY, false, "minecraft:oak");
+        worker.observe(level, villager, SettlementWorkforceService.duty(villager).orElseThrow(), 0);
+        var restored = SettlementWorkerState.load(worker.save());
+        town.recordWorker(restored);
+        var outsider = UUID.randomUUID();
+        helper.assertTrue(SettlementTreeClaims.claimedByOther(level, outsider, List.of(center.above())), "a saved worker retains the whole tree claim");
+        villager.setPos(origin.getCenter());
+        helper.assertTrue(level.addFreshEntity(villager), "the worker returns in a loaded chunk");
+        com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.clear(session.context());
+        helper.assertFalse(SettlementTreeClaims.claimedByOther(level, outsider, List.of(center)), "the current loaded worker takes precedence over an older snapshot");
+        com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.begin(session.context(), center, center.east(),
+                List.of(center, center.above()), List.of(), List.of(), ItemStack.EMPTY, false, "minecraft:oak");
+        helper.assertTrue(SettlementTreeClaims.claimedByOther(level, outsider, List.of(center)), "a paused loaded harvest keeps its saved work reserved");
+        villager.discard();
+        var duplicateTag = worker.save();
+        var secondId = UUID.randomUUID();
+        duplicateTag.putUUID("Id", secondId);
+        var duplicate = SettlementWorkerState.load(duplicateTag);
+        town.assignDuty(secondId, area.id());
+        town.recordWorker(duplicate);
+        var winner = worker.id().compareTo(secondId) < 0 ? worker.id() : secondId;
+        var loser = winner.equals(worker.id()) ? secondId : worker.id();
+        helper.assertFalse(SettlementTreeClaims.claimedByOther(level, winner, List.of(center)), "overlapping legacy plans choose one owner");
+        helper.assertTrue(SettlementTreeClaims.claimedByOther(level, loser, List.of(center)), "the other legacy plan waits without duplicating work");
+        town.removeDuty(worker.id());
+        town.removeDuty(secondId);
+        helper.assertFalse(SettlementTreeClaims.claimedByOther(level, outsider, List.of(center)), "reassignment releases saved tree claims");
+        helper.assertFalse(level.hasChunkAt(center), "claim checks never load the tree");
+        helper.succeed();
+    }
+
+    private static Personal logger(GameTestHelper helper) {
+        var fixture = personal(helper, HiredVillagerRole.LOGGING);
+        var villager = fixture.villager();
+        var level = helper.getLevel();
+        var center = villager.blockPosition();
+        villager.setPos(center.getBottomCenter());
+        var state = HiredWorkStateStore.state(villager);
+        HiredWorkArea.fromBounds(center.offset(-7, -1, -4), center.offset(6, 6, 4), true).save(state);
+        for (var position : BlockPos.betweenClosed(center.offset(-7, -1, -4), center.offset(6, -1, 4))) {
+            level.setBlockAndUpdate(position, Blocks.DIRT.defaultBlockState());
+        }
+        for (var root : List.of(center.east(2), center.west(4))) {
+            for (int y = 0; y < 4; y++) level.setBlockAndUpdate(root.above(y), Blocks.OAK_LOG.defaultBlockState());
+            for (var direction : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                level.setBlockAndUpdate(root.above(3).relative(direction), Blocks.OAK_LEAVES.defaultBlockState());
+            }
+        }
+        state.putBoolean(com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions.PLANT_SAPLINGS_TAG, false);
+        state.putBoolean(com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions.BONEMEAL_SAPLINGS_TAG, false);
+        state.putBoolean("AutoDepositOutputs", false);
+        state.putBoolean("UseAssignedStorageForSupplies", false);
+        HiredJobInventory.getJobInventory(villager).setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_AXE));
+        HiredWorkSession.invalidate(villager);
+        return fixture;
+    }
+
     private static HiredTemporaryTask task(Kind kind, BlockPos pos, int quantity) {
         return new HiredTemporaryTask(UUID.randomUUID(), kind, pos, pos, quantity);
     }

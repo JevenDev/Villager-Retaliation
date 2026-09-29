@@ -22,10 +22,18 @@ public final class SettlementTemporaryTaskScreen extends Screen {
     private int top;
     private int panelWidth;
     private EditBox quantity;
+    private final java.util.List<EditBox> bounds = new java.util.ArrayList<>();
+    private final BlockPos selectedTarget;
 
     SettlementTemporaryTaskScreen(SettlementViewScreen view, List<SettlementViewBatchPayload.Target> targets,
                                   HiredTemporaryTask.Kind kind, BlockPos min, BlockPos max, boolean append) {
+        this(view, targets, kind, min, max, append, min);
+    }
+
+    SettlementTemporaryTaskScreen(SettlementViewScreen view, List<SettlementViewBatchPayload.Target> targets,
+                                  HiredTemporaryTask.Kind kind, BlockPos min, BlockPos max, boolean append, BlockPos selectedTarget) {
         super(Component.literal("Temporary task"));
+        this.selectedTarget = selectedTarget.immutable();
         this.view = view;
         this.targets = List.copyOf(targets);
         this.kind = kind;
@@ -38,6 +46,7 @@ public final class SettlementTemporaryTaskScreen extends Screen {
 
     @Override
     protected void init() {
+        this.bounds.clear();
         this.panelWidth = Math.min(360, this.width - 32);
         this.left = (this.width - this.panelWidth) / 2;
         this.top = (this.height - 204) / 2;
@@ -45,6 +54,7 @@ public final class SettlementTemporaryTaskScreen extends Screen {
             this.kind = HiredTemporaryTask.Kind.values()[(this.kind.ordinal() + 1) % HiredTemporaryTask.Kind.values().length];
             button.setMessage(Component.literal(this.kind.label()));
             this.quantity.active = this.kind == HiredTemporaryTask.Kind.FISH;
+            this.bounds.forEach(field -> field.active = this.kind != HiredTemporaryTask.Kind.TREE);
         }).bounds(this.left, this.top + 22, this.panelWidth, 20).build());
         int cell = (this.panelWidth - 44) / 3;
         for (int i = 0; i < 6; i++) {
@@ -54,6 +64,8 @@ public final class SettlementTemporaryTaskScreen extends Screen {
             field.setMaxLength(10);
             field.setValue(this.values[i]);
             field.setResponder(value -> this.values[index] = value);
+            field.active = this.kind != HiredTemporaryTask.Kind.TREE;
+            this.bounds.add(field);
             addRenderableWidget(field);
         }
         this.quantity = new EditBox(this.font, this.left + this.panelWidth - 72, this.top + 112, 72, 20, Component.literal("Catches"));
@@ -77,7 +89,9 @@ public final class SettlementTemporaryTaskScreen extends Screen {
             var min = new BlockPos(Integer.parseInt(this.values[0]), Integer.parseInt(this.values[1]), Integer.parseInt(this.values[2]));
             var max = new BlockPos(Integer.parseInt(this.values[3]), Integer.parseInt(this.values[4]), Integer.parseInt(this.values[5]));
             int quantity = this.kind == HiredTemporaryTask.Kind.FISH ? Integer.parseInt(this.values[6]) : 1;
-            var task = new HiredTemporaryTask(UUID.randomUUID(), this.kind, min, max, quantity);
+            var task = this.kind == HiredTemporaryTask.Kind.TREE
+                    ? new HiredTemporaryTask(UUID.randomUUID(), this.kind, this.selectedTarget, this.selectedTarget, 1, this.selectedTarget)
+                    : new HiredTemporaryTask(UUID.randomUUID(), this.kind, min, max, quantity);
             this.view.submitTemporaryTask(this.targets, task, this.append);
             onClose();
         } catch (IllegalArgumentException exception) {
@@ -100,7 +114,8 @@ public final class SettlementTemporaryTaskScreen extends Screen {
         graphics.drawString(this.font, "Min", this.left, this.top + 62, 0xBBC5D0, false);
         graphics.drawString(this.font, "Max", this.left, this.top + 90, 0xBBC5D0, false);
         graphics.drawString(this.font, "Catches for fishing", this.left, this.top + 118, 0xBBC5D0, false);
-        graphics.drawString(this.font, this.font.plainSubstrByWidth(this.feedback, this.panelWidth), this.left, this.top + 166, 0xE6B86C, false);
+        String notice = this.feedback.isEmpty() && this.kind == HiredTemporaryTask.Kind.TREE ? "Tree bounds include branches and leaves" : this.feedback;
+        graphics.drawString(this.font, this.font.plainSubstrByWidth(notice, this.panelWidth), this.left, this.top + 166, 0xE6B86C, false);
     }
 
     @Override

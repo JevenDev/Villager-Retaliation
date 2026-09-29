@@ -217,6 +217,12 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
         HiredPathTarget target = findTreeLog(level, villager, context);
         if (target == null) {
+            if (com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(),
+                    com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TREE)) {
+                clearActiveBreakingTarget(level, context, villager);
+                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+                return WorkResult.idle("interaction.work.logging.selected_tree_blocked");
+            }
             if (!hasSaplingPlan(context)) {
                 WorkResult bonemealResult = tryBonemealSapling(level, villager, context);
                 if (bonemealResult != null) {
@@ -368,6 +374,14 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     @Override
+    protected void clearActiveBreakingTarget(ServerLevel level, HiredWorkContext context, Villager villager) {
+        super.clearActiveBreakingTarget(level, context, villager);
+        var pending = LoggingHarvestPlan.read(context);
+        if (pending != null) LoggingTreeClaims.reserve(level, villager,
+                java.util.Arrays.stream(pending.logs()).mapToObj(BlockPos::of).toList());
+    }
+
+    @Override
     protected HiredPathTarget chooseReachableTarget(
             ServerLevel level,
             Villager villager,
@@ -396,6 +410,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
         LoggingHarvestPlan.Snapshot pendingPlan = LoggingHarvestPlan.read(context);
         if (pendingPlan == null) {
             return null;
+        }
+        if (!LoggingTreeClaims.reserve(level, villager, java.util.Arrays.stream(pendingPlan.logs()).mapToObj(BlockPos::of).toList())) {
+            HiredWorkerBrain.setFailure(context, "tree_claimed", 0L);
+            return WorkResult.idle("interaction.work.logging.selected_tree_blocked");
         }
         if (!context.isInsideWorkArea(villager.blockPosition())) {
             setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
@@ -955,6 +973,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private static WorkResult completedTreeWork(HiredWorkContext context, int logsCut) {
+        com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.finishTree(context.state());
         LoggingHarvestPlan.clear(context);
         context.state().remove(NEXT_WORK_GAME_TIME_TAG);
         context.state().putBoolean(TREE_DEPOSIT_PENDING_TAG, true);
@@ -970,24 +989,57 @@ public final class LoggingWorker extends AbstractBlockWorker {
         LoggingTreeGeometry.DiscoveryCache trees = LoggingTreeGeometry.discovery(level, filters);
         HiredPathTarget storedTarget = storedWorkTarget(context.state());
         BlockPos validatedTarget = storedTarget == null ? null : storedTarget.blockPos();
-        return HiredTargetSearch.find(
+        var temporary = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.queue(context.state());
+        if (temporary != null && temporary.current().kind() == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TREE) {
+            var logs = LoggingTreeGeometry.selectedTreeLogs(level, temporary.current().target(), filters);
+            if (logs.isEmpty() || !LoggingTreeClaims.available(level, villager, logs)) {
+                HiredWorkerBrain.setFailure(context, logs.isEmpty() ? "target_changed" : "tree_claimed", 0L);
+                return null;
+            }
+            var target = storedTarget != null && logs.contains(storedTarget.blockPos())
+                    ? activeWorkTarget(level, context, villager) : null;
+            if (target == null) target = chooseReachableTarget(level, villager, context, logs);
+            if (target == null || !LoggingTreeClaims.reserve(level, villager, logs)) {
+                HiredWorkerBrain.setFailure(context, "target_unreachable", 0L);
+                return null;
+            }
+            return target;
+        }
+        Map<BlockPos, Boolean> available = new java.util.HashMap<>();
+        var selected = HiredTargetSearch.find(
                 level,
                 context,
                 () -> activeWorkTarget(level, context, villager),
                 target -> context.isInsideWorkArea(target.blockPos())
                         && context.isLoaded(level, target.blockPos())
                         && !isTemporarilyAvoidedTarget(level, villager, target.blockPos())
-                        && isTreeLog(level, target.blockPos(), filters, trees, validatedTarget),
+                        && isTreeLog(level, target.blockPos(), filters, trees, validatedTarget)
+                        && treeAvailable(level, villager, target.blockPos(), filters, available),
                 candidateFilter -> plannedTreeTarget(level, villager, context, candidateFilter),
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
-                        && isTreeLog(level, pos, filters, trees, validatedTarget),
+                        && isTreeLog(level, pos, filters, trees, validatedTarget)
+                        && treeAvailable(level, villager, pos, filters, available),
                 NEXT_TREE_SCAN_GAME_TIME_TAG,
                 TREE_SCAN_CURSOR_TAG,
                 MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK,
                 candidates -> rebuildTreeObjective(level, villager, context, candidates, trees),
                 TREE_SEARCH_MESSAGES);
+        if (selected != null && !LoggingTreeClaims.reserve(level, villager,
+                LoggingTreeGeometry.connectedTreeLogs(level, selected.blockPos(), filters))) return null;
+        return selected;
+    }
+
+    private static boolean treeAvailable(ServerLevel level, Villager villager, BlockPos position,
+                                         Set<ResourceLocation> filters, Map<BlockPos, Boolean> cache) {
+        var cached = cache.get(position);
+        if (cached != null) return cached;
+        var logs = LoggingTreeGeometry.connectedTreeLogs(level, position, filters);
+        boolean available = !logs.isEmpty() && LoggingTreeClaims.available(level, villager, logs);
+        logs.forEach(log -> cache.put(log, available));
+        cache.put(position, available);
+        return available;
     }
 
     private HiredPathTarget plannedTreeTarget(

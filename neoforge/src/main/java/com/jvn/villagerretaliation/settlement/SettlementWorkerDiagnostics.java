@@ -27,6 +27,7 @@ public final class SettlementWorkerDiagnostics {
         return switch (status) {
             case "temporary_task_unloaded" -> "Temporary work waits for the worker and task area to be loaded.";
             case "temporary_task_invalid" -> "Cancel the damaged temporary queue before issuing another task.";
+            case "tree_claimed" -> "Another worker is finishing this tree.";
             case "missing_hoe" ->
                     "Farmer needs a hoe in job gear or a supply depot.";
             case "missing_rod" ->

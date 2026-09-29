@@ -568,6 +568,16 @@ public final class SettlementViewClientSmoke {
             personal.init(minecraft, screen.width, screen.height);
             requireButtonsFit(personal);
             capture("temporary-task-picker");
+            button(screen, "Work farm patch").onPress();
+            button(screen, "Excavate area").onPress();
+            button(screen, "Catch fish").onPress();
+            require(screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).noneMatch(field -> field.active),
+                    "selected trees use server-derived bounds and no catch quantity");
+            ticks = 0;
+            phase = 109;
+        } else if (phase == 109 && minecraft.screen instanceof SettlementTemporaryTaskScreen screen && ++ticks >= 2) {
+            capture("selected-tree-picker");
             screen.onClose();
             ticks = 0;
             phase = 108;

@@ -438,6 +438,7 @@ public final class SettlementWorkerState {
         state.inventory = tag.getCompound("Inventory").copy();
         state.settings = tag.getCompound("Settings").copy();
         com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue.load(state.settings);
+        com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue.pending(state.settings);
         state.entityContext = tag.getCompound("EntityContext").copy();
         state.miningAccess = SettlementMiningAccess.load(tag.getCompound("MiningAccess"));
         state.checkedAt = Math.max(0L, tag.getLong("CheckedAt"));

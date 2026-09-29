@@ -829,10 +829,11 @@ public final class SettlementViewScreen extends Screen {
                 .map(area -> com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.forRole(area.kind().role()))
                 .filter(java.util.Objects::nonNull).findFirst().orElse(null);
         boolean append = shiftDown();
+        var selectedTarget = this.dragStart;
         enterMode(Mode.SELECT);
         if (kind == null || targets.isEmpty()) return;
         SettlementViewClient.openPanels(this);
-        this.minecraft.setScreen(new SettlementTemporaryTaskScreen(this, targets, kind, min, max, append));
+        this.minecraft.setScreen(new SettlementTemporaryTaskScreen(this, targets, kind, min, max, append, selectedTarget));
     }
 
     private void sendBatch(SettlementViewBatchPayload request) {

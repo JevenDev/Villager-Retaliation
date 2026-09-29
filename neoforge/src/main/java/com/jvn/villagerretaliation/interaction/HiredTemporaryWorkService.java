@@ -26,6 +26,7 @@ public final class HiredTemporaryWorkService {
     public static HiredTemporaryQueue queue(CompoundTag state) {
         try {
             HiredTemporaryQueue queue = HiredTemporaryQueue.load(state);
+            HiredTemporaryQueue.pending(state);
             state.remove(INVALID);
             return queue;
         } catch (IllegalArgumentException exception) {
@@ -57,23 +58,39 @@ public final class HiredTemporaryWorkService {
         if (task != null && task.kind().role() != authority.role()) return "Incompatible worker role";
         var state = HiredWorkStateStore.state(villager);
         var home = HiredWorkArea.fromState(state, villager.blockPosition());
+        var current = queue(state);
+        var previous = state.contains(HiredTemporaryQueue.PENDING_TAG) && !state.getBoolean(INVALID) ? HiredTemporaryQueue.pending(state) : current;
+        if (append && state.getBoolean(INVALID)) return "Saved task queue needs cancellation";
+        if (task != null && previous != null) {
+            var taskId = task.id();
+            var repeated = previous.tasks().stream().filter(existing -> existing.id().equals(taskId)).findFirst().orElse(null);
+            if (repeated != null) return repeated.equals(task) || task.kind() == HiredTemporaryTask.Kind.TREE
+                    && repeated.kind() == task.kind() && Objects.equals(repeated.target(), task.target()) ? "" : "Task identifier is already in use";
+        }
+        if (task != null && task.kind() == HiredTemporaryTask.Kind.TREE) {
+            if (!level.hasChunkAt(task.target()) || authority.civic() && !duty.town().contains(task.target())
+                    || !authority.civic() && (!home.usable() || !home.contains(task.target()))) return "Selected tree is outside available work bounds";
+            task = treeTask(level, state, task, authority.civic() ? null : home);
+            if (task == null) return "No matching natural tree at the selected block";
+        }
         if (task != null && (level.isOutsideBuildHeight(task.min()) || level.isOutsideBuildHeight(task.max())
                 || !level.getWorldBorder().isWithinBounds(task.min()) || !level.getWorldBorder().isWithinBounds(task.max())
                 || authority.civic() && !duty.town().contains(task.min(), task.max())
                 || !authority.civic() && (!home.usable() || !home.contains(task.min()) || !home.contains(task.max())))) {
             return authority.civic() ? "Task leaves settlement or world bounds" : "Task leaves the worker's assigned bounds";
         }
-        var previous = queue(state);
-        if (append && state.getBoolean(INVALID)) return "Saved task queue needs cancellation";
-        if (task != null && previous != null) {
-            var repeated = previous.tasks().stream().filter(existing -> existing.id().equals(task.id())).findFirst().orElse(null);
-            if (repeated != null) return repeated.equals(task) ? "" : "Task identifier is already in use";
-        }
         if (append && previous != null && previous.tasks().size() >= HiredTemporaryQueue.MAX_TASKS) return "Temporary queue is full";
         if (append && previous != null && !valid(level, villager, authority, previous)) return "Assignment changed since the queue was created";
         HiredTemporaryQueue next = task == null ? null : append && previous != null ? previous.append(task)
                 : new HiredTemporaryQueue(authority.civic() ? duty.town().id().value() : player.getUUID(), player.getUUID(),
                         authority.civic() ? duty.area().id() : null, authority.role(), home.min(), home.max(), List.of(task));
+        if (authority.role() == HiredVillagerRole.LOGGING && unfinishedTree(level, villager)) {
+            if (append && next != null && current != null && !state.contains(HiredTemporaryQueue.PENDING_TAG)) next = next.advance();
+            if (next != null && current != null && next.tasks().size() >= HiredTemporaryQueue.MAX_TASKS) return "Temporary queue is full";
+            HiredTemporaryQueue.storePending(state, next);
+            return "";
+        }
+        state.remove(HiredTemporaryQueue.PENDING_TAG);
         if (!append || previous == null || task == null) reset(level, villager, authority.role());
         write(state, next);
         if ((!append || previous == null) && task != null && task.kind() == HiredTemporaryTask.Kind.FISH
@@ -84,12 +101,46 @@ public final class HiredTemporaryWorkService {
         return "";
     }
 
+    private static HiredTemporaryTask treeTask(ServerLevel level, CompoundTag state, HiredTemporaryTask task, HiredWorkArea home) {
+        var logs = com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeGeometry.selectedTreeLogs(level,
+                task.target(), com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters.selectedFilterIds(state));
+        if (logs.isEmpty()) return null;
+        var positions = new java.util.ArrayList<>(logs);
+        positions.addAll(com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeGeometry.naturalTreeLeaves(level, level::hasChunkAt, logs));
+        var min = task.target();
+        var max = task.target();
+        for (var position : positions) {
+            min = HiredWorkArea.minPos(min, position);
+            max = HiredWorkArea.maxPos(max, position);
+        }
+        min = min.offset(-2, -1, -2);
+        max = max.offset(2, 1, 2);
+        if (home != null) {
+            min = HiredWorkArea.maxPos(min, home.min());
+            max = HiredWorkArea.minPos(max, home.max());
+            if (positions.stream().anyMatch(position -> !home.contains(position))) return null;
+        }
+        try {
+            return new HiredTemporaryTask(task.id(), task.kind(), min, max, 1, task.target());
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private static boolean unfinishedTree(ServerLevel level, Villager villager) {
+        return com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.read(
+                HiredWorkSession.create(level, villager, HiredVillagerRole.LOGGING).context()) != null;
+    }
+
     public static void validate(ServerLevel level, Villager villager, VillagerWorkAuthority authority) {
         var state = HiredWorkStateStore.state(villager);
-        if (!state.contains(HiredTemporaryQueue.STATE_TAG)) return;
+        if (!state.contains(HiredTemporaryQueue.STATE_TAG) && !state.contains(HiredTemporaryQueue.PENDING_TAG)) return;
         var queue = queue(state);
-        if (queue != null && !valid(level, villager, authority, queue)) {
-            reset(level, villager, queue.role());
+        var pending = state.getBoolean(INVALID) ? null : HiredTemporaryQueue.pending(state);
+        if (queue != null && !valid(level, villager, authority, queue) || pending != null && !valid(level, villager, authority, pending)
+                || state.contains(HiredTemporaryQueue.PENDING_TAG) && (!authority.active() || authority.role() != HiredVillagerRole.LOGGING)) {
+            reset(level, villager, queue != null ? queue.role() : HiredVillagerRole.LOGGING);
+            state.remove(HiredTemporaryQueue.PENDING_TAG);
             write(state, null);
         } else if (queue != null && queue.current().kind() == HiredTemporaryTask.Kind.FISH && state.getBoolean(FINISHED)) {
             completed(level, villager, HiredWorkSession.create(level, villager, queue.role()), WorkResult.idle(""));
@@ -147,6 +198,10 @@ public final class HiredTemporaryWorkService {
         if (active(state, HiredTemporaryTask.Kind.FARM_PATCH)) state.putBoolean(FINISHED, true);
     }
 
+    public static void finishTree(CompoundTag state) {
+        if (active(state, HiredTemporaryTask.Kind.TREE)) state.putBoolean(FINISHED, true);
+    }
+
     public static void caught(CompoundTag state) {
         if (!active(state, HiredTemporaryTask.Kind.FISH)) return;
         if (state.getBoolean(PREVIOUS_CATCH)) state.remove(PREVIOUS_CATCH);
@@ -155,6 +210,15 @@ public final class HiredTemporaryWorkService {
 
     public static void completed(ServerLevel level, Villager villager, HiredWorkSession session, WorkResult result) {
         var queue = queue(session.state());
+        if (session.state().contains(HiredTemporaryQueue.PENDING_TAG) && !session.state().getBoolean(INVALID)
+                && !unfinishedTree(level, villager)) {
+            var pending = HiredTemporaryQueue.pending(session.state());
+            session.state().remove(HiredTemporaryQueue.PENDING_TAG);
+            reset(level, villager, session.role());
+            write(session.state(), pending);
+            HiredWorkSession.invalidate(villager);
+            return;
+        }
         if (queue == null) return;
         if (!session.state().getBoolean(FINISHED)) return;
         var next = queue.advance();
@@ -182,7 +246,7 @@ public final class HiredTemporaryWorkService {
     }
 
     public static void copyState(CompoundTag source, CompoundTag destination) {
-        for (String key : List.of(HiredTemporaryQueue.STATE_TAG, FINISHED, PREVIOUS_CATCH, INVALID, MINING_SCAN)) {
+        for (String key : List.of(HiredTemporaryQueue.STATE_TAG, HiredTemporaryQueue.PENDING_TAG, FINISHED, PREVIOUS_CATCH, INVALID, MINING_SCAN)) {
             destination.remove(key);
             if (source.contains(key)) destination.put(key, source.get(key).copy());
         }
@@ -191,6 +255,10 @@ public final class HiredTemporaryWorkService {
     public static String summary(CompoundTag state) {
         var queue = queue(state);
         if (state.getBoolean(INVALID)) return "Invalid saved temporary queue";
+        if (state.contains(HiredTemporaryQueue.PENDING_TAG)) {
+            var pending = HiredTemporaryQueue.pending(state);
+            return pending == null ? "Cancel after current tree" : pending.tasks().size() + " queued after current tree";
+        }
         if (queue == null) return "";
         return queue.current().kind().label() + (queue.current().kind() == HiredTemporaryTask.Kind.FISH
                 ? " (" + queue.current().remaining() + " catches left)" : "") + " | " + queue.tasks().size() + " queued";
