@@ -673,6 +673,55 @@ public final class SettlementWorkforceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void personalHireNeedsNoSettlementAuthority(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = EntityType.VILLAGER.create(level);
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        ServerPlayer hirer = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "PersonalHirer"));
+        try {
+            helper.assertTrue(HiredVillagerContractService.startHireContract(level, villager, hirer,
+                    2, 8, HiredVillagerRole.FARMING), "personal hiring needs no village or leadership");
+            var authority = VillagerWorkAuthority.resolve(level, villager);
+            helper.assertTrue(authority.active() && !authority.civic(), "the contract owns the work authority");
+            helper.assertValueEqual(authority.owner().orElseThrow(), hirer.getUUID(), "ownership belongs to the hirer");
+            helper.assertValueEqual(authority.role(), HiredVillagerRole.FARMING, "the chosen personal role is active");
+            helper.assertTrue(SettlementWorkforceService.duty(villager).isEmpty(), "hiring creates no civic duty");
+            helper.assertFalse(authority.canWork(level, villager), "a hirer outside the online player list pauses work");
+        } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void authorityQueriesPreserveExpiredPersonalCommitmentUntilMaintenance(GameTestHelper helper) {
+        Fixture fixture = fixture(helper);
+        assign(helper, fixture);
+        var villager = fixture.villager();
+        var paid = HireContract.regular(UUID.randomUUID(), 0L, 1, 4, 4, HiredVillagerRole.COURIER);
+        paid.endGameTime(helper.getLevel().getGameTime() - 1L);
+        paid.autoPayment(true);
+        HireContractStore.save(villager, paid);
+        CompoundTag before = villager.getPersistentData().getCompound("VillagerRetaliationHireContract").copy();
+        try {
+            var authority = VillagerWorkAuthority.resolve(helper.getLevel(), villager);
+            helper.assertTrue(authority.active() && !authority.civic(), "a pending personal commitment takes precedence");
+            helper.assertValueEqual(VillagerWorkAuthority.activeRole(helper.getLevel(), villager), HiredVillagerRole.COURIER,
+                    "shared role lookup resolves personal precedence");
+            helper.assertValueEqual(HiredVillagerContractService.activeRoleWithoutMaintenance(helper.getLevel(), villager),
+                    HiredVillagerRole.COURIER, "personal lookup resolves the contract alone");
+            HiredWorkDecisionScheduler.isDecisionOpportunity(helper.getLevel(), villager);
+            helper.assertValueEqual(villager.getPersistentData().getCompound("VillagerRetaliationHireContract"), before,
+                    "read-only resolution never expires, renews, charges or refunds the contract");
+            helper.assertValueEqual(fixture.town().duties().get(villager.getUUID()), fixture.area().id(),
+                    "read-only resolution leaves assignment reconciliation to lifecycle maintenance");
+        } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
     private static void paidRequest(GameTestHelper helper, Fixture fixture, ServerPlayer player, HiredVillagerRole role, long revision) {
         helper.assertTrue(com.jvn.villagerretaliation.interaction.VillagerConversationService.start(player, fixture.villager()),
                 "the existing villager conversation is available");

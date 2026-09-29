@@ -32,7 +32,7 @@ public record HiredWorkSession(
     private static final Map<Villager, CachedEquipmentFingerprint> EQUIPMENT_FINGERPRINT_CACHE = new IdentityHashMap<>();
 
     public static HiredWorkSession active(ServerLevel level, Villager villager) {
-        return create(level, villager, HiredVillagerContractService.activeRole(level, villager));
+        return create(level, villager, VillagerWorkAuthority.activeRole(level, villager));
     }
 
     public static HiredWorkSession create(ServerLevel level, Villager villager, HiredVillagerRole role) {

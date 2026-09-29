@@ -76,7 +76,7 @@ public final class HiredVillagerFocusService {
                 || HiredVillagerContractService.isAwaitingAutoPayment(level, villager)) {
             return false;
         }
-        HiredVillagerRole role = HiredVillagerContractService.activeRoleWithoutMaintenance(level, villager);
+        HiredVillagerRole role = VillagerWorkAuthority.activeRole(level, villager);
         Brain<Villager> brain = villager.getBrain();
         if (!brain.isActive(Activity.WORK) && scheduledActivity(level, brain) != Activity.WORK) {
             return false;
@@ -110,7 +110,7 @@ public final class HiredVillagerFocusService {
                 || com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()
                         && !com.jvn.villagerretaliation.settlement.SettlementWorkforceService.onDuty(level, villager)
                 || HiredVillagerContractService.isAwaitingAutoPayment(level, villager)
-                || HiredVillagerContractService.activeRoleWithoutMaintenance(level, villager)
+                || VillagerWorkAuthority.activeRole(level, villager)
                         != HiredVillagerRole.COMBAT) {
             return false;
         }

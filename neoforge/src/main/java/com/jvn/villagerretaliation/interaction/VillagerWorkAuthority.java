@@ -21,6 +21,11 @@ public record VillagerWorkAuthority(boolean active, HiredVillagerRole role, Opti
                 .orElseGet(() -> new VillagerWorkAuthority(false, null, Optional.empty(), false, false, false));
     }
 
+    public static HiredVillagerRole activeRole(ServerLevel level, Villager villager) {
+        HiredVillagerRole role = resolve(level, villager).role();
+        return role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
+    }
+
     public static boolean hasWork(Villager villager) {
         return HiredVillagerContractService.hasActiveOrPendingContract(villager)
                 || SettlementWorkforceService.duty(villager).isPresent();

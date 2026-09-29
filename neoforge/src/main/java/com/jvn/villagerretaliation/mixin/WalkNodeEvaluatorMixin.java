@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
-import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.VillagerWorkAuthority;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningSafety;
 import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
@@ -32,8 +32,8 @@ public abstract class WalkNodeEvaluatorMixin {
             return;
         }
         boolean unsafeMiningNode = mob.level() instanceof ServerLevel level
-                && HiredVillagerContractService.isHired(level, villager)
-                && HiredVillagerContractService.activeRole(level, villager) == HiredVillagerRole.MINING
+                && VillagerWorkAuthority.hasWork(villager)
+                && VillagerWorkAuthority.activeRole(level, villager) == HiredVillagerRole.MINING
                 && !MiningSafety.isSafePathPosition(level, new BlockPos(x, y, z));
         if (VillagerContainerClimbGuard.isForbiddenStandingFloor(context.level(), floor)
                 || HiredVillagerFocusService.isClaimedJobSitePathFloor(villager, floor)

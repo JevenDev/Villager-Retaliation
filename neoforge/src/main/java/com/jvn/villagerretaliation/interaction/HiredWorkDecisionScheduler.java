@@ -32,7 +32,7 @@ public final class HiredWorkDecisionScheduler {
         if (level == null || villager == null) {
             return false;
         }
-        HiredVillagerRole role = HiredVillagerContractService.activeRoleWithoutMaintenance(level, villager);
+        HiredVillagerRole role = VillagerWorkAuthority.activeRole(level, villager);
         int interval = HiredWorkSession.cachedDecisionInterval(level, villager, role);
         return Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), interval) == 0L;
     }

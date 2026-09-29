@@ -1588,21 +1588,21 @@ public final class HiredVillagerWorkService {
     public static void initializeWorkArea(ServerLevel level, Villager villager) {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        HiredVillagerRole role = VillagerWorkAuthority.activeRole(level, villager);
         workAreaWithinMax(state, villager, maxWorkRadius(level, villager, role));
     }
 
     public static HiredWorkArea workArea(ServerLevel level, Villager villager) {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        HiredVillagerRole role = VillagerWorkAuthority.activeRole(level, villager);
         return jobSite(level, villager, role, state, maxWorkRadius(level, villager, role)).workArea();
     }
 
     public static HiredJobSite jobSite(ServerLevel level, Villager villager) {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        HiredVillagerRole role = VillagerWorkAuthority.activeRole(level, villager);
         return jobSite(level, villager, role, state, maxWorkRadius(level, villager, role));
     }
 

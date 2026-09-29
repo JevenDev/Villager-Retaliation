@@ -565,14 +565,7 @@ public final class HiredVillagerContractService {
 
     /** Non-mutating role lookup for AI policy evaluation. */
     public static HiredVillagerRole activeRoleWithoutMaintenance(ServerLevel level, Villager villager) {
-        HiredVillagerRole role = HireContractStore.load(villager)
-                .filter(HireContract::isActiveOrAwaitingAutoPayment)
-                .map(HireContract::role)
-                .orElse(null);
-        if (role == null) {
-            role = com.jvn.villagerretaliation.settlement.SettlementWorkforceService.role(villager);
-        }
-        return role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
+        return snapshot(level, villager).role();
     }
 
     public static boolean setActiveRole(ServerLevel level, Villager villager, HiredVillagerRole role) {

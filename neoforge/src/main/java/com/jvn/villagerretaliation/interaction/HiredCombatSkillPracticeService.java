@@ -27,7 +27,7 @@ public final class HiredCombatSkillPracticeService {
             return;
         }
 
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        HiredVillagerRole role = VillagerWorkAuthority.activeRole(level, villager);
         if (role != HiredVillagerRole.COMBAT && role != HiredVillagerRole.HUNTING) {
             return;
         }
@@ -64,7 +64,7 @@ public final class HiredCombatSkillPracticeService {
                 || target.isAlliedTo(villager)) {
             return;
         }
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        HiredVillagerRole role = VillagerWorkAuthority.activeRole(level, villager);
         if (role != HiredVillagerRole.COMBAT && role != HiredVillagerRole.HUNTING) {
             return;
         }

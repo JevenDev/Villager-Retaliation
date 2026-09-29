@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.interaction.work;
 
-import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
@@ -239,7 +238,7 @@ public final class HiredFarmingInventoryBridge {
     private static HiredWorkSession activeFarmingSession(ServerLevel level, Villager villager) {
         if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)
                 || !com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(villager)
-                || HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.FARMING) {
+                || com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.activeRole(level, villager) != HiredVillagerRole.FARMING) {
             return null;
         }
         HiredWorkSession session = HiredWorkSession.active(level, villager);
@@ -306,7 +305,7 @@ public final class HiredFarmingInventoryBridge {
 
     public static boolean permitsVanillaHarvest(ServerLevel level, Villager villager) {
         if (!com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(villager)
-                || HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.FARMING) return true;
+                || com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.activeRole(level, villager) != HiredVillagerRole.FARMING) return true;
         var state = HiredWorkStateStore.state(villager);
         return state.getBoolean("Enabled") && HiredFarmingOptions.harvestCrops(state);
     }
