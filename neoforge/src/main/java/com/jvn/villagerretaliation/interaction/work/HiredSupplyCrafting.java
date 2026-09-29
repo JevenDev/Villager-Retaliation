@@ -93,6 +93,14 @@ public final class HiredSupplyCrafting {
             ServerLevel level,
             HiredWorkContext context,
             CraftingRecipe recipe) {
+        return craftCarriedRecipeToOutputsWithStations(level, context, recipe, Map.of());
+    }
+
+    public static boolean craftCarriedRecipeToOutputsWithStations(
+            ServerLevel level,
+            HiredWorkContext context,
+            CraftingRecipe recipe,
+            Map<Integer, Item> narrowedIngredients) {
         boolean hasCraftingTable = hasCraftingTable(level, context);
         if (recipe == null || recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)) {
             return false;
@@ -102,7 +110,7 @@ public final class HiredSupplyCrafting {
             return false;
         }
         Map<Item, Integer> ingredients = new LinkedHashMap<>();
-        if (!prepareRecipeIngredients(level, context, recipe, ingredients, new HashSet<>(), hasCraftingTable)) {
+        if (!prepareRecipeIngredients(level, context, recipe, ingredients, narrowedIngredients, new HashSet<>(), hasCraftingTable)) {
             return false;
         }
         List<ItemStack> produced = craftingRemainders(ingredients);

@@ -109,7 +109,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             return WorkResult.progressed("interaction.work.craftsman.crafting");
         }
         context.setProgressTicks(0);
-        if (!HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(level, context, selection.recipe())) {
+        if (!HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(level, context, selection.recipe(), selection.narrowedIngredients())) {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, table);
             HiredWorkerBrain.setFailure(context, "craftsman_output_full", level.getGameTime() + 100L);
             return WorkResult.idle("interaction.work.craftsman.output_full");
@@ -140,15 +140,16 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 CraftingRecipe recipe = holder.value();
                 ItemStack result = recipe.getResultItem(level.registryAccess());
                 if (recipe.isSpecial() || result.isEmpty() || !result.is(target.stack().getItem())
-                        || !VillagerFilterMatcher.matches(level, filter, result)
+                        || !HiredProcessingRecipeFilter.allowsCraftingRecipe(level, filter, holder, result)
                         || !HiredSupplyCrafting.canUseRecipe(level, context, recipe)) {
                     continue;
                 }
                 Map<Item, Integer> materials = new LinkedHashMap<>();
                 HiredSupplyCrafting.MaterialPlanner planner =
                         new HiredSupplyCrafting.MaterialPlanner(level, villager, context, false, true);
-                if (planner.planRecipe(recipe, 1, materials)) {
-                    return new Selection(target, recipe, Map.copyOf(materials));
+                var narrowed = HiredProcessingRecipeFilter.narrowedCraftingIngredients(level, filter, holder);
+                if (planner.planRecipe(recipe, 1, materials, narrowed)) {
+                    return new Selection(target, recipe, Map.copyOf(materials), narrowed);
                 }
             }
         }
@@ -295,7 +296,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
     }
 
     public record Target(int slot, ItemStack stack) {}
-    private record Selection(Target target, CraftingRecipe recipe, Map<Item, Integer> materials) {}
+    private record Selection(Target target, CraftingRecipe recipe, Map<Item, Integer> materials, Map<Integer, Item> narrowedIngredients) {}
 
     public enum Mode {
         PREFER_FIRST("prefer_first"),
