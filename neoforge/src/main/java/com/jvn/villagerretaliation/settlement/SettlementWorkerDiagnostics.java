@@ -33,6 +33,9 @@ public final class SettlementWorkerDiagnostics {
             case "temporary_task_target_claimed" -> "Another worker is handling the selected target.";
             case "temporary_target_unreachable" -> "The selected target is not reachable under the current combat rules.";
             case "temporary_animal_unavailable" -> "The selected animal needs a ready partner, product, or excess herd count.";
+            case "fishing_preferences_invalid" -> "Replace the damaged fishing spot list or reset it to automatic discovery.";
+            case "fishing_selected_unavailable" -> "Visit the selected water and check for an open surface and a reachable dry shore inside the work area.";
+            case "fishing_spot_claimed" -> "Another fisher is using the selected water. Add another spot or wait for the current cast.";
             case "tree_claimed" -> "Another worker is finishing this tree.";
             case "missing_hoe" ->
                     "Farmer needs a hoe in job gear or a supply depot.";

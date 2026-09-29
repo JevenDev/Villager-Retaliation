@@ -327,7 +327,7 @@ public final class SettlementFishingWorkGameTests {
         return fixture.worker().items(helper.getLevel().registryAccess()).get(HiredJobInventory.MAINHAND_SLOT);
     }
 
-    private static void ready(GameTestHelper helper, Fixture fixture, int nibble, int lured, long nativeTick) {
+    static void ready(GameTestHelper helper, Fixture fixture, int nibble, int lured, long nativeTick) {
         var progress = new CompoundTag();
         progress.putInt("Nibble", nibble);
         progress.putInt("Lured", lured);
@@ -353,7 +353,7 @@ public final class SettlementFishingWorkGameTests {
         fixture(helper, false, check);
     }
 
-    private static void fixture(GameTestHelper helper, boolean loaded, Consumer<Fixture> check) {
+    static void fixture(GameTestHelper helper, boolean loaded, Consumer<Fixture> check) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(BlockPos.ZERO);
         var chunk = loaded ? level.getChunkAt(origin)
@@ -411,7 +411,7 @@ public final class SettlementFishingWorkGameTests {
         helper.succeed();
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, LevelChunk chunk, SettlementFishingSpot spot,
+    record Fixture(SettlementRecord town, SettlementArea area, LevelChunk chunk, SettlementFishingSpot spot,
                            SettlementDepot supply, SettlementDepot output, SettlementWorkerState worker, Villager villager) {
     }
 }

@@ -1824,6 +1824,11 @@ public final class ClipboardWorkforceScreen extends Screen {
             }
             if (this.page == Page.JOB_SITE) {
                 for (RowAction row : this.rowActions) {
+                    if (row.kind() == RowKind.FISHING_SPOTS && row.contains(panelMouseX, panelMouseY)) {
+                        this.minecraft.setScreen(new FishingSpotsScreen(this, row.worker().villagerId()));
+                        playPageSound();
+                        return true;
+                    }
                     if (row.kind() == RowKind.PRODUCTION && row.contains(panelMouseX, panelMouseY)) {
                         this.minecraft.setScreen(new ProductionOrdersScreen(this,
                                 new com.jvn.villagerretaliation.network.ProductionTarget(null, row.worker().villagerId())));
@@ -2267,6 +2272,9 @@ public final class ClipboardWorkforceScreen extends Screen {
                 this.selectedWorker.noWorkArea() ? WARNING : MUTED,
                 false);
         y += JOB_SITE_ROW_STEP;
+        if (this.selectedWorker.role() == HiredVillagerRole.FISHING) {
+            y = drawJobSiteActionRow(graphics, mouseX, mouseY, y, Component.literal("Fishing spots"), null, RowKind.FISHING_SPOTS);
+        }
         if (com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService.supports(this.selectedWorker.role())) {
             y = drawJobSiteActionRow(graphics, mouseX, mouseY, y, Component.literal("Production orders"), null, RowKind.PRODUCTION);
         }
@@ -3029,6 +3037,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         PAYMENT,
         WORKER,
         PRODUCTION,
+        FISHING_SPOTS,
         JOB_SITE_ACTION
     }
 

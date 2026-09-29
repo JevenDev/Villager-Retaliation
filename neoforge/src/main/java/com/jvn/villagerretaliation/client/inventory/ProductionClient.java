@@ -19,6 +19,7 @@ public final class ProductionClient {
             if (screen instanceof ProductionOrdersScreen orders) screen = orders.previous();
             else if (screen instanceof ProductionRecipeScreen recipes) screen = recipes.previous();
             else if (screen instanceof ProductionStorageScreen storage) screen = storage.previous();
+            else if (screen instanceof FishingSpotsScreen fishing) screen = fishing.previous();
             else return screen;
         }
     }

@@ -2044,6 +2044,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                             () -> SettlementViewClient.resume(this.parent)));
                 } else if (area != null && area.kind() == SettlementAreaType.TRADING_POST) {
                     openManagement(Page.TRADE, "");
+                } else if (area != null && area.kind() == SettlementAreaType.FISHERY) {
+                    if (selected instanceof SettlementManagementPayload.Resident resident && resident.settings() != null) {
+                        this.minecraft.setScreen(new SettlementWorkerScreen(management(), resident, this));
+                    } else this.minecraft.setScreen(new SettlementWorkerScreen(management(), area, this));
                 } else if (selected instanceof SettlementManagementPayload.Resident) {
                     openActionPopup(SettlementViewPopup.Kind.ACTIONS);
                 } else if (area != null && (area.kind() == SettlementAreaType.GUARD_POST || area.kind() == SettlementAreaType.HUNTING_GROUNDS)) {

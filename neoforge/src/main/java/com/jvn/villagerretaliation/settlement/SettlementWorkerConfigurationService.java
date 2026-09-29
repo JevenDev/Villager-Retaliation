@@ -66,6 +66,10 @@ public final class SettlementWorkerConfigurationService {
                 || SettlementWorkforceService.duty(villager).filter(duty -> duty.town() == town && duty.area().id().equals(areaId)).isEmpty())) {
             return false;
         }
+        var previous = snapshot(level, town, resident);
+        if (!SettlementWorksiteService.validFishingSpots(level, town, area, previous == null
+                ? com.jvn.villagerretaliation.interaction.work.HiredFishingSpots.AUTOMATIC : previous.fishingSpots(),
+                settings.fishingSpots())) return false;
         if (!town.setWorkerSettings(player.getUUID(), resident, settings)) {
             return false;
         }
@@ -92,11 +96,14 @@ public final class SettlementWorkerConfigurationService {
             state.putBoolean("Enabled", area.enabled());
             return;
         }
+        boolean preserveFishing = settings.role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.FISHING
+                && settings.options().entrySet().stream().allMatch(entry -> entry.getKey().read(state) == entry.getValue())
+                && state.getBoolean("Enabled") == (settings.enabled() && area.enabled());
         int oldMode = SettlementWorkerSetting.MINING_MODE.read(state);
         boolean linksChanged = SettlementWorksiteService.links(town, area.id()).apply(state);
         if (settings.apply(state, area.enabled()) || linksChanged) {
             var level = (ServerLevel) villager.level();
-            HiredWorkStateStore.pauseWork(level, villager, area.type().role(),
+            if (!preserveFishing || linksChanged) HiredWorkStateStore.pauseWork(level, villager, area.type().role(),
                     state.getBoolean("Enabled") ? "interaction.work.status.waiting_tick" : "interaction.work.status.paused", Map.of());
             if (settings.role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.MINING
                     && oldMode != SettlementWorkerSetting.MINING_MODE.read(state)) {

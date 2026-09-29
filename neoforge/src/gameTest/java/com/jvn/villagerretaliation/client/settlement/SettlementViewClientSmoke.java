@@ -727,6 +727,36 @@ public final class SettlementViewClientSmoke {
             require(screen == productionView && screen.focusX() == originalX && screen.focusZ() == originalZ
                             && screen.viewHeight() == originalHeight && screen.cameraYaw() == originalYaw,
                     "storage and station picking restores the same map camera and worksite");
+            var spots = new com.jvn.villagerretaliation.interaction.work.HiredFishingSpots(java.util.List.of(fixture.center(), fixture.center().south()));
+            SettlementViewClient.openPanels(screen);
+            minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.FishingSpotsScreen(screen.parent(), spots, saved -> {
+                require(saved.positions().equals(java.util.List.of(fixture.center().south(), fixture.center())), "fishing priority edits preserve exact ordered positions");
+            }, null));
+            ticks = 0;
+            phase = 145;
+        } else if (phase == 145 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.FishingSpotsScreen screen && ++ticks >= 5) {
+            for (int width : new int[] {320, 426, minecraft.getWindow().getGuiScaledWidth()}) {
+                screen.init(minecraft, width, minecraft.getWindow().getGuiScaledHeight());
+                requireButtonsFit(screen);
+            }
+            button(screen, "2. " + fixture.center().south().toShortString()).onPress();
+            button(screen, "Up").onPress();
+            ticks = 0;
+            phase = 146;
+        } else if (phase == 146 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.FishingSpotsScreen screen && ++ticks >= 5) {
+            capture("fishing-priorities");
+            require(minecraft.getCameraEntity() != minecraft.player, "the fishing picker retains the active map camera");
+            button(screen, "Save").onPress();
+            ticks = 0;
+            phase = 147;
+        } else if (phase == 147 && minecraft.screen instanceof SettlementManagementScreen screen && ++ticks >= 5) {
+            require(SettlementViewClient.resume(screen), "fishing picker can resume the selected map");
+            ticks = 0;
+            phase = 148;
+        } else if (phase == 148 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen == productionView && screen.focusX() == originalX && screen.focusZ() == originalZ
+                            && screen.viewHeight() == originalHeight && screen.cameraYaw() == originalYaw,
+                    "fishing priority picking restores the same map camera and selection");
             button(screen, "Browse settlement").onPress();
             require(!screen.inspector().visible(), "browsing hides the inspector without clearing the map selection");
             var targets = java.util.List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(fixture.resident(), null));

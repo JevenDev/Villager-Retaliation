@@ -338,6 +338,7 @@ public final class SettlementWorksiteGameTests {
             var defaults = SettlementWorksitePlan.defaults(role).settings();
             var legacy = defaults.save();
             legacy.remove("Version");
+            legacy.remove("FishingSpots");
             int added = 0;
             for (var option : SettlementWorkerSetting.values()) {
                 if (option.ordinal() > SettlementWorkerSetting.GUARD_MODE.ordinal() && option.supports(role)) {

@@ -859,6 +859,9 @@ public final class ClipboardWorkforceService {
 
     private static String fishingDiagnostic(HiredWorkerBrain.Snapshot brain) {
         String reason = lower(brain.failureReason());
+        if (reason.equals("fishing_preferences_invalid") || reason.equals("fishing_selected_unavailable") || reason.equals("fishing_spot_claimed")) {
+            return com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.describe(reason);
+        }
         if (reason.contains("fishing_rod_storage_unreachable")) {
             BlockPos storagePos = diagnosticStoragePos(brain);
             return storagePos == null

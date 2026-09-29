@@ -22,6 +22,9 @@ public final class SettlementWorksiteService {
         if (plan.route() != null && (!plan.route().within(town)
                 || plan.route().points().stream().anyMatch(player.serverLevel()::isOutsideBuildHeight))) return false;
         var previous = town.worksitePlans().get(areaId);
+        if (!validFishingSpots(player.serverLevel(), town, area, previous == null
+                ? com.jvn.villagerretaliation.interaction.work.HiredFishingSpots.AUTOMATIC : previous.settings().fishingSpots(),
+                plan.settings().fishingSpots())) return false;
         var previousLinks = previous == null ? SettlementWorksiteLinks.AUTOMATIC : previous.links();
         if ((!plan.links().supplies().equals(previousLinks.supplies()) || !plan.links().outputs().equals(previousLinks.outputs()))
                 && !town.permits(player.getUUID(), SettlementPermission.LOGISTICS)) return false;
@@ -58,6 +61,16 @@ public final class SettlementWorksiteService {
             }
         }
         return true;
+    }
+
+    static boolean validFishingSpots(net.minecraft.server.level.ServerLevel level, SettlementRecord town, SettlementArea area,
+                                     com.jvn.villagerretaliation.interaction.work.HiredFishingSpots previous,
+                                     com.jvn.villagerretaliation.interaction.work.HiredFishingSpots requested) {
+        return requested.positions().stream().allMatch(town::contains)
+                && com.jvn.villagerretaliation.interaction.work.HiredFishingSpotService.valid(level,
+                        com.jvn.villagerretaliation.interaction.HiredWorkArea.fromBounds(area.min(), area.max(), true),
+                        previous, requested, position -> town.fishingSpots().getOrDefault(area.id(), java.util.List.of()).stream()
+                                .anyMatch(spot -> spot.water().equals(position) && spot.within(area) && spot.valid()));
     }
 
     static SettlementWorksiteLinks links(SettlementRecord town, UUID area) {

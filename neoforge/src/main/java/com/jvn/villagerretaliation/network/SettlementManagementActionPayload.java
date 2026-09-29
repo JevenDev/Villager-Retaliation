@@ -325,6 +325,8 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         buffer.writeVarInt(settings.animals().size());
         settings.animals().stream().sorted().forEach(buffer::writeResourceLocation);
         buffer.writeInt(settings.overrides());
+        buffer.writeVarInt(settings.fishingSpots().positions().size());
+        settings.fishingSpots().positions().forEach(buffer::writeBlockPos);
     }
 
     static SettlementWorkerSettings readWorkerSettings(RegistryFriendlyByteBuf buffer) {
@@ -335,7 +337,15 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 options.put(setting, buffer.readVarInt());
             }
         }
-        return new SettlementWorkerSettings(role, options, readWorkerFilters(buffer), readWorkerFilters(buffer), buffer.readInt());
+        var logs = readWorkerFilters(buffer);
+        var animals = readWorkerFilters(buffer);
+        int overrides = buffer.readInt();
+        int count = VillagerPayloads.readCollectionSize(buffer,
+                com.jvn.villagerretaliation.interaction.work.HiredFishingSpots.MAX_SPOTS, "fishing spot priorities");
+        var positions = new java.util.ArrayList<net.minecraft.core.BlockPos>();
+        for (int index = 0; index < count; index++) positions.add(buffer.readBlockPos());
+        return new SettlementWorkerSettings(role, options, logs, animals, overrides,
+                new com.jvn.villagerretaliation.interaction.work.HiredFishingSpots(positions));
     }
 
     private static Set<net.minecraft.resources.ResourceLocation> readWorkerFilters(RegistryFriendlyByteBuf buffer) {

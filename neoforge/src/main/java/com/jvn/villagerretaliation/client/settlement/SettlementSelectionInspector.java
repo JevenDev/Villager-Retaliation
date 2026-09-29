@@ -144,7 +144,8 @@ final class SettlementSelectionInspector {
             case OVERVIEW -> "Focus selection";
             case STAFF -> this.selected instanceof Area && this.worksite != null && this.worksite.plan() != null ? "Fill staffing" : "Staff actions";
             case ORDERS -> this.production != null ? "Edit production" : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST
-                    ? "Trade orders" : this.selected instanceof Resident ? "Worker actions"
+                    ? "Trade orders" : this.worksite != null && this.worksite.kind() == SettlementAreaType.FISHERY ? "Fishing settings"
+                    : this.selected instanceof Resident ? "Worker actions"
                     : this.worksite != null && (this.worksite.kind() == SettlementAreaType.GUARD_POST
                     || this.worksite.kind() == SettlementAreaType.HUNTING_GROUNDS) ? "Shared route"
                     : this.worksite != null && this.worksite.kind() == SettlementAreaType.CONSTRUCTION ? "Project details"
@@ -162,7 +163,7 @@ final class SettlementSelectionInspector {
         if (this.section == Section.ORDERS && this.production == null && this.worksite != null
                 && this.worksite.kind() != SettlementAreaType.TRADING_POST && this.worksite.kind() != SettlementAreaType.CONSTRUCTION
                 && this.worksite.kind() != SettlementAreaType.DEPOT && this.worksite.kind() != SettlementAreaType.GUARD_POST
-                && this.worksite.kind() != SettlementAreaType.HUNTING_GROUNDS && this.staff.isEmpty()) this.primary.active = false;
+                && this.worksite.kind() != SettlementAreaType.HUNTING_GROUNDS && this.worksite.kind() != SettlementAreaType.FISHERY && this.staff.isEmpty()) this.primary.active = false;
         this.lines.clear();
         switch (this.section) {
             case OVERVIEW -> overview();
@@ -247,6 +248,14 @@ final class SettlementSelectionInspector {
                 line((legacy.continuous() ? "Continuous" : legacy.amount() + " remaining") + " / "
                         + (legacy.activeBottles() < 0 ? "needs station observation" : legacy.activeBottles() + " active bottles"));
             }
+        } else if (this.worksite != null && this.worksite.kind() == SettlementAreaType.FISHERY) {
+            var settings = this.selected instanceof Resident resident ? resident.settings()
+                    : this.worksite.plan() == null ? null : this.worksite.plan().settings();
+            if (settings == null) line("Adopt a worksite plan to share fishing priorities.");
+            else fishing(settings);
+            for (var resident : this.staff) if (!resident.temporary().isEmpty()) {
+                line(SettlementManagementScreen.name(resident).copy().append(": " + resident.temporary()));
+            }
         } else if (this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST) {
             line("Communal trade orders");
             if (this.trades.isEmpty()) line("No buy or sell orders");
@@ -295,6 +304,18 @@ final class SettlementSelectionInspector {
         });
         if (!settings.logs().isEmpty()) line("Tree species: " + settings.logs());
         if (!settings.animals().isEmpty()) line("Animal species: " + settings.animals());
+        if (settings.role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.FISHING) fishing(settings);
+    }
+
+    private void fishing(com.jvn.villagerretaliation.settlement.SettlementWorkerSettings settings) {
+        if (this.selected instanceof Resident resident && resident.worksitePlan()) {
+            line((settings.overrides() & com.jvn.villagerretaliation.settlement.SettlementWorkerSettings.FISHING_SPOTS_OVERRIDE) == 0
+                    ? "Fishing spots (inherited)" : "Fishing spots (override)");
+        }
+        var spots = settings.fishingSpots().positions();
+        if (spots.isEmpty()) line("Fishing spots: automatic discovery");
+        else for (int index = 0; index < spots.size(); index++) line((index + 1) + ". " + spots.get(index).toShortString());
+        line("First available spot wins. Current casts finish before changing spots.");
     }
 
     private void storage() {

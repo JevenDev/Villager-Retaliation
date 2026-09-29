@@ -33,6 +33,11 @@ final class SettlementWorksiteAdoptionScreen extends Screen {
         if (plan.settings().role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.ANIMAL_HANDLING) {
             this.preview.add(Component.literal("Animal species: " + (plan.settings().animals().isEmpty() ? "all" : plan.settings().animals())));
         }
+        if (plan.settings().role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.FISHING) {
+            var spots = plan.settings().fishingSpots().positions();
+            this.preview.add(Component.literal(spots.isEmpty() ? "Fishing spots: automatic discovery" : "Fishing spots in priority order:"));
+            spots.forEach(position -> this.preview.add(Component.literal(position.toShortString())));
+        }
         this.preview.add(Component.literal(plan.links().supplies().isEmpty() ? "Supply depots: automatic" : "Supply depots: " + plan.links().supplies()));
         this.preview.add(Component.literal(plan.links().outputs().isEmpty() ? "Output depots: automatic" : "Output depots: " + plan.links().outputs()));
         this.preview.add(Component.literal(plan.links().stations().isEmpty() ? "Stations: automatic" : "Permitted stations: " + plan.links().stations()));

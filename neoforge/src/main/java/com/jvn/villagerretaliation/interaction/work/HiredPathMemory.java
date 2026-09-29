@@ -394,6 +394,10 @@ public final class HiredPathMemory {
     }
 
     public static boolean isReservedByOther(ServerLevel level, Villager villager, BlockPos pos) {
+        return isReservedByOther(level, villager.getUUID(), pos);
+    }
+
+    public static boolean isReservedByOther(ServerLevel level, UUID villager, BlockPos pos) {
         Map<Long, TargetReservation> reservations = TARGET_RESERVATIONS.get(level.dimension());
         if (reservations == null) {
             return false;
@@ -406,22 +410,30 @@ public final class HiredPathMemory {
             reservations.remove(pos.asLong());
             return false;
         }
-        return !reservation.villagerId().equals(villager.getUUID());
+        return !reservation.villagerId().equals(villager);
     }
 
     public static void reserveTarget(ServerLevel level, Villager villager, BlockPos pos) {
+        reserveTarget(level, villager.getUUID(), pos);
+    }
+
+    public static void reserveTarget(ServerLevel level, UUID villager, BlockPos pos) {
         TARGET_RESERVATIONS
                 .computeIfAbsent(level.dimension(), ignored -> new HashMap<>())
-                .put(pos.asLong(), new TargetReservation(villager.getUUID(), level.getGameTime() + TARGET_RESERVATION_TICKS));
+                .put(pos.asLong(), new TargetReservation(villager, level.getGameTime() + TARGET_RESERVATION_TICKS));
     }
 
     public static void releaseTarget(ServerLevel level, Villager villager, BlockPos pos) {
+        releaseTarget(level, villager.getUUID(), pos);
+    }
+
+    public static void releaseTarget(ServerLevel level, UUID villager, BlockPos pos) {
         Map<Long, TargetReservation> reservations = TARGET_RESERVATIONS.get(level.dimension());
         if (reservations == null) {
             return;
         }
         TargetReservation reservation = reservations.get(pos.asLong());
-        if (reservation != null && reservation.villagerId().equals(villager.getUUID())) {
+        if (reservation != null && reservation.villagerId().equals(villager)) {
             reservations.remove(pos.asLong());
         }
     }

@@ -133,18 +133,29 @@ public final class SettlementBackgroundFishing {
             equipRod(level, worker, carried, depots, elapsed, multiplier);
             return;
         }
+        com.jvn.villagerretaliation.interaction.work.HiredFishingSpots preferences;
+        try {
+            preferences = com.jvn.villagerretaliation.interaction.work.HiredFishingSpots.read(state);
+        } catch (IllegalArgumentException invalid) {
+            worker.status("fishing_preferences_invalid");
+            return;
+        }
         var area = town.areas().get(worker.area());
+        var activeCast = state.getCompound(CAST);
         var spots = town.fishingSpots().getOrDefault(worker.area(), List.of()).stream()
                 .filter(spot -> spot.within(area) && spot.valid())
+                .filter(spot -> activeCast.contains("Water", Tag.TAG_LONG) && activeCast.getLong("Water") == spot.water().asLong()
+                        || preferences.selects(spot.water()))
                 .sorted(Comparator.<SettlementFishingSpot>comparingInt(spot ->
-                        state.getCompound(CAST).getLong("Water") == spot.water().asLong() ? 0 : 1)
+                        activeCast.contains("Water", Tag.TAG_LONG) && activeCast.getLong("Water") == spot.water().asLong() ? 0 : 1)
+                        .thenComparingInt(spot -> preferences.priority(spot.water()))
                         .thenComparingDouble(spot -> spot.approach().distSqr(worker.position()))).toList();
         if (spots.isEmpty()) {
             if (state.contains(CAST)) {
                 state.remove(CAST);
                 worker.changed();
             }
-            worker.status("no_observed_fishery");
+            worker.status(preferences.positions().isEmpty() ? "no_observed_fishery" : "fishing_selected_unavailable");
             return;
         }
         var owner = worker.context(level, town);
@@ -152,7 +163,12 @@ public final class SettlementBackgroundFishing {
             worker.status("awaiting_worker_observation");
             return;
         }
-        var spot = spots.getFirst();
+        var spot = spots.stream().filter(candidate -> SettlementFishingClaims.available(level, worker.id(), candidate.water()))
+                .findFirst().orElse(null);
+        if (spot == null) {
+            worker.status("fishing_spot_claimed");
+            return;
+        }
         owner.setPos(spot.approach().getBottomCenter());
         var inventory = HiredJobInventory.getJobInventory(owner);
         var rod = inventory.getItem(HiredJobInventory.MAINHAND_SLOT);

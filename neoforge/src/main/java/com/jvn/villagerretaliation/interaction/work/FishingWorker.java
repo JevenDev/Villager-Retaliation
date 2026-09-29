@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.settlement.SettlementBackgroundFishing;
+import com.jvn.villagerretaliation.settlement.SettlementFishingClaims;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.skill.VillagerSkillPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -89,11 +90,10 @@ public final class FishingWorker extends AbstractBlockWorker {
         }
         var spot = activeFishingSpot(level, context);
         if (spot != null) {
-            if (HiredPathMemory.isReservedByOther(level, villager, spot.water())) {
+            if (!SettlementFishingClaims.reserve(level, villager.getUUID(), spot.water())) {
                 clearActiveFishing(level, villager, context);
                 return;
             }
-            HiredPathMemory.reserveTarget(level, villager, spot.water());
         }
         faceBlock(villager, hook.position());
         if (hook.isBiting() || hook.shouldRetrieveWithoutCatch()) {
@@ -170,7 +170,16 @@ public final class FishingWorker extends AbstractBlockWorker {
         }
         clearHookState(context);
 
-        FishingSpotSearch search = findFishingSpot(level, villager, context);
+        HiredFishingSpots preferences;
+        try {
+            preferences = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.FISH)
+                    ? HiredFishingSpots.AUTOMATIC : HiredFishingSpots.read(context.state());
+        } catch (IllegalArgumentException invalid) {
+            HiredWorkerBrain.setFailure(context, "fishing_preferences_invalid", 0L);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+            return WorkResult.idle("interaction.work.fishing.no_open_water");
+        }
+        FishingSpotSearch search = findFishingSpot(level, villager, context, preferences);
         FishingSpot spot = search.spot();
         if (spot == null) {
             if (!search.complete()) {
@@ -180,6 +189,11 @@ public final class FishingWorker extends AbstractBlockWorker {
                 return WorkResult.progressed("interaction.work.fishing.no_open_water");
             }
             clearFishingTarget(context);
+            if (!preferences.positions().isEmpty()) {
+                HiredWorkerBrain.setFailure(context, "fishing_selected_unavailable", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+                return WorkResult.idle("interaction.work.fishing.no_open_water");
+            }
             if (roamInsideWorkArea(level, villager, context, 0.35D)) {
                 return WorkResult.progressed("interaction.work.fishing.roaming");
             }
@@ -188,12 +202,17 @@ public final class FishingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.fishing.no_open_water");
         }
 
-        HiredPathMemory.reserveTarget(level, villager, spot.water());
+        if (!SettlementFishingClaims.reserve(level, villager.getUUID(), spot.water())) {
+            HiredWorkerBrain.setFailure(context, "fishing_spot_claimed", level.getGameTime() + 20L);
+            return WorkResult.idle("interaction.work.fishing.no_open_water");
+        }
+        HiredWorkerBrain.clearFailure(context);
         rememberFishingTarget(context, spot);
         if (!canCastFromCurrentPosition(level, villager, context, spot)) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, spot.water());
             if (!moveToApproach(level, villager, context, spot.approach(), CAST_SPEED)) {
                 HiredPathMemory.recordFailure(level, villager, spot.water());
+                HiredPathMemory.releaseTarget(level, villager, spot.water());
                 clearFishingTarget(context);
                 HiredWorkerBrain.setFailure(context, "water_unreachable", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, spot.water());
@@ -466,6 +485,7 @@ public final class FishingWorker extends AbstractBlockWorker {
                 context.state().putBoolean(CATCH_OVERFLOW_TAG, true);
             }
         }
+        HiredPathMemory.releaseTarget(level, villager, BlockPos.of(context.state().getLong(ACTIVE_WATER_POS_TAG)));
         clearHookState(context);
         return result.completedCatch();
     }
@@ -491,12 +511,14 @@ public final class FishingWorker extends AbstractBlockWorker {
         return hook;
     }
 
-    private FishingSpotSearch findFishingSpot(ServerLevel level, Villager villager, HiredWorkContext context) {
+    private FishingSpotSearch findFishingSpot(ServerLevel level, Villager villager, HiredWorkContext context, HiredFishingSpots preferences) {
         FishingSpot remembered = rememberedFishingSpot(level, context);
-        if (remembered != null && !HiredPathMemory.isReservedByOther(level, villager, remembered.water())) {
+        if (remembered != null && (context.state().contains("SettlementFishingCast") || preferences.positions().isEmpty())
+                && SettlementFishingClaims.available(level, villager.getUUID(), remembered.water())) {
             clearFishingSpotScan(context);
             return new FishingSpotSearch(remembered, true);
         }
+        if (!preferences.positions().isEmpty()) return findSelectedFishingSpot(level, villager, context, preferences, remembered);
         long gameTime = level.getGameTime();
         if (gameTime < context.state().getLong(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG)) {
             return new FishingSpotSearch(null, true);
@@ -524,8 +546,8 @@ public final class FishingWorker extends AbstractBlockWorker {
             int zOffset = (int)(index % sizeZ);
             int yOffset = (int)(index / sizeZ);
             BlockPos water = min.offset(xOffset, yOffset, zOffset);
-            if (HiredPathMemory.isAvoided(level, villager, water) || HiredPathMemory.isReservedByOther(level, villager, water)
-                    || !isUsableFishingWater(level, context, water)) {
+            if (!isUsableFishingWater(level, context, water) || HiredPathMemory.isAvoided(level, villager, water)
+                    || !SettlementFishingClaims.available(level, villager.getUUID(), water)) {
                 continue;
             }
 
@@ -568,6 +590,45 @@ public final class FishingWorker extends AbstractBlockWorker {
                 NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG,
                 gameTime + NO_FISHING_SPOT_SCAN_COOLDOWN_TICKS);
         return new FishingSpotSearch(null, true);
+    }
+
+    private FishingSpotSearch findSelectedFishingSpot(ServerLevel level, Villager villager, HiredWorkContext context,
+                                                       HiredFishingSpots preferences, FishingSpot remembered) {
+        int fingerprint = java.util.Objects.hash(preferences, context.workMin(), context.workMax());
+        if (context.state().getInt("FishingPreferredScanFingerprint") != fingerprint) {
+            context.state().remove("FishingPreferredScanCursor");
+            context.state().putInt("FishingPreferredScanFingerprint", fingerprint);
+        }
+        int cursor = Math.clamp(context.state().getInt("FishingPreferredScanCursor"), 0, preferences.positions().size());
+        int attempts = 0;
+        while (cursor < preferences.positions().size() && attempts++ < MAX_WATER_PATH_ATTEMPTS_PER_WORK_TICK) {
+            BlockPos water = preferences.positions().get(cursor++);
+            if (water.getX() < (long) context.workMin().getX() - WATER_SEARCH_MARGIN
+                    || water.getX() > (long) context.workMax().getX() + WATER_SEARCH_MARGIN
+                    || water.getY() < (long) context.workMin().getY() - WATER_SEARCH_MARGIN
+                    || water.getY() > (long) context.workMax().getY() + WATER_SEARCH_MARGIN
+                    || water.getZ() < (long) context.workMin().getZ() - WATER_SEARCH_MARGIN
+                    || water.getZ() > (long) context.workMax().getZ() + WATER_SEARCH_MARGIN
+                    || HiredPathMemory.isAvoided(level, villager, water)
+                    || !SettlementFishingClaims.available(level, villager.getUUID(), water)
+                    || !isUsableFishingWater(level, context, water)) continue;
+            FishingSpot spot = remembered != null && remembered.water().equals(water) ? remembered : null;
+            if (spot == null && canCastFromPosition(level, villager, context, villager.blockPosition(), water)) {
+                spot = new FishingSpot(water, villager.blockPosition());
+            }
+            if (spot == null) {
+                BlockPos approach = bestApproach(level, villager, context, water);
+                if (approach != null) spot = new FishingSpot(water, approach);
+            }
+            if (spot != null) {
+                context.state().remove("FishingPreferredScanCursor");
+                return new FishingSpotSearch(spot, true);
+            }
+        }
+        boolean complete = cursor >= preferences.positions().size();
+        if (complete) context.state().remove("FishingPreferredScanCursor");
+        else context.state().putInt("FishingPreferredScanCursor", cursor);
+        return new FishingSpotSearch(null, complete);
     }
 
     private FishingSpot rememberedFishingSpot(ServerLevel level, HiredWorkContext context) {
@@ -663,6 +724,12 @@ public final class FishingWorker extends AbstractBlockWorker {
 
     private static boolean hasClearCastLineTo(ServerLevel level, BlockPos approach, Vec3 target) {
         Vec3 start = new Vec3(approach.getX() + 0.5D, approach.getY() + 1.4D, approach.getZ() + 0.5D);
+        BlockPos end = BlockPos.containing(target);
+        for (int x = Math.min(approach.getX(), end.getX()) >> 4; x <= Math.max(approach.getX(), end.getX()) >> 4; x++) {
+            for (int z = Math.min(approach.getZ(), end.getZ()) >> 4; z <= Math.max(approach.getZ(), end.getZ()) >> 4; z++) {
+                if (level.getChunkSource().getChunkNow(x, z) == null) return false;
+            }
+        }
         BlockHitResult hit = level.clip(new ClipContext(start, target, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty()));
         return hit.getType() == HitResult.Type.MISS;
     }
