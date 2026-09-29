@@ -520,6 +520,48 @@ public final class SettlementBackgroundCraftingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void personalAndCivicAdaptersProduceEquivalentRecipeRemainders(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.KITCHEN, Items.CAKE, fixture -> {
+            var level = helper.getLevel();
+            List<ItemStack> ingredients = List.of(new ItemStack(Items.MILK_BUCKET), new ItemStack(Items.MILK_BUCKET),
+                    new ItemStack(Items.MILK_BUCKET), new ItemStack(Items.SUGAR, 2), new ItemStack(Items.EGG), new ItemStack(Items.WHEAT, 3));
+            var position = helper.absolutePos(new BlockPos(2, 2, 2));
+            var previous = level.getBlockState(position);
+            var personal = EntityType.VILLAGER.create(level);
+            personal.setPos(position.getCenter());
+            try {
+                level.setBlockAndUpdate(position, Blocks.CRAFTING_TABLE.defaultBlockState());
+                com.jvn.villagerretaliation.interaction.HiredWorkArea.fromBounds(position, position, true)
+                        .save(HiredWorkStateStore.state(personal));
+                var session = com.jvn.villagerretaliation.interaction.HiredWorkSession.create(level, personal,
+                        com.jvn.villagerretaliation.interaction.HiredVillagerRole.COOK);
+                for (int index = 0; index < ingredients.size(); index++) {
+                    fixture.supply().setItem(index, ingredients.get(index).copy());
+                    helper.assertTrue(session.inventory().insertPlainSupply(ingredients.get(index).copy()).isEmpty(), "personal ingredients fit");
+                }
+                var recipe = (net.minecraft.world.item.crafting.CraftingRecipe) level.getRecipeManager().byKey(id("cake")).orElseThrow().value();
+                helper.assertTrue(com.jvn.villagerretaliation.interaction.work.HiredSupplyCrafting
+                        .craftCarriedRecipeToOutputsWithStations(level, session.context(), recipe), "the personal recipe commits");
+                SettlementBackgroundService.update(level, fixture.town(), 200L);
+                for (Item item : List.of(Items.CAKE, Items.BUCKET, Items.MILK_BUCKET, Items.SUGAR, Items.EGG, Items.WHEAT)) {
+                    int personalCount = 0;
+                    for (int slot = 0; slot < session.inventory().getContainerSize(); slot++) {
+                        var stack = session.inventory().getItem(slot);
+                        if (stack.is(item)) personalCount += stack.getCount();
+                    }
+                    helper.assertValueEqual(carried(helper, fixture, item), personalCount, "both adapters preserve the same actual outputs and remainders: " + item);
+                }
+                helper.assertTrue(fixture.supply().isEmpty(), "the civic adapter consumes exactly the same recipe inputs");
+                helper.assertFalse(com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(personal),
+                        "personal inventory crafting does not acquire civic authority");
+            } finally {
+                level.setBlockAndUpdate(position, previous);
+                personal.discard();
+            }
+        });
+    }
+
     private static HiredProductionQueue production(Fixture fixture) {
         fixture.town().setWorksitePlan(fixture.town().leader(), fixture.area().id(), SettlementWorksitePlan.defaults(fixture.area().type().role()));
         return fixture.town().beginProduction(fixture.town().leader(), fixture.area().id());
