@@ -26,6 +26,7 @@ public final class SettlementProject {
     private boolean paymentEarned;
     private boolean paymentDelivered;
     private boolean paymentRefunded;
+    private SettlementConstructionCrew crew;
 
     boolean settled(SettlementResidentState resident) {
         return !active() && (this.site == null || !this.site.unsettled())
@@ -191,7 +192,29 @@ public final class SettlementProject {
     }
 
     public int placed() {
-        return this.task.getInt("PlacedIndex");
+        return this.crew == null ? this.task.getInt("PlacedIndex") : this.crew.placed();
+    }
+
+    public int priority() { return this.crew == null ? 5 : this.crew.priority(); }
+    public long crewRevision() { return this.crew == null ? 0L : this.crew.revision(); }
+    public java.util.List<UUID> assistants() { return this.crew == null ? java.util.List.of() : this.crew.assistants(); }
+    public boolean includes(UUID worker) { return this.builder.equals(worker) || this.crew != null && this.crew.includes(worker); }
+    SettlementConstructionCrew crew() { return this.crew; }
+
+    boolean configureCrew(long expected, int priority, java.util.List<UUID> assistants) {
+        if (!active()) return false;
+        var next = this.crew == null ? new SettlementConstructionCrew(this.builder, total(), this.task.getInt("PlacedIndex")) : this.crew;
+        if (!next.configure(expected, priority, assistants)) return false;
+        this.crew = next;
+        return true;
+    }
+
+    boolean detachAssistant(UUID worker) { return this.crew != null && this.crew.detach(worker); }
+
+    boolean refreshProgress(java.util.function.IntPredicate matches) {
+        if (this.crew == null || !this.crew.refresh(matches)) return false;
+        this.task.putInt("PlacedIndex", this.crew.next());
+        return true;
     }
 
     public int total() {
@@ -244,7 +267,8 @@ public final class SettlementProject {
     }
 
     boolean observe(CompoundTag state) {
-        CompoundTag next = state.getCompound(BuilderTaskState.TASK_TAG);
+        CompoundTag next = state.getCompound(BuilderTaskState.TASK_TAG).copy();
+        if (this.crew != null) next.putInt("PlacedIndex", this.crew.next());
         if (!active() || next.equals(this.task) || !id.equals(BuilderTaskState.jobId(state).orElse(null))) {
             return false;
         }
@@ -257,7 +281,9 @@ public final class SettlementProject {
             return false;
         }
         this.status = status;
+        if (this.crew != null) this.crew.releaseAll();
         if (status == Status.COMPLETED) {
+            if (this.crew != null) this.crew.refresh(ignored -> true);
             this.task.putInt("PlacedIndex", total());
             this.task.remove("BlockedReason");
         }
@@ -285,6 +311,7 @@ public final class SettlementProject {
         tag.putBoolean("PaymentEarned", this.paymentEarned);
         tag.putBoolean("PaymentDelivered", this.paymentDelivered);
         tag.putBoolean("PaymentRefunded", this.paymentRefunded);
+        if (this.crew != null) tag.put("Crew", this.crew.save());
         return tag;
     }
 
@@ -295,6 +322,10 @@ public final class SettlementProject {
         var project = new SettlementProject(tag.getUUID("Id"), tag.getUUID("Area"), tag.getUUID("Builder"),
                 BlockPos.of(tag.getLong("Min")), BlockPos.of(tag.getLong("Max")), tag.getCompound("Task"),
                 Status.valueOf(tag.getString("Status")));
+        if (tag.contains("Crew")) {
+            if (!tag.contains("Crew", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid construction crew");
+            project.crew = SettlementConstructionCrew.load(tag.getCompound("Crew"), project.builder, project.total(), project.task.getInt("PlacedIndex"));
+        }
         project.fee = tag.getInt("Fee");
         project.paymentEarned = tag.getBoolean("PaymentEarned");
         project.paymentDelivered = tag.getBoolean("PaymentDelivered");

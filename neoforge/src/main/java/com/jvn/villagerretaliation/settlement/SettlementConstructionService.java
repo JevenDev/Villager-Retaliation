@@ -266,6 +266,31 @@ public final class SettlementConstructionService {
         return care != null && care.availableForWork() ? care.context(level) : null;
     }
 
+    public static boolean configureCrew(ServerPlayer player, SettlementRecord town, UUID projectId, long revision,
+                                        int priority, List<UUID> assistants) {
+        if (!canBuild(player, town) || !town.permits(player.getUUID(), SettlementPermission.STAFF)
+                || SettlementSavedData.get(player.serverLevel()).readOnly()
+                || SettlementSavedData.get(player.serverLevel()).get(town.id()).orElse(null) != town
+                || assistants == null || assistants.size() >= SettlementConstructionCrew.MAX_MEMBERS) return false;
+        var project = town.projects().get(projectId);
+        if (project == null || !project.active() || project.crewRevision() != revision
+                || project.workplace() == null && !town.worksitePlans().containsKey(project.area())) return false;
+        for (var id : assistants) {
+            if (id == null) return false;
+            var home = town.workplace(town.duties().get(id));
+            var settings = town.effectiveWorkerSettings(id);
+            var builder = resolveBuilder(player.serverLevel(), town, id);
+            if (home == null || home.type() != SettlementAreaType.CONSTRUCTION || !home.enabled()
+                    || !town.worksitePlans().containsKey(home.id()) || builder == null || !builder.isAlive() || builder.isBaby()
+                    || VillagerDownedService.isDowned(builder) || SettlementWorkforceService.hasPersonalCommitment(builder)
+                    || !HiredVillagerRoles.availableRoles(player.serverLevel(), builder).contains(HiredVillagerRole.BUILDER)
+                    || settings != null && settings.options().get(SettlementWorkerSetting.ENABLED) != 1) return false;
+        }
+        if (!project.configureCrew(revision, priority, assistants)) return false;
+        town.changed();
+        return true;
+    }
+
     public static boolean cancel(ServerPlayer player, SettlementRecord town, UUID projectId) {
         var project = town.projects().get(projectId);
         if (!canBuild(player, town) || project == null || !project.active()) {

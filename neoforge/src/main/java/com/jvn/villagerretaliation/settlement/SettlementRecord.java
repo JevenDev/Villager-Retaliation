@@ -685,6 +685,13 @@ public final class SettlementRecord {
         return this.projects.values().stream().filter(project -> project.active() && project.builder().equals(builder)).findFirst().orElse(null);
     }
 
+    public SettlementProject assignedProject(UUID worker) {
+        return this.projects.values().stream().filter(project -> project.active() && project.includes(worker))
+                .sorted(java.util.Comparator.comparingInt(SettlementProject::priority).reversed()
+                        .thenComparingLong(project -> project.state().getCompound(com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState.TASK_TAG).getLong("StartedGameTime"))
+                        .thenComparing(SettlementProject::id)).findFirst().orElse(null);
+    }
+
     boolean startProject(UUID actor, SettlementProject project) {
         var area = project.workplace() == null ? workplace(project.area()) : project.workplace();
         if (!permits(actor, SettlementPermission.BUILD) || !project.active() || !project.town().equals(this.id.value())
@@ -735,6 +742,7 @@ public final class SettlementRecord {
     }
 
     private void cancelProjects(UUID builder) {
+        for (var other : this.projects.values()) if (other.active() && other.detachAssistant(builder)) changed();
         var project = activeProject(builder);
         if (project != null) {
             finishProject(project.id(), SettlementProject.Status.CANCELLED);
@@ -1624,6 +1632,15 @@ public final class SettlementRecord {
                     || project.reservesFootprint() && record.projects.values().stream().anyMatch(existing -> existing != project
                             && existing.reservesFootprint() && existing.overlaps(project))) {
                 throw new IllegalArgumentException("Construction project overlaps reserved work or has no matching duty");
+            }
+        }
+        for (var project : record.projects.values()) {
+            if (!project.active()) continue;
+            for (var assistant : project.assistants()) {
+                var home = record.workplace(record.duties.get(assistant));
+                if (home == null || home.type() != SettlementAreaType.CONSTRUCTION || !record.worksitePlans.containsKey(home.id())) {
+                    throw new IllegalArgumentException("Construction assistant has no adopted construction assignment");
+                }
             }
         }
         for (Tag raw : tag.getList("Depots", Tag.TAG_COMPOUND)) {
