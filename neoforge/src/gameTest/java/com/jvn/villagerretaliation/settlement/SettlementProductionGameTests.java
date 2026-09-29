@@ -277,6 +277,37 @@ public final class SettlementProductionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "production_authority")
+    public static void unfinishedProductionPreventsWorksiteDeletionAndRepurposing(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        var area = fixture.area();
+        town.setWorksitePlan(town.leader(), area.id(), SettlementWorksitePlan.defaults(HiredVillagerRole.CRAFTSMAN));
+        var queue = town.beginProduction(town.leader(), area.id());
+        var order = sticks(helper);
+        queue.append(order);
+        var worker = UUID.randomUUID();
+        town.assignDuty(worker, area.id());
+        var allocation = queue.reserve(worker, order.id(), 4, 1, 0L, area.min());
+        queue.start(allocation.id());
+        town.removeDuty(worker);
+        long revision = town.revision();
+        helper.assertFalse(town.removeArea(town.leader(), area.id()), "deletion cannot discard an unfinished batch");
+        var replacement = new SettlementArea(area.id(), SettlementAreaType.KITCHEN, area.name(), area.min(), area.max(), area.priority(), area.enabled());
+        helper.assertFalse(town.putArea(town.leader(), replacement), "repurposing cannot discard an unfinished batch");
+        helper.assertValueEqual(town.revision(), revision, "rejected edits leave the worksite unchanged");
+        var restored = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+        var resumed = restored.productionQueues().get(area.id());
+        var successor = UUID.randomUUID();
+        restored.assignDuty(successor, area.id());
+        helper.assertTrue(resumed.resume(allocation.id(), successor), "replacement staff can recover the original receipt");
+        helper.assertTrue(resumed.complete(allocation.id(), new ItemStack(Items.STICK, 4)), "the pending output settles once");
+        restored.removeDuty(successor);
+        helper.assertTrue(restored.putArea(restored.leader(), replacement), "settled production permits repurposing");
+        helper.assertTrue(restored.removeArea(restored.leader(), area.id()), "settled production permits deletion");
+        helper.succeed();
+    }
+
     private static HiredProductionOrder sticks(GameTestHelper helper) {
         return HiredProductionOrder.create(helper.getLevel(), HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("stick"), Map.of()),
                 HiredProductionOrder.Mode.BATCH, 12, null);

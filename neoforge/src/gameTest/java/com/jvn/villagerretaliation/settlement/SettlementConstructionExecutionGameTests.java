@@ -37,6 +37,9 @@ public final class SettlementConstructionExecutionGameTests {
         SettlementBackgroundConstructionGameTests.fixture(helper, false, blocks, fixture -> {
             var second = UUID.randomUUID();
             var third = UUID.randomUUID();
+            fixture.town().setWorksitePlan(fixture.town().leader(), fixture.area().id(), SettlementWorksitePlan.defaults(HiredVillagerRole.BUILDER));
+            fixture.town().assignDuty(second, fixture.area().id());
+            fixture.town().assignDuty(third, fixture.area().id());
             fixture.project().configureCrew(0L, 5, List.of(second, third));
             var view = new SettlementConstructionView(helper.getLevel(), fixture.site());
             int first = SettlementConstructionCoordination.select(fixture.town(), fixture.project(), fixture.builder().getUUID(), fixture.plan(), view, 0L);
@@ -273,6 +276,26 @@ public final class SettlementConstructionExecutionGameTests {
             helper.assertValueEqual(project.status(), SettlementProject.Status.COMPLETED,
                     "reloaded workers cannot deadlock by claiming placements that need each other's carried materials");
             helper.assertValueEqual(project.site().placements().size(), 2, "each carried material funds exactly one placement");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "construction_execution")
+    public static void deletingTheHomeWorksiteDetachesAssistingBuildersAcrossReload(GameTestHelper helper) {
+        SettlementBackgroundConstructionGameTests.fixture(helper, false, planks(), fixture -> {
+            var assistant = assistant(helper, fixture);
+            var worker = fixture.town().workers().get(assistant.getUUID());
+            fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+            SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 400, 1.0D);
+            helper.assertTrue(fixture.project().crew().claim(assistant.getUUID(), helper.getLevel().getGameTime()) != null,
+                    "the assistant holds a pending placement");
+            helper.assertTrue(fixture.town().removeArea(fixture.town().leader(), worker.area()), "the separate home worksite can be deleted");
+            helper.assertTrue(fixture.project().active() && fixture.project().assistants().isEmpty(), "deleting the home detaches only its assistant");
+            helper.assertTrue(fixture.project().crew().claim(assistant.getUUID(), helper.getLevel().getGameTime()) == null,
+                    "home deletion releases claims at other worksites");
+            helper.assertValueEqual(carried(helper, worker) + fixture.depot().count(stack -> stack.is(Items.OAK_PLANKS)), 4,
+                    "collected materials remain conserved");
+            var restored = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+            helper.assertTrue(restored.projects().get(fixture.project().id()).active(), "the settlement remains valid after saving");
         });
     }
 

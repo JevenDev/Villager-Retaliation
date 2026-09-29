@@ -1051,6 +1051,9 @@ public final class SettlementRecord {
         var transfers = this.transferQueues.get(area.id());
         if (transfers != null && this.areas.get(area.id()) != null && this.areas.get(area.id()).type() != area.type()
                 && transfers.allocations().stream().anyMatch(com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Allocation::started)) return false;
+        var production = this.productionQueues.get(area.id());
+        if (production != null && this.areas.get(area.id()) != null && this.areas.get(area.id()).type() != area.type()
+                && production.allocations().stream().anyMatch(com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue.Allocation::started)) return false;
         SettlementArea previous = this.areas.put(area.id(), area);
         if (previous != null && previous.type() != area.type()) {
             this.worksitePlans.remove(area.id());
@@ -1073,13 +1076,14 @@ public final class SettlementRecord {
                 || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area))
                 || this.transferQueues.containsKey(area) && this.transferQueues.get(area).allocations().stream()
                         .anyMatch(com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Allocation::started)
+                || this.productionQueues.containsKey(area) && this.productionQueues.get(area).allocations().stream()
+                        .anyMatch(com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue.Allocation::started)
                 || this.areas.remove(area) == null) {
             return false;
         }
         this.projects.values().stream().filter(project -> project.active() && project.area().equals(area))
                 .forEach(project -> finishProject(project.id(), SettlementProject.Status.CANCELLED));
-        this.duties.entrySet().stream().filter(duty -> duty.getValue().equals(area)).map(Map.Entry::getKey).forEach(this::cancelBrewing);
-        this.duties.values().removeIf(area::equals);
+        this.duties.entrySet().stream().filter(duty -> duty.getValue().equals(area)).map(Map.Entry::getKey).toList().forEach(this::removeDuty);
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.surveys.remove(area);
