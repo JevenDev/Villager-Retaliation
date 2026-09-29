@@ -691,7 +691,8 @@ public final class VillagerReputationNetworking {
                             player,
                             payload.villagerId(),
                             payload.action(),
-                            payload.steps()
+                            payload.steps(),
+                            payload.quantity()
                     )))
         );
         network.playToServer(

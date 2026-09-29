@@ -555,6 +555,24 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 14;
         } else if (phase == 14 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30) {
+            var targets = java.util.List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(fixture.resident(), null));
+            var form = new SettlementTemporaryTaskScreen(screen, targets,
+                    com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FARM_PATCH,
+                    fixture.center(), fixture.center().offset(3, 2, 3), true);
+            SettlementViewClient.openPanels(screen);
+            minecraft.setScreen(form);
+            phase = 107;
+        } else if (phase == 107 && minecraft.screen instanceof SettlementTemporaryTaskScreen screen) {
+            requireButtonsFit(screen);
+            var personal = new com.jvn.villagerretaliation.client.inventory.ClipboardFishingTaskScreen(screen, fixture.resident(), true);
+            personal.init(minecraft, screen.width, screen.height);
+            requireButtonsFit(personal);
+            capture("temporary-task-picker");
+            screen.onClose();
+            ticks = 0;
+            phase = 108;
+        } else if (phase == 108 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            require(minecraft.getCameraEntity() != minecraft.player, "closing the task picker preserves the settlement camera");
             button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
             dragWorld(screen, Vec3.atBottomCenterOf(fixture.center().offset(7, 0, 7)),
                     Vec3.atBottomCenterOf(fixture.center().offset(9, 0, 9)));

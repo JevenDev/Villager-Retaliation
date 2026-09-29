@@ -118,6 +118,14 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return guideFieldWork(level, villager, context);
     }
 
+    @Override
+    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+        clearFieldScanState(context);
+        context.state().remove(NEXT_FIELD_SCAN_GAME_TIME_TAG);
+        clearSecondaryJobSite(villager);
+        super.stop(level, villager, context);
+    }
+
     private WorkResult guideFieldWork(ServerLevel level, Villager villager, HiredWorkContext context) {
         BlockPos jobSite = HiredVillagerWorkService.claimedJobSitePos(level, villager);
         BlockPos currentFieldTarget = currentFieldWalkTarget(level, villager, context, jobSite);
@@ -147,6 +155,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
         FieldSearchResult harvestSearch = HiredFarmingOptions.harvestCrops(context.state())
                 ? findNextFieldTarget(level, villager, context, jobSite, true) : new FieldSearchResult(null, false);
+        if (harvestSearch.blocked()) return WorkResult.idle("interaction.work.temporary.target_blocked");
         if (harvestSearch.scanInProgress()) {
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
             return WorkResult.progressed("interaction.work.farming.searching_scan");
@@ -157,6 +166,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
         if (HiredFarmingOptions.tillSoil(context.state()) && context.hasWorkArea()) {
             FieldSearchResult tillSearch = findNextTillTarget(level, villager, context, hoe);
+            if (tillSearch.blocked()) return WorkResult.idle("interaction.work.temporary.target_blocked");
             if (tillSearch.scanInProgress()) {
                 setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
                 return WorkResult.progressed("interaction.work.farming.searching_scan");
@@ -167,8 +177,10 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         if (HiredFarmingOptions.plantCrops(context.state()) && (HiredFarmingInventoryBridge.hasJobPlantingItem(villager, context)
-                || HiredFarmingOptions.crop(context.state()) != HiredFarmingOptions.Crop.ANY)) {
+                || HiredFarmingOptions.crop(context.state()) != HiredFarmingOptions.Crop.ANY
+                || com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.FARM_PATCH))) {
             FieldSearchResult plantSearch = findNextFieldTarget(level, villager, context, jobSite, false);
+            if (plantSearch.blocked()) return WorkResult.idle("interaction.work.temporary.target_blocked");
             if (plantSearch.scanInProgress()) {
                 setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
                 return WorkResult.progressed("interaction.work.farming.searching_scan");
@@ -190,6 +202,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
         clearSecondaryJobSite(villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
+        com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.finishPatch(context.state());
         return WorkResult.idle("interaction.work.farming.waiting_for_growth");
     }
 
@@ -234,6 +247,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             BlockPos target,
             String scanResult) {
+        if (HiredPathMemory.isReservedByOther(level, villager, target)) return WorkResult.idle("interaction.work.temporary.target_blocked");
+        HiredPathMemory.reserveTarget(level, villager, target);
         seedSecondaryJobSite(level, villager, target);
         HiredWorkerBrain.setLastTargetScanResult(context, scanResult);
         if (isInVanillaFieldWorkRange(villager, target)) {
@@ -400,6 +415,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             BlockPos soilTarget) {
+        if (HiredPathMemory.isReservedByOther(level, villager, soilTarget)) return WorkResult.idle("interaction.work.temporary.target_blocked");
+        HiredPathMemory.reserveTarget(level, villager, soilTarget);
         HiredWorkerBrain.setLastTargetScanResult(context, "till_target_found");
         BlockPos standTarget = soilTarget.above();
         if (!isInVanillaFieldWorkRange(villager, standTarget)) {
@@ -603,6 +620,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 context.state().remove(NEXT_FIELD_SCAN_GAME_TIME_TAG);
                 return FieldSearchResult.target(target);
             }
+            if (!scan.candidates().isEmpty() && com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(
+                    context.state(), HiredTemporaryTask.Kind.FARM_PATCH)) {
+                HiredWorkAreaScan.clearCursor(context, cursorTag);
+                return FieldSearchResult.blockedTarget();
+            }
             if (!scan.completedFullPass()) {
                 String phase = harvestOnly ? "harvest" : "plant";
                 HiredWorkerBrain.setLastTargetScanResult(context, "field_" + phase + "_scan_partial_" + scan.visitedPositions());
@@ -635,6 +657,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
             clearFieldScanState(context);
             context.state().remove(NEXT_FIELD_SCAN_GAME_TIME_TAG);
             return FieldSearchResult.target(target);
+        }
+        if (!scan.candidates().isEmpty() && com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(
+                context.state(), HiredTemporaryTask.Kind.FARM_PATCH)) {
+            HiredWorkAreaScan.clearCursor(context, FIELD_TILL_SCAN_CURSOR_TAG);
+            return FieldSearchResult.blockedTarget();
         }
         if (!scan.completedFullPass()) {
             HiredWorkerBrain.setLastTargetScanResult(context, "field_till_scan_partial_" + scan.visitedPositions());
@@ -700,7 +727,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (target == null) {
                 continue;
             }
-            if (HiredPathMemory.isAvoided(level, villager, target)
+            if (HiredPathMemory.isAvoided(level, villager, target) || HiredPathMemory.isReservedByOther(level, villager, target)
                     || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, target)) {
                 continue;
             }
@@ -726,7 +753,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (target == null) {
                 continue;
             }
-            if (HiredPathMemory.isAvoided(level, villager, target)
+            if (HiredPathMemory.isAvoided(level, villager, target) || HiredPathMemory.isReservedByOther(level, villager, target)
                     || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, target.above())) {
                 continue;
             }
@@ -1112,6 +1139,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
     }
 
     private static BlockPos returnTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.FARM_PATCH)) return context.workCenter();
         BlockPos jobSite = HiredVillagerWorkService.claimedJobSitePos(level, villager);
         return jobSite != null ? jobSite : context.workCenter();
     }
@@ -1122,7 +1150,10 @@ public final class FarmingWorker extends AbstractBlockWorker {
         SCANNING
     }
 
-    private record FieldSearchResult(BlockPos target, boolean scanInProgress) {
+    private record FieldSearchResult(BlockPos target, boolean scanInProgress, boolean blocked) {
+        FieldSearchResult(BlockPos target, boolean scanInProgress) { this(target, scanInProgress, false); }
+
+        static FieldSearchResult blockedTarget() { return new FieldSearchResult(null, false, true); }
         static FieldSearchResult target(BlockPos target) {
             return new FieldSearchResult(target, false);
         }

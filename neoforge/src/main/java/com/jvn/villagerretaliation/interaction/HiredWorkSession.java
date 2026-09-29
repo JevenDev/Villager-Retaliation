@@ -42,7 +42,8 @@ public record HiredWorkSession(
         HiredRoleWorker worker = HiredRoleWorkerRegistry.get(safeRole);
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         CachedMetadata metadata = metadata(level, villager, safeRole, state, inventory);
-        HiredWorkArea area = metadata.jobSite.workArea();
+        HiredJobSite jobSite = HiredTemporaryWorkService.jobSite(state, safeRole, metadata.jobSite);
+        HiredWorkArea area = jobSite.workArea();
         HiredRoute route = com.jvn.villagerretaliation.settlement.SettlementGuardService.route(villager, HiredRoute.fromState(state));
         int skillWorkSpeedPercent = HiredVillagerRoles.roleActionSpeedPercent(safeRole, metadata.roleScore);
         int transferCapacityPercent = HiredVillagerRoles.roleTransferCapacityPercent(safeRole, metadata.roleScore);
@@ -61,10 +62,10 @@ public record HiredWorkSession(
                 metadata.efficiency,
                 state.getBoolean("AutoDepositOutputs"),
                 state.getBoolean("UseAssignedStorageForSupplies"),
-                metadata.jobSite,
+                jobSite,
                 route);
         return new HiredWorkSession(state, safeRole, worker, inventory, metadata.maxRadius, area, route,
-                metadata.jobSite, metadata.efficiency, context);
+                jobSite, metadata.efficiency, context);
     }
 
     /** Uses cached efficiency for the early scheduling gate without constructing a full session. */

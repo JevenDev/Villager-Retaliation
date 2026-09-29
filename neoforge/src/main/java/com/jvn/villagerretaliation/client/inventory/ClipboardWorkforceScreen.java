@@ -2268,13 +2268,16 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_preview"),
                 ClipboardWorkAreaActionPayload.Action.PREVIEW);
-        y = drawJobSiteActionRow(
-                graphics,
-                mouseX,
-                mouseY,
-                y,
-                Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_apply_draft"),
-                ClipboardWorkAreaActionPayload.Action.APPLY_HELD_DRAFT);
+        if (com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.forRole(this.selectedWorker.role()) != null) {
+            y = drawJobSiteDirectionRow(graphics, mouseX, mouseY, y, Component.literal("Draft"),
+                    List.of(new JobSiteButton(Component.literal("Assign"), ClipboardWorkAreaActionPayload.Action.APPLY_HELD_DRAFT),
+                            new JobSiteButton(Component.literal("Task"), ClipboardWorkAreaActionPayload.Action.TEMPORARY_TASK),
+                            new JobSiteButton(Component.literal("Cancel"), ClipboardWorkAreaActionPayload.Action.CANCEL_TASKS)));
+        } else {
+            y = drawJobSiteActionRow(graphics, mouseX, mouseY, y,
+                    Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_apply_draft"),
+                    ClipboardWorkAreaActionPayload.Action.APPLY_HELD_DRAFT);
+        }
         y = drawJobSiteActionRow(
                 graphics,
                 mouseX,
@@ -2630,6 +2633,10 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private void requestWorkAreaAction(WorkerRow worker, ClipboardWorkAreaActionPayload.Action action) {
         if (worker == null || action == null) {
+            return;
+        }
+        if (action == ClipboardWorkAreaActionPayload.Action.TEMPORARY_TASK && worker.role() == HiredVillagerRole.FISHING) {
+            this.minecraft.setScreen(new ClipboardFishingTaskScreen(this, worker.villagerId(), hasShiftDown()));
             return;
         }
         PacketDistributor.sendToServer(new ClipboardWorkAreaActionPayload(worker.villagerId(), action, hasShiftDown() ? 5 : 1));

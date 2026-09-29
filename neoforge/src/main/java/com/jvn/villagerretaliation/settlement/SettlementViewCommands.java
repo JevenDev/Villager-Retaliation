@@ -88,6 +88,17 @@ final class SettlementViewCommands {
                 || request.order().points().stream().anyMatch(session.level::isOutsideBuildHeight))) {
             return new Outcome(id, Status.FAILED, "Route leaves settlement or world bounds");
         }
+        if (request.action() == SettlementViewAction.TEMPORARY_TASK || request.action() == SettlementViewAction.CANCEL_TASKS) {
+            if (!java.util.Objects.equals(target.expectedArea(), town.duties().get(id))) {
+                return new Outcome(id, Status.FAILED, "Assignment changed since review");
+            }
+            if (workplace == null || request.task() != null && request.task().kind().role() != workplace.type().role()) {
+                return new Outcome(id, Status.SKIPPED, "Incompatible workplace role");
+            }
+            if (!(session.level.getEntity(id) instanceof Villager villager)) return new Outcome(id, Status.FAILED, "Worker is not loaded");
+            String reason = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.submit(player, villager, request.task(), request.append());
+            return new Outcome(id, reason.isEmpty() ? Status.APPLIED : Status.FAILED, reason.isEmpty() ? "Applied" : reason);
+        }
         if (request.action() == SettlementViewAction.ASSIGN) {
             if (!java.util.Objects.equals(target.expectedArea(), town.duties().get(id))) {
                 return new Outcome(id, Status.FAILED, "Assignment changed since review");

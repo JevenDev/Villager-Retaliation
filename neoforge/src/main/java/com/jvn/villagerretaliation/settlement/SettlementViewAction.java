@@ -11,7 +11,9 @@ public enum SettlementViewAction {
     RETURN("Return to post", null),
     ENABLE("Enable work", null),
     PAUSE("Pause work", null),
-    ASSIGN("Assign to area", null);
+    ASSIGN("Assign to area", null),
+    TEMPORARY_TASK("Temporary task", null),
+    CANCEL_TASKS("Cancel temporary tasks", null);
 
     private final String label;
     private final SettlementGuardOrder.Mode targeting;
@@ -28,6 +30,8 @@ public enum SettlementViewAction {
 
     public boolean eligible(SettlementManagementPayload.Resident resident, SettlementManagementPayload.Area workplace) {
         if (resident == null || resident.baby()) return false;
+        if (this == TEMPORARY_TASK || this == CANCEL_TASKS) return workplace != null
+                && com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.forRole(workplace.kind().role()) != null;
         if (this == ASSIGN) return workplace != null && workplace.kind().role() != null && resident.roles().contains(workplace.kind().role());
         return workplace != null && workplace.kind().role() != null && (!guard() || workplace.kind() == SettlementAreaType.GUARD_POST);
     }
@@ -37,6 +41,7 @@ public enum SettlementViewAction {
             case MOVE, PATROL, DEFEND, RETURN -> SettlementGuardService.command(player, town, resident, order);
             case ENABLE, PAUSE -> SettlementWorkerConfigurationService.setEnabled(player, town, resident, town.duties().get(resident), this == ENABLE);
             case ASSIGN -> SettlementWorkforceService.assignResident(player.serverLevel(), player, town.id(), resident, area);
+            case TEMPORARY_TASK, CANCEL_TASKS -> false;
         };
     }
 }

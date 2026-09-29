@@ -174,6 +174,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
             }
+            com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.finishExcavation(level, context);
             if (depositResult != DepositResult.UNAVAILABLE && isExcavationComplete(level, context, mode)) {
                 setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
                 return WorkResult.completed(excavationResultStatusKey(depositResult, "completed_excavation"));

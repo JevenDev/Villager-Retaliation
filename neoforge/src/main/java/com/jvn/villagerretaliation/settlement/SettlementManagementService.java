@@ -288,6 +288,11 @@ public final class SettlementManagementService {
                     : Math.abs((long) position.getX() - town.center().getX()) <= radius
                         && Math.abs((long) position.getZ() - town.center().getZ()) <= radius ? Presence.HERE : Presence.AWAY;
             var work = residentWork(level, town, member.id(), villager, worker);
+            String temporary = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.summary(villager != null
+                    ? com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager)
+                    : worker == null ? new net.minecraft.nbt.CompoundTag() : worker.settings());
+            String diagnostic = temporary.isEmpty() ? work.diagnostic() : temporary + (work.diagnostic().isEmpty() ? "" : " | " + work.diagnostic());
+            diagnostic = diagnostic.substring(0, Math.min(180, diagnostic.length()));
             entries.add(new SettlementManagementPayload.Resident(member.id(),
                     display(villager == null ? social.knownName(member.id()).orElse("") : VillagerPresetNameRegistry.resolveDisplayName(villager).getString()),
                     profession, villager == null ? !member.adult() : villager.isBaby(), presence, position, town.duties().get(member.id()),
@@ -296,7 +301,7 @@ public final class SettlementManagementService {
                     work.status(),
                     villager == null ? care == null ? List.of() : care.availableRoles(level) : HiredVillagerRoles.availableRoles(level, villager),
                     town.guardOrders().get(member.id()), detailed ? SettlementWorkerConfigurationService.snapshot(level, town, member.id()) : null,
-                    detailed ? SettlementBrewingService.snapshot(level, town, member.id()) : null, work.diagnostic(), town.manuallyStaffed(member.id()),
+                    detailed ? SettlementBrewingService.snapshot(level, town, member.id()) : null, diagnostic, town.manuallyStaffed(member.id()),
                     town.worksitePlans().containsKey(town.duties().get(member.id()))));
         }
     }

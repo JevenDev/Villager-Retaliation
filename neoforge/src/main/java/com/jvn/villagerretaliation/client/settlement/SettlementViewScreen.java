@@ -813,6 +813,28 @@ public final class SettlementViewScreen extends Screen {
         } else sendBatch(request);
     }
 
+    void submitTemporaryTask(List<SettlementViewBatchPayload.Target> targets,
+                             com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask task, boolean append) {
+        if (this.commands.busy()) return;
+        sendBatch(new SettlementViewBatchPayload(this.session, UUID.randomUUID(), SettlementViewAction.TEMPORARY_TASK,
+                targets, null, null, task, append));
+    }
+
+    private void openTemporaryTaskPicker() {
+        var min = com.jvn.villagerretaliation.interaction.HiredWorkArea.minPos(this.dragStart, this.dragEnd);
+        var max = com.jvn.villagerretaliation.interaction.HiredWorkArea.maxPos(this.dragStart, this.dragEnd).above(2);
+        var targets = this.selection.residents().stream().map(id -> new SettlementViewBatchPayload.Target(id,
+                this.roster.containsKey(id) ? this.roster.get(id).area() : null)).toList();
+        var kind = targets.stream().map(target -> this.areas.get(target.expectedArea())).filter(java.util.Objects::nonNull)
+                .map(area -> com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.forRole(area.kind().role()))
+                .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+        boolean append = shiftDown();
+        enterMode(Mode.SELECT);
+        if (kind == null || targets.isEmpty()) return;
+        SettlementViewClient.openPanels(this);
+        this.minecraft.setScreen(new SettlementTemporaryTaskScreen(this, targets, kind, min, max, append));
+    }
+
     private void sendBatch(SettlementViewBatchPayload request) {
         this.commands.sent(request, Util.getMillis());
         this.assignmentReview = null;
@@ -837,7 +859,12 @@ public final class SettlementViewScreen extends Screen {
     }
 
     private void executeAction(SettlementViewAction action) {
-        if (action == SettlementViewAction.ASSIGN) openActionPopup(SettlementViewPopup.Kind.ASSIGN);
+        if (action == SettlementViewAction.TEMPORARY_TASK) {
+            enterMode(Mode.TASK_AREA);
+            this.guardFeedback = Component.literal("Drag task bounds. Shift appends. Right-click cancels");
+            updateActions();
+        }
+        else if (action == SettlementViewAction.ASSIGN) openActionPopup(SettlementViewPopup.Kind.ASSIGN);
         else if (action.targeting() != null) { this.popup = null; beginGuardOrder(action.targeting()); }
         else submitBatch(action, null, null);
     }
@@ -1170,6 +1197,12 @@ public final class SettlementViewScreen extends Screen {
             updateActions();
             return true;
         }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.interaction.is(Mode.TASK_AREA)) {
+            enterMode(Mode.SELECT);
+            this.guardFeedback = Component.empty();
+            updateActions();
+            return true;
+        }
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             openContext(pick(x, y), x, y);
             return true;
@@ -1178,6 +1211,11 @@ public final class SettlementViewScreen extends Screen {
         var draft = this.parent.buildingDraft();
         if (this.gizmo != null && (draft == null || draft.placed) && this.gizmo.begin(ray(x, y))) return true;
         var hit = pick(x, y);
+        if (this.interaction.is(Mode.TASK_AREA)) {
+            this.dragStart = hit.position();
+            this.dragEnd = hit.position();
+            return true;
+        }
         if (draft != null) {
             if (hit.position() != null) {
                 draft.move(hit.position().above());
@@ -1236,7 +1274,8 @@ public final class SettlementViewScreen extends Screen {
             this.gizmo.drag(ray(Math.min(x, this.panelLeft - 1), y)).ifPresent(this::adjustGizmo);
             return true;
         }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.interaction.is(Mode.DRAW_AREA) && this.dragStart != null) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && (this.interaction.is(Mode.DRAW_AREA)
+                || this.interaction.is(Mode.TASK_AREA)) && this.dragStart != null) {
             BlockPos position = pick(Math.min(x, this.panelLeft - 1), y).position();
             if (position != null) {
                 this.dragEnd = position;
@@ -1264,6 +1303,10 @@ public final class SettlementViewScreen extends Screen {
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) this.panning = false;
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.gizmo != null && this.gizmo.dragging()) {
             this.gizmo.end();
+            return true;
+        }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.interaction.is(Mode.TASK_AREA) && this.dragStart != null && this.dragEnd != null) {
+            openTemporaryTaskPicker();
             return true;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.interaction.is(Mode.DRAW_AREA) && this.dragStart != null && this.dragEnd != null) {
@@ -1381,6 +1424,11 @@ public final class SettlementViewScreen extends Screen {
                             issue ? 1 : paused ? 0.8F : 0.3F, issue ? 0.35F : 0.8F, 0.3F, 0.8F);
                 }
             }
+        }
+        if (this.interaction.is(Mode.TASK_AREA) && this.dragStart != null && this.dragEnd != null) {
+            var min = com.jvn.villagerretaliation.interaction.HiredWorkArea.minPos(this.dragStart, this.dragEnd);
+            var max = com.jvn.villagerretaliation.interaction.HiredWorkArea.maxPos(this.dragStart, this.dragEnd).above(2);
+            LevelRenderer.renderLineBox(pose, lines, new SettlementViewBounds(min, max).box(), 0.3F, 0.9F, 0.6F, 0.8F);
         }
         if (this.interaction.is(Mode.DRAW_AREA) && this.dragStart != null && this.dragEnd != null) {
             LevelRenderer.renderLineBox(pose, lines, draftBounds(), 0.62F, 0.72F, 0.78F, 0.65F);

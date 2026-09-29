@@ -107,6 +107,7 @@ public final class HiredVillagerWorkService {
         }
         HiredVillagerContractService.expireHireContractIfNeeded(level, villager);
         VillagerWorkAuthority contract = VillagerWorkAuthority.resolve(level, villager);
+        HiredTemporaryWorkService.validate(level, villager, contract);
         if (!contract.active()) {
             return;
         }
@@ -181,6 +182,10 @@ public final class HiredVillagerWorkService {
             return;
         }
         session.state().remove(DISABLED_WORK_PAUSED_TAG);
+        if (!HiredTemporaryWorkService.ready(level, session)) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            return;
+        }
         if (session.role() == HiredVillagerRole.FARMING) {
             VillagerTaskNavigationUtil.enableHiredFarmingWaterTraversal(villager);
         } else {
@@ -222,6 +227,7 @@ public final class HiredVillagerWorkService {
         }
         HiredWorkSkillGrowthService.onPractice(
                 level, villager, hirer, session.role(), session.state(), result.practice());
+        HiredTemporaryWorkService.completed(level, villager, session, result);
         if (result.completed()) {
             if (hirer != null) {
                 VillagerReputationAdvancements.onHiredAssignmentCompleted(hirer, villager);

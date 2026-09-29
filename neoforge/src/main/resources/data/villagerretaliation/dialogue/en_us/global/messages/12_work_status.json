@@ -10,6 +10,30 @@
   },
   "messages": [
     {
+      "key": "interaction.work.temporary.unloaded",
+      "lines": [
+        "My temporary task is waiting for the area to be loaded.",
+        "I cannot inspect the full task area yet.",
+        "I will continue once the task area is available."
+      ]
+    },
+    {
+      "key": "interaction.work.temporary.invalid",
+      "lines": [
+        "My saved task queue needs to be cancelled and replaced.",
+        "I cannot read the temporary task queue.",
+        "Please cancel this queue before assigning another temporary task."
+      ]
+    },
+    {
+      "key": "interaction.work.temporary.target_blocked",
+      "lines": [
+        "The remaining targets are occupied or unreachable.",
+        "I am waiting for access to the remaining task targets.",
+        "I cannot finish this patch until its remaining targets are available."
+      ]
+    },
+    {
       "key": "interaction.work.status.none",
       "lines": [
         "Nothing needs doing just now.",

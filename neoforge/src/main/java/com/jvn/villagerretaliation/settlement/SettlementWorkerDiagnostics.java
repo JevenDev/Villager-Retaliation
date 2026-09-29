@@ -25,6 +25,8 @@ public final class SettlementWorkerDiagnostics {
 
     public static String describe(String status) {
         return switch (status) {
+            case "temporary_task_unloaded" -> "Temporary work waits for the worker and task area to be loaded.";
+            case "temporary_task_invalid" -> "Cancel the damaged temporary queue before issuing another task.";
             case "missing_hoe" ->
                     "Farmer needs a hoe in job gear or a supply depot.";
             case "missing_rod" ->

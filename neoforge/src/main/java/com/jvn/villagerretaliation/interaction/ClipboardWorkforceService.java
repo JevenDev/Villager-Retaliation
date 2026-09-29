@@ -1173,6 +1173,8 @@ public final class ClipboardWorkforceService {
     }
 
     private static String workModeText(HiredVillagerRole role, net.minecraft.nbt.CompoundTag state) {
+        String temporary = HiredTemporaryWorkService.summary(state);
+        if (!temporary.isEmpty()) return temporary;
         return switch (role) {
             case MINING -> HiredMiningMode.fromState(state).label();
             case COMBAT -> HiredCombatMode.fromState(state).label();

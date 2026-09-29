@@ -1,0 +1,111 @@
+package com.jvn.villagerretaliation.client.settlement;
+
+import com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask;
+import com.jvn.villagerretaliation.network.SettlementViewBatchPayload;
+import java.util.List;
+import java.util.UUID;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+
+public final class SettlementTemporaryTaskScreen extends Screen {
+    private final SettlementViewScreen view;
+    private final List<SettlementViewBatchPayload.Target> targets;
+    private final String[] values;
+    private HiredTemporaryTask.Kind kind;
+    private boolean append;
+    private String feedback = "";
+    private int left;
+    private int top;
+    private int panelWidth;
+    private EditBox quantity;
+
+    SettlementTemporaryTaskScreen(SettlementViewScreen view, List<SettlementViewBatchPayload.Target> targets,
+                                  HiredTemporaryTask.Kind kind, BlockPos min, BlockPos max, boolean append) {
+        super(Component.literal("Temporary task"));
+        this.view = view;
+        this.targets = List.copyOf(targets);
+        this.kind = kind;
+        this.append = append;
+        this.values = new String[] {Integer.toString(min.getX()), Integer.toString(min.getY()), Integer.toString(min.getZ()),
+                Integer.toString(max.getX()), Integer.toString(max.getY()), Integer.toString(max.getZ()), "1"};
+    }
+
+    SettlementManagementScreen parent() { return this.view.parent(); }
+
+    @Override
+    protected void init() {
+        this.panelWidth = Math.min(360, this.width - 32);
+        this.left = (this.width - this.panelWidth) / 2;
+        this.top = (this.height - 204) / 2;
+        addRenderableWidget(Button.builder(Component.literal(this.kind.label()), button -> {
+            this.kind = HiredTemporaryTask.Kind.values()[(this.kind.ordinal() + 1) % HiredTemporaryTask.Kind.values().length];
+            button.setMessage(Component.literal(this.kind.label()));
+            this.quantity.active = this.kind == HiredTemporaryTask.Kind.FISH;
+        }).bounds(this.left, this.top + 22, this.panelWidth, 20).build());
+        int cell = (this.panelWidth - 44) / 3;
+        for (int i = 0; i < 6; i++) {
+            int index = i;
+            var field = new EditBox(this.font, this.left + 40 + i % 3 * cell, this.top + 56 + i / 3 * 28,
+                    cell - 4, 20, Component.literal((i < 3 ? "Min " : "Max ") + "XYZ".charAt(i % 3)));
+            field.setMaxLength(10);
+            field.setValue(this.values[i]);
+            field.setResponder(value -> this.values[index] = value);
+            addRenderableWidget(field);
+        }
+        this.quantity = new EditBox(this.font, this.left + this.panelWidth - 72, this.top + 112, 72, 20, Component.literal("Catches"));
+        this.quantity.setMaxLength(4);
+        this.quantity.setValue(this.values[6]);
+        this.quantity.setResponder(value -> this.values[6] = value);
+        this.quantity.active = this.kind == HiredTemporaryTask.Kind.FISH;
+        addRenderableWidget(this.quantity);
+        addRenderableWidget(Button.builder(Component.literal(this.append ? "Append to queue" : "Replace pending tasks"), button -> {
+            this.append = !this.append;
+            button.setMessage(Component.literal(this.append ? "Append to queue" : "Replace pending tasks"));
+        }).bounds(this.left, this.top + 140, this.panelWidth, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Apply to " + this.targets.size() + (this.targets.size() == 1 ? " worker" : " workers")), ignored -> submit())
+                .bounds(this.left, this.top + 180, this.panelWidth / 2 - 2, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Cancel"), ignored -> onClose())
+                .bounds(this.left + this.panelWidth / 2 + 2, this.top + 180, this.panelWidth / 2 - 2, 20).build());
+    }
+
+    private void submit() {
+        try {
+            var min = new BlockPos(Integer.parseInt(this.values[0]), Integer.parseInt(this.values[1]), Integer.parseInt(this.values[2]));
+            var max = new BlockPos(Integer.parseInt(this.values[3]), Integer.parseInt(this.values[4]), Integer.parseInt(this.values[5]));
+            int quantity = this.kind == HiredTemporaryTask.Kind.FISH ? Integer.parseInt(this.values[6]) : 1;
+            var task = new HiredTemporaryTask(UUID.randomUUID(), this.kind, min, max, quantity);
+            this.view.submitTemporaryTask(this.targets, task, this.append);
+            onClose();
+        } catch (IllegalArgumentException exception) {
+            this.feedback = "Check bounds (max 64) and catches (1-4096)";
+        }
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + 208, 0xEF151A20);
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        int cell = (this.panelWidth - 44) / 3;
+        for (int i = 0; i < 3; i++) graphics.drawString(this.font, String.valueOf("XYZ".charAt(i)),
+                this.left + 40 + i * cell, this.top + 45, 0xBBC5D0, false);
+        graphics.drawString(this.font, this.title, this.left, this.top + 4, 0xFFFFFF, false);
+        graphics.drawString(this.font, "Min", this.left, this.top + 62, 0xBBC5D0, false);
+        graphics.drawString(this.font, "Max", this.left, this.top + 90, 0xBBC5D0, false);
+        graphics.drawString(this.font, "Catches for fishing", this.left, this.top + 118, 0xBBC5D0, false);
+        graphics.drawString(this.font, this.font.plainSubstrByWidth(this.feedback, this.panelWidth), this.left, this.top + 166, 0xE6B86C, false);
+    }
+
+    @Override
+    public void onClose() { SettlementViewClient.resume(parent()); }
+
+    @Override
+    public boolean isPauseScreen() { return false; }
+}

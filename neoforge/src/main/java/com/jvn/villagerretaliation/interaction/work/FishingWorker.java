@@ -87,6 +87,14 @@ public final class FishingWorker extends AbstractBlockWorker {
             clearHookState(context);
             return;
         }
+        var spot = activeFishingSpot(level, context);
+        if (spot != null) {
+            if (HiredPathMemory.isReservedByOther(level, villager, spot.water())) {
+                clearActiveFishing(level, villager, context);
+                return;
+            }
+            HiredPathMemory.reserveTarget(level, villager, spot.water());
+        }
         faceBlock(villager, hook.position());
         if (hook.isBiting() || hook.shouldRetrieveWithoutCatch()) {
             retrieveHook(level, villager, context, hook);
@@ -180,6 +188,7 @@ public final class FishingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.fishing.no_open_water");
         }
 
+        HiredPathMemory.reserveTarget(level, villager, spot.water());
         rememberFishingTarget(context, spot);
         if (!canCastFromCurrentPosition(level, villager, context, spot)) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, spot.water());
@@ -248,6 +257,7 @@ public final class FishingWorker extends AbstractBlockWorker {
 
     public static List<VillagerSkillPractice> takeCompletedPractice(CompoundTag state) {
         boolean completed = state.getBoolean(CATCH_COMPLETED_TAG);
+        if (completed) com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.caught(state);
         double units = state.getDouble(CATCH_PRACTICE_UNITS_TAG);
         long key = state.getLong(CATCH_REPETITION_KEY_TAG);
         state.remove(CATCH_COMPLETED_TAG);
@@ -266,6 +276,8 @@ public final class FishingWorker extends AbstractBlockWorker {
     @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
         clearActiveFishing(level, villager, context);
+        clearFishingSpotScan(context);
+        context.state().remove(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG);
         super.stop(level, villager, context);
     }
 
@@ -392,6 +404,8 @@ public final class FishingWorker extends AbstractBlockWorker {
                 Vec3 target = castTargetAtOffset(waterCenter, outward, offset);
                 BlockPos targetWater = BlockPos.containing(target.x, water.getY(), target.z);
                 if (context.isLoaded(level, targetWater)
+                        && (!com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.FISH)
+                                || context.isInsideWorkArea(targetWater))
                         && isOpenFishingWater(level, targetWater)
                         && hasClearCastLineTo(level, villager.blockPosition(), target)) {
                     return target;
@@ -479,7 +493,7 @@ public final class FishingWorker extends AbstractBlockWorker {
 
     private FishingSpotSearch findFishingSpot(ServerLevel level, Villager villager, HiredWorkContext context) {
         FishingSpot remembered = rememberedFishingSpot(level, context);
-        if (remembered != null) {
+        if (remembered != null && !HiredPathMemory.isReservedByOther(level, villager, remembered.water())) {
             clearFishingSpotScan(context);
             return new FishingSpotSearch(remembered, true);
         }
@@ -510,7 +524,7 @@ public final class FishingWorker extends AbstractBlockWorker {
             int zOffset = (int)(index % sizeZ);
             int yOffset = (int)(index / sizeZ);
             BlockPos water = min.offset(xOffset, yOffset, zOffset);
-            if (HiredPathMemory.isAvoided(level, villager, water)
+            if (HiredPathMemory.isAvoided(level, villager, water) || HiredPathMemory.isReservedByOther(level, villager, water)
                     || !isUsableFishingWater(level, context, water)) {
                 continue;
             }
@@ -580,7 +594,9 @@ public final class FishingWorker extends AbstractBlockWorker {
     }
 
     private boolean isUsableFishingWater(ServerLevel level, HiredWorkContext context, BlockPos pos) {
-        return context.isLoaded(level, pos) && isOpenFishingWater(level, pos);
+        return context.isLoaded(level, pos) && isOpenFishingWater(level, pos)
+                && (!com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.FISH)
+                        || context.isInsideWorkArea(pos));
     }
 
     private static boolean isOpenFishingWater(ServerLevel level, BlockPos pos) {

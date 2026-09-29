@@ -95,6 +95,7 @@ public final class SettlementManagementClient {
             case SettlementViewScreen view -> view.parent();
             case SettlementEditScreen form -> form.parent();
             case SettlementWorkerScreen form -> form.parent();
+            case SettlementTemporaryTaskScreen form -> form.parent();
             case SettlementWorksiteLinksScreen form -> form.parent().parent();
             case SettlementConfirmScreen confirmation -> confirmation.parent();
             case SettlementBlueprintScreen blueprints -> blueprints.parent();

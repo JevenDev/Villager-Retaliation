@@ -71,6 +71,10 @@ public final class SettlementBackgroundService {
             worker.status("unsafe");
             return;
         }
+        if (worker.settings().contains(com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue.STATE_TAG)) {
+            worker.status("temporary_task_unloaded");
+            return;
+        }
         double multiplier = care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D);
         if (worker.role() == HiredVillagerRole.COURIER) {
             SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);

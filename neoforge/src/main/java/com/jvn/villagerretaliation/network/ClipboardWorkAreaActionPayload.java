@@ -5,27 +5,34 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record ClipboardWorkAreaActionPayload(UUID villagerId, Action action, int steps) implements CustomPacketPayload {
+public record ClipboardWorkAreaActionPayload(UUID villagerId, Action action, int steps, int quantity) implements CustomPacketPayload {
     public static final Type<ClipboardWorkAreaActionPayload> TYPE = VillagerPayloads.type("clipboard_work_area_action");
     public static final StreamCodec<RegistryFriendlyByteBuf, ClipboardWorkAreaActionPayload> STREAM_CODEC =
             VillagerPayloads.codec(ClipboardWorkAreaActionPayload::encode, ClipboardWorkAreaActionPayload::decode);
 
     public ClipboardWorkAreaActionPayload {
         steps = Math.max(1, Math.min(5, steps));
+        if (quantity < 1 || quantity > com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.MAX_CATCHES
+                || action != Action.TEMPORARY_TASK && quantity != 1) throw new IllegalArgumentException("Invalid task quantity");
     }
 
     public ClipboardWorkAreaActionPayload(UUID villagerId, Action action) {
-        this(villagerId, action, 1);
+        this(villagerId, action, 1, 1);
+    }
+
+    public ClipboardWorkAreaActionPayload(UUID villagerId, Action action, int steps) {
+        this(villagerId, action, steps, 1);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, ClipboardWorkAreaActionPayload payload) {
         buffer.writeUUID(payload.villagerId());
         buffer.writeEnum(payload.action());
         buffer.writeVarInt(payload.steps());
+        buffer.writeVarInt(payload.quantity());
     }
 
     private static ClipboardWorkAreaActionPayload decode(RegistryFriendlyByteBuf buffer) {
-        return new ClipboardWorkAreaActionPayload(buffer.readUUID(), buffer.readEnum(Action.class), buffer.readVarInt());
+        return new ClipboardWorkAreaActionPayload(buffer.readUUID(), buffer.readEnum(Action.class), buffer.readVarInt(), buffer.readVarInt());
     }
 
     @Override
@@ -54,6 +61,8 @@ public record ClipboardWorkAreaActionPayload(UUID villagerId, Action action, int
         EXPAND_UP,
         EXPAND_DOWN,
         CONTRACT_UP,
-        CONTRACT_DOWN
+        CONTRACT_DOWN,
+        TEMPORARY_TASK,
+        CANCEL_TASKS
     }
 }

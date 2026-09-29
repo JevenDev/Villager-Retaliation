@@ -295,6 +295,10 @@ public final class SettlementBackgroundFishing {
         ContainerHelper.saveAllItems(snapshot, updated, true, level.registryAccess());
         HiredJobInventory.getJobInventory(villager).restoreSnapshot(snapshot);
         state.remove(CATCH);
+        com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.caught(state);
+        com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.validate(level, villager,
+                com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.resolve(level, villager));
+        com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.copyState(state, worker.settings());
         worker.settings().remove(CATCH);
         worker.inventorySnapshot(snapshot);
         HiredWorkSkillGrowthService.onPractice(level, villager, null, HiredVillagerRole.FISHING, state, practice(items));

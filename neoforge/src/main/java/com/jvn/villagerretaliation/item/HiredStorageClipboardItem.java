@@ -1039,6 +1039,26 @@ public final class HiredStorageClipboardItem extends Item {
         assignSelectedWorkArea(player, level, villager, stack);
     }
 
+    public static void assignHeldTemporaryTask(ServerPlayer player, ServerLevel level, Villager villager, boolean append, int quantity) {
+        WorkAreaDraft draft = selectedWorkArea(heldClipboard(player));
+        var kind = com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.forRole(
+                HiredVillagerContractService.activeRole(level, villager));
+        if (draft.first() == null || draft.second() == null || !level.dimension().equals(draft.dimension()) || kind == null) {
+            player.displayClientMessage(Component.literal("Select two task corners in this dimension for a compatible worker"), true);
+            return;
+        }
+        var min = HiredWorkArea.minPos(draft.first(), draft.second());
+        var max = HiredWorkArea.maxPos(draft.first(), draft.second());
+        if ((long) max.getX() - min.getX() >= 64 || (long) max.getY() - min.getY() >= 64 || (long) max.getZ() - min.getZ() >= 64) {
+            player.displayClientMessage(Component.literal("Temporary tasks allow at most 64 blocks on each axis"), true);
+            return;
+        }
+        var task = new com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask(java.util.UUID.randomUUID(), kind, min, max,
+                kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FISH ? quantity : 1);
+        String reason = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.submit(player, villager, task, append);
+        player.displayClientMessage(Component.literal(reason.isEmpty() ? (append ? "Task queued" : "Task started") : reason), true);
+    }
+
     private static void assignSelectedWorkArea(ServerPlayer player, ServerLevel level, Villager villager, ItemStack stack) {
         if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
             player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.assign_work_area_owner_only"), true);
