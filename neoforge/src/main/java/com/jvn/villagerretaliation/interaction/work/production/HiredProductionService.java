@@ -60,6 +60,9 @@ public final class HiredProductionService {
             var contract = HiredVillagerContractService.currentContractId(villager).orElse(null);
             if (contract == null) return "Worker contract changed";
             var state = HiredWorkStateStore.state(villager);
+            if (authority.role() == HiredVillagerRole.BREWING && com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker.hasOrder(state)) {
+                return HiredBrewingMigration.append(level, villager, contract, requested);
+            }
             queue = new HiredProductionQueue(contract, HiredProductionQueue.Scope.PERSONAL, authority.role(),
                     updated -> state.put(STATE_TAG, updated.save(level.registryAccess())));
         } else if (queue.configurationRevision() != revision) return "Production orders changed";

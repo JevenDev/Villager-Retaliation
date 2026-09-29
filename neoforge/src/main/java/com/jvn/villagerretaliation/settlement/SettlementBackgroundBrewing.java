@@ -392,7 +392,7 @@ final class SettlementBackgroundBrewing {
         return ItemStack.EMPTY;
     }
 
-    private static int currentStep(ServerLevel level, NonNullList<ItemStack> items, HiredBrewingRecipeCatalog.BrewingRoute route) {
+    static int currentStep(ServerLevel level, NonNullList<ItemStack> items, HiredBrewingRecipeCatalog.BrewingRoute route) {
         ItemStack expected = PotionContents.createItemStack(Items.POTION, Potions.WATER);
         for (int step = 0; step <= route.ingredients().size(); step++) {
             boolean matches = true;
@@ -409,7 +409,7 @@ final class SettlementBackgroundBrewing {
         return -1;
     }
 
-    private static boolean remainder(HiredBrewingRecipeCatalog.BrewingRoute route, ItemStack stack) {
+    static boolean remainder(HiredBrewingRecipeCatalog.BrewingRoute route, ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
         }

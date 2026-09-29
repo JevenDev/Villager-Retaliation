@@ -144,11 +144,21 @@ public final class HiredProductionQueue {
         if (available <= 0L) return null;
         long batches = Math.min(maxBatches, (available + batchSize - 1L) / batchSize);
         int amount = Math.toIntExact(batches * batchSize);
-        var allocation = new Allocation(UUID.randomUUID(), worker, orderId, amount, false, station);
+        var allocation = new Allocation(UUID.randomUUID(), worker, orderId, amount, false, station, null);
         this.allocations.put(allocation.id(), allocation);
         blockerWithoutNotification(orderId, "");
         changed();
         return allocation;
+    }
+
+    public boolean bindMachine(UUID id, UUID machine) {
+        var allocation = this.allocations.get(id);
+        if (allocation == null || allocation.station() == null || machine == null) return false;
+        if (allocation.machine() != null) return allocation.machine().equals(machine);
+        this.allocations.put(id, new Allocation(id, allocation.worker(), allocation.order(), allocation.remaining(),
+                allocation.started(), allocation.station(), machine));
+        changed();
+        return true;
     }
 
     public boolean start(UUID id) {
@@ -157,7 +167,7 @@ public final class HiredProductionQueue {
         if (allocation.started()) return true;
         var order = order(allocation.order());
         if (!order.runnable()) return false;
-        this.allocations.put(id, new Allocation(id, allocation.worker(), allocation.order(), allocation.remaining(), true, allocation.station()));
+        this.allocations.put(id, new Allocation(id, allocation.worker(), allocation.order(), allocation.remaining(), true, allocation.station(), allocation.machine()));
         changed();
         return true;
     }
@@ -170,7 +180,7 @@ public final class HiredProductionQueue {
         replace(order.state(order.produced() + produced.getCount(), order.paused(), order.cancelled(), ""));
         int remaining = allocation.remaining() - produced.getCount();
         if (remaining == 0) this.allocations.remove(id);
-        else this.allocations.put(id, new Allocation(id, allocation.worker(), allocation.order(), remaining, true, allocation.station()));
+        else this.allocations.put(id, new Allocation(id, allocation.worker(), allocation.order(), remaining, true, allocation.station(), allocation.machine()));
         changed();
         return true;
     }
@@ -187,7 +197,7 @@ public final class HiredProductionQueue {
         var allocation = allocation(worker);
         if (allocation == null) return;
         if (allocation.started()) this.allocations.put(allocation.id(),
-                new Allocation(allocation.id(), null, allocation.order(), allocation.remaining(), true, allocation.station()));
+                new Allocation(allocation.id(), null, allocation.order(), allocation.remaining(), true, allocation.station(), allocation.machine()));
         else this.allocations.remove(allocation.id());
         changed();
     }
@@ -196,7 +206,7 @@ public final class HiredProductionQueue {
         Objects.requireNonNull(worker);
         var allocation = this.allocations.get(id);
         if (allocation == null || allocation.worker() != null || !allocation.started() || allocation(worker) != null) return false;
-        this.allocations.put(id, new Allocation(id, worker, allocation.order(), allocation.remaining(), true, allocation.station()));
+        this.allocations.put(id, new Allocation(id, worker, allocation.order(), allocation.remaining(), true, allocation.station(), allocation.machine()));
         changed();
         return true;
     }
@@ -238,7 +248,7 @@ public final class HiredProductionQueue {
 
     public CompoundTag save(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
-        tag.putInt("Version", 1);
+        tag.putInt("Version", 2);
         tag.putUUID("Owner", this.owner);
         tag.putString("Scope", this.scope.name());
         tag.putString("Role", this.role.name());
@@ -256,6 +266,7 @@ public final class HiredProductionQueue {
             entry.putInt("Remaining", allocation.remaining());
             entry.putBoolean("Started", allocation.started());
             if (allocation.station() != null) entry.putLong("Station", allocation.station().asLong());
+            if (allocation.machine() != null) entry.putUUID("Machine", allocation.machine());
             allocations.add(entry);
         });
         tag.put("Allocations", allocations);
@@ -263,7 +274,7 @@ public final class HiredProductionQueue {
     }
 
     public static HiredProductionQueue load(CompoundTag tag, HolderLookup.Provider provider, Consumer<HiredProductionQueue> changed) {
-        if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 1 || !tag.hasUUID("Owner")
+        if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 2) || !tag.hasUUID("Owner")
                 || !tag.contains("Scope", Tag.TAG_STRING) || !tag.contains("Role", Tag.TAG_STRING)
                 || !tag.contains("Revision", Tag.TAG_LONG) || tag.getLong("Revision") < 0L
                 || !tag.contains("ConfigurationRevision", Tag.TAG_LONG) || tag.getLong("ConfigurationRevision") < 0L
@@ -289,12 +300,14 @@ public final class HiredProductionQueue {
             var entry = (CompoundTag) raw;
             if (!entry.hasUUID("Id") || entry.contains("Worker") && !entry.hasUUID("Worker") || !entry.hasUUID("Order")
                     || !entry.contains("Remaining", Tag.TAG_INT) || !entry.contains("Started", Tag.TAG_BYTE)
-                    || entry.contains("Station") && !entry.contains("Station", Tag.TAG_LONG)) {
+                    || entry.contains("Station") && !entry.contains("Station", Tag.TAG_LONG)
+                    || entry.contains("Machine") && !entry.hasUUID("Machine")) {
                 throw new IllegalArgumentException("Invalid saved production allocation");
             }
             var allocation = new Allocation(entry.getUUID("Id"), entry.hasUUID("Worker") ? entry.getUUID("Worker") : null,
                     entry.getUUID("Order"), entry.getInt("Remaining"), entry.getBoolean("Started"),
-                    entry.contains("Station") ? BlockPos.of(entry.getLong("Station")) : null);
+                    entry.contains("Station") ? BlockPos.of(entry.getLong("Station")) : null,
+                    entry.hasUUID("Machine") ? entry.getUUID("Machine") : null);
             var order = queue.order(allocation.order());
             if (order == null || allocation.worker() != null && queue.allocation(allocation.worker()) != null
                     || !allocation.started() && !order.runnable() || allocation.station() != null
@@ -318,13 +331,13 @@ public final class HiredProductionQueue {
         WORKSITE
     }
 
-    public record Allocation(UUID id, UUID worker, UUID order, int remaining, boolean started, BlockPos station) {
+    public record Allocation(UUID id, UUID worker, UUID order, int remaining, boolean started, BlockPos station, UUID machine) {
         public Allocation {
             Objects.requireNonNull(id);
             Objects.requireNonNull(order);
             station = station == null ? null : station.immutable();
             if (remaining < 1 || remaining >= HiredProductionOrder.MAX_AMOUNT + HiredProductionOrder.MAX_BATCH
-                    || worker == null && !started) throw new IllegalArgumentException("Invalid production allocation");
+                    || worker == null && !started || machine != null && station == null) throw new IllegalArgumentException("Invalid production allocation");
         }
     }
 }

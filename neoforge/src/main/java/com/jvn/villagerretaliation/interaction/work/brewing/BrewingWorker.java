@@ -1370,7 +1370,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 Map.of("item", remainder.getHoverName().getString()));
     }
 
-    private static int currentBrewingStep(
+    public static boolean canMigrateBatch(ServerLevel level, BrewingStandBlockEntity stand, HiredBrewingRecipeCatalog.BrewingRoute route) {
+        var plan = BrewingStandPlan.create(level, stand.getBlockPos(), route, loadedBottleCount(stand));
+        return !plan.hasWrongBottles() && !plan.hasWrongIngredient() && !plan.hasWrongFuel();
+    }
+
+    public static int currentBrewingStep(
             ServerLevel level,
             BrewingStandBlockEntity blockEntity,
             HiredBrewingRecipeCatalog.BrewingRoute route) {
@@ -1395,7 +1400,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         return -1;
     }
 
-    private static int loadedBottleCount(BrewingStandBlockEntity blockEntity) {
+    public static int loadedBottleCount(BrewingStandBlockEntity blockEntity) {
         int count = 0;
         for (int slot = FIRST_BOTTLE_SLOT; slot < FIRST_BOTTLE_SLOT + BOTTLE_SLOT_COUNT; slot++) {
             if (!blockEntity.getItem(slot).isEmpty()) {

@@ -610,6 +610,7 @@ public final class VillagerRetaliationEvents {
         }
         if (event.getEntity() instanceof Villager villager && event.getLevel() instanceof ServerLevel level) {
             HiredVillagerIndex.update(level, villager);
+            com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations.onLoaded(villager);
             VillagerDownedService.onVillagerLoaded(villager);
             PartyVillagerContractService.onVillagerLoaded(villager);
             VillagerBehaviorSuppressionPolicy.enforce(level, villager);

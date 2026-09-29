@@ -332,6 +332,26 @@ public final class SettlementSavedData extends SavedData {
         setDirty();
     }
 
+    void persistProductionMigration(ServerLevel level, SettlementRecord source, SettlementRecord converted) throws java.io.IOException {
+        if (readOnly() || this.settlements.get(source.id()) != source || !source.id().equals(converted.id())
+                || !source.dimension().equals(converted.dimension())) throw new IllegalStateException("Stale production migration");
+        var root = save(new CompoundTag(), level.registryAccess());
+        var entries = root.getList("Settlements", Tag.TAG_COMPOUND);
+        for (int index = 0; index < entries.size(); index++) {
+            if (((CompoundTag) entries.get(index)).getUUID("Id").equals(source.id().value())) {
+                entries.set(index, converted.save(level.registryAccess()));
+                break;
+            }
+        }
+        var wrapper = new CompoundTag();
+        wrapper.put("data", root);
+        net.minecraft.nbt.NbtUtils.addCurrentDataVersion(wrapper);
+        var file = level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                .resolve("data").resolve(DATA_NAME + ".dat");
+        net.neoforged.neoforge.common.IOUtilities.waitUntilIOWorkerComplete();
+        net.neoforged.neoforge.common.IOUtilities.writeNbtCompressed(wrapper, file);
+    }
+
     @Override
     public void save(java.io.File file, HolderLookup.Provider provider) {
         if (!readOnly()) super.save(file, provider);

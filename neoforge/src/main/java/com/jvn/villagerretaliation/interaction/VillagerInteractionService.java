@@ -870,7 +870,8 @@ public final class VillagerInteractionService {
         }
         CompoundTag state = HiredWorkStateStore.state(villager);
         HiredWorkStateStore.initializeDefaults(state, villager);
-        if (BrewingWorker.hasOrder(state)) {
+        if (BrewingWorker.hasOrder(state) || com.jvn.villagerretaliation.interaction.work.production.HiredProductionService
+                .access(level, villager, HiredVillagerRole.BREWING).managed()) {
             sendVillagerNotice(player, villager, "interaction.work.brewing.already_brewing");
             return;
         }

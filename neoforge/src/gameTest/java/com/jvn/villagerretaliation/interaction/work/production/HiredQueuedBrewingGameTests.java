@@ -105,6 +105,72 @@ public final class HiredQueuedBrewingGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "queued_brewing")
+    public static void legacyPersonalBatchConvertsOnceWithoutRestartingNativeProgress(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            var level = helper.getLevel();
+            var state = fixture.context().state();
+            var requested = order(helper, "regeneration", 1);
+            BrewingWorker.setOrder(state, ResourceLocation.withDefaultNamespace("potion"), ResourceLocation.withDefaultNamespace("healing"), 5, false);
+            state.putLong("BrewingCachedStandPos", fixture.stand().getBlockPos().asLong());
+            for (int slot = 0; slot < 3; slot++) fixture.stand().setItem(slot, PotionContents.createItemStack(Items.POTION, Potions.WATER));
+            fixture.stand().setItem(3, new ItemStack(Items.NETHER_WART));
+            fixture.stand().setItem(4, new ItemStack(Items.BLAZE_POWDER));
+            brew(helper, fixture, 120);
+            var nativeSave = fixture.stand().saveWithoutMetadata(level.registryAccess());
+            helper.assertValueEqual(HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, requested), "", "legacy conversion succeeds");
+            var queue = queue(helper, fixture);
+            var legacy = queue.orders().getFirst();
+            helper.assertValueEqual(queue.orders().size(), 2, "the legacy order is followed by the new order");
+            helper.assertValueEqual(legacy.amount(), 5, "the legacy remaining quantity is retained");
+            helper.assertValueEqual(queue.pending(legacy.id()), 3, "the three active bottles already count toward the old quantity");
+            helper.assertTrue(queue.allocation(fixture.villager().getUUID()).machine() != null, "the native machine identity is durable");
+            var allocation = queue.allocation(fixture.villager().getUUID());
+            HiredProductionStations.get(level).release(allocation.id());
+            HiredProductionStations.onLoaded(fixture.villager());
+            helper.assertValueEqual(HiredProductionStations.get(level).claim(level, fixture.stand().getBlockPos()).allocation(),
+                    allocation.id(), "loading the personal worker restores its missing station reservation");
+            helper.assertValueEqual(fixture.stand().saveWithoutMetadata(level.registryAccess()).getShort("BrewTime"), nativeSave.getShort("BrewTime"), "conversion preserves native elapsed brewing time");
+            helper.assertFalse(BrewingWorker.hasOrder(state), "legacy tags clear after the private queue is stored");
+            helper.assertFalse(HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, requested).isEmpty(), "a repeated stale conversion cannot append again");
+            queue.cancel(legacy.id());
+            brew(helper, fixture, 281);
+            tick(helper, fixture);
+            brew(helper, fixture, 401);
+            tick(helper, fixture);
+            helper.assertValueEqual(queue(helper, fixture).order(legacy.id()).produced(), 3L, "the imported native batch settles exactly once");
+            helper.assertValueEqual(queue(helper, fixture).orders().size(), 2, "loading the private queue cannot import a second legacy order");
+        } finally {
+            cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "queued_brewing")
+    public static void incompatibleOrForeignLegacyPersonalOrdersRemainRecoverable(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            var state = fixture.context().state();
+            var requested = order(helper, "healing", 1);
+            BrewingWorker.setOrder(state, requested.recipe().brewingItem(), requested.recipe().potion(), 3, false, UUID.randomUUID());
+            var before = state.copy();
+            helper.assertFalse(HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, requested).isEmpty(), "another contract cannot import the old order");
+            helper.assertValueEqual(state, before, "foreign legacy settings remain untouched");
+            state.remove("BrewingOrderContractId");
+            state.putLong("BrewingCachedStandPos", fixture.stand().getBlockPos().asLong());
+            fixture.stand().setItem(0, PotionContents.createItemStack(Items.POTION, Potions.WATER));
+            fixture.stand().setItem(3, new ItemStack(Items.DIRT));
+            before = state.copy();
+            helper.assertFalse(HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, requested).isEmpty(), "a mismatched active ingredient blocks conversion");
+            helper.assertValueEqual(state, before, "a blocked conversion preserves legacy work and creates no queue");
+            helper.assertTrue(fixture.stand().getItem(3).is(Items.DIRT), "a conflicting physical stack is preserved");
+        } finally {
+            cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
     private static HiredProductionOrder order(GameTestHelper helper, String potion, int amount) {
         return HiredProductionOrder.create(helper.getLevel(), HiredProductionRecipe.brewing(ResourceLocation.withDefaultNamespace("potion"),
                 ResourceLocation.withDefaultNamespace(potion)), HiredProductionOrder.Mode.BATCH, amount, null);
@@ -148,6 +214,7 @@ public final class HiredQueuedBrewingGameTests {
         var state = HiredWorkStateStore.state(villager);
         HiredWorkerBrain.initialize(state);
         var area = HiredWorkArea.fromBounds(helper.absolutePos(new BlockPos(1, 2, 1)), helper.absolutePos(new BlockPos(5, 4, 5)), true);
+        area.save(state);
         var inventory = HiredJobInventory.getJobInventory(villager);
         for (int bottle = 0; bottle < 3; bottle++) helper.assertTrue(inventory.insertSupply(PotionContents.createItemStack(Items.POTION, Potions.WATER)).isEmpty(), "real water bottles fit");
         inventory.insertSupply(new ItemStack(Items.NETHER_WART, 3));

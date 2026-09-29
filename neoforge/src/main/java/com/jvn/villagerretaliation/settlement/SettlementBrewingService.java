@@ -37,7 +37,7 @@ public final class SettlementBrewingService {
         if (player == null || town == null || !player.isAlive() || player.isSpectator()
                 || !town.dimension().equals(player.level().dimension().location())
                 || !town.permits(player.getUUID(), SettlementPermission.STAFF)
-                || !areaId.equals(town.duties().get(resident))) {
+                || !areaId.equals(town.duties().get(resident)) || town.productionQueues().containsKey(areaId)) {
             return false;
         }
         var area = town.areas().get(areaId);

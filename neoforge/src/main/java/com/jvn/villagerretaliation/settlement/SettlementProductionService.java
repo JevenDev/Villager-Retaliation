@@ -21,6 +21,9 @@ public final class SettlementProductionService {
         }
         var queue = town.productionQueues().get(areaId);
         if (queue == null ? revision != 0L : queue.configurationRevision() != revision) return "Production orders changed";
+        if (queue == null && role == com.jvn.villagerretaliation.interaction.HiredVillagerRole.BREWING) {
+            return SettlementBrewingMigration.append(player, town, areaId, requested);
+        }
         if (queue == null) queue = town.beginProduction(player.getUUID(), areaId);
         if (queue == null || !queue.append(requested)) return "Production queue is full or the order already exists";
         return "";

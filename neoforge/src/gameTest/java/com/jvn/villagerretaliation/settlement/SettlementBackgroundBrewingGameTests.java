@@ -4,6 +4,10 @@ import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
+import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
@@ -452,6 +456,128 @@ public final class SettlementBackgroundBrewingGameTests {
             helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "replacement staff finish the original potion");
             helper.assertValueEqual(queue.pending(order.id()), 0, "the original receipt is completed once");
             helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 1, "handoff never consumes a second bottle");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_brewing")
+    public static void legacySharedBrewingPersistsBothActiveBatchesBeforeClearingOrders(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            town.setWorksitePlan(town.leader(), fixture.area().id(), SettlementWorksitePlan.defaults(fixture.area().type().role()));
+            fixture.worker().brewingOrder(order("potion", 3, false));
+            fixture.worker().settings().putLong("BrewingCachedStandPos", fixture.machine().position().asLong());
+            var second = SettlementBrewingStandState.capture(level, fixture.area().id(),
+                    new BrewingStandBlockEntity(fixture.machine().position().east(), Blocks.BREWING_STAND.defaultBlockState()), 0L);
+            town.recordBrewingStand(second);
+            for (var machine : List.of(fixture.machine(), second)) {
+                var items = machine.items(level.registryAccess());
+                for (int slot = 0; slot < 3; slot++) items.set(slot, PotionContents.createItemStack(Items.POTION, Potions.WATER));
+                items.set(3, new ItemStack(Items.NETHER_WART));
+                items.set(4, new ItemStack(Items.BLAZE_POWDER));
+                machine.updateItems(level, items);
+                machine.advance(level, 120L);
+            }
+            var player = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level, new com.mojang.authlib.GameProfile(town.leader(), "BrewMigration"));
+            var requested = HiredProductionOrder.create(level, HiredProductionRecipe.brewing(
+                    ResourceLocation.withDefaultNamespace("potion"), ResourceLocation.withDefaultNamespace("regeneration")),
+                    HiredProductionOrder.Mode.BATCH, 1, null);
+            helper.assertValueEqual(SettlementProductionService.append(player, town, fixture.area().id(), 0L, requested), "", "the legacy order and both existing batches convert");
+            var queue = town.productionQueues().get(fixture.area().id());
+            var legacy = queue.orders().getFirst();
+            helper.assertValueEqual(queue.orders().size(), 2, "one legacy entry precedes the requested order");
+            helper.assertValueEqual(legacy.amount(), 6, "both already consumed batches are retained even above the old remaining target");
+            helper.assertValueEqual(queue.pending(legacy.id()), 6, "all six existing bottles count before any worker resumes");
+            helper.assertValueEqual(queue.allocations().stream().filter(allocation -> allocation.worker() == null).count(), 1L, "the extra native batch waits for an available brewer");
+            helper.assertFalse(BrewingWorker.hasOrder(town.workers().get(fixture.worker().id()).settings()), "the canonical legacy order clears after durable conversion");
+            helper.assertFalse(SettlementBrewingService.configure(player, town, fixture.worker().id(), fixture.area().id(), order("potion", 1, false)), "legacy controls cannot recreate a second order after conversion");
+            helper.assertFalse(SettlementProductionService.append(player, town, fixture.area().id(), 0L, requested).isEmpty(), "a replayed append has a stale revision");
+            try {
+                var file = level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data/villagerretaliation_settlements.dat");
+                var disk = net.minecraft.nbt.NbtIo.readCompressed(file, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+                var restored = SettlementSavedData.load(disk.getCompound("data"), level.registryAccess()).get(town.id()).orElseThrow();
+                helper.assertValueEqual(restored.productionQueues().get(fixture.area().id()).save(level.registryAccess()), queue.save(level.registryAccess()), "the complete converted queue is already on disk");
+                helper.assertFalse(BrewingWorker.hasOrder(restored.workers().get(fixture.worker().id()).settings()), "disk recovery cannot import the old order again");
+            } catch (java.io.IOException exception) {
+                throw new IllegalStateException(exception);
+            }
+            var stations = HiredProductionStations.get(level);
+            var allocation = queue.allocation(fixture.worker().id());
+            stations.release(allocation.id());
+            helper.assertValueEqual(stations.claim(level, allocation.station()).machine(), fixture.machine().id(), "the canonical queue restores a missing station index entry");
+            var staleIndex = stations.save(new net.minecraft.nbt.CompoundTag(), level.registryAccess());
+            for (var raw : staleIndex.getList("Claims", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                var entry = (net.minecraft.nbt.CompoundTag) raw;
+                entry.putBoolean("Started", false);
+                entry.putLong("Expires", 0L);
+            }
+            var restoredIndex = HiredProductionStations.load(staleIndex, level.registryAccess());
+            helper.assertTrue(restoredIndex.claim(level, allocation.station()).started(), "the saved queue repairs a stale unstarted index without expiring consumed work");
+            helper.assertTrue(restoredIndex.reconcile(level, allocation.station(), UUID.randomUUID()) == null, "a verified replacement releases only the original machine's receipt");
+            helper.assertValueEqual(queue.pending(legacy.id()), 3, "replaced machines do not credit foreign potions");
+            helper.assertValueEqual(queue.order(legacy.id()).produced(), 0L, "lost work is never reported as output");
+            var retained = queue.reserve(fixture.worker().id(), legacy.id(), 3, 1, 0L, fixture.machine().position());
+            queue.bindMachine(retained.id(), fixture.machine().id());
+            queue.start(retained.id());
+            helper.assertFalse(level.hasChunkAt(town.center()), "conversion and station recovery do not load the worksite");
+            queue.cancel(legacy.id());
+            fixture.supply().setItem(2, new ItemStack(Items.GLISTERING_MELON_SLICE, 2));
+            var worker = town.workers().get(fixture.worker().id());
+            for (int now = 320; now <= 3520; now += 200) {
+                fixture.machine().advance(level, now);
+                second.advance(level, now);
+                SettlementBackgroundBrewing.tick(level, town, worker, 200, 1.0D);
+            }
+            helper.assertValueEqual(queue.order(legacy.id()).produced(), 6L, "a cancelled converted order finishes both actual batches exactly once");
+            helper.assertValueEqual(queue.pending(legacy.id()), 0, "all imported receipts settle");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_brewing")
+    public static void matchingLegacyBrewersKeepDistinctOrdersDuringConversion(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            town.setWorksitePlan(town.leader(), fixture.area().id(), SettlementWorksitePlan.defaults(fixture.area().type().role()));
+            fixture.worker().brewingOrder(order("potion", 2, false));
+            var saved = fixture.worker().save();
+            var secondId = UUID.randomUUID();
+            saved.putUUID("Id", secondId);
+            var second = SettlementWorkerState.load(saved);
+            second.brewingOrder(order("potion", 7, false));
+            helper.assertTrue(town.assignDuty(secondId, fixture.area().id()), "the second brewer has the same home worksite");
+            town.recordWorker(second);
+            var player = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level, new com.mojang.authlib.GameProfile(town.leader(), "BrewMigration"));
+            var requested = HiredProductionOrder.create(level, HiredProductionRecipe.brewing(
+                    ResourceLocation.withDefaultNamespace("potion"), ResourceLocation.withDefaultNamespace("regeneration")),
+                    HiredProductionOrder.Mode.BATCH, 1, null);
+            helper.assertValueEqual(SettlementProductionService.append(player, town, fixture.area().id(), 0L, requested), "", "matching legacy targets convert independently");
+            var queue = town.productionQueues().get(fixture.area().id());
+            helper.assertValueEqual(queue.orders().size(), 3, "two matching legacy entries are not merged");
+            helper.assertValueEqual(queue.orders().subList(0, 2).stream().map(HiredProductionOrder::amount).sorted().toList(), List.of(2, 7), "each original quantity survives");
+            helper.assertTrue(queue.orders().subList(0, 2).stream().map(HiredProductionOrder::id).distinct().count() == 2L, "each imported order has its own identity");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_brewing")
+    public static void unknownLegacyActiveBatchesBlockConversionWithoutLosingOrders(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            town.setWorksitePlan(town.leader(), fixture.area().id(), SettlementWorksitePlan.defaults(fixture.area().type().role()));
+            fixture.worker().brewingOrder(order("potion", 2, false));
+            var items = fixture.machine().items(level.registryAccess());
+            items.set(0, PotionContents.createItemStack(Items.POTION, Potions.REGENERATION));
+            fixture.machine().updateItems(level, items);
+            var player = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level, new com.mojang.authlib.GameProfile(town.leader(), "BrewMigration"));
+            var requested = HiredProductionOrder.create(level, HiredProductionRecipe.brewing(
+                    ResourceLocation.withDefaultNamespace("potion"), ResourceLocation.withDefaultNamespace("regeneration")),
+                    HiredProductionOrder.Mode.BATCH, 1, null);
+            helper.assertFalse(SettlementProductionService.append(player, town, fixture.area().id(), 0L, requested).isEmpty(), "an unmatched existing potion requires recovery");
+            helper.assertFalse(town.productionQueues().containsKey(fixture.area().id()), "blocked conversion creates no partial queue");
+            helper.assertValueEqual(SettlementBrewingOrder.read(fixture.worker().settings()).amount(), 2, "the legacy order remains intact");
+            helper.assertTrue(ItemStack.isSameItemSameComponents(fixture.machine().items(level.registryAccess()).get(0), items.get(0)), "the unmatched potion remains intact");
+            helper.assertFalse(level.hasChunkAt(town.center()), "blocked conversion never forces a chunk load");
         });
     }
 

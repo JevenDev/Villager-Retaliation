@@ -765,6 +765,12 @@ public final class SettlementRecord {
         return queue;
     }
 
+    void installProductionMigration(UUID area, HiredProductionQueue queue, Map<UUID, SettlementWorkerState> workers) {
+        this.productionQueues.put(area, queue);
+        this.workers.putAll(workers);
+        changed();
+    }
+
     public SettlementWorkerSettings effectiveWorkerSettings(UUID resident) {
         var settings = this.workerSettings.get(resident);
         var plan = this.worksitePlans.get(this.duties.get(resident));

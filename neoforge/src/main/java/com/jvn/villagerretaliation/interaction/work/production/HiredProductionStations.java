@@ -31,18 +31,69 @@ public final class HiredProductionStations extends SavedData {
     }
 
     public Claim claim(ServerLevel level, BlockPos position) {
-        var claim = this.claims.get(position);
+        var stored = this.claims.get(position);
+        var claim = stored == null && !readOnly() ? restoreCivicClaim(level, position) : stored;
         if (claim == null || readOnly()) return claim;
         if (claim.scope() == HiredProductionQueue.Scope.WORKSITE && SettlementSavedData.get(level).readOnly()) return claim;
         var queue = queue(level, claim);
-        if (!claim.started() && claim.expires() <= level.getGameTime()
-                || queue != null && queue.allocations().stream().noneMatch(allocation -> allocation.id().equals(claim.allocation()))
+        var allocation = queue == null ? null : queue.allocations().stream().filter(value -> value.id().equals(claim.allocation())).findFirst().orElse(null);
+        boolean started = allocation == null ? claim.started() : allocation.started();
+        if (!started && claim.expires() <= level.getGameTime() || queue != null && allocation == null
                 || claim.scope() == HiredProductionQueue.Scope.WORKSITE && queue == null) {
             this.claims.remove(position);
             setDirty();
             return null;
         }
+        if (started != claim.started()) {
+            var updated = new Claim(claim.queue(), claim.scope(), claim.allocation(), claim.worker(), claim.machine(), started, claim.expires());
+            this.claims.put(position, updated);
+            setDirty();
+            return updated;
+        }
         return claim;
+    }
+
+    public static void onLoaded(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) return;
+        var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager);
+        if (!state.contains(HiredProductionService.STATE_TAG, Tag.TAG_COMPOUND)) return;
+        HiredProductionQueue queue;
+        try {
+            queue = HiredProductionQueue.load(state.getCompound(HiredProductionService.STATE_TAG), level.registryAccess(), ignored -> {});
+        } catch (IllegalArgumentException exception) {
+            return;
+        }
+        if (queue.scope() != HiredProductionQueue.Scope.PERSONAL) return;
+        var allocation = queue.allocation(villager.getUUID());
+        if (allocation == null || allocation.machine() == null) return;
+        var data = get(level);
+        if (data.readOnly() || data.claims.size() >= MAX_CLAIMS || data.claim(level, allocation.station()) != null) return;
+        data.claims.put(allocation.station(), new Claim(queue.owner(), queue.scope(), allocation.id(), villager.getUUID(),
+                allocation.machine(), allocation.started(), Math.max(0L, level.getGameTime()) + 200L));
+        data.setDirty();
+    }
+
+    private Claim restoreCivicClaim(ServerLevel level, BlockPos position) {
+        var data = SettlementSavedData.get(level);
+        if (data.readOnly()) return null;
+        for (var town : data.settlements()) {
+            if (!town.dimension().equals(level.dimension().location()) || !town.contains(position)) continue;
+            for (var queue : town.productionQueues().values()) {
+                var allocation = queue.allocations().stream().filter(value -> position.equals(value.station())).findFirst().orElse(null);
+                if (allocation == null) continue;
+                UUID machine = allocation.machine();
+                if (machine == null) continue;
+                var claim = new Claim(queue.owner(), queue.scope(), allocation.id(),
+                        allocation.worker() == null ? allocation.id() : allocation.worker(), machine,
+                        allocation.started(), Math.max(0L, level.getGameTime()) + 200L);
+                if (this.claims.size() < MAX_CLAIMS) {
+                    this.claims.put(position, claim);
+                    setDirty();
+                }
+                return claim;
+            }
+        }
+        return null;
     }
 
     public Claim reconcile(ServerLevel level, BlockPos position, UUID machine) {
@@ -61,9 +112,18 @@ public final class HiredProductionStations extends SavedData {
     }
 
     public boolean reserve(ServerLevel level, HiredProductionQueue queue, HiredProductionQueue.Allocation allocation, UUID machine) {
-        if (readOnly() || allocation == null || allocation.station() == null || allocation.worker() == null || machine == null
-                || !allocation.equals(queue.allocation(allocation.worker()))) return false;
+        if (readOnly() || allocation == null || allocation.station() == null || allocation.worker() == null || machine == null) return false;
+        var current = queue.allocation(allocation.worker());
+        if (current == null || !new HiredProductionQueue.Allocation(allocation.id(), allocation.worker(), allocation.order(),
+                allocation.remaining(), allocation.started(), allocation.station(), current.machine()).equals(current)) return false;
+        allocation = current;
         var existing = claim(level, allocation.station());
+        if (allocation.machine() != null && !allocation.machine().equals(machine)) {
+            queue.lost(allocation.id());
+            release(allocation.id());
+            return false;
+        }
+        if (allocation.started() && allocation.machine() == null && existing == null) return false;
         if (existing != null && !existing.machine().equals(machine)) {
             var previous = queue(level, existing);
             if (existing.queue().equals(queue.owner()) && existing.scope() == queue.scope()) previous = queue;
@@ -74,7 +134,8 @@ public final class HiredProductionStations extends SavedData {
             existing = null;
         }
         if (existing != null && (!existing.queue().equals(queue.owner()) || !existing.allocation().equals(allocation.id()))) return false;
-        if (existing == null && this.claims.size() >= MAX_CLAIMS) return false;
+        if (!this.claims.containsKey(allocation.station()) && this.claims.size() >= MAX_CLAIMS) return false;
+        if (!queue.bindMachine(allocation.id(), machine)) return false;
         var updated = new Claim(queue.owner(), queue.scope(), allocation.id(), allocation.worker(), machine,
                 allocation.started(), Math.max(0L, level.getGameTime()) + 200L);
         this.claims.put(allocation.station(), updated);
