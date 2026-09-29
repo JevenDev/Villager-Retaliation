@@ -316,7 +316,7 @@ public final class SettlementViewClientSmoke {
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             phase = 13;
         } else if (phase == 13 && minecraft.screen instanceof SettlementViewScreen screen) {
-            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+            openOverview(screen);
             UUID player = minecraft.player.getUUID();
             serverCheck = minecraft.getSingleplayerServer().submit(() -> {
                 ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
@@ -514,6 +514,12 @@ public final class SettlementViewClientSmoke {
             require(button(screen, "villagerretaliation.gui.settlement.worksite_adopt").active, "a valid plan can be adopted");
             button(screen, "villagerretaliation.gui.settlement.worksite_adopt").onPress();
             ticks = 0;
+            phase = 137;
+        } else if (phase == 137 && minecraft.screen instanceof SettlementWorksiteAdoptionScreen screen && ++ticks >= 5) {
+            requireButtonsFit(screen);
+            capture("worksite-adoption-preview");
+            button(screen, "Adopt shared plan").onPress();
+            ticks = 0;
             phase = 97;
         } else if (phase == 97 && minecraft.screen instanceof SettlementManagementScreen screen && ++ticks >= 10) {
             UUID player = minecraft.player.getUUID();
@@ -595,10 +601,19 @@ public final class SettlementViewClientSmoke {
             originalHeight = screen.viewHeight();
             originalYaw = screen.cameraYaw();
             productionView = screen;
-            SettlementViewClient.openPanels(screen);
-            minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen(screen,
-                    new com.jvn.villagerretaliation.network.ProductionTarget(fixture.town().value(), productionArea),
-                    () -> SettlementViewClient.resume(screen.parent())));
+            screen.inspect(new com.jvn.villagerretaliation.network.SettlementManagementPayload.Area(productionArea, "Workshop",
+                    SettlementAreaType.WORKSHOP, fixture.center(), fixture.center().offset(3, 2, 3), 0, true, 0, 0, 0));
+            button(screen, "Orders").onPress();
+            screen.refreshManagement();
+            ticks = 0;
+            phase = 138;
+        } else if (phase == 138 && minecraft.screen instanceof SettlementViewScreen screen
+                && screen.inspector().sharedWorksite() && screen.inspector().production() != null && screen.inspector().production().editable() && ++ticks >= 5) {
+            require(screen.inspector().visible() && screen.inspector().section() == SettlementSelectionInspector.Section.ORDERS,
+                    "selecting a worksite exposes its orders beside the map");
+            requireButtonsFit(screen);
+            capture("inspector-production-orders");
+            button(screen, "Edit production").onPress();
             ticks = 0;
             phase = 127;
         } else if (phase == 127 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
@@ -620,7 +635,6 @@ public final class SettlementViewClientSmoke {
             screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
                     .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getY() != 34).findFirst().orElseThrow().setValue("5");
             requireButtonsFit(screen);
-            capture("production-exact-recipe");
             button(screen, "Batch").onPress();
             button(screen, "Continuous").onPress();
             require(!button(screen, "Add order").active, "maintain-stock orders require an explicit storage destination");
@@ -637,6 +651,7 @@ public final class SettlementViewClientSmoke {
             phase = 130;
         } else if (phase == 130 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionRecipeScreen screen
                 && screen.previous().state().editable() && ++ticks >= 5) {
+            capture("production-exact-recipe");
             button(screen, "Maintain stock").onPress();
             require(button(screen, "Add order").active, "a finite batch keeps the selected recipe and ingredient choice after closing storage");
             button(screen, "Add order").onPress();
@@ -676,6 +691,44 @@ public final class SettlementViewClientSmoke {
             require(screen == productionView && screen.focusX() == originalX && screen.focusZ() == originalZ
                             && screen.viewHeight() == originalHeight && screen.cameraYaw() == originalYaw,
                     "production screens preserve the exact map selection and camera instance");
+            require(screen.inspector().visible() && screen.inspector().section() == SettlementSelectionInspector.Section.ORDERS,
+                    "closing production restores the selected worksite inspector section");
+            button(screen, "Staff").onPress();
+            ticks = 0;
+            phase = 139;
+        } else if (phase == 139 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            requireButtonsFit(screen);
+            require(button(screen, "Fill staffing").active, "the selected shared worksite exposes explicit staffing");
+            capture("inspector-staff");
+            button(screen, "Settings").onPress();
+            ticks = 0;
+            phase = 140;
+        } else if (phase == 140 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            capture("inspector-settings");
+            button(screen, "Storage").onPress();
+            ticks = 0;
+            phase = 141;
+        } else if (phase == 141 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            capture("inspector-storage");
+            button(screen, "Storage and stations").onPress();
+            ticks = 0;
+            phase = 142;
+        } else if (phase == 142 && minecraft.screen instanceof SettlementWorksiteLinksScreen screen && ++ticks >= 5) {
+            requireButtonsFit(screen);
+            require(minecraft.getCameraEntity() != minecraft.player, "the station picker retains the active map camera");
+            screen.onClose();
+            ticks = 0;
+            phase = 143;
+        } else if (phase == 143 && minecraft.screen instanceof SettlementWorkerScreen screen && ++ticks >= 5) {
+            screen.onClose();
+            ticks = 0;
+            phase = 144;
+        } else if (phase == 144 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen == productionView && screen.focusX() == originalX && screen.focusZ() == originalZ
+                            && screen.viewHeight() == originalHeight && screen.cameraYaw() == originalYaw,
+                    "storage and station picking restores the same map camera and worksite");
+            button(screen, "Browse settlement").onPress();
+            require(!screen.inspector().visible(), "browsing hides the inspector without clearing the map selection");
             var targets = java.util.List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(fixture.resident(), null));
             var form = new SettlementTemporaryTaskScreen(screen, targets,
                     com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FARM_PATCH,
@@ -745,7 +798,7 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 74 && minecraft.screen instanceof SettlementViewScreen screen) {
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(minecraft.screen == screen && screen.selectionGizmo() == null, "area cancellation keeps the camera session");
-            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+            openOverview(screen);
             phase = 15;
         } else if (phase == 15 && minecraft.screen instanceof SettlementManagementScreen screen) {
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
@@ -896,7 +949,7 @@ public final class SettlementViewClientSmoke {
                     && screen.selectionGizmo().bounds().equals(new SettlementViewBounds(projectSnapshot.min(), projectSnapshot.max()).box()),
                     "the new designation starts at the exact construction footprint");
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
-            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+            openOverview(screen);
             phase = 114;
         } else if (phase == 114 && minecraft.screen instanceof SettlementManagementScreen screen) {
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
@@ -1067,7 +1120,7 @@ public final class SettlementViewClientSmoke {
                 require(SettlementWorkforceService.role(resident) == com.jvn.villagerretaliation.interaction.HiredVillagerRole.COMBAT,
                         "assigning a home preserves the resident's guard job");
             }).join();
-            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+            openOverview(screen);
             phase = 51;
         } else if (phase == 51 && minecraft.screen instanceof SettlementManagementScreen screen) {
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS, "");
@@ -1246,6 +1299,7 @@ public final class SettlementViewClientSmoke {
         screen.keyPressed(GLFW.GLFW_KEY_1, 0, 0);
         require(Math.abs(screen.focusX() - entity.blockPosition().getX()) < 1, "double recall focuses its members");
         screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
+        if (screen.inspector().visible()) button(screen, "Browse settlement").onPress();
         var search = screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
                 .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow();
         screen.setFocused(search);
@@ -1319,6 +1373,11 @@ public final class SettlementViewClientSmoke {
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
+    }
+
+    private static void openOverview(SettlementViewScreen screen) {
+        if (screen.inspector().visible()) button(screen, "Browse settlement").onPress();
+        button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
     }
 
     private static void selectFirstRow(SettlementManagementScreen screen) {

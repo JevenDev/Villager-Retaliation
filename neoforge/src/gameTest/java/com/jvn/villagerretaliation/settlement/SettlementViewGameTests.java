@@ -378,12 +378,12 @@ public final class SettlementViewGameTests {
                 if (tab != category) next = client.request(time - 1);
                 boolean complete = client.accept(new com.jvn.villagerretaliation.network.SettlementViewOverviewPayload(
                         session.id, next.requestId(), page.generation(), page.header(), tab, 0, 0, List.of()), time);
-                helper.assertValueEqual(complete, tab == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES,
+                helper.assertValueEqual(complete, tab == com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.CATEGORIES.getLast(),
                         "only a complete refresh replaces the visible snapshot");
                 time += 1_000;
             }
-            helper.assertTrue(client.request(9_000) == null, "refresh waits five seconds after completion");
-            helper.assertTrue(client.request(9_001) != null, "refresh restarts after the completion interval");
+            helper.assertTrue(client.request(time + 3_999) == null, "refresh waits five seconds after completion");
+            helper.assertTrue(client.request(time + 4_000) != null, "refresh restarts after the completion interval");
             expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
                     session.id, 3, 0, category, 1));
             SettlementViewService.close(fixture.player().getUUID(), false);

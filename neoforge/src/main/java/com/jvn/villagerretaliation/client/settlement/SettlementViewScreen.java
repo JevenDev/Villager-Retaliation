@@ -47,7 +47,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-public final class SettlementViewScreen extends Screen {
+public final class SettlementViewScreen extends Screen implements com.jvn.villagerretaliation.client.inventory.ProductionClient.Receiver {
     static final float PITCH = SettlementViewCamera.PITCH;
     private static final double MOVE_RESPONSE = 12.0D;
     private static final double ZOOM_RESPONSE = 14.0D;
@@ -60,6 +60,9 @@ public final class SettlementViewScreen extends Screen {
     private final SettlementViewBrowser browser = new SettlementViewBrowser();
     private final SettlementOverviewMap overviewMap = new SettlementOverviewMap();
     private final List<Button> browserRows = new ArrayList<>();
+    private final List<net.minecraft.client.gui.components.AbstractWidget> browserWidgets = new ArrayList<>();
+    private final SettlementSelectionInspector inspector = new SettlementSelectionInspector(this::inspectorAction, this::updateInspector,
+            id -> { var row = this.roster.get(id); if (row != null) inspect(row); });
     private final List<net.minecraft.client.gui.components.AbstractWidget> sidebarWidgets = new ArrayList<>();
     private net.minecraft.client.gui.components.EditBox search;
     private Button filterButton;
@@ -300,6 +303,11 @@ public final class SettlementViewScreen extends Screen {
         updateActions();
     }
 
+    void acceptManagementResult(SettlementManagementActionResultPayload payload) {
+        this.guardFeedback = SettlementManagementScreen.resultMessage(payload);
+        refreshManagement();
+    }
+
     void refreshManagement() {
         this.snapshots.refresh();
         this.residentRefreshAt = 0;
@@ -323,9 +331,12 @@ public final class SettlementViewScreen extends Screen {
         this.lastFrame = 0L;
         this.sidebarWidgets.clear();
         this.browserRows.clear();
+        this.browserWidgets.clear();
         this.panelWidth = Math.clamp(this.width / 3, 156, 224);
         this.panelLeft = this.width - (this.preferences.sidebar ? this.panelWidth : 20);
         initBrowser();
+        for (var child : children()) if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) this.browserWidgets.add(widget);
+        this.inspector.init(this.panelLeft, this.panelWidth, this.height, this::addRenderableWidget);
         this.manage = addRenderableWidget(Button.builder(text("manage_selection"), ignored -> manageSelection())
                 .bounds(this.panelLeft + 8, this.height - 70, this.panelWidth - 16, 20).build());
         this.drawArea = addRenderableWidget(Button.builder(text("draw_area"), ignored -> {
@@ -465,7 +476,7 @@ public final class SettlementViewScreen extends Screen {
         for (int i = 0; i < this.browserRows.size(); i++) {
             var button = this.browserRows.get(i);
             int index = i + this.browser.scroll;
-            button.visible = this.preferences.sidebar && index < rows.size();
+            button.visible = this.preferences.sidebar && !this.inspector.visible() && index < rows.size();
             if (index < rows.size()) {
                 var row = rows.get(index);
                 String label = row instanceof SettlementManagementPayload.Issue ? SettlementManagementScreen.detail(row).getString()
@@ -479,7 +490,8 @@ public final class SettlementViewScreen extends Screen {
         }
     }
 
-    private void inspect(SettlementManagementPayload.Entry entry) {
+    void inspect(SettlementManagementPayload.Entry entry) {
+        this.inspector.reveal();
         this.inspected = null;
         if (entry instanceof SettlementManagementPayload.Resident r) {
             select(new Pick(r.position(), r.id()), null);
@@ -542,6 +554,7 @@ public final class SettlementViewScreen extends Screen {
         var overviewRequest = this.snapshots.request(now);
         if (overviewRequest != null) PacketDistributor.sendToServer(overviewRequest);
         refreshPopup();
+        this.inspector.tick();
         var draft = this.parent.buildingDraft();
         if (draft != null) draft.tick(this.header.id());
         synchronizeGizmo();
@@ -641,7 +654,7 @@ public final class SettlementViewScreen extends Screen {
         }
         Component selection = this.interaction.is(Mode.SELECT_PLOT) ? plotDescription() : selectedName();
         int y = this.interaction.is(Mode.SELECT_PLOT) ? this.buyPlot.getBottom() + 8 : this.height - 122;
-        for (var line : this.font.split(this.preferences.sidebar || this.interaction.is(Mode.SELECT_PLOT) ? selection : Component.empty(), this.interaction.is(Mode.SELECT_PLOT) ? this.panelLeft - 16 : this.panelWidth - 16)) {
+        for (var line : this.font.split(this.preferences.sidebar && !this.inspector.visible() || this.interaction.is(Mode.SELECT_PLOT) ? selection : Component.empty(), this.interaction.is(Mode.SELECT_PLOT) ? this.panelLeft - 16 : this.panelWidth - 16)) {
             if (y + this.font.lineHeight > this.height - (this.interaction.is(Mode.SELECT_PLOT) ? 48 : 96)) {
                 break;
             }
@@ -684,6 +697,7 @@ public final class SettlementViewScreen extends Screen {
             graphics.renderOutline(left, top, rightEdge - left, bottom - top, 0xFF40CCFF);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.inspector.render(graphics, this.font, mouseX, mouseY);
         if (allLines.size() > lines.size() && mouseX < this.panelLeft && mouseY >= this.height - 42) {
             graphics.renderTooltip(this.font, hint, mouseX, mouseY);
         }
@@ -723,6 +737,7 @@ public final class SettlementViewScreen extends Screen {
     }
 
     private void updateActions() {
+        updateInspector();
         if (!permits(SettlementPermission.BUILD)) {
             cancelGizmo();
             if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
@@ -1175,6 +1190,7 @@ public final class SettlementViewScreen extends Screen {
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
         if (this.popup != null && this.popup.scroll(x, y, vertical) || this.gizmo != null && this.gizmo.dragging()) return true;
         if (this.preferences.sidebar && x >= this.panelLeft) {
+            if (this.inspector.visible()) { this.inspector.scroll(vertical); return true; }
             this.browser.scroll += vertical > 0 ? -1 : 1;
             updateBrowserRows();
             return true;
@@ -1193,6 +1209,7 @@ public final class SettlementViewScreen extends Screen {
             if (this.popup.click(x, y, button)) return true;
             this.popup = null;
         }
+        if (this.inspector.click(x, y, button)) return true;
         if (super.mouseClicked(x, y, button)) {
             return true;
         }
@@ -1629,6 +1646,7 @@ public final class SettlementViewScreen extends Screen {
     }
 
     private void select(Pick hit, UUID area) {
+        this.inspector.reveal();
         this.inspected = null;
         this.selectedArea = hit.resident() == null ? area : null;
         this.selectedBlock = hit.position();
@@ -1963,6 +1981,97 @@ public final class SettlementViewScreen extends Screen {
             this.popup = null;
             run.run();
         });
+    }
+
+    SettlementSelectionInspector inspector() { return this.inspector; }
+
+    private SettlementManagementPayload.Entry inspectorSelection() {
+        if (this.inspected != null) return this.inspected;
+        if (this.selectedResident != null) return this.resident == null ? this.roster.get(this.selectedResident) : this.resident;
+        if (this.projects.containsKey(this.selectedArea)) return this.projects.get(this.selectedArea);
+        return this.areas.get(this.selectedArea);
+    }
+
+    private SettlementManagementPayload.Area inspectorWorksite() {
+        var selected = inspectorSelection();
+        var area = selected instanceof SettlementManagementPayload.Area value ? value
+                : selected instanceof SettlementManagementPayload.Resident value ? this.areas.get(value.area())
+                : selected instanceof SettlementManagementPayload.Project value ? this.areas.get(value.area()) : null;
+        return area != null && area.kind().role() != null ? area : null;
+    }
+
+    private List<SettlementManagementPayload.Resident> inspectorStaff() {
+        var selected = inspectorSelection();
+        var worksite = inspectorWorksite();
+        if (selected instanceof SettlementManagementPayload.Resident resident) return List.of(resident);
+        return this.roster.values().stream().filter(row -> worksite != null ? worksite.id().equals(row.area())
+                : this.selection.contains(row.id())).toList();
+    }
+
+    private void updateInspector() {
+        this.inspector.update(this.header, inspectorSelection(), inspectorWorksite(), inspectorStaff(),
+                this.snapshots.entries(Page.DEPOTS), this.snapshots.entries(Page.TRADE),
+                this.preferences.sidebar && !this.interaction.is(Mode.SELECT_PLOT), this.commands.busy() || this.parent.submitting());
+        for (var widget : this.browserWidgets) widget.visible = this.preferences.sidebar && !this.inspector.visible();
+        if (this.inspector.visible() && this.search != null) this.search.setFocused(false);
+        updateBrowserRows();
+    }
+
+    @Override
+    public void acceptProduction(com.jvn.villagerretaliation.network.ProductionSnapshotPayload payload) {
+        this.inspector.accept(payload);
+    }
+
+    private void inspectorAction(SettlementSelectionInspector.Section section) {
+        var selected = inspectorSelection();
+        var area = inspectorWorksite();
+        switch (section) {
+            case OVERVIEW -> focusSelection();
+            case STAFF -> {
+                if (selected instanceof SettlementManagementPayload.Area && area != null && area.plan() != null) {
+                    this.parent.submit(new SettlementManagementActionPayload.FillStaffing(area.id()));
+                } else {
+                    this.selection.select(inspectorStaff().stream().map(SettlementManagementPayload.Resident::id).toList(), false);
+                    this.selectedArea = null;
+                    syncSelection();
+                    openActionPopup(SettlementViewPopup.Kind.ACTIONS);
+                }
+            }
+            case ORDERS -> {
+                if (area != null && com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService.supports(area.kind().role())) {
+                    this.minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen(management(),
+                            new com.jvn.villagerretaliation.network.ProductionTarget(this.header.id(), area.id()),
+                            () -> SettlementViewClient.resume(this.parent)));
+                } else if (area != null && area.kind() == SettlementAreaType.TRADING_POST) {
+                    openManagement(Page.TRADE, "");
+                } else if (selected instanceof SettlementManagementPayload.Resident) {
+                    openActionPopup(SettlementViewPopup.Kind.ACTIONS);
+                } else if (area != null && (area.kind() == SettlementAreaType.GUARD_POST || area.kind() == SettlementAreaType.HUNTING_GROUNDS)) {
+                    if (sharedRouteAvailable(area)) beginGuardOrder(SettlementGuardOrder.Mode.PATROL, area.id());
+                    else this.minecraft.setScreen(new SettlementWorkerScreen(management(), area, this));
+                } else if (area != null && area.kind() == SettlementAreaType.CONSTRUCTION) {
+                    openManagement(Page.PROJECTS, selected instanceof SettlementManagementPayload.Project project ? project.id().toString() : "");
+                } else if (area != null && area.kind() == SettlementAreaType.DEPOT) {
+                    openManagement(Page.DEPOTS, "");
+                } else {
+                    this.selection.select(inspectorStaff().stream().map(SettlementManagementPayload.Resident::id).toList(), false);
+                    this.selectedArea = null;
+                    syncSelection();
+                    executeAction(SettlementViewAction.TEMPORARY_TASK);
+                }
+            }
+            case SETTINGS -> {
+                if (selected instanceof SettlementManagementPayload.Resident resident && resident.settings() != null) {
+                    this.minecraft.setScreen(new SettlementWorkerScreen(management(), resident, this));
+                } else if (area != null) this.minecraft.setScreen(new SettlementWorkerScreen(management(), area, this));
+            }
+            case STORAGE -> {
+                if (area != null) {
+                    var form = new SettlementWorkerScreen(management(), area, this);
+                    this.minecraft.setScreen(new SettlementWorksiteLinksScreen(form));
+                }
+            }
+        }
     }
 
     private SettlementManagementScreen management() {

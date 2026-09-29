@@ -60,11 +60,15 @@ public final class SettlementWorkerScreen extends Screen {
     private int panelHeight;
 
     public SettlementWorkerScreen(SettlementManagementScreen parent, SettlementManagementPayload.Resident resident) {
+        this(parent, resident, null);
+    }
+
+    public SettlementWorkerScreen(SettlementManagementScreen parent, SettlementManagementPayload.Resident resident, SettlementViewScreen view) {
         super(text("worker_title", resident.name().isBlank() ? text("unnamed_resident") : Component.literal(resident.name())));
         this.parent = parent;
         this.resident = resident;
         this.worksite = null;
-        this.view = null;
+        this.view = view;
         this.draft = resident.settings();
     }
 
@@ -190,13 +194,20 @@ public final class SettlementWorkerScreen extends Screen {
             }).bounds(this.left + 100, bottom - 20, this.panelWidth - 200, 20).build());
         }
         this.save = addRenderableWidget(Button.builder(text(this.worksite != null && this.worksite.plan() == null ? "worksite_adopt" : "save"), ignored -> {
-            this.parent.submit(this.worksite == null
-                    ? new SettlementManagementActionPayload.SaveWorker(this.resident.id(), this.resident.area(), this.draft)
-                    : new SettlementManagementActionPayload.SaveWorksite(this.worksite.id(),
-                            new SettlementWorksitePlan(this.draft, this.desiredStaff, this.links, this.route), this.worksite.plan() == null));
-            this.feedback = text("saving");
-            updateRows();
+            if (this.worksite != null && this.worksite.plan() == null) {
+                this.minecraft.setScreen(new SettlementWorksiteAdoptionScreen(this,
+                        new SettlementWorksitePlan(this.draft, this.desiredStaff, this.links, this.route)));
+            } else savePlan();
         }).bounds(this.left + this.panelWidth - 94, bottom - 20, 94, 20).build());
+        updateRows();
+    }
+
+    void savePlan() {
+        this.parent.submit(this.worksite == null
+                ? new SettlementManagementActionPayload.SaveWorker(this.resident.id(), this.resident.area(), this.draft)
+                : new SettlementManagementActionPayload.SaveWorksite(this.worksite.id(),
+                        new SettlementWorksitePlan(this.draft, this.desiredStaff, this.links, this.route), this.worksite.plan() == null));
+        this.feedback = text("saving");
         updateRows();
     }
 
@@ -299,7 +310,7 @@ public final class SettlementWorkerScreen extends Screen {
         }
     }
 
-    private Component value(SettlementWorkerSetting setting, int value) {
+    static Component value(SettlementWorkerSetting setting, int value) {
         return switch (setting) {
             case MINING_MODE -> SettlementManagementScreen.enumText("worker_mining", HiredMiningMode.values()[value]);
             case CRAFTING_MODE -> SettlementManagementScreen.enumText("worker_crafting", CraftsmanWorker.Mode.values()[value]);

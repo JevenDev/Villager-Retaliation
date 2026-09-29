@@ -549,6 +549,84 @@ public final class SettlementWorksiteGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worksite_settings")
+    public static void inspectorSnapshotsCarryOverridesTasksStorageAndTrade(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.FARM, false);
+        var town = fixture.town();
+        var area = fixture.area();
+        helper.assertTrue(SettlementWorksiteService.configure(fixture.leader(), town, area.id(),
+                SettlementWorksitePlan.defaults(HiredVillagerRole.FARMING), true), "the fixture adopts explicitly");
+        var task = new com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask(UUID.randomUUID(),
+                com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FARM_PATCH, area.min(), area.max(), 1);
+        new com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue(town.id().value(), town.leader(), area.id(),
+                HiredVillagerRole.FARMING, area.min(), area.max(), List.of(task)).store(town.workers().get(fixture.villager().getUUID()).settings());
+        var depot = town.registerDepot(town.leader(), area.id(), area.min(), SettlementDepotPurpose.GENERAL);
+        depot.setItem(0, new ItemStack(Items.WHEAT, 11));
+        var order = SettlementTradeOrder.disabled(ResourceLocation.withDefaultNamespace("wheat"), SettlementTradeOrder.Direction.BUY);
+        helper.assertTrue(town.economy().putOrder(order), "a communal trade order is recorded");
+        var overview = SettlementManagementService.overview(fixture.leader(), town);
+        var resident = (SettlementManagementPayload.Resident) overview.get(SettlementManagementRequestPayload.Page.RESIDENTS).getFirst();
+        helper.assertTrue(resident.settings() == null && resident.worksitePlan() && resident.overrideCount() > 0,
+                "compact overview rows retain inheritance indicators without copying complete worker settings");
+        helper.assertTrue(!resident.temporary().isEmpty(), "background temporary work has an explicit status");
+        helper.assertValueEqual(((SettlementManagementPayload.Depot) overview.get(SettlementManagementRequestPayload.Page.DEPOTS).getFirst()).items(),
+                11, "storage quantities reach the inspector");
+        var trade = (SettlementManagementPayload.Order) overview.get(SettlementManagementRequestPayload.Page.TRADE).getFirst();
+        helper.assertTrue(trade.id().equals(order.id()) && trade.budget().equals(order.dailyBudget()),
+                "the trading inspector uses the communal order and budget");
+        var header = SettlementManagementService.overviewHeader(fixture.leader(), town).header();
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            for (var category : List.of(SettlementManagementRequestPayload.Page.RESIDENTS,
+                    SettlementManagementRequestPayload.Page.DEPOTS, SettlementManagementRequestPayload.Page.TRADE)) {
+                var entries = overview.get(category);
+                var payload = new com.jvn.villagerretaliation.network.SettlementViewOverviewPayload(UUID.randomUUID(), 1, 1,
+                        header, category, 0, entries.size(), entries);
+                com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.STREAM_CODEC.encode(buffer, payload);
+                var decoded = com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.STREAM_CODEC.decode(buffer);
+                helper.assertValueEqual(decoded.entries(), payload.entries(), "inspector information survives bounded wire serialization");
+            }
+            var detail = SettlementManagementService.snapshot(fixture.leader(), new SettlementManagementRequestPayload(
+                    town.id().value(), SettlementManagementRequestPayload.Page.RESIDENTS, 0, resident.id().toString(), 3, false));
+            SettlementManagementPayload.STREAM_CODEC.encode(buffer, detail);
+            var restored = (SettlementManagementPayload.Resident) SettlementManagementPayload.STREAM_CODEC.decode(buffer).entries().getFirst();
+            helper.assertTrue(restored.overrideCount() == resident.overrideCount() && restored.temporary().equals(resident.temporary()),
+                    "full worker details agree with the compact map inspector");
+        } finally {
+            buffer.release();
+        }
+        helper.assertFalse(helper.getLevel().hasChunkAt(town.center()), "inspector snapshots do not load the remote worksite");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worksite_settings")
+    public static void civicInspectorDoesNotExposePersonalTemporaryOrders(GameTestHelper helper) {
+        var fixture = fixture(helper, SettlementAreaType.FARM, true);
+        try {
+            var owner = UUID.randomUUID();
+            var contract = com.jvn.villagerretaliation.interaction.HireContract.regular(owner,
+                    helper.getLevel().getGameTime(), 1, 1, 1, HiredVillagerRole.FARMING);
+            com.jvn.villagerretaliation.interaction.HireContractStore.save(fixture.villager(), contract);
+            var task = new com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask(UUID.randomUUID(),
+                    com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FARM_PATCH,
+                    fixture.area().min(), fixture.area().max(), 1);
+            new com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue(owner, owner, null, HiredVillagerRole.FARMING,
+                    fixture.area().min(), fixture.area().max(), List.of(task)).store(HiredWorkStateStore.state(fixture.villager()));
+            var payload = SettlementManagementService.snapshot(fixture.leader(), new SettlementManagementRequestPayload(
+                    fixture.town().id().value(), SettlementManagementRequestPayload.Page.RESIDENTS, 0,
+                    fixture.villager().getUUID().toString(), 1, false));
+            var resident = (SettlementManagementPayload.Resident) payload.entries().getFirst();
+            helper.assertTrue(resident.temporary().isEmpty() && resident.settings() == null && resident.brewingOrder() == null,
+                    "civic viewers cannot inspect private task or job settings even during an assignment handoff");
+            helper.assertValueEqual(resident.status(), "personal_commitment", "the inspector reports only the civic availability blocker");
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.HireContractStore.load(fixture.villager()).orElseThrow().owner().filter(owner::equals).isPresent(),
+                    "viewing the civic roster does not change personal ownership");
+        } finally {
+            fixture.villager().discard();
+        }
+        helper.succeed();
+    }
+
     private static SettlementWorkerSettings snapshot(GameTestHelper helper, Fixture fixture) {
         return SettlementWorkerConfigurationService.snapshot(helper.getLevel(), fixture.town(), fixture.villager().getUUID());
     }

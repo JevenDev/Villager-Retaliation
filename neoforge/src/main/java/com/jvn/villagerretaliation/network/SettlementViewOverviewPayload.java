@@ -13,7 +13,7 @@ public record SettlementViewOverviewPayload(UUID session, int requestId, long ge
                                             Page category, int index, int total, List<Entry> entries)
         implements CustomPacketPayload {
     public static final int PAGE_SIZE = 64;
-    public static final List<Page> CATEGORIES = List.of(Page.RESIDENTS, Page.AREAS, Page.PROJECTS, Page.ISSUES);
+    public static final List<Page> CATEGORIES = List.of(Page.RESIDENTS, Page.AREAS, Page.PROJECTS, Page.ISSUES, Page.DEPOTS, Page.TRADE);
     public static final Type<SettlementViewOverviewPayload> TYPE = VillagerPayloads.type("settlement_view_overview");
     public static final StreamCodec<RegistryFriendlyByteBuf, SettlementViewOverviewPayload> STREAM_CODEC =
             VillagerPayloads.codec(SettlementViewOverviewPayload::encode, SettlementViewOverviewPayload::decode);
@@ -31,6 +31,8 @@ public record SettlementViewOverviewPayload(UUID session, int requestId, long ge
                 case AREAS -> entry instanceof Area;
                 case PROJECTS -> entry instanceof Project;
                 case ISSUES -> entry instanceof Issue;
+                case DEPOTS -> entry instanceof Depot;
+                case TRADE -> entry instanceof Order;
                 default -> false;
             })) throw new IllegalArgumentException("Invalid overview category");
         }
@@ -59,6 +61,10 @@ public record SettlementViewOverviewPayload(UUID session, int requestId, long ge
                 r.roles().forEach(b::writeEnum);
                 SettlementManagementActionPayload.writeGuardOrder(b, r.guardOrder());
                 b.writeUtf(r.diagnostic(), 180);
+                b.writeBoolean(r.manualStaffing());
+                b.writeBoolean(r.worksitePlan());
+                b.writeVarInt(r.overrideCount());
+                b.writeUtf(r.temporary(), 180);
             } else SettlementManagementPayload.writeEntry(b, entry);
         }
     }
@@ -91,7 +97,8 @@ public record SettlementViewOverviewPayload(UUID session, int requestId, long ge
             List<com.jvn.villagerretaliation.interaction.HiredVillagerRole> available = new ArrayList<>();
             for (int r = 0; r < roles; r++) available.add(b.readEnum(com.jvn.villagerretaliation.interaction.HiredVillagerRole.class));
             entries.add(new Resident(id, name, profession, baby, presence, position, area, -1, -1, status, available,
-                    SettlementManagementActionPayload.readGuardOrder(b), null, null, b.readUtf(180)));
+                    SettlementManagementActionPayload.readGuardOrder(b), null, null, b.readUtf(180),
+                    b.readBoolean(), b.readBoolean(), b.readVarInt(), b.readUtf(180)));
         }
         return new SettlementViewOverviewPayload(session, request, generation, header, category, index, total, entries);
     }
