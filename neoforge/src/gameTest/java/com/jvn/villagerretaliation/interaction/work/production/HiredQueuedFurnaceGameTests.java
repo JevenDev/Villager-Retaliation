@@ -279,6 +279,37 @@ public final class HiredQueuedFurnaceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "queued_furnace")
+    public static void changedPlannedInputCannotMergeDifferentComponents(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            var order = order(helper, "iron_ingot_from_smelting_raw_iron", 2);
+            HiredProductionService.appendPersonal(fixture.owner(), fixture.villager(), 0L, order);
+            var queue = queue(helper, fixture);
+            var allocation = queue.reserve(fixture.villager().getUUID(), order.id(), 1, 2, 0L, fixture.station());
+            HiredProductionStations.get(helper.getLevel()).reserve(helper.getLevel(), queue, allocation,
+                    com.jvn.villagerretaliation.settlement.SettlementFurnaceState.identity(furnace(helper, fixture)));
+            var inventory = fixture.context().inventory();
+            inventory.consumeSupply(stack -> stack.is(Items.RAW_IRON), 10);
+            var marked = new ItemStack(Items.RAW_IRON);
+            marked.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Selected ore"));
+            inventory.insertSupply(marked.copy());
+            inventory.insertSupply(new ItemStack(Items.RAW_IRON));
+            tick(helper, fixture);
+            helper.assertTrue(furnace(helper, fixture).getItem(0).isEmpty(), "changed carried variants cannot be merged into the planned batch");
+            helper.assertValueEqual(inventory.countItem(Items.RAW_IRON), 2, "a failed exact pickup consumes neither variant");
+            helper.assertTrue(inventory.findSupply(stack -> HiredProductionStock.matches(marked, stack)).getCount() == 1,
+                    "the original component-bearing item remains intact");
+            helper.assertTrue(queue(helper, fixture).allocations().isEmpty(), "the blocked planned batch releases its quantity");
+            tick(helper, fixture);
+            helper.assertValueEqual(furnace(helper, fixture).getItem(0).getCount(), 1, "a later attempt plans the available exact batch");
+            helper.assertTrue(HiredProductionStock.matches(marked, furnace(helper, fixture).getItem(0)), "the selected native input keeps its components");
+        } finally {
+            cleanup(helper, fixture);
+        }
+        helper.succeed();
+    }
+
     private static HiredProductionOrder order(GameTestHelper helper, String recipe, int amount) {
         return HiredProductionOrder.create(helper.getLevel(), HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace(recipe), Map.of()),
                 HiredProductionOrder.Mode.BATCH, amount, null);

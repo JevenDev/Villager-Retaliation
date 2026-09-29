@@ -43,6 +43,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!context.hasWorkArea()) {
+            HiredProductionService.releasePlanned(level, villager, role());
             return waitForWorkAreaAssignment(level, villager, context);
         }
         if (AssignedStorageService.hasAssignedStorage(level, villager)) {
@@ -51,6 +52,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 return WorkResult.progressed("interaction.work.craftsman.depositing_outputs");
             }
             if (deposit == DepositResult.STORAGE_FULL) {
+                HiredProductionService.releasePlanned(level, villager, role());
                 return WorkResult.idle(storageFullStatus(context));
             }
         }

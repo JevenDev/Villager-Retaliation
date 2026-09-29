@@ -217,6 +217,7 @@ public final class HiredVillagerWorkService {
         }
 
         if (isOutputBackpressured(villager, session)) {
+            com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.releasePlanned(level, villager, session.role());
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             HiredWorkerBrain.clearFailure(session.context());
             HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE);

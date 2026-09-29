@@ -4,7 +4,6 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
 import com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials;
-import com.jvn.villagerretaliation.interaction.work.HiredSupplyCrafting;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
@@ -59,7 +58,10 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
         }
         var deposit = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
         if (deposit == DepositResult.MOVING) return WorkResult.progressed(status("depositing_outputs"));
-        if (deposit == DepositResult.STORAGE_FULL) return WorkResult.idle(storageFullStatus(context));
+        if (deposit == DepositResult.STORAGE_FULL) {
+            releasePlanned(level, villager, queue);
+            return WorkResult.idle(storageFullStatus(context));
+        }
         var stations = HiredProductionStations.get(level);
         if (stations.readOnly()) return waiting(level, context, "production_station_recovery_required");
         var allocation = queue.allocation(villager.getUUID());
@@ -122,7 +124,7 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
                 var fuel = fuel(villager, context, furnace);
                 if (input.isEmpty() || needsFuel(furnace) && fuel.isEmpty()) continue;
                 int available = input.getCount();
-                if (!fuel.isEmpty() && fuel.is(input.getItem()) && needsFuel(furnace)) available--;
+                if (!fuel.isEmpty() && HiredProductionStock.matches(fuel, input) && needsFuel(furnace)) available--;
                 int batches = Math.min(context.transferLimit(16), available);
                 if (batches <= 0) continue;
                 var consumed = new LinkedHashMap<Item, Integer>();
@@ -204,23 +206,28 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
             return blocked(level, context, queue, order, "station_input_changed");
         }
         var fuel = fuel(villager, context, furnace);
-        var required = new LinkedHashMap<Item, Integer>();
-        if (!allocation.started()) required.put(input.getItem(), allocation.remaining() / order.output().getCount());
-        if (output.isEmpty() && needsFuel(furnace)) {
-            if (fuel.isEmpty()) return blocked(level, context, queue, order, "missing_fuel");
-            required.merge(fuel.getItem(), 1, Integer::sum);
+        var required = new java.util.ArrayList<HiredProductionMaterials.Need>();
+        int inputCount = allocation.started() ? 0 : allocation.remaining() / order.output().getCount();
+        boolean fuelNeeded = output.isEmpty() && needsFuel(furnace);
+        if (fuelNeeded && fuel.isEmpty()) return blocked(level, context, queue, order, "missing_fuel");
+        if (inputCount > 0 && fuelNeeded && HiredProductionStock.matches(input, fuel)) {
+            inputCount++;
+            fuelNeeded = false;
         }
-        var missing = new LinkedHashMap<Item, Integer>();
-        required.forEach((item, count) -> {
-            int deficit = count - HiredSupplyCrafting.countCarried(context, item);
-            if (deficit > 0) missing.put(item, deficit);
-        });
-        if (!AssignedStorageService.reserveProductionInputs(villager, missing)) {
+        if (inputCount > 0) required.add(exactNeed(input, inputCount));
+        if (fuelNeeded) required.add(exactNeed(fuel, 1));
+        var missing = new java.util.ArrayList<HiredProductionMaterials.Need>();
+        for (var need : required) {
+            int carried = context.inventory().supplySlots().stream().map(context.inventory()::getItem)
+                    .filter(need.predicate()).mapToInt(ItemStack::getCount).sum();
+            if (carried < need.count()) missing.add(new HiredProductionMaterials.Need(need.predicate(), need.count() - carried, need.label()));
+        }
+        if (!AssignedStorageService.reserveProductionNeeds(villager, missing)) {
             return blocked(level, context, queue, order, "materials_reserved");
         }
         if (!missing.isEmpty()) {
             var gathered = HiredProductionMaterials.acquireFromAssignedStorage(level, villager, context,
-                    HiredProductionMaterials.missingItemNeeds(context, required), 0.45D, 16,
+                    missing, 0.45D, 16,
                     HiredProductionMaterials.StorageFilterPolicy.IGNORE_INPUT_FILTER);
             queue.blocker(order.id(), gathered.status() == HiredProductionMaterials.Status.MISSING ? "missing_materials" : "");
             return gathered.moved() > 0 || gathered.status() == HiredProductionMaterials.Status.MOVING
@@ -272,11 +279,11 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
         ItemStack loadedInput = ItemStack.EMPTY;
         ItemStack loadedFuel = ItemStack.EMPTY;
         if (!allocation.started()) {
-            loadedInput = take(context, input.getItem(), allocation.remaining() / order.output().getCount());
+            loadedInput = take(context, input, allocation.remaining() / order.output().getCount());
             if (loadedInput.isEmpty()) return blocked(level, context, queue, order, "missing_materials");
         }
         if (needsFuel(furnace)) {
-            loadedFuel = take(context, fuel.getItem(), 1);
+            loadedFuel = take(context, fuel, 1);
             if (loadedFuel.isEmpty()) {
                 context.inventory().restoreSnapshot(snapshot);
                 return blocked(level, context, queue, order, "missing_fuel");
@@ -294,11 +301,14 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
         return WorkResult.progressed(status("waiting_station"));
     }
 
-    private static ItemStack take(HiredWorkContext context, Item item, int count) {
-        var sample = context.inventory().findSupply(stack -> stack.is(item)).copy();
-        if (sample.isEmpty() || HiredSupplyCrafting.countCarried(context, item) < count) return ItemStack.EMPTY;
-        int taken = context.inventory().consumeSupply(stack -> stack.is(item), count);
-        return taken == count ? sample.copyWithCount(count) : ItemStack.EMPTY;
+    private static HiredProductionMaterials.Need exactNeed(ItemStack sample, int count) {
+        return new HiredProductionMaterials.Need(stack -> HiredProductionStock.matches(sample, stack), count, sample.getHoverName().getString());
+    }
+
+    private static ItemStack take(HiredWorkContext context, ItemStack sample, int count) {
+        var material = HiredProductionStock.product(sample);
+        return !material.isEmpty() && context.inventory().consumeSupplyExactly(stack -> HiredProductionStock.matches(material, stack), count)
+                ? material.copyWithCount(count) : ItemStack.EMPTY;
     }
 
     private static ItemStack fuel(Villager villager, HiredWorkContext context, AbstractFurnaceBlockEntity furnace) {

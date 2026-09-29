@@ -178,6 +178,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 return WorkResult.progressed("interaction.work.brewing.depositing_outputs");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
+                HiredProductionService.releasePlanned(level, villager, role());
                 return WorkResult.idle(storageFullStatus(context));
             }
         }
