@@ -39,6 +39,63 @@ public final class SettlementWorkerConfigurationGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_settings")
+    public static void sharedSettingsKeepPersonalDefaultsAndCivicSaveValuesCompatible(GameTestHelper helper) {
+        for (HiredVillagerRole role : HiredVillagerRole.values()) {
+            CompoundTag personal = new CompoundTag();
+            personal.putString("UnrelatedSavedState", "retained");
+            var defaults = SettlementWorkerSettings.capture(role, personal.copy());
+            for (SettlementWorkerSetting setting : SettlementWorkerSetting.values()) {
+                var definition = setting.definition();
+                helper.assertValueEqual(setting.supports(role), definition.supports(role), "capability support has one definition");
+                if (!setting.supports(role)) continue;
+                helper.assertValueEqual(defaults.options().get(setting), Integer.valueOf(definition.read(personal)),
+                        "personal and civic reads share defaults");
+                int value = definition.choices() - 1;
+                definition.apply(personal, role, value);
+                helper.assertValueEqual(setting.read(personal), value, "existing worker NBT stores the same typed value");
+                helper.assertFalse(definition.valid(role, -1), "negative option values are rejected");
+                helper.assertFalse(definition.valid(role, definition.choices()), "out-of-range option values are rejected");
+            }
+            var captured = SettlementWorkerSettings.capture(role, personal);
+            var saved = captured.save();
+            helper.assertValueEqual(SettlementWorkerSettings.load(saved), captured, "all existing civic option names round trip");
+            for (var entry : captured.options().entrySet()) {
+                helper.assertValueEqual(saved.getCompound("Options").getInt(entry.getKey().name()), entry.getValue(),
+                        "saved values retain the existing civic option identifiers");
+            }
+            helper.assertValueEqual(personal.getString("UnrelatedSavedState"), "retained", "typed writes preserve unrelated worker state");
+        }
+        helper.assertFalse(com.jvn.villagerretaliation.interaction.HiredJobSetting.CROP_SELECTION.valid(HiredVillagerRole.COMBAT, 0),
+                "a valid numeric choice cannot configure an unsupported role");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_settings")
+    public static void sharedDefaultsPreserveLegacyHuntingAndExplicitPersonalOverrides(GameTestHelper helper) {
+        var state = new CompoundTag();
+        state.putString("CombatMode", "roaming");
+        helper.assertValueEqual(SettlementWorkerSetting.HUNT_ANIMALS.read(state), 0, "legacy hostile hunting keeps animals disabled");
+        helper.assertValueEqual(SettlementWorkerSetting.HUNT_HOSTILES.read(state), 1, "legacy combat mode retains hostile hunting");
+        state.putBoolean("LoggingPlantSaplings", false);
+        com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions.initializeDefaults(state);
+        helper.assertFalse(com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions.plantSaplings(state),
+                "initialization does not overwrite a personal choice");
+        helper.assertTrue(com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions.pickUpDecayDrops(new CompoundTag()),
+                "reading an uninitialized worker uses the same decay default");
+        var inherited = SettlementWorkerSettings.capture(HiredVillagerRole.LOGGING, new CompoundTag()).withOverrides(0);
+        var worksite = SettlementWorkerSettings.capture(HiredVillagerRole.LOGGING, new CompoundTag())
+                .with(SettlementWorkerSetting.PLANT_SAPLINGS, 0);
+        helper.assertValueEqual(inherited.resolve(worksite).options().get(SettlementWorkerSetting.PLANT_SAPLINGS), Integer.valueOf(0),
+                "civic workers inherit the worksite default");
+        var override = inherited.with(SettlementWorkerSetting.PLANT_SAPLINGS, 1);
+        helper.assertValueEqual(override.resolve(worksite).options().get(SettlementWorkerSetting.PLANT_SAPLINGS), Integer.valueOf(1),
+                "an individual override remains independent");
+        helper.assertValueEqual(SettlementWorkerSettings.load(override.save()).resolve(worksite), override.resolve(worksite),
+                "reload preserves the per-setting override mask");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_settings")
     public static void quickPauseUsesCurrentSettingsAndRejectsStaleAssignments(GameTestHelper helper) {
         var fixture = fixture(helper, SettlementAreaType.FARM, false);
         var town = fixture.town();

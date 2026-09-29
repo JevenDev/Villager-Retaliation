@@ -1,8 +1,8 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.interaction.HiredJobSetting;
 import java.util.Locale;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 
 public final class HiredFarmingOptions {
     public static final String TILL_SOIL_TAG = "FarmingTillSoil";
@@ -19,21 +19,21 @@ public final class HiredFarmingOptions {
     }
 
     public static void initializeDefaults(CompoundTag state) {
-        putDefault(state, TILL_SOIL_TAG, true);
-        putDefault(state, PLANT_CROPS_TAG, true);
-        putDefault(state, HARVEST_CROPS_TAG, true);
+        HiredJobSetting.TILL_SOIL.initializeDefault(state);
+        HiredJobSetting.PLANT_CROPS.initializeDefault(state);
+        HiredJobSetting.HARVEST_CROPS.initializeDefault(state);
     }
 
     public static boolean tillSoil(CompoundTag state) {
-        return !state.contains(TILL_SOIL_TAG, Tag.TAG_BYTE) || state.getBoolean(TILL_SOIL_TAG);
+        return HiredJobSetting.TILL_SOIL.read(state) != 0;
     }
 
     public static boolean plantCrops(CompoundTag state) {
-        return !state.contains(PLANT_CROPS_TAG, Tag.TAG_BYTE) || state.getBoolean(PLANT_CROPS_TAG);
+        return HiredJobSetting.PLANT_CROPS.read(state) != 0;
     }
 
     public static boolean harvestCrops(CompoundTag state) {
-        return !state.contains(HARVEST_CROPS_TAG, Tag.TAG_BYTE) || state.getBoolean(HARVEST_CROPS_TAG);
+        return HiredJobSetting.HARVEST_CROPS.read(state) != 0;
     }
 
     public static Crop crop(CompoundTag state) {
@@ -79,15 +79,15 @@ public final class HiredFarmingOptions {
     public static ToggleResult toggle(CompoundTag state, String optionId) {
         String normalized = normalize(optionId);
         if (CROP.equals(normalized)) {
-            state.putString(CROP_TAG, Crop.values()[(crop(state).ordinal() + 1) % Crop.values().length].name());
+            HiredJobSetting.CROP_SELECTION.apply(state, (crop(state).ordinal() + 1) % HiredJobSetting.CROP_SELECTION.choices());
             return new ToggleResult(normalized, true, false);
         }
-        String tag = tagFor(normalized);
-        if (tag.isBlank()) {
+        HiredJobSetting setting = settingFor(normalized);
+        if (setting == null) {
             return ToggleResult.invalidResult();
         }
         boolean enabled = !enabled(state, normalized);
-        state.putBoolean(tag, enabled);
+        setting.apply(state, enabled ? 1 : 0);
         return new ToggleResult(normalized, enabled, false);
     }
 
@@ -101,18 +101,12 @@ public final class HiredFarmingOptions {
         };
     }
 
-    private static void putDefault(CompoundTag state, String tag, boolean value) {
-        if (!state.contains(tag, Tag.TAG_BYTE)) {
-            state.putBoolean(tag, value);
-        }
-    }
-
-    private static String tagFor(String optionId) {
+    private static HiredJobSetting settingFor(String optionId) {
         return switch (optionId) {
-            case TILL_SOIL -> TILL_SOIL_TAG;
-            case PLANT_CROPS -> PLANT_CROPS_TAG;
-            case HARVEST_CROPS -> HARVEST_CROPS_TAG;
-            default -> "";
+            case TILL_SOIL -> HiredJobSetting.TILL_SOIL;
+            case PLANT_CROPS -> HiredJobSetting.PLANT_CROPS;
+            case HARVEST_CROPS -> HiredJobSetting.HARVEST_CROPS;
+            default -> null;
         };
     }
 

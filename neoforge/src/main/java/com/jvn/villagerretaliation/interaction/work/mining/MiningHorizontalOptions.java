@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.mining;
 
+import com.jvn.villagerretaliation.interaction.HiredJobSetting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 
 public final class MiningHorizontalOptions {
     public static final String PATCH_FLOOR_TAG = "HorizontalMiningPatchFloor";
@@ -10,19 +10,17 @@ public final class MiningHorizontalOptions {
     }
 
     public static void initializeDefaults(CompoundTag state) {
-        if (!state.contains(PATCH_FLOOR_TAG, Tag.TAG_BYTE)) {
-            state.putBoolean(PATCH_FLOOR_TAG, true);
-        }
+        HiredJobSetting.PATCH_FLOOR.initializeDefault(state);
     }
 
     public static boolean patchFloor(CompoundTag state) {
         initializeDefaults(state);
-        return state.getBoolean(PATCH_FLOOR_TAG);
+        return HiredJobSetting.PATCH_FLOOR.read(state) != 0;
     }
 
     public static boolean togglePatchFloor(CompoundTag state) {
         boolean enabled = !patchFloor(state);
-        state.putBoolean(PATCH_FLOOR_TAG, enabled);
+        HiredJobSetting.PATCH_FLOOR.apply(state, enabled ? 1 : 0);
         return enabled;
     }
 }

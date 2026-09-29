@@ -7247,6 +7247,8 @@ public final class VillagerWorkerGameTests {
         }
 
         CompoundTag state = new CompoundTag();
+        state.putBoolean(com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions.PLANT_SAPLINGS_TAG, false);
+        state.putBoolean(com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions.PICK_UP_DECAY_DROPS_TAG, false);
         HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(7, 6, 5), true);
         context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
         LoggingWorker worker = new LoggingWorker();

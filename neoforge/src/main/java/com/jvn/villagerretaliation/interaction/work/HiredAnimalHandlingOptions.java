@@ -1,8 +1,8 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.interaction.HiredJobSetting;
 import java.util.Locale;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 
 public final class HiredAnimalHandlingOptions {
     public static final String SHEAR_SHEEP_TAG = "AnimalHandlingShearSheep";
@@ -20,13 +20,14 @@ public final class HiredAnimalHandlingOptions {
     }
 
     public static void initializeDefaults(CompoundTag state) {
-        for (String tag : java.util.List.of(SHEAR_SHEEP_TAG, BREED_TAG, MILK_TAG, COLLECT_TAG, CULL_TAG)) {
-            if (!state.contains(tag, Tag.TAG_BYTE)) state.putBoolean(tag, true);
+        for (HiredJobSetting setting : java.util.List.of(HiredJobSetting.SHEAR_SHEEP, HiredJobSetting.BREED_ANIMALS,
+                HiredJobSetting.MILK_ANIMALS, HiredJobSetting.COLLECT_ANIMAL_DROPS, HiredJobSetting.CULL_ANIMALS)) {
+            setting.initializeDefault(state);
         }
     }
 
     public static boolean shearSheep(CompoundTag state) {
-        return !state.contains(SHEAR_SHEEP_TAG, Tag.TAG_BYTE) || state.getBoolean(SHEAR_SHEEP_TAG);
+        return HiredJobSetting.SHEAR_SHEEP.read(state) != 0;
     }
 
     public static boolean breed(CompoundTag state) { return enabled(state, BREED); }
@@ -35,29 +36,29 @@ public final class HiredAnimalHandlingOptions {
     public static boolean cull(CompoundTag state) { return enabled(state, CULL); }
 
     public static boolean enabled(CompoundTag state, String optionId) {
-        String tag = tagFor(normalize(optionId));
-        return !tag.isEmpty() && (!state.contains(tag, Tag.TAG_BYTE) || state.getBoolean(tag));
+        HiredJobSetting setting = settingFor(normalize(optionId));
+        return setting != null && setting.read(state) != 0;
     }
 
-    private static String tagFor(String optionId) {
+    private static HiredJobSetting settingFor(String optionId) {
         return switch (optionId) {
-            case SHEAR_SHEEP -> SHEAR_SHEEP_TAG;
-            case BREED -> BREED_TAG;
-            case MILK -> MILK_TAG;
-            case COLLECT -> COLLECT_TAG;
-            case CULL -> CULL_TAG;
-            default -> "";
+            case SHEAR_SHEEP -> HiredJobSetting.SHEAR_SHEEP;
+            case BREED -> HiredJobSetting.BREED_ANIMALS;
+            case MILK -> HiredJobSetting.MILK_ANIMALS;
+            case COLLECT -> HiredJobSetting.COLLECT_ANIMAL_DROPS;
+            case CULL -> HiredJobSetting.CULL_ANIMALS;
+            default -> null;
         };
     }
 
     public static ToggleResult toggle(CompoundTag state, String optionId) {
         String normalized = normalize(optionId);
-        String tag = tagFor(normalized);
-        if (tag.isEmpty()) {
+        HiredJobSetting setting = settingFor(normalized);
+        if (setting == null) {
             return ToggleResult.invalidResult();
         }
         boolean enabled = !enabled(state, normalized);
-        state.putBoolean(tag, enabled);
+        setting.apply(state, enabled ? 1 : 0);
         return new ToggleResult(normalized, enabled, false);
     }
 

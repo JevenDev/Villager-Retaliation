@@ -53,7 +53,7 @@ public final class SettlementWorkerSettings {
         this.fishingSpots = Objects.requireNonNull(fishingSpots);
         for (var setting : SettlementWorkerSetting.values()) {
             Integer value = options.get(setting);
-            if (setting.supports(role) ? value == null || value < 0 || value >= setting.choices() : value != null) {
+            if (setting.supports(role) ? value == null || !setting.definition().valid(role, value) : value != null) {
                 throw new IllegalArgumentException("Worker option does not match its role or range");
             }
         }

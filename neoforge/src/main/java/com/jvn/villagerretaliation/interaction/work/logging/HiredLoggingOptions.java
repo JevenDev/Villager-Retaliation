@@ -1,9 +1,9 @@
 package com.jvn.villagerretaliation.interaction.work.logging;
 
+import com.jvn.villagerretaliation.interaction.HiredJobSetting;
 import java.util.Locale;
 import java.util.Map;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 
 public final class HiredLoggingOptions {
     public static final String STRIP_LOGS_TAG = "LoggingStripLogs";
@@ -18,11 +18,11 @@ public final class HiredLoggingOptions {
     public static final String PLANT_SAPLINGS = "plant_saplings";
     public static final String PICK_UP_DECAY_DROPS = "pick_up_decay_drops";
 
-    private static final Option STRIP_LOGS_OPTION = new Option(STRIP_LOGS, STRIP_LOGS_TAG, "Strip logs", false);
-    private static final Option HARVEST_LEAVES_OPTION = new Option(HARVEST_LEAVES, HARVEST_LEAVES_TAG, "Harvest leaves", false);
-    private static final Option BONEMEAL_SAPLINGS_OPTION = new Option(BONEMEAL_SAPLINGS, BONEMEAL_SAPLINGS_TAG, "Bonemeal saplings", false);
-    private static final Option PLANT_SAPLINGS_OPTION = new Option(PLANT_SAPLINGS, PLANT_SAPLINGS_TAG, "Plant saplings", true);
-    private static final Option PICK_UP_DECAY_DROPS_OPTION = new Option(PICK_UP_DECAY_DROPS, PICK_UP_DECAY_DROPS_TAG, "Pick up decay drops", true);
+    private static final Option STRIP_LOGS_OPTION = new Option(STRIP_LOGS, HiredJobSetting.STRIP_LOGS, "Strip logs");
+    private static final Option HARVEST_LEAVES_OPTION = new Option(HARVEST_LEAVES, HiredJobSetting.HARVEST_LEAVES, "Harvest leaves");
+    private static final Option BONEMEAL_SAPLINGS_OPTION = new Option(BONEMEAL_SAPLINGS, HiredJobSetting.BONEMEAL_SAPLINGS, "Bonemeal saplings");
+    private static final Option PLANT_SAPLINGS_OPTION = new Option(PLANT_SAPLINGS, HiredJobSetting.PLANT_SAPLINGS, "Plant saplings");
+    private static final Option PICK_UP_DECAY_DROPS_OPTION = new Option(PICK_UP_DECAY_DROPS, HiredJobSetting.COLLECT_DECAY, "Pick up decay drops");
     private static final Map<String, Option> OPTIONS = Map.of(
             STRIP_LOGS, STRIP_LOGS_OPTION,
             HARVEST_LEAVES, HARVEST_LEAVES_OPTION,
@@ -35,7 +35,7 @@ public final class HiredLoggingOptions {
 
     public static void initializeDefaults(CompoundTag state) {
         for (Option option : OPTIONS.values()) {
-            putDefault(state, option.tag(), option.defaultEnabled());
+            option.setting().initializeDefault(state);
         }
     }
 
@@ -69,7 +69,7 @@ public final class HiredLoggingOptions {
             return ToggleResult.invalidResult();
         }
         boolean enabled = !enabled(state, option);
-        state.putBoolean(option.tag(), enabled);
+        option.setting().apply(state, enabled ? 1 : 0);
         return new ToggleResult(option.id(), enabled, false);
     }
 
@@ -79,13 +79,7 @@ public final class HiredLoggingOptions {
     }
 
     private static boolean enabled(CompoundTag state, Option option) {
-        return option != null && state.getBoolean(option.tag());
-    }
-
-    private static void putDefault(CompoundTag state, String tag, boolean value) {
-        if (!state.contains(tag, Tag.TAG_BYTE)) {
-            state.putBoolean(tag, value);
-        }
+        return option != null && option.setting().read(state) != 0;
     }
 
     private static String normalize(String optionId) {
@@ -98,6 +92,6 @@ public final class HiredLoggingOptions {
         }
     }
 
-    private record Option(String id, String tag, String label, boolean defaultEnabled) {
+    private record Option(String id, HiredJobSetting setting, String label) {
     }
 }

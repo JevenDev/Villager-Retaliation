@@ -45,9 +45,7 @@ public final class HiredWorkStateStore {
         boolean hadStoredArea = state.contains(HiredWorkArea.WORK_CENTER_POS_TAG, Tag.TAG_LONG)
                 && state.contains(HiredWorkArea.WORK_MIN_POS_TAG, Tag.TAG_LONG)
                 && state.contains(HiredWorkArea.WORK_MAX_POS_TAG, Tag.TAG_LONG);
-        if (!state.contains("Enabled", Tag.TAG_BYTE)) {
-            state.putBoolean("Enabled", true);
-        }
+        HiredJobSetting.ENABLED.initializeDefault(state);
         if (!state.contains(HiredWorkArea.RADIUS_TAG, Tag.TAG_INT)) {
             state.putInt(HiredWorkArea.RADIUS_TAG, Mth.clamp(
                     VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(),
@@ -57,12 +55,8 @@ public final class HiredWorkStateStore {
         if (!state.contains(HiredWorkArea.WORK_AREA_ASSIGNED_TAG, Tag.TAG_BYTE)) {
             state.putBoolean(HiredWorkArea.WORK_AREA_ASSIGNED_TAG, false);
         }
-        if (!state.contains("UseAssignedStorageForSupplies", Tag.TAG_BYTE)) {
-            state.putBoolean("UseAssignedStorageForSupplies", true);
-        }
-        if (!state.contains("AutoDepositOutputs", Tag.TAG_BYTE)) {
-            state.putBoolean("AutoDepositOutputs", true);
-        }
+        HiredJobSetting.USE_STORAGE.initializeDefault(state);
+        HiredJobSetting.AUTO_DEPOSIT.initializeDefault(state);
         if (!state.contains("LoggingFilter", Tag.TAG_STRING)) {
             state.putString("LoggingFilter", "any");
         }
