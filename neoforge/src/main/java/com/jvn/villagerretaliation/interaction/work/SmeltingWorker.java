@@ -550,13 +550,13 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 .isPresent();
     }
 
-    private static boolean isRawOre(ItemStack stack) {
+    public static boolean isRawOre(ItemStack stack) {
         return stack != null && !stack.isEmpty() && (stack.is(Items.RAW_COPPER)
                 || stack.is(Items.RAW_GOLD)
                 || stack.is(Items.RAW_IRON));
     }
 
-    private static boolean isSmeltedOre(ItemStack stack) {
+    public static boolean isSmeltedOre(ItemStack stack) {
         return stack != null && !stack.isEmpty() && (stack.is(Items.COPPER_INGOT)
                 || stack.is(Items.GOLD_INGOT)
                 || stack.is(Items.IRON_INGOT));

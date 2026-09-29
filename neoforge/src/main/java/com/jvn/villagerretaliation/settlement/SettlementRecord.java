@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -34,6 +35,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementGuardOrder> guardOrders = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerSettings> workerSettings = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorksitePlan> worksitePlans = new LinkedHashMap<>();
+    private final Map<UUID, HiredProductionQueue> productionQueues = new LinkedHashMap<>();
     private final Map<UUID, SettlementProject> projects = new LinkedHashMap<>();
     private final Map<UUID, SettlementProject> projectHistory = new LinkedHashMap<>();
     private final Set<UUID> retiredProjects = new java.util.LinkedHashSet<>();
@@ -743,6 +745,24 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.worksitePlans);
     }
 
+    public Map<UUID, HiredProductionQueue> productionQueues() {
+        return Collections.unmodifiableMap(this.productionQueues);
+    }
+
+    HiredProductionQueue beginProduction(UUID actor, UUID areaId) {
+        var area = workplace(areaId);
+        if (!permits(actor, SettlementPermission.STAFF) || area == null || !this.worksitePlans.containsKey(areaId)
+                || area.type() != SettlementAreaType.WORKSHOP && area.type() != SettlementAreaType.KITCHEN
+                    && area.type() != SettlementAreaType.SMELTERY && area.type() != SettlementAreaType.BREWERY) return null;
+        var queue = this.productionQueues.get(areaId);
+        if (queue == null) {
+            queue = new HiredProductionQueue(areaId, HiredProductionQueue.Scope.WORKSITE, area.type().role(), ignored -> changed());
+            this.productionQueues.put(areaId, queue);
+            changed();
+        }
+        return queue;
+    }
+
     public SettlementWorkerSettings effectiveWorkerSettings(UUID resident) {
         var settings = this.workerSettings.get(resident);
         var plan = this.worksitePlans.get(this.duties.get(resident));
@@ -774,7 +794,10 @@ public final class SettlementRecord {
         if (resident == null || target == null || target.type().role() == null) {
             return false;
         }
-        if (!area.equals(this.duties.put(resident, area))) {
+        UUID previous = this.duties.put(resident, area);
+        if (!area.equals(previous)) {
+            var queue = this.productionQueues.get(previous);
+            if (queue != null) queue.detach(resident);
             cancelProjects(resident);
             cancelBrewing(resident);
             this.guardOrders.remove(resident);
@@ -785,9 +808,12 @@ public final class SettlementRecord {
     }
 
     boolean removeDuty(UUID resident) {
-        if (this.duties.remove(resident) == null) {
+        UUID previous = this.duties.remove(resident);
+        if (previous == null) {
             return false;
         }
+        var queue = this.productionQueues.get(previous);
+        if (queue != null) queue.detach(resident);
         cancelProjects(resident);
         cancelBrewing(resident);
         this.guardOrders.remove(resident);
@@ -976,7 +1002,10 @@ public final class SettlementRecord {
             return false;
         }
         SettlementArea previous = this.areas.put(area.id(), area);
-        if (previous != null && previous.type() != area.type()) this.worksitePlans.remove(area.id());
+        if (previous != null && previous.type() != area.type()) {
+            this.worksitePlans.remove(area.id());
+            this.productionQueues.remove(area.id());
+        }
         this.cachedHousingCapacity = -1;
         if (!area.equals(previous)) {
             if (previous == null || previous.type() != area.type()
@@ -1002,6 +1031,7 @@ public final class SettlementRecord {
         this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.surveys.remove(area);
         this.worksitePlans.remove(area);
+        this.productionQueues.remove(area);
         this.cachedHousingCapacity = -1;
         changed();
         return true;
@@ -1092,6 +1122,9 @@ public final class SettlementRecord {
             planTags.add(entry);
         });
         tag.put("WorksitePlans", planTags);
+        var productionTags = new ListTag();
+        this.productionQueues.values().forEach(queue -> productionTags.add(queue.save(provider)));
+        tag.put("ProductionQueues", productionTags);
         ListTag projectTags = new ListTag();
         this.projects.values().forEach(project -> projectTags.add(project.save()));
         tag.put("Projects", projectTags);
@@ -1496,6 +1529,21 @@ public final class SettlementRecord {
                     || plan.route() != null && !plan.route().within(record)
                     || record.worksitePlans.putIfAbsent(area.id(), plan) != null) {
                 throw new IllegalArgumentException("Worksite plan is duplicated or has no matching area");
+            }
+        }
+        if (tag.contains("ProductionQueues") && !(tag.get("ProductionQueues") instanceof ListTag)
+                || tag.get("ProductionQueues") instanceof ListTag list && (!list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND
+                        || list.size() > MAX_AREAS)) {
+            throw new IllegalArgumentException("Invalid worksite production queues");
+        }
+        for (Tag raw : tag.getList("ProductionQueues", Tag.TAG_COMPOUND)) {
+            var queue = HiredProductionQueue.load((CompoundTag) raw, provider, ignored -> record.changed());
+            var area = record.areas.get(queue.owner());
+            if (queue.scope() != HiredProductionQueue.Scope.WORKSITE || area == null || area.type().role() != queue.role()
+                    || !record.worksitePlans.containsKey(area.id()) || record.productionQueues.putIfAbsent(area.id(), queue) != null
+                    || queue.allocations().stream().anyMatch(allocation -> allocation.worker() != null
+                        && !area.id().equals(record.duties.get(allocation.worker())))) {
+                throw new IllegalArgumentException("Worksite production has invalid ownership");
             }
         }
         for (Tag raw : tag.getList("WorkerSettings", Tag.TAG_COMPOUND)) {
