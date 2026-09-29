@@ -9,6 +9,10 @@ import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOr
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionService;
+import com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService;
+import com.jvn.villagerretaliation.network.ProductionRequestPayload;
+import com.jvn.villagerretaliation.network.ProductionSnapshotPayload;
+import com.jvn.villagerretaliation.network.ProductionTarget;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
 import java.util.Set;
@@ -145,6 +149,130 @@ public final class SettlementProductionGameTests {
                     "the old queue remains preserved for explicit handling");
         } finally {
             worker.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "production_authority")
+    public static void productionSnapshotsAndCommandsRevalidateCivicAccessAndPreserveProgress(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var town = fixture.town();
+        var area = fixture.area();
+        var target = new ProductionTarget(town.id().value(), area.id());
+        var view = new ProductionRequestPayload(target, UUID.randomUUID(), 0L, new ProductionRequestPayload.View());
+        var before = ProductionManagementService.snapshot(fixture.leader(), view, false, "");
+        helper.assertFalse(before.editable(), "a legacy worksite previews its explicit adoption requirement");
+        helper.assertTrue(before.queue() == null && !before.blocker().isEmpty(), "viewing a legacy worksite creates no queue");
+        SettlementWorksiteService.configure(fixture.leader(), town, area.id(), SettlementWorksitePlan.defaults(HiredVillagerRole.CRAFTSMAN), true);
+        var recipe = HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("stick"), Map.of(
+                0, ResourceLocation.withDefaultNamespace("oak_planks"), 1, ResourceLocation.withDefaultNamespace("birch_planks")));
+        var append = new ProductionRequestPayload(target, UUID.randomUUID(), 0L,
+                new ProductionRequestPayload.Append(recipe, HiredProductionOrder.Mode.BATCH, 8, null));
+        helper.assertValueEqual(ProductionManagementService.apply(fixture.leader(), append), "", "the staff command adds the exact recipe");
+        helper.assertFalse(ProductionManagementService.apply(fixture.leader(), append).isEmpty(), "a repeated request cannot add another order");
+        var queue = town.productionQueues().get(area.id());
+        var order = queue.orders().getFirst();
+        var worker = UUID.randomUUID();
+        var allocation = queue.reserve(worker, order.id(), 4, 1, 0L, null);
+        queue.start(allocation.id());
+        queue.complete(allocation.id(), new ItemStack(Items.STICK, 4));
+        var viewer = player(helper, "ProductionViewer");
+        town.setPermissions(town.leader(), viewer.getUUID(), Set.of(SettlementPermission.VIEW));
+        var snapshot = ProductionManagementService.snapshot(viewer, view, false, "");
+        helper.assertFalse(snapshot.editable(), "view permission does not grant production edits");
+        helper.assertValueEqual(HiredProductionQueue.load(snapshot.queue(), level.registryAccess(), ignored -> {}).order(order.id()).produced(), 4L, "the snapshot includes actual completed progress");
+        var edit = new ProductionRequestPayload(target, UUID.randomUUID(), queue.configurationRevision(),
+                new ProductionRequestPayload.Edit(order.id(), HiredProductionService.Edit.PAUSE, 0));
+        helper.assertFalse(ProductionManagementService.apply(viewer, edit).isEmpty(), "a viewer cannot pause work");
+        town.setPermissions(town.leader(), viewer.getUUID(), Set.of(SettlementPermission.VIEW, SettlementPermission.STAFF));
+        helper.assertValueEqual(ProductionManagementService.apply(viewer, edit), "", "current staff can pause without replacing progress");
+        helper.assertValueEqual(queue.order(order.id()).produced(), 4L, "edits preserve work completed since opening the screen");
+        var saved = queue.save(level.registryAccess());
+        snapshot.queue().putString("Owner", "changed");
+        helper.assertValueEqual(queue.save(level.registryAccess()), saved, "snapshot data cannot mutate the authoritative queue");
+        town.setPermissions(town.leader(), viewer.getUUID(), Set.of());
+        var hidden = ProductionManagementService.snapshot(viewer, view, false, "");
+        helper.assertTrue(hidden.role() == null && hidden.queue() == null && hidden.storages().isEmpty(), "revoked viewers receive no queue or storage details");
+        helper.assertFalse(level.hasChunkAt(town.center()), "production requests never load remote worksite chunks");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "production_authority")
+    public static void personalProductionRequestsRemainIndependentOfCivicAdministration(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var owner = player(helper, "PersonalOrders");
+        var outsider = player(helper, "OtherOrders");
+        var worker = EntityType.VILLAGER.create(level);
+        worker.setPos(helper.absolutePos(new BlockPos(2, 2, 2)).getBottomCenter());
+        worker.setNoAi(true);
+        level.addFreshEntity(worker);
+        try {
+            HireContractStore.save(worker, HireContract.regular(owner.getUUID(), level.getGameTime(), 1, 1, 1, HiredVillagerRole.CRAFTSMAN));
+            var target = new ProductionTarget(null, worker.getUUID());
+            var request = new ProductionRequestPayload(target, UUID.randomUUID(), 0L,
+                    new ProductionRequestPayload.Append(HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("stick"), Map.of()),
+                            HiredProductionOrder.Mode.BATCH, 4, null));
+            helper.assertFalse(ProductionManagementService.apply(outsider, request).isEmpty(), "another player cannot submit private production");
+            helper.assertTrue(ProductionManagementService.snapshot(outsider, request, false, "").queue() == null, "private orders are not disclosed to another player");
+            helper.assertValueEqual(ProductionManagementService.apply(owner, request), "", "a player can order production without any town authority");
+            var snapshot = ProductionManagementService.snapshot(owner, request, true, "");
+            helper.assertTrue(snapshot.editable() && snapshot.target().town() == null, "the personal production view remains personal");
+            helper.assertValueEqual(HiredProductionQueue.load(snapshot.queue(), level.registryAccess(), ignored -> {}).scope(), HiredProductionQueue.Scope.PERSONAL, "the server owns the private quantity under the hire");
+            helper.assertTrue(SettlementWorkforceService.duty(worker).isEmpty(), "the protocol does not create a civic assignment");
+            var forged = new ProductionRequestPayload(new ProductionTarget(UUID.randomUUID(), worker.getUUID()), UUID.randomUUID(), 0L, request.command());
+            helper.assertFalse(ProductionManagementService.apply(owner, forged).isEmpty(), "a personal worker cannot become a civic target through the packet");
+        } finally {
+            worker.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "production_authority")
+    public static void productionPacketRoundTripsBoundedExactOrdersAndSnapshots(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var target = new ProductionTarget(fixture.town().id().value(), fixture.area().id());
+        SettlementWorksiteService.configure(fixture.leader(), fixture.town(), fixture.area().id(),
+                SettlementWorksitePlan.defaults(HiredVillagerRole.CRAFTSMAN), true);
+        var recipe = HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("stick"),
+                Map.of(0, ResourceLocation.withDefaultNamespace("birch_planks")));
+        var append = new ProductionRequestPayload(target, UUID.randomUUID(), 0L,
+                new ProductionRequestPayload.Append(recipe, HiredProductionOrder.Mode.BATCH, 5, null));
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+        try {
+            ProductionRequestPayload.STREAM_CODEC.encode(buffer, append);
+            helper.assertValueEqual(ProductionRequestPayload.STREAM_CODEC.decode(buffer), append, "exact recipe alternatives and command identity round trip");
+            helper.assertValueEqual(ProductionManagementService.apply(fixture.leader(), append), "", "the decoded command is supported");
+            var snapshot = ProductionManagementService.snapshot(fixture.leader(), append, true, "");
+            ProductionSnapshotPayload.STREAM_CODEC.encode(buffer, snapshot);
+            helper.assertValueEqual(ProductionSnapshotPayload.STREAM_CODEC.decode(buffer), snapshot, "the bounded queue snapshot retains its acknowledgement and configuration");
+            for (int count : new int[] {10, 2}) {
+                buffer.clear();
+                buffer.writeBoolean(false);
+                buffer.writeUUID(UUID.randomUUID());
+                buffer.writeUUID(UUID.randomUUID());
+                buffer.writeVarLong(0L);
+                buffer.writeVarInt(1);
+                buffer.writeBoolean(true);
+                buffer.writeResourceLocation(ResourceLocation.withDefaultNamespace("stick"));
+                buffer.writeVarInt(count);
+                if (count == 2) {
+                    for (int index = 0; index < 2; index++) {
+                        buffer.writeVarInt(0);
+                        buffer.writeResourceLocation(ResourceLocation.withDefaultNamespace("oak_planks"));
+                    }
+                }
+                boolean rejected = false;
+                try {
+                    ProductionRequestPayload.STREAM_CODEC.decode(buffer);
+                } catch (IllegalArgumentException exception) {
+                    rejected = true;
+                }
+                helper.assertTrue(rejected, "oversized or duplicate ingredient choices are rejected before creating an order");
+            }
+        } finally {
+            buffer.release();
         }
         helper.succeed();
     }
