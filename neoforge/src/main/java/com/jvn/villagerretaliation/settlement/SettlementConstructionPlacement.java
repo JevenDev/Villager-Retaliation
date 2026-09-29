@@ -16,6 +16,14 @@ final class SettlementConstructionPlacement {
     private final UUID id;
     private final List<Part> parts;
     private boolean conflict;
+    private final java.util.Map<net.minecraft.world.level.chunk.LevelChunk, Long> appliedRevisions = new java.util.WeakHashMap<>();
+
+    private final java.util.Map<BlockPos, SettlementReceipt> receipts = new java.util.LinkedHashMap<>();
+
+    SettlementConstructionPlacement(ServerLevel level, List<Part> parts) {
+        this(parts);
+        for (var part : parts) this.receipts.put(part.position(), SettlementReceipt.issue(level, "construction", part.position()));
+    }
 
     SettlementConstructionPlacement(List<Part> parts) {
         this(UUID.randomUUID(), parts);
@@ -47,7 +55,7 @@ final class SettlementConstructionPlacement {
             var pos = part.position();
             var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
             if (chunk == null || !level.areEntitiesLoaded(chunk.getPos().toLong())) return false;
-            if (SettlementChunkReceipts.version(chunk, key(project, pos), this.id) >= 1L) continue;
+            if (SettlementChunkReceipts.version(chunk, key(project, pos), this.id, this.receipts.get(pos)) >= 1L) continue;
             for (int x = pos.getX() - 2 >> 4; x <= pos.getX() + 2 >> 4; x++) {
                 for (int z = pos.getZ() - 2 >> 4; z <= pos.getZ() + 2 >> 4; z++) {
                     if (level.getChunkSource().getChunkNow(x, z) == null) return false;
@@ -65,7 +73,7 @@ final class SettlementConstructionPlacement {
         for (var part : this.parts) {
             var pos = part.position();
             var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
-            if (SettlementChunkReceipts.version(chunk, key(project, pos), this.id) >= 1L) continue;
+            if (SettlementChunkReceipts.version(chunk, key(project, pos), this.id, this.receipts.get(pos)) >= 1L) continue;
             chunk.setBlockState(pos, part.after(), false);
             if (chunk.getBlockState(pos) != part.after()) {
                 this.conflict = true;
@@ -78,13 +86,31 @@ final class SettlementConstructionPlacement {
                 entity.setChanged();
             }
             SettlementMineReactions.queue(chunk, pos, part.before(), chunk.getBlockState(pos));
-            SettlementChunkReceipts.applied(chunk, key(project, pos), this.id, 1L);
+            SettlementChunkReceipts.applied(chunk, key(project, pos), this.id, 1L, this.receipts.get(pos));
         }
         return true;
     }
 
+    void acknowledgeNative(ServerLevel level, UUID project) {
+        for (var part : this.parts) {
+            var chunk = level.getChunkAt(part.position());
+            SettlementChunkReceipts.applied(chunk, key(project, part.position()), this.id, 1L, this.receipts.get(part.position()));
+        }
+    }
+
+    boolean durable(ServerLevel level) {
+        boolean durable = true;
+        for (var part : this.parts) {
+            var chunk = level.getChunkSource().getChunkNow(part.position().getX() >> 4, part.position().getZ() >> 4);
+            if (chunk == null) return false;
+            long revision = this.appliedRevisions.computeIfAbsent(chunk, SettlementChunkCheckpoint::revision);
+            durable &= SettlementChunkCheckpoint.durable(level, chunk, revision);
+        }
+        return durable;
+    }
+
     boolean applied(net.minecraft.world.level.chunk.LevelChunk chunk, UUID project, BlockPos pos) {
-        return SettlementChunkReceipts.version(chunk, key(project, pos), this.id) >= 1L;
+        return SettlementChunkReceipts.version(chunk, key(project, pos), this.id, this.receipts.get(pos)) >= 1L;
     }
 
     private String key(UUID project, BlockPos pos) {
@@ -99,6 +125,7 @@ final class SettlementConstructionPlacement {
         for (var part : this.parts) {
             var entry = new CompoundTag();
             entry.putLong("Position", part.position().asLong());
+            if (this.receipts.containsKey(part.position())) entry.put("Receipt", this.receipts.get(part.position()).save());
             entry.put("Before", NbtUtils.writeBlockState(part.before()));
             entry.put("After", NbtUtils.writeBlockState(part.after()));
             if (part.blockEntity() != null) entry.put("BlockEntity", part.blockEntity().copy());
@@ -121,6 +148,10 @@ final class SettlementConstructionPlacement {
                     entry.contains("BlockEntity", Tag.TAG_COMPOUND) ? entry.getCompound("BlockEntity") : null));
         }
         var placement = new SettlementConstructionPlacement(tag.getUUID("Id"), parts);
+        for (Tag raw : tag.getList("Parts", Tag.TAG_COMPOUND)) {
+            var entry = (CompoundTag) raw;
+            if (entry.contains("Receipt")) placement.receipts.put(BlockPos.of(entry.getLong("Position")), SettlementReceipt.load(entry.getCompound("Receipt")));
+        }
         placement.conflict = tag.getBoolean("Conflict");
         return placement;
     }

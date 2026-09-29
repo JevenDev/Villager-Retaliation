@@ -17,6 +17,29 @@ public final class SettlementChunkReceipts {
     private static final Supplier<AttachmentType<CompoundTag>> RECEIPTS = TYPES.register("settlement_terrain",
             () -> AttachmentType.builder(() -> new CompoundTag()).serialize(CompoundTag.CODEC).build());
 
+    private static final Supplier<AttachmentType<SettlementReceiptLedger>> SEQUENCES = TYPES.register("settlement_receipts",
+            () -> AttachmentType.builder(SettlementReceiptLedger::new)
+                    .serialize(CompoundTag.CODEC.xmap(SettlementReceiptLedger::load, SettlementReceiptLedger::save)).build());
+
+    static long version(LevelChunk chunk, String key, UUID id, SettlementReceipt receipt) {
+        return receipt == null ? version(chunk, key, id) : chunk.getData(SEQUENCES).version(receipt);
+    }
+
+    static void applied(LevelChunk chunk, String key, UUID id, long version, SettlementReceipt receipt) {
+        if (receipt == null) applied(chunk, key, id, version);
+        else {
+            chunk.getData(SEQUENCES).applied(receipt, version);
+            SettlementChunkCheckpoint.changed(chunk);
+            chunk.setUnsaved(true);
+        }
+    }
+
+    static boolean includedIn(LevelChunk chunk, CompoundTag snapshot) {
+        var attachments = snapshot.getCompound(net.neoforged.neoforge.attachment.AttachmentHolder.ATTACHMENTS_NBT_KEY);
+        return (!chunk.hasData(RECEIPTS) || attachments.getCompound("villagerretaliation:settlement_terrain").equals(chunk.getData(RECEIPTS)))
+                && (!chunk.hasData(SEQUENCES) || attachments.getCompound("villagerretaliation:settlement_receipts").equals(chunk.getData(SEQUENCES).save()));
+    }
+
     private SettlementChunkReceipts() {
     }
 
@@ -56,6 +79,7 @@ public final class SettlementChunkReceipts {
         entry.putUUID("Id", id);
         entry.putLong("Version", version);
         chunk.getData(RECEIPTS).put(key, entry);
+        SettlementChunkCheckpoint.changed(chunk);
         chunk.setUnsaved(true);
     }
 

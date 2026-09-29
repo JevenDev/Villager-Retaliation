@@ -86,9 +86,12 @@ public final class SettlementProjectReservationGameTests {
         });
     }
 
-    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_project_reservations")
+    // accelerated test ticks must allow time for real region-file I/O
+    @GameTest(template = "empty", timeoutTicks = 120000, batch = "settlement_project_reservations")
     public static void deliveredWorkReleasesItsFootprintAndRetainsOverlappingHistory(GameTestHelper helper) {
-        SettlementBackgroundConstructionGameTests.fixture(helper, true, blocks(), fixture -> {
+        var prepared = new SettlementBackgroundConstructionGameTests.Fixture[1];
+        SettlementBackgroundConstructionGameTests.fixture(helper, helper.absolutePos(new BlockPos(2, 2, 2)), blocks(), false, fixture -> {
+            prepared[0] = fixture;
             var level = helper.getLevel();
             level.setBlock(fixture.origin(), Blocks.AIR.defaultBlockState(), 2);
             fixture.site().queue(new SettlementConstructionPlacement(List.of(new SettlementConstructionPlacement.Part(
@@ -99,7 +102,14 @@ public final class SettlementProjectReservationGameTests {
                     "the footprint stays reserved while its world operation is pending");
             SettlementConstructionSiteService.update(level, fixture.town());
             helper.assertTrue(level.getBlockState(fixture.origin()).is(Blocks.OAK_PLANKS), "delivery places the reserved block");
-            helper.assertFalse(fixture.project().reservesFootprint(), "actual world delivery releases the retired footprint");
+            helper.assertTrue(fixture.project().reservesFootprint(), "world application retains recovery until its checkpoint is durable");
+        });
+        var fixture = prepared[0];
+        var replacement = replacement(fixture, fixture.origin());
+        helper.succeedWhen(() -> {
+            SettlementConstructionSiteService.update(helper.getLevel(), fixture.town());
+            helper.assertFalse(fixture.project().reservesFootprint(), "durable world delivery releases the retired footprint (waiting=" + fixture.site().awaitingCheckpoint().size()
+                    + ", owned=" + fixture.town().owns(fixture.project()) + ", entities=" + helper.getLevel().areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(fixture.origin()).toLong()) + ")");
             helper.assertTrue(fixture.town().startProject(fixture.town().leader(), replacement),
                     "the builder can now reuse the delivered site");
             for (boolean reversed : List.of(false, true)) {

@@ -163,6 +163,14 @@ public final class SettlementResidentState {
         return this.mendingEquipment != null && this.mendingEquipment.restore(villager);
     }
 
+    void restoreWallet(Villager villager) {
+        if (this.wallet != null) this.wallet.restore(villager);
+    }
+
+    boolean acknowledgesConstruction(SettlementProject project) {
+        return this.wallet != null && this.wallet.acknowledgesConstruction(project);
+    }
+
     void remember(Villager villager) {
         if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident context has a different identity");
         if (this.familyInventory != null) this.familyInventory.restore(villager);
@@ -402,7 +410,7 @@ public final class SettlementResidentState {
         state.familyUnsafe = tag.getBoolean("FamilyUnsafe");
         state.entityContext = tag.getCompound("EntityContext").copy();
         if (tag.contains("FamilyInventory")) state.familyInventory = SettlementFamilyInventory.load(tag.getCompound("FamilyInventory"), state.id);
-        if (tag.contains("Wallet")) state.wallet = SettlementWalletState.load(tag.getCompound("Wallet"), state.id);
+        if (tag.contains("Wallet")) state.wallet = SettlementWalletState.load(tag.getCompound("Wallet"), state.id, state.entityContext);
         if (tag.contains("MendingEquipment")) state.mendingEquipment = SettlementMendingEquipment.load(tag.getCompound("MendingEquipment"));
         if (!state.entityContext.isEmpty() && (!state.entityContext.hasUUID("UUID") || !state.id.equals(state.entityContext.getUUID("UUID")))) {
             throw new IllegalArgumentException("Resident context has a different identity");

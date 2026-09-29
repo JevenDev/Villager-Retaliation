@@ -47,7 +47,7 @@ public final class SettlementConstructionService {
         var preview = ConstructionBlueprintItem.previewData(blueprint).orElse(null);
         if (preview == null || preview.started() || preview.expired() || preview.completed()
                 || !preview.dimension().equals(level.dimension())
-                || SettlementSavedData.get(level).settlements().stream().anyMatch(other -> other.projects().containsKey(blueprintId))) {
+                || SettlementSavedData.get(level).settlements().stream().anyMatch(other -> other.knowsProject(blueprintId))) {
             return false;
         }
         var entry = BuilderStructureCatalog.byId(level.getServer(), preview.structureId()).orElse(null);
@@ -91,14 +91,14 @@ public final class SettlementConstructionService {
     public static String commission(ServerPlayer player, SettlementRecord town, UUID request, ResourceLocation structure,
                                     BlockPos anchor, Rotation rotation, UUID resident) {
         if (!canBuild(player, town)) return "permission";
-        var existing = town.projects().get(request);
+        var existing = town.project(request);
         if (existing != null) {
             var accepted = scan(player.serverLevel(), structure, rotation);
             return accepted != null && existing.builder().equals(resident) && existing.structure().equals(structure)
                     && existing.rotation() == rotation && existing.origin().equals(origin(accepted, anchor)) ? "" : "duplicate";
         }
         var level = player.serverLevel();
-        if (SettlementSavedData.get(level).settlements().stream().anyMatch(other -> other.projects().containsKey(request))) return "duplicate";
+        if (SettlementSavedData.get(level).settlements().stream().anyMatch(other -> other.knowsProject(request))) return "duplicate";
         var plan = scan(level, structure, rotation);
         if (plan == null) return "prefab";
         var origin = origin(plan, anchor);
@@ -196,6 +196,28 @@ public final class SettlementConstructionService {
         }
     }
 
+    public static void placed(Villager builder, CompoundTag state, BlockPos position, net.minecraft.world.level.block.state.BlockState before) {
+        var town = town(builder, state);
+        var project = project(builder, state);
+        if (town == null || project == null || !project.active()) return;
+        var level = (ServerLevel) builder.level();
+        var after = level.getBlockState(position);
+        if (before == after) return;
+        project.observeSite(town.workplace(project.area()));
+        var site = project.site();
+        var origin = SettlementTerrainSection.sectionOrigin(position);
+        var min = new BlockPos(Math.max(origin.getX(), site.min().getX()), Math.max(origin.getY(), site.min().getY()), Math.max(origin.getZ(), site.min().getZ()));
+        var max = new BlockPos(Math.min(origin.getX() + 15, site.max().getX()), Math.min(origin.getY() + 15, site.max().getY()), Math.min(origin.getZ() + 15, site.max().getZ()));
+        site.record(SettlementTerrainSection.capture("ConstructionSurvey", project.id(), min, max, level.getChunkAt(position)));
+        var entity = level.getBlockEntity(position);
+        var placement = new SettlementConstructionPlacement(level, List.of(new SettlementConstructionPlacement.Part(position, before, after,
+                entity == null ? null : entity.saveWithoutMetadata(level.registryAccess()))));
+        placement.acknowledgeNative(level, project.id());
+        site.nativePlacement(placement);
+        worked(town, project, builder);
+        town.changed();
+    }
+
     public static void worked(Villager builder, CompoundTag state) {
         var town = town(builder, state);
         var project = project(builder, state);
@@ -208,12 +230,14 @@ public final class SettlementConstructionService {
     }
 
     static void synchronizePayments(SettlementRecord town, Villager builder) {
+        var care = town.residents().get(builder.getUUID());
+        if (care != null) care.restoreWallet(builder);
         var receipts = builder.getPersistentData().getCompound("SettlementConstructionPayments");
         boolean changed = false;
         for (var project : town.projects().values()) {
             if (!project.builder().equals(builder.getUUID()) || !project.paymentEarned() || project.fee() == 0) continue;
             if (receipts.getBoolean(project.id().toString())) {
-                if (project.acknowledgePayment()) town.changed();
+                if (project.acknowledgePayment()) changed = true;
                 continue;
             }
             VillagerWalletService.addCurrency(builder, project.fee());
@@ -225,7 +249,6 @@ public final class SettlementConstructionService {
             builder.getPersistentData().put("SettlementConstructionPayments", receipts);
             var worker = town.workers().get(builder.getUUID());
             if (worker != null) worker.rememberPayments(builder);
-            var care = town.residents().get(builder.getUUID());
             if (care != null) care.remember(builder);
             town.changed();
         }

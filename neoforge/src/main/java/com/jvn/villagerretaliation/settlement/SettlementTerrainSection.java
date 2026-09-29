@@ -43,10 +43,10 @@ final class SettlementTerrainSection {
             throw new IllegalArgumentException("Terrain section requires its observed chunk");
         }
         String key = receiptKey(namespace, area, min);
-        UUID id = SettlementChunkReceipts.identity(chunk, key);
+        UUID id = namespace.equals("ConstructionSurvey") ? UUID.randomUUID() : SettlementChunkReceipts.identity(chunk, key);
         int size = volume(min, max);
         var section = new SettlementTerrainSection(namespace, area, id, min, max, new BlockState[size], new BlockState[size]);
-        section.version = SettlementChunkReceipts.version(chunk, key, id);
+        section.version = namespace.equals("ConstructionSurvey") ? 0 : SettlementChunkReceipts.version(chunk, key, id);
         section.refresh(chunk);
         return section;
     }

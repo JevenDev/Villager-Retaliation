@@ -27,6 +27,26 @@ public final class SettlementProject {
     private boolean paymentDelivered;
     private boolean paymentRefunded;
 
+    boolean settled(SettlementResidentState resident) {
+        return !active() && (this.site == null || !this.site.unsettled())
+                && (this.fee == 0 || this.paymentRefunded || this.paymentDelivered
+                        && resident != null && resident.acknowledgesConstruction(this));
+    }
+
+    void summarize() {
+        if (active() || this.site != null && this.site.unsettled()) throw new IllegalStateException("Construction still has world obligations");
+        var summary = new CompoundTag();
+        for (String key : java.util.List.of("JobId", "SettlementTown", "StructureId", "StructureLabel", "Origin", "Rotation",
+                "Phase", "PlacedIndex", "TotalBlocks", "PaidCurrency", "StartedGameTime", "MaterialSummary")) {
+            if (this.task.contains(key)) summary.put(key, this.task.get(key).copy());
+        }
+        this.task = summary;
+        this.site = null;
+        this.workplace = null;
+        this.previousArea = null;
+        this.previousSettings = null;
+    }
+
     private SettlementProject(UUID id, UUID area, UUID builder, BlockPos min, BlockPos max, CompoundTag task, Status status) {
         this.id = Objects.requireNonNull(id);
         this.area = Objects.requireNonNull(area);
@@ -115,11 +135,11 @@ public final class SettlementProject {
     }
 
     void observeSite(SettlementArea area) {
-        if (this.site == null || !this.site.matches(area) && !this.site.pending()) this.site = new SettlementConstructionSite(this.id, area);
+        if (this.site == null || !this.site.matches(area) && !this.site.unsettled()) this.site = new SettlementConstructionSite(this.id, area);
     }
 
     void clearSite() {
-        if (this.site != null && !this.site.pending()) this.site = null;
+        if (this.site != null && !this.site.unsettled()) this.site = null;
     }
 
     public UUID id() {
@@ -151,7 +171,7 @@ public final class SettlementProject {
     }
 
     boolean reservesFootprint() {
-        return active() || this.site != null && this.site.pending();
+        return active() || this.site != null && this.site.unsettled();
     }
 
     public String label() {
@@ -180,7 +200,7 @@ public final class SettlementProject {
 
     public String blocker() {
         if (this.site != null && this.site.conflict()) return "world_conflict";
-        if (!active() && this.site != null && this.site.pending()) return "pending_world";
+        if (!active() && this.site != null && this.site.unsettled()) return "pending_world";
         return this.task.getString("BlockedReason");
     }
 

@@ -67,13 +67,18 @@ final class SettlementLifecyclePlan {
             var combined = ((ListTag) into.get(key)).copy();
             for (Tag raw : list) {
                 var entry = raw.copy();
-                if (key.equals("Projects")) ((CompoundTag) entry).getCompound("Task").putUUID("SettlementTown", target.id().value());
+                if (key.equals("AnimalBirths") && !((CompoundTag) entry).hasUUID("ReceiptTown")) ((CompoundTag) entry).putUUID("ReceiptTown", source.id().value());
+                if (key.equals("Projects") || key.equals("ProjectHistory")) ((CompoundTag) entry).getCompound("Task").putUUID("SettlementTown", target.id().value());
                 if (key.equals("Arrivals") && !((CompoundTag) entry).contains("Origin")) ((CompoundTag) entry).putLong("Origin", source.center().asLong());
                 if (key.equals("Navigation") && combined.contains(entry)) continue;
                 combined.add(entry);
             }
             into.put(key, combined);
         }
+        long[] oldRetired = from.getLongArray("RetiredProjects"), newRetired = into.getLongArray("RetiredProjects");
+        long[] retired = java.util.Arrays.copyOf(newRetired, newRetired.length + oldRetired.length);
+        System.arraycopy(oldRetired, 0, retired, newRetired.length, oldRetired.length);
+        into.putLongArray("RetiredProjects", retired);
         var stage = source.stage().ordinal() > target.stage().ordinal() ? source.stage() : target.stage();
         into.putString("Stage", stage.name());
         into.putInt("ExpansionRadius", Math.max(from.getInt("ExpansionRadius"), into.getInt("ExpansionRadius")));
@@ -120,7 +125,7 @@ final class SettlementLifecyclePlan {
     static boolean emptyForRelocation(ServerLevel level, SettlementRecord town) {
         var tag = town.save(level.registryAccess());
         return tag.getAllKeys().stream().filter(key -> tag.get(key) instanceof ListTag)
-                .filter(key -> !Set.of("Delegates", "History", "SupportServices", "ManualDuties").contains(key))
+                .filter(key -> !Set.of("Delegates", "History", "ProjectHistory", "SupportServices", "ManualDuties").contains(key))
                 .allMatch(key -> ((ListTag) tag.get(key)).isEmpty());
     }
 

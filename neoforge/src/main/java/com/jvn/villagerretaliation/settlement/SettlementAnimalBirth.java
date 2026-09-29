@@ -15,6 +15,9 @@ final class SettlementAnimalBirth {
     private boolean childApplied;
     private boolean experienceQueued;
     private long createdAt = -1L;
+    private UUID receiptTown;
+
+    UUID receiptTown(SettlementRecord town) { return this.receiptTown == null ? town.id().value() : this.receiptTown; }
 
     private SettlementAnimalBirth(UUID id, BlockPos position, CompoundTag entity, UUID experienceId, int experience) {
         if (id == null || position == null || experienceId == null || id.equals(experienceId)
@@ -80,6 +83,7 @@ final class SettlementAnimalBirth {
     CompoundTag save() {
         var tag = new CompoundTag();
         tag.putUUID("Id", this.id);
+        if (this.receiptTown != null) tag.putUUID("ReceiptTown", this.receiptTown);
         tag.putLong("Position", this.position.asLong());
         tag.put("Entity", this.entity.copy());
         tag.putUUID("ExperienceId", this.experienceId);
@@ -96,6 +100,8 @@ final class SettlementAnimalBirth {
         }
         var birth = new SettlementAnimalBirth(tag.getUUID("Id"), BlockPos.of(tag.getLong("Position")),
                 tag.getCompound("Entity"), tag.getUUID("ExperienceId"), tag.getInt("Experience"));
+        if (tag.contains("ReceiptTown") && !tag.hasUUID("ReceiptTown")) throw new IllegalArgumentException("Animal birth receipt namespace is invalid");
+        if (tag.hasUUID("ReceiptTown")) birth.receiptTown = tag.getUUID("ReceiptTown");
         birth.childApplied = tag.getBoolean("ChildApplied");
         birth.experienceQueued = tag.getBoolean("ExperienceQueued");
         birth.createdAt = tag.contains("CreatedAt", Tag.TAG_LONG) ? tag.getLong("CreatedAt") : -1L;

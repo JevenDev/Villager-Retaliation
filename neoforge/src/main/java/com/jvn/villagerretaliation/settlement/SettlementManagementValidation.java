@@ -66,8 +66,8 @@ final class SettlementManagementValidation {
                     : player.getMainHandItem().isEmpty() ? "held_item_required" : "";
             case RemoveOrder order -> town.economy().orders().containsKey(order.id()) ? "" : "order_missing";
             case Applicant applicant -> town.applicants().containsKey(applicant.id()) ? "" : "applicant_missing";
-            case CancelProject cancel -> !town.projects().containsKey(cancel.project()) ? "project_missing"
-                    : !town.projects().get(cancel.project()).active() ? "project_finished" : "";
+            case CancelProject cancel -> !town.knowsProject(cancel.project()) ? "project_missing"
+                    : town.project(cancel.project()) == null || !town.project(cancel.project()).active() ? "project_finished" : "";
             case Treasury treasury -> treasury.amount() <= 0 || treasury.amount() > 4_096 ? "invalid_amount"
                     : treasury.deposit() && com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(player) < treasury.amount()
                             ? "player_funds" : !treasury.deposit() && town.economy().balance().compareTo(

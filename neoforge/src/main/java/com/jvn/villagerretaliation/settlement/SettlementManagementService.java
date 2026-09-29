@@ -252,7 +252,7 @@ public final class SettlementManagementService {
     }
 
     private static void projects(SettlementRecord town, List<Entry> entries) {
-        town.projects().values().forEach(project -> entries.add(new SettlementManagementPayload.Project(
+        java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream()).forEach(project -> entries.add(new SettlementManagementPayload.Project(
                         project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.min(), project.max(), project.status(),
                         project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
                         project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),

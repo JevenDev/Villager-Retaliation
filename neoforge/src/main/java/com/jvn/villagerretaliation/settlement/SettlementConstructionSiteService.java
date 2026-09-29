@@ -52,15 +52,19 @@ final class SettlementConstructionSiteService {
         for (var project : town.projects().values()) {
             if (project.site() == null || !town.owns(project)) continue;
             refresh(level, project.site());
-            if (!project.active() && !project.site().pending()) town.clearProjectSite(project);
+            if (!project.active() && !project.site().unsettled()) town.clearProjectSite(project);
             town.changed();
         }
     }
 
     static void refresh(ServerLevel level, SettlementConstructionSite site) {
-        for (var placement : List.copyOf(site.placements().values()).stream().limit(32).toList()) {
+        for (var placement : site.awaitingCheckpoint().values().stream().limit(32).toList()) {
+            if (placement.reconcile(level, site.project()) && placement.durable(level)) site.checkpointed(placement.id());
+        }
+        for (var placement : site.placements().values().stream().limit(32).toList()) {
             if (!placement.reconcile(level, site.project())) break;
             site.applied(placement.id());
+            if (placement.durable(level)) site.checkpointed(placement.id());
         }
         for (var section : List.copyOf(site.sections().values())) {
             var chunk = level.getChunkSource().getChunkNow(section.min().getX() >> 4, section.min().getZ() >> 4);

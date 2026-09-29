@@ -31,7 +31,7 @@ final class SettlementAnimalBirthService {
     }
 
     private static String receiptKey(SettlementRecord town, SettlementAnimalBirth birth) {
-        return "AnimalBirth:" + town.id().value() + ":" + birth.id();
+        return "AnimalBirth:" + birth.receiptTown(town) + ":" + birth.id();
     }
 
     static void update(ServerLevel level, SettlementRecord town) {

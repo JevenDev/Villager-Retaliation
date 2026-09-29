@@ -168,7 +168,7 @@ final class SettlementBackgroundConstruction {
                     return;
                 }
                 if (consumes && !inventory.consumeSupplyExactly(material::materialMatches, 1)) throw new IllegalStateException("Verified construction material disappeared");
-                site.queue(new SettlementConstructionPlacement(changes));
+                site.queue(new SettlementConstructionPlacement(level, changes));
                 SettlementConstructionService.worked(town, project, owner);
                 for (var part : group.parts()) {
                     if (part.block().requiresToolAction() && changes.stream().anyMatch(change -> change.position().equals(part.worldPos()))) {
@@ -233,7 +233,7 @@ final class SettlementBackgroundConstruction {
             worker.status("clearing_construction");
             return false;
         }
-        site.queue(new SettlementConstructionPlacement(List.of(new SettlementConstructionPlacement.Part(pos, block, block.getFluidState().createLegacyBlock(), null))));
+        site.queue(new SettlementConstructionPlacement(level, List.of(new SettlementConstructionPlacement.Part(pos, block, block.getFluidState().createLegacyBlock(), null))));
         SettlementWorkforceService.home(level, owner).ifPresent(town -> {
             var project = town.activeProject(owner.getUUID());
             if (project != null) SettlementConstructionService.worked(town, project, owner);

@@ -1920,7 +1920,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         swingWorkTool(villager);
         EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
         });
-        if (level.destroyBlock(pos, false, villager)) SettlementConstructionService.worked(villager, context.state());
+        if (level.destroyBlock(pos, false, villager)) SettlementConstructionService.placed(villager, context.state(), pos, state);
         HiredPathMemory.onBlockChanged(level, pos);
         level.destroyBlockProgress(villager.getId(), pos, -1);
         damageTool(context, villager, tool, level, state, pos);
@@ -2611,14 +2611,14 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 if (!placedSource) {
                     return false;
                 }
-                SettlementConstructionService.worked(villager, context.state());
+                SettlementConstructionService.placed(villager, context.state(), worldPos, current);
                 HiredPathMemory.onBlockChanged(level, worldPos);
             }
+            BlockState placementBefore = level.getBlockState(worldPos);
             boolean placed = level.setBlock(worldPos, block.state(), Block.UPDATE_ALL);
             if (!placed) {
                 return false;
             }
-            SettlementConstructionService.worked(villager, context.state());
             HiredPathMemory.onBlockChanged(level, worldPos);
             if (block.requiresToolAction()) {
                 damageTool(context, villager, actionTool);
@@ -2631,6 +2631,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 blockEntity.loadWithComponents(tag, level.registryAccess());
                 blockEntity.setChanged();
             }
+            SettlementConstructionService.placed(villager, context.state(), worldPos, placementBefore);
         }
         if (consumesMaterial) {
             context.inventory().consumeSupply(materialBlock::materialMatches, 1);

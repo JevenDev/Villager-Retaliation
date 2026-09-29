@@ -18,6 +18,8 @@
     "SettlementEntityAddedMixin",
     "SettlementEntityTickingMixin",
     "SettlementChunkViewMixin",
+    "ChunkStorageAccessor",
+    "IOWorkerAccessor",
     "SettlementTrackedEntityMixin",
     "ChunkGenerationCompletionMixin",
     "ChunkGenerationSaveMixin",

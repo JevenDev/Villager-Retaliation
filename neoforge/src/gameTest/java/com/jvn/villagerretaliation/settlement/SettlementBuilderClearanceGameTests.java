@@ -117,7 +117,8 @@ public final class SettlementBuilderClearanceGameTests {
         });
     }
 
-    @GameTest(template = "empty", timeoutTicks = 160, batch = "settlement_builder_clearance_walk")
+    // accelerated test ticks must allow time for real region-file I/O
+    @GameTest(template = "empty", timeoutTicks = 120000, batch = "settlement_builder_clearance_walk")
     public static void aFinishedBuilderPhysicallyWalksClearAndAllowsNativeDelivery(GameTestHelper helper) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(2, 2, 2));
@@ -173,7 +174,8 @@ public final class SettlementBuilderClearanceGameTests {
         helper.succeedWhen(() -> {
             SettlementConstructionSiteService.update(level, fixture.town());
             helper.assertTrue(level.getBlockState(origin).is(Blocks.OAK_PLANKS), "native movement must vacate the block before it can be delivered");
-            helper.assertFalse(fixture.project().reservesFootprint(), "successful world delivery releases the completed footprint");
+            helper.assertFalse(fixture.project().reservesFootprint(), "successful chunk checkpoint releases the completed footprint (waiting=" + fixture.site().awaitingCheckpoint().size()
+                    + ", owned=" + fixture.town().owns(fixture.project()) + ", entities=" + helper.getLevel().areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(fixture.origin()).toLong()) + ")");
             helper.assertTrue(builder.position().distanceToSqr(before) > 0.25D, "native entity ticks actually move the builder");
             helper.assertFalse(BuilderTaskState.hasTask(HiredWorkStateStore.state(builder)), "walking cannot recreate the completed task");
             helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.COMPLETED, "the finished project remains complete");
@@ -200,7 +202,7 @@ public final class SettlementBuilderClearanceGameTests {
         builder.setPos(path.getTarget().getBottomCenter());
         SettlementConstructionSiteService.update(level, fixture.town());
         helper.assertTrue(level.getBlockState(fixture.origin()).is(Blocks.OAK_PLANKS), "the paid block applies after the builder leaves");
-        helper.assertFalse(fixture.project().reservesFootprint(), "world delivery releases the retired reservation");
+        helper.assertTrue(fixture.project().reservesFootprint(), "applied work retains its reservation until the chunk checkpoint completes");
         helper.assertTrue(SettlementConstructionService.pendingClearance(builder) == null, "finished delivery leaves no evacuation request");
     }
 

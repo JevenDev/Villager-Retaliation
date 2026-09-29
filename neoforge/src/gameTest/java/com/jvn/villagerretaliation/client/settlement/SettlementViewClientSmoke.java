@@ -712,7 +712,7 @@ public final class SettlementViewClientSmoke {
                 require(!serverPlayer.serverLevel().getChunkSource().chunkMap.getDistanceManager()
                         .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "closing linked management releases server tickets");
                 var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
-                require(town.projects().get(projectFixture.project()).status()
+                require(town.project(projectFixture.project()).status()
                         == com.jvn.villagerretaliation.settlement.SettlementProject.Status.CANCELLED,
                         "the client cancelled the authoritative construction project");
             }).join();

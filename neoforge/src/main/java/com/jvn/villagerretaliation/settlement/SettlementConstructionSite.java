@@ -18,6 +18,7 @@ final class SettlementConstructionSite implements BlockGetter {
     private final SettlementArea area;
     private final Map<BlockPos, SettlementTerrainSection> sections = new LinkedHashMap<>();
     private final Map<UUID, SettlementConstructionPlacement> placements = new LinkedHashMap<>();
+    private final Map<UUID, SettlementConstructionPlacement> awaitingCheckpoint = new LinkedHashMap<>();
     private final Map<BlockPos, BlockState> planned = new LinkedHashMap<>();
 
     SettlementConstructionSite(UUID project, SettlementArea area) {
@@ -47,12 +48,32 @@ final class SettlementConstructionSite implements BlockGetter {
         return Collections.unmodifiableMap(this.placements);
     }
 
+    Map<UUID, SettlementConstructionPlacement> awaitingCheckpoint() {
+        return Collections.unmodifiableMap(this.awaitingCheckpoint);
+    }
+
+    boolean unsettled() {
+        return pending() || !this.awaitingCheckpoint.isEmpty();
+    }
+
+    void nativePlacement(SettlementConstructionPlacement placement) {
+        if (placement.parts().stream().anyMatch(part -> !this.area.contains(part.position()) || !observed(part.position()))) {
+            throw new IllegalArgumentException("Native construction exceeds its observed site");
+        }
+        this.awaitingCheckpoint.put(placement.id(), placement);
+    }
+
+    void checkpointed(UUID id) {
+        this.awaitingCheckpoint.remove(id);
+    }
+
     boolean pending() {
         return !this.placements.isEmpty();
     }
 
     boolean conflict() {
-        return this.placements.values().stream().anyMatch(SettlementConstructionPlacement::conflict);
+        return this.placements.values().stream().anyMatch(SettlementConstructionPlacement::conflict)
+                || this.awaitingCheckpoint.values().stream().anyMatch(SettlementConstructionPlacement::conflict);
     }
 
     BlockPos min() {
@@ -86,7 +107,8 @@ final class SettlementConstructionSite implements BlockGetter {
     }
 
     void applied(UUID id) {
-        this.placements.remove(id);
+        var applied = this.placements.remove(id);
+        if (applied != null) this.awaitingCheckpoint.put(id, applied);
         this.planned.clear();
         this.placements.values().forEach(placement -> placement.parts().forEach(part -> this.planned.put(part.position(), part.after())));
     }
@@ -135,6 +157,7 @@ final class SettlementConstructionSite implements BlockGetter {
         this.sections.values().forEach(section -> sections.add(section.save()));
         tag.put("Sections", sections);
         var placements = new ListTag();
+        this.awaitingCheckpoint.values().forEach(placement -> placements.add(placement.save()));
         this.placements.values().forEach(placement -> placements.add(placement.save()));
         tag.put("Placements", placements);
         return tag;

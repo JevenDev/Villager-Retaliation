@@ -32,6 +32,7 @@ public final class SettlementBackgroundService {
                 worker -> SettlementBackgroundFishing.migrateExperience(level, town, worker)));
         jobs.add(() -> SettlementGroundExperienceService.update(level, town, now));
         jobs.add(() -> SettlementConstructionSiteService.update(level, town));
+        jobs.add(town::maintainProjects);
         for (var depot : town.depots().values()) jobs.add(() -> SettlementDepotService.observeRules(level, depot));
         for (var resident : town.duties().keySet()) jobs.add(() -> updateWorker(level, town, resident, now));
         jobs.add(() -> SettlementProjectileService.update(level, town, now));
