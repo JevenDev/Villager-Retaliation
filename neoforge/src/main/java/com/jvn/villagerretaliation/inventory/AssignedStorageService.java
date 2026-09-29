@@ -659,31 +659,40 @@ public final class AssignedStorageService {
     }
 
     public static boolean reserveProductionInputs(Villager villager, Map<net.minecraft.world.item.Item, Integer> needs) {
-        if (!(villager.level() instanceof ServerLevel level)) return false;
-        var remaining = new LinkedHashMap<>(needs);
-        if (remaining.size() > 64 || remaining.values().stream().anyMatch(count -> count == null || count < 1 || count > 4096)) return false;
+        if (needs.size() > 64 || needs.values().stream().anyMatch(count -> count == null || count < 1 || count > 4096)) return false;
+        return reserveProductionNeeds(villager, needs.entrySet().stream().map(entry ->
+                new com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need(stack -> stack.is(entry.getKey()), entry.getValue(), "")).toList());
+    }
+
+    public static boolean reserveProductionNeeds(Villager villager, List<com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need> needs) {
+        if (!(villager.level() instanceof ServerLevel level) || needs.size() > 64
+                || needs.stream().anyMatch(need -> need == null || need.predicate() == null || need.count() < 1 || need.count() > 4096)) return false;
+        int[] remaining = needs.stream().mapToInt(com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need::count).toArray();
         Map<BlockPos, List<ItemStack>> planned = new LinkedHashMap<>();
         for (var source : liveInputContainerCandidates(level, villager)) {
-            if (remaining.isEmpty()) break;
+            if (java.util.Arrays.stream(remaining).allMatch(count -> count == 0)) break;
             var resolution = ContainerFilterResolver.resolve(level, source);
             if (!resolution.live()) continue;
             var reserved = new ArrayList<ItemStack>();
             for (int slot = 0; slot < source.container().getContainerSize(); slot++) {
                 var stack = source.container().getItem(slot);
-                int needed = remaining.getOrDefault(stack.getItem(), 0);
-                if (stack.isEmpty() || needed <= 0) continue;
-                int count = Math.min(needed, Math.min(stack.getCount(),
-                        sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), reserved)));
-                if (count <= 0) continue;
-                reserved.add(stack.copyWithCount(count));
-                if (count == needed) remaining.remove(stack.getItem());
-                else remaining.put(stack.getItem(), needed - count);
+                if (stack.isEmpty()) continue;
+                int used = 0;
+                for (int index = 0; index < needs.size(); index++) {
+                    if (remaining[index] <= 0 || !needs.get(index).predicate().test(stack)) continue;
+                    int count = Math.min(remaining[index], Math.min(stack.getCount() - used,
+                            sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), reserved)));
+                    if (count <= 0) continue;
+                    reserved.add(stack.copyWithCount(count));
+                    used += count;
+                    remaining[index] -= count;
+                }
             }
             if (!reserved.isEmpty()) planned.put(source.pos(), reserved);
         }
-        ContainerTransferClaimLedger.replaceAll(level, villager.getUUID(), VillagerFilterPolicy.TransferOperation.PROVIDE,
-                remaining.isEmpty() ? planned : Map.of());
-        return remaining.isEmpty();
+        boolean complete = java.util.Arrays.stream(remaining).allMatch(count -> count == 0);
+        ContainerTransferClaimLedger.replaceAll(level, villager.getUUID(), VillagerFilterPolicy.TransferOperation.PROVIDE, complete ? planned : Map.of());
+        return complete;
     }
 
     private static void consumeProductionInputClaim(ServerLevel level, UUID worker, BlockPos position, ItemStack consumed) {

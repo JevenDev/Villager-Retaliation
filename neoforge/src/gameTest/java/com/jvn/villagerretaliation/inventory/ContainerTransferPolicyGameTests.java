@@ -859,6 +859,41 @@ public final class ContainerTransferPolicyGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void productionMaterialClaimsKeepPotionContentsSeparate(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 4, 1);
+        var level = helper.getLevel();
+        var source = helper.absolutePos(new BlockPos(2, 2, 2));
+        setBlock(helper, new BlockPos(2, 2, 2), Blocks.CHEST.defaultBlockState());
+        var water = net.minecraft.world.item.alchemy.PotionContents.createItemStack(Items.POTION, net.minecraft.world.item.alchemy.Potions.WATER);
+        var healing = net.minecraft.world.item.alchemy.PotionContents.createItemStack(Items.POTION, net.minecraft.world.item.alchemy.Potions.HEALING);
+        container(level, source).setItem(0, water.copy());
+        container(level, source).setItem(1, healing.copy());
+        var first = spawnVillager(helper, new BlockPos(4, 2, 2));
+        var second = spawnVillager(helper, new BlockPos(4, 2, 3));
+        var hirer = fakePlayer(level, "PotionClaims");
+        assignStorage(helper, hirer, first, source, AssignedStorageService.SUPPLY_PURPOSE);
+        assignStorage(helper, hirer, second, source, AssignedStorageService.SUPPLY_PURPOSE);
+        var waterNeed = new com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need(
+                stack -> ItemStack.isSameItemSameComponents(stack, water), 1, "water");
+        var healingNeed = new com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need(
+                stack -> ItemStack.isSameItemSameComponents(stack, healing), 1, "healing");
+        try {
+            helper.assertTrue(AssignedStorageService.reserveProductionNeeds(first, java.util.List.of(waterNeed)), "the real water bottle is reserved");
+            helper.assertFalse(AssignedStorageService.reserveProductionNeeds(second, java.util.List.of(waterNeed)), "another potion cannot replace reserved water");
+            helper.assertTrue(AssignedStorageService.reserveProductionNeeds(second, java.util.List.of(healingNeed)), "a different potion remains independently available");
+            helper.assertValueEqual(AssignedStorageService.transferItemsAtAssignedStorageIgnoringFilter(first, source, waterNeed.predicate(), 1, stack -> ItemStack.EMPTY), 1,
+                    "the producer collects only its exact bottle");
+            helper.assertTrue(ItemStack.matches(container(level, source).getItem(1), healing), "unrelated potion components are preserved");
+        } finally {
+            AssignedStorageService.releaseProductionInputs(first);
+            AssignedStorageService.releaseProductionInputs(second);
+            first.discard();
+            second.discard();
+        }
+        helper.succeed();
+    }
+
     private record FixtureResult(int moved, int sourceRemaining, int accepted) {
     }
 }

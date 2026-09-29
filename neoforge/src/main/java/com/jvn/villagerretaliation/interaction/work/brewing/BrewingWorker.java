@@ -3,6 +3,12 @@ package com.jvn.villagerretaliation.interaction.work.brewing;
 import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionService;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
+import com.jvn.villagerretaliation.settlement.SettlementBrewingStandState;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
@@ -162,6 +168,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!context.hasWorkArea()) {
+            HiredProductionService.releasePlanned(level, villager, role());
             return waitForWorkAreaAssignment(level, villager, context);
         }
         boolean hasAssignedStorage = AssignedStorageService.hasAssignedStorage(level, villager);
@@ -174,6 +181,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 return WorkResult.idle(storageFullStatus(context));
             }
         }
+        var production = HiredProductionService.access(level, villager, role());
+        if (production.managed()) return tickProduction(level, villager, context, production);
         if (!hasOrder(context.state())) {
             context.setProgressTicks(0);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
@@ -194,7 +203,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return WorkResult.completed("interaction.work.brewing.order_complete");
         }
 
-        BlockPos stand = nearestBrewingStand(level, villager, context, route, batchSize);
+        return tickRoute(level, villager, context, route, batchSize, null, null);
+    }
+
+    private WorkResult tickRoute(ServerLevel level, Villager villager, HiredWorkContext context,
+            HiredBrewingRecipeCatalog.BrewingRoute route, int batchSize, HiredProductionQueue queue, HiredProductionQueue.Allocation allocation) {
+        BlockPos stand = allocation == null ? nearestBrewingStand(level, villager, context, route, batchSize) : allocation.station();
         if (stand == null) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "no_brewing_stand", level.getGameTime() + 100L);
@@ -225,6 +239,18 @@ public final class BrewingWorker extends AbstractBlockWorker {
         }
 
         MaterialPlan materials = MaterialPlan.create(level, villager, context, route, waterSource, standPlan);
+        if (queue != null) {
+            if (!materials.hasEverything()) {
+                queue.blocker(allocation.order(), "missing_materials");
+                setBrewingBlocked(context, "missing_brewing_materials", materials.missingMaterials());
+                return WorkResult.idle(materials.missingStatus());
+            }
+            if (!AssignedStorageService.reserveProductionNeeds(villager, materials.storageNeeds(context))) {
+                queue.blocker(allocation.order(), "materials_reserved");
+                return WorkResult.idle("interaction.work.brewing.missing_materials");
+            }
+            queue.blocker(allocation.order(), "");
+        }
         if (!materials.hasEverything()) {
             WorkResult gatheredPartialMaterials = gatherBrewingMaterials(level, villager, context, materials);
             if (gatheredPartialMaterials != null) {
@@ -295,7 +321,164 @@ public final class BrewingWorker extends AbstractBlockWorker {
         setTaskState(context, HiredWorkerTaskState.WORKING, stand);
 
         context.setProgressTicks(0);
-        return workBrewingStand(level, villager, context, route, standPlan.targetBottleCount(), standPlan.collectLimit(context.state()), stand);
+        return workBrewingStand(level, villager, context, route, standPlan.targetBottleCount(),
+                allocation == null ? standPlan.collectLimit(context.state()) : allocation.remaining(), stand, queue, allocation);
+    }
+
+    private WorkResult tickProduction(ServerLevel level, Villager villager, HiredWorkContext context, HiredProductionService.Access access) {
+        var queue = access.queue();
+        var stations = HiredProductionStations.get(level);
+        if (queue == null || !access.blocker().isEmpty() || stations.readOnly()) {
+            AssignedStorageService.releaseProductionInputs(villager);
+            return productionBlocked(level, context, queue, null, access.blocker().isEmpty() ? "production_station_recovery_required" : access.blocker());
+        }
+        var allocation = queue.allocation(villager.getUUID());
+        if (allocation == null) {
+            for (var orphan : queue.allocations()) {
+                if (orphan.started() && orphan.worker() == null && orphan.station() != null
+                        && context.isInsideWorkArea(orphan.station()) && context.permitsStation(orphan.station())
+                        && context.isLoaded(level, orphan.station()) && queue.resume(orphan.id(), villager.getUUID())) {
+                    allocation = queue.allocation(villager.getUUID());
+                    break;
+                }
+            }
+        }
+        if (allocation != null && allocation.started()) return productionBatch(level, villager, context, queue, allocation);
+        var positions = productionStands(level, villager, context);
+        for (var order : queue.orders()) {
+            if (!order.runnable()) continue;
+            var route = HiredBrewingRecipeCatalog.find(level, order.recipe().brewingItem(), order.recipe().potion()).orElse(null);
+            if (route == null || !ItemStack.matches(order.output(), route.output())) {
+                queue.blocker(order.id(), "recipe_unavailable");
+                continue;
+            }
+            long stock = HiredProductionStock.count(level, villager, queue, order);
+            long own = allocation != null && allocation.order().equals(order.id()) ? allocation.remaining() : 0L;
+            if (stock < 0L || queue.available(order.id(), stock) + own <= 0L) {
+                queue.blocker(order.id(), stock < 0L ? "output_storage_unavailable" : "quantity_reserved_or_stock_met");
+                continue;
+            }
+            if (context.inventory().hasOutput(ignored -> true)
+                    && !java.util.Objects.equals(HiredProductionStock.destination(context.state()), order.storage())) {
+                queue.blocker(order.id(), "awaiting_output_delivery");
+                continue;
+            }
+            int batchSize = (int) Math.min(3L, queue.available(order.id(), stock) + own);
+            int attempts = 0;
+            queue.blocker(order.id(), "no_available_brewing_stand");
+            for (var position : positions) {
+                var stand = (BrewingStandBlockEntity) level.getBlockEntity(position);
+                var claim = stations.reconcile(level, position, SettlementBrewingStandState.identity(stand));
+                if (claim != null && (allocation == null || !claim.allocation().equals(allocation.id()))
+                        || loadedBottleCount(stand) > 0 || !stand.getItem(INGREDIENT_SLOT).isEmpty()) continue;
+                if (++attempts > MAX_FACILITY_PATH_ATTEMPTS) break;
+                if (brewingStandPathScore(level, villager, context, position) >= Double.MAX_VALUE) {
+                    queue.blocker(order.id(), "station_unreachable");
+                    continue;
+                }
+                var plan = BrewingStandPlan.create(level, position, route, batchSize);
+                if (plan.hasWrongFuel()) {
+                    queue.blocker(order.id(), "station_fuel_changed");
+                    continue;
+                }
+                var materials = MaterialPlan.create(level, villager, context, route, nearestWaterSource(level, villager, context, position) != null, plan);
+                if (!materials.hasEverything()) {
+                    queue.blocker(order.id(), "missing_materials");
+                    continue;
+                }
+                if (!context.canStoreOutputs(List.of(route.output()))) {
+                    queue.blocker(order.id(), "output_full");
+                    continue;
+                }
+                if (!AssignedStorageService.reserveProductionNeeds(villager, materials.storageNeeds(context))) {
+                    queue.blocker(order.id(), "materials_reserved");
+                    continue;
+                }
+                if (allocation != null && (!allocation.order().equals(order.id()) || !position.equals(allocation.station()))) {
+                    stations.release(allocation.id());
+                    queue.release(allocation.id());
+                    allocation = null;
+                }
+                if (allocation == null) allocation = queue.reserve(villager.getUUID(), order.id(), batchSize, 1, stock, position);
+                if (allocation == null) continue;
+                if (!stations.reserve(level, queue, allocation, SettlementBrewingStandState.identity(stand))) {
+                    queue.release(allocation.id());
+                    allocation = null;
+                    continue;
+                }
+                HiredProductionStock.prepareDestination(context.state(), context.inventory().hasOutput(ignored -> true), order);
+                var result = productionBatch(level, villager, context, queue, allocation);
+                var current = queue.allocation(villager.getUUID());
+                if (result.progressed() || current != null && current.started()) return result;
+                releaseProduction(level, villager, queue);
+                allocation = null;
+            }
+        }
+        releaseProduction(level, villager, queue);
+        return productionBlocked(level, context, queue, null, "no_runnable_production");
+    }
+
+    private WorkResult productionBatch(ServerLevel level, Villager villager, HiredWorkContext context,
+            HiredProductionQueue queue, HiredProductionQueue.Allocation allocation) {
+        var order = queue.order(allocation.order());
+        var position = allocation.station();
+        if (position == null || !context.isInsideWorkArea(position) || !context.permitsStation(position) || !context.isLoaded(level, position)) {
+            return productionBlocked(level, context, queue, order, "station_unavailable");
+        }
+        var stations = HiredProductionStations.get(level);
+        if (!(level.getBlockEntity(position) instanceof BrewingStandBlockEntity stand)) {
+            stations.release(allocation.id());
+            queue.lost(allocation.id());
+            return productionBlocked(level, context, queue, order, "station_removed");
+        }
+        if (!stations.reserve(level, queue, allocation, SettlementBrewingStandState.identity(stand))) {
+            return productionBlocked(level, context, queue, order, "station_claim_changed");
+        }
+        var route = HiredBrewingRecipeCatalog.find(level, order.recipe().brewingItem(), order.recipe().potion()).orElse(null);
+        if (route == null || !ItemStack.matches(order.output(), route.output())) return productionBlocked(level, context, queue, order, "recipe_unavailable");
+        if (allocation.started() && loadedBottleCount(stand) == 0) {
+            stations.release(allocation.id());
+            queue.lost(allocation.id());
+            return productionBlocked(level, context, queue, order, "station_batch_missing");
+        }
+        if (!allocation.started() && (loadedBottleCount(stand) > 0 || !stand.getItem(INGREDIENT_SLOT).isEmpty())) {
+            return productionBlocked(level, context, queue, order, "station_contents_changed");
+        }
+        if (!HiredProductionStock.prepareDestination(context.state(), context.inventory().hasOutput(ignored -> true), order)) {
+            return productionBlocked(level, context, queue, order, "awaiting_output_delivery");
+        }
+        var result = tickRoute(level, villager, context, route, allocation.remaining(), queue, allocation);
+        if (!result.progressed() && queue.order(order.id()).blocker().isEmpty()) queue.blocker(order.id(), result.status());
+        return result;
+    }
+
+    private static List<BlockPos> productionStands(ServerLevel level, Villager villager, HiredWorkContext context) {
+        var candidates = new java.util.LinkedHashSet<BlockPos>();
+        java.util.Arrays.stream(context.state().getLongArray("ProductionBrewingStands")).limit(128).mapToObj(BlockPos::of).forEach(candidates::add);
+        java.util.function.Predicate<BlockPos> valid = position -> context.isInsideWorkArea(position) && context.permitsStation(position)
+                && context.isLoaded(level, position) && level.getBlockEntity(position) instanceof BrewingStandBlockEntity;
+        candidates.removeIf(valid.negate());
+        candidates.addAll(com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan.collect(
+                context, "ProductionBrewingStandScan", 4096, valid).candidates());
+        var positions = candidates.stream().sorted(Comparator.comparingDouble(pos -> villager.distanceToSqr(pos.getCenter()))).limit(128).toList();
+        context.state().putLongArray("ProductionBrewingStands", positions.stream().mapToLong(BlockPos::asLong).toArray());
+        return positions;
+    }
+
+    private static void releaseProduction(ServerLevel level, Villager villager, HiredProductionQueue queue) {
+        var allocation = queue.allocation(villager.getUUID());
+        if (allocation != null && !allocation.started()) {
+            HiredProductionStations.get(level).release(allocation.id());
+            queue.release(allocation.id());
+        }
+        AssignedStorageService.releaseProductionInputs(villager);
+    }
+
+    private WorkResult productionBlocked(ServerLevel level, HiredWorkContext context, HiredProductionQueue queue, HiredProductionOrder order, String reason) {
+        if (queue != null && order != null) queue.blocker(order.id(), reason);
+        HiredWorkerBrain.setFailure(context, reason, level.getGameTime() + 100L);
+        setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
+        return WorkResult.idle("interaction.work.brewing.missing_materials");
     }
 
     private boolean moveToBrewingStandTarget(
@@ -385,6 +568,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         CompoundTag state = context.state();
         BlockPos cached = cachedPos(state, CACHED_STAND_POS_TAG);
         if (isValidBrewingStand(level, context, cached)
+                && HiredProductionStations.get(level).available(level, cached)
                 && !HiredPathMemory.isAvoided(level, villager, cached)
                 && brewingStandCanServeOrder(level, cached, route, requestedBatchSize)) {
             return cached;
@@ -400,6 +584,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         for (BlockPos raw : context.workAreaPositions()) {
             BlockPos pos = raw.immutable();
             if (isValidBrewingStand(level, context, pos)
+                    && HiredProductionStations.get(level).available(level, pos)
                     && !HiredPathMemory.isAvoided(level, villager, pos)) {
                 candidates.add(new FacilityCandidate(pos, villager.distanceToSqr(pos.getCenter())));
             }
@@ -929,7 +1114,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             HiredBrewingRecipeCatalog.BrewingRoute route,
             int batchSize,
             int collectLimit,
-            BlockPos stand) {
+            BlockPos stand, HiredProductionQueue queue, HiredProductionQueue.Allocation allocation) {
         if (!(level.getBlockEntity(stand) instanceof BrewingStandBlockEntity blockEntity)) {
             HiredWorkerBrain.setFailure(context, "no_brewing_stand", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
@@ -944,8 +1129,16 @@ public final class BrewingWorker extends AbstractBlockWorker {
 
         int collected = collectFinishedPotions(level, villager, context, route, blockEntity, stand, collectLimit);
         if (collected > 0) {
-            boolean completesOrder = completesOrder(context.state(), collected);
-            decrementOrder(context.state(), collected);
+            boolean completesOrder;
+            if (queue == null) {
+                completesOrder = completesOrder(context.state(), collected);
+                decrementOrder(context.state(), collected);
+            } else {
+                if (!queue.complete(allocation.id(), route.output().copyWithCount(collected))) throw new IllegalStateException("Brewed output did not match its production allocation");
+                completesOrder = queue.allocation(villager.getUUID()) == null;
+                if (completesOrder) HiredProductionStations.get(level).release(allocation.id());
+                AssignedStorageService.releaseProductionInputs(villager);
+            }
             level.playSound(null, stand, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1.0F, 1.0F);
             setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, stand);
             Map<String, String> replacements = Map.of(
@@ -983,6 +1176,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (loadedBottles < batchSize) {
             if (loadedBottles > 0 && (currentStep > 0 || !blockEntity.getItem(INGREDIENT_SLOT).isEmpty())) {
                 return WorkResult.progressed("interaction.work.brewing.waiting_current_batch");
+            }
+            if (queue != null && !allocation.started()) {
+                if (countJobWaterBottles(context) < batchSize - loadedBottles || !queue.start(allocation.id())) {
+                    return WorkResult.idle("interaction.work.brewing.missing_materials");
+                }
+                HiredProductionStations.get(level).reserve(level, queue, queue.allocation(villager.getUUID()), SettlementBrewingStandState.identity(blockEntity));
             }
             int loaded = loadWaterBottlesIntoStand(level, context, blockEntity, stand, batchSize - loadedBottles);
             if (loaded <= 0) {

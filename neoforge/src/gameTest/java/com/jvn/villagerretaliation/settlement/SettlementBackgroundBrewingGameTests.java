@@ -32,7 +32,7 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("villagerretaliation")
 @PrefixGameTestTemplate(false)
 public final class SettlementBackgroundBrewingGameTests {
     private SettlementBackgroundBrewingGameTests() {
@@ -390,6 +390,68 @@ public final class SettlementBackgroundBrewingGameTests {
             helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 3, "unsafe workers cannot fetch new bottles");
             helper.assertValueEqual(fixture.supply().getItem(2).getCount(), 1, "unsafe workers cannot supply the next ingredient");
             helper.assertValueEqual(fixture.worker().status(), "unsafe", "the resident retains the safety pause");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_brewing")
+    public static void sharedBrewingQueueFinishesOnlyItsCancelledNativeBatch(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            fixture.town().setWorksitePlan(fixture.town().leader(), fixture.area().id(), SettlementWorksitePlan.defaults(fixture.area().type().role()));
+            var queue = fixture.town().beginProduction(fixture.town().leader(), fixture.area().id());
+            var order = com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.create(level,
+                    com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe.brewing(
+                            ResourceLocation.withDefaultNamespace("potion"), ResourceLocation.withDefaultNamespace("healing")),
+                    com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.Mode.BATCH, 5, null);
+            queue.append(order);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            supply(fixture, 6, 3);
+            SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(queue.pending(order.id()), 3, "one real three-bottle batch is reserved before processing");
+            helper.assertTrue(queue.cancel(order.id()), "future bottles are cancelled");
+            for (int now = 200; now <= 2000; now += 200) {
+                fixture.machine().advance(level, now);
+                SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            }
+            helper.assertValueEqual(queue.order(order.id()).produced(), 3L, "the in-progress recipe chain finishes exactly three potions");
+            helper.assertValueEqual(queue.pending(order.id()), 0, "the finished batch releases its reservation");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 3, "no extra bottle is filled after cancellation");
+            helper.assertValueEqual(fixture.supply().getItem(1).getCount(), 2, "only one real wart is consumed");
+            helper.assertValueEqual(fixture.supply().getItem(2).getCount(), 2, "only one real melon is consumed");
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations.get(level).available(level, fixture.machine().position()),
+                    "completion releases the shared stand");
+            helper.assertFalse(level.hasChunkAt(fixture.town().center()), "brewing does not load the worksite chunk");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_brewing")
+    public static void replacementBrewerContinuesTheOriginalSharedPotionReceipt(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            fixture.town().setWorksitePlan(fixture.town().leader(), fixture.area().id(), SettlementWorksitePlan.defaults(fixture.area().type().role()));
+            var queue = fixture.town().beginProduction(fixture.town().leader(), fixture.area().id());
+            var order = com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.create(level,
+                    com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe.brewing(
+                            ResourceLocation.withDefaultNamespace("potion"), ResourceLocation.withDefaultNamespace("healing")),
+                    com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.Mode.BATCH, 1, null);
+            queue.append(order);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            supply(fixture, 2, 2);
+            SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            var saved = fixture.worker().save();
+            fixture.town().removeWorker(fixture.worker().id());
+            var next = UUID.randomUUID();
+            saved.putUUID("Id", next);
+            var replacement = SettlementWorkerState.load(saved);
+            fixture.town().assignDuty(next, fixture.area().id());
+            fixture.town().recordWorker(replacement);
+            for (int now = 200; now <= 1600; now += 200) {
+                fixture.machine().advance(level, now);
+                SettlementBackgroundBrewing.tick(level, fixture.town(), replacement, 200, 1.0D);
+            }
+            helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "replacement staff finish the original potion");
+            helper.assertValueEqual(queue.pending(order.id()), 0, "the original receipt is completed once");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 1, "handoff never consumes a second bottle");
         });
     }
 

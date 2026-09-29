@@ -38,8 +38,17 @@ public final class SettlementBrewingStandState {
         this.position = position.immutable();
     }
 
-    UUID id() {
+    public UUID id() {
         return this.id;
+    }
+
+    public static UUID identity(BrewingStandBlockEntity stand) {
+        var persistent = stand.getPersistentData();
+        if (!persistent.hasUUID(ID_TAG)) {
+            persistent.putUUID(ID_TAG, UUID.randomUUID());
+            stand.setChanged();
+        }
+        return persistent.getUUID(ID_TAG);
     }
 
     static void bindConstruction(BrewingStandBlockEntity entity, UUID id) {
@@ -88,9 +97,7 @@ public final class SettlementBrewingStandState {
     }
 
     static SettlementBrewingStandState capture(ServerLevel level, UUID area, BrewingStandBlockEntity stand, long now) {
-        var persistent = stand.getPersistentData();
-        UUID id = persistent.hasUUID(ID_TAG) ? persistent.getUUID(ID_TAG) : UUID.randomUUID();
-        persistent.putUUID(ID_TAG, id);
+        UUID id = identity(stand);
         var state = new SettlementBrewingStandState(id, area, stand.getBlockPos());
         state.observe(level.registryAccess(), stand, now);
         return state;
