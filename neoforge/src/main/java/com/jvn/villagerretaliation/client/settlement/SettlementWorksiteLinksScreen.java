@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
-import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page;
+import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementWorksiteLinks;
 import java.util.ArrayList;
@@ -11,20 +13,15 @@ import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
-public final class SettlementWorksiteLinksScreen extends Screen {
+public final class SettlementWorksiteLinksScreen extends VillagerWindowScreen {
     private final SettlementWorkerScreen parent;
     private final SettlementManagementPayload previousSnapshot;
     private final List<Button> rows = new ArrayList<>();
     private int tab;
     private int offset;
-    private int left;
-    private int top;
-    private int panelWidth;
-    private int panelHeight;
     private Button previous;
     private Button next;
     private Button automatic;
@@ -47,16 +44,11 @@ public final class SettlementWorksiteLinksScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(480, this.width - 32),
-                Math.min(350, this.height - 24), true);
-        this.panelWidth = layout.width();
-        this.panelHeight = layout.height();
-        this.left = layout.left();
-        this.top = layout.top();
+        initWindow(360, 310);
         int tabWidth = (this.panelWidth - 8) / 3;
         for (int index = 0; index < 3; index++) {
             int selected = index;
-            addRenderableWidget(Button.builder(text(index == 0 ? "worksite_supplies" : index == 1 ? "worksite_outputs" : "worksite_stations"),
+            addRenderableWidget(VillagerUi.buttonBuilder(text(index == 0 ? "worksite_supplies" : index == 1 ? "worksite_outputs" : "worksite_stations"),
                     ignored -> {
                         this.tab = selected;
                         this.offset = 0;
@@ -65,21 +57,21 @@ public final class SettlementWorksiteLinksScreen extends Screen {
                     }).bounds(this.left + index * (tabWidth + 4), this.top + 24, tabWidth, 20).build());
         }
         this.rows.clear();
-        int count = this.panelHeight < 280 ? 4 : 8;
+        int count = Math.max(1, (this.panelHeight - 108) / 24);
         this.offset -= this.offset % count;
         for (int index = 0; index < count; index++) {
             int row = index;
-            this.rows.add(addRenderableWidget(Button.builder(Component.empty(), ignored -> toggle(row))
+            this.rows.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> toggle(row))
                     .bounds(this.left, this.top + 54 + index * 24, this.panelWidth, 20).build()));
         }
         int bottom = this.top + this.panelHeight;
-        this.previous = addRenderableWidget(Button.builder(Component.literal("<"), ignored -> move(-this.rows.size()))
+        this.previous = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("<"), ignored -> move(-this.rows.size()))
                 .bounds(this.left, bottom - 48, 24, 20).build());
-        this.next = addRenderableWidget(Button.builder(Component.literal(">"), ignored -> move(this.rows.size()))
+        this.next = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(">"), ignored -> move(this.rows.size()))
                 .bounds(this.left + 28, bottom - 48, 24, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(this.left, bottom - 20, 94, 20).build());
-        this.automatic = addRenderableWidget(Button.builder(text("worksite_automatic"), ignored -> {
+        this.automatic = addRenderableWidget(VillagerUi.buttonBuilder(text("worksite_automatic"), ignored -> {
             var links = this.parent.links();
             this.parent.links(new SettlementWorksiteLinks(this.tab == 0 ? java.util.Set.of() : links.supplies(),
                     this.tab == 1 ? java.util.Set.of() : links.outputs(), this.tab == 2 ? java.util.Set.of() : links.stations()));
@@ -156,7 +148,8 @@ public final class SettlementWorksiteLinksScreen extends Screen {
             } else if (entry instanceof SettlementManagementPayload.Depot depot) {
                 position = depot.position().toShortString();
             }
-            Component label = Component.literal(selected(entry) ? "[x] " : "[ ] ").append(name).append(" (" + position + ")");
+            Component label = name.copy().append(" (" + position + ")");
+            ((VillagerUi.OptionButton) button).checkbox(true, selected(entry));
             button.setMessage(Component.literal(this.font.plainSubstrByWidth(label.getString(), this.panelWidth - 12)));
             button.setTooltip(Tooltip.create(label));
             boolean compatible = !(entry instanceof SettlementManagementPayload.Depot depot)
@@ -180,14 +173,6 @@ public final class SettlementWorksiteLinksScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() { return false; }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xD0101010);
-        }
-    }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

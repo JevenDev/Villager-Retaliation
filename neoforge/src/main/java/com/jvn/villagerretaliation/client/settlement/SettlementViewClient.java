@@ -6,10 +6,10 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Marker;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
@@ -102,16 +102,16 @@ public final class SettlementViewClient {
         }
     }
 
-    static boolean connectedPanel() {
+    public static boolean connectedPanel() {
         var management = SettlementManagementClient.current();
         return active != null && panels && management != null && management.root() == active.parent().root();
     }
 
-    static SettlementViewPanelLayout panelLayout(int width, int height, int preferredWidth, int preferredHeight, boolean compact) {
+    public static SettlementViewPanelLayout panelLayout(int width, int height, int preferredWidth, int preferredHeight, boolean compact) {
         return SettlementViewPanelLayout.create(width, height, preferredWidth, preferredHeight, connectedPanel(), compact);
     }
 
-    static boolean renderPanelBackground(net.minecraft.client.gui.GuiGraphics graphics, int left, int top, int width, int height) {
+    public static boolean renderPanelBackground(net.minecraft.client.gui.GuiGraphics graphics, int left, int top, int width, int height) {
         if (!connectedPanel()) return false;
         active.renderPanelBackdrop(graphics, Minecraft.getInstance().screen.width);
         SettlementViewUi.frame(graphics, left - 8, top - 8, width + 16, height + 16);

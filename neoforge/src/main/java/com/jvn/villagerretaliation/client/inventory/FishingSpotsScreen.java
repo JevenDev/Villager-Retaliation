@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.inventory;
 
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.interaction.work.HiredFishingSpots;
 import com.jvn.villagerretaliation.network.HiredFishingRequestPayload;
 import com.jvn.villagerretaliation.network.HiredFishingSnapshotPayload;
@@ -19,7 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-public final class FishingSpotsScreen extends Screen {
+public final class FishingSpotsScreen extends VillagerWindowScreen {
     private final Screen previous;
     private final UUID worker;
     private final Consumer<HiredFishingSpots> saveDraft;
@@ -47,8 +49,6 @@ public final class FishingSpotsScreen extends Screen {
     private String feedback = "";
     private int selected = -1;
     private int page;
-    private int left;
-    private int panelWidth;
     private String inputX = "";
     private String inputY = "";
     private String inputZ = "";
@@ -77,20 +77,19 @@ public final class FishingSpotsScreen extends Screen {
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(460, this.width - 32);
-        this.left = (this.width - this.panelWidth) / 2;
+        initWindow(360, 300);
         this.rows.clear();
-        int count = Math.max(1, (this.height - 168) / 24);
+        int count = Math.max(1, (this.panelHeight - 168) / 24);
         for (int index = 0; index < count; index++) {
             int row = index;
-            this.rows.add(button("", this.left, 52 + index * 24, this.panelWidth, () -> {
+            this.rows.add(button("", this.left, this.top + 52 + index * 24, this.panelWidth, () -> {
                 this.selected = this.page * this.rows.size() + row;
                 update();
             }));
         }
-        this.backPage = button("<", this.left + this.panelWidth - 52, 16, 24, () -> { this.page--; update(); });
-        this.next = button(">", this.left + this.panelWidth - 24, 16, 24, () -> { this.page++; update(); });
-        int bottom = this.height - 108;
+        this.backPage = button("<", this.left + this.panelWidth - 52, this.top, 24, () -> { this.page--; update(); });
+        this.next = button(">", this.left + this.panelWidth - 24, this.top, 24, () -> { this.page++; update(); });
+        int bottom = this.top + this.panelHeight - 108;
         int column = (this.panelWidth - 84) / 3;
         this.x = coordinate(this.left, bottom, column - 4, "X", this.inputX);
         this.y = coordinate(this.left + column, bottom, column - 4, "Y", this.inputY);
@@ -113,13 +112,13 @@ public final class FishingSpotsScreen extends Screen {
             update();
         });
         this.automatic.setTooltip(Tooltip.create(Component.literal("An empty list lets the fisher discover water near the assigned work area.")));
-        button("Back", this.left, this.height - 28, 64, this::onClose);
-        if (this.worker != null) this.refresh = button("Refresh", this.left + 68, this.height - 28, 68, () -> request(false));
-        if (this.inherit != null) button("Inherit", this.left + 68, this.height - 28, 68, () -> {
+        button("Back", this.left, this.top + this.panelHeight - 28, 64, this::onClose);
+        if (this.worker != null) this.refresh = button("Refresh", this.left + 68, this.top + this.panelHeight - 28, 68, () -> request(false));
+        if (this.inherit != null) button("Inherit", this.left + 68, this.top + this.panelHeight - 28, 68, () -> {
             this.inherit.run();
             onClose();
         }).setTooltip(Tooltip.create(Component.literal("Use the worksite's fishing spots.")));
-        this.save = button("Save", this.left + this.panelWidth - 72, this.height - 28, 72, () -> {
+        this.save = button("Save", this.left + this.panelWidth - 72, this.top + this.panelHeight - 28, 72, () -> {
             if (this.worker != null) request(true);
             else {
                 this.saveDraft.accept(new HiredFishingSpots(this.positions));
@@ -145,7 +144,7 @@ public final class FishingSpotsScreen extends Screen {
     }
 
     private Button button(String label, int x, int y, int width, Runnable action) {
-        return addRenderableWidget(Button.builder(Component.literal(label), ignored -> action.run()).bounds(x, y, width, 20).build());
+        return addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(label), ignored -> action.run()).bounds(x, y, width, 20).build());
     }
 
     private void add() {
@@ -240,12 +239,12 @@ public final class FishingSpotsScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawString(this.font, this.title, this.left, 20, 0xFFFFFF);
+        graphics.drawString(this.font, this.title, this.left, this.top + 4, 0xFFFFFF);
         String hint = this.positions.isEmpty() ? "Automatic discovery" : "First available spot wins. Current casts finish.";
-        graphics.drawString(this.font, this.font.plainSubstrByWidth(hint, this.panelWidth), this.left, 40, 0xBBBBBB);
-        int y = this.height - 58;
+        graphics.drawString(this.font, this.font.plainSubstrByWidth(hint, this.panelWidth), this.left, this.top + 28, 0xBBBBBB);
+        int y = this.top + this.panelHeight - 58;
         for (var line : this.font.split(Component.literal(this.feedback), this.panelWidth)) {
-            if (y + this.font.lineHeight > this.height - 32) break;
+            if (y + this.font.lineHeight > this.top + this.panelHeight - 32) break;
             graphics.drawString(this.font, line, this.left, y, 0xFFD080);
             y += this.font.lineHeight;
         }

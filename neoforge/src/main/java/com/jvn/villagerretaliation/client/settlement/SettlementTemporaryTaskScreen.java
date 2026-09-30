@@ -1,26 +1,23 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTaskScreen;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask;
 import com.jvn.villagerretaliation.network.SettlementViewBatchPayload;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 
-public final class SettlementTemporaryTaskScreen extends Screen {
+public final class SettlementTemporaryTaskScreen extends VillagerTaskScreen {
     private final SettlementViewScreen view;
     private final List<SettlementViewBatchPayload.Target> targets;
     private final String[] values;
     private HiredTemporaryTask.Kind kind;
     private boolean append;
     private String feedback = "";
-    private int left;
-    private int top;
-    private int panelWidth;
     private EditBox quantity;
     private final java.util.List<EditBox> bounds = new java.util.ArrayList<>();
     private final BlockPos selectedTarget;
@@ -54,11 +51,8 @@ public final class SettlementTemporaryTaskScreen extends Screen {
     @Override
     protected void init() {
         this.bounds.clear();
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(360, this.width - 32), 204, true);
-        this.panelWidth = layout.width();
-        this.left = layout.left();
-        this.top = layout.top();
-        addRenderableWidget(Button.builder(Component.literal(this.kind.label()), button -> {
+        initWindow(360, 204);
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(this.kind.label()), button -> {
             this.kind = HiredTemporaryTask.Kind.values()[(this.kind.ordinal() + 1) % HiredTemporaryTask.Kind.values().length];
             button.setMessage(Component.literal(this.kind.label()));
             this.quantity.active = this.kind == HiredTemporaryTask.Kind.FISH;
@@ -82,14 +76,9 @@ public final class SettlementTemporaryTaskScreen extends Screen {
         this.quantity.setResponder(value -> this.values[6] = value);
         this.quantity.active = this.kind == HiredTemporaryTask.Kind.FISH;
         addRenderableWidget(this.quantity);
-        addRenderableWidget(Button.builder(Component.literal(this.append ? "Append to queue" : "Replace pending tasks"), button -> {
-            this.append = !this.append;
-            button.setMessage(Component.literal(this.append ? "Append to queue" : "Replace pending tasks"));
-        }).bounds(this.left, this.top + 140, this.panelWidth, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Apply to " + this.targets.size() + (this.targets.size() == 1 ? " worker" : " workers")), ignored -> submit())
-                .bounds(this.left, this.top + 180, this.panelWidth / 2 - 2, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Cancel"), ignored -> onClose())
-                .bounds(this.left + this.panelWidth / 2 + 2, this.top + 180, this.panelWidth / 2 - 2, 20).build());
+        queueMode(this.top + 140, () -> this.append, () -> this.append = !this.append);
+        taskActions(this.top + 180, Component.literal("Apply to " + this.targets.size()
+                + (this.targets.size() == 1 ? " worker" : " workers")), this::submit);
     }
 
     private boolean editableBounds() { return this.kind != HiredTemporaryTask.Kind.TREE && this.kind != HiredTemporaryTask.Kind.HUNT; }
@@ -110,13 +99,6 @@ public final class SettlementTemporaryTaskScreen extends Screen {
             onClose();
         } catch (IllegalArgumentException exception) {
             this.feedback = "Check bounds (max 64) and catches (1-4096)";
-        }
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, 204)) {
-            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + 208, 0xEF151A20);
         }
     }
 

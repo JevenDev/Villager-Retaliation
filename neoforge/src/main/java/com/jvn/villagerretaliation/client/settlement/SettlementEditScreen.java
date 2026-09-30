@@ -1,9 +1,11 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
-import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload.Entry;
+import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.settlement.SettlementArea;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
@@ -31,7 +33,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 
-public final class SettlementEditScreen extends Screen {
+public final class SettlementEditScreen extends VillagerWindowScreen {
     private final SettlementManagementScreen parent;
     private final SettlementViewScreen view;
     private final boolean returnToView;
@@ -49,10 +51,6 @@ public final class SettlementEditScreen extends Screen {
     private boolean deposit = true;
     private Component error = Component.empty();
     private Button save;
-    private int left;
-    private int top;
-    private int panelWidth;
-    private int panelHeight;
 
     public SettlementEditScreen(SettlementManagementScreen parent, Mode mode, Entry original) {
         this(parent, mode, original, null);
@@ -124,12 +122,7 @@ public final class SettlementEditScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(440, this.width - 32),
-                Math.min(258, this.height - 24), true);
-        this.panelWidth = layout.width();
-        this.panelHeight = layout.height();
-        this.left = layout.left();
-        this.top = layout.top();
+        initWindow(360, 258);
         this.labels.clear();
         int x = this.left;
         int y = this.top + 26;
@@ -191,7 +184,7 @@ public final class SettlementEditScreen extends Screen {
                 for (SettlementPermission permission : SettlementPermission.values()) {
                     int column = index % 2;
                     int row = index / 2;
-                    Button button = addRenderableWidget(Button.builder(
+                    Button button = addRenderableWidget(VillagerUi.buttonBuilder(
                             text("permission_toggle", SettlementManagementScreen.enumText("permission", permission),
                                     text(this.permissions.contains(permission) ? "enabled" : "disabled")),
                             ignored -> {
@@ -207,9 +200,9 @@ public final class SettlementEditScreen extends Screen {
             }
         }
         int bottom = this.top + this.panelHeight;
-        this.save = addRenderableWidget(Button.builder(text("save"), ignored -> save())
+        this.save = addRenderableWidget(VillagerUi.buttonBuilder(text("save"), ignored -> save())
                 .bounds(x + half + 6, bottom - 20, half, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.cancel"), ignored -> onClose())
                 .bounds(x, bottom - 20, half, 20).build());
     }
 
@@ -293,7 +286,7 @@ public final class SettlementEditScreen extends Screen {
 
     private void positionField(String key, int y) {
         field(key, this.left, y, this.panelWidth - 88, 36);
-        addRenderableWidget(Button.builder(text("use_position"), ignored -> {
+        addRenderableWidget(VillagerUi.buttonBuilder(text("use_position"), ignored -> {
             this.values.put(key, coordinates(this.minecraft.player.blockPosition()));
             rebuildWidgets();
         }).bounds(this.left + this.panelWidth - 82, y + 12, 82, 20).build());
@@ -311,11 +304,11 @@ public final class SettlementEditScreen extends Screen {
 
     private void cycle(String label, int x, int y, int width, Component value, Runnable change) {
         this.labels.add(new Label(text("field." + label), x, y));
-        addRenderableWidget(Button.builder(value, ignored -> change.run()).bounds(x, y + 12, width, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(value, ignored -> change.run()).bounds(x, y + 12, width, 20).build());
     }
 
     private void toggle(int x, int y, int width) {
-        addRenderableWidget(Button.builder(text(this.enabled ? "enabled" : "disabled"), ignored -> {
+        addRenderableWidget(VillagerUi.buttonBuilder(text(this.enabled ? "enabled" : "disabled"), ignored -> {
             this.enabled = !this.enabled;
             rebuildWidgets();
         }).bounds(x, y, width, 20).build());
@@ -356,11 +349,8 @@ public final class SettlementEditScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xD0101010);
-        }
+    protected void windowMoved(int dx, int dy) {
+        this.labels.replaceAll(label -> new Label(label.text(), label.x() + dx, label.y() + dy));
     }
 
     @Override

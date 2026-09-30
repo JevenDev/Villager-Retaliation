@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
@@ -13,11 +15,10 @@ import java.util.UUID;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 
-public final class SettlementStorageScreen extends Screen {
+public final class SettlementStorageScreen extends VillagerWindowScreen {
     private final SettlementManagementScreen parent;
     private final SettlementViewScreen view;
     private final UUID scope;
@@ -37,10 +38,6 @@ public final class SettlementStorageScreen extends Screen {
     private int selected = -1;
     private int offset;
     private int frameIndex;
-    private int left;
-    private int top;
-    private int panelWidth;
-    private int panelHeight;
     private Component feedback = Component.empty();
     private Button save;
     private Button previous;
@@ -90,12 +87,7 @@ public final class SettlementStorageScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(610, this.width - 24),
-                Math.min(430, this.height - 20), true);
-        this.panelWidth = layout.width();
-        this.panelHeight = layout.height();
-        this.left = layout.left();
-        this.top = layout.top();
+        initWindow(360, 350);
         this.rows.clear();
         this.edits.clear();
         this.policyButtons.clear();
@@ -157,7 +149,7 @@ public final class SettlementStorageScreen extends Screen {
     }
 
     private Button button(String text, int x, int y, int width, Runnable action) {
-        var button = addRenderableWidget(Button.builder(Component.empty(), ignored -> action.run()).bounds(x, y, width, 20).build());
+        var button = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> action.run()).bounds(x, y, width, 20).build());
         fit(button, text);
         return button;
     }
@@ -288,7 +280,10 @@ public final class SettlementStorageScreen extends Screen {
             var status = status(link);
             String description = (status == null ? "Container" : status.name()) + " " + link.position().toShortString() + " | "
                     + link.purpose().label() + " | priority " + link.priority() + " | " + (status == null ? "Validate on save" : status.status().replace('_', ' '));
-            button.setMessage(Component.literal(this.font.plainSubstrByWidth((position == this.selected ? "> " : "") + description, this.panelWidth - 12)));
+            var row = (VillagerUi.OptionButton) button;
+            row.icon(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHEST));
+            row.selected(position == this.selected);
+            button.setMessage(Component.literal(description));
             button.setTooltip(Tooltip.create(Component.literal(description + "\nPriority 0 is highest. Live workers still check access, filters and reachability.")));
             button.active = !this.parent.submitting();
         }
@@ -334,14 +329,6 @@ public final class SettlementStorageScreen extends Screen {
     }
     @Override
     public boolean isPauseScreen() { return false; }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xE0101010);
-        }
-    }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

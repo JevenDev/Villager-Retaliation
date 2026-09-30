@@ -22,8 +22,7 @@ final class SettlementViewUi {
     private SettlementViewUi() { }
 
     static void frame(GuiGraphics graphics, int left, int top, int width, int height) {
-        FRAME.renderAtTextureScale(graphics, left, top, width, height);
-        graphics.fill(left + 3, top + 3, left + width - 3, top + height - 3, 0xF023282E);
+        com.jvn.villagerretaliation.client.ui.VillagerUi.frame(graphics, left, top, width, height);
     }
 
     static void portrait(GuiGraphics graphics, int left, int top, int size) {

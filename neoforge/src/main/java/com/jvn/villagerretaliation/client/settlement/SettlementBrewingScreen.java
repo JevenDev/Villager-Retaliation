@@ -1,7 +1,10 @@
 package com.jvn.villagerretaliation.client.settlement;
 
-import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
+import com.jvn.villagerretaliation.client.ui.VillagerSelectionList;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog.BrewingRoute;
+import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
@@ -13,12 +16,11 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
 
-public final class SettlementBrewingScreen extends Screen {
+public final class SettlementBrewingScreen extends VillagerWindowScreen {
     private final SettlementWorkerScreen previous;
     private final SettlementManagementPayload.Resident resident;
     private List<BrewingRoute> recipes;
@@ -32,10 +34,6 @@ public final class SettlementBrewingScreen extends Screen {
     private Button mode;
     private Button save;
     private Button cancel;
-    private int left;
-    private int panelWidth;
-    private int top;
-    private int panelHeight;
 
     public SettlementBrewingScreen(SettlementWorkerScreen previous, SettlementManagementPayload.Resident resident) {
         super(text("brewing_title", resident.name().isBlank() ? text("unnamed_resident") : Component.literal(resident.name())));
@@ -63,11 +61,7 @@ public final class SettlementBrewingScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(520, this.width - 32), this.height - 24, true);
-        this.panelWidth = layout.width();
-        this.left = layout.left();
-        this.top = layout.top();
-        this.panelHeight = layout.height();
+        initWindow(360, 330);
         this.recipes = HiredBrewingRecipeCatalog.routes(this.minecraft.level);
         if (this.selected == null && this.resident.brewingOrder() != null) {
             var order = this.resident.brewingOrder();
@@ -92,16 +86,16 @@ public final class SettlementBrewingScreen extends Screen {
             this.quantity = value;
             updateActions();
         });
-        this.mode = addRenderableWidget(Button.builder(Component.empty(), ignored -> {
+        this.mode = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> {
             this.continuous = !this.continuous;
             updateActions();
         }).bounds(this.left + 124, controls, this.panelWidth - 124, 20).build());
         int third = (this.panelWidth - 8) / 3;
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(this.left, this.top + this.panelHeight - 16, third, 20).build());
-        this.cancel = addRenderableWidget(Button.builder(text("brewing_cancel"), ignored -> submit(null))
+        this.cancel = addRenderableWidget(VillagerUi.buttonBuilder(text("brewing_cancel"), ignored -> submit(null))
                 .bounds(this.left + third + 4, this.top + this.panelHeight - 16, third, 20).build());
-        this.save = addRenderableWidget(Button.builder(text("brewing_order"), ignored -> submit(new SettlementBrewingOrder(
+        this.save = addRenderableWidget(VillagerUi.buttonBuilder(text("brewing_order"), ignored -> submit(new SettlementBrewingOrder(
                 this.selected.itemId(), this.selected.potionId(), this.continuous ? 1 : amount(), this.continuous)))
                 .bounds(this.left + (third + 4) * 2, this.top + this.panelHeight - 16, third, 20).build());
         updateActions();
@@ -152,13 +146,6 @@ public final class SettlementBrewingScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        }
-    }
-
-    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.font.plainSubstrByWidth(this.title.getString(), this.panelWidth),
@@ -176,7 +163,7 @@ public final class SettlementBrewingScreen extends Screen {
         return SettlementManagementScreen.text(key, arguments);
     }
 
-    private final class Recipes extends ObjectSelectionList<Recipe> {
+    private final class Recipes extends VillagerSelectionList<Recipe> {
         private Recipes() {
             super(SettlementBrewingScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 152), top + 52, 36);
             setX(left);

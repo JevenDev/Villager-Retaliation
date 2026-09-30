@@ -1,5 +1,10 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.toucanlib.client.interaction.ToucanInputModifiers;
+import com.jvn.toucanlib.client.interaction.ToucanSlotAmounts;
+import com.jvn.villagerretaliation.client.ui.VillagerItemSlot;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
@@ -8,6 +13,7 @@ import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
+import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,14 +21,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
-public final class SettlementStorageFilterScreen extends Screen {
+public final class SettlementStorageFilterScreen extends VillagerWindowScreen {
     private final SettlementStorageScreen parent;
     private final UUID scope;
     private final BlockPos position;
@@ -35,22 +40,21 @@ public final class SettlementStorageFilterScreen extends Screen {
     private int sampleSlot;
     private int selected;
     private int offset;
-    private int left;
-    private int top;
-    private int panelWidth;
-    private int panelHeight;
     private boolean ingredients;
     private boolean submitted;
     private boolean uncertain;
     private String query = "";
     private Component feedback = Component.literal("Draft filter. Saving changes this physical filter for every container user.");
-    private Button sample;
+    private final List<VillagerItemSlot> slots = new ArrayList<>();
+    private final List<VillagerItemSlot> inventory = new ArrayList<>();
     private Button primary;
+    private Button clear;
     private Button less;
     private Button more;
     private Button previous;
     private Button next;
     private Button save;
+    private VillagerItemSlot output;
 
     SettlementStorageFilterScreen(SettlementStorageScreen parent, UUID scope, BlockPos position, SettlementManagementPayload.StorageFilter filter) {
         super(Component.literal("Edit framed " + filter.item().getHoverName().getString()));
@@ -65,47 +69,110 @@ public final class SettlementStorageFilterScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(580, this.width - 24),
-                Math.min(390, this.height - 20), true);
-        this.panelWidth = layout.width();
-        this.panelHeight = layout.height();
-        this.left = layout.left();
-        this.top = layout.top();
+        initWindow(340, 280);
         this.rows.clear();
-        if (VillagerRetaliationItems.isRecipeFilter(this.draft)) {
+        this.slots.clear();
+        this.inventory.clear();
+        boolean recipe = VillagerRetaliationItems.isRecipeFilter(this.draft);
+        boolean item = VillagerRetaliationItems.isItemFilter(this.draft);
+        if (recipe) {
             this.catalog = VillagerRecipeFilterData.catalog(this.minecraft.level);
             var search = addRenderableWidget(new EditBox(this.font, this.left, this.top + 22, this.panelWidth, 18, Component.literal("Search recipe")));
             search.setHint(Component.literal("Search recipe name or ID"));
             search.setValue(this.query);
             search.setResponder(value -> { this.query = value; this.offset = 0; refreshChoices(); update(); });
-        } else this.sample = button("", this.left, this.top + 22, this.panelWidth, this::cycleSample);
-        int count = Math.max(1, (this.panelHeight - 138) / 22);
-        for (int index = 0; index < count; index++) {
-            int row = index;
-            this.rows.add(button("", this.left, this.top + 46 + index * 22, this.panelWidth, () -> select(this.offset + row)));
+        }
+        if (!item) {
+            int count = Math.max(1, (this.panelHeight - (recipe ? 154 : 194)) / 22);
+            for (int index = 0; index < count; index++) {
+                int row = index;
+                this.rows.add(button("", this.left, this.top + (recipe ? 46 : 50) + index * 22, this.panelWidth, () -> select(this.offset + row)));
+            }
         }
         int bottom = this.top + this.panelHeight;
-        this.previous = button("<", this.left, bottom - 88, 24, () -> { this.offset = Math.max(0, this.offset - this.rows.size()); update(); });
-        this.next = button(">", this.left + 28, bottom - 88, 24, () -> { this.offset += this.rows.size(); update(); });
-        int width = (this.panelWidth - 76) / 4;
-        this.primary = button(VillagerRetaliationItems.isRecipeFilter(this.draft) ? "Ingredients" : "Use sample",
-                this.left + 60, bottom - 88, width, () -> {
-                    if (VillagerRetaliationItems.isRecipeFilter(this.draft)) { this.ingredients = !this.ingredients; this.offset = 0; }
-                    else if (!VillagerItemFilterData.setEntry(this.draft, this.selected, sample())) this.feedback = Component.literal("That entry is unchanged, duplicated, or exceeds the nesting limit.");
-                    update();
-                });
-        button("Clear", this.left + 64 + width, bottom - 88, width, () -> {
-            if (VillagerRetaliationItems.isItemFilter(this.draft)) VillagerItemFilterData.setEntry(this.draft, this.selected, ItemStack.EMPTY);
-            else if (VillagerRetaliationItems.isAttributeFilter(this.draft)) VillagerAttributeFilterData.clear(this.draft);
+        int controls = recipe ? bottom - 104 : this.top + (item ? 52 : 24);
+        this.previous = button("<", this.left, controls, 24, () -> { this.offset = Math.max(0, this.offset - this.rows.size()); update(); });
+        this.next = button(">", this.left + 28, controls, 24, () -> { this.offset += this.rows.size(); update(); });
+        this.primary = button("Ingredients", this.left + 56, controls, this.panelWidth - 122, () -> {
+            this.ingredients = !this.ingredients;
+            this.offset = 0;
+            update();
+        });
+        this.clear = button("Clear", this.left + this.panelWidth - 62, controls, 62, () -> {
+            if (item) VillagerItemFilterData.setEntry(this.draft, this.selected, ItemStack.EMPTY);
+            else if (!recipe) VillagerAttributeFilterData.clear(this.draft);
             else VillagerRecipeFilterData.clear(this.draft);
             refreshChoices();
             update();
         });
-        this.less = button("Limit -", this.left + 68 + width * 2, bottom - 88, width, () -> { VillagerItemFilterData.adjustAmount(this.draft, this.selected, -1); update(); });
-        this.more = button("Limit +", this.left + 72 + width * 3, bottom - 88, width, () -> { VillagerItemFilterData.adjustAmount(this.draft, this.selected, 1); update(); });
+        if (item || recipe) {
+            for (int index = 0; index < 9; index++) {
+                int slot = index;
+                int x = item ? this.left + (this.panelWidth - 180) / 2 + index * 20 : this.left + 12 + index % 3 * 20;
+                int y = this.top + (item ? 24 : 46 + index / 3 * 20);
+                this.slots.add(addRenderableWidget(new VillagerItemSlot(x, y, () -> slotItem(slot), button -> {
+                    this.selected = slot;
+                    if (item) {
+                        if (!VillagerItemFilterData.setEntry(this.draft, slot, button == 1 ? ItemStack.EMPTY : sample()))
+                            this.feedback = Component.literal("That entry is unchanged, duplicated, or exceeds the nesting limit.");
+                    } else cycleIngredient(slot, button == 1 ? -1 : 1);
+                    update();
+                }, direction -> {
+                    if (item) adjustAmount(slot, direction * ToucanSlotAmounts.step(ToucanInputModifiers.current()));
+                    else cycleIngredient(slot, direction);
+                    update();
+                })));
+            }
+        }
+        if (recipe) this.output = addRenderableWidget(new VillagerItemSlot(this.left + this.panelWidth - 24, this.top + 46,
+                () -> {
+                    var resolution = VillagerRecipeFilterData.resolve(this.minecraft.level, this.draft);
+                    return resolution.valid() ? resolution.recipe().value().getResultItem(this.minecraft.level.registryAccess()) : ItemStack.EMPTY;
+                }, ignored -> { }, null));
+        this.less = button("Limit -", this.left, this.top + 52, 70, () -> adjustAmount(this.selected, -1));
+        this.more = button("Limit +", this.left + 74, this.top + 52, 70, () -> adjustAmount(this.selected, 1));
+        if (!recipe) {
+            int x = this.left + (this.panelWidth - 180) / 2;
+            for (int index = 0; index < 36; index++) {
+                int slot = index;
+                this.inventory.add(addRenderableWidget(new VillagerItemSlot(x + index % 9 * 20, bottom - 132 + index / 9 * 20,
+                        () -> this.minecraft.player.getInventory().getItem(slot), button -> {
+                    this.sampleSlot = slot;
+                    refreshChoices();
+                    update();
+                }, null)));
+            }
+        }
         button("Cancel", this.left, bottom - 20, 90, this::onClose);
         this.save = button("Save physical filter", this.left + this.panelWidth - 140, bottom - 20, 140, this::save);
         refreshChoices();
+        update();
+    }
+
+    private ItemStack slotItem(int slot) {
+        if (VillagerRetaliationItems.isItemFilter(this.draft)) return VillagerItemFilterData.entry(this.draft, slot);
+        var resolution = VillagerRecipeFilterData.resolve(this.minecraft.level, this.draft);
+        if (!resolution.valid() || slot >= resolution.recipe().value().getIngredients().size()) return ItemStack.EMPTY;
+        var choices = VillagerRecipeFilterData.ingredientChoices(resolution.recipe().value().getIngredients().get(slot));
+        var chosen = resolution.configuration().narrowedIngredients().get(slot);
+        return choices.stream().filter(stack -> chosen == null || BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(chosen))
+                .findFirst().orElse(ItemStack.EMPTY);
+    }
+
+    private void cycleIngredient(int slot, int direction) {
+        var resolution = VillagerRecipeFilterData.resolve(this.minecraft.level, this.draft);
+        if (!resolution.valid() || slot >= resolution.recipe().value().getIngredients().size()) return;
+        var choices = VillagerRecipeFilterData.ingredientChoices(resolution.recipe().value().getIngredients().get(slot)).stream()
+                .map(stack -> BuiltInRegistries.ITEM.getKey(stack.getItem())).toList();
+        var current = resolution.configuration().narrowedIngredients().get(slot);
+        int next = Math.floorMod((current == null ? -1 : choices.indexOf(current)) + direction + 1, choices.size() + 1) - 1;
+        VillagerRecipeFilterData.setIngredient(this.draft, this.minecraft.level, slot, next < 0 ? null : choices.get(next));
+    }
+
+    private void adjustAmount(int slot, int delta) {
+        if (VillagerFilterPolicy.read(this.draft).state() == VillagerFilterPolicy.PolicyState.LEGACY
+                && VillagerItemFilterData.isAmountEntry(VillagerItemFilterData.entry(this.draft, slot)))
+            VillagerItemFilterData.adjustAmount(this.draft, slot, delta);
         update();
     }
 
@@ -116,22 +183,13 @@ public final class SettlementStorageFilterScreen extends Screen {
     }
 
     private Button button(String text, int x, int y, int width, Runnable action) {
-        var button = addRenderableWidget(Button.builder(Component.empty(), ignored -> { if (!this.parent.parent().submitting()) action.run(); })
+        var button = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> { if (!this.parent.parent().submitting()) action.run(); })
                 .bounds(x, y, width, 20).build());
         fit(button, text);
         return button;
     }
 
     private ItemStack sample() { return this.minecraft.player.getInventory().getItem(this.sampleSlot); }
-
-    private void cycleSample() {
-        for (int count = 0; count < 36; count++) {
-            this.sampleSlot = (this.sampleSlot + 1) % 36;
-            if (!sample().isEmpty()) break;
-        }
-        refreshChoices();
-        update();
-    }
 
     private void refreshChoices() {
         if (VillagerRetaliationItems.isAttributeFilter(this.draft)) {
@@ -146,9 +204,7 @@ public final class SettlementStorageFilterScreen extends Screen {
     }
 
     private int count() {
-        return VillagerRetaliationItems.isItemFilter(this.draft) ? VillagerItemFilterData.ENTRY_COUNT
-                : VillagerRetaliationItems.isAttributeFilter(this.draft) ? this.attributes.size()
-                : this.ingredients ? 9 : this.recipes.size();
+        return VillagerRetaliationItems.isAttributeFilter(this.draft) ? this.attributes.size() : this.recipes.size();
     }
 
     private void select(int index) {
@@ -157,60 +213,79 @@ public final class SettlementStorageFilterScreen extends Screen {
         if (VillagerRetaliationItems.isAttributeFilter(this.draft)) {
             VillagerAttributeFilterData.toggleSelected(this.draft, this.attributes.get(index));
         } else if (VillagerRetaliationItems.isRecipeFilter(this.draft)) {
-            if (!this.ingredients) VillagerRecipeFilterData.setRecipe(this.draft, this.minecraft.level, this.recipes.get(index).id());
-            else {
-                var resolution = VillagerRecipeFilterData.resolve(this.minecraft.level, this.draft);
-                if (resolution.valid() && index < resolution.recipe().value().getIngredients().size()) {
-                    var choices = VillagerRecipeFilterData.ingredientChoices(resolution.recipe().value().getIngredients().get(index)).stream()
-                            .map(stack -> BuiltInRegistries.ITEM.getKey(stack.getItem())).toList();
-                    var current = resolution.configuration().narrowedIngredients().get(index);
-                    int next = current == null ? 0 : choices.indexOf(current) + 1;
-                    VillagerRecipeFilterData.setIngredient(this.draft, this.minecraft.level, index, next < choices.size() ? choices.get(next) : null);
-                }
-            }
+            VillagerRecipeFilterData.setRecipe(this.draft, this.minecraft.level, this.recipes.get(index).id());
         }
         update();
     }
 
     private String label(int index) {
-        if (VillagerRetaliationItems.isItemFilter(this.draft)) {
-            var item = VillagerItemFilterData.entry(this.draft, index);
-            return (index == this.selected ? "> " : "") + (index + 1) + ". " + (item.isEmpty() ? "Empty" : item.getHoverName().getString())
-                    + " / limit " + VillagerItemFilterData.formatAmount(VillagerItemFilterData.amount(this.draft, index));
-        }
-        if (VillagerRetaliationItems.isAttributeFilter(this.draft)) {
-            var attribute = this.attributes.get(index);
-            return (VillagerAttributeFilterData.read(this.draft).attributes().contains(attribute) ? "[x] " : "[ ] ") + attribute.display().getString();
-        }
-        var config = VillagerRecipeFilterData.read(this.draft);
-        if (!this.ingredients) return (this.recipes.get(index).id().equals(config.recipeId()) ? "[x] " : "[ ] ") + this.recipes.get(index).id();
-        var selected = config.narrowedIngredients().get(index);
-        return "Ingredient " + (index + 1) + ": " + (selected == null ? "Any matching alternative" : selected.toString());
+        if (VillagerRetaliationItems.isAttributeFilter(this.draft)) return this.attributes.get(index).display().getString();
+        return this.recipes.get(index).value().getResultItem(this.minecraft.level.registryAccess()).getHoverName().getString();
     }
 
     private void update() {
         if (this.save == null) return;
-        this.offset = Math.min(this.offset, Math.max(0, (count() - 1) / this.rows.size() * this.rows.size()));
+        boolean allowed = !this.parent.parent().submitting() && this.parent.parent().permits(SettlementPermission.STAFF)
+                && this.parent.parent().permits(SettlementPermission.LOGISTICS) && !this.uncertain;
+        boolean recipe = VillagerRetaliationItems.isRecipeFilter(this.draft);
+        if (!this.rows.isEmpty()) this.offset = Math.min(this.offset, Math.max(0, (count() - 1) / this.rows.size() * this.rows.size()));
         for (int index = 0; index < this.rows.size(); index++) {
             int row = this.offset + index;
             var button = this.rows.get(index);
-            button.visible = row < count();
+            button.visible = row < count() && (!recipe || !this.ingredients);
+            button.active = allowed;
             if (button.visible) {
                 var label = label(row);
                 button.setMessage(Component.literal(this.font.plainSubstrByWidth(label, this.panelWidth - 12)));
-                button.setTooltip(Tooltip.create(Component.literal(label)));
+                button.setTooltip(Tooltip.create(Component.literal(recipe ? label + "\n" + this.recipes.get(row).id() : label)));
+                var choice = (VillagerUi.OptionButton) button;
+                if (!recipe) choice.checkbox(true, VillagerAttributeFilterData.read(this.draft).attributes().contains(this.attributes.get(row)));
+                else {
+                    choice.selected(this.recipes.get(row).id().equals(VillagerRecipeFilterData.read(this.draft).recipeId()));
+                    choice.icon(this.recipes.get(row).value().getResultItem(this.minecraft.level.registryAccess()));
+                }
             }
         }
-        if (this.sample != null) fit(this.sample, "Inventory sample: " + (sample().isEmpty() ? "empty" : sample().getHoverName().getString()) + " (click to cycle)");
+        for (int index = 0; index < this.inventory.size(); index++) {
+            var slot = this.inventory.get(index);
+            slot.active = allowed;
+            slot.selected(index == this.sampleSlot);
+            var stack = this.minecraft.player.getInventory().getItem(index);
+            slot.setMessage(stack.isEmpty() ? Component.literal("Empty inventory slot") : stack.getHoverName());
+            slot.setTooltip(Tooltip.create(slot.getMessage().copy().append("\nSelect as the filter sample")));
+        }
+        for (int index = 0; index < this.slots.size(); index++) {
+            var slot = this.slots.get(index);
+            slot.visible = !recipe || this.ingredients;
+            slot.active = allowed && (!recipe || !slotItem(index).isEmpty());
+            var resolution = recipe ? VillagerRecipeFilterData.resolve(this.minecraft.level, this.draft) : null;
+            var narrowed = resolution != null && resolution.valid() ? resolution.configuration().narrowedIngredients().get(index) : null;
+            slot.selected(recipe ? narrowed != null : index == this.selected);
+            var stack = slotItem(index);
+            Component label = stack.isEmpty() ? Component.literal("Empty filter entry") : stack.getHoverName().copy();
+            if (!recipe) label = label.copy().append("\nLimit: " + VillagerItemFilterData.formatAmount(VillagerItemFilterData.amount(this.draft, index))
+                    + "\nLeft-click uses the inventory sample. Right-click clears. Scroll adjusts the limit.");
+            else label = label.copy().append(narrowed == null ? "\nAny matching item" : "\nOnly this item")
+                    .append("\nClick or scroll to cycle alternatives, including any matching item.");
+            slot.setMessage(label);
+            slot.setTooltip(Tooltip.create(label));
+        }
+        if (this.output != null) {
+            this.output.visible = this.ingredients;
+            this.output.setMessage(Component.literal("Selected recipe output"));
+            this.output.setTooltip(Tooltip.create(this.output.getMessage()));
+        }
+        this.previous.visible = this.next.visible = !this.rows.isEmpty() && (!recipe || !this.ingredients);
         this.previous.active = this.offset > 0;
         this.next.active = this.offset + this.rows.size() < count();
-        this.primary.visible = !VillagerRetaliationItems.isAttributeFilter(this.draft);
+        this.primary.visible = recipe;
+        this.primary.active = this.clear.active = this.less.active = this.more.active = allowed;
         if (VillagerRetaliationItems.isRecipeFilter(this.draft)) fit(this.primary, this.ingredients ? "Recipes" : "Ingredients");
         boolean amounts = VillagerRetaliationItems.isItemFilter(this.draft)
                 && VillagerFilterPolicy.read(this.draft).state() == VillagerFilterPolicy.PolicyState.LEGACY
                 && VillagerItemFilterData.isAmountEntry(VillagerItemFilterData.entry(this.draft, this.selected));
         this.less.visible = this.more.visible = amounts;
-        this.save.active = !this.parent.parent().submitting() && !this.uncertain && !ItemStack.matches(this.original.item(), this.draft);
+        this.save.active = allowed && !ItemStack.matches(this.original.item(), this.draft);
     }
 
     private void save() {
@@ -248,17 +323,18 @@ public final class SettlementStorageFilterScreen extends Screen {
     public boolean isPauseScreen() { return false; }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xE0101010);
-        }
-    }
-
-    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawString(this.font, this.font.plainSubstrByWidth(this.title.getString(), this.panelWidth), this.left, this.top, 0xFFFFFF);
-        SettlementManagementScreen.renderFeedback(graphics, this.font, this.feedback, this.left, this.top + this.panelHeight - 60, this.panelWidth, mouseX, mouseY);
+        if (!VillagerRetaliationItems.isRecipeFilter(this.draft)) {
+            graphics.drawString(this.font, "Inventory sample", this.left + (this.panelWidth - 180) / 2,
+                    this.top + this.panelHeight - 144, 0xBBBBBB, false);
+            if (VillagerRetaliationItems.isAttributeFilter(this.draft)) {
+                graphics.renderItem(sample(), this.left + 60, this.top + 25);
+                if (mouseX >= this.left + 60 && mouseX < this.left + 76 && mouseY >= this.top + 25 && mouseY < this.top + 41)
+                    graphics.renderTooltip(this.font, sample(), mouseX, mouseY);
+            }
+        }
+        SettlementManagementScreen.renderFeedback(graphics, this.font, this.feedback, this.left, this.top + this.panelHeight - 48, this.panelWidth, mouseX, mouseY);
     }
 }

@@ -1,24 +1,21 @@
 package com.jvn.villagerretaliation.client.inventory;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTaskScreen;
 import com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import java.util.UUID;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-public final class ClipboardFishingTaskScreen extends Screen {
+public final class ClipboardFishingTaskScreen extends VillagerTaskScreen {
     private final Screen parent;
     private final UUID worker;
     private boolean append;
     private String quantity = "1";
     private String feedback = "";
-    private int left;
-    private int top;
-    private int panelWidth;
 
     public ClipboardFishingTaskScreen(Screen parent, UUID worker, boolean append) {
         super(Component.literal("Catch fish in draft bounds"));
@@ -29,22 +26,14 @@ public final class ClipboardFishingTaskScreen extends Screen {
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(300, this.width - 32);
-        this.left = (this.width - this.panelWidth) / 2;
-        this.top = (this.height - 146) / 2;
+        initWindow(300, 146);
         var count = new EditBox(this.font, this.left + this.panelWidth - 72, this.top + 26, 72, 20, Component.literal("Catches"));
         count.setMaxLength(4);
         count.setValue(this.quantity);
         count.setResponder(value -> this.quantity = value);
         addRenderableWidget(count);
-        addRenderableWidget(Button.builder(Component.literal(this.append ? "Append to queue" : "Replace pending tasks"), button -> {
-            this.append = !this.append;
-            button.setMessage(Component.literal(this.append ? "Append to queue" : "Replace pending tasks"));
-        }).bounds(this.left, this.top + 58, this.panelWidth, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Apply"), ignored -> submit())
-                .bounds(this.left, this.top + 116, this.panelWidth / 2 - 2, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Cancel"), ignored -> onClose())
-                .bounds(this.left + this.panelWidth / 2 + 2, this.top + 116, this.panelWidth / 2 - 2, 20).build());
+        queueMode(this.top + 58, () -> this.append, () -> this.append = !this.append);
+        taskActions(this.top + 116, Component.literal("Apply"), this::submit);
     }
 
     private void submit() {
@@ -57,11 +46,6 @@ public final class ClipboardFishingTaskScreen extends Screen {
         } catch (IllegalArgumentException exception) {
             this.feedback = "Enter a catch count from 1 to 4096";
         }
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + 146, 0xEF151A20);
     }
 
     @Override

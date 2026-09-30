@@ -1,13 +1,14 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerSelectionList;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -16,15 +17,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
-public final class SettlementItemPickerScreen extends Screen {
+public final class SettlementItemPickerScreen extends VillagerWindowScreen {
     private final SettlementEditScreen parent;
     private final Consumer<ResourceLocation> selected;
     private final List<Item> items = BuiltInRegistries.ITEM.stream().filter(item -> item != Items.AIR).toList();
     private String query = "";
-    private int left;
-    private int panelWidth;
-    private int top;
-    private int panelHeight;
     private ItemsList list;
 
     public SettlementItemPickerScreen(SettlementEditScreen parent, Consumer<ResourceLocation> selected) {
@@ -39,11 +36,7 @@ public final class SettlementItemPickerScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(400, this.width - 32), this.height - 24, true);
-        this.panelWidth = layout.width();
-        this.left = layout.left();
-        this.top = layout.top();
-        this.panelHeight = layout.height();
+        initWindow(400, 320);
         int width = this.panelWidth;
         int left = this.left;
         EditBox search = new EditBox(this.font, left, this.top + 20, width, 20, SettlementManagementScreen.text("search"));
@@ -57,7 +50,7 @@ public final class SettlementItemPickerScreen extends Screen {
             this.list.refresh();
         });
         this.list.refresh();
-        addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.cancel"), ignored -> onClose())
                 .bounds(left, this.top + this.panelHeight - 16, width, 20).build());
         setInitialFocus(search);
     }
@@ -82,19 +75,12 @@ public final class SettlementItemPickerScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        }
-    }
-
-    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
     }
 
-    private final class ItemsList extends ObjectSelectionList<ItemRow> {
+    private final class ItemsList extends VillagerSelectionList<ItemRow> {
         private ItemsList(int x, int width) {
             super(SettlementItemPickerScreen.this.minecraft, width, Math.max(32, panelHeight - 70), top + 46, 24);
             setX(x);

@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
-record SettlementViewPanelLayout(int left, int top, int width, int height) {
+public record SettlementViewPanelLayout(int left, int top, int width, int height) {
     static SettlementViewPanelLayout create(int width, int height, int preferredWidth, int preferredHeight, boolean connected, boolean compact) {
         if (!connected || height < 280) return new SettlementViewPanelLayout((width - preferredWidth) / 2, (height - preferredHeight) / 2,
                 preferredWidth, preferredHeight);

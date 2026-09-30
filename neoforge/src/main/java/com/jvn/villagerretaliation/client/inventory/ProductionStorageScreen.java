@@ -1,20 +1,19 @@
 package com.jvn.villagerretaliation.client.inventory;
 
+import com.jvn.villagerretaliation.client.ui.VillagerSelectionList;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.network.ProductionSnapshotPayload;
 import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-public final class ProductionStorageScreen extends Screen implements ProductionClient.Receiver {
+public final class ProductionStorageScreen extends VillagerWindowScreen implements ProductionClient.Receiver {
     private final ProductionRecipeScreen previous;
     private String query = "";
     private Storages list;
-    private int left;
-    private int panelWidth;
 
     public ProductionStorageScreen(ProductionRecipeScreen previous) {
         super(Component.literal("Choose output storage"));
@@ -25,9 +24,8 @@ public final class ProductionStorageScreen extends Screen implements ProductionC
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(480, this.width - 24);
-        this.left = (this.width - this.panelWidth) / 2;
-        var search = addRenderableWidget(new EditBox(this.font, this.left, 36, this.panelWidth, 20, Component.literal("Search storage")));
+        initWindow(360, 300);
+        var search = addRenderableWidget(new EditBox(this.font, this.left, this.top + 22, this.panelWidth, 20, Component.literal("Search storage")));
         search.setMaxLength(96);
         search.setHint(Component.literal("Search by name or position"));
         search.setValue(this.query);
@@ -37,7 +35,7 @@ public final class ProductionStorageScreen extends Screen implements ProductionC
             this.list.refresh();
         });
         this.list.refresh();
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose()).bounds(this.left, this.height - 28, 84, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose()).bounds(this.left, this.top + this.panelHeight - 28, 84, 20).build());
         setInitialFocus(search);
     }
 
@@ -59,12 +57,12 @@ public final class ProductionStorageScreen extends Screen implements ProductionC
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 16, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
     }
 
-    private final class Storages extends ObjectSelectionList<Row> {
+    private final class Storages extends VillagerSelectionList<Row> {
         private Storages() {
-            super(ProductionStorageScreen.this.minecraft, panelWidth, Math.max(32, ProductionStorageScreen.this.height - 104), 64, 28);
+            super(ProductionStorageScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 82), top + 46, 28);
             setX(left);
         }
 
@@ -97,8 +95,10 @@ public final class ProductionStorageScreen extends Screen implements ProductionC
         @Override
         public void render(GuiGraphics graphics, int index, int top, int rowLeft, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
-            graphics.drawString(font, font.plainSubstrByWidth(label(), rowWidth - 8), rowLeft + 4, top + 8,
+            graphics.renderItem(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHEST), rowLeft + 4, top + 5);
+            graphics.drawString(font, font.plainSubstrByWidth(label(), rowWidth - 30), rowLeft + 26, top + 3,
                     this.storage == null || this.storage.available() ? 0xFFFFFF : 0x888888);
+            if (this.storage != null) graphics.drawString(font, this.storage.position().toShortString(), rowLeft + 26, top + 15, 0xAAAAAA);
         }
 
         @Override

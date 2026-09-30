@@ -75,7 +75,7 @@ final class SettlementViewPopup {
         this.buttons.clear();
         for (int index = 0; index < this.actions.size(); index++) {
             var action = this.actions.get(index);
-            Button button = Button.builder(action.label(), ignored -> action.run().run())
+            Button button = com.jvn.villagerretaliation.client.ui.VillagerUi.buttonBuilder(action.label(), ignored -> action.run().run())
                     .bounds(this.left + 8, this.top + this.textHeight + index * 22 - this.scroll, this.width - 16, 20).build();
             button.active = action.enabled();
             button.setFocused(index == this.focus);
@@ -153,7 +153,7 @@ final class SettlementViewPopup {
     }
 
     enum Kind {
-        RESIDENT, AREA, DRAFT, CHOOSER, ACTIONS, ASSIGN, CONFIRM_ASSIGN, RESULTS, OVERLAYS, OVERVIEW, TREASURY, FOOD, NAVIGATION
+        RESIDENT, AREA, DRAFT, CHOOSER, ACTIONS, ASSIGN, CONFIRM_ASSIGN, RESULTS, OVERLAYS, OVERVIEW, TREASURY, FOOD, NAVIGATION, FILTERS
     }
 
     record Target(Kind kind, UUID id, List<UUID> choices) {

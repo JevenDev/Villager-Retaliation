@@ -2,22 +2,22 @@ package com.jvn.villagerretaliation.client.settlement;
 
 import com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer;
 import com.jvn.villagerretaliation.client.settlement.SettlementViewInteraction.Mode;
-import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
-import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
-import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload;
+import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page;
+import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload;
+import com.jvn.villagerretaliation.network.SettlementViewBatchPayload;
+import com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload;
 import com.jvn.villagerretaliation.network.SettlementViewRequestPayload;
 import com.jvn.villagerretaliation.network.SettlementViewStatePayload;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
-import com.jvn.villagerretaliation.settlement.SettlementViewAction;
-import com.jvn.villagerretaliation.network.SettlementViewBatchPayload;
-import com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementProject;
+import com.jvn.villagerretaliation.settlement.SettlementViewAction;
 import com.jvn.villagerretaliation.settlement.SettlementViewWindow;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -564,11 +564,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.browser.scroll = 0;
             updateBrowserRows();
         });
-        this.filterButton = addRenderableWidget(Button.builder(Component.literal(this.browser.filter), ignored -> {
-            var filters = this.browser.filters(this.snapshots.entries(this.browser.page));
-            this.browser.filter = filters.get((filters.indexOf(this.browser.filter) + 1) % filters.size());
-            this.browser.scroll = 0;
-            updateBrowserRows();
+        this.filterButton = addRenderableWidget(com.jvn.villagerretaliation.client.ui.VillagerUi.buttonBuilder(Component.literal(this.browser.filter), ignored -> {
+            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.FILTERS, null),
+                    this.filterButton.getX(), this.filterButton.getBottom() + 2);
+            refreshPopup();
         }).bounds(this.panelLeft + 6, 80, this.panelWidth - 12, 16).build());
         for (int i = 0; i < this.layout.browserRows(); i++) {
             final int row = i;
@@ -2379,6 +2378,16 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         List<SettlementViewPopup.Action> actions = new ArrayList<>();
         boolean ready = !this.commands.busy();
         switch (target.kind()) {
+            case FILTERS -> {
+                details.add(Component.literal("Choose a filter"));
+                for (var filter : this.browser.filters(this.snapshots.entries(this.browser.page))) {
+                    actions.add(menuAction(Component.literal(filter), true, () -> {
+                        this.browser.filter = filter;
+                        this.browser.scroll = 0;
+                        updateBrowserRows();
+                    }));
+                }
+            }
             case OVERVIEW -> {
                 details.add(Component.literal(this.header.name()));
                 details.add(SettlementManagementScreen.text("stage", SettlementManagementScreen.enumText("stage", this.header.stage())));

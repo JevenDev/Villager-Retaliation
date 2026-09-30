@@ -1,14 +1,15 @@
 package com.jvn.villagerretaliation.client.party;
 
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.network.PartyActionRequestPayload;
 import com.jvn.villagerretaliation.network.PartyInvitationSyncPayload;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-final class PartyInvitationScreen extends Screen {
+final class PartyInvitationScreen extends VillagerWindowScreen {
     private final Screen parent;
     private final PartyInvitationSyncPayload invitation;
     private boolean responded;
@@ -21,14 +22,15 @@ final class PartyInvitationScreen extends Screen {
 
     @Override
     protected void init() {
-        int centerX = this.width / 2;
-        int buttonY = this.height / 2 + 18;
-        addRenderableWidget(Button.builder(
+        initWindow(280, 100);
+        int centerX = this.left + this.panelWidth / 2;
+        int buttonY = this.top + 76;
+        addRenderableWidget(VillagerUi.buttonBuilder(
                 Component.translatable("villagerretaliation.party.invitation.accept"),
                 button -> respond(PartyActionRequestPayload.Action.ACCEPT_INVITATION))
                 .bounds(centerX - 104, buttonY, 100, 20)
                 .build());
-        addRenderableWidget(Button.builder(
+        addRenderableWidget(VillagerUi.buttonBuilder(
                 Component.translatable("villagerretaliation.party.invitation.decline"),
                 button -> respond(PartyActionRequestPayload.Action.DECLINE_INVITATION))
                 .bounds(centerX + 4, buttonY, 100, 20)
@@ -38,12 +40,12 @@ final class PartyInvitationScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 35, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
         graphics.drawCenteredString(
                 this.font,
                 Component.translatable("villagerretaliation.party.invitation.prompt", this.invitation.inviterName()),
-                this.width / 2,
-                this.height / 2 - 10,
+                this.left + this.panelWidth / 2,
+                this.top + 28,
                 0xDDDDDD);
     }
 

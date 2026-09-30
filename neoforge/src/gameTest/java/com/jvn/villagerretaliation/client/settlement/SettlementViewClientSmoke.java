@@ -9,17 +9,17 @@ import com.jvn.villagerretaliation.settlement.SettlementArea;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementBuildingService;
 import com.jvn.villagerretaliation.settlement.SettlementCareService;
+import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementManagementService;
 import com.jvn.villagerretaliation.settlement.SettlementSavedData;
-import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
-import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
 import com.jvn.villagerretaliation.settlement.SettlementViewWindow;
-import com.mojang.logging.LogUtils;
+import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.logging.LogUtils;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -30,8 +30,8 @@ import net.minecraft.Util;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -48,8 +48,8 @@ import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.properties.BedPart;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -655,13 +655,17 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 128 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionRecipeScreen screen
                 && screen.previous().state().editable() && ++ticks >= 5) {
             screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
-                    .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getY() == 34).findFirst().orElseThrow().setValue("minecraft:stick");
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getMessage().getString().equals("Search recipes")).findFirst().orElseThrow().setValue("minecraft:stick");
             var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
                     .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
             rows.children().getFirst().mouseClicked(0, 0, 0);
-            button(screen, "1: Any").onPress();
+            var ingredient = button(screen, "Ingredient 1: Any");
+            require(ingredient.mouseClicked(ingredient.getX() + 4, ingredient.getY() + 4, 1), "ingredient slots accept reverse cycling");
+            require(ingredient.mouseScrolled(ingredient.getX() + 4, ingredient.getY() + 4, 0, 1)
+                    && ingredient.getMessage().getString().equals("Ingredient 1: Any"), "scrolling can return an ingredient to Any");
+            ingredient.onPress();
             screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
-                    .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getY() != 34).findFirst().orElseThrow().setValue("5");
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getMessage().getString().equals("Quantity")).findFirst().orElseThrow().setValue("5");
             requireButtonsFit(screen);
             button(screen, "Batch").onPress();
             button(screen, "Continuous").onPress();
@@ -1864,6 +1868,10 @@ public final class SettlementViewClientSmoke {
         for (var size : java.util.List.of(new int[]{320, 240}, new int[]{426, 240}, new int[]{width, height})) {
             screen.resize(Minecraft.getInstance(), size[0], size[1]);
             checkButtonsFit(screen);
+            if (screen instanceof com.jvn.villagerretaliation.client.ui.VillagerWindowScreen window) {
+                SettlementViewPanelClientChecks.verifyWindow(window);
+                checkButtonsFit(screen);
+            }
         }
     }
 
@@ -1874,6 +1882,9 @@ public final class SettlementViewClientSmoke {
                     && button.getBottom() <= screen.height, "management buttons remain inside the window");
             if (button instanceof SettlementViewUi.IconButton || button instanceof SettlementViewUi.EntryButton)
                 require(button.getTooltip() != null, "icon and portrait controls expose their full labels");
+            else if (button instanceof com.jvn.villagerretaliation.client.ui.VillagerUi.OptionButton
+                    || button instanceof com.jvn.villagerretaliation.client.ui.VillagerItemSlot)
+                require(button.getTooltip() != null, "shared controls expose full labels when their rendered text is clipped");
             else if (!(button instanceof SettlementViewUi.HeaderButton))
                 require(Minecraft.getInstance().font.width(button.getMessage()) <= button.getWidth() - 4, "management button labels fit");
             for (var other : buttons) {

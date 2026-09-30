@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.interaction.HiredCombatMode;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
@@ -24,11 +26,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
-public final class SettlementWorkerScreen extends Screen {
+public final class SettlementWorkerScreen extends VillagerWindowScreen {
     private final SettlementManagementScreen parent;
     private final SettlementManagementPayload.Resident resident;
     private SettlementWorkerSettings draft;
@@ -55,10 +56,6 @@ public final class SettlementWorkerScreen extends Screen {
     private Button productionOrders;
     private Button fishingSpots;
     private Component feedback = Component.empty();
-    private int left;
-    private int top;
-    private int panelWidth;
-    private int panelHeight;
 
     public SettlementWorkerScreen(SettlementManagementScreen parent, SettlementManagementPayload.Resident resident) {
         this(parent, resident, null);
@@ -108,38 +105,33 @@ public final class SettlementWorkerScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(480, this.width - 32),
-                Math.min(350, this.height - 24), true);
-        this.panelWidth = layout.width();
-        this.panelHeight = layout.height();
-        this.left = layout.left();
-        this.top = layout.top();
+        initWindow(360, 310);
         this.settings = Arrays.stream(SettlementWorkerSetting.values()).filter(setting -> setting.supports(this.draft.role())).toList();
         this.filters = this.draft.role() == HiredVillagerRole.LOGGING ? HiredLoggingFilters.options()
                 : this.draft.role() == HiredVillagerRole.ANIMAL_HANDLING ? HiredAnimalBreedingTargets.options() : List.of();
         if (!this.filters.isEmpty()) {
             int half = (this.panelWidth - 4 - (this.worksite == null ? 0 : 104)) / 2;
-            addRenderableWidget(Button.builder(text("worker_options"), ignored -> switchPage(false))
+            addRenderableWidget(VillagerUi.buttonBuilder(text("worker_options"), ignored -> switchPage(false))
                     .bounds(this.left, this.top + 22, half, 20).build());
-            addRenderableWidget(Button.builder(text(this.draft.role() == HiredVillagerRole.LOGGING ? "worker_logs" : "worker_animals"),
+            addRenderableWidget(VillagerUi.buttonBuilder(text(this.draft.role() == HiredVillagerRole.LOGGING ? "worker_logs" : "worker_animals"),
                     ignored -> switchPage(true)).bounds(this.left + half + 4, this.top + 22, half, 20).build());
         }
         boolean production = com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService.supports(this.draft.role());
         boolean fishing = this.draft.role() == HiredVillagerRole.FISHING;
         if (this.worksite != null) {
-            this.connections = addRenderableWidget(Button.builder(text("worksite_links"), ignored ->
+            this.connections = addRenderableWidget(VillagerUi.buttonBuilder(text("worksite_links"), ignored ->
                     this.minecraft.setScreen(new SettlementWorksiteLinksScreen(this)))
                     .bounds(this.filters.isEmpty() ? this.left : this.left + this.panelWidth - 100,
                             this.top + 22, this.filters.isEmpty() ? (production || fishing ? (this.panelWidth - 4) / 2 : this.panelWidth) : 100, 20).build());
         }
         if (this.resident != null && !this.resident.worksitePlan() && this.draft.role() == HiredVillagerRole.BREWING) {
-            this.brewing = addRenderableWidget(Button.builder(text("brewing_orders"), ignored ->
+            this.brewing = addRenderableWidget(VillagerUi.buttonBuilder(text("brewing_orders"), ignored ->
                     this.minecraft.setScreen(new SettlementBrewingScreen(this, this.resident)))
                     .bounds(this.left, this.top + 22, (this.panelWidth - 4) / 2, 20).build());
             this.brewing.setTooltip(Tooltip.create(text("brewing_open_hint")));
         }
         if (fishing) {
-            this.fishingSpots = addRenderableWidget(Button.builder(Component.literal("Fishing spots"), ignored ->
+            this.fishingSpots = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Fishing spots"), ignored ->
                     this.minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.FishingSpotsScreen(this,
                             this.draft.fishingSpots(), spots -> this.draft = this.draft.withFishingSpots(spots),
                             this.resident != null && this.resident.worksitePlan() ? () -> this.draft = this.draft.withOverrides(
@@ -149,7 +141,7 @@ public final class SettlementWorkerScreen extends Screen {
         }
         if (production) {
             boolean split = this.worksite != null || this.brewing != null;
-            this.productionOrders = addRenderableWidget(Button.builder(Component.literal("Production orders"), ignored ->
+            this.productionOrders = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Production orders"), ignored ->
                     this.minecraft.setScreen(new com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen(this,
                             new com.jvn.villagerretaliation.network.ProductionTarget(this.parent.snapshot().header().id(),
                                     this.worksite == null ? this.resident.area() : this.worksite.id()))))
@@ -165,7 +157,7 @@ public final class SettlementWorkerScreen extends Screen {
             this.page = 0;
             updateRows();
         });
-        this.all = addRenderableWidget(Button.builder(text("worker_all_types"), ignored -> {
+        this.all = addRenderableWidget(VillagerUi.buttonBuilder(text("worker_all_types"), ignored -> {
             this.draft = hasShiftDown() && this.resident != null && this.resident.worksitePlan()
                     ? this.draft.withOverrides(this.draft.overrides() & ~(SettlementWorkerSettings.LOGS_OVERRIDE | SettlementWorkerSettings.ANIMALS_OVERRIDE))
                     : this.draft.withFilters(Set.of(), Set.of());
@@ -186,27 +178,27 @@ public final class SettlementWorkerScreen extends Screen {
         int count = Math.max(1, (this.panelHeight - 132) / 24);
         for (int index = 0; index < count; index++) {
             int row = index;
-            this.rows.add(addRenderableWidget(Button.builder(Component.empty(), ignored -> change(row))
+            this.rows.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> change(row))
                     .bounds(this.left, this.top + 74 + index * 24, this.panelWidth, 20).build()));
         }
         int bottom = this.top + this.panelHeight;
-        this.previous = addRenderableWidget(Button.builder(Component.literal("<"), ignored -> {
+        this.previous = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("<"), ignored -> {
             this.page--;
             updateRows();
         }).bounds(this.left, bottom - 48, 24, 20).build());
-        this.next = addRenderableWidget(Button.builder(Component.literal(">"), ignored -> {
+        this.next = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(">"), ignored -> {
             this.page++;
             updateRows();
         }).bounds(this.left + 28, bottom - 48, 24, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(this.left, bottom - 20, 94, 20).build());
         if (this.resident != null && this.resident.worksitePlan()) {
-            this.reset = addRenderableWidget(Button.builder(text("worksite_reset"), ignored -> {
+            this.reset = addRenderableWidget(VillagerUi.buttonBuilder(text("worksite_reset"), ignored -> {
                 this.draft = this.draft.withOverrides(0);
                 updateRows();
             }).bounds(this.left + 100, bottom - 20, this.panelWidth - 200, 20).build());
         }
-        this.save = addRenderableWidget(Button.builder(text(this.worksite != null && this.worksite.plan() == null ? "worksite_adopt" : "save"), ignored -> {
+        this.save = addRenderableWidget(VillagerUi.buttonBuilder(text(this.worksite != null && this.worksite.plan() == null ? "worksite_adopt" : "save"), ignored -> {
             if (this.worksite != null && this.worksite.plan() == null) {
                 this.minecraft.setScreen(new SettlementWorksiteAdoptionScreen(this,
                         new SettlementWorksitePlan(this.draft, this.desiredStaff, this.links, this.route)));
@@ -309,6 +301,12 @@ public final class SettlementWorkerScreen extends Screen {
                         this.resident != null && this.resident.worksitePlan() && !this.draft.overrides(setting)
                                 ? text("worksite_inherit") : value(setting, this.draft.options().get(setting)));
             }
+            ((VillagerUi.OptionButton) button).checkbox(this.filtering || switch (this.settings.get(index)) {
+                case CULL_CAP, MINING_MODE, CRAFTING_MODE, GUARD_MODE, CROP_SELECTION -> false;
+                default -> true;
+            },
+                    this.filtering ? selectedFilters().isEmpty() || selectedFilters().contains(visible.get(index))
+                            : this.draft.options().get(this.settings.get(index)) != 0);
             button.setMessage(label);
             button.setTooltip(Tooltip.create(this.resident != null && this.resident.worksitePlan()
                     ? label.copy().append("\n").append(text("worksite_inherit_hint")) : label));
@@ -349,14 +347,6 @@ public final class SettlementWorkerScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xD0101010);
-        }
     }
 
     @Override

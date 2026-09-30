@@ -1,27 +1,26 @@
 package com.jvn.villagerretaliation.client.inventory;
 
+import com.jvn.villagerretaliation.client.ui.VillagerSelectionList;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
 import com.jvn.villagerretaliation.network.TransferSnapshotPayload;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-public final class TransferChoiceScreen extends Screen implements TransferClient.Receiver {
+public final class TransferChoiceScreen extends VillagerWindowScreen implements TransferClient.Receiver {
     enum Kind { SOURCE, DESTINATION, ITEM }
     private final TransferEditorScreen previous;
     private final Kind kind;
     private String query = "";
     private Choices list;
-    private int left;
-    private int panelWidth;
 
     TransferChoiceScreen(TransferEditorScreen previous, Kind kind) {
         super(Component.literal(switch (kind) {
@@ -37,16 +36,15 @@ public final class TransferChoiceScreen extends Screen implements TransferClient
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(480, this.width - 24);
-        this.left = (this.width - this.panelWidth) / 2;
-        var search = addRenderableWidget(new EditBox(this.font, this.left, 36, this.panelWidth, 20, Component.literal("Search")));
+        initWindow(360, 300);
+        var search = addRenderableWidget(new EditBox(this.font, this.left, this.top + 22, this.panelWidth, 20, Component.literal("Search")));
         search.setMaxLength(96);
         search.setHint(Component.literal(this.kind == Kind.ITEM ? "Search items or choose observed stock below" : "Search by name or position"));
         search.setValue(this.query);
         this.list = addRenderableWidget(new Choices());
         search.setResponder(value -> { this.query = value; this.list.refresh(); });
         this.list.refresh();
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose()).bounds(this.left, this.height - 28, 84, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose()).bounds(this.left, this.top + this.panelHeight - 28, 84, 20).build());
         setInitialFocus(search);
     }
 
@@ -68,14 +66,14 @@ public final class TransferChoiceScreen extends Screen implements TransferClient
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 16, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
         var hovered = this.list.hovered();
         if (hovered != null && !hovered.sample.isEmpty()) graphics.renderTooltip(this.font, hovered.sample, mouseX, mouseY);
     }
 
-    private final class Choices extends ObjectSelectionList<Row> {
+    private final class Choices extends VillagerSelectionList<Row> {
         private Choices() {
-            super(TransferChoiceScreen.this.minecraft, panelWidth, Math.max(32, TransferChoiceScreen.this.height - 104), 64, 28);
+            super(TransferChoiceScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 82), top + 46, 28);
             setX(left);
         }
 
@@ -146,7 +144,9 @@ public final class TransferChoiceScreen extends Screen implements TransferClient
         public void render(GuiGraphics graphics, int index, int top, int rowLeft, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             if (this.storage != null) {
-                graphics.drawString(font, font.plainSubstrByWidth(label(), rowWidth - 8), rowLeft + 4, top + 8, 0xFFFFFF);
+                graphics.renderItem(new ItemStack(net.minecraft.world.item.Items.CHEST), rowLeft + 4, top + 5);
+                graphics.drawString(font, font.plainSubstrByWidth(label(), rowWidth - 30), rowLeft + 26, top + 3, 0xFFFFFF);
+                graphics.drawString(font, this.storage.endpoint().position().toShortString(), rowLeft + 26, top + 15, 0xAAAAAA);
             } else {
                 graphics.renderItem(this.sample, rowLeft + 4, top + 5);
                 graphics.drawString(font, font.plainSubstrByWidth(label(), rowWidth - 30), rowLeft + 26, top + 3, 0xFFFFFF);
