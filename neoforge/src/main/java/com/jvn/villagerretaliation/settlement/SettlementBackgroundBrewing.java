@@ -393,20 +393,7 @@ final class SettlementBackgroundBrewing {
     }
 
     static int currentStep(ServerLevel level, NonNullList<ItemStack> items, HiredBrewingRecipeCatalog.BrewingRoute route) {
-        ItemStack expected = PotionContents.createItemStack(Items.POTION, Potions.WATER);
-        for (int step = 0; step <= route.ingredients().size(); step++) {
-            boolean matches = true;
-            for (int slot = 0; slot < 3; slot++) {
-                matches &= items.get(slot).isEmpty() || ItemStack.isSameItemSameComponents(items.get(slot), expected);
-            }
-            if (matches) {
-                return step;
-            }
-            if (step < route.ingredients().size()) {
-                expected = level.potionBrewing().mix(new ItemStack(route.ingredients().get(step)), expected);
-            }
-        }
-        return -1;
+        return HiredBrewingRecipeCatalog.currentStep(level, items, route);
     }
 
     static boolean remainder(HiredBrewingRecipeCatalog.BrewingRoute route, ItemStack stack) {

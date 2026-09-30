@@ -15,8 +15,8 @@ final class SettlementSupplyView {
     private SettlementSupplyView() { }
 
     static Component detail(Supply supply) {
-        return SettlementManagementScreen.text("supply_counts", quantity(supply.stored()), quantity(supply.incoming()),
-                supply.target(), quantity(supply.shortage()));
+        return SettlementManagementScreen.text("supply_counts", quantity(supply.stored()), quantity(supply.outgoing()),
+                quantity(supply.incoming()), supply.target(), quantity(supply.shortage()));
     }
 
     static Component detail(SupplyLink link) {
@@ -63,6 +63,7 @@ final class SettlementSupplyView {
             case STORAGE_TARGET -> parent.navigateTo(Page.DEPOTS, link.targetId().toString());
             case INPUT_STORAGE -> parent.navigateTo(Page.SUPPLIES, link.position().toShortString());
             case PROJECT -> parent.navigateTo(Page.PROJECTS, link.targetId().toString());
+            case CONSUMER -> parent.navigateTo(Page.DEMAND, link.targetId().toString());
             case WORKSITE -> parent.navigateTo(Page.AREAS, link.area().toString());
         }
     }

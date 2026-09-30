@@ -199,8 +199,9 @@ public final class SettlementManagementService {
                     var storage = SettlementStorageService.snapshot(player, town, request.query());
                     if (storage != null) entries.add(storage);
                 }
-                case SUPPLIES -> entries.addAll(SettlementSupplyService.supplies(player, town));
-                case SUPPLY_LINKS -> entries.addAll(SettlementSupplyService.links(player, town, request.query()));
+                case DEMAND -> entries.addAll(assessment.demands());
+                case SUPPLIES -> entries.addAll(SettlementSupplyService.supplies(player, town, assessment.supply().stock()));
+                case SUPPLY_LINKS -> entries.addAll(SettlementSupplyService.links(player, town, request.query(), assessment.supply()));
                 case ISSUES -> entries.addAll(issues);
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
@@ -244,13 +245,16 @@ public final class SettlementManagementService {
                 request.query(), request.requestId(), request.openScreen(), filtered.subList(start, Math.min(filtered.size(), start + size)));
     }
 
-    record Assessment(SettlementManagementPayload.Header header, List<SettlementManagementPayload.Issue> issues) { }
+    record Assessment(SettlementManagementPayload.Header header, List<SettlementManagementPayload.Issue> issues,
+                      SettlementDemandService.Snapshot supply, List<SettlementManagementPayload.Demand> demands) { }
 
     static Assessment overviewHeader(ServerPlayer player, SettlementRecord town) {
         var level = player.serverLevel();
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var status = SettlementProgressionService.assess(level, town);
-        var issues = SettlementIssueService.issues(level, town, status);
+        var supply = SettlementDemandService.inspect(level, town, player);
+        var demands = SettlementDemandViewService.demands(level, town, supply);
+        var issues = SettlementIssueService.issues(level, town, status, demands);
         Set<SettlementPermission> permissions = EnumSet.noneOf(SettlementPermission.class);
         for (SettlementPermission permission : SettlementPermission.values()) {
             if (town.permits(player.getUUID(), permission)) {
@@ -265,7 +269,7 @@ public final class SettlementManagementService {
                 town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), (int) issues.stream().filter(SettlementManagementPayload.Issue::needsAttention).count(), town.manualManagement(), SettlementPlotService.totals(town),
                 SettlementPopulationRequirements.growthTarget(), SettlementPopulationRequirements.effective(),
                 SettlementPopulationRequirements.adjusted(), SettlementPopulationRequirements.problem());
-        return new Assessment(header, issues);
+        return new Assessment(header, issues, supply, demands);
     }
 
     static java.util.Map<Page, List<Entry>> overview(ServerPlayer player, SettlementRecord town) {
@@ -440,6 +444,7 @@ public final class SettlementManagementService {
         return entry.name() + " " + entry.id() + switch (entry) {
             case SettlementManagementPayload.Issue issue -> " " + issue.kind().name() + " " + issue.cause() + " "
                     + issue.detail() + " " + issue.targetId() + " " + issue.resident() + " " + issue.area();
+            case SettlementManagementPayload.Demand demand -> " " + demand.consumer() + " " + demand.requirement() + " " + demand.cause();
             case SettlementManagementPayload.Supply supply -> " " + supply.storageName() + " " + supply.position().toShortString();
             case SettlementManagementPayload.Resident resident -> " " + resident.profession().getPath();
             case SettlementManagementPayload.Bed bed -> " " + bed.position().toShortString() + " " + bed.residentName() + " " + bed.resident();

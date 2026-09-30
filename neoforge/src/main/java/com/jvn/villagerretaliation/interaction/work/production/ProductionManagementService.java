@@ -99,7 +99,7 @@ public final class ProductionManagementService {
         if (blocker.isEmpty() && legacy == null && role == HiredVillagerRole.BREWING && BrewingWorker.hasOrder(state)) blocker = "The legacy brewing order requires recovery";
         return new ProductionSnapshotPayload(level.dimension().location(), request.target(), request.request(), applied, role,
                 title(villager.getName().getString()), blocker.isEmpty(), blocker, feedback, queue == null ? null : queue.save(level.registryAccess()),
-                legacy == null ? 0 : 1, legacy == null ? List.of() : List.of(legacy), storages, stock);
+                legacy == null ? 0 : 1, legacy == null ? List.of() : List.of(legacy), storages, stock, HiredProductionDemand.inspect(level, villager, player, queue, stock));
     }
 
     public static ProductionSnapshotPayload unavailable(ServerPlayer player, ProductionRequestPayload request, String feedback) {

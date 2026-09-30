@@ -904,6 +904,16 @@ public final class SettlementViewClientSmoke {
                 screen.init(minecraft, width, minecraft.getWindow().getGuiScaledHeight());
                 requireButtonsFit(screen);
             }
+            button(screen, "Deliver once").onPress();
+            require(button(screen, "Maintain destination stock").active, "the shared transfer editor offers recurring replenishment");
+            ticks = 0;
+            phase = 181;
+        } else if (phase == 181 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferEditorScreen screen && ++ticks >= 5) {
+            capture("transfer-recurring-mode");
+            ticks = 0;
+            phase = 182;
+        } else if (phase == 182 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferEditorScreen screen && ++ticks >= 5) {
+            button(screen, "Maintain destination stock").onPress();
             button(screen, "Choose source").onPress();
             ticks = 0;
             phase = 152;
@@ -1042,6 +1052,69 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 177;
         } else if (phase == 177 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUPPLY_LINKS && ++ticks >= 5) {
+            minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                var town = SettlementSavedData.get(level).get(fixture.town()).orElseThrow();
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(town.leader());
+                var inputs = fixture.center().offset(-3, 0, 4);
+                var output = fixture.center().offset(2, 0, 2);
+                var source = ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(fixture.center().offset(-6, 0, 4))).inventory();
+                var wheat = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WHEAT, 12);
+                wheat.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Bakery wheat"));
+                source.setItem(1, wheat);
+                var defaults = com.jvn.villagerretaliation.settlement.SettlementWorksitePlan.defaults(com.jvn.villagerretaliation.interaction.HiredVillagerRole.CRAFTSMAN);
+                var storage = new com.jvn.villagerretaliation.settlement.SettlementStorageLinks(false, java.util.List.of(
+                        new com.jvn.villagerretaliation.settlement.SettlementStorageLinks.Link(inputs, com.jvn.villagerretaliation.settlement.SettlementStorageLinks.Purpose.SUPPLY, 0),
+                        new com.jvn.villagerretaliation.settlement.SettlementStorageLinks.Link(output, com.jvn.villagerretaliation.settlement.SettlementStorageLinks.Purpose.OUTPUT, 1)));
+                require(com.jvn.villagerretaliation.settlement.SettlementWorksiteService.configure(serverPlayer, town, productionArea,
+                        new com.jvn.villagerretaliation.settlement.SettlementWorksitePlan(defaults.settings().withStorage(storage), 0), false),
+                        "the demand fixture has explicit input storage");
+                var recipe = com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe.exact(net.minecraft.resources.ResourceLocation.withDefaultNamespace("bread"), java.util.Map.of());
+                var order = com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.create(level, recipe,
+                        com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.Mode.BATCH, 2, output);
+                var queue = town.productionQueues().get(productionArea);
+                require(com.jvn.villagerretaliation.settlement.SettlementProductionService.append(serverPlayer, town, productionArea,
+                        queue == null ? 0 : queue.revision(), order).isEmpty(), "the demand fixture has an explicit consumer");
+            }).join();
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.DEMAND, "");
+            ticks = 0;
+            phase = 179;
+        } else if (phase == 179 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.DEMAND && ++ticks >= 5) {
+            for (int width : new int[] {320, 426, minecraft.getWindow().getGuiScaledWidth()}) {
+                screen.init(minecraft, width, minecraft.getWindow().getGuiScaledHeight());
+                requireButtonsFit(screen);
+            }
+            require(minecraft.getCameraEntity() != minecraft.player, "demand inspection retains the world camera");
+            var demand = screen.snapshot().entries().stream().filter(com.jvn.villagerretaliation.network.SettlementManagementPayload.Demand.class::isInstance)
+                    .map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Demand.class::cast)
+                    .filter(row -> row.courier() != null).findFirst().orElseThrow();
+            require(demand.required() == 6 && demand.missing() == 6, "two native bread batches report six outstanding wheat");
+            screen.restoreSelection(demand.id());
+            capture("consumer-demand");
+            button(screen, "Draft delivery").onPress();
+            ticks = 0;
+            phase = 183;
+        } else if (phase == 183 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferEditorScreen screen && ++ticks >= 5) {
+            require(button(screen, "Add transfer").active && button(screen, "Bakery wheat").active,
+                    "recovery prefills permitted endpoints and the actual component-sensitive stock");
+            require(screen.previous().state().queue().orders().size() == 1, "opening a recovery draft never submits an order");
+            require(minecraft.getCameraEntity() != minecraft.player, "recovery drafts retain the world camera");
+            capture("demand-transfer-draft");
+            screen.onClose();
+            ticks = 0;
+            phase = 184;
+        } else if (phase == 184 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferOrdersScreen screen && ++ticks >= 5) {
+            screen.onClose();
+            ticks = 0;
+            phase = 185;
+        } else if (phase == 185 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.DEMAND && ++ticks >= 5) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUPPLY_LINKS, supplyRow.toString());
+            ticks = 0;
+            phase = 180;
+        } else if (phase == 180 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUPPLY_LINKS && ++ticks >= 5) {
             screen.restoreSelection(supplyTransfer);
             button(screen, "Show on map").onPress();

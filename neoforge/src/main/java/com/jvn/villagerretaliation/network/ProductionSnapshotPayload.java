@@ -18,7 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
         HiredVillagerRole role, String title, boolean editable, String blocker, String feedback, CompoundTag queue,
-        int legacyCount, List<Legacy> legacy, List<Storage> storages, Map<UUID, Long> stock) implements CustomPacketPayload {
+        int legacyCount, List<Legacy> legacy, List<Storage> storages, Map<UUID, Long> stock, List<com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement> requirements) implements CustomPacketPayload {
     public static final Type<ProductionSnapshotPayload> TYPE = VillagerPayloads.type("production_snapshot");
     public static final StreamCodec<RegistryFriendlyByteBuf, ProductionSnapshotPayload> STREAM_CODEC =
             VillagerPayloads.codec(ProductionSnapshotPayload::encode, ProductionSnapshotPayload::decode);
@@ -35,8 +35,15 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
         legacy = List.copyOf(legacy);
         storages = List.copyOf(storages);
         stock = Map.copyOf(stock);
-        if (legacy.size() > 32 || legacyCount < legacy.size() || storages.size() > 128 || stock.size() > 32
+        requirements = List.copyOf(requirements);
+        if (legacy.size() > 32 || legacyCount < legacy.size() || storages.size() > 128 || stock.size() > 32 || requirements.size() > 544
                 || stock.values().stream().anyMatch(count -> count < -1L)) throw new IllegalArgumentException("Oversized production snapshot");
+    }
+
+    public ProductionSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
+            HiredVillagerRole role, String title, boolean editable, String blocker, String feedback, CompoundTag queue,
+            int legacyCount, List<Legacy> legacy, List<Storage> storages, Map<UUID, Long> stock) {
+        this(dimension, target, request, applied, role, title, editable, blocker, feedback, queue, legacyCount, legacy, storages, stock, List.of());
     }
 
     @Override
@@ -76,6 +83,15 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
             buffer.writeUUID(id);
             buffer.writeVarLong(count);
         });
+        buffer.writeVarInt(payload.requirements().size());
+        for (var need : payload.requirements()) {
+            buffer.writeUUID(need.order());
+            buffer.writeUtf(need.name(), 128);
+            buffer.writeEnum(need.unit());
+            buffer.writeLong(need.required());
+            buffer.writeLong(need.supplied());
+            buffer.writeLong(need.missing());
+        }
     }
 
     private static ProductionSnapshotPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -107,7 +123,12 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
         for (int index = 0; index < stockSize; index++) {
             if (stock.putIfAbsent(buffer.readUUID(), buffer.readVarLong()) != null) throw new IllegalArgumentException("Duplicate production stock");
         }
-        return new ProductionSnapshotPayload(dimension, target, request, applied, role, title, editable, blocker, feedback, queue, legacyCount, legacy, storages, stock);
+        var requirements = new ArrayList<com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement>();
+        int size = VillagerPayloads.readCollectionSize(buffer, 544, "Production requirements");
+        for (int index = 0; index < size; index++) requirements.add(new com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement(
+                buffer.readUUID(), buffer.readUtf(128), buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.class),
+                buffer.readLong(), buffer.readLong(), buffer.readLong()));
+        return new ProductionSnapshotPayload(dimension, target, request, applied, role, title, editable, blocker, feedback, queue, legacyCount, legacy, storages, stock, requirements);
     }
 
     @Override

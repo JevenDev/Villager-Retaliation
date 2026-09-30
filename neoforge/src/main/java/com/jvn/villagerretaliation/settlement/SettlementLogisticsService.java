@@ -312,6 +312,11 @@ public final class SettlementLogisticsService {
         }
         int current = depot.count(task::matches);
         int target = providing || !task.surplus() ? Math.max(0, requestedTarget(level, town, depot, sample)) : task.target();
-        return Math.max(0, (providing ? current - target : target - current) - claimed);
+        var facts = SettlementSupplyStock.observe(level, town, position, sample, null);
+        if (!facts.known()) return 0;
+        long own = AssignedStorageService.reservedItemCount(level, position, null, operation, sample)
+                - AssignedStorageService.reservedItemCount(level, position, worker, operation, sample);
+        long committed = Math.max(claimed, (providing ? facts.outgoing() : facts.incoming()) - own);
+        return (int) Math.max(0L, (providing ? current - target : target - current) - committed);
     }
 }

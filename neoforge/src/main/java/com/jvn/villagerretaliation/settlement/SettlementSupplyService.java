@@ -23,6 +23,10 @@ final class SettlementSupplyService {
     private SettlementSupplyService() { }
 
     static List<Supply> supplies(ServerPlayer player, SettlementRecord town) {
+        return supplies(player, town, new SettlementSupplyStock.Snapshot(player.serverLevel(), town));
+    }
+
+    static List<Supply> supplies(ServerPlayer player, SettlementRecord town, SettlementSupplyStock.Snapshot stock) {
         var level = player.serverLevel();
         var stores = stores(player, town);
         var rows = new LinkedHashMap<Key, Integer>();
@@ -35,14 +39,16 @@ final class SettlementSupplyService {
             add(rows, order.storage(), order.output(), order.mode() == HiredProductionOrder.Mode.MAINTAIN_STOCK && !order.cancelled() ? order.amount() : 0);
         }
         for (var queue : town.transferQueues().values()) for (var order : queue.orders()) {
-            if ((!order.cancelled() && order.delivered() < order.amount() || order.pending() > 0) && stores.containsKey(order.destination().position())) {
-                add(rows, order.destination().position(), order.sample(), 0);
+            if ((!order.cancelled() && !order.complete() || order.pending() > 0) && stores.containsKey(order.destination().position())) {
+                add(rows, order.destination().position(), order.sample(), order.mode() == com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Mode.MAINTAIN_STOCK ? order.amount() : 0);
             }
         }
         var commitments = com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(level);
         for (var store : stores.values()) {
-            commitments.refresh(level, store.position());
-            for (var sample : commitments.samples(store.position())) add(rows, store.position(), sample, 0);
+            for (var position : SettlementSupplyStock.positions(level, store.position())) {
+                commitments.refresh(level, position);
+                for (var sample : commitments.samples(position)) add(rows, store.position(), sample, 0);
+            }
         }
         for (var worker : town.workers().values()) {
             if (!town.duties().containsKey(worker.id())) continue;
@@ -63,9 +69,15 @@ final class SettlementSupplyService {
                 rows.put(new Key(store.position(), ItemStack.EMPTY), 0);
             }
         }
-        var result = new ArrayList<Supply>();
-        var stock = new SettlementSupplyStock.Snapshot(level, town);
+        var normalized = new LinkedHashMap<Key, Integer>();
         for (var entry : rows.entrySet()) {
+            var position = SettlementSupplyStock.positions(level, entry.getKey().position()).getFirst();
+            var original = stores.get(entry.getKey().position());
+            stores.putIfAbsent(position, new Store(position, original.depot(), original.area(), original.name(), original.status(), original.contents()));
+            normalized.merge(new Key(position, entry.getKey().item()), entry.getValue(), Math::max);
+        }
+        var result = new ArrayList<Supply>();
+        for (var entry : normalized.entrySet()) {
             var key = entry.getKey();
             var store = stores.get(key.position());
             long stored = store.contents() == null ? -1L : store.contents().stream()
@@ -77,13 +89,18 @@ final class SettlementSupplyService {
             String itemName = key.item().isEmpty() ? store.name() : key.item().getHoverName().getString();
             result.add(new Supply(identity(level, town, key), bounded(itemName, 128), key.position(),
                     store.depot() == null ? null : store.depot().id(), store.area(), bounded(store.name(), 128),
-                    key.item(), stored, incoming, entry.getValue(), status));
+                    key.item(), stored, key.item().isEmpty() || store.contents() == null ? -1 : stock.observe(key.position(), key.item(), null).outgoing(),
+                    incoming, entry.getValue(), status));
         }
         return List.copyOf(result);
     }
 
     static List<SupplyLink> links(ServerPlayer player, SettlementRecord town, String query) {
-        var supply = supplies(player, town).stream().filter(row -> row.id().toString().equals(query)).findFirst().orElse(null);
+        return links(player, town, query, SettlementDemandService.inspect(player.serverLevel(), town, player));
+    }
+
+    static List<SupplyLink> links(ServerPlayer player, SettlementRecord town, String query, SettlementDemandService.Snapshot snapshot) {
+        var supply = supplies(player, town, snapshot.stock()).stream().filter(row -> row.id().toString().equals(query)).findFirst().orElse(null);
         if (supply == null) return List.of();
         var level = player.serverLevel();
         var links = new LinkedHashMap<UUID, SupplyLink>();
@@ -95,7 +112,7 @@ final class SettlementSupplyService {
             var area = town.areas().get(queue.owner());
             if (area == null) continue;
             for (var order : queue.orders()) {
-                if (!supply.position().equals(order.storage()) || !HiredProductionStock.matches(supply.item(), order.output())) continue;
+                if (!SettlementSupplyStock.sameStorage(level, supply.position(), order.storage()) || !HiredProductionStock.matches(supply.item(), order.output())) continue;
                 long pending = queue.pending(order.id());
                 if (order.cancelled() && pending == 0 || order.complete() && pending == 0) continue;
                 String status = order.cancelled() ? "cancelled" : order.paused() || !enabled(town, area) ? "paused"
@@ -114,20 +131,21 @@ final class SettlementSupplyService {
             var area = town.areas().get(queue.owner());
             if (area == null) continue;
             for (var order : queue.orders()) {
-                if (!supply.position().equals(order.destination().position()) || !order.matches(supply.item())
-                        || order.cancelled() && order.pending() == 0 || order.delivered() == order.amount()) continue;
+                if (!SettlementSupplyStock.sameStorage(level, supply.position(), order.destination().position()) || !order.matches(supply.item())
+                        || order.cancelled() && order.pending() == 0 || order.complete()) continue;
                 long pending = queue.allocations().stream().filter(allocation -> allocation.order().equals(order.id()))
                         .mapToLong(com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Allocation::amount).sum();
                 String status = order.cancelled() ? "cancelled" : order.paused() || !enabled(town, area) ? "paused"
                         : order.blocker().isEmpty() ? "active" : "blocked";
-                link(links, supply, SupplyLinkKind.TRANSFER, area.name(), area.id(), order.id(), area.center(), pending, 0,
+                link(links, supply, SupplyLinkKind.TRANSFER, area.name(), area.id(), order.id(), area.center(), pending,
+                        order.mode() == com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Mode.MAINTAIN_STOCK ? order.amount() : 0,
                         status, order.blocker());
                 input(links, supply, town, area, order.source().position(), order.source().depot());
             }
         }
         for (var area : town.areas().values()) {
             if (area.type().role() == null) continue;
-            if (outputs(town, area, supply) && !producers.contains(area.id())) {
+            if (outputs(level, town, area, supply) && !producers.contains(area.id())) {
                 String diagnostic = "";
                 for (var duty : town.duties().entrySet()) {
                     if (!duty.getValue().equals(area.id())) continue;
@@ -168,6 +186,16 @@ final class SettlementSupplyService {
             link(links, supply, SupplyLinkKind.PROJECT, project.label(), project.area(), project.id(), project.origin(),
                     0, 0, "blocked", detail);
         }
+        for (var demand : SettlementDemandViewService.demands(level, town, snapshot, supply.item())) {
+            boolean input = demand.sources().stream().anyMatch(position -> SettlementSupplyStock.sameStorage(level, position, supply.position()));
+            boolean product = town.productionQueues().values().stream().flatMap(queue -> queue.orders().stream())
+                    .anyMatch(order -> order.id().equals(demand.consumer()) && order.matches(supply.item()) && SettlementSupplyStock.sameStorage(level, order.storage(), supply.position()));
+            if (!product && !input) continue;
+            link(links, supply, SupplyLinkKind.CONSUMER, demand.name(), demand.area(), demand.id(), demand.focus(), 0, 0,
+                    demand.missing() < 0 ? "unknown" : demand.missing() > 0 ? "blocked" : "covered",
+                    bounded(demand.requirement() + ": required " + demand.required() + ", supplied " + demand.supplied() + ", outstanding "
+                            + (demand.missing() < 0 ? "unknown" : demand.missing()) + ". " + demand.advice(), 512));
+        }
         return List.copyOf(links.values());
     }
 
@@ -179,11 +207,11 @@ final class SettlementSupplyService {
         link(links, supply, SupplyLinkKind.INPUT_STORAGE, area.name() + ": " + name, area.id(), depotId, position, 0, 0, "linked", "");
     }
 
-    private static boolean outputs(SettlementRecord town, SettlementArea area, Supply supply) {
+    private static boolean outputs(ServerLevel level, SettlementRecord town, SettlementArea area, Supply supply) {
         if (area.type() == SettlementAreaType.CONSTRUCTION || area.type() == SettlementAreaType.GUARD_POST) return false;
         var plan = town.worksitePlans().get(area.id());
         if (plan != null && !plan.settings().storage().automatic()) return plan.settings().storage().entries().stream()
-                .anyMatch(link -> link.purpose().outputs() && link.position().equals(supply.position()));
+                .anyMatch(link -> link.purpose().outputs() && SettlementSupplyStock.sameStorage(level, link.position(), supply.position()));
         return supply.depot() != null && SettlementWorksiteService.links(town, area.id()).permitsOutput(supply.depot())
                 && town.depots().get(supply.depot()).purpose().acceptsOutputs();
     }
@@ -220,17 +248,19 @@ final class SettlementSupplyService {
             if (area != null && area.type().role() != null) addStores(player, town, area, SettlementStorageService.effective(town, duty.getKey()), result);
         }
         for (var queue : town.productionQueues().values()) for (var order : queue.orders()) {
-            missingStore(town, result, order.storage(), queue.owner());
+            missingStore(level, town, result, order.storage(), queue.owner());
         }
         for (var queue : town.transferQueues().values()) for (var order : queue.orders()) {
-            missingStore(town, result, order.destination().position(), queue.owner());
+            missingStore(level, town, result, order.destination().position(), queue.owner());
         }
         return result;
     }
 
-    private static void missingStore(SettlementRecord town, Map<BlockPos, Store> stores, BlockPos position, UUID area) {
-        if (position != null && town.contains(position)) stores.putIfAbsent(position,
-                new Store(position, null, area, position.toShortString(), "missing", null));
+    private static void missingStore(ServerLevel level, SettlementRecord town, Map<BlockPos, Store> stores, BlockPos position, UUID area) {
+        if (position == null || !town.contains(position) || stores.containsKey(position)) return;
+        var alias = stores.values().stream().filter(store -> SettlementSupplyStock.sameStorage(level, store.position(), position)).findFirst().orElse(null);
+        stores.put(position, alias == null ? new Store(position, null, area, position.toShortString(), "missing", null)
+                : new Store(position, alias.depot(), alias.area(), alias.name(), alias.status(), alias.contents()));
     }
 
     private static void addStores(ServerPlayer player, SettlementRecord town, SettlementArea area, SettlementStorageLinks storage,

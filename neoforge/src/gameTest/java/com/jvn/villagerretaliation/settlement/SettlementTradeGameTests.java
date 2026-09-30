@@ -336,6 +336,48 @@ public final class SettlementTradeGameTests {
         }
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void tradeProtectsConsumersAndSubtractsProductionCommitments(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var position = town.center().east(6);
+            var bakery = new SettlementArea(UUID.randomUUID(), SettlementAreaType.KITCHEN, "Bakery", position, position.offset(2, 2, 2), 5, true);
+            SettlementTestPlots.claim(level, town, position, bakery.max());
+            helper.assertTrue(town.putArea(town.leader(), bakery), "the bakery is registered");
+            town.setWorksitePlan(town.leader(), bakery.id(), SettlementWorksitePlan.defaults(bakery.type().role()));
+            var production = com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.create(level,
+                    com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("bread"), java.util.Map.of()),
+                    com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.Mode.BATCH, 4, fixture.depot().position());
+            var queue = town.beginProduction(town.leader(), bakery.id());
+            queue.append(production);
+            fixture.depot().setItem(0, new ItemStack(Items.WHEAT, 20));
+            var sale = order(Items.WHEAT, SettlementTradeOrder.Direction.SELL, 0, true);
+            SettlementTradeService.putOrder(fixture.leader(), town.id(), sale);
+            helper.assertValueEqual(SettlementTradeService.process(level, town, 1_000L).get(sale.id()).count(), 8, "only the eight surplus wheat are sold");
+            helper.assertValueEqual(SettlementTradeService.process(level, town, 1_200L).get(sale.id()).count(), 0, "the remaining twelve wheat are protected");
+            queue.pause(production.id(), true);
+            var jobs = new java.util.ArrayList<Runnable>();
+            SettlementTradeService.schedule(level, town, 1_400L, jobs);
+            var scheduled = jobs.getLast();
+            scheduled.run();
+            queue.pause(production.id(), false);
+            for (int step = 0; step < 10 && !SettlementWork.complete(scheduled); step++) scheduled.run();
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 12, "scheduled sales recheck consumers changed between work steps");
+            queue.pause(production.id(), true);
+            helper.assertValueEqual(SettlementTradeService.process(level, town, 1_600L).get(sale.id()).count(), 8, "pausing releases future consumer protection");
+            SettlementTradeService.removeOrder(fixture.leader(), town.id(), sale.id());
+            queue.pause(production.id(), false);
+            queue.reserve(UUID.randomUUID(), production.id(), 1, 4, 0, null);
+            town.economy().credit(money(100));
+            SettlementTradeService.configureBudget(fixture.leader(), town.id(), CurrencyAmount.ZERO, money(100));
+            var purchase = order(Items.BREAD, SettlementTradeOrder.Direction.BUY, 6, true);
+            SettlementTradeService.putOrder(fixture.leader(), town.id(), purchase);
+            helper.assertValueEqual(SettlementTradeService.process(level, town, 1_800L).get(purchase.id()).count(), 2, "buying subtracts four committed loaves");
+            helper.assertValueEqual(SettlementTradeService.process(level, town, 2_000L).get(purchase.id()).count(), 0, "the same incoming supply cannot be purchased twice");
+        });
+    }
+
     private static SettlementTradeOrder order(Item item, SettlementTradeOrder.Direction direction, int target, boolean enabled) {
         return new SettlementTradeOrder(UUID.randomUUID(), direction, BuiltInRegistries.ITEM.getKey(item), target,
                 direction == SettlementTradeOrder.Direction.BUY ? money(100) : CurrencyAmount.ZERO, money(100), enabled);

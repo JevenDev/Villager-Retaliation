@@ -71,16 +71,26 @@ public final class HiredProductionStock {
         if (order.mode() != HiredProductionOrder.Mode.MAINTAIN_STOCK) return 0L;
         var commitments = HiredProductionCommitments.get(level);
         HiredProductionCommitments.observe(villager);
-        commitments.refresh(level, order.storage());
-        long incoming = commitments.count(order.storage(), order.output(), villager.getUUID());
-        if (incoming < 0L) return -1L;
-        var contributors = commitments.contributors(order.storage(), order.output());
+        long incoming = 0;
+        var contributors = new java.util.HashSet<java.util.UUID>();
+        for (var position : com.jvn.villagerretaliation.settlement.SettlementSupplyStock.positions(level, order.storage())) {
+            commitments.refresh(level, position);
+            long count = commitments.count(position, order.output(), villager.getUUID());
+            if (count < 0) return -1L;
+            incoming += count;
+            contributors.addAll(commitments.contributors(position, order.output()));
+        }
+        incoming += queue.allocations().stream().filter(allocation -> {
+            var allocated = queue.order(allocation.order());
+            return allocated.matches(order.output()) && !Objects.equals(allocated.storage(), order.storage())
+                    && com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(level, allocated.storage(), order.storage());
+        }).mapToLong(HiredProductionQueue.Allocation::remaining).sum();
         contributors.add(villager.getUUID());
         long stored = AssignedStorageService.productionStockAt(villager, order.storage(), stack -> matches(order.output(), stack), contributors);
         if (stored < 0L) return -1L;
         stored += incoming;
         var inventory = HiredJobInventory.getJobInventory(villager);
-        if (order.storage().equals(destination(HiredWorkStateStore.state(villager)))) {
+        if (com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(level, order.storage(), destination(HiredWorkStateStore.state(villager)))) {
             for (int slot : inventory.outputSlots()) {
                 var stack = inventory.getItem(slot);
                 if (matches(order.output(), stack)) stored += stack.getCount();

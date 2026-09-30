@@ -97,7 +97,8 @@ public final class SettlementProductionService {
             if (legacyCount >= 32) blocker = "Converting the legacy orders would leave no room for the new order";
         }
         var stock = new LinkedHashMap<UUID, Long>();
-        if (queue != null) queue.orders().forEach(order -> stock.put(order.id(), SettlementProductionStock.count(level, town, queue, order)));
+        var supply = new SettlementSupplyStock.Snapshot(level, town);
+        if (queue != null) queue.orders().forEach(order -> stock.put(order.id(), SettlementProductionStock.count(level, town, queue, order, supply)));
         return new ProductionSnapshotPayload(level.dimension().location(), target, request.request(),
                 applied, area.type().role(), area.name(), permits(player, town, area.id()) && blocker.isEmpty(), blocker, feedback,
                 queue == null ? null : queue.save(level.registryAccess()), legacyCount, legacy, storages, stock);

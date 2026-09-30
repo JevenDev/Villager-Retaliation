@@ -6,6 +6,11 @@ import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue;
+import com.jvn.villagerretaliation.interaction.work.courier.TransferManagementService;
+import com.jvn.villagerretaliation.network.ProductionTarget;
+import com.jvn.villagerretaliation.network.TransferRequestPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload;
 import com.jvn.villagerretaliation.network.SettlementViewRequestPayload;
@@ -14,6 +19,9 @@ import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementBuildingService;
 import com.jvn.villagerretaliation.settlement.SettlementCareService;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
+import com.jvn.villagerretaliation.settlement.SettlementDepotService;
+import com.jvn.villagerretaliation.settlement.SettlementWorksitePlan;
+import com.jvn.villagerretaliation.settlement.SettlementWorksiteService;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementSavedData;
 import com.jvn.villagerretaliation.settlement.SettlementViewService;
@@ -43,6 +51,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Marker;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
@@ -131,7 +141,9 @@ public final class SettlementMultiplayerAcceptance {
                         "checks", List.of("outsider access denied", "delegated view cannot grant itself authority or order guards",
                                 "authorized guard selection and movement order", "stale camera request rejected",
                                 "remote body remains vulnerable and unmoved", "damage closes view and releases chunks",
-                                "normal close releases chunks", "disconnect releases server tickets"),
+                                "normal close releases chunks", "disconnect releases server tickets",
+                                "competing shared transfer edits reject stale revisions", "finite and recurring orders survive TCP transport",
+                                "replayed append and revoked logistics edits preserve the shared queue"),
                         "simultaneousTicks", simultaneousTicks,
                         "peakSharedTickets", peakTickets,
                         "peakChunkPacketsPerTick", peakSends,
@@ -182,7 +194,7 @@ public final class SettlementMultiplayerAcceptance {
                 move.onPress();
                 clickWorld(screen, CENTER.offset(4, 0, 3).getBottomCenter());
                 commandStep = 2;
-            } else if (commandStep == 2 && screen.getNarrationMessage().getString().contains("\nMove")) {
+            } else if (commandStep == 2 && screen.getNarrationMessage().getString().contains("Temporary move")) {
                 verifyView(minecraft);
                 capture("peer-guard-order");
                 PacketDistributor.sendToServer(new SettlementViewRequestPayload(screen.session(), 1_000, CENTER.getX() + 3.5D, CENTER.getZ() + 0.5D, 32, false));
@@ -212,6 +224,16 @@ public final class SettlementMultiplayerAcceptance {
                 require(SettlementViewChunks.get(minecraft.level, CENTER.getX() >> 4, CENTER.getZ() >> 4) == null, "normal close clears remote client chunks");
                 write("peer-state.txt", "close_done");
             }
+        } else if (phase.equals("orders_stale") || phase.equals("orders_append") || phase.equals("orders_replay")) {
+            if (ticks == 10) PacketDistributor.sendToServer(transfer(
+                    phase.equals("orders_stale") ? 0 : 1, HiredTransferQueue.Mode.MAINTAIN_STOCK));
+            if (ticks == 40) write("peer-state.txt", phase + "_done");
+        } else if (phase.equals("orders_revoked")) {
+            if (ticks == 10) PacketDistributor.sendToServer(new TransferRequestPayload(
+                    new ProductionTarget(fixture.town(), fixture.courier()), UUID.randomUUID(),
+                    Long.parseLong(read("queue-revision.txt")), new TransferRequestPayload.Edit(
+                    UUID.fromString(read("queue-order.txt")), HiredTransferQueue.Edit.CANCEL, 0)));
+            if (ticks == 40) write("peer-state.txt", "orders_revoked_done");
         } else if (phase.equals("disconnect")) {
             openView(minecraft);
             if (minecraft.screen instanceof SettlementViewScreen && ++viewTicks >= 50) {
@@ -262,7 +284,7 @@ public final class SettlementMultiplayerAcceptance {
             require(town.setPermissions(leader, peer.getUUID(), Set.of(SettlementPermission.VIEW, SettlementPermission.STAFF)), "the leader grants independent staffing authority");
             next("staff", now);
         } else if (hostPhase.equals("staff") && ack.equals("staff_done")) {
-            require(moveOrder().equals(town.guardOrders().get(fixture.resident())), "the authorized world click applies the exact guard order");
+            require(moveOrder().equals(town.temporaryGuardOrders().get(fixture.resident())), "the authorized world click applies the exact guard order");
             verifyBody(peer);
             require(peer.hurt(peer.damageSources().generic(), 1.0F), "the viewing player's survival body accepts damage");
             next("damage", now);
@@ -271,13 +293,42 @@ public final class SettlementMultiplayerAcceptance {
             next("close", now);
         } else if (hostPhase.equals("close") && ack.equals("close_done") && now - phaseStarted >= 30) {
             require(!ticketed(server), "normal view close releases remote server tickets");
+            require(town.setPermissions(leader, peer.getUUID(), Set.of(SettlementPermission.VIEW,
+                    SettlementPermission.STAFF, SettlementPermission.LOGISTICS)), "the peer can edit the shared courier queue");
+            require(TransferManagementService.apply(server.getPlayerList().getPlayer(leader),
+                    transfer(0, HiredTransferQueue.Mode.FINITE)).isEmpty(), "the host commits its transfer before the peer's stale edit");
+            next("orders_stale", now);
+        } else if (hostPhase.equals("orders_stale") && ack.equals("orders_stale_done")) {
+            var queue = town.transferQueues().get(fixture.courier());
+            require(queue.orders().size() == 1 && queue.revision() == 1,
+                    "the peer's stale recurring append cannot duplicate the host's finite order");
+            next("orders_append", now);
+        } else if (hostPhase.equals("orders_append") && ack.equals("orders_append_done")) {
+            var queue = town.transferQueues().get(fixture.courier());
+            require(queue.orders().size() == 2 && queue.revision() == 2
+                    && queue.orders().getFirst().mode() == HiredTransferQueue.Mode.FINITE
+                    && queue.orders().getLast().mode() == HiredTransferQueue.Mode.MAINTAIN_STOCK,
+                    "both transfer modes arrive intact through the native multiplayer handler");
+            next("orders_replay", now);
+        } else if (hostPhase.equals("orders_replay") && ack.equals("orders_replay_done")) {
+            var queue = town.transferQueues().get(fixture.courier());
+            require(queue.orders().size() == 2 && queue.revision() == 2, "replaying the peer append preserves exactly two orders");
+            write("queue-revision.txt", Long.toString(queue.revision()));
+            write("queue-order.txt", queue.orders().getFirst().id().toString());
+            require(town.setPermissions(leader, peer.getUUID(), Set.of(SettlementPermission.VIEW, SettlementPermission.STAFF)),
+                    "the host revokes logistics before the peer submits its pending edit");
+            next("orders_revoked", now);
+        } else if (hostPhase.equals("orders_revoked") && ack.equals("orders_revoked_done")) {
+            var queue = town.transferQueues().get(fixture.courier());
+            require(queue.orders().size() == 2 && queue.revision() == 2 && !queue.orders().getFirst().cancelled(),
+                    "revoked logistics rejects the peer's current-revision cancellation");
             next("disconnect", now);
         } else if (hostPhase.equals("disconnect") && ack.equals("disconnected") && peer == null) {
             next("cleanup", now);
         } else if (hostPhase.equals("cleanup") && now - phaseStarted >= 40 && peerProcess != null && !peerProcess.isAlive()) {
             require(!ticketed(server), "disconnect releases every remote server ticket");
             require(SettlementViewService.viewers(server.overworld(), new ChunkPos(CENTER)).isEmpty(), "disconnect removes the viewing session");
-            require(town.duties().containsKey(fixture.resident()) && moveOrder().equals(town.guardOrders().get(fixture.resident())),
+            require(town.duties().containsKey(fixture.resident()) && moveOrder().equals(town.temporaryGuardOrders().get(fixture.resident())),
                     "view lifecycle changes retain the resident's authoritative assignment and order");
             next("finished", now);
         }
@@ -310,6 +361,20 @@ public final class SettlementMultiplayerAcceptance {
         require(SettlementBuildingService.register(player, id, post), "the multiplayer guard post is registered");
         require(SettlementWorkforceService.assign(level, player, id, resident, post.id()), "the multiplayer resident is a civic guard");
         SettlementCareService.onUnloaded(resident);
+        var town = SettlementSavedData.get(level).get(id).orElseThrow();
+        var courier = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Shared courier",
+                CENTER.offset(-6, 0, 4), CENTER.offset(-3, 2, 6), 5, true);
+        com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, town, courier.min(), courier.max());
+        require(SettlementBuildingService.register(player, id, courier), "the shared courier worksite is registered");
+        require(SettlementWorksiteService.configure(player, town, courier.id(),
+                SettlementWorksitePlan.defaults(HiredVillagerRole.COURIER), true), "the shared courier settings are adopted");
+        player.setPos(courier.min().getCenter());
+        for (var position : List.of(courier.min(), courier.min().east(3))) {
+            level.setBlockAndUpdate(position, com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+            require(SettlementDepotService.register(player, position), "shared transfer storage is registered");
+        }
+        UUID source = town.depots().values().stream().filter(depot -> depot.position().equals(courier.min())).findFirst().orElseThrow().id();
+        UUID destination = town.depots().values().stream().filter(depot -> depot.position().equals(courier.min().east(3))).findFirst().orElseThrow().id();
         for (var pos : BlockPos.betweenClosed(new BlockPos(-3, -61, -3), new BlockPos(3, -61, 3))) level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
         player.connection.teleport(BODY.x, BODY.y, BODY.z, 0, 0);
         try {
@@ -320,7 +385,7 @@ public final class SettlementMultiplayerAcceptance {
             }
             server.setUsesAuthentication(false);
             server.getConnection().startTcpServerListener(loopback, port);
-            var result = new Fixture(id.value(), resident.getUUID(), post.id(), port);
+            var result = new Fixture(id.value(), resident.getUUID(), post.id(), courier.id(), source, destination, port);
             write("fixture.json", new Gson().toJson(result));
             return result;
         } catch (IOException exception) {
@@ -381,6 +446,12 @@ public final class SettlementMultiplayerAcceptance {
 
     private static SettlementGuardOrder moveOrder() {
         return new SettlementGuardOrder(SettlementGuardOrder.Mode.MOVE, List.of(CENTER.offset(4, 0, 3)));
+    }
+
+    private static TransferRequestPayload transfer(long revision, HiredTransferQueue.Mode mode) {
+        return new TransferRequestPayload(new ProductionTarget(fixture.town(), fixture.courier()), UUID.randomUUID(), revision,
+                new TransferRequestPayload.Append(new HiredTransferQueue.Endpoint(CENTER.offset(-6, 0, 4), fixture.source()),
+                        new HiredTransferQueue.Endpoint(CENTER.offset(-3, 0, 4), fixture.destination()), new ItemStack(Items.WHEAT), 12, mode));
     }
 
     private static void action(SettlementManagementActionPayload.Command command) {
@@ -447,6 +518,6 @@ public final class SettlementMultiplayerAcceptance {
         if (!condition) throw new IllegalStateException(message);
     }
 
-    private record Fixture(UUID town, UUID resident, UUID area, int port) {
+    private record Fixture(UUID town, UUID resident, UUID area, UUID courier, UUID source, UUID destination, int port) {
     }
 }

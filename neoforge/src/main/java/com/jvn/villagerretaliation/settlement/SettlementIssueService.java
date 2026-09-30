@@ -19,6 +19,15 @@ final class SettlementIssueService {
     }
 
     static List<Issue> issues(ServerLevel level, SettlementRecord town, SettlementProgressionService.Status progression) {
+        return issues(level, town, progression, SettlementDemandViewService.demands(level, town));
+    }
+
+    static List<Issue> issues(net.minecraft.server.level.ServerPlayer player, SettlementRecord town, SettlementProgressionService.Status progression) {
+        return issues(player.serverLevel(), town, progression, SettlementDemandViewService.demands(player, town));
+    }
+
+    static List<Issue> issues(ServerLevel level, SettlementRecord town, SettlementProgressionService.Status progression,
+                               List<com.jvn.villagerretaliation.network.SettlementManagementPayload.Demand> demands) {
         List<Issue> issues = new ArrayList<>();
         for (var missing : progression.missing()) {
             Page target = switch (missing) {
@@ -78,6 +87,11 @@ final class SettlementIssueService {
             if (!SettlementWorkerDiagnostics.diagnostic("trade." + cause).severity().attention()) continue;
             issues.add(new Issue(identity(town, "trade:" + order.id()), bounded(order.sample().getHoverName().getString(), 128),
                     IssueKind.TRADE, cause, "", Page.TRADE, order.id(), null, null, false));
+        }
+        for (var demand : demands) {
+            if (demand.cause() == SettlementSupplyRecovery.Cause.READY) continue;
+            issues.add(new Issue(demand.id(), demand.name(), IssueKind.SUPPLY, demand.cause().name().toLowerCase(Locale.ROOT),
+                    demand.advice(), Page.DEMAND, demand.id(), null, demand.area(), false));
         }
         String simulation = SettlementSimulationService.suspension(level, town);
         if (!simulation.isEmpty()) {

@@ -181,6 +181,17 @@ public final class HiredBrewingRecipeCatalog {
         return choices;
     }
 
+    public static int currentStep(net.minecraft.server.level.ServerLevel level, List<ItemStack> items, BrewingRoute route) {
+        ItemStack expected = PotionContents.createItemStack(Items.POTION, Potions.WATER);
+        for (int step = 0; step <= route.ingredients().size(); step++) {
+            boolean matches = true;
+            for (int slot = 0; slot < 3; slot++) matches &= items.get(slot).isEmpty() || ItemStack.isSameItemSameComponents(items.get(slot), expected);
+            if (matches) return step;
+            if (step < route.ingredients().size()) expected = level.potionBrewing().mix(new ItemStack(route.ingredients().get(step)), expected);
+        }
+        return -1;
+    }
+
     public static boolean isWaterPotion(ItemStack stack) {
         return stack != null
                 && stack.is(Items.POTION)

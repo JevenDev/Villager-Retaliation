@@ -292,7 +292,7 @@ public final class SettlementManagementScreen extends Screen {
     private int extraActionHeight() {
         int count = switch (this.desiredPage) {
             case RESIDENTS -> 7;
-            case SUMMARY, AREAS, SUPPLY_LINKS -> 5;
+            case SUMMARY, AREAS, SUPPLY_LINKS, DEMAND -> 5;
             case PROJECTS, ISSUES -> 4;
             default -> 3;
         };
@@ -426,6 +426,14 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         switch (this.desiredPage) {
+            case DEMAND -> {
+                action(0, "demand_open", selected instanceof SettlementManagementPayload.Demand);
+                action(1, "supply_storage", selected instanceof SettlementManagementPayload.Demand);
+                action(2, "supply_focus", selected instanceof SettlementManagementPayload.Demand);
+                action(3, "supply_worksite", selected instanceof SettlementManagementPayload.Demand);
+                action(4, "demand_transfer", selected instanceof SettlementManagementPayload.Demand demand && demand.courier() != null
+                        && permits(SettlementPermission.STAFF) && permits(SettlementPermission.LOGISTICS));
+            }
             case SUPPLIES -> {
                 action(0, "supply_details", selected instanceof SettlementManagementPayload.Supply);
                 action(1, "supply_storage", selected instanceof SettlementManagementPayload.Supply supply && supply.area() != null);
@@ -552,6 +560,9 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         switch (this.desiredPage) {
+            case DEMAND -> {
+                if (selected instanceof SettlementManagementPayload.Demand demand) SettlementDemandView.open(this, demand, action);
+            }
             case SUPPLIES -> {
                 if (action == 2) navigate(Page.PROJECTS, 0, "");
                 else if (selected instanceof SettlementManagementPayload.Supply supply) {
@@ -841,7 +852,7 @@ public final class SettlementManagementScreen extends Screen {
             return switch (issue.kind()) {
                 case PROGRESSION -> text("issue_progression");
                 case SIMULATION -> text("issue_simulation");
-                case WORKER, PROJECT, TRADE, RESIDENT -> text("issue_" + issue.kind().name().toLowerCase(Locale.ROOT),
+                case WORKER, PROJECT, TRADE, RESIDENT, SUPPLY -> text("issue_" + issue.kind().name().toLowerCase(Locale.ROOT),
                         issue.name().isBlank() ? text("unnamed_resident") : Component.literal(issue.name()));
             };
         }
@@ -868,16 +879,17 @@ public final class SettlementManagementScreen extends Screen {
 
     static Component detail(Entry entry) {
         return switch (entry) {
+            case SettlementManagementPayload.Demand demand -> SettlementDemandView.detail(demand);
             case SettlementManagementPayload.Supply supply -> SettlementSupplyView.detail(supply);
             case SettlementManagementPayload.SupplyLink link -> SettlementSupplyView.detail(link);
             case SettlementManagementPayload.Issue issue -> {
-                if (issue.kind() == SettlementManagementPayload.IssueKind.WORKER && !issue.detail().isBlank()) {
+                if ((issue.kind() == SettlementManagementPayload.IssueKind.WORKER || issue.kind() == SettlementManagementPayload.IssueKind.SUPPLY) && !issue.detail().isBlank()) {
                     yield Component.literal(issue.detail());
                 }
                 String key = switch (issue.kind()) {
                     case PROGRESSION -> "villagerretaliation.gui.settlement.requirement." + issue.cause();
                     case PROJECT -> "villagerretaliation.gui.settlement.project_blocker." + issue.cause();
-                    case TRADE, RESIDENT, SIMULATION -> "villagerretaliation.gui.settlement.issue." + issue.cause();
+                    case TRADE, RESIDENT, SIMULATION, SUPPLY -> "villagerretaliation.gui.settlement.issue." + issue.cause();
                     case WORKER -> issue.cause().startsWith("workforce.")
                             ? "villagerretaliation.gui.clipboard_workforce.status." + issue.cause().substring("workforce.".length())
                             : "villagerretaliation.gui.settlement.work." + issue.cause();
@@ -991,7 +1003,9 @@ public final class SettlementManagementScreen extends Screen {
             fitted(graphics, this.secondary, x + 3, y + 15, width - 8, 0xD0D0D0);
             if (hovered) {
                 List<Component> lines = new ArrayList<>(List.of(this.primary, this.secondary));
-                if (this.entry instanceof SettlementManagementPayload.Supply supply) {
+                if (this.entry instanceof SettlementManagementPayload.Demand demand) {
+                    lines.addAll(SettlementDemandView.tooltip(demand));
+                } else if (this.entry instanceof SettlementManagementPayload.Supply supply) {
                     lines.addAll(SettlementSupplyView.tooltip(supply));
                 } else if (this.entry instanceof SettlementManagementPayload.SupplyLink link) {
                     lines.addAll(SettlementSupplyView.tooltip(link));

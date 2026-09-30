@@ -26,7 +26,7 @@ public final class SettlementDemandService {
 
     public enum Kind { PRODUCTION, PROJECT }
     public record Demand(UUID consumer, UUID area, Kind kind, String name, WorkSupplyRequirement requirement,
-                         long supplied, long missing, List<BlockPos> sources, String blocker) {
+                         long supplied, long missing, long immediateMissing, List<BlockPos> sources, String blocker) {
         public Demand { sources = List.copyOf(sources); }
     }
 
@@ -38,14 +38,28 @@ public final class SettlementDemandService {
         private final Map<UUID, List<ItemStack>> carried = new LinkedHashMap<>();
         private final List<Demand> demands = new ArrayList<>();
         private boolean unknown;
+        private final net.minecraft.server.level.ServerPlayer viewer;
 
-        private Snapshot(ServerLevel level, SettlementRecord town) {
+        private Snapshot(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer) {
             this.level = level;
+            this.viewer = viewer;
             this.town = town;
             this.stock = new SettlementSupplyStock.Snapshot(level, town);
         }
 
+        public boolean visible(BlockPos position) {
+            return this.viewer == null || !AssignedStorageService.containerLoaded(this.level, position)
+                    || com.jvn.villagerretaliation.inventory.PartyContainerLootService.isAvailable(this.level, position, this.viewer);
+        }
+
         public List<Demand> demands() { return List.copyOf(this.demands); }
+        SettlementSupplyStock.Snapshot stock() { return this.stock; }
+
+        public long covered(BlockPos position, ItemStack sample) {
+            var stocks = store(position);
+            return stocks == null ? 0 : stocks.stream().filter(stock -> HiredProductionStock.matches(stock.sample, sample))
+                    .mapToLong(stock -> stock.used).sum();
+        }
 
         public void sold(SettlementDepot depot, ItemStack sample) {
             var stocks = store(depot.position());
@@ -73,7 +87,7 @@ public final class SettlementDemandService {
         private List<Stock> store(BlockPos position) {
             var key = SettlementSupplyStock.positions(this.level, position).getFirst();
             if (this.stores.containsKey(key)) return this.stores.get(key);
-            var contents = SettlementSupplyStock.contents(this.level, this.town, key);
+            var contents = visible(key) ? SettlementSupplyStock.contents(this.level, this.town, key) : null;
             List<Stock> result = null;
             if (contents != null) {
                 result = new ArrayList<>();
@@ -146,7 +160,7 @@ public final class SettlementDemandService {
         }
 
         private void add(UUID consumer, UUID area, Kind kind, String name, WorkSupplyRequirement requirement,
-                         List<BlockPos> sources, List<UUID> workers, List<ItemStack> privateSupplies, long progress, String blocker) {
+                         List<BlockPos> sources, List<UUID> workers, List<ItemStack> privateSupplies, long progress, long immediate, String blocker) {
             long remaining = Math.max(0, requirement.quantity() - progress);
             remaining = consume(privateSupplies, requirement, remaining);
             for (var worker : workers) remaining = consume(carried(worker), requirement, remaining);
@@ -172,14 +186,15 @@ public final class SettlementDemandService {
             String reason = !known && remaining > 0 ? "storage_unavailable" : remaining > 0 ? "missing_materials" : "";
             if (!blocker.isBlank()) reason = blocker;
             this.demands.add(new Demand(consumer, area, kind, name, requirement,
-                    requirement.quantity() - remaining, !known && remaining > 0 ? -1 : remaining, sources, reason));
+                    requirement.quantity() - remaining, !known && remaining > 0 ? -1 : remaining,
+                    !known && remaining > 0 ? -1 : Math.max(0, immediate - (requirement.quantity() - remaining)), sources, reason));
         }
 
         private void unknown(UUID consumer, UUID area, Kind kind, String name, List<BlockPos> sources, String blocker) {
             this.unknown = true;
             this.demands.add(new Demand(consumer, area, kind, name,
                     new WorkSupplyRequirement("unknown", List.of(), 0, WorkSupplyRequirement.Unit.ITEMS, stack -> false, null),
-                    0, -1, sources, blocker));
+                    0, -1, -1, sources, blocker));
         }
 
         private void production(SettlementArea area, HiredProductionQueue queue) {
@@ -190,7 +205,7 @@ public final class SettlementDemandService {
             for (var order : queue.orders()) {
                 boolean active = enabled && order.runnable();
                 long stock = order.mode() == HiredProductionOrder.Mode.MAINTAIN_STOCK
-                        ? SettlementProductionStock.count(this.level, this.town, queue, order) : 0;
+                        ? SettlementProductionStock.count(this.level, this.town, queue, order, this.stock) : 0;
                 if (active && stock < 0) unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, "output_storage_unavailable");
                 long amount = !active || stock < 0 ? 0 : order.mode() == HiredProductionOrder.Mode.CONTINUOUS
                         ? order.output().getCount() : queue.available(order.id(), stock);
@@ -255,10 +270,15 @@ public final class SettlementDemandService {
                     !this.level.hasChunkAt(position) || SettlementBuildingSurvey.waterSource(this.level.getBlockState(position)));
             var plan = WorkProductionDemand.describe(this.level, order.recipe(), amount, available, water);
             if (!plan.blocker().isEmpty()) { unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, plan.blocker()); return; }
+            var next = WorkProductionDemand.describe(this.level, order.recipe(),
+                    Math.min(amount, order.recipe().recipe() == null ? 3 : order.output().getCount()), available, water);
             for (var need : plan.requirements()) add(order.id(), area.id(), Kind.PRODUCTION, area.name(), need, sources, workers,
                     privateSupplies, need.unit() == WorkSupplyRequirement.Unit.BURN_TICKS ? burn
                             : need.unit() == WorkSupplyRequirement.Unit.BREW_USES ? uses
-                            : need.unit() == WorkSupplyRequirement.Unit.WATER_FILLS && water ? need.quantity() : 0, order.blocker());
+                            : need.unit() == WorkSupplyRequirement.Unit.WATER_FILLS && water ? need.quantity() : 0,
+                    next.requirements().stream().filter(value -> value.unit() == need.unit() && value.key().equals(need.key())
+                            && (value.alternatives().isEmpty() || value.alternatives().stream().anyMatch(sample -> need.value(sample) > 0)))
+                            .mapToLong(WorkSupplyRequirement::quantity).sum(), order.blocker());
         }
 
         private void project(SettlementProject project) {
@@ -288,13 +308,17 @@ public final class SettlementDemandService {
                 var sample = new ItemStack(entry.getKey());
                 add(project.id(), project.area(), Kind.PROJECT, project.label(),
                         new WorkSupplyRequirement("construction", List.of(sample), entry.getValue(), WorkSupplyRequirement.Unit.ITEMS,
-                                stack -> BuilderStructureScanner.sameMaterial(stack, sample), null), sources, workers, new ArrayList<>(), 0, project.blocker());
+                                stack -> BuilderStructureScanner.sameMaterial(stack, sample), null), sources, workers, new ArrayList<>(), 0, 1, project.blocker());
             }
         }
     }
 
     public static Snapshot inspect(ServerLevel level, SettlementRecord town) {
-        var snapshot = new Snapshot(level, town);
+        return inspect(level, town, null);
+    }
+
+    public static Snapshot inspect(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer) {
+        var snapshot = new Snapshot(level, town, viewer);
         record Consumer(int priority, UUID id, Runnable run) { }
         var consumers = new ArrayList<Consumer>();
         for (var queue : town.productionQueues().values()) {

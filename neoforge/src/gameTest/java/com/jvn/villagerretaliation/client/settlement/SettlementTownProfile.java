@@ -37,6 +37,7 @@ import org.lwjgl.glfw.GLFW;
 public final class SettlementTownProfile {
     private static final String OUTPUT = "villagerretaliation.settlementTownProfile";
     private static final int SAMPLE_TICKS = 600;
+    private static final Map<Stage, List<Long>> DEMAND_TIMES = new EnumMap<>(Stage.class);
     private static final Map<Stage, List<Long>> SERVER_TIMES = new EnumMap<>(Stage.class);
     private static final Map<Stage, List<Long>> FRAME_INTERVALS = new EnumMap<>(Stage.class);
     private static final Map<Stage, List<Integer>> NATIVE_RESIDENTS = new EnumMap<>(Stage.class);
@@ -194,6 +195,13 @@ public final class SettlementTownProfile {
         }
         ServerPlayer player = event.getServer().getPlayerList().getPlayer(playerId);
         require(player != null, "the observing client remains connected");
+        if (stage.sampled() && stageTicks % 20 == 0) {
+            long queryStarted = System.nanoTime();
+            var demand = fixture.demand(player);
+            DEMAND_TIMES.computeIfAbsent(stage, ignored -> new ArrayList<>()).add(System.nanoTime() - queryStarted);
+            require(demand != null && demand.header() != null && demand.entries().size() <= com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.PAGE_SIZE,
+                    "demand queries return bounded, authorized pages in loaded and background towns");
+        }
         if (stageTicks % 100 == 0) {
             latest = fixture.snapshot(player);
             LogUtils.getLogger().info("Settlement town profile {} tick {}: {}", stage, stageTicks, latest);
@@ -291,6 +299,7 @@ public final class SettlementTownProfile {
         report.put("scenario", "Seeded City fixture, 100 AI-enabled residents, 100 assigned beds, 32 farmers, 32 couriers, 32 guards and 4 blueprint builders");
         report.put("scope", "Performance and loaded/background reconciliation. Founding and progression gates require separate acceptance coverage.");
         report.put("serverMeasurement", "Highest-priority ServerTickEvent.Pre through lowest-priority ServerTickEvent.Post, including settlement post-tick work and excluding benchmark probes");
+        report.put("demandMeasurement", "One authorized Demand page query every 20 sampled ticks, measured separately from server ticks");
         report.put("clientMeasurement", "Intervals between rendered frame starts at 1280x720, GUI scale 2, render distance 6, 120 FPS cap, VSync disabled");
         report.put("screenshots", "Captured during warmup, outside the measured intervals");
         report.put("operatingSystem", System.getProperty("os.name") + " " + System.getProperty("os.version"));
@@ -309,6 +318,7 @@ public final class SettlementTownProfile {
                     "nativeResidentsMaximum", NATIVE_RESIDENTS.get(sample).stream().mapToInt(Integer::intValue).max().orElseThrow(),
                     "renderedResidentsPerFrame", summarizeCounts(RENDERED_RESIDENTS.getOrDefault(sample, List.of())),
                     "serverTickMilliseconds", summarize(serverTimes),
+                    "demandQueryMilliseconds", summarize(DEMAND_TIMES.getOrDefault(sample, List.of())),
                     "frameIntervalMilliseconds", summarize(FRAME_INTERVALS.getOrDefault(sample, List.of()))));
         }
         report.put("measurements", stages);

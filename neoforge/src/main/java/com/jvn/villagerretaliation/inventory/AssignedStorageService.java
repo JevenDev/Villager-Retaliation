@@ -720,6 +720,27 @@ public final class AssignedStorageService {
         return ItemStack.EMPTY;
     }
 
+    public static List<ItemStack> productionSupplies(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) return List.of();
+        var result = new ArrayList<ItemStack>();
+        for (var source : liveInputContainerCandidates(level, villager)) {
+            var resolution = ContainerFilterResolver.resolve(level, source);
+            if (!resolution.live()) continue;
+            var reserved = new ArrayList<ItemStack>();
+            for (int slot = 0; slot < source.container().getContainerSize(); slot++) {
+                var stack = source.container().getItem(slot);
+                if (stack.isEmpty()) continue;
+                int count = Math.min(stack.getCount(), sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), reserved));
+                if (count > 0) {
+                    var accepted = stack.copyWithCount(count);
+                    reserved.add(accepted);
+                    result.add(accepted);
+                }
+            }
+        }
+        return List.copyOf(result);
+    }
+
     public static boolean reserveProductionInputs(Villager villager, Map<net.minecraft.world.item.Item, Integer> needs) {
         if (needs.size() > 64 || needs.values().stream().anyMatch(count -> count == null || count < 1 || count > 4096)) return false;
         return reserveProductionNeeds(villager, needs.entrySet().stream().map(entry ->

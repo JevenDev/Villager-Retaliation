@@ -59,7 +59,7 @@ public final class SettlementSupplyChainGameTests {
             var storage = town.areas().get(fixture.supply().area());
             town.setWorksitePlan(town.leader(), storage.id(), SettlementWorksitePlan.defaults(storage.type().role()));
             var courier = worker(helper, town, storage, root.east(7), Items.AIR);
-            var transfer = transfer(town, storage, fixture.output(), fixture.supply(), Items.WHEAT, 3);
+            var transfer = transfer(town, storage, fixture.output(), fixture.supply(), Items.WHEAT, 3, HiredTransferQueue.Mode.MAINTAIN_STOCK);
             var kitchen = area(helper, town, SettlementAreaType.KITCHEN, "Bakery", root.north(4), root.offset(2, 2, -2));
             var food = depot(town, storage, root.east(10), SettlementDepotPurpose.FOOD);
             var links = new SettlementWorksiteLinks(Set.of(fixture.supply().id()), Set.of(food.id()), Set.of());
@@ -82,7 +82,7 @@ public final class SettlementSupplyChainGameTests {
                 SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(cook.id()), 200, 1.0D);
                 SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(partner.id()), 200, 1.0D);
             }
-            helper.assertValueEqual(restored.transferQueues().get(storage.id()).order(transfer.id()).delivered(), 3L, "one finite shipment supplies the kitchen");
+            helper.assertValueEqual(restored.transferQueues().get(storage.id()).order(transfer.id()).delivered(), 3L, "the recurring shipment supplies the kitchen once");
             helper.assertValueEqual(restored.productionQueues().get(kitchen.id()).order(order.id()).produced(), 1L, "two cooks share one maintained meal target");
             helper.assertValueEqual(restored.depots().get(food.id()).count(stack -> stack.is(Items.BREAD)), 1, "the requested meal reaches food storage");
             helper.assertValueEqual(count(helper, restored, Items.WHEAT), 0, "one native bread recipe consumes exactly three harvested wheat");
@@ -92,6 +92,15 @@ public final class SettlementSupplyChainGameTests {
             helper.assertValueEqual(fulfilled.stored(), 1L, "the overview observes the finished meal after reload");
             helper.assertValueEqual(fulfilled.incoming(), 0L, "completed work is no longer incoming");
             helper.assertValueEqual(fulfilled.shortage(), 0L, "the real supply chain resolves its displayed shortage");
+            restored.depots().get(food.id()).removeItem(0, 1);
+            restored.depots().get(fixture.output().id()).setItem(0, new ItemStack(Items.WHEAT, 3));
+            for (int tick = 0; tick < 40; tick++) {
+                SettlementBackgroundTransfers.tick(level, restored, restored.workers().get(courier.id()), 200, 1.0D);
+                SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(cook.id()), 200, 1.0D);
+                SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(partner.id()), 200, 1.0D);
+            }
+            helper.assertValueEqual(restored.transferQueues().get(storage.id()).order(transfer.id()).delivered(), 6L, "a recurring delivery supplies the next harvest after consumption");
+            helper.assertValueEqual(restored.productionQueues().get(kitchen.id()).order(order.id()).produced(), 2L, "maintained bread production replenishes the consumed meal once");
             for (var plot : restored.fields().values()) helper.assertTrue(plot.reconcile(fixture.chunk()), "returned crops accept their durable harvest receipts");
             var returning = EntityType.VILLAGER.create(level);
             returning.setUUID(cook.id());
@@ -140,6 +149,9 @@ public final class SettlementSupplyChainGameTests {
             var shipment = transfer(town, storage, finished, fixture.depot(), Items.OAK_PLANKS, 16);
             for (int tick = 0; tick < 10; tick++) SettlementBackgroundTransfers.tick(level, town, courier, 200, 1.0D);
             helper.assertValueEqual(town.transferQueues().get(storage.id()).order(shipment.id()).delivered(), 16L, "one finite material transfer supplies construction");
+            var needs = SettlementDemandService.inspect(level, town).demands().stream().filter(row -> row.consumer().equals(fixture.project().id())).toList();
+            helper.assertValueEqual(needs.stream().mapToLong(row -> row.requirement().quantity()).sum(), 16L, "a cooperative crew shares one set of placement requirements");
+            helper.assertValueEqual(SettlementDemandService.inspect(level, town).sellable(fixture.depot(), new ItemStack(Items.OAK_PLANKS)), 0, "project requirements protect delivered planks");
             SettlementBackgroundConstruction.tick(level, town, fixture.worker(), 400, 1.0D);
             SettlementBackgroundConstruction.tick(level, town, town.workers().get(assistant.getUUID()), 400, 1.0D);
             var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
@@ -208,8 +220,13 @@ public final class SettlementSupplyChainGameTests {
 
     private static HiredTransferQueue.Order transfer(SettlementRecord town, SettlementArea area, SettlementDepot source,
                                                        SettlementDepot destination, Item item, int count) {
+        return transfer(town, area, source, destination, item, count, HiredTransferQueue.Mode.FINITE);
+    }
+
+    private static HiredTransferQueue.Order transfer(SettlementRecord town, SettlementArea area, SettlementDepot source,
+                                                       SettlementDepot destination, Item item, int count, HiredTransferQueue.Mode mode) {
         var order = HiredTransferQueue.Order.create(new HiredTransferQueue.Endpoint(source.position(), source.id()),
-                new HiredTransferQueue.Endpoint(destination.position(), destination.id()), new ItemStack(item), count);
+                new HiredTransferQueue.Endpoint(destination.position(), destination.id()), new ItemStack(item), count, mode);
         if (!town.beginTransfers(town.leader(), area.id()).append(order)) throw new IllegalStateException("Cannot add supply-chain transfer");
         return order;
     }

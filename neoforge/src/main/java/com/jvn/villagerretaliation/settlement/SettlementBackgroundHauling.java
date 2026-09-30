@@ -32,13 +32,13 @@ final class SettlementBackgroundHauling {
         SettlementDepot source = town.depots().get(task.source());
         SettlementDepot destination = town.depots().get(task.destination());
         ItemStack sample = task.sample();
-        int reservedSource = AssignedStorageService.reservedItemCount(level, source.position(), null,
-                VillagerFilterPolicy.TransferOperation.PROVIDE, sample);
-        int available = source.count(task::matches) - Math.max(0, SettlementLogisticsService.requestedTarget(level, town, source, sample))
-                - reservedSource;
-        int reservedDestination = AssignedStorageService.reservedItemCount(level, destination.position(), null,
-                VillagerFilterPolicy.TransferOperation.RECEIVE, sample);
-        int needed = task.target() - destination.count(task::matches) - reservedDestination;
+        var stocks = new SettlementSupplyStock.Snapshot(level, town);
+        var sourceStock = stocks.observe(source.position(), sample, null);
+        var destinationStock = stocks.observe(destination.position(), sample, null);
+        if (!sourceStock.known() || !destinationStock.known()) { worker.status("storage_unavailable"); return; }
+        int available = (int) Math.max(0, sourceStock.available()
+                - Math.max(0, SettlementLogisticsService.requestedTarget(level, town, source, sample)));
+        int needed = (int) Math.max(0, task.target() - destinationStock.stored() - destinationStock.incoming());
         int count = Math.min(Math.min(available, needed), HiredVillagerRoles.courierTransferLimit(worker.aptitude()));
         count = Math.min(count, Math.min(receiveAllowance(level, destination, sample),
                 SettlementLogisticsService.framedAllowance(level, source, sample, VillagerFilterPolicy.TransferOperation.PROVIDE, true)));

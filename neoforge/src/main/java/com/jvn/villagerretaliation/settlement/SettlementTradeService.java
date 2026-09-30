@@ -129,7 +129,6 @@ public final class SettlementTradeService {
             if (!orders.isEmpty()) java.util.Collections.rotate(orders, -(int) Math.floorMod(now / 200L, orders.size()));
             int[] remaining = {workCapacity(level, town, activeClerks(level, town, false))};
             var results = new LinkedHashMap<UUID, Result>();
-            var protection = SettlementDemandService.inspect(level, town);
             return SettlementWork.each(orders, id -> {
                 var order = town.economy().orders().get(id);
                 if (order == null) return;
@@ -142,7 +141,7 @@ public final class SettlementTradeService {
                 else if (remaining[0] == 0) result = Result.blocked(Status.BUSY);
                 else {
                     result = order.direction() == SettlementTradeOrder.Direction.BUY
-                            ? buy(level, town, order, remaining[0]) : sell(level, town, order, remaining[0], protection);
+                            ? buy(level, town, order, remaining[0]) : sell(level, town, order, remaining[0], SettlementDemandService.inspect(level, town));
                     remaining[0] -= result.count();
                 }
                 results.put(id, result);

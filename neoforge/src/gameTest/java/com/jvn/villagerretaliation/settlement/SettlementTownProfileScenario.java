@@ -255,6 +255,11 @@ public final class SettlementTownProfileScenario {
         return true;
     }
 
+    public com.jvn.villagerretaliation.network.SettlementManagementPayload demand(ServerPlayer player) {
+        return SettlementManagementService.snapshot(player, new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(
+                town.id().value(), com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.DEMAND, 0, "", 0, false));
+    }
+
     public Snapshot snapshot(ServerPlayer player) {
         int loaded = 0;
         int ticking = 0;

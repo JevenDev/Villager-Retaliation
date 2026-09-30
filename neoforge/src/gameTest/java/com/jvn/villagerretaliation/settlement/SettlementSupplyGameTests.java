@@ -351,6 +351,121 @@ public final class SettlementSupplyGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_supplies")
+    public static void nativeDemandIncludesBrewingBatchesWaterAndContainerRemainders(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var brewing = HiredProductionRecipe.brewing(ResourceLocation.withDefaultNamespace("potion"), ResourceLocation.withDefaultNamespace("healing"));
+        var plan = com.jvn.villagerretaliation.interaction.work.production.WorkProductionDemand.describe(level, brewing, 4,
+                List.of(new ItemStack(Items.GLASS_BOTTLE, 4)), true);
+        helper.assertTrue(plan.blocker().isEmpty(), "the native healing route resolves");
+        helper.assertValueEqual(plan.requirements().stream().filter(row -> row.key().equals("ingredient")).mapToLong(row -> row.quantity()).sum(), 4L,
+                "four bottles require two batches of each of the two brewing ingredients");
+        helper.assertValueEqual(plan.requirements().stream().filter(row -> row.key().equals("brewing_fuel")).findFirst().orElseThrow().quantity(), 4L,
+                "brewing fuel counts native recipe steps rather than bottles");
+        helper.assertValueEqual(plan.requirements().stream().filter(row -> row.key().equals("water")).findFirst().orElseThrow().quantity(), 4L,
+                "empty bottles retain explicit water requirements");
+        var cake = HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("cake"), Map.of());
+        var ingredients = List.of(new ItemStack(Items.MILK_BUCKET, 3), new ItemStack(Items.WHEAT, 3),
+                new ItemStack(Items.SUGAR, 2), new ItemStack(Items.EGG));
+        var cakePlan = com.jvn.villagerretaliation.interaction.work.production.WorkProductionDemand.describe(level, cake, 1, ingredients);
+        helper.assertValueEqual(cakePlan.requirements().stream().mapToLong(row -> row.quantity()).sum(), 9L,
+                "native container remainders do not become additional input demand");
+        helper.assertTrue(cakePlan.requirements().stream().noneMatch(row -> row.alternatives().stream().anyMatch(stack -> stack.is(Items.BUCKET))),
+                "returned buckets remain remainders");
+        helper.assertValueEqual(ingredients.getFirst().getCount(), 3, "demand inspection never consumes the observed ingredients");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_supplies")
+    public static void doubleChestAliasesShareStockAndProductionCommitments(GameTestHelper helper) {
+        SettlementHaulingGameTests.withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var workshop = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.WORKSHOP).findFirst().orElseThrow();
+            var first = workshop.min().above();
+            var second = first.east();
+            var chest = net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState()
+                    .setValue(net.minecraft.world.level.block.ChestBlock.FACING, net.minecraft.core.Direction.NORTH);
+            level.setBlockAndUpdate(first, chest.setValue(net.minecraft.world.level.block.ChestBlock.TYPE, net.minecraft.world.level.block.state.properties.ChestType.LEFT));
+            level.setBlockAndUpdate(second, chest.setValue(net.minecraft.world.level.block.ChestBlock.TYPE, net.minecraft.world.level.block.state.properties.ChestType.RIGHT));
+            ((net.minecraft.world.Container) level.getBlockEntity(first)).setItem(0, new ItemStack(Items.STICK, 4));
+            ((net.minecraft.world.Container) level.getBlockEntity(second)).setItem(0, new ItemStack(Items.STICK, 6));
+            var defaults = SettlementWorksitePlan.defaults(workshop.type().role());
+            town.setWorksitePlan(town.leader(), workshop.id(), new SettlementWorksitePlan(defaults.settings().withStorage(
+                    new SettlementStorageLinks(false, List.of(new SettlementStorageLinks.Link(first, SettlementStorageLinks.Purpose.OUTPUT, 0),
+                            new SettlementStorageLinks.Link(second, SettlementStorageLinks.Purpose.OUTPUT, 1)))), 1));
+            helper.assertValueEqual(SettlementSupplyStock.storages(level, town, workshop.id(), true).size(), 1, "overlapping chest assignments have one storage identity");
+            var queue = town.beginProduction(town.leader(), workshop.id());
+            var a = HiredProductionOrder.create(level, HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("stick"), Map.of()), HiredProductionOrder.Mode.MAINTAIN_STOCK, 12, first);
+            var b = HiredProductionOrder.create(level, a.recipe(), HiredProductionOrder.Mode.MAINTAIN_STOCK, 16, second);
+            queue.append(a);
+            queue.append(b);
+            helper.assertTrue(queue.reserve(UUID.randomUUID(), a.id(), 4, 1, 10, null) != null, "the producer reserves a native four-stick batch");
+            helper.assertValueEqual(SettlementProductionStock.count(level, town, queue, b), 14L, "another alias includes the same queue's existing commitment");
+            helper.assertValueEqual(queue.available(b.id(), SettlementProductionStock.count(level, town, queue, b)), 2L, "overlapping targets cannot bypass allocated output");
+            helper.assertValueEqual(SettlementSupplyStock.observe(level, town, first, new ItemStack(Items.STICK), null).stored(), 10L, "the connected inventory is counted once");
+            var rows = SettlementSupplyService.supplies(fixture.leader(), town).stream().filter(row -> row.item().is(Items.STICK)).toList();
+            helper.assertValueEqual(rows.size(), 1, "both chest halves produce one management row");
+            helper.assertValueEqual(rows.getFirst().stored(), 10L, "the aliased management row retains the live observation");
+            helper.assertValueEqual(rows.getFirst().incoming(), 4L, "the management row counts allocated output once");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_supplies")
+    public static void demandRecoveryDistinguishesConnectionsPausedDeliveriesAndFilters(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        var bakery = area(town, SettlementAreaType.KITCHEN, "Bakery", 5);
+        var defaults = SettlementWorksitePlan.defaults(bakery.type().role());
+        town.setWorksitePlan(town.leader(), bakery.id(), new SettlementWorksitePlan(defaults.settings(), 1,
+                new SettlementWorksiteLinks(Set.of(fixture.destination().id()), Set.of(fixture.destination().id()), Set.of())));
+        bread(helper, town, bakery, fixture.destination().position(), 1);
+        fixture.source().setItem(0, new ItemStack(Items.WHEAT, 10));
+        var missing = SettlementSupplyRecovery.inspect(helper.getLevel(), town, SettlementDemandService.inspect(helper.getLevel(), town)).getFirst();
+        helper.assertValueEqual(missing.cause(), SettlementSupplyRecovery.Cause.CONNECTION, "available wheat outside configured inputs identifies a missing connection");
+        helper.assertValueEqual(missing.source().position(), fixture.source().position(), "the recovery draft identifies actual available stock");
+        helper.assertValueEqual(missing.destination().position(), fixture.destination().position(), "the recovery draft targets the consumer's configured input");
+        helper.assertTrue(missing.courier() != null, "a permitted shared courier worksite can submit the draft");
+        var transfers = town.beginTransfers(town.leader(), fixture.storage().id());
+        var transfer = HiredTransferQueue.Order.create(missing.source(), missing.destination(), new ItemStack(Items.WHEAT), 3, HiredTransferQueue.Mode.MAINTAIN_STOCK);
+        transfers.append(transfer);
+        transfers.edit(transfer.id(), HiredTransferQueue.Edit.PAUSE, 0);
+        helper.assertValueEqual(SettlementSupplyRecovery.inspect(helper.getLevel(), town, SettlementDemandService.inspect(helper.getLevel(), town)).getFirst().cause(),
+                SettlementSupplyRecovery.Cause.PAUSED, "a configured paused delivery has specific recovery advice");
+        transfers.edit(transfer.id(), HiredTransferQueue.Edit.REMOVE, 0);
+        fixture.source().observeRules(List.of(new ItemStack(Items.BREAD)));
+        helper.assertValueEqual(SettlementSupplyRecovery.inspect(helper.getLevel(), town, SettlementDemandService.inspect(helper.getLevel(), town)).getFirst().cause(),
+                SettlementSupplyRecovery.Cause.FILTER, "a source restriction does not claim the route is unreachable");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_supplies")
+    public static void demandPagesRoundTripAndRevokeViewingPermission(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var bakery = area(fixture.town(), SettlementAreaType.KITCHEN, "Demand bakery", 5);
+        for (int index = 0; index < 30; index++) bread(helper, fixture.town(), bakery, fixture.destination().position(), 1);
+        var request = new SettlementManagementRequestPayload(fixture.town().id().value(), Page.DEMAND, 0, "", 91, false);
+        var page = SettlementManagementService.snapshot(fixture.leader(), request);
+        helper.assertValueEqual(page.total(), 30, "each consumer has one exact wheat group");
+        helper.assertValueEqual(page.entries().size(), SettlementManagementRequestPayload.PAGE_SIZE, "demand uses bounded management pagination");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            SettlementManagementPayload.STREAM_CODEC.encode(buffer, page);
+            var decoded = SettlementManagementPayload.STREAM_CODEC.decode(buffer);
+            var entry = (SettlementManagementPayload.Demand) decoded.entries().getFirst();
+            helper.assertValueEqual(entry.required(), 3L, "wire format preserves total native requirements");
+            helper.assertValueEqual(entry.immediateMissing(), 3L, "wire format distinguishes immediate batch shortages");
+            helper.assertTrue(entry.alternatives().getFirst().is(Items.WHEAT), "wire format preserves requirement alternatives");
+            helper.assertTrue(entry.consumer() != null && entry.area().equals(bakery.id()), "typed consumer links survive the payload");
+        } finally { buffer.release(); }
+        var guest = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "DemandViewer"));
+        fixture.town().setPermissions(fixture.leader().getUUID(), guest.getUUID(), Set.of(SettlementPermission.VIEW));
+        helper.assertFalse(SettlementManagementService.snapshot(guest, request).entries().isEmpty(), "view permission permits inspection");
+        fixture.town().setPermissions(fixture.leader().getUUID(), guest.getUUID(), Set.of());
+        helper.assertTrue(SettlementManagementService.snapshot(guest, request) == null, "revocation clears consumer details");
+        helper.succeed();
+    }
+
     private static Supply breadSupply(ServerPlayer player, SettlementRecord town, BlockPos position) {
         return SettlementSupplyService.supplies(player, town).stream().filter(row -> row.position().equals(position)
                 && row.item().is(Items.BREAD) && !row.item().has(DataComponents.CUSTOM_NAME)).findFirst().orElseThrow();

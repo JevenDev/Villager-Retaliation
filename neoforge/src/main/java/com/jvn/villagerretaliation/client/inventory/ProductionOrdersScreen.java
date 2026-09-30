@@ -239,6 +239,10 @@ public final class ProductionOrdersScreen extends Screen implements ProductionCl
             details.add(Component.literal(this.quantity));
             details.add(Component.literal(this.status));
             details.add(Component.literal("Output storage: " + (order.storage() == null ? "automatic" : order.storage().toShortString())));
+            for (var need : state.snapshot().requirements()) if (need.order().equals(order.id())) {
+                details.add(Component.literal(need.name() + ": required " + need.required() + " / supplied " + need.supplied()
+                        + " / outstanding " + (need.missing() < 0 ? "unknown" : need.missing()) + " " + need.unit().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ')));
+            }
             this.details = java.util.List.copyOf(details);
         }
 
