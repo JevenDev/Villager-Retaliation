@@ -64,6 +64,7 @@ public final class SettlementViewClientSmoke {
     private static CompletableFuture<Fixture> preparation;
     private static CompletableFuture<Void> serverCheck;
     private static CompletableFuture<Void> appearanceReload;
+    private static CompletableFuture<Void> navigationCheck;
     private static Fixture fixture;
     private static ProjectFixture projectFixture;
     private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
@@ -127,6 +128,9 @@ public final class SettlementViewClientSmoke {
             return;
         }
         if (phase == 0 && minecraft.screen == null) {
+            if (navigationCheck == null) navigationCheck = VillagerNavigationClientChecks.verify();
+            if (!navigationCheck.isDone()) return;
+            navigationCheck.join();
             if (appearanceReload == null) {
                 VillagerWorkAppearanceClientChecks.verify();
                 appearanceReload = minecraft.reloadResourcePacks();

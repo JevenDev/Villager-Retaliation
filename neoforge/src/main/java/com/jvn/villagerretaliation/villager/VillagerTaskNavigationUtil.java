@@ -222,6 +222,7 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static void clearRuntimeState(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel)) return;
         VillagerDoorCoordinator.clearRuntimeState(villager);
         VillagerWaterTraversal.clearRuntimeState(villager);
         VillagerLadderTraversal.clearRuntimeState(villager);
