@@ -39,6 +39,7 @@ final class SettlementDemandViewService {
             result.add(new Demand(supply.id(), bounded(demand.name(), 128), demand.consumer(), demand.area(), demand.kind(),
                     bounded(requirement, 128), need.unit(), need.quantity(), demand.supplied(), demand.missing(), demand.immediateMissing(),
                     supply.availableNow(), supply.committed(), supply.incoming(), supply.proposed(), supply.targetReserve(), supply.protectedMinimum(), supply.priority(),
+                    supply.blocker().competingConsumer(),
                     need.alternatives().stream().limit(16).toList(),
                     demand.sources().stream().limit(128).toList(), recovery.cause(), bounded(recovery.advice(), 512), recovery.focus(),
                     recovery.courier(), recovery.source(), recovery.destination(), recovery.sample()));

@@ -130,6 +130,7 @@ public final class SettlementTransferExecutionGameTests {
             fixture.source().setItem(0, new ItemStack(Items.IRON_INGOT, 20));
             var order = order(fixture.source(), fixture.destination(), new ItemStack(Items.IRON_INGOT), 7);
             queue.append(order);
+            SettlementTestPlots.planSupplies(helper.getLevel(), town);
             SettlementBackgroundHauling.tick(helper.getLevel(), town, fixture.worker(), 200, 1.0D);
             SettlementBackgroundHauling.tick(helper.getLevel(), town, fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(queue.order(order.id()).delivered(), 7L, "repeated work stops at the finite quantity");
@@ -154,6 +155,7 @@ public final class SettlementTransferExecutionGameTests {
             queue.edit(order.id(), HiredTransferQueue.Edit.CANCEL, 0);
             var restored = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
             var worker = restored.workers().get(fixture.worker().id());
+            SettlementTestPlots.planSupplies(helper.getLevel(), restored);
             SettlementBackgroundHauling.tick(helper.getLevel(), restored, worker, 200, 1.0D);
             helper.assertValueEqual(restored.transferQueues().get(fixture.area().id()).order(order.id()).delivered(), 7L, "saved cargo finishes its cancelled order");
             helper.assertTrue(worker.restore(fixture.courier()), "the updated inventory returns to the entity");
@@ -423,11 +425,17 @@ public final class SettlementTransferExecutionGameTests {
             var finite = order(fixture.source(), fixture.destination(), new ItemStack(Items.IRON_INGOT), 7);
             var order = HiredTransferQueue.Order.create(finite.source(), finite.destination(), finite.sample(), 7, HiredTransferQueue.Mode.MAINTAIN_STOCK);
             queue.append(order);
-            for (int tick = 0; tick < 4; tick++) SettlementBackgroundTransfers.tick(helper.getLevel(), town, fixture.worker(), 200, 1);
+            for (int tick = 0; tick < 4; tick++) {
+                SettlementTestPlots.planSupplies(helper.getLevel(), town);
+                SettlementBackgroundTransfers.tick(helper.getLevel(), town, fixture.worker(), 200, 1);
+            }
             helper.assertValueEqual(queue.order(order.id()).delivered(), 7L, "background trips stop at destination stock");
             var restored = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
             restored.depots().get(fixture.destination().id()).removeItem(0, 4);
-            for (int tick = 0; tick < 4; tick++) SettlementBackgroundTransfers.tick(helper.getLevel(), restored, restored.workers().get(fixture.worker().id()), 200, 1);
+            for (int tick = 0; tick < 4; tick++) {
+                SettlementTestPlots.planSupplies(helper.getLevel(), restored);
+                SettlementBackgroundTransfers.tick(helper.getLevel(), restored, restored.workers().get(fixture.worker().id()), 200, 1);
+            }
             helper.assertValueEqual(restored.transferQueues().get(fixture.area().id()).order(order.id()).delivered(), 11L, "reload replenishes consumed stock once");
             helper.assertFalse(helper.getLevel().hasChunkAt(town.center()), "recurring background work never loads the town");
         });
@@ -481,6 +489,7 @@ public final class SettlementTransferExecutionGameTests {
     }
 
     private static void tick(GameTestHelper helper, SettlementHaulingGameTests.Fixture fixture, HiredWorkSession session) {
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         session.worker().tick(helper.getLevel(), fixture.courier(), null, session.context());
     }
 }

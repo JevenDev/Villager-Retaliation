@@ -134,7 +134,7 @@ final class SettlementBackgroundConstruction {
                         blocked(worker, "construction_crew_waiting", "crew_waiting");
                         return;
                     }
-                    if (!clear(level, worker, site, owner, inventory, depots, budget, route.target(), route.steps().getLast(), travel)) return;
+                    if (!clear(level, town, worker, site, owner, inventory, depots, budget, route.target(), route.steps().getLast(), travel)) return;
                     state.putLong(POSITION, route.steps().getLast().asLong());
                     continue;
                 }
@@ -164,7 +164,7 @@ final class SettlementBackgroundConstruction {
                 if (consumes && inventory.findSupply(material::materialMatches).isEmpty()) {
                     inventory.promoteOutputToSupply(material::materialMatches, 1);
                     if (inventory.findSupply(material::materialMatches).isEmpty()) {
-                        fetch(level, worker, inventory, depots, material, site, project, plan, index, budget);
+                        fetch(level, town, worker, inventory, depots, material, site, project, plan, index, budget);
                         return;
                     }
                 }
@@ -173,7 +173,7 @@ final class SettlementBackgroundConstruction {
                     var requiredAction = toolAction;
                     tool = inventory.equipBestTool(stack -> BuilderStructureScanner.matchesToolAction(stack, requiredAction), stack -> 1.0D);
                     if (tool.isEmpty()) {
-                        SettlementBackgroundTools.fetchTool(level, worker, inventory, depots,
+                        SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots,
                                 stack -> BuilderStructureScanner.matchesToolAction(stack, requiredAction), stack -> 1.0D, "placement_tool", budget);
                         BuilderTaskState.setBlocked(state, "missing_placement_tool");
                         return;
@@ -230,7 +230,7 @@ final class SettlementBackgroundConstruction {
         return positions;
     }
 
-    private static boolean clear(ServerLevel level, SettlementWorkerState worker, SettlementConstructionSite site, Villager owner,
+    private static boolean clear(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementConstructionSite site, Villager owner,
                                  HiredJobInventory inventory, List<SettlementDepot> depots, SettlementWorkBudget budget,
                                  BlockPos pos, BlockPos stance, double travel) {
         if (com.jvn.villagerretaliation.interaction.work.mining.MiningSafety.isUnsafeMiningTarget(site, site::observed, pos, stance, worker.position())) {
@@ -240,7 +240,7 @@ final class SettlementBackgroundConstruction {
         var block = site.getBlockState(pos);
         var tool = inventory.equipBestTool(stack -> MiningBlockRules.isUsableBuilderClearingTool(stack, block), stack -> MiningBlockRules.destroySpeed(stack, block));
         if (tool.isEmpty()) {
-            SettlementBackgroundTools.fetchTool(level, worker, inventory, depots, stack -> MiningBlockRules.isUsableBuilderClearingTool(stack, block),
+            SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots, stack -> MiningBlockRules.isUsableBuilderClearingTool(stack, block),
                     stack -> MiningBlockRules.destroySpeed(stack, block), "clear_tool", budget);
             return false;
         }
@@ -255,10 +255,8 @@ final class SettlementBackgroundConstruction {
             return false;
         }
         site.queue(new SettlementConstructionPlacement(level, List.of(new SettlementConstructionPlacement.Part(pos, block, block.getFluidState().createLegacyBlock(), null))));
-        SettlementWorkforceService.home(level, owner).ifPresent(town -> {
-            var project = BuilderTaskState.jobId(worker.settings()).map(town.projects()::get).orElse(null);
-            if (project != null) SettlementConstructionService.worked(town, project, owner);
-        });
+        var project = BuilderTaskState.jobId(worker.settings()).map(town.projects()::get).orElse(null);
+        if (project != null) SettlementConstructionService.worked(town, project, owner);
         drops.forEach(inventory::insertOutput);
         if (!VillagerEquipmentDurability.mineBlock(tool, level, block, pos, owner)) VillagerEquipmentDurability.hurtTool(tool, owner, EquipmentSlot.MAINHAND);
         inventory.syncMainHandEquipment();
@@ -267,13 +265,13 @@ final class SettlementBackgroundConstruction {
         return true;
     }
 
-    private static void fetch(ServerLevel level, SettlementWorkerState worker, HiredJobInventory inventory, List<SettlementDepot> depots,
+    private static void fetch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory, List<SettlementDepot> depots,
                               BuilderStructureScanner.BuildBlock material, SettlementConstructionSite site, SettlementProject project,
                               BuilderStructureScanner.StructurePlan plan, int startIndex, SettlementWorkBudget budget) {
         var batch = project.crew() == null ? BuilderWorker.nextMaterialBatch(site, inventory, plan, project.origin(), startIndex)
                 : BuilderWorker.singleMaterialBatch(site, plan, project.origin(), startIndex);
         BuilderTaskState.setMaterialBatchEndIndex(worker.settings(), batch.endIndex());
-        var supplies = SettlementProductionInventory.supplies(level, worker, SettlementBackgroundTools.items(inventory), depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, SettlementBackgroundTools.items(inventory), depots);
         for (var depot : depots) {
             var consumed = new ArrayList<>(java.util.Collections.nCopies(supplies.size(), 0));
             var received = new ArrayList<ItemStack>();
@@ -288,7 +286,7 @@ final class SettlementBackgroundConstruction {
                     missing -= count;
                 }
             }
-            if (received.isEmpty() || !SettlementProductionInventory.allowed(level, supplies, consumed)) continue;
+            if (received.isEmpty() || !SettlementProductionInventory.allowed(level, supplies, consumed, project.id())) continue;
             if (!inventory.canStorePlainSupplies(received)) {
                 blocked(worker, "supply_full", "material_inventory_full");
                 return;

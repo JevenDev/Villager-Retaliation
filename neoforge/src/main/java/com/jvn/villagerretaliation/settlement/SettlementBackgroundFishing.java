@@ -130,7 +130,7 @@ public final class SettlementBackgroundFishing {
                 state.remove(CAST);
                 worker.changed();
             }
-            equipRod(level, worker, carried, depots, elapsed, multiplier);
+            equipRod(level, town, worker, carried, depots, elapsed, multiplier);
             return;
         }
         com.jvn.villagerretaliation.interaction.work.HiredFishingSpots preferences;
@@ -351,9 +351,9 @@ public final class SettlementBackgroundFishing {
         return !stack.isEmpty() && stack.canPerformAction(ItemAbilities.FISHING_ROD_CAST);
     }
 
-    private static void equipRod(ServerLevel level, SettlementWorkerState worker, NonNullList<ItemStack> carried,
+    private static void equipRod(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, NonNullList<ItemStack> carried,
                                  List<SettlementDepot> depots, int elapsed, double multiplier) {
-        var supplies = SettlementProductionInventory.supplies(level, worker, carried, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);
             if (!isRod(source.available())) continue;

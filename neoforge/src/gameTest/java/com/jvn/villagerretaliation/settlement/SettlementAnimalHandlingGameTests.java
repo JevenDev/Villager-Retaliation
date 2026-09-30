@@ -70,7 +70,10 @@ public final class SettlementAnimalHandlingGameTests {
             fixture.town().recordWorker(worker);
             fixture.town().recordResident(SettlementResidentState.capture(second, fixture.town(), 0L));
             fixture.town().livestock().values().forEach(animal -> animal.access(worker.id(), worker.position(), 0));
-            for (int step = 0; step < 8; step++) SettlementBackgroundAnimalHandling.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
+            for (int step = 0; step < 8; step++) {
+                SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
+                SettlementBackgroundAnimalHandling.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
+            }
             helper.assertTrue(first > 0, "the first handler harvested the fleece");
             helper.assertValueEqual(worker.items(helper.getLevel().registryAccess()).stream()
                     .filter(stack -> stack.is(Items.WHITE_WOOL)).mapToInt(ItemStack::getCount).sum(), 0, "the second handler sees the shared sheared state");
@@ -341,7 +344,10 @@ public final class SettlementAnimalHandlingGameTests {
             helper.assertTrue(wool > 0, "the pending fleece output is saved with the worker");
             helper.assertTrue(((Sheep) restored.livestock().get(sheep.getUUID()).context(level)).isSheared(),
                     "the same save retains the consumed fleece");
-            for (int step = 0; step < 8; step++) SettlementBackgroundAnimalHandling.tick(level, restored, worker, 200, 1.0D);
+            for (int step = 0; step < 8; step++) {
+                SettlementTestPlots.planSupplies(level, restored);
+                SettlementBackgroundAnimalHandling.tick(level, restored, worker, 200, 1.0D);
+            }
             helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.GREEN_WOOL))
                     .mapToInt(ItemStack::getCount).sum(), wool, "town reload cannot repeat the harvest");
             saved.remove("Livestock");
@@ -590,7 +596,10 @@ public final class SettlementAnimalHandlingGameTests {
             helper.assertValueEqual(((net.minecraft.world.entity.animal.Chicken) restored.livestock().get(chicken.getUUID()).context(level)).eggTime,
                     ((net.minecraft.world.entity.animal.Chicken) state.context(level)).eggTime, "the consumed timer survives unchanged");
             var worker = restored.workers().get(fixture.worker().id());
-            for (int step = 0; step < 8; step++) SettlementBackgroundAnimalHandling.tick(level, restored, worker, 200, 1.0D);
+            for (int step = 0; step < 8; step++) {
+                SettlementTestPlots.planSupplies(level, restored);
+                SettlementBackgroundAnimalHandling.tick(level, restored, worker, 200, 1.0D);
+            }
             helper.assertTrue(restored.itemDrops().isEmpty(), "the restored egg remains collectable");
             helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.EGG)).mapToInt(ItemStack::getCount).sum(),
                     1, "reloading credits only the actual pending egg");
@@ -682,6 +691,7 @@ public final class SettlementAnimalHandlingGameTests {
 
     private static void work(GameTestHelper helper, Fixture fixture, int intervals) {
         for (int index = 0; index < intervals; index++) {
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundAnimalHandling.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
         }
     }

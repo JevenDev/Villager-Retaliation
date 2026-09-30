@@ -223,7 +223,7 @@ public final class SettlementWorksiteGameTests {
                     "active storage links preserve direction");
             var worker = town.workers().get(resident);
             var items = worker.items(level.registryAccess());
-            var supplies = SettlementProductionInventory.supplies(level, worker, items, List.of(source, output));
+            var supplies = SettlementProductionInventory.supplies(level, town, worker, items, List.of(source, output));
             helper.assertTrue(supplies.stream().anyMatch(supply -> supply.depot() == source), "selected supply stock is available");
             helper.assertTrue(supplies.stream().noneMatch(supply -> supply.depot() == output), "output storage cannot supply ingredients");
             int slot = worker.outputSlots().getFirst();
@@ -525,7 +525,9 @@ public final class SettlementWorksiteGameTests {
             fixture.villager().setPos(fixture.area().min().east().south().getCenter());
             source.observeRules(List.of());
             other.observeRules(List.of());
-            other.setItem(0, new ItemStack(Items.CARROT, 8));
+            other.configure(SettlementDepotPurpose.GENERAL, 9);
+            other.setItem(0, new ItemStack(Items.BREAD, 64));
+            other.setItem(1, new ItemStack(Items.CARROT, 8));
             var settings = SettlementWorksitePlan.defaults(HiredVillagerRole.FARMING).settings()
                     .with(SettlementWorkerSetting.CROP_SELECTION, 2).with(SettlementWorkerSetting.TILL_SOIL, 0);
             helper.assertTrue(SettlementWorksiteService.configure(fixture.leader(), town, fixture.area().id(),
@@ -538,10 +540,12 @@ public final class SettlementWorksiteGameTests {
             var crop = fixture.area().min().east();
             level.setBlockAndUpdate(crop.below(), net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState());
             var work = new com.jvn.villagerretaliation.interaction.work.FarmingWorker();
+            SettlementTestPlots.planSupplies(level, town);
             var missing = work.tick(level, fixture.villager(), fixture.leader(), context);
             helper.assertValueEqual(missing.status(), "interaction.work.farming.missing_planting_item",
                     "seeds in an unlinked depot do not satisfy the selected crop");
             source.setItem(0, new ItemStack(Items.CARROT, 3));
+            SettlementTestPlots.planSupplies(level, town);
             var fetched = work.tick(level, fixture.villager(), fixture.leader(), context);
             helper.assertValueEqual(fetched.status(), "interaction.work.farming.gathered_seeds", "the farmer collects real linked seeds");
             helper.assertValueEqual(source.count(stack -> stack.is(Items.CARROT)), 0, "fetching consumes the finite linked supply");

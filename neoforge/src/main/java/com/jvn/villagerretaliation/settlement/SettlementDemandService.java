@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
+import com.jvn.villagerretaliation.interaction.work.production.WorkSupplyAllocation;
 import com.jvn.villagerretaliation.interaction.work.production.WorkProductionDemand;
 import com.jvn.villagerretaliation.interaction.work.production.WorkProductionProgress;
 import com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand;
@@ -46,6 +47,9 @@ public final class SettlementDemandService {
         private final Map<BlockPos, List<Stock>> stores = new LinkedHashMap<>();
         private final Map<UUID, List<ItemStack>> carried = new LinkedHashMap<>();
         private final List<Demand> demands = new ArrayList<>();
+        private final List<Definition> definitions = new ArrayList<>();
+        private final Map<UUID, Long> started = new LinkedHashMap<>();
+        private WorkSupplyAllocation.Result allocation;
         private final net.minecraft.server.level.ServerPlayer viewer;
 
         private Snapshot(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer) {
@@ -68,6 +72,53 @@ public final class SettlementDemandService {
         }
 
         SettlementSupplyStock.Snapshot stock() { return this.stock; }
+
+        WorkSupplyAllocation.Result allocation() { return this.allocation; }
+
+        java.util.Set<UUID> consumers(UUID worker) {
+            return this.definitions.stream().filter(definition -> definition.workers().contains(worker))
+                    .map(definition -> definition.request().consumer()).collect(java.util.stream.Collectors.toSet());
+        }
+
+        Snapshot refresh() {
+            return refresh(null);
+        }
+
+        Snapshot refresh(BlockPos source) {
+            var refreshed = new Snapshot(this.level, this.town, this.viewer);
+            for (var definition : this.definitions) refreshed.evaluate(definition);
+            if (source != null) refreshed.store(source);
+            refreshed.started.putAll(this.started);
+            refreshed.allocate();
+            return refreshed;
+        }
+
+        private void allocate() {
+            var metadata = new LinkedHashMap<UUID, Demand>();
+            demands().forEach(demand -> metadata.put(demand.supply().id(), demand));
+            var offers = this.stores.values().stream().filter(java.util.Objects::nonNull).flatMap(List::stream)
+                    .map(stock -> new WorkSupplyAllocation.Stock(stock.position, stock.sample, stock.remaining,
+                            stock.claimed, stock.incoming, stock.known)).toList();
+            this.allocation = WorkSupplyAllocation.allocate(metadata.values().stream()
+                    .map(demand -> new WorkSupplyAllocation.Request(demand.supply(), this.started.getOrDefault(demand.supply().id(), 0L))).toList(), offers);
+            this.demands.clear();
+            for (var demand : this.allocation.demands()) {
+                var original = metadata.get(demand.id());
+                this.demands.add(new Demand(original.area(), original.name(), demand));
+            }
+            for (var grant : this.allocation.grants()) {
+                var stocks = store(grant.source());
+                if (stocks == null) continue;
+                for (var stock : stocks) if (HiredProductionStock.matches(stock.sample, grant.sample())) {
+                    if (grant.incoming()) stock.incoming -= grant.count();
+                    else {
+                        stock.remaining -= grant.count();
+                        stock.used += grant.count();
+                    }
+                    break;
+                }
+            }
+        }
 
         public long covered(BlockPos position, ItemStack sample) {
             var stocks = store(position);
@@ -189,60 +240,57 @@ public final class SettlementDemandService {
         private void add(UUID consumer, UUID area, Kind kind, String name, WorkSupplyRequirement requirement,
                          List<BlockPos> sources, List<UUID> workers, List<ItemStack> privateSupplies, long progress, long immediate, String blocker,
                          long reserve, int priority, BlockPos destination) {
-            long remaining = Math.max(0, requirement.quantity() - progress);
+            var request = new WorkSupplyDemand(WorkSupplyDemand.identity(this.level.registryAccess(), consumer, kind, requirement),
+                    consumer, kind, requirement, Math.min(immediate, requirement.quantity()), reserve, kind == Kind.FOOD ? reserve : 0,
+                    priority, 0, 0, 0, 0, true, sources, destination, WorkSupplyDemand.Blocker.of(blocker));
+            evaluate(new Definition(area, name, request, workers, privateSupplies, progress), privateSupplies);
+        }
+
+        private void evaluate(Definition definition) {
+            evaluate(definition, definition.privateSupplies().stream().map(ItemStack::copy).toList());
+        }
+
+        private void evaluate(Definition definition, List<ItemStack> privateSupplies) {
+            this.definitions.add(definition);
+            var request = definition.request();
+            var requirement = request.requirement();
+            var workers = definition.workers();
+            var sources = request.sources();
+            long remaining = Math.max(0, requirement.quantity() - definition.progress());
             remaining = consume(privateSupplies, requirement, remaining);
             for (var worker : workers) remaining = consume(carried(worker), requirement, remaining);
             long committed = requirement.quantity() - remaining;
-            long available = 0;
-            boolean known = true;
+            boolean known = request.known();
             for (var position : sources) {
                 var stocks = store(position);
                 if (stocks == null) { known = false; continue; }
                 for (var stock : stocks) {
                     long value = requirement.value(stock.sample);
                     if (value <= 0 || remaining <= 0) continue;
+                    if (!stock.known) known = false;
                     for (var worker : workers) {
                         long credit = Math.min(owned(stock, List.of(worker)), (remaining + value - 1) / value);
                         stock.credited.merge(worker, credit, Long::sum);
                         committed += Math.min(remaining, credit * value);
                         remaining = Math.max(0, remaining - credit * value);
                     }
-                    long amount = Math.min(stock.remaining, (remaining + value - 1) / value);
-                    stock.remaining -= amount;
-                    stock.used += amount;
-                    available += Math.min(remaining, amount * value);
-                    remaining = Math.max(0, remaining - amount * value);
-                }
-            }
-            long incoming = 0;
-            for (var position : sources) {
-                var stocks = store(position);
-                if (stocks == null) continue;
-                for (var stock : stocks) {
-                    long value = requirement.value(stock.sample);
-                    if (value <= 0) continue;
-                    if (!stock.known) known = false;
-                    long count = remaining == 0 ? 0 : Math.min(stock.incoming, (remaining - 1) / value + 1);
-                    stock.incoming -= count;
-                    incoming += Math.min(remaining, count * value);
-                    remaining = Math.max(0, remaining - count * value);
                 }
             }
             String reason = !known && remaining > 0 ? "storage_unavailable" : remaining > 0 ? "missing_materials" : "";
-            if (!blocker.isBlank()) reason = blocker;
-            this.demands.add(new Demand(area, name, new WorkSupplyDemand(
-                    WorkSupplyDemand.identity(this.level.registryAccess(), consumer, kind, requirement), consumer, kind, requirement,
-                    Math.min(immediate, requirement.quantity()), reserve, kind == Kind.FOOD ? reserve : 0, priority,
-                    available, committed, incoming, 0, known || remaining == 0, sources, destination,
+            if (!request.blocker().code().isBlank()) reason = request.blocker().code();
+            this.demands.add(new Demand(definition.area(), definition.name(), new WorkSupplyDemand(
+                    request.id(), request.consumer(), request.kind(), requirement, request.immediate(), request.targetReserve(),
+                    request.protectedMinimum(), request.priority(), 0, committed, 0, request.proposed(),
+                    known || requirement.quantity() > 0 && remaining == 0, sources, request.destination(),
                     WorkSupplyDemand.Blocker.of(reason))));
         }
 
         private void unknown(UUID consumer, UUID area, Kind kind, String name, List<BlockPos> sources, String blocker) {
             var requirement = new WorkSupplyRequirement("unknown_" + blocker, List.of(), 0, WorkSupplyRequirement.Unit.ITEMS, stack -> false, null);
-            this.demands.add(new Demand(area, name, new WorkSupplyDemand(
+            evaluate(new Definition(area, name, new WorkSupplyDemand(
                     WorkSupplyDemand.identity(this.level.registryAccess(), consumer, kind, requirement), consumer, kind, requirement,
                     0, 0, 0, priority(consumer, area), 0, 0, 0, 0, false, sources, destination(consumer, area, kind),
-                    WorkSupplyDemand.Blocker.of(blocker))));
+                    WorkSupplyDemand.Blocker.of(blocker)), List.of(), List.of(), 0));
         }
 
         private int priority(UUID consumer, UUID area) {
@@ -272,85 +320,120 @@ public final class SettlementDemandService {
         private void stockReserves() {
             for (var depot : SettlementStock.depots(this.town)) for (var target : depot.stockTargets()) {
                 var position = SettlementSupplyStock.positions(this.level, depot.position()).getFirst();
-                var stocks = store(position);
-                long covered = stocks == null ? 0 : stocks.stream().filter(stock -> HiredProductionStock.matches(stock.sample, target.sample()))
-                        .mapToLong(stock -> stock.claimed + stock.used).sum();
-                long additional = Math.max(0, target.count() - covered);
                 add(depot.id(), depot.area(), Kind.STOCK_RESERVE, target.sample().getHoverName().getString(),
-                        WorkSupplyRequirement.exact("stock_reserve", target.sample(), additional),
-                        List.of(position), List.of(), new ArrayList<>(), 0, additional, "", target.count(), depot.priority(), position);
+                        WorkSupplyRequirement.exact("stock_reserve", target.sample(), target.count()),
+                        List.of(position), List.of(), new ArrayList<>(), 0, target.count(), "", target.count(), depot.priority(), position);
             }
         }
 
-        private void production(SettlementArea area, HiredProductionQueue queue) {
+        private void production(SettlementArea area, HiredProductionQueue queue, HiredProductionOrder order) {
             var sources = SettlementSupplyStock.storages(this.level, this.town, area.id(), false);
             var workers = workers(area.id());
             var plan = this.town.worksitePlans().get(area.id());
             boolean enabled = area.enabled() && (plan == null || plan.settings().enabled());
-            for (var order : queue.orders()) {
-                boolean active = enabled && order.runnable();
-                long stock = order.mode() == HiredProductionOrder.Mode.MAINTAIN_STOCK
-                        ? SettlementProductionStock.count(this.level, this.town, queue, order, this.stock) : 0;
-                if (active && stock < 0) unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, "output_storage_unavailable");
-                long amount = !active || stock < 0 ? 0 : order.mode() == HiredProductionOrder.Mode.CONTINUOUS
-                        ? order.output().getCount() : queue.available(order.id(), stock);
-                for (var allocation : queue.allocations()) {
-                    if (!allocation.order().equals(order.id())) continue;
-                    if (allocation.started() && allocation.station() == null) continue;
-                    var progress = new WorkProductionProgress(allocation.remaining(), List.of(), 0, 0, "");
-                    if (allocation.started() && allocation.station() != null) {
-                        var furnace = this.town.furnaces().get(allocation.station());
-                        var stand = this.town.brewingStands().get(allocation.station());
-                        if (furnace != null && !furnace.conflict()) {
-                            var items = furnace.items(this.level.registryAccess());
-                            var tag = furnace.save().getCompound("Contents");
-                            if (this.level.hasChunkAt(allocation.station()) && this.level.getBlockEntity(allocation.station()) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity live) {
-                                tag = live.saveWithoutMetadata(this.level.registryAccess());
-                                net.minecraft.world.ContainerHelper.loadAllItems(tag, items, this.level.registryAccess());
-                            }
-                            progress = WorkProductionProgress.furnace(order, allocation.remaining(), items, tag,
-                                    !furnace.block().equals(net.minecraft.resources.ResourceLocation.withDefaultNamespace("furnace")));
-                        } else if (stand != null && !stand.conflict()) {
-                            var items = stand.items(this.level.registryAccess());
-                            var contents = stand.save().getCompound("Contents");
-                            if (this.level.hasChunkAt(allocation.station()) && this.level.getBlockEntity(allocation.station()) instanceof net.minecraft.world.level.block.entity.BrewingStandBlockEntity live) {
-                                contents = live.saveWithoutMetadata(this.level.registryAccess());
-                                net.minecraft.world.ContainerHelper.loadAllItems(contents, items, this.level.registryAccess());
-                            }
-                            progress = WorkProductionProgress.brewing(this.level, order, allocation.remaining(), items, contents);
-                        } else {
-                            unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, "station_unavailable");
-                            continue;
+            boolean active = enabled && order.runnable();
+            long stock = order.mode() == HiredProductionOrder.Mode.MAINTAIN_STOCK
+                    ? SettlementProductionStock.count(this.level, this.town, queue, order, this.stock) : 0;
+            if (active && stock < 0) unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, "output_storage_unavailable");
+            long amount = !active || stock < 0 ? 0 : order.mode() == HiredProductionOrder.Mode.CONTINUOUS
+                    ? order.output().getCount() : queue.available(order.id(), stock);
+            for (var allocation : queue.allocations()) {
+                if (!allocation.order().equals(order.id())) continue;
+                if (allocation.started() && allocation.station() == null) continue;
+                var progress = new WorkProductionProgress(allocation.remaining(), List.of(), 0, 0, "");
+                if (allocation.started() && allocation.station() != null) {
+                    var furnace = this.town.furnaces().get(allocation.station());
+                    var stand = this.town.brewingStands().get(allocation.station());
+                    if (furnace != null && !furnace.conflict()) {
+                        var items = furnace.items(this.level.registryAccess());
+                        var tag = furnace.save().getCompound("Contents");
+                        if (this.level.hasChunkAt(allocation.station()) && this.level.getBlockEntity(allocation.station()) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity live) {
+                            tag = live.saveWithoutMetadata(this.level.registryAccess());
+                            net.minecraft.world.ContainerHelper.loadAllItems(tag, items, this.level.registryAccess());
                         }
-                    }
-                    if (!progress.blocker().isEmpty()) {
-                        unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, progress.blocker());
+                        progress = WorkProductionProgress.furnace(order, allocation.remaining(), items, tag,
+                                !furnace.block().equals(net.minecraft.resources.ResourceLocation.withDefaultNamespace("furnace")));
+                    } else if (stand != null && !stand.conflict()) {
+                        var items = stand.items(this.level.registryAccess());
+                        var contents = stand.save().getCompound("Contents");
+                        if (this.level.hasChunkAt(allocation.station()) && this.level.getBlockEntity(allocation.station()) instanceof net.minecraft.world.level.block.entity.BrewingStandBlockEntity live) {
+                            contents = live.saveWithoutMetadata(this.level.registryAccess());
+                            net.minecraft.world.ContainerHelper.loadAllItems(contents, items, this.level.registryAccess());
+                        }
+                        progress = WorkProductionProgress.brewing(this.level, order, allocation.remaining(), items, contents);
+                    } else {
+                        unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, "station_unavailable");
                         continue;
                     }
-                    describe(area, order, progress.remaining(), sources, allocation.worker() == null ? List.of() : List.of(allocation.worker()),
-                            new ArrayList<>(progress.supplies()), progress.burn(), progress.uses());
                 }
-                describe(area, order, amount, sources, workers, new ArrayList<>(), 0, 0);
+                if (!progress.blocker().isEmpty()) {
+                    unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, progress.blocker());
+                    continue;
+                }
+                describe(area, order, progress.remaining(), sources, allocation.worker() == null ? List.of() : List.of(allocation.worker()),
+                        new ArrayList<>(progress.supplies()), progress.burn(), progress.uses(), allocation.started());
             }
+            describe(area, order, amount, sources, workers, new ArrayList<>(), 0, 0, false);
         }
 
         private void describe(SettlementArea area, HiredProductionOrder order, long amount, List<BlockPos> sources,
-                              List<UUID> workers, List<ItemStack> privateSupplies, long burn, long uses) {
-            if (amount <= 0) return;
-            var available = available(sources, workers);
-            available.addAll(privateSupplies);
+                              List<UUID> workers, List<ItemStack> privateSupplies, long burn, long uses, boolean started) {
             var survey = this.town.surveys().get(area.id());
             boolean water = survey != null && survey.waterSources().stream().anyMatch(position ->
                     !this.level.hasChunkAt(position) || SettlementBuildingSurvey.waterSource(this.level.getBlockState(position)));
+            describe(area.id(), area.name(), order, amount, sources, workers, privateSupplies, burn, uses, started, water);
+        }
+
+        private void describe(UUID area, String name, HiredProductionOrder order, long amount, List<BlockPos> sources,
+                              List<UUID> workers, List<ItemStack> privateSupplies, long burn, long uses, boolean started, boolean water) {
+            if (amount <= 0) return;
+            var available = available(sources, workers);
+            available.addAll(privateSupplies);
             var plan = WorkProductionDemand.describe(this.level, order.recipe(), amount, available, water);
-            if (!plan.blocker().isEmpty()) { unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, plan.blocker()); return; }
+            if (!plan.blocker().isEmpty()) { unknown(order.id(), area, Kind.PRODUCTION, name, sources, plan.blocker()); return; }
             var next = WorkProductionDemand.describe(this.level, order.recipe(),
                     Math.min(amount, order.recipe().recipe() == null ? 3 : order.output().getCount()), available, water);
-            for (var need : plan.requirements()) add(order.id(), area.id(), Kind.PRODUCTION, area.name(), need, sources, workers,
+            for (var need : plan.requirements()) {
+                if (started) this.started.merge(WorkSupplyDemand.identity(this.level.registryAccess(), order.id(), Kind.PRODUCTION, need),
+                        need.quantity(), Long::sum);
+                add(order.id(), area, Kind.PRODUCTION, name, need, sources, workers,
                     privateSupplies, WorkSupplyEvaluation.progress(need, burn, uses, water),
                     next.requirements().stream().filter(value -> value.unit() == need.unit() && value.key().equals(need.key())
                             && (value.alternatives().isEmpty() || value.alternatives().stream().anyMatch(sample -> need.value(sample) > 0)))
-                            .mapToLong(WorkSupplyRequirement::quantity).sum(), order.blocker());
+                            .mapToLong(WorkSupplyRequirement::quantity).sum(), order.blocker(), 0, priority(order.id(), area), order.storage());
+            }
+        }
+
+        private void personal(Villager worker, HiredProductionQueue queue, HiredProductionOrder order) {
+            var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(worker);
+            boolean enabled = !state.contains("Enabled") || state.getBoolean("Enabled");
+            boolean assigned = !state.contains("UseAssignedStorageForSupplies") || state.getBoolean("UseAssignedStorageForSupplies");
+            var sources = com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.get(this.level).assignedTo(worker.getUUID()).stream()
+                    .filter(link -> assigned && link.dimension().equals(this.level.dimension()) && supplies(link.purpose()))
+                    .map(link -> SettlementSupplyStock.positions(this.level, link.pos()).getFirst()).distinct().toList();
+            var waterPosition = BlockPos.of(state.getLong("BrewingCachedWaterPos"));
+            boolean water = state.contains("BrewingCachedWaterPos") && this.level.hasChunkAt(waterPosition)
+                    && this.level.getFluidState(waterPosition).is(net.minecraft.tags.FluidTags.WATER) && this.level.getFluidState(waterPosition).isSource();
+            var workers = List.of(worker.getUUID());
+            var name = worker.getName().getString();
+            for (var allocation : queue.allocations()) {
+                if (!allocation.order().equals(order.id()) || allocation.started() && allocation.station() == null) continue;
+                var progress = WorkProductionProgress.loaded(this.level, order, allocation);
+                if (!progress.blocker().isEmpty()) {
+                    unknown(order.id(), worker.getUUID(), Kind.PRODUCTION, name, sources, progress.blocker());
+                    continue;
+                }
+                describe(worker.getUUID(), name, order, progress.remaining(), sources, workers,
+                        new ArrayList<>(progress.supplies()), progress.burn(), progress.uses(), allocation.started(), water);
+            }
+            long stock = HiredProductionStock.count(this.level, worker, queue, order);
+            if (enabled && order.runnable() && stock < 0) {
+                unknown(order.id(), worker.getUUID(), Kind.PRODUCTION, name, sources, "output_storage_unavailable");
+                return;
+            }
+            long amount = !enabled || !order.runnable() || stock < 0 ? 0 : order.mode() == HiredProductionOrder.Mode.CONTINUOUS
+                    ? order.output().getCount() : queue.available(order.id(), stock);
+            describe(worker.getUUID(), name, order, amount, sources, workers, new ArrayList<>(), 0, 0, false, water);
         }
 
         private void project(SettlementProject project) {
@@ -391,22 +474,71 @@ public final class SettlementDemandService {
 
     public static Snapshot inspect(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer) {
         var snapshot = new Snapshot(level, town, viewer);
-        snapshot.food();
+        planning(snapshot, town).forEach(Runnable::run);
+        return snapshot;
+    }
+
+    static Runnable plan(ServerLevel level, SettlementRecord town, java.util.function.Consumer<Snapshot> ready) {
+        var snapshot = new Snapshot(level, town, null);
+        var work = planning(snapshot, town);
+        work.add(() -> ready.accept(snapshot));
+        return new SettlementWork(work);
+    }
+
+    private static List<Runnable> planning(Snapshot snapshot, SettlementRecord town) {
+        var work = new ArrayList<Runnable>();
+        work.add(snapshot::food);
         record Consumer(int priority, UUID id, Runnable run) { }
         var consumers = new ArrayList<Consumer>();
         for (var queue : town.productionQueues().values()) {
             var area = town.areas().get(queue.owner());
-            if (area != null) consumers.add(new Consumer(area.priority(), area.id(), () -> snapshot.production(area, queue)));
+            if (area != null) for (var order : queue.orders())
+                consumers.add(new Consumer(area.priority(), order.id(), () -> snapshot.production(area, queue, order)));
+        }
+        for (var worker : linkedPersonalWorkers(snapshot.level, town)) {
+            var role = com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.assignedRole(snapshot.level, worker);
+            var access = com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.access(snapshot.level, worker, role);
+            if (access.queue() == null || !access.blocker().isEmpty()) continue;
+            for (var order : access.queue().orders())
+                consumers.add(new Consumer(5, order.id(), () -> snapshot.personal(worker, access.queue(), order)));
         }
         for (var project : town.projects().values()) consumers.add(new Consumer(project.priority(), project.id(), () -> snapshot.project(project)));
         consumers.sort(Comparator.comparingInt(Consumer::priority).reversed().thenComparing(Consumer::id));
-        consumers.forEach(consumer -> consumer.run().run());
-        snapshot.stockReserves();
-        return snapshot;
+        consumers.forEach(consumer -> work.add(consumer.run()));
+        work.add(snapshot::stockReserves);
+        work.add(snapshot::allocate);
+        return work;
+    }
+
+    static List<Villager> linkedPersonalWorkers(ServerLevel level, SettlementRecord town) {
+        var positions = new java.util.LinkedHashSet<BlockPos>();
+        town.depots().values().forEach(depot -> positions.add(depot.position()));
+        town.worksitePlans().values().forEach(plan -> plan.settings().storage().entries().stream()
+                .filter(link -> link.purpose().supplies()).forEach(link -> positions.add(link.position())));
+        town.workerSettings().values().forEach(settings -> settings.storage().entries().stream()
+                .filter(link -> link.purpose().supplies()).forEach(link -> positions.add(link.position())));
+        var storage = com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.get(level);
+        return positions.stream().flatMap(position -> SettlementSupplyStock.positions(level, position).stream())
+                .flatMap(position -> storage.assignedAt(level.dimension(), position).stream())
+                .filter(link -> supplies(link.purpose())).map(link -> link.villagerId()).distinct().sorted()
+                .filter(id -> !town.duties().containsKey(id)).map(level::getEntity).filter(Villager.class::isInstance).map(Villager.class::cast)
+                .filter(worker -> worker.isAlive() && com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.resolve(level, worker).active()).toList();
+    }
+
+    private static boolean supplies(String purpose) {
+        return purpose.equals(AssignedStorageService.GENERAL_PURPOSE) || purpose.equals(AssignedStorageService.SUPPLY_PURPOSE);
     }
 
     private static long consume(List<ItemStack> items, WorkSupplyRequirement requirement, long remaining) {
         return WorkSupplyEvaluation.consume(items, requirement, remaining);
+    }
+
+    private record Definition(UUID area, String name, WorkSupplyDemand request, List<UUID> workers,
+                              List<ItemStack> privateSupplies, long progress) {
+        private Definition {
+            workers = List.copyOf(workers);
+            privateSupplies = privateSupplies.stream().map(ItemStack::copy).toList();
+        }
     }
 
     private static final class Stock {

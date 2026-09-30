@@ -89,7 +89,7 @@ final class SettlementBackgroundSmelting {
             if (!needsInput && !needsFuel) {
                 continue;
             }
-            var supplies = SettlementProductionInventory.supplies(level, worker, carried, depots);
+            var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
             List<Integer> consumed = new ArrayList<>(java.util.Collections.nCopies(supplies.size(), 0));
             for (int index = 0; needsInput && index < supplies.size() && items.getFirst().getCount() < 16; index++) {
                 ItemStack candidate = supplies.get(index).available();

@@ -125,7 +125,7 @@ final class SettlementBackgroundBrewing {
                 continue;
             }
             var carried = worker.items(level.registryAccess());
-            var supplies = SettlementProductionInventory.supplies(level, worker, carried, depots);
+            var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
             List<Integer> consumed = new ArrayList<>(java.util.Collections.nCopies(supplies.size(), 0));
             BlockPos water = null;
             int bottles = 0;
@@ -162,7 +162,8 @@ final class SettlementBackgroundBrewing {
                 }
             }
             if (consumed.stream().mapToInt(Integer::intValue).sum() == 0
-                    || allocation != null && !allocation.started() && bottles != allocation.remaining()) {
+                    || allocation != null && !allocation.started() && bottles != allocation.remaining()
+                    || !SettlementProductionInventory.allowed(level, supplies, consumed, allocation == null ? null : allocation.order())) {
                 continue;
             }
             double cost = travel(worker, machine);
@@ -228,7 +229,7 @@ final class SettlementBackgroundBrewing {
         var construction = new SettlementConstructionMachines(level, town, null);
         var carried = worker.items(level.registryAccess());
         var depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
-        var supplies = SettlementProductionInventory.supplies(level, worker, carried, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
         for (var order : queue.orders()) {
             if (!order.runnable()) continue;
             var route = HiredBrewingRecipeCatalog.find(level, order.recipe().brewingItem(), order.recipe().potion()).orElse(null);
@@ -268,7 +269,7 @@ final class SettlementBackgroundBrewing {
                 }
                 if (machine.fuel() == 0 && items.get(4).isEmpty()
                         && take(level, supplies, consumed, stack -> stack.is(Items.BLAZE_POWDER)).isEmpty()) ready = false;
-                if (!ready) {
+                if (!ready || !SettlementProductionInventory.allowed(level, supplies, consumed, order.id())) {
                     queue.blocker(order.id(), "missing_materials");
                     continue;
                 }

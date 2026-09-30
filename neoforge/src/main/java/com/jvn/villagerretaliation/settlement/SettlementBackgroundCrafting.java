@@ -69,7 +69,7 @@ final class SettlementBackgroundCrafting {
             worker.status("no_filter");
             return false;
         }
-        List<SettlementProductionInventory.Supply> supplies = SettlementProductionInventory.supplies(level, worker, items, depots);
+        List<SettlementProductionInventory.Supply> supplies = SettlementProductionInventory.supplies(level, town, worker, items, depots);
         var mode = queue != null || worker.role() == HiredVillagerRole.COOK ? CraftsmanWorker.Mode.PREFER_FIRST : CraftsmanWorker.mode(worker.settings());
         int start = mode == CraftsmanWorker.Mode.PREFER_FIRST ? 0
                 : CraftsmanWorker.indexAtOrAfter(targets, worker.settings().getInt("CraftsmanCursor"));
@@ -109,7 +109,7 @@ final class SettlementBackgroundCrafting {
                 }
                 var plan = WorkCraftingPlan.prepare(level, recipe.value(), supplies.stream().map(SettlementProductionInventory.Supply::available).toList(),
                         HiredProcessingRecipeFilter.narrowedCraftingIngredients(level, filter, recipe), table != null);
-                if (plan == null || !SettlementProductionInventory.allowed(level, supplies, plan.consumed())) {
+                if (plan == null || !SettlementProductionInventory.allowed(level, supplies, plan.consumed(), order == null ? null : order.id())) {
                     continue;
                 }
                 output = plan.result();

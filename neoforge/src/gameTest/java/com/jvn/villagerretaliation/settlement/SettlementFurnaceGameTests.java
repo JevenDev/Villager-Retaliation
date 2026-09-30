@@ -134,6 +134,8 @@ public final class SettlementFurnaceGameTests {
     public static void unloadedCookUsesSmokerAndReturnsTheFuelBucket(GameTestHelper helper) {
         fixture(helper, true, fixture -> {
             var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
+            fixture.output().configure(SettlementDepotPurpose.GENERAL, 9);
+            fixture.output().setItem(0, new ItemStack(Items.BREAD, 64));
             fixture.supply().setItem(0, new ItemStack(Items.POTATO, 2));
             fixture.supply().setItem(1, new ItemStack(Items.LAVA_BUCKET));
             for (int now = 200; now <= 1_200; now += 200) {
@@ -241,6 +243,8 @@ public final class SettlementFurnaceGameTests {
             HiredJobInventory.getJobInventory(cook).setItem(HiredJobInventory.FILTER_SLOT, filter);
             fixture.town().recordWorker(SettlementWorkerState.capture(level, cook, SettlementWorkforceService.duty(cook).orElseThrow(), 0L));
             fixture.town().recordResident(SettlementResidentState.capture(cook, fixture.town(), 0L));
+            fixture.output().configure(SettlementDepotPurpose.GENERAL, 9);
+            fixture.output().setItem(0, new ItemStack(Items.BREAD, 64));
             fixture.supply().setItem(0, new ItemStack(Items.RAW_IRON, 2));
             fixture.supply().setItem(1, new ItemStack(Items.POTATO, 2));
             fixture.supply().setItem(2, new ItemStack(Items.COAL));
@@ -362,16 +366,20 @@ public final class SettlementFurnaceGameTests {
             fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
             fixture.supply().setItem(0, new ItemStack(Items.RAW_IRON, 8));
             fixture.supply().setItem(1, new ItemStack(Items.COAL, 8));
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(fixture.machine().items(level.registryAccess()).getFirst().getCount(), 3, "only the finite shared batch is loaded");
             helper.assertTrue(queue.cancel(order.id()), "future production is cancelled");
             fixture.machine().advance(level, 200L);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "one native output is collected after its cooking interval");
             helper.assertValueEqual(queue.pending(order.id()), 2, "remaining native input stays reserved");
             fixture.machine().advance(level, 400L);
             fixture.machine().advance(level, 600L);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(queue.order(order.id()).produced(), 3L, "the cancelled in-progress batch finishes once");
             helper.assertValueEqual(queue.pending(order.id()), 0, "completion releases the shared quantity");
@@ -395,6 +403,7 @@ public final class SettlementFurnaceGameTests {
             fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
             fixture.supply().setItem(0, new ItemStack(Items.RAW_IRON, 2));
             fixture.supply().setItem(1, new ItemStack(Items.COAL));
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundProductionFurnace.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             var saved = fixture.worker().save();
             fixture.town().removeWorker(fixture.worker().id());
@@ -404,6 +413,7 @@ public final class SettlementFurnaceGameTests {
             fixture.town().assignDuty(nextId, area.id());
             fixture.town().recordWorker(replacement);
             fixture.machine().advance(level, 200L);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundProductionFurnace.tick(level, fixture.town(), replacement, 200, 1.0D);
             helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "replacement staff complete the existing receipt");
             helper.assertValueEqual(queue.pending(order.id()), 0, "handoff releases the original allocation");

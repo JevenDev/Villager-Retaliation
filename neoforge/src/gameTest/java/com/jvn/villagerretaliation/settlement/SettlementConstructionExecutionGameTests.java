@@ -65,7 +65,9 @@ public final class SettlementConstructionExecutionGameTests {
             var assistant = assistant(helper, fixture);
             var worker = fixture.town().workers().get(assistant.getUUID());
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), fixture.worker(), 400, 1.0D);
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 400, 1.0D);
             helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.OAK_PLANKS)), 2,
                     "each builder fetches one claimed placement instead of claiming the entire project inventory");
@@ -76,7 +78,9 @@ public final class SettlementConstructionExecutionGameTests {
             var first = restored.workers().get(fixture.builder().getUUID());
             var second = restored.workers().get(assistant.getUUID());
             for (int tick = 0; tick < 50 && project.active(); tick++) {
+                SettlementTestPlots.planSupplies(helper.getLevel(), restored);
                 SettlementBackgroundConstruction.tick(helper.getLevel(), restored, first, 200, 1.0D);
+                SettlementTestPlots.planSupplies(helper.getLevel(), restored);
                 SettlementBackgroundConstruction.tick(helper.getLevel(), restored, second, 200, 1.0D);
             }
             helper.assertValueEqual(project.status(), SettlementProject.Status.COMPLETED,
@@ -87,6 +91,7 @@ public final class SettlementConstructionExecutionGameTests {
                     + carried(helper, first) + carried(helper, second), 0, "exactly four plank items were consumed");
             helper.assertValueEqual(restored.duties().get(assistant.getUUID()), worker.area(), "completion retains the assistant's separate home assignment");
             int receipts = project.site().placements().size();
+            SettlementTestPlots.planSupplies(helper.getLevel(), restored);
             SettlementBackgroundConstruction.tick(helper.getLevel(), restored, second, 1000, 1.0D);
             helper.assertValueEqual(project.site().placements().size(), receipts, "completion cannot replay a worker's private cursor");
             helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "the entire crew works only from saved observations");
@@ -131,7 +136,10 @@ public final class SettlementConstructionExecutionGameTests {
         SettlementBackgroundConstructionGameTests.fixture(helper, false, planks(), fixture -> {
             var assistant = assistant(helper, fixture);
             var worker = fixture.town().workers().get(assistant.getUUID());
-            for (int tick = 0; tick < 10; tick++) SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
+            for (int tick = 0; tick < 10; tick++) {
+                SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
+                SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
+            }
             helper.assertValueEqual(worker.status(), "missing_construction_materials", "an empty supply depot produces the existing supply blocker");
             helper.assertValueEqual(fixture.project().placed(), 0, "missing supplies never advance progress");
             helper.assertTrue(fixture.project().crew().claim(assistant.getUUID(), helper.getLevel().getGameTime()) == null,
@@ -140,6 +148,7 @@ public final class SettlementConstructionExecutionGameTests {
             var unreachable = SettlementWorkerState.capture(helper.getLevel(), assistant, SettlementWorkforceService.duty(assistant).orElseThrow(), 0L);
             fixture.town().recordWorker(unreachable);
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), unreachable, 1000, 1.0D);
             helper.assertValueEqual(unreachable.status(), "construction_unreachable", "unobserved approaches remain blocked");
             helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.OAK_PLANKS)), 4, "unreachable helpers cannot spend supplies");
@@ -154,9 +163,11 @@ public final class SettlementConstructionExecutionGameTests {
             var assistant = assistant(helper, fixture);
             var worker = fixture.town().workers().get(assistant.getUUID());
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 400, 1.0D);
             helper.assertValueEqual(carried(helper, worker), 1, "the assistant collected one real material");
             fixture.town().finishProject(fixture.project().id(), SettlementProject.Status.CANCELLED);
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
             helper.assertValueEqual(carried(helper, worker) + fixture.depot().count(stack -> stack.is(Items.OAK_PLANKS)), 4,
                     "cancellation preserves supplies already carried by the crew");
@@ -181,7 +192,9 @@ public final class SettlementConstructionExecutionGameTests {
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 2));
             fixture.depot().setItem(1, new ItemStack(Items.OAK_DOOR, 2));
             for (int tick = 0; tick < 50 && fixture.project().active(); tick++) {
+                SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
                 SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), fixture.worker(), 400, 1.0D);
+                SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
                 SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 400, 1.0D);
             }
             helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.COMPLETED,
@@ -246,6 +259,7 @@ public final class SettlementConstructionExecutionGameTests {
             items.set(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
             worker.updateInventory(helper.getLevel().registryAccess(), items);
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 1000, 1.0D);
             helper.assertValueEqual(worker.status(), "output_full", "clearing waits for space for the real mined output");
             helper.assertTrue(fixture.site().getBlockState(fixture.origin()).is(Blocks.STONE), "the obstruction is not removed without output space");
@@ -270,7 +284,9 @@ public final class SettlementConstructionExecutionGameTests {
             var restored = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
             var project = restored.projects().get(fixture.project().id());
             for (int tick = 0; tick < 10 && project.active(); tick++) {
+                SettlementTestPlots.planSupplies(helper.getLevel(), restored);
                 SettlementBackgroundConstruction.tick(helper.getLevel(), restored, restored.workers().get(fixture.builder().getUUID()), 400, 1.0D);
+                SettlementTestPlots.planSupplies(helper.getLevel(), restored);
                 SettlementBackgroundConstruction.tick(helper.getLevel(), restored, restored.workers().get(assistant.getUUID()), 400, 1.0D);
             }
             helper.assertValueEqual(project.status(), SettlementProject.Status.COMPLETED,
@@ -285,6 +301,7 @@ public final class SettlementConstructionExecutionGameTests {
             var assistant = assistant(helper, fixture);
             var worker = fixture.town().workers().get(assistant.getUUID());
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), worker, 400, 1.0D);
             helper.assertTrue(fixture.project().crew().claim(assistant.getUUID(), helper.getLevel().getGameTime()) != null,
                     "the assistant holds a pending placement");

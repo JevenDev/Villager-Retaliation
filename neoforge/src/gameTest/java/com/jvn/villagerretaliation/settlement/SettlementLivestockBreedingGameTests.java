@@ -73,6 +73,11 @@ public final class SettlementLivestockBreedingGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_breeding")
     public static void breedingFetchesOnlyPermittedFiniteDepotFood(GameTestHelper helper) {
         fixture(helper, false, EntityType.PIG, fixture -> {
+            var meals = fixture.town().registerDepot(fixture.town().leader(), fixture.depot().area(),
+                    fixture.depot().position().east(), SettlementDepotPurpose.FOOD);
+            meals.configure(SettlementDepotPurpose.FOOD, 9);
+            meals.observeRules(List.of());
+            meals.setItem(0, new ItemStack(Items.BREAD, 64));
             fixture.depot().setItem(0, new ItemStack(Items.CARROT, 3));
             fixture.worker().settings().putBoolean("UseAssignedStorageForSupplies", false);
             work(helper, fixture, 12);
@@ -408,6 +413,7 @@ public final class SettlementLivestockBreedingGameTests {
 
     private static void work(GameTestHelper helper, Fixture fixture, int intervals) {
         for (int index = 0; index < intervals; index++) {
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundAnimalHandling.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
         }
     }

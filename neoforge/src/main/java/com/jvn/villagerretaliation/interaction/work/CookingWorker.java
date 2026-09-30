@@ -554,7 +554,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             queue.blocker(order.id(), "output_full");
             return WorkResult.idle("interaction.work.cooking.output_full");
         }
-        if (!AssignedStorageService.reserveProductionInputs(villager, missing)) {
+        if (!AssignedStorageService.reserveProductionInputs(villager, missing, order.id())) {
             queue.blocker(order.id(), "materials_reserved");
             return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
         }

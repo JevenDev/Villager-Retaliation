@@ -39,8 +39,14 @@ final class HiredTransferWorker {
                     queue.blocker(order.id(), invalid);
                     continue;
                 }
-                allocation = queue.reserve(villager.getUUID(), order.id(), HiredVillagerRoles.courierTransferLimit(context.aptitude()), stock);
-                if (allocation == null) continue;
+                int permitted = com.jvn.villagerretaliation.settlement.SettlementAllocationService.deliveryAllowance(level,
+                        villager.getUUID(), order.source().position(), order.destination().position(), order.sample(),
+                        HiredVillagerRoles.courierTransferLimit(context.aptitude()));
+                allocation = queue.reserve(villager.getUUID(), order.id(), permitted, stock);
+                if (allocation == null) {
+                    queue.blocker(order.id(), "transfer_supply_or_capacity");
+                    continue;
+                }
                 bind(level, villager, order);
                 AssignedStorageService.releaseCourierClaims(villager);
                 int count = AssignedStorageService.reserveCourierTransferClaims(villager, order.source().position(), allocation.amount());

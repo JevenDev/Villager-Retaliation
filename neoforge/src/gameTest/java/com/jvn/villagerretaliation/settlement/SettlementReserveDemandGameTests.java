@@ -81,6 +81,7 @@ public final class SettlementReserveDemandGameTests {
         var resident = EntityType.VILLAGER.create(helper.getLevel());
         resident.setPos(town.center().getCenter());
         VillageAllegianceApi.assignKnown(helper.getLevel(), resident, town.id(), AllegianceAssignmentSource.EXPLICIT_API);
+        SettlementTestPlots.planSupplies(helper.getLevel(), town);
         helper.assertTrue(SettlementFoodService.takeMeal(resident).is(Items.BREAD), "the intended resident can consume protected nutrition");
         var after = food(helper, town);
         helper.assertValueEqual(after.supply().availableNow(), 4L, "the consumed meal leaves actual stock exactly once");

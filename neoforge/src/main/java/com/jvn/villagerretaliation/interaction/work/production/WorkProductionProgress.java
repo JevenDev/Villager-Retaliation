@@ -13,6 +13,24 @@ import net.minecraft.world.item.alchemy.Potions;
 public record WorkProductionProgress(long remaining, List<ItemStack> supplies, long burn, long uses, String blocker) {
     public WorkProductionProgress { supplies = supplies.stream().map(ItemStack::copy).toList(); }
 
+    public static WorkProductionProgress loaded(ServerLevel level, HiredProductionOrder order, HiredProductionQueue.Allocation allocation) {
+        if (!allocation.started()) return new WorkProductionProgress(allocation.remaining(), List.of(), 0, 0, "");
+        var machine = allocation.station() != null && level.hasChunkAt(allocation.station()) ? level.getBlockEntity(allocation.station()) : null;
+        if (machine instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity furnace) {
+            var tag = furnace.saveWithoutMetadata(level.registryAccess());
+            var items = net.minecraft.core.NonNullList.withSize(3, ItemStack.EMPTY);
+            net.minecraft.world.ContainerHelper.loadAllItems(tag, items, level.registryAccess());
+            return furnace(order, allocation.remaining(), items, tag, !furnace.getBlockState().is(net.minecraft.world.level.block.Blocks.FURNACE));
+        }
+        if (machine instanceof net.minecraft.world.level.block.entity.BrewingStandBlockEntity stand) {
+            var tag = stand.saveWithoutMetadata(level.registryAccess());
+            var items = net.minecraft.core.NonNullList.withSize(5, ItemStack.EMPTY);
+            net.minecraft.world.ContainerHelper.loadAllItems(tag, items, level.registryAccess());
+            return brewing(level, order, allocation.remaining(), items, tag);
+        }
+        return new WorkProductionProgress(allocation.remaining(), List.of(), 0, 0, "station_unavailable");
+    }
+
     public static WorkProductionProgress furnace(HiredProductionOrder order, long amount, List<ItemStack> items,
                                                  CompoundTag contents, boolean fast) {
         long remaining = Math.max(0, amount - (order.matches(items.get(2)) ? items.get(2).getCount() : 0));

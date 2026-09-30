@@ -70,7 +70,7 @@ final class SettlementBackgroundLogging {
         try {
             LoggingHarvestPlan.clearCompletedDeposit(context);
             state.remove(DEPOSIT);
-            work(level, worker, forest, owner, context, depots, new SettlementWorkBudget(worker, elapsed, multiplier));
+            work(level, town, worker, forest, owner, context, depots, new SettlementWorkBudget(worker, elapsed, multiplier));
         } finally {
             var snapshot = inventory.captureSnapshot();
             if (!snapshot.equals(worker.inventory()) || !before.equals(state)) worker.changed();
@@ -85,7 +85,7 @@ final class SettlementBackgroundLogging {
                 100, 1, false, false);
     }
 
-    private static void work(ServerLevel level, SettlementWorkerState worker, SettlementForest forest, Villager owner,
+    private static void work(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementForest forest, Villager owner,
                              HiredWorkContext context, List<SettlementDepot> depots, SettlementWorkBudget budget) {
         var plan = LoggingHarvestPlan.read(context);
         if (plan == null) {
@@ -100,7 +100,7 @@ final class SettlementBackgroundLogging {
                             LoggingTreeGeometry.connectedTreeLogs(forest, forest::observed, root, filters)))
                     .sorted(Comparator.comparingDouble(position -> position.distSqr(worker.position()))).toList();
             if (roots.isEmpty()) {
-                if (bonemeal(level, worker, forest, context, depots, budget)) return;
+                if (bonemeal(level, town, worker, forest, context, depots, budget)) return;
                 worker.status(candidates.completedFullPass() ? "waiting_for_trees" : "searching_forest");
                 return;
             }
@@ -148,7 +148,7 @@ final class SettlementBackgroundLogging {
                 if (plan.logFamily().isBlank()) LoggingHarvestPlan.rememberLogFamily(context, LoggingTreeGeometry.logFamilyKey(block));
                 var axe = context.inventory().equipBestTool(stack -> stack.is(ItemTags.AXES), stack -> destroySpeed(level, stack, block));
                 if (axe.isEmpty()) {
-                    SettlementBackgroundTools.fetchTool(level, worker, context.inventory(), depots, stack -> stack.is(ItemTags.AXES),
+                    SettlementBackgroundTools.fetchTool(level, town, worker, context.inventory(), depots, stack -> stack.is(ItemTags.AXES),
                             stack -> destroySpeed(level, stack, block), "axe", budget);
                     return;
                 }
@@ -172,7 +172,7 @@ final class SettlementBackgroundLogging {
                 var tool = HiredLoggingOptions.harvestLeaves(context.state())
                         ? context.inventory().equipBestTool(LoggingWorker::isLeafHarvestTool, LoggingWorker::leafToolScore) : ItemStack.EMPTY;
                 if (HiredLoggingOptions.harvestLeaves(context.state()) && tool.isEmpty()
-                        && SettlementBackgroundTools.fetchTool(level, worker, context.inventory(), depots, LoggingWorker::isLeafHarvestTool,
+                        && SettlementBackgroundTools.fetchTool(level, town, worker, context.inventory(), depots, LoggingWorker::isLeafHarvestTool,
                                 LoggingWorker::leafToolScore, "leaf_tool", budget)) return;
                 if (!harvest(level, worker, forest, owner, context, position, block, tool, 10.0D, false, "clearing_tree_leaves", budget)) return;
                 LoggingHarvestPlan.removeLeaf(context, position);
@@ -186,7 +186,7 @@ final class SettlementBackgroundLogging {
                     LoggingHarvestPlan.removeSapling(context, position);
                     continue;
                 }
-                if (!plant(level, worker, forest, context, depots, position, plan.sapling(), item.getBlock().defaultBlockState(), budget)) return;
+                if (!plant(level, town, worker, forest, context, depots, position, plan.sapling(), item.getBlock().defaultBlockState(), budget)) return;
                 LoggingHarvestPlan.removeSapling(context, position);
             } else {
                 int cut = plan.logsCut();
@@ -202,11 +202,11 @@ final class SettlementBackgroundLogging {
         }
     }
 
-    private static boolean bonemeal(ServerLevel level, SettlementWorkerState worker, SettlementForest forest,
+    private static boolean bonemeal(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementForest forest,
                                     HiredWorkContext context, List<SettlementDepot> depots, SettlementWorkBudget budget) {
         if (!HiredLoggingOptions.bonemealSaplings(context.state())) return false;
         var updated = SettlementBackgroundTools.items(context.inventory());
-        var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, updated, depots);
         int selected = -1;
         for (int index = 0; index < supplies.size(); index++) {
             if (supplies.get(index).available().is(net.minecraft.world.item.Items.BONE_MEAL) && SettlementBackgroundTools.allowed(level, supplies, index)) {
@@ -283,7 +283,7 @@ final class SettlementBackgroundLogging {
         return true;
     }
 
-    private static boolean plant(ServerLevel level, SettlementWorkerState worker, SettlementForest forest,
+    private static boolean plant(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementForest forest,
                                  HiredWorkContext context, List<SettlementDepot> depots, BlockPos position, ItemStack sapling, BlockState planted, SettlementWorkBudget budget) {
         var updated = SettlementBackgroundTools.items(context.inventory());
         for (int slot : worker.outputSlots()) {
@@ -299,7 +299,7 @@ final class SettlementBackgroundLogging {
                 return true;
             }
         }
-        var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, updated, depots);
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);
             if (!source.available().is(sapling.getItem()) || !SettlementBackgroundTools.allowed(level, supplies, index)) continue;

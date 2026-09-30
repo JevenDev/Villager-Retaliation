@@ -212,7 +212,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 queue.blocker(order.id(), "output_full");
                 continue;
             }
-            if (!AssignedStorageService.reserveProductionInputs(villager, missing)) {
+            if (!AssignedStorageService.reserveProductionInputs(villager, missing, order.id())) {
                 queue.blocker(order.id(), "materials_reserved");
                 continue;
             }

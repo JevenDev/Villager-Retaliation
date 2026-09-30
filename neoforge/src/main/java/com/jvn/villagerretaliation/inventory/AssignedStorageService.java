@@ -742,12 +742,21 @@ public final class AssignedStorageService {
     }
 
     public static boolean reserveProductionInputs(Villager villager, Map<net.minecraft.world.item.Item, Integer> needs) {
+        return reserveProductionInputs(villager, needs, null);
+    }
+
+    public static boolean reserveProductionInputs(Villager villager, Map<net.minecraft.world.item.Item, Integer> needs, UUID consumer) {
         if (needs.size() > 64 || needs.values().stream().anyMatch(count -> count == null || count < 1 || count > 4096)) return false;
         return reserveProductionNeeds(villager, needs.entrySet().stream().map(entry ->
-                new com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need(stack -> stack.is(entry.getKey()), entry.getValue(), "")).toList());
+                new com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need(stack -> stack.is(entry.getKey()), entry.getValue(), "")).toList(), consumer);
     }
 
     public static boolean reserveProductionNeeds(Villager villager, List<com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need> needs) {
+        return reserveProductionNeeds(villager, needs, null);
+    }
+
+    public static boolean reserveProductionNeeds(Villager villager,
+            List<com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need> needs, UUID consumer) {
         if (!(villager.level() instanceof ServerLevel level) || needs.size() > 64
                 || needs.stream().anyMatch(need -> need == null || need.predicate() == null || need.count() < 1 || need.count() > 4096)) return false;
         int[] remaining = needs.stream().mapToInt(com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials.Need::count).toArray();
@@ -764,7 +773,7 @@ public final class AssignedStorageService {
                 for (int index = 0; index < needs.size(); index++) {
                     if (remaining[index] <= 0 || !needs.get(index).predicate().test(stack)) continue;
                     int count = Math.min(remaining[index], Math.min(stack.getCount() - used,
-                            sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), reserved)));
+                            sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), reserved, consumer)));
                     if (count <= 0) continue;
                     reserved.add(stack.copyWithCount(count));
                     used += count;
@@ -1073,6 +1082,17 @@ public final class AssignedStorageService {
             ItemStack stack,
             UUID excludedOwner,
             List<ItemStack> additionalClaims) {
+        return sourceAllowance(level, candidate, rules, stack, excludedOwner, additionalClaims, null);
+    }
+
+    private static int sourceAllowance(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            List<ItemStack> rules,
+            ItemStack stack,
+            UUID excludedOwner,
+            List<ItemStack> additionalClaims,
+            UUID consumer) {
         ContainerFilterEvaluator.Evaluation evaluation = evaluateContainerRules(
                 level,
                 candidate,
@@ -1081,9 +1101,11 @@ public final class AssignedStorageService {
                 VillagerFilterPolicy.TransferOperation.PROVIDE,
                 excludedOwner,
                 additionalClaims);
-        return evaluation.valid() && evaluation.permitted()
+        int available = evaluation.valid() && evaluation.permitted()
                 ? Math.min(evaluation.allowance(), unclaimedSourceCount(level, candidate, stack, excludedOwner, additionalClaims))
                 : 0;
+        return com.jvn.villagerretaliation.settlement.SettlementAllocationService.allowance(
+                level, excludedOwner, candidate.pos(), stack, available, additionalClaims, consumer);
     }
 
     private static int unclaimedSourceCount(ServerLevel level, VillagerInventoryOverflowService.ContainerCandidate candidate,
@@ -1641,7 +1663,7 @@ public final class AssignedStorageService {
         return liveContainerCandidates(level, villager, use).stream()
                 .filter(candidate -> candidate.anyPositionMatches(safeFilter))
                 .filter(candidate -> !isStorageRecentlyFailed(level, villager, candidate, use))
-                .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
+                .filter(candidate -> containerHasAvailableItem(level, candidate, safePredicate, villager.getUUID()))
                 .min((first, second) -> Double.compare(
                         first.distanceToSqr(villagerPos),
                         second.distanceToSqr(villagerPos)))
@@ -1671,7 +1693,7 @@ public final class AssignedStorageService {
         return liveContainerCandidates(level, villager, use).stream()
                 .filter(candidate -> candidate.anyPositionMatches(safeFilter))
                 .filter(candidate -> !isStorageRecentlyFailed(level, villager, candidate, use))
-                .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
+                .filter(candidate -> containerHasAvailableItem(level, candidate, safePredicate, villager.getUUID()))
                 .sorted((first, second) -> Double.compare(
                         first.distanceToSqr(villagerPos),
                         second.distanceToSqr(villagerPos)))
@@ -2088,11 +2110,8 @@ public final class AssignedStorageService {
                 if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
-                int available = unclaimedSourceCount(level, candidate, stack, villager.getUUID(), List.of());
-                if (!ContainerTransferClaimLedger.snapshot(level, villager.getUUID(), VillagerFilterPolicy.TransferOperation.PROVIDE).isEmpty()) {
-                    var resolution = ContainerFilterResolver.resolve(level, candidate);
-                    available = resolution.live() ? sourceAllowance(level, candidate, resolution.rules(), stack, villager.getUUID(), List.of()) : 0;
-                }
+                var resolution = ContainerFilterResolver.resolve(level, candidate);
+                int available = resolution.live() ? sourceAllowance(level, candidate, resolution.rules(), stack, villager.getUUID(), List.of()) : 0;
                 int requested = Math.min(maxCount - movedTotal, Math.min(stack.getCount(), available));
                 ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
                         villager, container, slot, requested);
@@ -2142,8 +2161,11 @@ public final class AssignedStorageService {
                 if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
+                var resolution = ContainerFilterResolver.resolve(level, candidate);
+                int available = resolution.live() ? sourceAllowance(level, candidate, resolution.rules(), stack, villager.getUUID(), List.of()) : 0;
+                if (available <= 0) continue;
                 ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
-                        villager, container, slot, stack.getCount());
+                        villager, container, slot, Math.min(stack.getCount(), available));
                 if (extracted.isEmpty()) {
                     return 0;
                 }
@@ -2157,6 +2179,7 @@ public final class AssignedStorageService {
                 if (moved <= 0) {
                     return 0;
                 }
+                consumeProductionInputClaim(level, villager.getUUID(), candidate.pos(), extracted.copyWithCount(moved));
                 VillagerInventoryOverflowService.openUsedContainers(level, List.of(candidate));
                 return moved;
             }
@@ -2272,10 +2295,18 @@ public final class AssignedStorageService {
         return count;
     }
 
-    private static boolean containerHasItem(Container container, Predicate<ItemStack> predicate) {
+    private static boolean containerHasAvailableItem(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            Predicate<ItemStack> predicate,
+            UUID worker) {
+        var resolution = ContainerFilterResolver.resolve(level, candidate);
+        if (!resolution.live()) return false;
+        Container container = candidate.container();
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
             ItemStack stack = container.getItem(slot);
-            if (!stack.isEmpty() && predicate.test(stack)) {
+            if (!stack.isEmpty() && predicate.test(stack)
+                    && sourceAllowance(level, candidate, resolution.rules(), stack, worker, List.of()) > 0) {
                 return true;
             }
         }

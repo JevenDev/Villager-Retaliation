@@ -71,7 +71,7 @@ final class SettlementBackgroundProductionFurnace {
         }
         if (allocation == null && SettlementBackgroundSmelting.finishExisting(level, town, worker, elapsed, multiplier)) return true;
         var carried = worker.items(level.registryAccess());
-        var supplies = SettlementProductionInventory.supplies(level, worker, carried, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
         for (var order : queue.orders()) {
             if (!order.runnable()) continue;
             if (!order.recipe().supports(level, worker.role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
@@ -110,7 +110,7 @@ final class SettlementBackgroundProductionFurnace {
                 consumed.set(supplies.indexOf(source), batches);
                 items.set(0, source.available().copyWithCount(batches));
                 if (items.get(1).isEmpty() && machine.burnTime() <= 0 && !planFuel(machine, items, supplies, consumed)) continue;
-                if (!SettlementProductionInventory.allowed(level, supplies, consumed)) continue;
+                if (!SettlementProductionInventory.allowed(level, supplies, consumed, order.id())) continue;
                 var preview = copy(carried);
                 consumeCarried(preview, supplies, consumed);
                 if (!SettlementProductionInventory.insertOutputs(worker, preview, List.of(order.output()))) {
@@ -205,9 +205,9 @@ final class SettlementBackgroundProductionFurnace {
             return blocked(worker, queue, order, "station_batch_missing");
         }
         if (items.get(1).isEmpty() && machine.burnTime() <= 0) {
-            var supplies = SettlementProductionInventory.supplies(level, worker, carried, depots);
+            var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
             var consumed = new ArrayList<Integer>(java.util.Collections.nCopies(supplies.size(), 0));
-            if (!planFuel(machine, items, supplies, consumed) || !SettlementProductionInventory.allowed(level, supplies, consumed)) {
+            if (!planFuel(machine, items, supplies, consumed) || !SettlementProductionInventory.allowed(level, supplies, consumed, order.id())) {
                 return blocked(worker, queue, order, "missing_fuel");
             }
             worker.work(elapsed, multiplier);

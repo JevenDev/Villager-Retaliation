@@ -44,6 +44,7 @@ public final class SettlementEconomyGameTests {
         var resident = resident(helper, fixture);
         fixture.depot().setItem(0, new ItemStack(Items.BREAD));
         VillagerRecoveryService.restoreRecoveryState(resident, new VillagerRecoveryService.RecoverySnapshot(0, 0, 0, 0));
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         helper.assertTrue(VillagerRecoveryService.onVillagerTickPost(resident), "a hungry resident starts eating");
         helper.assertTrue(fixture.depot().isEmpty(), "the meal is reserved from real stock before the animation");
         for (int tick = 0; tick < 31; tick++) {
@@ -62,6 +63,7 @@ public final class SettlementEconomyGameTests {
         var resident = resident(helper, fixture);
         fixture.depot().setItem(0, new ItemStack(Items.BREAD));
         VillagerRecoveryService.restoreRecoveryState(resident, new VillagerRecoveryService.RecoverySnapshot(0, 0, 0, 0));
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         VillagerRecoveryService.onVillagerTickPost(resident);
         VillagerRecoveryService.cancelForcedRecovery(resident);
         helper.assertValueEqual(resident.getInventory().countItem(Items.BREAD), 1, "cancelled eating returns the reserved meal");
@@ -211,6 +213,7 @@ public final class SettlementEconomyGameTests {
         var resident = resident(helper, fixture);
         fixture.town().assignDuty(resident.getUUID(), fixture.farm().id());
         VillagerRecoveryService.restoreRecoveryState(resident, new VillagerRecoveryService.RecoverySnapshot(0, 0, 0, 0));
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         helper.assertTrue(SettlementFoodService.workMultiplier(helper.getLevel(), resident) < 0.5D,
                 "severe hunger and homelessness reduce civic work output");
         fixture.town().recordSurvey(fixture.home().id(),
@@ -257,6 +260,8 @@ public final class SettlementEconomyGameTests {
         data.putArea(registry, id, leader.getUUID(), farm);
         data.putArea(registry, id, leader.getUUID(), home);
         var depot = town.registerDepot(leader.getUUID(), farm.id(), center.offset(1, 0, 1), SettlementDepotPurpose.GENERAL);
+        SettlementTestPlots.activateDepot(level, town, depot);
+        depot.observeRules(List.of());
         return new Fixture(town, farm, home, depot, leader);
     }
 

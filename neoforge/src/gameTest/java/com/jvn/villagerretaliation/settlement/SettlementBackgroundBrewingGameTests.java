@@ -353,22 +353,26 @@ public final class SettlementBackgroundBrewingGameTests {
         fixture(helper, fixture -> {
             var level = helper.getLevel();
             BlockPos center = fixture.town().center();
+            SettlementTestPlots.activateDepot(level, fixture.town(), fixture.supply());
             var chunk = level.getChunkAt(center);
-            chunk.setBlockState(center, Blocks.BREWING_STAND.defaultBlockState(), false);
-            chunk.setBlockState(center.east(), Blocks.AIR.defaultBlockState(), false);
-            var stand = (BrewingStandBlockEntity) chunk.getBlockEntity(center);
+            level.setBlockAndUpdate(center, Blocks.BREWING_STAND.defaultBlockState());
+            level.setBlockAndUpdate(center.east(), Blocks.AIR.defaultBlockState());
+            var stand = (BrewingStandBlockEntity) level.getBlockEntity(center);
             var machine = SettlementBrewingStandState.capture(level, fixture.area().id(), stand, level.getGameTime());
             fixture.town().recordBrewingStand(machine);
             fixture.town().recordSurvey(fixture.area().id(), new SettlementBuildingSurvey.Survey(0L, List.of(), List.of(center), true,
                     Map.of(center, ResourceLocation.withDefaultNamespace("brewing_stand")), List.of(center.east())));
             fixture.worker().brewingOrder(order("potion", 3, false));
             supply(fixture, 3, 1);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 3, "removed loaded water overrides the older survey");
-            chunk.setBlockState(center.east(), Blocks.WATER.defaultBlockState(), false);
+            level.setBlockAndUpdate(center.east(), Blocks.WATER.defaultBlockState());
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
-            helper.assertTrue(fixture.supply().getItem(0).isEmpty(), "a restored real source allows the three bottles to be filled");
+            helper.assertTrue(fixture.supply().getItem(0).isEmpty(), "a restored real source allows the three bottles to be filled: " + fixture.worker().status());
             helper.assertTrue(stand.getItem(0).is(Items.POTION), "loaded stands receive supplied bottles immediately");
             helper.assertTrue(level.getBlockState(center).getValue(BrewingStandBlock.HAS_BOTTLE[0]), "the block displays its actual supplied bottle");
             helper.assertTrue(SettlementBuildingSurvey.waterSource(chunk.getBlockState(center.east())), "filling preserves the native water source");
@@ -410,11 +414,13 @@ public final class SettlementBackgroundBrewingGameTests {
             queue.append(order);
             fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
             supply(fixture, 6, 3);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(queue.pending(order.id()), 3, "one real three-bottle batch is reserved before processing");
             helper.assertTrue(queue.cancel(order.id()), "future bottles are cancelled");
             for (int now = 200; now <= 2000; now += 200) {
                 fixture.machine().advance(level, now);
+                SettlementTestPlots.planSupplies(level, fixture.town());
                 SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             }
             helper.assertValueEqual(queue.order(order.id()).produced(), 3L, "the in-progress recipe chain finishes exactly three potions");
@@ -441,6 +447,7 @@ public final class SettlementBackgroundBrewingGameTests {
             queue.append(order);
             fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
             supply(fixture, 2, 2);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundBrewing.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             var saved = fixture.worker().save();
             fixture.town().removeWorker(fixture.worker().id());
@@ -451,6 +458,7 @@ public final class SettlementBackgroundBrewingGameTests {
             fixture.town().recordWorker(replacement);
             for (int now = 200; now <= 1600; now += 200) {
                 fixture.machine().advance(level, now);
+                SettlementTestPlots.planSupplies(level, fixture.town());
                 SettlementBackgroundBrewing.tick(level, fixture.town(), replacement, 200, 1.0D);
             }
             helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "replacement staff finish the original potion");
@@ -526,6 +534,7 @@ public final class SettlementBackgroundBrewingGameTests {
             for (int now = 320; now <= 3520; now += 200) {
                 fixture.machine().advance(level, now);
                 second.advance(level, now);
+                SettlementTestPlots.planSupplies(level, town);
                 SettlementBackgroundBrewing.tick(level, town, worker, 200, 1.0D);
             }
             helper.assertValueEqual(queue.order(legacy.id()).produced(), 6L, "a cancelled converted order finishes both actual batches exactly once");

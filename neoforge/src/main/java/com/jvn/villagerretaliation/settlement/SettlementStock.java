@@ -32,6 +32,20 @@ public final class SettlementStock {
         return depots.stream().mapToInt(depot -> depot.count(predicate)).sum();
     }
 
+    static ItemStack take(net.minecraft.server.level.ServerLevel level, SettlementRecord town, java.util.UUID consumer,
+                          Predicate<ItemStack> predicate, int maximum) {
+        for (var depot : supplies(town)) for (int slot = 0; slot < depot.getContainerSize(); slot++) {
+            var sample = depot.getItem(slot);
+            if (sample.isEmpty() || !predicate.test(sample)) continue;
+            int count = Math.min(maximum, SettlementAllocationService.inspect(level, town, null, consumer, depot.position(), sample).allowance());
+            count = Math.min(count, com.jvn.villagerretaliation.inventory.AssignedStorageService.observedTransferAllowance(
+                    level, depot.position(), depot, depot.observedRules(), sample,
+                    com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation.PROVIDE));
+            if (count > 0) return depot.removeItem(slot, count);
+        }
+        return ItemStack.EMPTY;
+    }
+
     public static ItemStack take(SettlementRecord town, Predicate<ItemStack> predicate, int maximum) {
         return take(supplies(town), predicate, maximum);
     }

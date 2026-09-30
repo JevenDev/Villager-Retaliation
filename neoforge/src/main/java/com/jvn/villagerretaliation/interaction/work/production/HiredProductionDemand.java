@@ -68,20 +68,7 @@ public final class HiredProductionDemand {
                 if (!allocation.started()) {
                     describe(level, order, allocation.remaining(), supplies, carried, sources, new ArrayList<>(), 0, 0, unknown, water, result);
                 } else if (allocation.station() != null) {
-                    var machine = level.hasChunkAt(allocation.station()) ? level.getBlockEntity(allocation.station()) : null;
-                    WorkProductionProgress progress;
-                    if (machine instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity furnace) {
-                        var tag = furnace.saveWithoutMetadata(level.registryAccess());
-                        var items = net.minecraft.core.NonNullList.withSize(3, ItemStack.EMPTY);
-                        net.minecraft.world.ContainerHelper.loadAllItems(tag, items, level.registryAccess());
-                        progress = WorkProductionProgress.furnace(order, allocation.remaining(), items, tag,
-                                !furnace.getBlockState().is(net.minecraft.world.level.block.Blocks.FURNACE));
-                    } else if (machine instanceof net.minecraft.world.level.block.entity.BrewingStandBlockEntity stand) {
-                        var tag = stand.saveWithoutMetadata(level.registryAccess());
-                        var items = net.minecraft.core.NonNullList.withSize(5, ItemStack.EMPTY);
-                        net.minecraft.world.ContainerHelper.loadAllItems(tag, items, level.registryAccess());
-                        progress = WorkProductionProgress.brewing(level, order, allocation.remaining(), items, tag);
-                    } else { result.add(unavailable(order)); continue; }
+                    var progress = WorkProductionProgress.loaded(level, order, allocation);
                     if (!progress.blocker().isEmpty()) { result.add(unavailable(order)); continue; }
                     describe(level, order, progress.remaining(), supplies, carried, sources, new ArrayList<>(progress.supplies()), progress.burn(), progress.uses(), unknown, water, result);
                 }

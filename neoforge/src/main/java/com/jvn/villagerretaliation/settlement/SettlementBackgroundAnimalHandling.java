@@ -76,12 +76,12 @@ final class SettlementBackgroundAnimalHandling {
                     tool = inventory.equipBestTool(stack -> stack.is(Items.SHEARS),
                             stack -> stack.getMaxDamage() - stack.getDamageValue());
                     if (tool.isEmpty()) {
-                        SettlementBackgroundTools.fetchTool(level, worker, inventory, depots, stack -> stack.is(Items.SHEARS),
+                        SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots, stack -> stack.is(Items.SHEARS),
                                 stack -> stack.getMaxDamage() - stack.getDamageValue(), "shears", budget);
                         return;
                     }
                 } else if (inventory.findSupply(stack -> stack.is(Items.BUCKET)).isEmpty()) {
-                    fetchBucket(level, worker, inventory, depots, budget);
+                    fetchBucket(level, town, worker, inventory, depots, budget);
                     return;
                 }
                 double cost = productTicks(worker) + steps * 16.0D;
@@ -140,10 +140,10 @@ final class SettlementBackgroundAnimalHandling {
                 + HiredVillagerWorkService.completedTaskCooldownTicks(efficiency);
     }
 
-    private static void fetchBucket(ServerLevel level, SettlementWorkerState worker, HiredJobInventory inventory,
+    private static void fetchBucket(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory,
                                     List<SettlementDepot> depots, SettlementWorkBudget budget) {
         var items = SettlementBackgroundTools.items(inventory);
-        var supplies = SettlementProductionInventory.supplies(level, worker, items, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, items, depots);
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);
             if (!source.available().is(Items.BUCKET) || !SettlementBackgroundTools.allowed(level, supplies, index)) continue;

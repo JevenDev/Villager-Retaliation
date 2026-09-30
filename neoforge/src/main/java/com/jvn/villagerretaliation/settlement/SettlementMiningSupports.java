@@ -25,7 +25,7 @@ final class SettlementMiningSupports {
     private SettlementMiningSupports() {
     }
 
-    static Result tick(ServerLevel level, SettlementWorkerState worker, SettlementMine mine, SettlementMiningView view,
+    static Result tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementMine mine, SettlementMiningView view,
                        Villager owner, HiredWorkContext context, BlockPos origin, Integer layer,
                        List<SettlementDepot> depots, SettlementWorkBudget budget, SettlementMiningRoutes.Budget routeBudget) {
         int current = layer == null ? context.workMin().getY() : layer;
@@ -39,14 +39,14 @@ final class SettlementMiningSupports {
         }
         if (!MiningExcavationShaft.hasCompleteRouteToLayer(view, context, current)) {
             if (find(context, worker.supplySlots(), stack -> stack.is(Items.LADDER)) < 0) {
-                return fetch(level, worker, context, origin, depots, budget, stack -> stack.is(Items.LADDER), "ladders", true);
+                return fetch(level, town, worker, context, origin, depots, budget, stack -> stack.is(Items.LADDER), "ladders", true);
             }
             int floor = MiningExcavationShaft.supportFloorY(view, context, current);
             for (int y = MiningExcavationShaft.topY(view, context, shaft); y >= floor; y--) {
                 var position = shaft.at(y);
                 if (mine.getBlockState(position).is(Blocks.LADDER)) continue;
                 if (!mine.getBlockState(position).isAir()) break;
-                return place(level, worker, mine, view, owner, context, origin, position, shaft.ladderState(),
+                return place(level, town, worker, mine, view, owner, context, origin, position, shaft.ladderState(),
                         Items.LADDER, depots, budget, routeBudget, true);
             }
         }
@@ -57,9 +57,9 @@ final class SettlementMiningSupports {
                 var state = Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, placement.facing());
                 if (!MiningSupportManager.canEventuallyPlace(view, context, placement.pos(), state)) continue;
                 if (find(context, worker.supplySlots(), stack -> stack.is(Items.TORCH)) < 0) {
-                    return fetch(level, worker, context, origin, depots, budget, stack -> stack.is(Items.TORCH), "torches", false);
+                    return fetch(level, town, worker, context, origin, depots, budget, stack -> stack.is(Items.TORCH), "torches", false);
                 }
-                var result = place(level, worker, mine, view, owner, context, origin, placement.pos(), state,
+                var result = place(level, town, worker, mine, view, owner, context, origin, placement.pos(), state,
                         Items.TORCH, depots, budget, routeBudget, false);
                 if (result != Result.NONE) return result;
             }
@@ -67,7 +67,7 @@ final class SettlementMiningSupports {
         return Result.NONE;
     }
 
-    private static Result place(ServerLevel level, SettlementWorkerState worker, SettlementMine mine, SettlementMiningView view,
+    private static Result place(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementMine mine, SettlementMiningView view,
                                 Villager owner, HiredWorkContext context, BlockPos origin, BlockPos position, BlockState state,
                                 Item item, List<SettlementDepot> depots, SettlementWorkBudget budget,
                                 SettlementMiningRoutes.Budget routeBudget, boolean required) {
@@ -92,7 +92,7 @@ final class SettlementMiningSupports {
             var slots = new ArrayList<>(worker.outputSlots());
             slots.addAll(worker.supplySlots());
             slot = find(context, slots, suitable);
-            if (slot < 0) return fetch(level, worker, context, origin, depots, budget, suitable, "backing", required);
+            if (slot < 0) return fetch(level, town, worker, context, origin, depots, budget, suitable, "backing", required);
             state = ((BlockItem) context.inventory().getItem(slot).getItem()).getBlock().defaultBlockState();
             destination = need.backingPos();
         } else {
@@ -125,11 +125,11 @@ final class SettlementMiningSupports {
         return -1;
     }
 
-    private static Result fetch(ServerLevel level, SettlementWorkerState worker, HiredWorkContext context, BlockPos origin,
+    private static Result fetch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredWorkContext context, BlockPos origin,
                                 List<SettlementDepot> depots, SettlementWorkBudget budget, Predicate<ItemStack> predicate,
                                 String label, boolean required) {
         var updated = SettlementBackgroundTools.items(context.inventory());
-        var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, updated, depots);
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);
             if (source.depot() == null || !predicate.test(source.available()) || !SettlementBackgroundTools.allowed(level, supplies, index)) continue;

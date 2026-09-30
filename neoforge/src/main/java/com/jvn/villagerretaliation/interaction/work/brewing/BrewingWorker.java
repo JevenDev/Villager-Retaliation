@@ -246,7 +246,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 setBrewingBlocked(context, "missing_brewing_materials", materials.missingMaterials());
                 return WorkResult.idle(materials.missingStatus());
             }
-            if (!AssignedStorageService.reserveProductionNeeds(villager, materials.storageNeeds(context))) {
+            if (!AssignedStorageService.reserveProductionNeeds(villager, materials.storageNeeds(context), allocation.order())) {
                 queue.blocker(allocation.order(), "materials_reserved");
                 return WorkResult.idle("interaction.work.brewing.missing_materials");
             }
@@ -391,7 +391,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                     queue.blocker(order.id(), "output_full");
                     continue;
                 }
-                if (!AssignedStorageService.reserveProductionNeeds(villager, materials.storageNeeds(context))) {
+                if (!AssignedStorageService.reserveProductionNeeds(villager, materials.storageNeeds(context), order.id())) {
                     queue.blocker(order.id(), "materials_reserved");
                     continue;
                 }

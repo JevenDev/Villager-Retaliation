@@ -76,6 +76,7 @@ public final class HiredProductionService {
     private static void savePersonal(ServerLevel level, Villager villager, HiredProductionQueue queue) {
         HiredWorkStateStore.state(villager).put(STATE_TAG, queue.save(level.registryAccess()));
         HiredProductionCommitments.observe(villager);
+        com.jvn.villagerretaliation.settlement.SettlementAllocationService.personalChanged(level, villager, queue);
     }
 
     public static String editPersonal(ServerPlayer player, Villager villager, long revision, UUID order, Edit edit, int index) {

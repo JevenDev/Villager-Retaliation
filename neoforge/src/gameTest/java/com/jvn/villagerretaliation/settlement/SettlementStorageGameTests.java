@@ -127,6 +127,7 @@ public final class SettlementStorageGameTests {
             var container = (Container) level.getBlockEntity(fixture.container());
             var remainder = AssignedStorageService.depositStackAtAssignedStorage(fixture.worker(), fixture.container(), new ItemStack(Items.WHEAT, 12));
             helper.assertTrue(remainder.isEmpty() && container.countItem(Items.WHEAT) == 12, "live output reaches the linked barrel exactly once");
+            SettlementTestPlots.planSupplies(level, fixture.town());
             var received = new java.util.ArrayList<ItemStack>();
             int moved = AssignedStorageService.transferItemsAtAssignedStorage(fixture.worker(), fixture.container(), stack -> stack.is(Items.WHEAT), 5,
                     stack -> { received.add(stack.copy()); return ItemStack.EMPTY; });
@@ -156,7 +157,7 @@ public final class SettlementStorageGameTests {
             var worker = SettlementWorkerState.capture(helper.getLevel(), fixture.worker(), SettlementWorkforceService.duty(fixture.worker()).orElseThrow(), 0);
             helper.assertFalse(SettlementWorksiteLinks.permitsSupply(worker.settings(), depot.id()) || SettlementWorksiteLinks.permitsOutput(worker.settings(), depot.id()),
                     "an explicit ordinary link cannot become an automatic depot wildcard");
-            var supplies = SettlementProductionInventory.supplies(helper.getLevel(), worker, worker.items(helper.getLevel().registryAccess()), List.of(depot));
+            var supplies = SettlementProductionInventory.supplies(helper.getLevel(), town, worker, worker.items(helper.getLevel().registryAccess()), List.of(depot));
             helper.assertTrue(supplies.stream().noneMatch(supply -> supply.depot() != null), "simulation never reads ordinary inventory or unrelated depot stock");
             helper.assertValueEqual(depot.getItem(0).getCount(), 32, "unrelated depot inventory remains intact");
             helper.assertValueEqual(save(fixture, null, SettlementStorageLinks.AUTOMATIC), "", "automatic depots can be restored deliberately");

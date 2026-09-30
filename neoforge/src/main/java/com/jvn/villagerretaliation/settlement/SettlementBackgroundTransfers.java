@@ -58,6 +58,8 @@ final class SettlementBackgroundTransfers {
             count = Math.min(count, SettlementLogisticsService.framedAllowance(level, source, order.sample(),
                     VillagerFilterPolicy.TransferOperation.PROVIDE, true));
             count = Math.min(count, capacity(level, destination, order.sample()));
+            count = Math.min(count, SettlementAllocationService.inspect(level, town, worker.id(), order.id(),
+                    source.position(), destination.position(), order.sample()).allowance());
             if (count <= 0) {
                 queue.blocker(order.id(), "transfer_supply_or_capacity");
                 continue;

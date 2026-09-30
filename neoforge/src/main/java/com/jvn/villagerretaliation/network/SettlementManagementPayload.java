@@ -103,6 +103,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.writeLong(demand.targetReserve());
                 buffer.writeLong(demand.protectedMinimum());
                 buffer.writeVarInt(demand.priority());
+                writeOptionalId(buffer, demand.competingConsumer());
                 buffer.writeVarInt(demand.alternatives().size());
                 for (var item : demand.alternatives()) ItemStack.STREAM_CODEC.encode(buffer, item);
                 buffer.writeVarInt(demand.sources().size());
@@ -311,6 +312,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 long targetReserve = buffer.readLong();
                 long protectedMinimum = buffer.readLong();
                 int priority = buffer.readVarInt();
+                UUID competingConsumer = readOptionalId(buffer);
                 var alternatives = new ArrayList<ItemStack>();
                 int count = VillagerPayloads.readCollectionSize(buffer, 16, "Demand alternatives");
                 for (int index = 0; index < count; index++) alternatives.add(ItemStack.STREAM_CODEC.decode(buffer));
@@ -326,7 +328,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 var destination = transfer ? TransferRequestPayload.readEndpoint(buffer) : null;
                 var sample = transfer ? ItemStack.STREAM_CODEC.decode(buffer) : ItemStack.EMPTY;
                 yield new Demand(id, name, consumer, area, kind, requirement, unit, required, supplied, missing, immediate,
-                        availableNow, committed, incoming, proposed, targetReserve, protectedMinimum, priority,
+                        availableNow, committed, incoming, proposed, targetReserve, protectedMinimum, priority, competingConsumer,
                         alternatives, sources, cause, advice, focus, courier, source, destination, sample);
             }
             case SUPPLIES -> new Supply(id, name, buffer.readBlockPos(), readOptionalId(buffer), readOptionalId(buffer),
@@ -550,7 +552,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                          com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind kind, String requirement,
                          com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit unit,
                          long required, long supplied, long missing, long immediateMissing,
-                         long availableNow, long committed, long incoming, long proposed, long targetReserve, long protectedMinimum, int priority,
+                         long availableNow, long committed, long incoming, long proposed, long targetReserve, long protectedMinimum, int priority, UUID competingConsumer,
                          List<ItemStack> alternatives, List<BlockPos> sources,
                          com.jvn.villagerretaliation.settlement.SettlementSupplyRecovery.Cause cause, String advice, BlockPos focus,
                          UUID courier, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint source,

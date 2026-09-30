@@ -114,6 +114,7 @@ public final class SettlementTradeService {
     }
 
     static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
+        SettlementAllocationService.schedule(level, town, jobs);
         jobs.add(SettlementWork.lazy(() -> {
             var surveys = new ArrayList<Runnable>();
             if (town.stage().ordinal() >= SettlementStage.VILLAGE.ordinal()) {
@@ -140,8 +141,9 @@ public final class SettlementTradeService {
                 else if (activeClerks(level, town, false).isEmpty()) result = Result.blocked(Status.NO_STAFF);
                 else if (remaining[0] == 0) result = Result.blocked(Status.BUSY);
                 else {
-                    result = order.direction() == SettlementTradeOrder.Direction.BUY
-                            ? buy(level, town, order, remaining[0]) : sell(level, town, order, remaining[0], SettlementDemandService.inspect(level, town));
+                    var protection = order.direction() == SettlementTradeOrder.Direction.SELL ? SettlementAllocationService.ready(level, town) : null;
+                    result = order.direction() == SettlementTradeOrder.Direction.BUY ? buy(level, town, order, remaining[0])
+                            : protection == null ? Result.blocked(Status.BUSY) : sell(level, town, order, remaining[0], protection.refresh());
                     remaining[0] -= result.count();
                 }
                 results.put(id, result);

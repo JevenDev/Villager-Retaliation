@@ -855,6 +855,7 @@ public final class SettlementBackgroundConstructionGameTests {
             worker.settings().putBoolean("AutoDepositOutputs", false);
             fixture.town().recordWorker(worker);
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 2));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             for (int index = 0; index < 20; index++) SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
             helper.assertValueEqual(worker.items(helper.getLevel().registryAccess()).stream().filter(stack -> stack.is(Items.STICK))
                     .mapToInt(ItemStack::getCount).sum(), 4, "the completed workshop produces one real recipe batch");
@@ -937,7 +938,10 @@ public final class SettlementBackgroundConstructionGameTests {
     }
 
     static void work(GameTestHelper helper, Fixture fixture, int intervals) {
-        for (int index = 0; index < intervals; index++) SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+        for (int index = 0; index < intervals; index++) {
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
+            SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+        }
     }
 
     private static int count(GameTestHelper helper, Fixture fixture, Item item) {

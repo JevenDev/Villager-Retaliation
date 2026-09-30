@@ -240,13 +240,19 @@ public final class SettlementBackgroundCraftingGameTests {
             chunk.setBlockState(table, Blocks.AIR.defaultBlockState(), false);
             observeTable(fixture);
             fixture.supply().setItem(0, new ItemStack(Items.OAK_LOG, 2));
+            SettlementTestPlots.activateDepot(level, fixture.town(), fixture.supply());
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundCrafting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(fixture.worker().status(), "no_crafting_table", "the worker notices a destroyed loaded table immediately");
             helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 2, "stale survey data cannot consume real ingredients");
             helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 0, "a missing table produces no goods");
-            chunk.setBlockState(table, Blocks.CRAFTING_TABLE.defaultBlockState(), false);
+            level.setBlockAndUpdate(table, Blocks.CRAFTING_TABLE.defaultBlockState());
+            fixture.supply().observeRules(List.of());
+            SettlementTestPlots.planSupplies(level, fixture.town());
+            helper.assertValueEqual(SettlementAllocationService.inspect(level, fixture.town(), fixture.worker().id(), null,
+                    fixture.supply().position(), new ItemStack(Items.OAK_LOG)).allowance(), 2, "the restored table retains its real source allowance");
             SettlementBackgroundCrafting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
-            helper.assertTrue(fixture.supply().isEmpty(), "restoring the real table permits production");
+            helper.assertTrue(fixture.supply().isEmpty(), "restoring the real table permits production: " + fixture.worker().status());
             helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 1, "production resumes from the same real stock");
         });
     }
@@ -264,6 +270,7 @@ public final class SettlementBackgroundCraftingGameTests {
             helper.assertValueEqual(carried(helper, fixture, Items.OAK_LOG), 2, "the final active supplies reach the worker ledger");
             helper.assertValueEqual(care.health(), 7.0F, "recent damage reaches the care ledger");
             helper.assertValueEqual(care.food(), 0, "recent hunger reaches the care ledger");
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
             SettlementCareService.update(helper.getLevel(), fixture.town(), care.checkedAt() + 200L);
             SettlementSimulationHandoff.stopTicking(villager);
@@ -338,12 +345,14 @@ public final class SettlementBackgroundCraftingGameTests {
     public static void partialCraftSurvivesNativeReturnWithoutSpendingIngredientsTwice(GameTestHelper helper) {
         fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
             fixture.supply().setItem(0, new ItemStack(Items.OAK_PLANKS, 8));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 50, 1.0D);
             helper.assertValueEqual(fixture.worker().status(), "crafting", "travel and crafting need more than the first interval");
             helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 8, "unfinished work reserves no ingredients");
             SettlementBackgroundService.onActive(fixture.villager());
             SettlementSimulationHandoff.stopTicking(fixture.villager());
             helper.assertValueEqual(fixture.worker().progress(), 50.0D, "native return retains the paid part of the job");
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 100, 1.0D);
             helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 1, "the remaining interval completes the original recipe");
             helper.assertTrue(fixture.supply().isEmpty(), "only one recipe consumes ingredients");
@@ -373,13 +382,16 @@ public final class SettlementBackgroundCraftingGameTests {
             var second = SettlementWorkerState.load(copy);
             fixture.town().assignDuty(secondId, fixture.area().id());
             fixture.town().recordWorker(second);
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 1, 1.0D);
             helper.assertValueEqual(queue.pending(order.id()), 4, "the first worker reserves the shared batch while approaching supplies");
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), second, 200, 1.0D);
             helper.assertValueEqual(queue.pending(order.id()), 4, "another worker cannot duplicate the worksite goal");
             helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 8, "uncommitted work consumes nothing");
             var restored = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
             var returned = restored.workers().get(fixture.worker().id());
+            SettlementTestPlots.planSupplies(helper.getLevel(), restored);
             SettlementBackgroundCrafting.tick(helper.getLevel(), restored, returned, 200, 1.0D);
             var restoredQueue = restored.productionQueues().get(fixture.area().id());
             helper.assertValueEqual(restoredQueue.order(order.id()).produced(), 4L, "reloaded production completes the original reserved quantity");
@@ -399,10 +411,12 @@ public final class SettlementBackgroundCraftingGameTests {
             fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
             fixture.supply().setItem(0, new ItemStack(Items.OAK_PLANKS, 8));
             fixture.output().setItem(0, new ItemStack(Items.STICK, 1));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(carried(helper, fixture, Items.STICK), 4, "the missing stock is crafted once");
             helper.assertValueEqual(SettlementProductionStock.count(helper.getLevel(), fixture.town(), queue, order), 5L,
                     "stored and carried outputs count toward the same stock target");
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(carried(helper, fixture, Items.STICK), 4, "undelivered goods prevent redundant production");
             helper.assertTrue(fixture.worker().restore(fixture.villager()), "the saved inventory returns to its villager");
@@ -410,6 +424,7 @@ public final class SettlementBackgroundCraftingGameTests {
                     fixture.output().position(), "the chosen destination returns with the goods");
             helper.assertFalse(fixture.worker().restore(fixture.villager()), "the same handoff cannot restore goods twice");
             fixture.worker().settings().putBoolean("AutoDepositOutputs", true);
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 300, 1.0D);
             helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.STICK)), 5, "the batch reaches only its selected output depot");
             helper.assertTrue(HiredProductionStock.destination(fixture.worker().settings()) == null, "completed delivery clears the temporary destination");
@@ -424,6 +439,7 @@ public final class SettlementBackgroundCraftingGameTests {
                     HiredProductionOrder.Mode.BATCH, 4, null);
             queue.append(order);
             fixture.supply().setItem(0, new ItemStack(Items.OAK_PLANKS, 2));
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 1, 1.0D);
             helper.assertValueEqual(queue.pending(order.id()), 4, "travel has reserved the next batch");
             fixture.town().removeWorker(fixture.worker().id());
@@ -447,20 +463,28 @@ public final class SettlementBackgroundCraftingGameTests {
             fixture.supply().setItem(0, new ItemStack(Items.POTATO, 5));
             fixture.supply().setItem(1, new ItemStack(Items.COAL));
             fixture.supply().setItem(2, new ItemStack(Items.WHEAT, 6));
+            fixture.output().configure(SettlementDepotPurpose.GENERAL, 9);
+            fixture.output().setItem(0, new ItemStack(Items.BREAD, 64));
             var entity = new net.minecraft.world.level.block.entity.SmokerBlockEntity(fixture.area().min().east(), Blocks.SMOKER.defaultBlockState());
             var machine = SettlementFurnaceState.capture(level, fixture.area().id(), entity, 0L);
             fixture.town().recordFurnace(machine);
-            for (int tick = 0; tick < 60; tick++) SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 3, 1.0D);
+            for (int tick = 0; tick < 60; tick++) {
+                SettlementTestPlots.planSupplies(level, fixture.town());
+                SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 3, 1.0D);
+            }
             helper.assertValueEqual(machine.items(level.registryAccess()).getFirst().getCount(), 2, "blocked earlier crafts do not repeatedly reset the runnable furnace trip");
             helper.assertValueEqual(carried(helper, fixture, Items.BREAD), 0, "a later craft cannot bypass the first runnable furnace order");
             helper.assertFalse(queue.order(cake.id()).blocker().isEmpty(), "the blocked crafting order remains visible");
             machine.advance(level, 99L);
             helper.assertTrue(machine.items(level.registryAccess()).get(2).isEmpty(), "the smoker keeps its native duration");
             machine.advance(level, 100L);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(queue.order(potato.id()).produced(), 1L, "the first actual meal settles once");
             machine.advance(level, 200L);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertValueEqual(queue.order(potato.id()).produced(), 2L, "the finite smoking entry completes");
             helper.assertValueEqual(queue.order(bread.id()).produced(), 1L, "the later craft runs after native processing finishes");
@@ -486,7 +510,9 @@ public final class SettlementBackgroundCraftingGameTests {
             var second = SettlementWorkerState.load(saved);
             fixture.town().assignDuty(secondId, fixture.area().id());
             fixture.town().recordWorker(second);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundSmelting.tick(level, fixture.town(), second, 200, 1.0D);
             helper.assertValueEqual(queue.order(order.id()).produced(), 8L, "the kitchen completes one indivisible batch for the five-meal target");
             helper.assertValueEqual(SettlementProductionStock.count(level, fixture.town(), queue, order), 8L, "carried meals count toward shared stock before delivery");
@@ -512,6 +538,7 @@ public final class SettlementBackgroundCraftingGameTests {
             furnace.setItem(1, new ItemStack(Items.COAL));
             var machine = SettlementFurnaceState.capture(level, fixture.area().id(), furnace, 0L);
             fixture.town().recordFurnace(machine);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             SettlementBackgroundSmelting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertTrue(machine.items(level.registryAccess()).getFirst().is(Items.RAW_IRON), "unrelated legacy furnace contents remain untouched");
             helper.assertValueEqual(queue.order(order.id()).produced(), 1L, "a small native recipe does not gain a new crafting-table requirement");

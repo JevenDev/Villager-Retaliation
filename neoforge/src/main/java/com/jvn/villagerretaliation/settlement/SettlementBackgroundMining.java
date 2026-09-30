@@ -63,7 +63,7 @@ final class SettlementBackgroundMining {
             MiningWorkerState.prepareBackground(context);
             state.remove(DEPOSIT);
             var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
-            if (enter(worker, mine, area, budget)) work(level, worker, mine, owner, context, depots, budget);
+            if (enter(worker, mine, area, budget)) work(level, town, worker, mine, owner, context, depots, budget);
         } catch (SettlementMiningView.Unavailable unavailable) {
             worker.status("excavation_needs_observation");
         } finally {
@@ -95,7 +95,7 @@ final class SettlementBackgroundMining {
         return true;
     }
 
-    private static void work(ServerLevel level, SettlementWorkerState worker, SettlementMine mine, Villager owner,
+    private static void work(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementMine mine, Villager owner,
                              HiredWorkContext context, List<SettlementDepot> depots, SettlementWorkBudget budget) {
         var routeBudget = new SettlementMiningRoutes.Budget();
         var mode = HiredMiningMode.fromState(context.state());
@@ -110,19 +110,19 @@ final class SettlementBackgroundMining {
                 return;
             }
             if (mode.usesExcavationShaft()) {
-                var hazard = SettlementMiningHazards.tick(level, worker, mine, view, owner, context, origin, depots, budget, routeBudget);
+                var hazard = SettlementMiningHazards.tick(level, town, worker, mine, view, owner, context, origin, depots, budget, routeBudget);
                 if (hazard == SettlementMiningHazards.Result.PROGRESSED) continue;
                 if (hazard == SettlementMiningHazards.Result.WAITING) return;
             }
             Integer layer = mode.usesExcavationShaft() ? MiningBlockRules.currentExcavationLayer(mine, mine::observed, context) : null;
             if (mode.usesExcavationShaft()) {
-                var support = SettlementMiningSupports.tick(level, worker, mine, view, owner, context, origin, layer, depots, budget, routeBudget);
+                var support = SettlementMiningSupports.tick(level, town, worker, mine, view, owner, context, origin, layer, depots, budget, routeBudget);
                 if (support == SettlementMiningSupports.Result.PROGRESSED) continue;
                 if (support == SettlementMiningSupports.Result.WAITING) return;
             }
             boolean floorDeferred = false;
             if (mode.excavatesHorizontally() && com.jvn.villagerretaliation.interaction.work.mining.MiningHorizontalOptions.patchFloor(state)) {
-                var floor = SettlementMiningFloor.tick(level, worker, mine, owner, context, origin, depots, budget, routeBudget);
+                var floor = SettlementMiningFloor.tick(level, town, worker, mine, owner, context, origin, depots, budget, routeBudget);
                 if (floor == SettlementMiningFloor.Result.PROGRESSED) continue;
                 if (floor == SettlementMiningFloor.Result.WAITING) return;
                 floorDeferred = floor == SettlementMiningFloor.Result.DEFERRED;
@@ -142,7 +142,7 @@ final class SettlementBackgroundMining {
                     stack -> MiningBlockRules.isUsableMiningTool(mode, stack, block),
                     stack -> MiningBlockRules.destroySpeed(stack, block));
             if (tool.isEmpty()) {
-                SettlementBackgroundTools.fetchTool(level, worker, context.inventory(), depots,
+                SettlementBackgroundTools.fetchTool(level, town, worker, context.inventory(), depots,
                         stack -> MiningBlockRules.isUsableMiningTool(mode, stack, block),
                         stack -> MiningBlockRules.destroySpeed(stack, block), MiningBlockRules.requiredMiningToolLabel(mode, block), budget);
                 return;

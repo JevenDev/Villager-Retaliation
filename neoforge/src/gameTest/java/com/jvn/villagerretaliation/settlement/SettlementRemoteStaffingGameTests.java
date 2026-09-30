@@ -288,7 +288,10 @@ public final class SettlementRemoteStaffingGameTests {
                 new SettlementManagementActionPayload.Assign(resident.getUUID(), workshop.id()))), "an admitted resident can be assigned before its world entity exists");
         var worker = fixture.town().workers().get(resident.getUUID());
         worker.settings().putBoolean("AutoDepositOutputs", false);
-        for (int index = 0; index < 20; index++) SettlementBackgroundCrafting.tick(level, fixture.town(), worker, 200, 1.0D);
+        for (int index = 0; index < 20; index++) {
+            SettlementTestPlots.planSupplies(level, fixture.town());
+            SettlementBackgroundCrafting.tick(level, fixture.town(), worker, 200, 1.0D);
+        }
         helper.assertValueEqual(count(helper, worker, Items.STICK), 4, "the pending arrival completes one recipe from its recorded inventory");
         helper.assertTrue(SettlementArrivalService.materialize(level, fixture.town(), resident.getUUID()), "the admitted resident reaches its physical town");
         var actual = (Villager) level.getEntity(resident.getUUID());
@@ -364,7 +367,10 @@ public final class SettlementRemoteStaffingGameTests {
     private static void craft(GameTestHelper helper, Fixture fixture) {
         var worker = fixture.town().workers().get(fixture.resident().getUUID());
         worker.settings().putBoolean("AutoDepositOutputs", false);
-        for (int index = 0; index < 20; index++) SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
+        for (int index = 0; index < 20; index++) {
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
+        }
     }
 
     private static int count(GameTestHelper helper, SettlementWorkerState worker, Item item) {

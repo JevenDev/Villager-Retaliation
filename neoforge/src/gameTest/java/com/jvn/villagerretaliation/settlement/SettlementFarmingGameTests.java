@@ -231,6 +231,8 @@ public final class SettlementFarmingGameTests {
             fixture.plot().change(fixture.plot().soil(), Blocks.AIR.defaultBlockState());
             SettlementBackgroundService.update(level, fixture.town(), 200L);
             helper.assertTrue(fixture.plot().crop().isAir(), "an empty field cannot invent a seed");
+            fixture.output().configure(SettlementDepotPurpose.GENERAL, 9);
+            fixture.output().setItem(0, new ItemStack(Items.BREAD, 64));
             fixture.supply().setItem(0, new ItemStack(Items.CARROT));
             fixture.worker().settings().putBoolean("UseAssignedStorageForSupplies", false);
             SettlementBackgroundService.update(level, fixture.town(), 400L);

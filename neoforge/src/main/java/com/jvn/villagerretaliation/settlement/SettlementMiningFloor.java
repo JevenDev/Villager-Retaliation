@@ -16,7 +16,7 @@ final class SettlementMiningFloor {
     private SettlementMiningFloor() {
     }
 
-    static Result tick(ServerLevel level, SettlementWorkerState worker, SettlementMine mine, Villager owner,
+    static Result tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementMine mine, Villager owner,
                        HiredWorkContext context, BlockPos origin, List<SettlementDepot> depots,
                        SettlementWorkBudget budget, SettlementMiningRoutes.Budget routeBudget) {
         var position = MiningHazardManager.horizontalFloorTarget(mine, mine::observed, context, origin.getBottomCenter());
@@ -38,7 +38,7 @@ final class SettlementMiningFloor {
                 break;
             }
         }
-        if (selected < 0) return fetch(level, worker, context, origin, position, view, depots, budget);
+        if (selected < 0) return fetch(level, town, worker, context, origin, position, view, depots, budget);
         double cost = 20.0D + 16.0D * target.steps();
         if (!SettlementBackgroundMining.ready(worker, target, budget, cost, "approaching_floor", "patching_floor")) return Result.WAITING;
         var fill = ((BlockItem) updated.get(selected).getItem()).getBlock().defaultBlockState();
@@ -57,10 +57,10 @@ final class SettlementMiningFloor {
         return Result.PROGRESSED;
     }
 
-    private static Result fetch(ServerLevel level, SettlementWorkerState worker, HiredWorkContext context, BlockPos origin,
+    private static Result fetch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredWorkContext context, BlockPos origin,
                                 BlockPos position, SettlementMiningView view, List<SettlementDepot> depots, SettlementWorkBudget budget) {
         var updated = SettlementBackgroundTools.items(context.inventory());
-        var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, updated, depots);
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);
             if (source.depot() == null || !safeFill(view, position, source.available())

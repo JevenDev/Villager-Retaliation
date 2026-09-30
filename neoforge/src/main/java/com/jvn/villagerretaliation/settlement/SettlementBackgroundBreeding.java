@@ -38,7 +38,7 @@ final class SettlementBackgroundBreeding {
         Candidate second = null;
         Predicate<ItemStack> food = null;
         double best = Double.MAX_VALUE;
-        var supplies = SettlementProductionInventory.supplies(level, worker, SettlementBackgroundTools.items(inventory), depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, SettlementBackgroundTools.items(inventory), depots);
         for (int a = 0; a < animals.size(); a++) {
             for (int b = a + 1; b < animals.size(); b++) {
                 var one = animals.get(a);

@@ -519,6 +519,7 @@ public final class SettlementWorkforceGameTests {
             inventory.setItem(HiredJobInventory.FILTER_SLOT, filter);
             villager.setPos(storagePos.north().getBottomCenter());
             var session = HiredWorkSession.active(level, villager);
+            SettlementTestPlots.planSupplies(level, fixture.town());
             new com.jvn.villagerretaliation.interaction.work.CookingWorker().tick(level, villager, null, session.context());
             helper.assertValueEqual(depot.count(stack -> stack.is(Items.WHEAT)), 9,
                     "a cook outside its kitchen can collect one real bread recipe");

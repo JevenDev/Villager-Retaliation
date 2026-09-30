@@ -35,6 +35,7 @@ public final class AssignedStorageSavedData extends SavedData {
 
     private final Map<ContainerKey, AssignedContainerRecord> byContainer = new HashMap<>();
     private final Map<UUID, List<AssignedContainerRecord>> byVillager = new HashMap<>();
+    private final Map<StorageKey, Map<ContainerKey, AssignedContainerRecord>> byStorage = new HashMap<>();
 
     public static AssignedStorageSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -138,6 +139,10 @@ public final class AssignedStorageSavedData extends SavedData {
         return matches;
     }
 
+    public List<AssignedContainerRecord> assignedAt(ResourceKey<Level> dimension, BlockPos position) {
+        return List.copyOf(this.byStorage.getOrDefault(new StorageKey(dimension, position), Map.of()).values());
+    }
+
     public AssignedContainerRecord assignedAt(
             ResourceKey<Level> dimension,
             BlockPos pos,
@@ -162,7 +167,7 @@ public final class AssignedStorageSavedData extends SavedData {
     }
 
     public boolean removeAssignment(AssignedContainerRecord record) {
-        if (record == null || this.byContainer.remove(key(record)) == null) {
+        if (record == null || remove(key(record)) == null) {
             return false;
         }
         List<AssignedContainerRecord> records = this.byVillager.get(record.villagerId());
@@ -179,7 +184,7 @@ public final class AssignedStorageSavedData extends SavedData {
     public int removeAssignedTo(UUID villagerId) {
         List<AssignedContainerRecord> records = new ArrayList<>(this.byVillager.getOrDefault(villagerId, List.of()));
         for (AssignedContainerRecord record : records) {
-            this.byContainer.remove(key(record));
+            remove(key(record));
         }
         this.byVillager.remove(villagerId);
         if (!records.isEmpty()) {
@@ -199,7 +204,7 @@ public final class AssignedStorageSavedData extends SavedData {
         }
 
         this.byVillager.remove(sourceVillagerId);
-        records.forEach(record -> this.byContainer.remove(key(record)));
+        records.forEach(record -> remove(key(record)));
         for (AssignedContainerRecord record : records) {
             put(new AssignedContainerRecord(
                     record.dimension(),
@@ -253,7 +258,7 @@ public final class AssignedStorageSavedData extends SavedData {
                 .filter(record -> normalizePurpose(record.purpose()).equals(normalizedPurpose))
                 .toList());
         for (AssignedContainerRecord record : records) {
-            this.byContainer.remove(key(record));
+            remove(key(record));
         }
         List<AssignedContainerRecord> remaining = this.byVillager.get(villagerId);
         if (remaining != null) {
@@ -276,7 +281,7 @@ public final class AssignedStorageSavedData extends SavedData {
             return false;
         }
         for (AssignedContainerRecord record : removed) {
-            this.byContainer.remove(key(record));
+            remove(key(record));
             List<AssignedContainerRecord> records = this.byVillager.get(record.villagerId());
             if (records != null) {
                 records.removeIf(candidate -> sameAssignment(candidate, record));
@@ -349,9 +354,21 @@ public final class AssignedStorageSavedData extends SavedData {
         return true;
     }
 
+    private AssignedContainerRecord remove(ContainerKey key) {
+        var previous = this.byContainer.remove(key);
+        if (previous != null) {
+            var storage = new StorageKey(previous.dimension(), previous.pos());
+            var records = this.byStorage.get(storage);
+            records.remove(key);
+            if (records.isEmpty()) this.byStorage.remove(storage);
+        }
+        return previous;
+    }
+
     private void put(AssignedContainerRecord record) {
         ContainerKey key = key(record);
         AssignedContainerRecord previous = this.byContainer.put(key, record);
+        this.byStorage.computeIfAbsent(new StorageKey(record.dimension(), record.pos()), ignored -> new HashMap<>()).put(key, record);
         if (previous != null) {
             List<AssignedContainerRecord> previousList = this.byVillager.get(previous.villagerId());
             if (previousList != null) {
@@ -386,6 +403,8 @@ public final class AssignedStorageSavedData extends SavedData {
     private static String normalizePurpose(String purpose) {
         return AssignedStorageService.normalizePurpose(purpose);
     }
+
+    private record StorageKey(ResourceKey<Level> dimension, BlockPos position) { }
 
     public enum AssignmentResult {
         ASSIGNED,

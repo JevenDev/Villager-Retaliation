@@ -278,7 +278,7 @@ public final class SettlementResidentState {
             }
             regenerate(level);
             if (this.food < 10 && tick % 32 == 0) {
-                eat(town);
+                eat(level, town);
             }
         }
         this.version++;
@@ -304,8 +304,8 @@ public final class SettlementResidentState {
                 : Math.max(0L, this.shortageTicks - elapsed * 2L);
     }
 
-    private void eat(SettlementRecord town) {
-        ItemStack meal = SettlementStock.take(town, stack -> {
+    private void eat(ServerLevel level, SettlementRecord town) {
+        ItemStack meal = SettlementStock.take(level, town, town.id().value(), stack -> {
             if (!SettlementFoodService.isMeal(stack)) {
                 return false;
             }

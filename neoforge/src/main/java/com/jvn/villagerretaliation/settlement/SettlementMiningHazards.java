@@ -18,7 +18,7 @@ final class SettlementMiningHazards {
     private SettlementMiningHazards() {
     }
 
-    static Result tick(ServerLevel level, SettlementWorkerState worker, SettlementMine mine, SettlementMiningView view,
+    static Result tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, SettlementMine mine, SettlementMiningView view,
                        Villager owner, HiredWorkContext context, BlockPos origin, List<SettlementDepot> depots,
                        SettlementWorkBudget budget, SettlementMiningRoutes.Budget routeBudget) {
         var plan = MiningHazardManager.assess(mine, mine::observed, context, origin.getBottomCenter());
@@ -50,7 +50,7 @@ final class SettlementMiningHazards {
                 break;
             }
         }
-        if (selected < 0) return fetch(level, worker, context, origin, position, plan.positions().size() - plan.index(),
+        if (selected < 0) return fetch(level, town, worker, context, origin, position, plan.positions().size() - plan.index(),
                 view, depots, budget);
         var routes = SettlementMiningRoutes.forWorker(worker, mine, origin, true);
         var target = routes.target(owner, position, routeBudget);
@@ -81,10 +81,10 @@ final class SettlementMiningHazards {
         MiningWorkerState.clearExcavationLayerCache(context);
     }
 
-    private static Result fetch(ServerLevel level, SettlementWorkerState worker, HiredWorkContext context, BlockPos origin,
+    private static Result fetch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredWorkContext context, BlockPos origin,
                                 BlockPos position, int remaining, SettlementMiningView view,
                                 List<SettlementDepot> depots, SettlementWorkBudget budget) {
-        var supplies = SettlementProductionInventory.supplies(level, worker, SettlementBackgroundTools.items(context.inventory()), depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, SettlementBackgroundTools.items(context.inventory()), depots);
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);
             if (source.depot() == null || !safeFill(view, position, source.available())) continue;

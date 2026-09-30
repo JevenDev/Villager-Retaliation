@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
@@ -14,12 +15,12 @@ final class SettlementProductionInventory {
     private SettlementProductionInventory() {
     }
 
-    static List<Supply> supplies(ServerLevel level, SettlementWorkerState worker,
+    static List<Supply> supplies(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,
                                         NonNullList<ItemStack> items, List<SettlementDepot> depots) {
         List<Supply> result = new ArrayList<>();
         for (int slot : worker.supplySlots()) {
             if (!items.get(slot).isEmpty()) {
-                result.add(new Supply(null, slot, items.get(slot).copy()));
+                result.add(new Supply(town, worker.id(), null, slot, items.get(slot).copy()));
             }
         }
         if (worker.settings().contains("UseAssignedStorageForSupplies")
@@ -46,7 +47,7 @@ final class SettlementProductionInventory {
                         SettlementLogisticsService.framedAllowance(level, depot, stored,
                                 VillagerFilterPolicy.TransferOperation.PROVIDE, true)));
                 if (count > 0) {
-                    result.add(new Supply(depot, slot, stored.copyWithCount(count)));
+                    result.add(new Supply(town, worker.id(), depot, slot, stored.copyWithCount(count)));
                 }
             }
         }
@@ -54,6 +55,10 @@ final class SettlementProductionInventory {
     }
 
     static boolean allowed(ServerLevel level, List<Supply> supplies, List<Integer> consumed) {
+        return allowed(level, supplies, consumed, null);
+    }
+
+    static boolean allowed(ServerLevel level, List<Supply> supplies, List<Integer> consumed, UUID consumer) {
         Map<SettlementDepot, List<ItemStack>> reservations = new HashMap<>();
         for (int index = 0; index < supplies.size(); index++) {
             Supply supply = supplies.get(index);
@@ -63,6 +68,11 @@ final class SettlementProductionInventory {
             }
             var depot = supply.depot();
             var reserved = reservations.computeIfAbsent(depot, ignored -> new ArrayList<>());
+            int granted = SettlementAllocationService.inspect(level, supply.town(), supply.worker(), consumer,
+                    depot.position(), supply.available()).allowance();
+            int alreadyUsed = reserved.stream().filter(stack -> ItemStack.isSameItemSameComponents(stack, supply.available()))
+                    .mapToInt(ItemStack::getCount).sum();
+            if (granted - alreadyUsed < count) return false;
             if (AssignedStorageService.observedTransferAllowance(level, depot.position(), depot, depot.observedRules(),
                     supply.available(), VillagerFilterPolicy.TransferOperation.PROVIDE, reserved) < count) {
                 return false;
@@ -106,6 +116,6 @@ final class SettlementProductionInventory {
         return true;
     }
 
-    record Supply(SettlementDepot depot, int slot, ItemStack available) {
+    record Supply(SettlementRecord town, UUID worker, SettlementDepot depot, int slot, ItemStack available) {
     }
 }

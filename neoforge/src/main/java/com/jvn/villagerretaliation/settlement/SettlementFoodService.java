@@ -28,7 +28,7 @@ public final class SettlementFoodService {
         var town = SettlementWorkforceService.home(level, villager).orElse(null);
         return town != null && town.dimension().equals(level.dimension().location())
                 && withinTown(town, villager)
-                ? SettlementStock.take(town, SettlementFoodService::isMeal, 1) : ItemStack.EMPTY;
+                ? SettlementStock.take(level, town, town.id().value(), SettlementFoodService::isMeal, 1) : ItemStack.EMPTY;
     }
 
     private static boolean withinTown(SettlementRecord town, Villager villager) {

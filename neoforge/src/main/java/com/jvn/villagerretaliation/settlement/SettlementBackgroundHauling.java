@@ -42,6 +42,8 @@ final class SettlementBackgroundHauling {
         int count = Math.min(Math.min(available, needed), HiredVillagerRoles.courierTransferLimit(worker.aptitude()));
         count = Math.min(count, Math.min(receiveAllowance(level, destination, sample),
                 SettlementLogisticsService.framedAllowance(level, source, sample, VillagerFilterPolicy.TransferOperation.PROVIDE, true)));
+        count = Math.min(count, SettlementAllocationService.inspect(level, town, worker.id(), null,
+                source.position(), destination.position(), sample).allowance());
         if (count <= 0) {
             worker.status("no_demand");
             return;

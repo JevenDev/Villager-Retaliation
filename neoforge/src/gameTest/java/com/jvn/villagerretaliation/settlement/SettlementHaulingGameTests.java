@@ -93,12 +93,14 @@ public final class SettlementHaulingGameTests {
             fixture.town().setDepotStockTarget(fixture.leader().getUUID(), fixture.destination().id(), new ItemStack(Items.IRON_INGOT), 7);
             SettlementDepot secondDestination = depot(helper, fixture, new BlockPos(5, 2, 5), SettlementDepotPurpose.MATERIALS, 4);
             fixture.town().setDepotStockTarget(fixture.leader().getUUID(), secondDestination.id(), new ItemStack(Items.IRON_INGOT), 7);
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             var first = SettlementLogisticsService.prepare(helper.getLevel(), fixture.courier(), fixture.town());
             helper.assertValueEqual(first.destination(), fixture.destination().id(), "the higher priority destination is served first");
             helper.assertValueEqual(AssignedStorageService.reservedItemCount(helper.getLevel(), fixture.destination().position(), null,
                     VillagerFilterPolicy.TransferOperation.RECEIVE, new ItemStack(Items.IRON_INGOT)), 7, "destination capacity is reserved");
             Villager second = courier(helper, fixture.town(), fixture.area(), fixture.leader());
             try {
+                SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
                 var secondTask = SettlementLogisticsService.prepare(helper.getLevel(), second, fixture.town());
                 helper.assertValueEqual(secondTask.destination(), secondDestination.id(), "another courier serves the next unmet target");
                 helper.assertValueEqual(AssignedStorageService.reservedItemCount(helper.getLevel(), fixture.source().position(), null,
@@ -223,6 +225,34 @@ public final class SettlementHaulingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_hauling")
+    public static void priorityEditsReleaseUnstartedHaulingClaimsAndPreserveCargo(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var sample = new ItemStack(Items.IRON_INGOT);
+            fixture.source().setItem(0, sample.copyWithCount(20));
+            town.setDepotStockTarget(town.leader(), fixture.destination().id(), sample, 7);
+            SettlementTestPlots.planSupplies(level, town);
+            helper.assertTrue(SettlementLogisticsService.prepare(level, fixture.courier(), town) != null, "the courier plans a real shipment");
+            helper.assertValueEqual(AssignedStorageService.reservedItemCount(level, fixture.source().position(), null,
+                    VillagerFilterPolicy.TransferOperation.PROVIDE, sample), 7, "the pending shipment reserves its actual source");
+            town.configureDepot(town.leader(), fixture.destination().id(), fixture.destination().purpose(), 0);
+            SettlementTestPlots.planSupplies(level, town);
+            helper.assertValueEqual(AssignedStorageService.reservedItemCount(level, fixture.source().position(), null,
+                    VillagerFilterPolicy.TransferOperation.PROVIDE, sample), 0, "priority changes release an unstarted hauling claim");
+            helper.assertTrue(SettlementLogisticsService.task(fixture.courier()) == null, "the unstarted route is reconsidered");
+            var session = HiredWorkSession.active(level, fixture.courier());
+            tick(helper, fixture, session);
+            int carried = cargo(session);
+            helper.assertTrue(carried > 0, "the reconsidered shipment physically starts");
+            town.configureDepot(town.leader(), fixture.destination().id(), fixture.destination().purpose(), 9);
+            SettlementTestPlots.planSupplies(level, town);
+            helper.assertValueEqual(cargo(session), carried, "later priority edits retain the courier's cargo");
+            helper.assertTrue(SettlementLogisticsService.task(fixture.courier()) != null, "started cargo retains its delivery destination");
+        });
+    }
+
     private static ItemFrame attachRule(GameTestHelper helper, BlockPos container) {
         ItemFrame frame = new ItemFrame(helper.getLevel(), container.south(), Direction.SOUTH);
         frame.setItem(new ItemStack(Items.BREAD));
@@ -232,6 +262,7 @@ public final class SettlementHaulingGameTests {
     }
 
     private static void tick(GameTestHelper helper, Fixture fixture, HiredWorkSession session) {
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         session.worker().tick(helper.getLevel(), fixture.courier(), null, session.context());
     }
 

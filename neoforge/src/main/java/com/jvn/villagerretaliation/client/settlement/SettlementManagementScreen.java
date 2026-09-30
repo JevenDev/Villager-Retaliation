@@ -433,6 +433,7 @@ public final class SettlementManagementScreen extends Screen {
                 action(3, "supply_worksite", selected instanceof SettlementManagementPayload.Demand);
                 action(4, "demand_transfer", selected instanceof SettlementManagementPayload.Demand demand && demand.courier() != null
                         && permits(SettlementPermission.STAFF) && permits(SettlementPermission.LOGISTICS));
+                action(5, "demand_competitor", selected instanceof SettlementManagementPayload.Demand demand && demand.competingConsumer() != null);
             }
             case SUPPLIES -> {
                 action(0, "supply_details", selected instanceof SettlementManagementPayload.Supply);

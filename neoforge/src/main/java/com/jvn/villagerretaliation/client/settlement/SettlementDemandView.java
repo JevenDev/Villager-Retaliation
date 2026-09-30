@@ -37,6 +37,10 @@ final class SettlementDemandView {
 
     static void open(SettlementManagementScreen parent, Demand demand, int action) {
         var client = Minecraft.getInstance();
+        if (action == 5 && demand.competingConsumer() != null) {
+            parent.navigateTo(Page.DEMAND, demand.competingConsumer().toString());
+            return;
+        }
         if (action == 2) { parent.focusSupply(demand.area(), demand.focus()); return; }
         SettlementViewClient.focusSupply(parent, demand.area(), demand.focus(), false);
         if ((demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD

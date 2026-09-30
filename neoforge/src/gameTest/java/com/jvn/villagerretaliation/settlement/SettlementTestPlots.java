@@ -10,6 +10,19 @@ public final class SettlementTestPlots {
     private SettlementTestPlots() {
     }
 
+    static void activateDepot(ServerLevel level, SettlementRecord town, SettlementDepot depot) {
+        level.setBlockAndUpdate(depot.position(), com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+        ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(depot.position())).bind(town.id(), depot.id());
+    }
+
+    static void planSupplies(ServerLevel level, SettlementRecord town) {
+        var jobs = new java.util.ArrayList<Runnable>();
+        SettlementAllocationService.schedule(level, town, jobs);
+        var work = new SettlementWork(jobs);
+        for (int step = 0; step < 10_000 && !SettlementWork.complete(work); step++) work.run();
+        if (!SettlementWork.complete(work)) throw new IllegalStateException("Supply planning did not complete");
+    }
+
     public static void claim(ServerLevel level, SettlementRecord town, BlockPos min, BlockPos max) {
         claim(SettlementSavedData.get(level), VillageAllegianceRegistrySavedData.get(level), town, min, max);
     }

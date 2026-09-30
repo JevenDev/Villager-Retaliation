@@ -187,6 +187,7 @@ public final class SettlementHuntingSupplyGameTests {
         helper.assertValueEqual(fixture.worker().status(), "supply_full", "ammunition requires actual inventory capacity");
         helper.assertValueEqual(depot.getItem(0).getCount(), 5, "failed supply insertion cannot consume arrows");
         supply(helper, fixture, HiredJobInventory.HOTBAR_START, ItemStack.EMPTY);
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         SettlementBackgroundHunting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 1, 1.0D);
         helper.assertValueEqual(depot.getItem(0).getCount(), 5, "an unfinished supply trip cannot consume arrows");
         helper.assertValueEqual(count(helper, fixture, Items.TIPPED_ARROW), 0, "an unfinished trip cannot retain its trial insertion");
@@ -256,6 +257,7 @@ public final class SettlementHuntingSupplyGameTests {
             var saved = fixture.worker().save();
             saved.remove("EntityContext");
             var legacy = SettlementWorkerState.load(saved);
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             SettlementBackgroundHunting.tick(helper.getLevel(), fixture.town(), legacy, 200, 1.0D);
             helper.assertValueEqual(legacy.status(), "awaiting_worker_observation", "old hunter saves wait for a real worker context");
             helper.assertFalse(state.removed(), "missing legacy context cannot invent a worker or collect resources");
@@ -299,6 +301,7 @@ public final class SettlementHuntingSupplyGameTests {
         var level = helper.getLevel();
         var center = fixture.town().center();
         var depot = depot(fixture, true);
+        SettlementTestPlots.activateDepot(level, fixture.town(), depot);
         depot.setItem(0, new ItemStack(Items.ARROW, 2));
         for (var floor : BlockPos.betweenClosed(center.offset(-5, -1, -5), center.offset(8, -1, 5))) {
             level.setBlockAndUpdate(floor, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
@@ -430,6 +433,7 @@ public final class SettlementHuntingSupplyGameTests {
     }
 
     private static void work(GameTestHelper helper, Fixture fixture) {
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         SettlementBackgroundHunting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
     }
 

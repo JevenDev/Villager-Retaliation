@@ -61,6 +61,7 @@ public final class SettlementConstructedMachineGameTests {
             helper.assertValueEqual(fixture.town().brewingStands().size(), 1, "funded construction creates a processing ledger");
             for (int now = 200; now <= 4_000; now += 200) {
                 SettlementBrewingStandService.update(level, fixture.town(), now);
+                SettlementTestPlots.planSupplies(level, fixture.town());
                 SettlementBackgroundBrewing.tick(level, fixture.town(), worker, 200, 1.0D);
             }
             var expected = PotionContents.createItemStack(Items.POTION, Potions.HEALING);
@@ -328,6 +329,13 @@ public final class SettlementConstructedMachineGameTests {
             build(helper, fixture, block.asItem());
             var area = designate(helper, fixture, type);
             var worker = staff(helper, fixture, area);
+            if (type == SettlementAreaType.KITCHEN) {
+                var meals = fixture.town().registerDepot(fixture.town().leader(), fixture.depot().area(),
+                        fixture.depot().position().east(), SettlementDepotPurpose.FOOD);
+                meals.configure(SettlementDepotPurpose.FOOD, 9);
+                meals.observeRules(List.of());
+                meals.setItem(0, new ItemStack(Items.BREAD, 64));
+            }
             fixture.depot().setItem(0, new ItemStack(input, 2));
             fixture.depot().setItem(1, new ItemStack(Items.COAL));
             var level = helper.getLevel();
@@ -335,6 +343,7 @@ public final class SettlementConstructedMachineGameTests {
             helper.assertValueEqual(fixture.town().furnaces().size(), 1, "a funded machine can process before materializing");
             for (int now = 200; now <= 2_000; now += 200) {
                 SettlementFurnaceService.update(level, fixture.town(), now);
+                SettlementTestPlots.planSupplies(level, fixture.town());
                 SettlementBackgroundSmelting.tick(level, fixture.town(), worker, 200, 1.0D);
             }
             helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(output)).mapToInt(ItemStack::getCount).sum(),

@@ -31,6 +31,7 @@ public final class SettlementCareGameTests {
         fixture.resident().setHealth(10.0F);
         var state = SettlementResidentState.capture(fixture.resident(), fixture.town(), 0L);
         fixture.town().recordResident(state);
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         helper.assertValueEqual(state.advance(helper.getLevel(), fixture.town(), 200L), 200, "only server game ticks are simulated");
         helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.MUSHROOM_STEW)), 0, "two actual meals are consumed");
         helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.BOWL)), 2, "both meal containers return to real stock");
@@ -49,6 +50,7 @@ public final class SettlementCareGameTests {
         fixture.resident().saveWithoutId(oldEntity);
         var state = SettlementResidentState.capture(fixture.resident(), fixture.town(), 0L);
         fixture.town().recordResident(state);
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         state.advance(helper.getLevel(), fixture.town(), 200L);
         var savedTown = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()),
                 helper.getLevel().registryAccess(), () -> {});
@@ -74,12 +76,14 @@ public final class SettlementCareGameTests {
         fixture.resident().setHealth(1.0F);
         var state = SettlementResidentState.capture(fixture.resident(), fixture.town(), 0L);
         for (int tick = 200; tick <= 2_000; tick += 200) {
+            SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
             state.advance(helper.getLevel(), fixture.town(), tick);
             state.observeShortage(200, false);
         }
         helper.assertValueEqual(state.health(), 1.0F, "care starvation is nonfatal");
         helper.assertValueEqual(state.shortageTicks(), 2_000L, "sustained hunger records a recoverable warning");
         fixture.depot().setItem(0, new ItemStack(Items.BREAD, 20));
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         state.advance(helper.getLevel(), fixture.town(), 2_200L);
         state.observeShortage(200, false);
         helper.assertTrue(state.food() >= 10, "resupply restores food without resetting the resident");
@@ -92,11 +96,14 @@ public final class SettlementCareGameTests {
         var fixture = fixture(helper, 20);
         fixture.resident().setAge(-1_000);
         var state = SettlementResidentState.capture(fixture.resident(), fixture.town(), 100L);
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         helper.assertValueEqual(state.advance(helper.getLevel(), fixture.town(), 10_000_000L), 200, "a clock gap is bounded to one running interval");
         helper.assertValueEqual(state.age(), -800, "children do not age through an offline time gap");
         long version = state.version();
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         helper.assertValueEqual(state.advance(helper.getLevel(), fixture.town(), 10_000_000L), 0, "repeated simulation at one time has no effect");
         helper.assertValueEqual(state.version(), version, "idempotent simulation keeps the same revision");
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         helper.assertValueEqual(state.advance(helper.getLevel(), fixture.town(), 1L), 0, "a reversed clock never simulates negative time");
         helper.succeed();
     }
@@ -143,6 +150,7 @@ public final class SettlementCareGameTests {
         fixture.resident().setPos(fixture.town().center().east(200).getCenter());
         var state = SettlementResidentState.capture(fixture.resident(), fixture.town(), 0L);
         helper.assertFalse(state.present(), "a resident outside the town is recorded as away");
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         helper.assertValueEqual(state.advance(helper.getLevel(), fixture.town(), 200L), 0, "the town does not simulate care for travellers");
         helper.assertValueEqual(fixture.depot().getItem(0).getCount(), 20, "travellers cannot draw meals from distant town stock");
         helper.succeed();
@@ -154,6 +162,7 @@ public final class SettlementCareGameTests {
         fixture.town().configureDepot(fixture.town().leader(), fixture.depot().id(), SettlementDepotPurpose.FOOD, 5);
         fixture.depot().setItem(0, new ItemStack(Items.MUSHROOM_STEW));
         var state = SettlementResidentState.capture(fixture.resident(), fixture.town(), 0L);
+        SettlementTestPlots.planSupplies(helper.getLevel(), fixture.town());
         state.advance(helper.getLevel(), fixture.town(), 200L);
         helper.assertTrue(fixture.depot().getItem(0).is(Items.MUSHROOM_STEW), "a meal is not consumed when its bowl has nowhere to go");
         CompoundTag legacy = fixture.town().save(helper.getLevel().registryAccess());
@@ -212,6 +221,7 @@ public final class SettlementCareGameTests {
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Stores", center, center.offset(3, 2, 3), 5, true);
         town.putArea(town.leader(), area);
         var depot = town.registerDepot(town.leader(), area.id(), center, SettlementDepotPurpose.GENERAL);
+        SettlementTestPlots.activateDepot(level, town, depot);
         Villager resident = EntityType.VILLAGER.create(level);
         resident.setPos(center.getCenter());
         resident.setNoAi(true);

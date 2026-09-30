@@ -30,7 +30,7 @@ final class SettlementBackgroundFarming {
         if (autoDeposit && (fullStack || worker.settings().getBoolean(DEPOSIT_BATCH))
                 && depositBatch(level, town, worker, elapsed, multiplier, depots)) return;
         if (!FarmerHoeRequirement.isHoe(carried.get(HiredJobInventory.MAINHAND_SLOT))) {
-            equipHoe(level, worker, carried, depots, elapsed, multiplier);
+            equipHoe(level, town, worker, carried, depots, elapsed, multiplier);
             return;
         }
         var area = town.areas().get(worker.area());
@@ -69,7 +69,7 @@ final class SettlementBackgroundFarming {
             List<ItemStack> drops = harvest
                     ? new ArrayList<>(Block.getDrops(crop, level, plot.position().above(), null, null, updated.get(HiredJobInventory.MAINHAND_SLOT)))
                     : new ArrayList<>();
-            var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
+            var supplies = SettlementProductionInventory.supplies(level, town, worker, updated, depots);
             int selected = -1;
             ItemStack seed = ItemStack.EMPTY;
             boolean replant = HiredFarmingOptions.plantCrops(worker.settings()) && plot.canReplant()
@@ -146,9 +146,9 @@ final class SettlementBackgroundFarming {
                 : plot.soil().is(Blocks.FARMLAND) && plot.crop().isAir() ? 1 : 2;
     }
 
-    private static void equipHoe(ServerLevel level, SettlementWorkerState worker, NonNullList<ItemStack> carried,
+    private static void equipHoe(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, NonNullList<ItemStack> carried,
                                  List<SettlementDepot> depots, int elapsed, double multiplier) {
-        var supplies = SettlementProductionInventory.supplies(level, worker, carried, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);
             if (!FarmerHoeRequirement.isHoe(source.available())) {

@@ -15,10 +15,12 @@ public final class SettlementCareService {
     static void update(ServerLevel level, SettlementRecord town, long now) {
         var jobs = new java.util.ArrayList<Runnable>();
         schedule(level, town, now, jobs);
-        jobs.forEach(Runnable::run);
+        var work = new SettlementWork(jobs);
+        while (!SettlementWork.complete(work)) work.run();
     }
 
     static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
+        SettlementAllocationService.schedule(level, town, jobs);
         jobs.add(() -> SettlementHousingService.update(level, town));
         var roster = VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now);
         // housing and census are fixed for this care cycle, membership is checked at each safe point

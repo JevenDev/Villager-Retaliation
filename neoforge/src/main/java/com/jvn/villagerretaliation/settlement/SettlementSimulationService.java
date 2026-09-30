@@ -179,6 +179,7 @@ public final class SettlementSimulationService {
                 offset++;
             }
             this.entries.keySet().retainAll(retained);
+            SettlementAllocationService.retain(server.overworld(), towns.stream().map(SettlementRecord::id).collect(java.util.stream.Collectors.toSet()));
             this.scheduled = List.copyOf(this.entries.values());
         });
         if (this.selection == null) this.selection = new SettlementWork(jobs);

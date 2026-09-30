@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 public final class SettlementSupplyRecovery {
     private SettlementSupplyRecovery() { }
 
-    public enum Cause { READY, MISSING_STOCK, COMMITTED, CONNECTION, FILTER, CAPACITY, STATION, STAFFING, PAUSED, UNKNOWN, UNREACHABLE }
+    public enum Cause { READY, MISSING_STOCK, COMMITTED, CONNECTION, FILTER, CAPACITY, STATION, STAFFING, PAUSED, UNKNOWN, UNREACHABLE, ALLOCATED }
     public record Recovery(SettlementDemandService.Demand demand, Cause cause, String advice, BlockPos focus,
                            UUID courier, HiredTransferQueue.Endpoint source, HiredTransferQueue.Endpoint destination, ItemStack sample) {
         public Recovery { sample = sample.copy(); }
@@ -42,6 +42,15 @@ public final class SettlementSupplyRecovery {
         String prefix = demand.name() + " needs " + item + ". ";
         String blocker = demand.blocker();
         if (demand.missing() < 0) return result(demand, Cause.UNKNOWN, prefix + "Observe the configured storage or station to determine what is available.", focus);
+        var competing = demand.supply().blocker().competingConsumer();
+        if (competing != null) {
+            var other = projection.demands().stream().filter(candidate -> candidate.consumer().equals(competing)
+                    && candidate.requirement().alternatives().stream().anyMatch(sample -> demand.requirement().value(sample) > 0))
+                    .findFirst().orElse(null);
+            if (other != null) return result(demand, Cause.ALLOCATED,
+                    net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.demand_allocated",
+                            other.name(), other.supply().priority(), other.supply().protectedMinimum()).getString(), focus);
+        }
         if (blocker.contains("unreachable") || blocker.contains("path_failed"))
             return result(demand, Cause.UNREACHABLE, prefix + "The worker could not reach its target. Inspect its existing path diagnostic.", focus);
         if (blocker.contains("station") || blocker.contains("furnace") || blocker.contains("crafting_table") || blocker.contains("brewing_stand"))

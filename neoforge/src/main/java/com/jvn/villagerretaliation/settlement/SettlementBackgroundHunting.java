@@ -48,9 +48,9 @@ final class SettlementBackgroundHunting {
             if (weapon.isEmpty()) {
                 Predicate<ItemStack> allowed =
                         stack -> HuntingWorker.isHuntingWeapon(stack) && VillagerItemFilterService.mayWithdraw(owner, stack);
-                SettlementBackgroundTools.fetchTool(level, worker, inventory, depots, allowed,
+                SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots, allowed,
                         HuntingWorker::huntingWeaponScore, "hunting_weapon", budget);
-                if (worker.status().equals("missing_hunting_weapon") && inaccessibleSupply(level, worker, inventory,
+                if (worker.status().equals("missing_hunting_weapon") && inaccessibleSupply(level, town, worker, inventory,
                         allDepots, depots, allowed)) worker.status("hunting_storage_unreachable");
                 return;
             }
@@ -71,8 +71,8 @@ final class SettlementBackgroundHunting {
                 }
                 Predicate<ItemStack> allowed =
                         stack -> HiredRangedAmmo.isAmmo(stack) && VillagerItemFilterService.mayWithdraw(owner, stack);
-                restockAmmo(level, worker, inventory, depots, access, budget, allowed);
-                if (worker.status().equals("missing_ranged_ammo") && inaccessibleSupply(level, worker, inventory,
+                restockAmmo(level, town, worker, inventory, depots, access, budget, allowed);
+                if (worker.status().equals("missing_ranged_ammo") && inaccessibleSupply(level, town, worker, inventory,
                         allDepots, depots, allowed)) worker.status("hunting_storage_unreachable");
                 return;
             }
@@ -118,18 +118,18 @@ final class SettlementBackgroundHunting {
         }
     }
 
-    private static boolean inaccessibleSupply(ServerLevel level, SettlementWorkerState worker, HiredJobInventory inventory,
+    private static boolean inaccessibleSupply(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory,
                                                List<SettlementDepot> all, List<SettlementDepot> accessible,
                                                Predicate<ItemStack> filter) {
-        return SettlementProductionInventory.supplies(level, worker, SettlementBackgroundTools.items(inventory), all).stream()
+        return SettlementProductionInventory.supplies(level, town, worker, SettlementBackgroundTools.items(inventory), all).stream()
                 .anyMatch(source -> source.depot() != null && !accessible.contains(source.depot()) && filter.test(source.available()));
     }
 
-    private static void restockAmmo(ServerLevel level, SettlementWorkerState worker, HiredJobInventory inventory,
+    private static void restockAmmo(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory,
                                     List<SettlementDepot> depots, Map<UUID, Integer> access,
                                     SettlementWorkBudget budget,
                                     Predicate<ItemStack> allowed) {
-        var supplies = SettlementProductionInventory.supplies(level, worker, SettlementBackgroundTools.items(inventory), depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, SettlementBackgroundTools.items(inventory), depots);
         boolean full = false;
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);

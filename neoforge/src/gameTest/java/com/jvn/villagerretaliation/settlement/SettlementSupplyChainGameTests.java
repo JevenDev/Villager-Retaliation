@@ -54,7 +54,10 @@ public final class SettlementSupplyChainGameTests {
                 town.recordField(SettlementFieldPlot.load(saved));
             }
             fixture.supply().setItem(0, new ItemStack(Items.WHEAT_SEEDS, 3));
-            for (int tick = 0; tick < 20; tick++) SettlementBackgroundFarming.tick(level, town, fixture.worker(), 200, 1.0D);
+            for (int tick = 0; tick < 20; tick++) {
+                SettlementTestPlots.planSupplies(level, town);
+                SettlementBackgroundFarming.tick(level, town, fixture.worker(), 200, 1.0D);
+            }
             helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.WHEAT)), 3, "the three real crop drops reach the harvest depot");
             var storage = town.areas().get(fixture.supply().area());
             town.setWorksitePlan(town.leader(), storage.id(), SettlementWorksitePlan.defaults(storage.type().role()));
@@ -78,8 +81,11 @@ public final class SettlementSupplyChainGameTests {
                             && fixture.supply().position().equals(link.position())), "the bread shortage links to the kitchen's actual wheat storage");
             var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
             for (int tick = 0; tick < 40; tick++) {
+                SettlementTestPlots.planSupplies(level, restored);
                 SettlementBackgroundTransfers.tick(level, restored, restored.workers().get(courier.id()), 200, 1.0D);
+                SettlementTestPlots.planSupplies(level, restored);
                 SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(cook.id()), 200, 1.0D);
+                SettlementTestPlots.planSupplies(level, restored);
                 SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(partner.id()), 200, 1.0D);
             }
             helper.assertValueEqual(restored.transferQueues().get(storage.id()).order(transfer.id()).delivered(), 3L, "the recurring shipment supplies the kitchen once");
@@ -95,8 +101,11 @@ public final class SettlementSupplyChainGameTests {
             restored.depots().get(food.id()).removeItem(0, 1);
             restored.depots().get(fixture.output().id()).setItem(0, new ItemStack(Items.WHEAT, 3));
             for (int tick = 0; tick < 40; tick++) {
+                SettlementTestPlots.planSupplies(level, restored);
                 SettlementBackgroundTransfers.tick(level, restored, restored.workers().get(courier.id()), 200, 1.0D);
+                SettlementTestPlots.planSupplies(level, restored);
                 SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(cook.id()), 200, 1.0D);
+                SettlementTestPlots.planSupplies(level, restored);
                 SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(partner.id()), 200, 1.0D);
             }
             helper.assertValueEqual(restored.transferQueues().get(storage.id()).order(transfer.id()).delivered(), 6L, "a recurring delivery supplies the next harvest after consumption");
@@ -128,7 +137,10 @@ public final class SettlementSupplyChainGameTests {
             raw.setItem(0, new ItemStack(Items.OAK_SAPLING));
             var chunks = forest(helper, town, forestry, forestRoot);
             var logger = worker(helper, town, forestry, forestRoot.west(2), Items.DIAMOND_AXE);
-            for (int tick = 0; tick < 60; tick++) SettlementBackgroundLogging.tick(level, town, logger, 200, 1.0D);
+            for (int tick = 0; tick < 60; tick++) {
+                SettlementTestPlots.planSupplies(level, town);
+                SettlementBackgroundLogging.tick(level, town, logger, 200, 1.0D);
+            }
             helper.assertValueEqual(raw.count(stack -> stack.is(Items.OAK_LOG)), 4, "four observed tree blocks produce four delivered logs");
             helper.assertTrue(town.forests().get(forestry.id()).getBlockState(forestRoot).is(Blocks.OAK_SAPLING), "the tree consumes one real replanting sapling");
             var workshop = area(helper, town, SettlementAreaType.WORKSHOP, "Sawmill", fixture.origin().offset(-2, 0, -10), fixture.origin().offset(2, 3, -6));
@@ -139,7 +151,9 @@ public final class SettlementSupplyChainGameTests {
             var partner = worker(helper, town, workshop, workshop.min().east(), Items.AIR);
             var order = order(helper, town, workshop, "oak_planks", HiredProductionOrder.Mode.BATCH, 16, finished.position());
             for (int tick = 0; tick < 40; tick++) {
+                SettlementTestPlots.planSupplies(level, town);
                 SettlementBackgroundCrafting.tick(level, town, craftsman, 200, 1.0D);
+                SettlementTestPlots.planSupplies(level, town);
                 SettlementBackgroundCrafting.tick(level, town, partner, 200, 1.0D);
             }
             helper.assertValueEqual(finished.count(stack -> stack.is(Items.OAK_PLANKS)), 16, "four native recipe batches turn the harvested logs into sixteen planks");
@@ -147,17 +161,24 @@ public final class SettlementSupplyChainGameTests {
             helper.assertValueEqual(count(helper, town, Items.OAK_LOG), 0, "all four raw logs are consumed");
             var courier = worker(helper, town, storage, storage.min(), Items.AIR);
             var shipment = transfer(town, storage, finished, fixture.depot(), Items.OAK_PLANKS, 16);
-            for (int tick = 0; tick < 10; tick++) SettlementBackgroundTransfers.tick(level, town, courier, 200, 1.0D);
+            for (int tick = 0; tick < 10; tick++) {
+                SettlementTestPlots.planSupplies(level, town);
+                SettlementBackgroundTransfers.tick(level, town, courier, 200, 1.0D);
+            }
             helper.assertValueEqual(town.transferQueues().get(storage.id()).order(shipment.id()).delivered(), 16L, "one finite material transfer supplies construction");
             var needs = SettlementDemandService.inspect(level, town).demands().stream().filter(row -> row.consumer().equals(fixture.project().id())).toList();
             helper.assertValueEqual(needs.stream().mapToLong(row -> row.requirement().quantity()).sum(), 16L, "a cooperative crew shares one set of placement requirements");
             helper.assertValueEqual(SettlementDemandService.inspect(level, town).sellable(fixture.depot(), new ItemStack(Items.OAK_PLANKS)), 0, "project requirements protect delivered planks");
+            SettlementTestPlots.planSupplies(level, town);
             SettlementBackgroundConstruction.tick(level, town, fixture.worker(), 400, 1.0D);
+            SettlementTestPlots.planSupplies(level, town);
             SettlementBackgroundConstruction.tick(level, town, town.workers().get(assistant.getUUID()), 400, 1.0D);
             var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
             var project = restored.projects().get(fixture.project().id());
             for (int tick = 0; tick < 100 && project.active(); tick++) {
+                SettlementTestPlots.planSupplies(level, restored);
                 SettlementBackgroundConstruction.tick(level, restored, restored.workers().get(fixture.builder().getUUID()), 200, 1.0D);
+                SettlementTestPlots.planSupplies(level, restored);
                 SettlementBackgroundConstruction.tick(level, restored, restored.workers().get(assistant.getUUID()), 200, 1.0D);
             }
             helper.assertValueEqual(project.status(), SettlementProject.Status.COMPLETED, "the crew completes construction from harvested resources");
@@ -166,6 +187,7 @@ public final class SettlementSupplyChainGameTests {
             helper.assertValueEqual(count(helper, restored, Items.OAK_PLANKS), 0, "construction consumes every crafted plank exactly once");
             var saved = restored.save(level.registryAccess());
             var reopened = SettlementRecord.load(saved, level.registryAccess(), () -> {});
+            SettlementTestPlots.planSupplies(level, reopened);
             SettlementBackgroundConstruction.tick(level, reopened, reopened.workers().get(assistant.getUUID()), 400, 1.0D);
             helper.assertValueEqual(reopened.projects().get(project.id()).placed(), 16, "completed work cannot replay after another load");
             for (var chunk : chunks) SettlementForestService.observeArea(level, restored, forestry, chunk);

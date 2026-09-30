@@ -15,10 +15,10 @@ final class SettlementBackgroundTools {
     private SettlementBackgroundTools() {
     }
 
-    static boolean fetchTool(ServerLevel level, SettlementWorkerState worker, HiredJobInventory inventory,
+    static boolean fetchTool(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory,
                              List<SettlementDepot> depots, Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> score, String kind, SettlementWorkBudget budget) {
         var updated = items(inventory);
-        var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
+        var supplies = SettlementProductionInventory.supplies(level, town, worker, updated, depots);
         int selected = -1;
         double best = Double.NEGATIVE_INFINITY;
         for (int index = 0; index < supplies.size(); index++) {
