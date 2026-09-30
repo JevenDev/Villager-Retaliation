@@ -240,8 +240,10 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
             details.add(Component.literal(this.status));
             details.add(Component.literal("Output storage: " + (order.storage() == null ? "automatic" : order.storage().toShortString())));
             for (var need : state.snapshot().requirements()) if (need.order().equals(order.id())) {
-                details.add(Component.literal(need.name() + ": required " + need.required() + " / supplied " + need.supplied()
-                        + " / outstanding " + (need.missing() < 0 ? "unknown" : need.missing()) + " " + need.unit().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ')));
+                details.add(Component.translatable("villagerretaliation.gui.settlement.demand_quantities", need.name(), need.required(),
+                        Component.translatable("villagerretaliation.gui.settlement.supply_unit." + need.unit().name().toLowerCase(java.util.Locale.ROOT)),
+                        need.availableNow(), need.committed(), need.incoming(),
+                        need.missing() < 0 ? Component.translatable("villagerretaliation.gui.settlement.supply_unknown") : need.missing()));
             }
             this.details = java.util.List.copyOf(details);
         }

@@ -63,6 +63,18 @@ public final class SettlementSupplyStock {
             index.computeIfAbsent(positions(this.level, position).getFirst(), ignored -> new ArrayList<>()).add(commitment);
         }
 
+        public List<ItemStack> incomingSamples(BlockPos position) {
+            var canonical = positions(this.level, position).getFirst();
+            var result = new ArrayList<ItemStack>();
+            for (var commitment : this.incoming.getOrDefault(canonical, List.of())) result.add(commitment.sample().copyWithCount(1));
+            var personal = com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(this.level);
+            for (var alias : positions(this.level, position)) {
+                if (this.refreshed.add(alias)) personal.refresh(this.level, alias);
+                result.addAll(personal.samples(alias));
+            }
+            return List.copyOf(result);
+        }
+
         public Facts observe(BlockPos position, ItemStack sample, HiredProductionQueue excluded) {
             var canonical = positions(this.level, position).getFirst();
             var key = new Key(canonical, HiredProductionStock.product(sample).copyWithCount(1), excluded);

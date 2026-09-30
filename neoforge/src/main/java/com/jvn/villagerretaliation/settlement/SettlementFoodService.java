@@ -52,6 +52,19 @@ public final class SettlementFoodService {
         return residents <= 0 ? 0.0D : nutrition(town) / ((double) residents * dailyNutrition());
     }
 
+    public static long reserveNutrition(ServerLevel level, SettlementRecord town) {
+        int population = com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(level)
+                .residentCount(town.id(), level.getGameTime());
+        return (long) population * dailyNutrition() * Math.clamp(VillagerRetaliationConfig.SETTLEMENT_FOOD_RESERVE_DAYS.get(), 1, 30);
+    }
+
+    public static com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement requirement(long nutrition) {
+        var meals = net.minecraft.core.registries.BuiltInRegistries.ITEM.stream().map(ItemStack::new)
+                .filter(SettlementFoodService::isMeal).toList();
+        return new com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement("food_nutrition", meals, nutrition,
+                com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.NUTRITION, SettlementFoodService::isMeal, null);
+    }
+
     public static int dailyNutrition() {
         return Math.clamp(VillagerRetaliationConfig.SETTLEMENT_DAILY_NUTRITION.get(), 1, 100);
     }

@@ -146,6 +146,14 @@ public final class SettlementTradeGameTests {
             var materials = town.registerDepot(fixture.leader().getUUID(), fixture.area().id(),
                     fixture.area().min().offset(2, 0, 1), SettlementDepotPurpose.MATERIALS);
             materials.setItem(0, new ItemStack(Items.WHEAT, 64));
+            var demand = SettlementDemandService.inspect(helper.getLevel(), town);
+            helper.assertTrue(demand.demands().stream().anyMatch(row -> row.kind()
+                    == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD && row.missing() < 0),
+                    "the missing physical material depot leaves food accounting unknown");
+            helper.assertValueEqual(demand.sellable(fixture.depot(), new ItemStack(Items.WHEAT)), 20,
+                    "unknown meal stock cannot protect unrelated known wheat from sales");
+            helper.assertValueEqual(demand.sellable(fixture.depot(), new ItemStack(Items.BREAD)), 0,
+                    "unknown meal stock still prevents selling eligible food");
             var rule = order(Items.WHEAT, SettlementTradeOrder.Direction.SELL, 12, true);
             SettlementTradeService.putOrder(fixture.leader(), town.id(), rule);
             CurrencyAmount expected = VillageSellMarket.quote(helper.getLevel(), town.center(), new ItemStack(Items.WHEAT, 8))

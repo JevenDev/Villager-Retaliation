@@ -51,23 +51,28 @@ public final class WorkProductionDemand {
         for (int slot = 0; slot < recipe.getIngredients().size() && batches > 0; slot++) {
             var ingredient = recipe.getIngredients().get(slot);
             if (ingredient.isEmpty()) continue;
-            var narrowed = definition.alternatives().get(slot);
-            java.util.function.Predicate<ItemStack> accepts = stack -> ingredient.test(stack)
-                    && (narrowed == null || BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(narrowed));
-            var alternatives = java.util.Arrays.stream(ingredient.getItems()).filter(accepts).toList();
-            if (alternatives.isEmpty()) return new Plan(List.of(), "ingredient_unavailable");
+            var need = ingredient(definition, ingredient, slot, batches);
+            if (need.alternatives().isEmpty()) return new Plan(List.of(), "ingredient_unavailable");
             long needed = batches;
-            if (recipe instanceof CraftingRecipe) needed = fulfill(level, supplies, accepts, needed);
-            if (needed > 0) merge(result, new WorkSupplyRequirement("ingredient", alternatives, needed,
-                    WorkSupplyRequirement.Unit.ITEMS, accepts, null));
+            if (recipe instanceof CraftingRecipe) needed = fulfill(level, supplies, need.accepts(), needed);
+            if (needed > 0) merge(result, need.withQuantity(needed));
         }
         if (recipe instanceof CraftingRecipe) {
             var inputs = new ArrayList<WorkSupplyRequirement>();
             for (int index = 0; index < available.size(); index++) {
                 int consumed = available.get(index).getCount() - supplies.get(index).getCount();
-                if (consumed > 0) merge(inputs, WorkSupplyRequirement.exact("material", available.get(index), consumed));
+                if (consumed <= 0) continue;
+                WorkSupplyRequirement direct = null;
+                for (int slot = 0; slot < recipe.getIngredients().size(); slot++) {
+                    var candidate = ingredient(definition, recipe.getIngredients().get(slot), slot, consumed);
+                    if (candidate.accepts().test(available.get(index))) {
+                        direct = candidate;
+                        break;
+                    }
+                }
+                merge(inputs, direct == null ? WorkSupplyRequirement.exact("material", available.get(index), consumed) : direct);
             }
-            inputs.addAll(result);
+            result.forEach(need -> merge(inputs, need));
             result = inputs;
         }
         if (recipe instanceof AbstractCookingRecipe cooking) {
@@ -77,6 +82,15 @@ public final class WorkProductionDemand {
                     WorkSupplyRequirement.Unit.BURN_TICKS, stack -> stack.getBurnTime(type) > 0, type));
         }
         return new Plan(result, "");
+    }
+
+    private static WorkSupplyRequirement ingredient(HiredProductionRecipe definition, net.minecraft.world.item.crafting.Ingredient ingredient,
+                                                    int slot, long quantity) {
+        var narrowed = definition.alternatives().get(slot);
+        java.util.function.Predicate<ItemStack> accepts = stack -> ingredient.test(stack)
+                && (narrowed == null || BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(narrowed));
+        return new WorkSupplyRequirement("ingredient", java.util.Arrays.stream(ingredient.getItems()).filter(accepts).toList(),
+                quantity, WorkSupplyRequirement.Unit.ITEMS, accepts, null);
     }
 
     private static long fulfill(ServerLevel level, List<ItemStack> supplies, java.util.function.Predicate<ItemStack> accepts, long needed) {
@@ -132,13 +146,7 @@ public final class WorkProductionDemand {
     private static void merge(List<WorkSupplyRequirement> result, WorkSupplyRequirement next) {
         for (int index = 0; index < result.size(); index++) {
             var previous = result.get(index);
-            if (previous.unit() != next.unit() || !previous.key().equals(next.key())) continue;
-            var first = previous.alternatives();
-            var second = next.alternatives();
-            if (first.size() != second.size() || first.isEmpty()) continue;
-            boolean same = true;
-            for (int item = 0; item < first.size(); item++) if (!ItemStack.isSameItemSameComponents(first.get(item), second.get(item))) same = false;
-            if (same) {
+            if (previous.sameGroup(next)) {
                 result.set(index, previous.withQuantity(previous.quantity() + next.quantity()));
                 return;
             }

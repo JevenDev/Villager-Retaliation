@@ -89,13 +89,20 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             case Demand demand -> {
                 buffer.writeUUID(demand.consumer());
                 buffer.writeUUID(demand.area());
-                buffer.writeBoolean(demand.project());
+                buffer.writeEnum(demand.kind());
                 buffer.writeUtf(demand.requirement(), 128);
                 buffer.writeEnum(demand.unit());
                 buffer.writeLong(demand.required());
                 buffer.writeLong(demand.supplied());
                 buffer.writeLong(demand.missing());
                 buffer.writeLong(demand.immediateMissing());
+                buffer.writeLong(demand.availableNow());
+                buffer.writeLong(demand.committed());
+                buffer.writeLong(demand.incoming());
+                buffer.writeLong(demand.proposed());
+                buffer.writeLong(demand.targetReserve());
+                buffer.writeLong(demand.protectedMinimum());
+                buffer.writeVarInt(demand.priority());
                 buffer.writeVarInt(demand.alternatives().size());
                 for (var item : demand.alternatives()) ItemStack.STREAM_CODEC.encode(buffer, item);
                 buffer.writeVarInt(demand.sources().size());
@@ -290,13 +297,20 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             case DEMAND -> {
                 var consumer = buffer.readUUID();
                 var area = buffer.readUUID();
-                boolean project = buffer.readBoolean();
+                var kind = buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.class);
                 String requirement = buffer.readUtf(128);
                 var unit = buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.class);
                 long required = buffer.readLong();
                 long supplied = buffer.readLong();
                 long missing = buffer.readLong();
                 long immediate = buffer.readLong();
+                long availableNow = buffer.readLong();
+                long committed = buffer.readLong();
+                long incoming = buffer.readLong();
+                long proposed = buffer.readLong();
+                long targetReserve = buffer.readLong();
+                long protectedMinimum = buffer.readLong();
+                int priority = buffer.readVarInt();
                 var alternatives = new ArrayList<ItemStack>();
                 int count = VillagerPayloads.readCollectionSize(buffer, 16, "Demand alternatives");
                 for (int index = 0; index < count; index++) alternatives.add(ItemStack.STREAM_CODEC.decode(buffer));
@@ -311,7 +325,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 var source = transfer ? TransferRequestPayload.readEndpoint(buffer) : null;
                 var destination = transfer ? TransferRequestPayload.readEndpoint(buffer) : null;
                 var sample = transfer ? ItemStack.STREAM_CODEC.decode(buffer) : ItemStack.EMPTY;
-                yield new Demand(id, name, consumer, area, project, requirement, unit, required, supplied, missing, immediate,
+                yield new Demand(id, name, consumer, area, kind, requirement, unit, required, supplied, missing, immediate,
+                        availableNow, committed, incoming, proposed, targetReserve, protectedMinimum, priority,
                         alternatives, sources, cause, advice, focus, courier, source, destination, sample);
             }
             case SUPPLIES -> new Supply(id, name, buffer.readBlockPos(), readOptionalId(buffer), readOptionalId(buffer),
@@ -531,15 +546,21 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         String name();
     }
 
-    public record Demand(UUID id, String name, UUID consumer, UUID area, boolean project, String requirement,
+    public record Demand(UUID id, String name, UUID consumer, UUID area,
+                         com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind kind, String requirement,
                          com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit unit,
-                         long required, long supplied, long missing, long immediateMissing, List<ItemStack> alternatives, List<BlockPos> sources,
+                         long required, long supplied, long missing, long immediateMissing,
+                         long availableNow, long committed, long incoming, long proposed, long targetReserve, long protectedMinimum, int priority,
+                         List<ItemStack> alternatives, List<BlockPos> sources,
                          com.jvn.villagerretaliation.settlement.SettlementSupplyRecovery.Cause cause, String advice, BlockPos focus,
                          UUID courier, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint source,
                          com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint destination, ItemStack sample) implements Entry {
         public Demand {
             if (id == null || name == null || name.length() > 128 || consumer == null || area == null || requirement == null
-                    || requirement.length() > 128 || unit == null || required < 0 || supplied < 0 || supplied > required || missing < -1
+                    || requirement.length() > 128 || kind == null || unit == null || required < 0 || supplied < 0 || supplied > required || missing < -1
+                    || availableNow < 0 || committed < 0 || incoming < 0 || proposed < 0 || targetReserve < 0
+                    || protectedMinimum < 0 || protectedMinimum > required || priority < 0 || priority > 9
+                    || availableNow > required || committed > required || incoming > required
                     || missing > required || immediateMissing < -1 || immediateMissing > required || alternatives.size() > 16 || sources.size() > 128 || cause == null || advice == null
                     || advice.length() > 512 || focus == null || (source == null) != (destination == null) || sample == null
                     || source != null && sample.isEmpty() || courier != null && source == null) throw new IllegalArgumentException("Invalid consumer demand");
@@ -549,6 +570,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
         @Override public List<ItemStack> alternatives() { return alternatives.stream().map(ItemStack::copy).toList(); }
         @Override public ItemStack sample() { return sample.copy(); }
+        public boolean project() { return kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PROJECT; }
     }
 
     public record Supply(UUID id, String name, BlockPos position, UUID depot, UUID area, String storageName,
@@ -620,7 +642,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         case WORKER -> target != Page.RESIDENTS || targetId == null || !targetId.equals(resident) || area == null;
                         case PROJECT -> target != Page.PROJECTS || targetId == null || resident == null || area == null;
                         case TRADE -> target != Page.TRADE || targetId == null;
-                        case RESIDENT -> target != Page.RESIDENTS || resident == null || !resident.equals(targetId);
+                        case RESIDENT -> resident == null || (target == Page.RESIDENTS ? !resident.equals(targetId)
+                                : target != Page.DEMAND || !cause.equals("resident_hungry") || targetId == null || area == null);
                         case SIMULATION -> target != Page.SUMMARY;
                         case SUPPLY -> target != Page.DEMAND || targetId == null || area == null;
                     }) {

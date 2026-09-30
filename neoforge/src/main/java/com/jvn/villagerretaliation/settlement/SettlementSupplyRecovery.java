@@ -38,8 +38,7 @@ public final class SettlementSupplyRecovery {
                                     java.util.Map<BlockPos, List<ItemStack>> contents, SettlementDemandService.Snapshot projection, SettlementDemandService.Demand demand) {
         var area = town.areas().get(demand.area());
         var focus = area == null ? town.center() : area.center();
-        String item = demand.requirement().alternatives().isEmpty() ? demand.requirement().key()
-                : demand.requirement().alternatives().getFirst().getHoverName().getString();
+        String item = com.jvn.villagerretaliation.interaction.work.production.WorkSupplyEvaluation.name(demand.requirement());
         String prefix = demand.name() + " needs " + item + ". ";
         String blocker = demand.blocker();
         if (demand.missing() < 0) return result(demand, Cause.UNKNOWN, prefix + "Observe the configured storage or station to determine what is available.", focus);
@@ -50,6 +49,12 @@ public final class SettlementSupplyRecovery {
         if (blocker.contains("full") || blocker.contains("capacity"))
             return result(demand, Cause.CAPACITY, prefix + "Free space in the configured destination.", focus);
         if (demand.missing() == 0) {
+            if (demand.immediateMissing() > 0) return result(demand, Cause.COMMITTED,
+                    net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.demand_incoming", prefix).getString(), focus);
+            if (demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD
+                    || demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.STOCK_RESERVE)
+                return result(demand, Cause.READY,
+                        net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.demand_reserve_ready").getString(), focus);
             if (town.duties().values().stream().noneMatch(demand.area()::equals))
                 return result(demand, Cause.STAFFING, "Inputs are covered. Assign a worker to " + demand.name() + ".", focus);
             return result(demand, Cause.READY, "Inputs are covered for " + demand.name() + ".", focus);

@@ -49,6 +49,8 @@ final class SettlementIssueService {
                     "population_configuration", SettlementPopulationRequirements.problem(), Page.RESIDENTS, null, null, null, false));
         }
         var social = VillagerSocialGraphSavedData.get(level);
+        var foodDemand = demands.stream().filter(demand -> demand.kind()
+                == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD).findFirst().orElse(null);
         for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime())) {
             var entity = level.getEntity(member.id());
             Villager villager = entity instanceof Villager loaded && loaded.isAlive() ? loaded : null;
@@ -59,7 +61,9 @@ final class SettlementIssueService {
             if (care != null && care.shortageTicks() >= 1_200L && (villager == null ? care.food()
                     : com.jvn.villagerretaliation.villager.VillagerRecoveryService.captureRecoveryState(villager).food()) < 6) {
                 issues.add(new Issue(identity(town, "food:" + member.id()), bounded(name, 128), IssueKind.RESIDENT,
-                        "resident_hungry", "", Page.RESIDENTS, member.id(), member.id(), null, false));
+                        "resident_hungry", foodDemand == null ? "" : foodDemand.advice(),
+                        foodDemand == null ? Page.RESIDENTS : Page.DEMAND, foodDemand == null ? member.id() : foodDemand.id(),
+                        member.id(), foodDemand == null ? null : foodDemand.area(), false));
             }
             if (villager != null ? villager.getHealth() <= villager.getMaxHealth() / 2
                     : care != null && care.needsRecovery()) {

@@ -110,7 +110,12 @@ public final class SettlementManagementGameTests {
         var second = snapshot(fixture, Page.ISSUES, 1, "");
         helper.assertValueEqual(first.entries().size(), SettlementManagementRequestPayload.PAGE_SIZE, "issues obey the existing packet limit");
         helper.assertTrue(second.total() > 30, "progression shortages appear alongside worker issues");
-        helper.assertValueEqual(snapshot(fixture, Page.SUMMARY, 0, "").header().issues(), 30, "summary counts actionable issues across pages without treating progression as a failure");
+        helper.assertValueEqual(snapshot(fixture, Page.SUMMARY, 0, "").header().issues(), 31,
+                "summary counts thirty worker issues and one shared food shortage without treating progression as a failure");
+        var food = snapshot(fixture, Page.DEMAND, 0, "").entries().stream().map(SettlementManagementPayload.Demand.class::cast)
+                .filter(demand -> demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD).findFirst().orElseThrow();
+        helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 0, food.id().toString()).total(), 1,
+                "all residents share one actionable nutrition reserve");
         helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 99, "missing_hoe").total(), 30, "search matches causes across the complete town");
         helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 99, "missing_hoe").index(), 1, "stale page indices are clamped");
         var seen = new HashSet<UUID>();
@@ -775,6 +780,13 @@ public final class SettlementManagementGameTests {
         helper.assertTrue(care.entries().stream().map(SettlementManagementPayload.Issue.class::cast).allMatch(
                 issue -> issue.kind() == SettlementManagementPayload.IssueKind.RESIDENT && issue.needsAttention()),
                 "resident problems link to the resident and attention filter");
+        var hunger = care.entries().stream().map(SettlementManagementPayload.Issue.class::cast)
+                .filter(issue -> issue.cause().equals("resident_hungry")).findFirst().orElseThrow();
+        helper.assertValueEqual(hunger.target(), Page.DEMAND, "hunger opens the shared food requirement");
+        var food = snapshot(fixture, Page.DEMAND, 0, "").entries().stream().map(SettlementManagementPayload.Demand.class::cast)
+                .filter(demand -> demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD).findFirst().orElseThrow();
+        helper.assertValueEqual(hunger.targetId(), food.id(), "hunger navigation retains the semantic requirement identity");
+        helper.assertValueEqual(hunger.resident(), worker.id(), "hunger still identifies the affected resident");
         roundTrip(helper, SettlementManagementPayload.STREAM_CODEC, care);
         state.putInt("Food", 20);
         state.putFloat("Health", 20);

@@ -85,12 +85,16 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
         });
         buffer.writeVarInt(payload.requirements().size());
         for (var need : payload.requirements()) {
+            buffer.writeUUID(need.id());
             buffer.writeUUID(need.order());
             buffer.writeUtf(need.name(), 128);
             buffer.writeEnum(need.unit());
             buffer.writeLong(need.required());
             buffer.writeLong(need.supplied());
             buffer.writeLong(need.missing());
+            buffer.writeLong(need.availableNow());
+            buffer.writeLong(need.committed());
+            buffer.writeLong(need.incoming());
         }
     }
 
@@ -126,8 +130,8 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
         var requirements = new ArrayList<com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement>();
         int size = VillagerPayloads.readCollectionSize(buffer, 544, "Production requirements");
         for (int index = 0; index < size; index++) requirements.add(new com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement(
-                buffer.readUUID(), buffer.readUtf(128), buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.class),
-                buffer.readLong(), buffer.readLong(), buffer.readLong()));
+                buffer.readUUID(), buffer.readUUID(), buffer.readUtf(128), buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.class),
+                buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong()));
         return new ProductionSnapshotPayload(dimension, target, request, applied, role, title, editable, blocker, feedback, queue, legacyCount, legacy, storages, stock, requirements);
     }
 
