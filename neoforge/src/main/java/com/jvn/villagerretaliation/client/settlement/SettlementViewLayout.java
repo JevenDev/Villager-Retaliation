@@ -21,8 +21,8 @@ final class SettlementViewLayout {
         this.railSize = height < 240 ? 20 : 26;
         this.worldLeft = this.railSize + 16;
         this.dockedMap = sidebar && height >= 280;
-        this.mapWidth = this.dockedMap ? this.panelWidth - 38 : Math.clamp(this.panelLeft / 3, 44, 96);
-        this.mapHeight = this.dockedMap ? Math.min(this.mapWidth, height / 4) : Math.min(this.mapWidth, 64);
+        this.mapWidth = this.dockedMap ? Math.min(this.panelWidth - 38, height / 3) : Math.clamp(this.panelLeft / 3, 64, 112);
+        this.mapHeight = this.mapWidth;
         this.mapLeft = this.dockedMap ? this.panelLeft + 30 : this.panelLeft - this.mapWidth - 6;
         this.mapTop = this.dockedMap ? height - this.mapHeight - 22 : HEADER_HEIGHT + 6;
         this.contentBottom = this.dockedMap && map ? this.mapTop - 24 : height - 28;

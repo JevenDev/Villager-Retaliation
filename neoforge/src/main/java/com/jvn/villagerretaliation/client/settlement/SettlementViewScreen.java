@@ -459,9 +459,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             int left = this.layout.dockedMap ? this.panelLeft + 6 : this.overviewMap.left - 24;
             addRenderableWidget(new SettlementViewUi.IconButton(text("center"), left, this.overviewMap.top, 20, 18,
                     new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COMPASS), false, false, () -> false,
-                    () -> focus(this.window.center().getX() + 0.5D, this.window.center().getZ() + 0.5D)));
-            addRenderableWidget(Button.builder(Component.literal("+"), ignored -> zoom(-1)).bounds(left, this.overviewMap.top + 20, 20, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("-"), ignored -> zoom(1)).bounds(left, this.overviewMap.top + 40, 20, 18).build());
+                    () -> { this.overviewMap.center(); focus(this.window.center().getX() + 0.5D, this.window.center().getZ() + 0.5D); }));
+            addRenderableWidget(new SettlementViewUi.IconButton(text("map_zoom_in"), left, this.overviewMap.top + 20, 20, 18,
+                    net.minecraft.world.item.ItemStack.EMPTY, false, false, () -> false, () -> this.overviewMap.zoom(-1, this.focusX, this.focusZ)).symbol("+"));
+            addRenderableWidget(new SettlementViewUi.IconButton(text("map_zoom_out"), left, this.overviewMap.top + 40, 20, 18,
+                    net.minecraft.world.item.ItemStack.EMPTY, false, false, () -> false, () -> this.overviewMap.zoom(1, this.focusX, this.focusZ)).symbol("-"));
         }
         updateBrowserRows();
         updateActions();
@@ -601,6 +603,16 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void renderMap(GuiGraphics graphics, int mouseX, int mouseY) {
         if (!this.preferences.map) return;
         var markers = new ArrayList<SettlementOverviewMap.Marker>();
+        for (var area : this.areas.values()) {
+            if (area.kind() == SettlementAreaType.CONSTRUCTION
+                    || area.kind() == SettlementAreaType.HOME && !area.id().equals(this.selectedArea)) continue;
+            markers.add(new SettlementOverviewMap.Marker(area, area.min().offset((area.max().getX() - area.min().getX()) / 2,
+                    0, (area.max().getZ() - area.min().getZ()) / 2), false,
+                    area.id().equals(this.selectedArea) ? 0xFF70CBFF : 0xFF63879C));
+        }
+        for (var project : this.projects.values()) markers.add(new SettlementOverviewMap.Marker(project,
+                project.min().offset((project.max().getX() - project.min().getX()) / 2, 0, (project.max().getZ() - project.min().getZ()) / 2),
+                false, project.id().equals(this.selectedArea) ? 0xFF70CBFF : 0xFFE7B64E));
         Map<UUID, BlockPos> visible = new java.util.HashMap<>();
         for (var entity : this.minecraft.level.entitiesForRendering()) {
             if (entity instanceof Villager && contains(entity.blockPosition())) visible.put(entity.getUUID(), entity.blockPosition());
@@ -608,16 +620,31 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         for (var r : this.roster.values()) {
             boolean live = visible.containsKey(r.id());
             markers.add(new SettlementOverviewMap.Marker(r, visible.getOrDefault(r.id(), r.position()), !live,
-                    this.selection.contains(r.id()) ? 0xFF40CCFF : live ? 0xFFFFFFFF : 0xFF888888));
+                    this.selection.contains(r.id()) ? 0xFF40CCFF : live ? 0xFF66E478 : 0xFFAAAAAA));
         }
         for (var entry : this.snapshots.entries(Page.ISSUES)) {
             var issue = (SettlementManagementPayload.Issue) entry;
             BlockPos position = issuePosition(issue);
             if (position != null) markers.add(new SettlementOverviewMap.Marker(issue, position, false, 0xFFFF8840));
         }
-        this.overviewMap.render(graphics, this.font, this.plotSnapshot.plots(), List.copyOf(this.areas.values()), List.copyOf(this.projects.values()),
-                markers, this.minecraft.gameRenderer.getMainCamera().getPosition().x,
-                this.minecraft.gameRenderer.getMainCamera().getPosition().z, this.camera.yaw(), mouseX, mouseY);
+        var camera = this.minecraft.gameRenderer.getMainCamera();
+        this.overviewMap.render(graphics, this.font, this.window.chunks(), this.plotSnapshot.plots(), List.copyOf(this.areas.values()),
+                List.copyOf(this.projects.values()), markers, this.selectedArea, mapCameraFootprint(), this.focusX, this.focusZ,
+                camera.getPosition().x, camera.getPosition().z, this.camera.yaw(), mouseX, mouseY);
+    }
+
+    private List<Vec3> mapCameraFootprint() {
+        double ground = terrainHeight((int) Math.floor(this.focusX), (int) Math.floor(this.focusZ));
+        if (!Double.isFinite(ground)) return List.of();
+        var corners = new ArrayList<Vec3>();
+        for (double[] point : new double[][]{{0, 0}, {this.panelLeft, 0}, {this.panelLeft, this.height}, {0, this.height}}) {
+            var ray = ray(point[0], point[1]);
+            if (ray.direction().y >= -1.0E-5D) return List.of();
+            double distance = (ground - ray.origin().y) / ray.direction().y;
+            if (distance <= 0) return List.of();
+            corners.add(ray.origin().add(ray.direction().scale(distance)));
+        }
+        return corners;
     }
 
     @Override
@@ -816,8 +843,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (this.preferences.map && this.layout.dockedMap) {
                 SettlementViewUi.frame(graphics, this.panelLeft + 2, this.overviewMap.top - 22,
                         this.panelWidth - 4, this.height - this.overviewMap.top + 20);
-                graphics.drawString(this.font, this.font.plainSubstrByWidth("x: " + Math.round(this.focusX) + "  z: " + Math.round(this.focusZ),
-                        this.panelWidth - 14), this.panelLeft + 7, this.height - 14, 0xB9C1CB);
             }
         }
         SettlementViewUi.frame(graphics, 3, SettlementViewLayout.HEADER_HEIGHT + 3, this.layout.railSize + 6, (this.layout.railSize + 2) * 6 + 4);
@@ -862,7 +887,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private boolean worldContains(double x, double y) {
         if (x < this.layout.worldLeft || x >= this.panelLeft || y < SettlementViewLayout.HEADER_HEIGHT + 4 || y >= this.height - 32)
             return false;
-        if (this.preferences.map && this.overviewMap.contains(x, y)) return false;
+        if (this.preferences.map && this.overviewMap.coversChrome(x, y)) return false;
         for (var child : children()) if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget && widget.visible
                 && x >= widget.getX() - 3 && x < widget.getRight() + 3 && y >= widget.getY() - 3 && y < widget.getBottom() + 3) return false;
         return true;
@@ -1574,7 +1599,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
         if (this.routeDraft != null && this.routeDraft.dragging()) return true;
         if (this.popup != null && this.popup.scroll(x, y, vertical) || this.gizmo != null && this.gizmo.dragging()) return true;
-        if (this.preferences.map && this.overviewMap.contains(x, y)) return true;
+        if (this.preferences.map && this.overviewMap.contains(x, y)) {
+            if (vertical != 0) this.overviewMap.zoom(-vertical, this.focusX, this.focusZ);
+            return true;
+        }
+        if (this.preferences.map && this.overviewMap.coversChrome(x, y)) return true;
         if (this.preferences.sidebar && x >= this.panelLeft) {
             if (y < SettlementViewLayout.HEADER_HEIGHT || y >= this.layout.contentBottom) return true;
             if (this.inspector.visible()) { this.inspector.scroll(vertical); return true; }
@@ -2131,6 +2160,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         savePreferences();
         this.commands.clear();
         this.snapshots.clear();
+        this.overviewMap.close();
         this.assignmentReview = null;
         this.selection.select(List.of(), false);
         this.roster.clear();

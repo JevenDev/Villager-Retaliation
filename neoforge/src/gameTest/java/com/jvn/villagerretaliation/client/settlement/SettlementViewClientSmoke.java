@@ -180,6 +180,8 @@ public final class SettlementViewClientSmoke {
             require(screen.terrainLoaded(), "the minimum zoom capture includes the streamed terrain");
             require(Math.abs(minecraft.gameRenderer.getMainCamera().getXRot() - SettlementViewScreen.PITCH) < 3.0F,
                     "the centered settlement camera has an isometric-style tilt");
+            SettlementOverviewMapClientChecks.verify(screen, fixture.center());
+            capture("terrain-overview-map");
             capture("minimum-zoom");
             screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
             ticks = 0;

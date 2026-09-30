@@ -72,6 +72,7 @@ final class SettlementViewUi {
         private final BooleanSupplier selected;
         private final boolean label;
         private final boolean portrait;
+        private Component symbol;
 
         IconButton(Component message, int left, int top, int width, int height, ItemStack icon,
                    boolean label, boolean portrait, BooleanSupplier selected, Runnable action) {
@@ -81,6 +82,11 @@ final class SettlementViewUi {
             this.portrait = portrait;
             this.selected = selected;
             setTooltip(Tooltip.create(message));
+        }
+
+        IconButton symbol(String value) {
+            this.symbol = Component.literal(value);
+            return this;
         }
 
         @Override
@@ -101,7 +107,7 @@ final class SettlementViewUi {
                 graphics.drawString(font, font.plainSubstrByWidth(getMessage().getString(), getRight() - textLeft - 3),
                         textLeft, getY() + (getHeight() - font.lineHeight) / 2, this.active ? 0xFFFFFF : 0x999999);
             } else if (this.icon.isEmpty() && !this.portrait) {
-                graphics.drawCenteredString(Minecraft.getInstance().font, getMessage(), getX() + getWidth() / 2,
+                graphics.drawCenteredString(Minecraft.getInstance().font, this.symbol == null ? getMessage() : this.symbol, getX() + getWidth() / 2,
                         getY() + (getHeight() - 8) / 2, this.active ? 0xFFFFFF : 0x999999);
             }
         }
