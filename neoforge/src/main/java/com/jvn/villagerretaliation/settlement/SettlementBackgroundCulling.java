@@ -46,7 +46,7 @@ final class SettlementBackgroundCulling {
         var target = candidates.stream().filter(candidate -> counts.get(candidate.animal().getType()) > cap)
                 .min(Comparator.comparingDouble(candidate -> candidate.animal().distanceToSqr(owner))).orElse(null);
         if (target == null) return false;
-        var weapon = inventory.equipBestTool(AnimalBreedingWorker::isCullWeapon, AnimalBreedingWorker::cullWeaponScore);
+        var weapon = SettlementBackgroundTools.equipTool(worker, inventory, AnimalBreedingWorker::isCullWeapon, AnimalBreedingWorker::cullWeaponScore);
         if (weapon.isEmpty()) {
             SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots, AnimalBreedingWorker::isCullWeapon,
                     AnimalBreedingWorker::cullWeaponScore, "cull_weapon", budget);

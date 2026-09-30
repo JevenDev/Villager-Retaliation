@@ -559,9 +559,10 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 level,
                 villager,
                 context,
-                FarmerHoeRequirement::isHoe,
+                HiredEquipmentNeed.of(HiredEquipmentNeed.Kind.HOE),
                 FarmerHoeRequirement::hoeScore,
                 0.45D);
+        if (toolResult.blocker() != null) return toolResult.blocker();
         return switch (toolResult.status()) {
             case READY -> null;
             case COLLECTED -> {

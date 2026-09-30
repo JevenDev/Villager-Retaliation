@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
@@ -170,11 +171,12 @@ final class SettlementBackgroundConstruction {
                 }
                 ItemStack tool = ItemStack.EMPTY;
                 if (toolAction != BuilderStructureScanner.BuilderToolAction.NONE) {
-                    var requiredAction = toolAction;
-                    tool = inventory.equipBestTool(stack -> BuilderStructureScanner.matchesToolAction(stack, requiredAction), stack -> 1.0D);
+                    var equipment = HiredEquipmentNeed.placement(toolAction);
+                    equipment.remember(state);
+                    tool = SettlementBackgroundTools.equipTool(worker, inventory, equipment, stack -> 1.0D);
                     if (tool.isEmpty()) {
                         SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots,
-                                stack -> BuilderStructureScanner.matchesToolAction(stack, requiredAction), stack -> 1.0D, "placement_tool", budget);
+                                equipment, stack -> 1.0D, "placement_tool", budget);
                         BuilderTaskState.setBlocked(state, "missing_placement_tool");
                         return;
                     }
@@ -238,9 +240,11 @@ final class SettlementBackgroundConstruction {
             return false;
         }
         var block = site.getBlockState(pos);
-        var tool = inventory.equipBestTool(stack -> MiningBlockRules.isUsableBuilderClearingTool(stack, block), stack -> MiningBlockRules.destroySpeed(stack, block));
+        var equipment = HiredEquipmentNeed.clearing(block);
+        equipment.remember(worker.settings());
+        var tool = SettlementBackgroundTools.equipTool(worker, inventory, equipment, stack -> MiningBlockRules.destroySpeed(stack, block));
         if (tool.isEmpty()) {
-            SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots, stack -> MiningBlockRules.isUsableBuilderClearingTool(stack, block),
+            SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots, equipment,
                     stack -> MiningBlockRules.destroySpeed(stack, block), "clear_tool", budget);
             return false;
         }

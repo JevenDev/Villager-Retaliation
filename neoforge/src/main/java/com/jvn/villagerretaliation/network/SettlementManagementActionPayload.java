@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.settlement.SettlementTradeOrder;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSetting;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
 import com.jvn.villagerretaliation.settlement.SettlementWorksitePlan;
+import com.jvn.villagerretaliation.settlement.SettlementEquipmentPlan;
 import com.jvn.villagerretaliation.settlement.SettlementStorageLinks;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.EnumSet;
@@ -143,6 +144,13 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 buffer.writeUUID(enabled.area());
                 buffer.writeBoolean(enabled.enabled());
             }
+            case SaveEquipment save -> {
+                buffer.writeEnum(Kind.SAVE_EQUIPMENT);
+                buffer.writeUUID(save.area());
+                buffer.writeLong(save.revision());
+                buffer.writeBoolean(save.configuration() != null);
+                if (save.configuration() != null) writeEquipmentConfiguration(buffer, save.configuration());
+            }
             case SaveWorksite save -> {
                 buffer.writeEnum(Kind.SAVE_WORKSITE);
                 buffer.writeUUID(save.area());
@@ -271,6 +279,8 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             case VIEW -> new View();
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case BREW -> new Brew(buffer.readUUID(), buffer.readUUID(), readBrewingOrder(buffer));
+            case SAVE_EQUIPMENT -> new SaveEquipment(buffer.readUUID(), buffer.readLong(),
+                    buffer.readBoolean() ? readEquipmentConfiguration(buffer) : null);
             case SAVE_WORKSITE -> new SaveWorksite(buffer.readUUID(), readWorksitePlan(buffer), buffer.readBoolean());
             case SAVE_STORAGE_FILTER -> new SaveStorageFilter(buffer.readUUID(), buffer.readBlockPos(), buffer.readUUID(),
                     net.minecraft.world.item.ItemStack.STREAM_CODEC.decode(buffer), net.minecraft.world.item.ItemStack.STREAM_CODEC.decode(buffer));
@@ -331,6 +341,47 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             case INVENTORY -> new Inventory(buffer.readUUID());
         };
         return new SettlementManagementActionPayload(town, command, request);
+    }
+
+    static void writeEquipmentPlan(RegistryFriendlyByteBuf buffer, SettlementEquipmentPlan plan) {
+        buffer.writeBoolean(plan != null);
+        if (plan == null) return;
+        buffer.writeUUID(plan.authority());
+        buffer.writeLong(plan.revision());
+        buffer.writeUtf(plan.blocker(), 128);
+        writeEquipmentConfiguration(buffer, plan.configuration());
+    }
+
+    static SettlementEquipmentPlan readEquipmentPlan(RegistryFriendlyByteBuf buffer) {
+        if (!buffer.readBoolean()) return null;
+        var authority = buffer.readUUID();
+        long revision = buffer.readLong();
+        String blocker = buffer.readUtf(128);
+        return new SettlementEquipmentPlan(readEquipmentConfiguration(buffer), authority, revision, blocker);
+    }
+
+    private static void writeEquipmentConfiguration(RegistryFriendlyByteBuf buffer, SettlementEquipmentPlan.Configuration configuration) {
+        buffer.writeVarInt(configuration.priority());
+        buffer.writeBoolean(configuration.enabled());
+        buffer.writeVarInt(configuration.selections().size());
+        for (var selection : configuration.selections()) {
+            buffer.writeEnum(selection.kind());
+            buffer.writeVarInt(selection.spares());
+            buffer.writeBoolean(selection.equip());
+            buffer.writeBoolean(selection.protectedMinimum());
+        }
+    }
+
+    private static SettlementEquipmentPlan.Configuration readEquipmentConfiguration(RegistryFriendlyByteBuf buffer) {
+        int priority = buffer.readVarInt();
+        boolean enabled = buffer.readBoolean();
+        int count = VillagerPayloads.readCollectionSize(buffer, SettlementEquipmentPlan.MAX_SELECTIONS, "equipment selections");
+        var selections = new java.util.ArrayList<SettlementEquipmentPlan.Selection>(count);
+        for (int index = 0; index < count; index++)
+            selections.add(new SettlementEquipmentPlan.Selection(buffer.readEnum(
+                    com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.Kind.class), buffer.readVarInt(),
+                    buffer.readBoolean(), buffer.readBoolean()));
+        return new SettlementEquipmentPlan.Configuration(selections, priority, enabled);
     }
 
     static void writeWorksitePlan(RegistryFriendlyByteBuf buffer, SettlementWorksitePlan plan) {
@@ -478,11 +529,11 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER, SAVE_EQUIPMENT
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter, SaveEquipment {
     }
 
     public record SaveRoute(UUID area, UUID resident, SettlementGuardOrder expected, SettlementGuardOrder route) implements Command {
@@ -517,6 +568,13 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
         public SaveStorage {
             Objects.requireNonNull(area);
             Objects.requireNonNull(expected);
+        }
+    }
+
+    public record SaveEquipment(UUID area, long revision, SettlementEquipmentPlan.Configuration configuration) implements Command {
+        public SaveEquipment {
+            Objects.requireNonNull(area);
+            if (revision < -1 || revision == Long.MAX_VALUE) throw new IllegalArgumentException("Invalid equipment revision");
         }
     }
 

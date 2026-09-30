@@ -46,9 +46,14 @@ public final class SettlementDemandService {
         private final SettlementSupplyStock.Snapshot stock;
         private final Map<BlockPos, List<Stock>> stores = new LinkedHashMap<>();
         private final Map<UUID, List<ItemStack>> carried = new LinkedHashMap<>();
+        private final java.util.Set<UUID> equipmentWorkers = new java.util.LinkedHashSet<>();
+        private final java.util.Set<UUID> equipmentReserves = new java.util.LinkedHashSet<>();
+        private final Map<com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed, WorkSupplyRequirement> equipmentRequirements = new LinkedHashMap<>();
         private final List<Demand> demands = new ArrayList<>();
         private final List<Definition> definitions = new ArrayList<>();
+        private final Map<UUID, List<ProductionInput>> productionInputs = new LinkedHashMap<>();
         private final Map<UUID, Long> started = new LinkedHashMap<>();
+        private final Map<UUID, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue> transfers = new LinkedHashMap<>();
         private WorkSupplyAllocation.Result allocation;
         private final Map<UUID, Long> gathered = new LinkedHashMap<>();
         private final Map<UUID, java.util.function.BooleanSupplier> consumersCurrent = new LinkedHashMap<>();
@@ -105,8 +110,16 @@ public final class SettlementDemandService {
 
         Snapshot policyDraft(UUID policy, SettlementSupplyPolicy.Configuration configuration) {
             var draft = new Snapshot(this.level, this.town, this.viewer);
+            draft.equipmentRequirements.putAll(this.equipmentRequirements);
+            draft.productionInputs.putAll(this.productionInputs);
+            for (var definition : this.definitions) if (definition.request().kind() == Kind.FOOD) draft.evaluate(definition);
+            this.equipmentWorkers.forEach(draft::equipment);
+            this.equipmentReserves.forEach(draft::equipmentReserve);
+            refreshTransfers(draft);
             for (var definition : this.definitions)
-                if (definition.request().kind() != Kind.STOCK_RESERVE || !definition.request().consumer().equals(policy)) draft.evaluate(definition);
+                if (definition.request().kind() != Kind.EQUIPMENT && definition.request().kind() != Kind.FOOD
+                        && !this.transfers.containsKey(definition.request().consumer())
+                        && (definition.request().kind() != Kind.STOCK_RESERVE || !definition.request().consumer().equals(policy))) draft.evaluate(definition);
             draft.policyReserve(policy, configuration);
             draft.started.putAll(this.started);
             draft.consumersCurrent.putAll(this.consumersCurrent);
@@ -120,7 +133,15 @@ public final class SettlementDemandService {
 
         Snapshot refresh(BlockPos source) {
             var refreshed = new Snapshot(this.level, this.town, this.viewer);
-            for (var definition : this.definitions) refreshed.evaluate(definition);
+            refreshed.equipmentRequirements.putAll(this.equipmentRequirements);
+            refreshed.productionInputs.putAll(this.productionInputs);
+            for (var definition : this.definitions) if (definition.request().kind() == Kind.FOOD) refreshed.evaluate(definition);
+            this.equipmentWorkers.forEach(refreshed::equipment);
+            this.equipmentReserves.forEach(refreshed::equipmentReserve);
+            refreshTransfers(refreshed);
+            for (var definition : this.definitions)
+                if (definition.request().kind() != Kind.EQUIPMENT && definition.request().kind() != Kind.FOOD
+                        && !this.transfers.containsKey(definition.request().consumer())) refreshed.evaluate(definition);
             if (source != null) refreshed.store(source);
             refreshed.started.putAll(this.started);
             refreshed.allocate();
@@ -128,13 +149,46 @@ public final class SettlementDemandService {
         }
 
         private void allocate() {
+            var work = allocationWork();
+            while (!SettlementWork.complete(work)) work.run();
+        }
+
+        private Runnable allocationWork() {
             var metadata = new LinkedHashMap<UUID, Demand>();
             demands().forEach(demand -> metadata.put(demand.supply().id(), demand));
             var offers = this.stores.values().stream().filter(java.util.Objects::nonNull).flatMap(List::stream)
                     .map(stock -> new WorkSupplyAllocation.Stock(stock.position, stock.sample, stock.remaining,
                             stock.claimed, stock.incoming, stock.known)).toList();
-            this.allocation = WorkSupplyAllocation.allocate(metadata.values().stream()
-                    .map(demand -> new WorkSupplyAllocation.Request(demand.supply(), this.started.getOrDefault(demand.supply().id(), 0L))).toList(), offers);
+            return SettlementPolicyUrgency.plan(this.level, this.town, metadata.values().stream()
+                    .map(demand -> new WorkSupplyAllocation.Request(demand.supply(), this.started.getOrDefault(demand.supply().id(), 0L))).toList(),
+                    offers, this.stock, this::protectedInputs, result -> applyAllocation(metadata, result));
+        }
+
+        private List<WorkSupplyRequirement> protectedInputs(UUID order, long amount) {
+            var inputs = new ArrayList<WorkSupplyRequirement>();
+            for (var part : this.productionInputs.getOrDefault(order, List.of())) {
+                long count = Math.min(amount, part.amount());
+                if (count == 0) break;
+                var plan = WorkProductionDemand.describe(this.level, part.recipe(), count, part.supplies(), part.water());
+                for (var need : plan.requirements()) {
+                    int index = -1;
+                    for (int candidate = 0; candidate < inputs.size(); candidate++)
+                        if (inputs.get(candidate).sameGroup(need)) { index = candidate; break; }
+                    if (index < 0) inputs.add(need);
+                    else inputs.set(index, need.withQuantity(inputs.get(index).quantity() + need.quantity()));
+                }
+                amount -= count;
+            }
+            return inputs;
+        }
+
+        private record ProductionInput(com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe recipe,
+                                       long amount, List<ItemStack> supplies, boolean water) {
+            ProductionInput { supplies = supplies.stream().map(ItemStack::copy).toList(); }
+        }
+
+        private void applyAllocation(Map<UUID, Demand> metadata, WorkSupplyAllocation.Result result) {
+            this.allocation = result;
             this.demands.clear();
             for (var demand : this.allocation.demands()) {
                 var original = metadata.get(demand.id());
@@ -238,7 +292,8 @@ public final class SettlementDemandService {
         private List<ItemStack> carried(UUID worker) {
             return this.carried.computeIfAbsent(worker, id -> {
                 var result = new ArrayList<ItemStack>();
-                if (this.level.getEntity(id) instanceof Villager villager) {
+                if (this.level.getEntity(id) instanceof Villager villager
+                        && (!this.town.workers().containsKey(id) || this.level.isPositionEntityTicking(villager.blockPosition()))) {
                     var inventory = HiredJobInventory.getJobInventory(villager);
                     for (int slot : inventory.supplySlots()) result.add(inventory.getItem(slot).copy());
                 } else {
@@ -275,7 +330,7 @@ public final class SettlementDemandService {
                          List<BlockPos> sources, List<UUID> workers, List<ItemStack> privateSupplies, long progress, long immediate, String blocker,
                          long reserve, int priority, BlockPos destination) {
             var request = new WorkSupplyDemand(WorkSupplyDemand.identity(this.level.registryAccess(), consumer, kind, requirement),
-                    consumer, kind, requirement, Math.min(immediate, requirement.quantity()), reserve, kind == Kind.FOOD ? reserve : SettlementPolicyExecution.essential(this.town, consumer) ? requirement.quantity() : 0,
+                    consumer, kind, requirement, Math.min(immediate, requirement.quantity()), reserve, kind == Kind.FOOD ? reserve : 0,
                     priority, 0, 0, 0, 0, true, sources, destination, WorkSupplyDemand.Blocker.of(blocker));
             evaluate(new Definition(area, name, request, workers, privateSupplies, progress), privateSupplies);
         }
@@ -339,6 +394,41 @@ public final class SettlementDemandService {
             return kind == Kind.PRODUCTION && queue != null && queue.order(consumer) != null ? queue.order(consumer).storage() : null;
         }
 
+        private void equipment(UUID worker) {
+            this.equipmentWorkers.add(worker);
+            var equipment = SettlementEquipmentDemand.describe(this.level, this.town, worker);
+            if (equipment == null) return;
+            for (var need : equipment.needs()) {
+                var requirement = this.equipmentRequirements.computeIfAbsent(need.equipment(), value -> value.requirement(1)).withQuantity(need.amount());
+                var request = new WorkSupplyDemand(WorkSupplyDemand.identity(this.level.registryAccess(), worker, Kind.EQUIPMENT, requirement),
+                        worker, Kind.EQUIPMENT, requirement, Math.min(1, need.amount()), need.reserve(), need.essential(),
+                        equipment.priority() < 0 ? priority(worker, equipment.area()) : equipment.priority(),
+                        0, 0, 0, 0, true, equipment.sources(), null, WorkSupplyDemand.Blocker.of(""));
+                evaluate(new Definition(equipment.area(), equipment.name(), request, List.of(worker), equipment.owned(), 0), equipment.owned());
+            }
+        }
+
+        private void equipmentReserve(UUID areaId) {
+            this.equipmentReserves.add(areaId);
+            var plan = this.town.equipmentPlans().get(areaId);
+            var area = this.town.workplace(areaId);
+            var settings = this.town.worksitePlans().get(areaId);
+            if (plan == null || !plan.authorized(this.town) || area == null || !area.enabled()
+                    || settings == null || !settings.settings().enabled()) return;
+            var sources = SettlementSupplyStock.storages(this.level, this.town, areaId, false);
+            var workers = workers(areaId).stream().filter(this.equipmentWorkers::contains).toList();
+            for (var selection : plan.configuration().selections()) {
+                if (selection.spares() == 0 || selection.kind() == com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.Kind.AMMUNITION) continue;
+                var need = com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.of(selection.kind());
+                var requirement = this.equipmentRequirements.computeIfAbsent(need, value -> value.requirement(1)).withQuantity(selection.spares());
+                var request = new WorkSupplyDemand(WorkSupplyDemand.identity(this.level.registryAccess(), areaId, Kind.EQUIPMENT, requirement),
+                        areaId, Kind.EQUIPMENT, requirement, 0, selection.spares(), selection.protectedMinimum() ? selection.spares() : 0,
+                        plan.configuration().priority(), 0, 0, 0, 0, true, sources, null,
+                        WorkSupplyDemand.Blocker.of(""));
+                evaluate(new Definition(areaId, area.name(), request, workers, List.of(), 0));
+            }
+        }
+
         private void food() {
             long target = SettlementFoodService.reserveNutrition(this.level, this.town);
             this.consumersCurrent.put(this.town.id().value(), () -> target == SettlementFoodService.reserveNutrition(this.level, this.town));
@@ -374,6 +464,33 @@ public final class SettlementDemandService {
             add(id, this.town.id().value(), Kind.STOCK_RESERVE, configuration.name(),
                     WorkSupplyRequirement.exact("policy_stock", target.sample(), target.amount()),
                     List.of(position), List.of(), new ArrayList<>(), 0, target.amount(), "", target.amount(), configuration.priority(), position);
+        }
+
+        private void refreshTransfers(Snapshot target) {
+            this.transfers.forEach((id, queue) -> {
+                var area = this.town.areas().get(queue.owner());
+                var order = queue.order(id);
+                if (area != null && order != null) target.transfer(area, queue, order);
+            });
+        }
+
+        private void transfer(SettlementArea area, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue queue,
+                              com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Order order) {
+            this.transfers.put(order.id(), queue);
+            if (this.town.managedSupplyOrder(order.id()) == null || !SettlementPolicyExecution.mayStart(this.town, order.id())) return;
+            var plan = this.town.worksitePlans().get(area.id());
+            if (!area.enabled() || plan != null && !plan.settings().enabled()) return;
+            acceptTransfer(queue, order);
+            long stock = SettlementTransferService.stock(this.level, this.town, order);
+            long pending = queue.allocations().stream().filter(value -> value.order().equals(order.id()) && !value.started())
+                    .mapToLong(com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Allocation::amount).sum();
+            long amount = stock < 0 ? order.amount() : queue.available(order.id(), stock) + pending;
+            if (amount <= 0) return;
+            var sources = SettlementSupplyStock.positions(this.level, order.source().position()).subList(0, 1);
+            add(order.id(), area.id(), Kind.PRODUCTION, area.name(),
+                    WorkSupplyRequirement.exact("policy_delivery", order.sample(), amount), sources, List.of(), new ArrayList<>(),
+                    pending, Math.min(1, amount), stock < 0 ? "output_storage_unavailable" : "", 0,
+                    priority(order.id(), area.id()), order.destination().position());
         }
 
         private void production(SettlementArea area, HiredProductionQueue queue, HiredProductionOrder order) {
@@ -442,6 +559,8 @@ public final class SettlementDemandService {
             available.addAll(privateSupplies);
             var plan = WorkProductionDemand.describe(this.level, order.recipe(), amount, available, water);
             if (!plan.blocker().isEmpty()) { unknown(order.id(), area, Kind.PRODUCTION, name, sources, plan.blocker()); return; }
+            if (!started) this.productionInputs.computeIfAbsent(order.id(), ignored -> new ArrayList<>())
+                    .add(new ProductionInput(order.recipe(), amount, available, water));
             var next = WorkProductionDemand.describe(this.level, order.recipe(),
                     Math.min(amount, order.recipe().recipe() == null ? 3 : order.output().getCount()), available, water);
             for (var need : plan.requirements()) {
@@ -530,7 +649,9 @@ public final class SettlementDemandService {
 
     public static Snapshot inspect(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer) {
         var snapshot = new Snapshot(level, town, viewer);
-        planning(snapshot, town).forEach(Runnable::run);
+        for (var work : planning(snapshot, town)) {
+            do { work.run(); } while (!SettlementWork.complete(work));
+        }
         return snapshot;
     }
 
@@ -549,6 +670,11 @@ public final class SettlementDemandService {
     private static List<Runnable> planning(Snapshot snapshot, SettlementRecord town) {
         var work = new ArrayList<Runnable>();
         work.add(snapshot::food);
+        for (var entry : town.duties().entrySet()) {
+            var area = town.workplace(entry.getValue());
+            if (area != null && com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.supports(area.type().role()))
+                work.add(() -> snapshot.equipment(entry.getKey()));
+        }
         record Consumer(int priority, UUID id, Runnable run) { }
         var consumers = new ArrayList<Consumer>();
         for (var queue : town.productionQueues().values()) {
@@ -556,7 +682,14 @@ public final class SettlementDemandService {
             if (area != null) for (var order : queue.orders())
                 consumers.add(new Consumer(SettlementPolicyExecution.priority(town, area.id(), order.id()), order.id(), () -> snapshot.production(area, queue, order)));
         }
+        for (var queue : town.transferQueues().values()) {
+            var area = town.areas().get(queue.owner());
+            if (area != null) for (var order : queue.orders())
+                if (town.managedSupplyOrder(order.id()) != null) consumers.add(new Consumer(
+                        SettlementPolicyExecution.priority(town, area.id(), order.id()), order.id(), () -> snapshot.transfer(area, queue, order)));
+        }
         for (var worker : linkedPersonalWorkers(snapshot.level, town)) {
+            work.add(() -> snapshot.equipment(worker.getUUID()));
             var role = com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.assignedRole(snapshot.level, worker);
             var access = com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.access(snapshot.level, worker, role);
             if (access.queue() == null || !access.blocker().isEmpty()) continue;
@@ -564,11 +697,12 @@ public final class SettlementDemandService {
                 consumers.add(new Consumer(5, order.id(), () -> snapshot.personal(worker, access.queue(), order)));
         }
         for (var project : town.projects().values()) consumers.add(new Consumer(project.priority(), project.id(), () -> snapshot.project(project)));
+        for (var area : town.equipmentPlans().keySet()) work.add(() -> snapshot.equipmentReserve(area));
         consumers.sort(Comparator.comparingInt(Consumer::priority).reversed().thenComparing(Consumer::id));
         consumers.forEach(consumer -> work.add(consumer.run()));
         work.add(snapshot::stockReserves);
         work.add(snapshot::policyReserves);
-        work.add(snapshot::allocate);
+        work.add(SettlementWork.lazy(snapshot::allocationWork));
         return work;
     }
 

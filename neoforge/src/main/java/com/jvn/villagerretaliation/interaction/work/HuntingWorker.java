@@ -195,9 +195,10 @@ public final class HuntingWorker extends AbstractBlockWorker {
                 level,
                 villager,
                 context,
-                HuntingWorker::isHuntingWeapon,
+                HiredEquipmentNeed.of(HiredEquipmentNeed.Kind.HUNTING),
                 HuntingWorker::huntingWeaponScore,
                 PATROL_SPEED);
+        if (toolResult.blocker() != null) return toolResult.blocker();
         if (toolResult.status() == ToolStorageStatus.READY || toolResult.status() == ToolStorageStatus.COLLECTED) {
             return null;
         }

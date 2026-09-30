@@ -157,7 +157,7 @@ final class SettlementBackgroundLogging {
                     continue;
                 }
                 if (plan.logFamily().isBlank()) LoggingHarvestPlan.rememberLogFamily(context, LoggingTreeGeometry.logFamilyKey(block));
-                var axe = context.inventory().equipBestTool(stack -> stack.is(ItemTags.AXES), stack -> destroySpeed(level, stack, block));
+                var axe = SettlementBackgroundTools.equipTool(worker, context.inventory(), stack -> stack.is(ItemTags.AXES), stack -> destroySpeed(level, stack, block));
                 if (axe.isEmpty()) {
                     SettlementBackgroundTools.fetchTool(level, town, worker, context.inventory(), depots, stack -> stack.is(ItemTags.AXES),
                             stack -> destroySpeed(level, stack, block), "axe", budget);
@@ -182,7 +182,7 @@ final class SettlementBackgroundLogging {
                     continue;
                 }
                 var tool = HiredLoggingOptions.harvestLeaves(context.state())
-                        ? context.inventory().equipBestTool(LoggingWorker::isLeafHarvestTool, LoggingWorker::leafToolScore) : ItemStack.EMPTY;
+                        ? SettlementBackgroundTools.equipTool(worker, context.inventory(), LoggingWorker::isLeafHarvestTool, LoggingWorker::leafToolScore) : ItemStack.EMPTY;
                 if (HiredLoggingOptions.harvestLeaves(context.state()) && tool.isEmpty()
                         && SettlementBackgroundTools.fetchTool(level, town, worker, context.inventory(), depots, LoggingWorker::isLeafHarvestTool,
                                 LoggingWorker::leafToolScore, "leaf_tool", budget)) return;
@@ -208,7 +208,7 @@ final class SettlementBackgroundLogging {
                 context.state().remove(APPROACHED);
                 context.state().putBoolean(DEPOSIT, true);
                 if (cut > 0) worker.practice(level, HiredWorkPractice.logging(cut));
-                context.inventory().equipBestTool(stack -> stack.is(ItemTags.AXES), stack -> stack.getDestroySpeed(Blocks.OAK_LOG.defaultBlockState()));
+                SettlementBackgroundTools.equipTool(worker, context.inventory(), stack -> stack.is(ItemTags.AXES), stack -> stack.getDestroySpeed(Blocks.OAK_LOG.defaultBlockState()));
                 worker.status(cut > 0 ? "tree_harvested" : "waiting_for_trees");
                 return;
             }

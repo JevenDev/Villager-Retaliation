@@ -620,10 +620,14 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
-            Predicate<ItemStack> predicate,
+            HiredEquipmentNeed need,
             ToDoubleFunction<ItemStack> scorer,
             double speed) {
-        ItemStack tool = context.inventory().equipBestTool(predicate, scorer);
+        need.remember(context.state());
+        var blocked = equipmentExchangeBlocker(context);
+        if (blocked != null) return new ToolStorageResult(ToolStorageStatus.MISSING, ItemStack.EMPTY, null, blocked);
+        Predicate<ItemStack> eligible = need;
+        ItemStack tool = context.inventory().equipBestTool(eligible, scorer);
         if (!tool.isEmpty()) {
             HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.clearFailure(context);
@@ -633,7 +637,7 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
             return new ToolStorageResult(ToolStorageStatus.MISSING, ItemStack.EMPTY, null);
         }
 
-        BlockPos storage = AssignedStorageService.nearestAssignedToolStoragePosContaining(level, villager, predicate);
+        BlockPos storage = AssignedStorageService.nearestAssignedToolStoragePosContaining(level, villager, eligible);
         if (storage == null) {
             return new ToolStorageResult(ToolStorageStatus.MISSING, ItemStack.EMPTY, null);
         }
@@ -658,9 +662,9 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         int moved = AssignedStorageService.transferToolAtAssignedStorage(
                 villager,
                 storage,
-                predicate,
+                eligible,
                 context.inventory()::insertToolFromStorage);
-        tool = context.inventory().equipBestTool(predicate, scorer);
+        tool = context.inventory().equipBestTool(eligible, scorer);
         if (moved <= 0 || tool.isEmpty()) {
             ToolStorageStatus status = context.inventory().hasToolSpace()
                     ? ToolStorageStatus.MISSING
@@ -803,6 +807,16 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         UNAVAILABLE
     }
 
+    protected static WorkResult equipmentExchangeBlocker(HiredWorkContext context) {
+        var blocker = context.inventory().equipmentBlocker(EquipmentSlot.MAINHAND);
+        if (blocker == com.jvn.villagerretaliation.inventory.HiredJobInventory.EquipmentBlocker.NONE) return null;
+        String code = "equipment_" + blocker.name().toLowerCase(java.util.Locale.ROOT);
+        HiredWorkerBrain.setFailure(context, code, 0L);
+        HiredWorkerBrain.setState(context, blocker == com.jvn.villagerretaliation.inventory.HiredJobInventory.EquipmentBlocker.CAPACITY
+                ? HiredWorkerTaskState.PAUSED_FULL_INVENTORY : HiredWorkerTaskState.AWAITING_INSTRUCTION);
+        return WorkResult.idle("interaction.work.status." + code);
+    }
+
     protected enum ToolStorageStatus {
         READY,
         COLLECTED,
@@ -812,7 +826,10 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         INVENTORY_FULL
     }
 
-    protected record ToolStorageResult(ToolStorageStatus status, ItemStack tool, BlockPos storagePos) {
+    protected record ToolStorageResult(ToolStorageStatus status, ItemStack tool, BlockPos storagePos, WorkResult blocker) {
+        protected ToolStorageResult(ToolStorageStatus status, ItemStack tool, BlockPos storagePos) {
+            this(status, tool, storagePos, null);
+        }
     }
 
     protected record OutputFullHandling(DepositResult depositResult, WorkResult result) {

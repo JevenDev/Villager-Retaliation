@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work.logging;
 
+import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.NEXT_SAPLING_SCAN_GAME_TIME_TAG;
 import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.NEXT_TREE_SCAN_GAME_TIME_TAG;
 import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.SAPLING_SCAN_CURSOR_TAG;
@@ -254,9 +255,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 level,
                 villager,
                 context,
-                stack -> stack.is(ItemTags.AXES),
+                HiredEquipmentNeed.of(HiredEquipmentNeed.Kind.AXE),
                 stack -> effectiveDestroySpeed(stack, targetState),
                 0.55D);
+        if (toolResult.blocker() != null) return toolResult.blocker();
         if (toolResult.status() != ToolStorageStatus.READY && toolResult.status() != ToolStorageStatus.COLLECTED) {
             if (toolResult.status() == ToolStorageStatus.MOVING) {
                 return WorkResult.progressed("interaction.work.status.collecting_tool");
@@ -437,9 +439,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     level,
                     villager,
                     context,
-                    stack -> stack.is(ItemTags.AXES),
+                    HiredEquipmentNeed.of(HiredEquipmentNeed.Kind.AXE),
                     stack -> effectiveDestroySpeed(stack, nextLogState),
                     0.55D);
+            if (toolResult.blocker() != null) return toolResult.blocker();
             if (toolResult.status() != ToolStorageStatus.READY && toolResult.status() != ToolStorageStatus.COLLECTED) {
                 if (toolResult.status() == ToolStorageStatus.MOVING) {
                     return WorkResult.progressed("interaction.work.status.collecting_tool");

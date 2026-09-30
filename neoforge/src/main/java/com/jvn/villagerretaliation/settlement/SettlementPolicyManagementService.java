@@ -227,6 +227,18 @@ public final class SettlementPolicyManagementService {
         consumers.add(new SettlementPolicySnapshotPayload.Consumer(town.id().value(),
                 net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.food_reserve").getString(),
                 SettlementSupplyPolicy.TargetKind.FOOD));
+        for (var area : town.equipmentPlans().keySet()) if (request.area() == null || request.area().equals(area)) {
+            var workplace = town.workplace(area);
+            if (workplace != null) consumers.add(new SettlementPolicySnapshotPayload.Consumer(area, text(workplace.name()),
+                    SettlementSupplyPolicy.TargetKind.EQUIPMENT));
+        }
+        if (request.area() != null) for (var entry : town.duties().entrySet()) {
+            var area = town.workplace(entry.getValue());
+            if (area != null && area.id().equals(request.area())
+                    && com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.supports(area.type().role()))
+                consumers.add(new SettlementPolicySnapshotPayload.Consumer(entry.getKey(), text(SettlementEquipmentDemand.name(level, entry.getKey())),
+                        SettlementSupplyPolicy.TargetKind.EQUIPMENT));
+        }
         for (var project : town.projects().values()) if (project.active() && (request.area() == null || request.area().equals(project.area())))
             consumers.add(new SettlementPolicySnapshotPayload.Consumer(project.id(), text(project.label()), SettlementSupplyPolicy.TargetKind.CONSUMER));
         if (request.area() != null) {

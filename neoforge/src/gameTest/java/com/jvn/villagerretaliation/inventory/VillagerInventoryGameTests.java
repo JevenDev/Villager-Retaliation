@@ -1864,6 +1864,174 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void usableJobToolSurvivesBetterSuppliesAndReloadUntilItBreaks(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        ItemStack worn = new ItemStack(Items.IRON_PICKAXE);
+        worn.setDamageValue(worn.getMaxDamage() - 1);
+        worn.set(DataComponents.CUSTOM_NAME, Component.literal("Kept pickaxe"));
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, worn);
+        inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.DIAMOND_PICKAXE));
+        inventory.restoreSnapshot(inventory.captureSnapshot());
+
+        ItemStack selected = inventory.equipBestTool(stack -> stack.is(net.minecraft.tags.ItemTags.PICKAXES),
+                stack -> stack.is(Items.DIAMOND_PICKAXE) ? 100.0D : 1.0D);
+        helper.assertTrue(selected.is(Items.IRON_PICKAXE) && selected.getDamageValue() == selected.getMaxDamage() - 1,
+                "one remaining use is enough to retain the equipped tool after reload");
+        helper.assertValueEqual(selected.get(DataComponents.CUSTOM_NAME), Component.literal("Kept pickaxe"),
+                "retaining equipment preserves its components");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.DIAMOND_PICKAXE),
+                "a better spare stays in its original inventory slot");
+
+        villager.getMainHandItem().hurtAndBreak(1, villager, EquipmentSlot.MAINHAND);
+        HiredJobInventory.synchronizeEquipmentDurability(villager, EquipmentSlot.MAINHAND);
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAINHAND_SLOT).isEmpty(),
+                "breaking the live tool clears its inventory owner");
+        selected = inventory.equipBestTool(stack -> stack.is(net.minecraft.tags.ItemTags.PICKAXES), ignored -> 1.0D);
+        helper.assertTrue(selected.is(Items.DIAMOND_PICKAXE)
+                        && inventory.getItem(HiredJobInventory.HOTBAR_START).isEmpty(),
+                "the replacement moves into the equipment slot without a second inventory owner");
+        inventory.restoreSnapshot(inventory.captureSnapshot());
+        helper.assertTrue(villager.getMainHandItem().is(Items.DIAMOND_PICKAXE),
+                "the replacement equipment remains authoritative after reload");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void unusableToolsCannotDisplaceUsableSupplies(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        ItemStack exhausted = new ItemStack(Items.DIAMOND_PICKAXE);
+        exhausted.setDamageValue(exhausted.getMaxDamage());
+        inventory.setItem(HiredJobInventory.HOTBAR_START, exhausted);
+        helper.assertTrue(inventory.findTool(stack -> stack.is(net.minecraft.tags.ItemTags.PICKAXES)).isEmpty(),
+                "an exhausted saved tool cannot satisfy equipment demand");
+        inventory.setItem(HiredJobInventory.HOTBAR_START + 1, new ItemStack(Items.IRON_PICKAXE));
+        ItemStack selected = inventory.equipBestTool(stack -> stack.is(net.minecraft.tags.ItemTags.PICKAXES),
+                stack -> stack.is(Items.DIAMOND_PICKAXE) ? 100.0D : 1.0D);
+        helper.assertTrue(selected.is(Items.IRON_PICKAXE),
+                "a higher score cannot make an exhausted tool usable");
+
+        inventory.setItem(HiredJobInventory.HOTBAR_START + 2, new ItemStack(Items.IRON_AXE));
+        selected = inventory.equipBestTool(stack -> stack.is(net.minecraft.tags.ItemTags.AXES), ignored -> 1.0D);
+        helper.assertTrue(selected.is(Items.IRON_AXE)
+                        && inventory.getItem(HiredJobInventory.HOTBAR_START + 2).is(Items.IRON_PICKAXE),
+                "a changed job requirement can safely stow a still-usable tool");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void automaticEquipmentExchangeWaitsForSafePersonalStorage(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        var full = new ArrayList<ItemStack>();
+        for (int slot = 0; slot < 36; slot++) full.add(new ItemStack(Items.COBBLESTONE, 64));
+        VillagerInventoryAccess.replaceFullInventory(villager, full);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_SWORD));
+        var inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.FISHING_ROD));
+        helper.assertValueEqual(inventory.equipmentBlocker(EquipmentSlot.MAINHAND), HiredJobInventory.EquipmentBlocker.CAPACITY,
+                "foreign equipment requires safe storage before automatic exchange");
+        helper.assertTrue(inventory.equipBestTool(stack -> stack.is(Items.FISHING_ROD), ignored -> 1).isEmpty(),
+                "a full personal inventory blocks the exchange without consuming its replacement");
+        helper.assertTrue(villager.getMainHandItem().is(Items.DIAMOND_SWORD)
+                        && inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.FISHING_ROD),
+                "both original owners remain unchanged while blocked");
+        helper.assertFalse(inventory.canEquipReplacement(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_PICKAXE)),
+                "external replacements use the same capacity preflight");
+        helper.assertValueEqual(countDroppedItems(helper.getLevel(), villager.blockPosition(), Items.DIAMOND_SWORD), 0,
+                "an automatic exchange never drops the displaced item");
+
+        full.set(0, ItemStack.EMPTY);
+        VillagerInventoryAccess.replaceFullInventory(villager, full);
+        var equipped = inventory.equipBestTool(stack -> stack.is(Items.FISHING_ROD), ignored -> 1);
+        helper.assertTrue(equipped.is(Items.FISHING_ROD) && equipped == inventory.getItem(HiredJobInventory.MAINHAND_SLOT),
+                "work receives the authoritative replacement stack");
+        helper.assertValueEqual(countStored(villager, Items.DIAMOND_SWORD), 1, "the old item moves into storage exactly once");
+        inventory.restoreSnapshot(inventory.captureSnapshot());
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).isEmpty() && villager.getMainHandItem().is(Items.FISHING_ROD),
+                "reload retains one owner of the replacement");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void automaticEquipmentExchangePreservesBorrowedCrossbowOwnership(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        var inventory = HiredJobInventory.getJobInventory(villager);
+        var job = new ItemStack(Items.CROSSBOW);
+        job.set(DataComponents.CUSTOM_NAME, Component.literal("Work crossbow"));
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, job);
+        var borrowed = new ItemStack(Items.CROSSBOW);
+        borrowed.set(DataComponents.CUSTOM_NAME, Component.literal("Personal crossbow"));
+        borrowed.enchant(helper.getLevel().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(net.minecraft.world.item.enchantment.Enchantments.QUICK_CHARGE), 1);
+        borrowed.set(DataComponents.CHARGED_PROJECTILES,
+                net.minecraft.world.item.component.ChargedProjectiles.of(new ItemStack(Items.SPECTRAL_ARROW)));
+        VillagerInventoryAccess.addItem(villager, borrowed);
+        helper.assertTrue(VillagerInventoryContainer.tryBorrowCombatWeapon(villager), "the better personal crossbow overlays job gear");
+        var snapshot = inventory.captureSnapshot();
+        inventory.restoreSnapshot(snapshot);
+        var reloaded = new HiredJobInventory(villager);
+        HiredJobInventory.synchronizeEquipmentDurability(villager, EquipmentSlot.MAINHAND);
+        HiredJobInventory.clearRuntimeState(villager);
+        HiredJobInventory.maintainEquipmentSlots(villager);
+        helper.assertTrue(ItemStack.isSameItemSameComponents(villager.getMainHandItem(), borrowed),
+                "snapshot restoration and maintenance leave the charged loan in the live hand");
+        helper.assertTrue(ItemStack.isSameItemSameComponents(reloaded.getItem(HiredJobInventory.MAINHAND_SLOT), job)
+                        && ItemStack.isSameItemSameComponents(inventory.getItem(HiredJobInventory.MAINHAND_SLOT), job),
+                "same-item loans cannot copy their components into the underlying job owner");
+        helper.assertTrue(inventory.equipBestTool(stack -> stack.is(Items.CROSSBOW), ignored -> 1).isEmpty(),
+                "automatic equipment selection waits for the existing loan");
+        helper.assertFalse(inventory.equipReplacement(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD)),
+                "external replacements cannot interrupt a loan");
+        VillagerInventoryContainer.returnBorrowedCombatWeapon(villager);
+        helper.assertTrue(ItemStack.isSameItemSameComponents(villager.getMainHandItem(), job),
+                "returning the personal loan restores the original job crossbow");
+        var returned = VillagerInventoryAccess.captureFullInventory(villager).stream().filter(stack -> stack.is(Items.CROSSBOW)).toList();
+        helper.assertTrue(returned.size() == 1 && ItemStack.isSameItemSameComponents(returned.getFirst(), borrowed),
+                "the personal crossbow returns once with its enchantment and charged projectile");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void automaticArmorExchangeUsesFreedSupplySlotAndRespectsManualOffhand(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        var inventory = HiredJobInventory.getJobInventory(villager);
+        var helmet = new ItemStack(Items.IRON_HELMET);
+        helmet.setDamageValue(helmet.getMaxDamage());
+        inventory.setItem(0, helmet);
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.FILTER_SLOT; slot++)
+            inventory.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.DIAMOND_HELMET));
+        var equipped = inventory.equipBestEquipment(EquipmentSlot.HEAD, stack -> stack.is(Items.DIAMOND_HELMET), ignored -> 1);
+        helper.assertTrue(equipped.is(Items.DIAMOND_HELMET) && inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.IRON_HELMET),
+                "the displaced helmet uses the source slot freed by the replacement");
+        helper.assertFalse(inventory.canEquipReplacement(EquipmentSlot.HEAD, new ItemStack(Items.NETHERITE_HELMET)),
+                "an external replacement waits when all supply slots remain full");
+        inventory.setItem(HiredJobInventory.OFFHAND_SLOT, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerDefensiveLoadoutService.markManualOffhand(villager, true);
+        inventory.setItem(HiredJobInventory.HOTBAR_START + 1, new ItemStack(Items.SHIELD));
+        helper.assertValueEqual(inventory.equipmentBlocker(EquipmentSlot.OFFHAND), HiredJobInventory.EquipmentBlocker.MANUAL,
+                "the manual offhand remains authoritative");
+        helper.assertTrue(inventory.equipBestEquipment(EquipmentSlot.OFFHAND, stack -> stack.is(Items.SHIELD), ignored -> 1).isEmpty()
+                        && villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING),
+                "automatic shield selection cannot displace a manual totem");
+        VillagerDefensiveLoadoutService.markManualOffhand(villager, false);
+        helper.assertTrue(inventory.equipBestEquipment(EquipmentSlot.OFFHAND, stack -> stack.is(Items.SHIELD), ignored -> 1).is(Items.SHIELD),
+                "clearing the override allows a safe shield exchange");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START + 1).is(Items.TOTEM_OF_UNDYING),
+                "the old offhand retains one inventory owner");
+        inventory.restoreSnapshot(inventory.captureSnapshot());
+        helper.assertTrue(villager.getItemBySlot(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET) && villager.getOffhandItem().is(Items.SHIELD),
+                "armor and shield ownership remain synchronized after reload");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void jobInventoryPrioritizesToolsAndUsesHotbarForOverflow(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));

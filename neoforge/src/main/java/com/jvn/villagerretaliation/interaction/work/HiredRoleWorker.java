@@ -30,6 +30,7 @@ public interface HiredRoleWorker {
     }
 
     default void cancel(ServerLevel level, Villager villager, HiredWorkContext context) {
+        HiredEquipmentNeed.clear(context.state());
         pause(level, villager, context);
     }
 

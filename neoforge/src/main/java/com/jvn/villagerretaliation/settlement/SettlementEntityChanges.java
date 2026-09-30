@@ -39,6 +39,10 @@ final class SettlementEntityChanges {
         return changed;
     }
 
+    boolean pending(long appliedVersion) {
+        return this.fields.values().stream().anyMatch(version -> version > appliedVersion);
+    }
+
     boolean touches(String field, long appliedVersion) {
         return this.fields.entrySet().stream().anyMatch(entry -> entry.getKey().getFirst().equals(field) && entry.getValue() > appliedVersion);
     }

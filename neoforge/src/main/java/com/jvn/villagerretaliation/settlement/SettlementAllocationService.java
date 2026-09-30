@@ -77,8 +77,26 @@ public final class SettlementAllocationService {
         var snapshot = ready.refresh(canonical);
         var consumers = new HashSet<>(consumers(town, worker, consumer, destination == null ? canonical : null));
         if (worker != null && consumer == null && !town.duties().containsKey(worker)) consumers.addAll(snapshot.consumers(worker));
+        if (worker != null && consumer == null && destination == null) {
+            var area = town.duties().get(worker);
+            boolean needsEquipment = area != null && snapshot.demands().stream().anyMatch(demand ->
+                    demand.consumer().equals(worker) && demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.EQUIPMENT
+                            && demand.sources().contains(canonical) && demand.requirement().value(sample) > 0
+                            && demand.supply().committed() < demand.requirement().quantity());
+            if (needsEquipment && snapshot.demands().stream().anyMatch(demand -> demand.consumer().equals(area)
+                    && demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.EQUIPMENT
+                    && demand.sources().contains(canonical) && demand.requirement().value(sample) > 0)) consumers.add(area);
+        }
         if (destination != null) {
             var target = SettlementSupplyStock.positions(level, destination).getFirst();
+            var area = worker == null ? null : town.duties().get(worker);
+            var transfers = area == null ? null : town.transferQueues().get(area);
+            if (consumer == null && transfers != null) {
+                var assigned = transfers.allocation(worker);
+                for (var order : transfers.executionOrders()) if ((assigned == null || assigned.order().equals(order.id()))
+                        && order.matches(sample) && SettlementSupplyStock.sameStorage(level, order.source().position(), canonical)
+                        && SettlementSupplyStock.sameStorage(level, order.destination().position(), target)) consumers.add(order.id());
+            }
             for (var demand : snapshot.demands()) if (demand.sources().contains(target) && demand.requirement().value(sample) > 0)
                 consumers.add(demand.consumer());
         }
@@ -250,8 +268,10 @@ public final class SettlementAllocationService {
                                  Map<UUID, SettlementWorkerSettings> settings, Map<UUID, UUID> duties,
                                  List<QueueConfiguration> production, List<QueueConfiguration> transfers,
                                  List<ProjectConfiguration> projects, List<DepotConfiguration> depots,
-                                 UUID leader, Map<UUID, Set<SettlementPermission>> delegates, long supplyRevision, Map<UUID, Integer> policyPriorities) {
+                                 UUID leader, Map<UUID, Set<SettlementPermission>> delegates, long supplyRevision, Map<UUID, Integer> policyPriorities,
+                                 Map<UUID, SettlementEquipmentPlan> equipmentPlans) {
         boolean priorityChanged(Configuration next) {
+            if (!this.equipmentPlans.equals(next.equipmentPlans)) return true;
             for (var policy : this.policyPriorities.entrySet())
                 if (next.policyPriorities.containsKey(policy.getKey()) && !policy.getValue().equals(next.policyPriorities.get(policy.getKey()))) return true;
             for (var area : this.areas.values()) {
@@ -273,7 +293,7 @@ public final class SettlementAllocationService {
                     town.depots().values().stream().map(depot -> new DepotConfiguration(depot.id(), depot.area(), depot.position(), depot.purpose(),
                             depot.priority(), depot.stockTargets())).toList(), town.leader(), Map.copyOf(town.delegates()), town.supplyRevision(),
                     town.supplyPolicies().values().stream().collect(java.util.stream.Collectors.toMap(SettlementSupplyPolicy::id,
-                            policy -> policy.configuration().priority())));
+                            policy -> SettlementPolicyService.priority(town, policy))), Map.copyOf(town.equipmentPlans()));
         }
     }
 }

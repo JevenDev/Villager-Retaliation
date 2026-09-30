@@ -34,6 +34,7 @@ public final class SettlementBackgroundService {
         jobs.add(() -> SettlementConstructionSiteService.update(level, town));
         jobs.add(town::maintainProjects);
         for (var depot : town.depots().values()) jobs.add(() -> SettlementDepotService.observeRules(level, depot));
+        for (var area : town.equipmentPlans().keySet()) jobs.add(() -> town.validateEquipmentAuthority(area));
         if (!town.supplyPolicies().isEmpty()) jobs.add(SettlementWork.lazy(() -> SettlementPolicyService.cycle(level, town)));
         SettlementAllocationService.schedule(level, town, jobs);
         for (var resident : town.duties().keySet()) jobs.add(() -> updateWorker(level, town, resident, now));
@@ -81,6 +82,8 @@ public final class SettlementBackgroundService {
         double multiplier = care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D);
         if (SettlementTransferService.pending(town, worker.id()) != null) {
             SettlementBackgroundTransfers.tick(level, town, worker, elapsed, multiplier);
+        } else if (worker.role() == HiredVillagerRole.COMBAT) {
+            SettlementEquipmentService.tick(level, town, worker, elapsed, multiplier);
         } else if (worker.role() == HiredVillagerRole.COURIER) {
             SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);
         } else if (worker.role() == HiredVillagerRole.SMELTER) {

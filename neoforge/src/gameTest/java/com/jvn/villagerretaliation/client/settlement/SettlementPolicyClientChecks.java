@@ -280,7 +280,7 @@ final class SettlementPolicyClientChecks {
                 .findFirst().orElseThrow(() -> new IllegalStateException("Missing policy choice " + text)).mouseClicked(0, 0, 0);
     }
 
-    private static void bounds(Screen screen) {
+    static void bounds(Screen screen) {
         var minecraft = Minecraft.getInstance();
         int width = screen.width, height = screen.height;
         for (var size : List.of(new int[]{320, 240}, new int[]{426, 240}, new int[]{width, height})) {

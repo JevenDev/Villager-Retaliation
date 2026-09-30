@@ -32,7 +32,7 @@ public final class HiredRangedAmmo {
     public static final String STATUS_MISSING = "interaction.work.status.missing_arrows";
     public static final String STATUS_STORAGE_UNREACHABLE = "interaction.work.status.arrow_storage_unreachable";
     public static final String STATUS_INVENTORY_FULL = "interaction.work.status.arrow_inventory_full";
-    private static final int RESTOCK_COUNT = 64;
+    public static final int RESTOCK_COUNT = 64;
     private static final double ARROW_PICKUP_HORIZONTAL_REACH_SQR = 0.64D;
     private static final double ARROW_PICKUP_VERTICAL_REACH = 1.25D;
     private static final int ARROW_PATH_CLOSE_ENOUGH = 0;
@@ -119,19 +119,34 @@ public final class HiredRangedAmmo {
         return true;
     }
 
+    public static int carriedAmmo(Villager villager) {
+        var inventory = HiredJobInventory.getJobInventory(villager);
+        return inventory.supplySlots().stream().map(inventory::getItem).filter(HiredRangedAmmo::isAmmo).mapToInt(ItemStack::getCount).sum()
+                + VillagerInventoryAccess.captureFullInventory(villager).stream().filter(HiredRangedAmmo::isAmmo).mapToInt(ItemStack::getCount).sum();
+    }
+
     public static WorkResult ensureReady(ServerLevel level, Villager villager, HiredWorkContext context, double speed) {
+        return ensureStock(level, villager, context, speed,
+                com.jvn.villagerretaliation.settlement.SettlementEquipmentService.ammunitionTarget(villager));
+    }
+
+    public static WorkResult maintainReserve(ServerLevel level, Villager villager, HiredWorkContext context, double speed, int target) {
+        return target <= 0 ? null : ensureStock(level, villager, context, speed, target);
+    }
+
+    private static WorkResult ensureStock(ServerLevel level, Villager villager, HiredWorkContext context, double speed, int target) {
         ItemStack weapon = ammoCheckedWeapon(context, villager);
         if (!isWeaponRequiringAmmo(weapon)) {
             return null;
         }
-        if (hasAmmo(context) || canUseRangedAttack(villager, weapon)) {
+        int requested = target > 0 ? Math.max(0, target - carriedAmmo(villager)) : RESTOCK_COUNT;
+        if (target > 0 ? requested == 0 : hasAmmo(context) || canUseRangedAttack(villager, weapon)) {
             HiredWorkerBrain.clearFailure(context);
             return null;
         }
-        if (context.inventory().promoteOutputToSupply(HiredRangedAmmo::isAmmo, RESTOCK_COUNT) > 0
-                && hasAmmo(context)) {
+        if (context.inventory().promoteOutputToSupply(HiredRangedAmmo::isAmmo, requested) > 0 && hasAmmo(context)) {
             HiredWorkerBrain.clearFailure(context);
-            return null;
+            return target > 0 ? WorkResult.progressed(STATUS_GATHERED) : null;
         }
         WorkResult recoveredArrow = recoverNearbyArrow(level, villager, context, speed);
         if (recoveredArrow != null) {
@@ -141,10 +156,9 @@ public final class HiredRangedAmmo {
             return missingAmmo(context);
         }
 
-        BlockPos storage = AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
-                level,
-                villager,
-                HiredRangedAmmo::isAmmo);
+        BlockPos storage = target > 0
+                ? AssignedStorageService.nearestAssignedToolStoragePosContaining(level, villager, HiredRangedAmmo::isAmmo)
+                : AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(level, villager, HiredRangedAmmo::isAmmo);
         if (storage == null) {
             return missingAmmo(context);
         }
@@ -168,12 +182,11 @@ public final class HiredRangedAmmo {
             return WorkResult.idle(STATUS_STORAGE_UNREACHABLE);
         }
 
-        int moved = AssignedStorageService.transferItemsAtAssignedNonPaymentStorage(
-                villager,
-                storage,
-                HiredRangedAmmo::isAmmo,
-                RESTOCK_COUNT,
-                context.inventory()::insertSupplyFromStorage);
+        int moved = target > 0
+                ? AssignedStorageService.transferItemsAtAssignedStorage(villager, storage, HiredRangedAmmo::isAmmo,
+                        requested, context.inventory()::insertSupplyFromStorage)
+                : AssignedStorageService.transferItemsAtAssignedNonPaymentStorage(villager, storage, HiredRangedAmmo::isAmmo,
+                        requested, context.inventory()::insertSupplyFromStorage);
         HiredStorageNavigationGoal.clearStorageTarget(context);
         if (moved > 0) {
             HiredWorkerBrain.clearFailure(context);

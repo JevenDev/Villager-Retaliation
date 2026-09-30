@@ -59,11 +59,6 @@ public final class SettlementPolicyExecution {
         return allocation != null && allocation.started() && allocation.order().equals(order);
     }
 
-    static boolean essential(SettlementRecord town, UUID consumer) {
-        var managed = town.managedSupplyOrder(consumer);
-        return managed != null && managed.policy().configuration().target().kind() == SettlementSupplyPolicy.TargetKind.FOOD;
-    }
-
     static int priority(SettlementRecord town, UUID area, UUID order) {
         var managed = town.managedSupplyOrder(order);
         if (managed != null) return SettlementPolicyService.priority(town, managed.policy());

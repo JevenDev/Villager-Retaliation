@@ -4,10 +4,8 @@ import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.interaction.work.HuntingWorker;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.server.level.ServerLevel;
@@ -54,7 +52,7 @@ final class SettlementBackgroundHunting {
         }
         var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
         try {
-            var weapon = inventory.equipBestTool(HuntingWorker::isHuntingWeapon, HuntingWorker::huntingWeaponScore);
+            var weapon = SettlementBackgroundTools.equipTool(worker, inventory, HuntingWorker::isHuntingWeapon, HuntingWorker::huntingWeaponScore);
             if (weapon.isEmpty()) {
                 Predicate<ItemStack> allowed =
                         stack -> HuntingWorker.isHuntingWeapon(stack) && VillagerItemFilterService.mayWithdraw(owner, stack);
@@ -73,18 +71,22 @@ final class SettlementBackgroundHunting {
                 });
                 return;
             }
+            int reserve = SettlementEquipmentService.ammunitionTarget(town, worker.area());
             if (HiredRangedAmmo.isWeaponRequiringAmmo(weapon)
-                    && !HiredRangedAmmo.canUseRangedAttack(owner, weapon)) {
-                if (inventory.promoteOutputToSupply(HiredRangedAmmo::isAmmo, 64) > 0) {
-                    worker.status("restocked_hunting_ammo");
-                    return;
-                }
-                Predicate<ItemStack> allowed =
-                        stack -> HiredRangedAmmo.isAmmo(stack) && VillagerItemFilterService.mayWithdraw(owner, stack);
-                restockAmmo(level, town, worker, inventory, depots, access, budget, allowed);
+                    && (!HiredRangedAmmo.canUseRangedAttack(owner, weapon)
+                    || !worker.huntingEngaged() && reserve > HiredRangedAmmo.carriedAmmo(owner))) {
+                SettlementEquipmentService.restock(level, town, worker, inventory, depots, reserve > 0 ? reserve : HiredRangedAmmo.RESTOCK_COUNT, budget,
+                        depot -> access.get(depot.id()) * 16.0D);
                 if (worker.status().equals("missing_ranged_ammo") && inaccessibleSupply(level, town, worker, inventory,
-                        allDepots, depots, allowed)) worker.status("hunting_storage_unreachable");
-                return;
+                        allDepots, depots, stack -> HiredRangedAmmo.isAmmo(stack) && VillagerItemFilterService.mayWithdraw(owner, stack)))
+                    worker.status("hunting_storage_unreachable");
+                worker.status(switch (worker.status()) {
+                    case "fetching_ammo" -> "fetching_hunting_ammo";
+                    case "restocked_ammo" -> "restocked_hunting_ammo";
+                    default -> worker.status();
+                });
+                if (!HiredRangedAmmo.canUseRangedAttack(owner, weapon) || worker.status().equals("fetching_hunting_ammo")
+                        || worker.status().equals("restocked_hunting_ammo")) return;
             }
             var target = SettlementHuntingTargetService.select(level, town, worker, owner);
             worker.huntingTarget(target == null ? null : target.getUUID());
@@ -133,39 +135,5 @@ final class SettlementBackgroundHunting {
                                                Predicate<ItemStack> filter) {
         return SettlementProductionInventory.supplies(level, town, worker, SettlementBackgroundTools.items(inventory), all).stream()
                 .anyMatch(source -> source.depot() != null && !accessible.contains(source.depot()) && filter.test(source.available()));
-    }
-
-    private static void restockAmmo(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory,
-                                    List<SettlementDepot> depots, Map<UUID, Integer> access,
-                                    SettlementWorkBudget budget,
-                                    Predicate<ItemStack> allowed) {
-        var supplies = SettlementProductionInventory.supplies(level, town, worker, SettlementBackgroundTools.items(inventory), depots);
-        boolean full = false;
-        for (int index = 0; index < supplies.size(); index++) {
-            var source = supplies.get(index);
-            if (source.depot() == null || !allowed.test(source.available())) continue;
-            int requested = Math.min(64, source.available().getCount());
-            var before = inventory.captureSnapshot();
-            var remainder = inventory.insertSupplyFromStorage(source.available().copyWithCount(requested));
-            int moved = requested - remainder.getCount();
-            var after = inventory.captureSnapshot();
-            inventory.restoreSnapshot(before);
-            if (moved <= 0) {
-                full = true;
-                continue;
-            }
-            var consumed = new ArrayList<>(java.util.Collections.nCopies(supplies.size(), 0));
-            consumed.set(index, moved);
-            if (!SettlementProductionInventory.allowed(level, supplies, consumed)) continue;
-            if (!budget.spend(40.0D + access.get(source.depot().id()) * 16.0D)) {
-                worker.status("fetching_hunting_ammo");
-                return;
-            }
-            source.depot().removeItem(source.slot(), moved);
-            inventory.restoreSnapshot(after);
-            worker.status("restocked_hunting_ammo");
-            return;
-        }
-        worker.status(full ? "supply_full" : "missing_ranged_ammo");
     }
 }

@@ -67,6 +67,7 @@ public final class SettlementViewClientSmoke {
     private static CompletableFuture<Void> navigationCheck;
     private static Fixture fixture;
     private static SettlementPolicyClientChecks policyChecks;
+    private static SettlementEquipmentClientChecks equipmentChecks;
     private static ProjectFixture projectFixture;
     private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
     private static UUID brewer;
@@ -1724,6 +1725,9 @@ public final class SettlementViewClientSmoke {
                     SettlementViewClientSmoke::capture);
             phase = 201;
         } else if (phase == 201 && policyChecks.tick(minecraft)) {
+            equipmentChecks = new SettlementEquipmentClientChecks(fixture.town(), SettlementViewClientSmoke::capture);
+            phase = 202;
+        } else if (phase == 202 && equipmentChecks.tick(minecraft)) {
             minecraft.screen.onClose();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");

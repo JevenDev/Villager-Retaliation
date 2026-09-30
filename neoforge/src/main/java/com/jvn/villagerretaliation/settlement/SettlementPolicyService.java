@@ -145,6 +145,14 @@ public final class SettlementPolicyService {
         int priority = policy.configuration().priority();
         var consumer = policy.configuration().target().consumer();
         if (consumer == null) return priority;
+        if (policy.configuration().target().kind() == SettlementSupplyPolicy.TargetKind.EQUIPMENT) {
+            var area = town.areas().get(town.duties().getOrDefault(consumer, consumer));
+            if (area != null) {
+                var equipment = town.equipmentPlans().get(area.id());
+                priority = Math.max(priority, equipment != null && equipment.authorized(town)
+                        ? equipment.configuration().priority() : area.priority());
+            }
+        }
         var project = town.projects().get(consumer);
         if (project != null) return Math.max(priority, project.priority());
         for (var queue : town.productionQueues().values()) {

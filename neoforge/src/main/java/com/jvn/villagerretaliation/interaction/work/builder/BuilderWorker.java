@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work.builder;
 
+import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
@@ -1841,9 +1842,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 level,
                 villager,
                 context,
-                stack -> MiningBlockRules.isUsableBuilderClearingTool(stack, state),
+                HiredEquipmentNeed.clearing(state),
                 stack -> effectiveDestroySpeed(stack, state),
                 0.55D);
+        if (toolResult.blocker() != null) return toolResult.blocker();
         if (toolResult.status() != ToolStorageStatus.READY && toolResult.status() != ToolStorageStatus.COLLECTED) {
             if (toolResult.status() == ToolStorageStatus.MOVING) {
                 BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
@@ -2049,9 +2051,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 level,
                 villager,
                 context,
-                stack -> BuilderStructureScanner.matchesToolAction(stack, action),
+                HiredEquipmentNeed.placement(action),
                 stack -> 1.0D,
                 BUILD_WALK_SPEED);
+        if (toolResult.blocker() != null) return toolResult.blocker();
         if (toolResult.status() == ToolStorageStatus.READY || toolResult.status() == ToolStorageStatus.COLLECTED) {
             HiredStorageNavigationGoal.clearStorageTarget(context);
             return null;

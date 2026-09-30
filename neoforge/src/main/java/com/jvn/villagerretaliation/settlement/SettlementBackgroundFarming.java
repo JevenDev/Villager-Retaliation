@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.interaction.work.FarmerHoeRequirement;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
+import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import java.util.ArrayList;
@@ -39,8 +40,10 @@ final class SettlementBackgroundFarming {
                 .anyMatch(stack -> !stack.isEmpty() && stack.getCount() >= stack.getMaxStackSize());
         if (autoDeposit && (fullStack || worker.settings().getBoolean(DEPOSIT_BATCH))
                 && depositBatch(level, town, worker, elapsed, multiplier, depots)) return;
-        if (!FarmerHoeRequirement.isHoe(carried.get(HiredJobInventory.MAINHAND_SLOT))) {
-            equipHoe(level, town, worker, carried, depots, elapsed, multiplier);
+        if (!HiredEquipmentNeed.of(HiredEquipmentNeed.Kind.HOE).test(carried.get(HiredJobInventory.MAINHAND_SLOT))) {
+            SettlementBackgroundTools.fetchTool(level, town, worker, depots,
+                    HiredEquipmentNeed.of(HiredEquipmentNeed.Kind.HOE), FarmerHoeRequirement::hoeScore, "hoe",
+                    new SettlementWorkBudget(worker, elapsed, multiplier));
             return;
         }
         var area = town.areas().get(worker.area());
@@ -154,44 +157,6 @@ final class SettlementBackgroundFarming {
     private static int priority(SettlementFieldPlot plot) {
         return plot.harvestable() ? 0
                 : plot.soil().is(Blocks.FARMLAND) && plot.crop().isAir() ? 1 : 2;
-    }
-
-    private static void equipHoe(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, NonNullList<ItemStack> carried,
-                                 List<SettlementDepot> depots, int elapsed, double multiplier) {
-        var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
-        for (int index = 0; index < supplies.size(); index++) {
-            var source = supplies.get(index);
-            if (!FarmerHoeRequirement.isHoe(source.available())) {
-                continue;
-            }
-            List<Integer> consumed = new ArrayList<>(java.util.Collections.nCopies(supplies.size(), 0));
-            consumed.set(index, 1);
-            if (!SettlementProductionInventory.allowed(level, supplies, consumed)) {
-                continue;
-            }
-            var updated = worker.items(level.registryAccess());
-            if (source.depot() == null) {
-                updated.get(source.slot()).shrink(1);
-            }
-            if (!SettlementProductionInventory.insertSupplies(worker, updated, List.of(updated.get(HiredJobInventory.MAINHAND_SLOT)))) {
-                worker.status("supply_full");
-                return;
-            }
-            double cost = 40.0D + (source.depot() == null ? 0.0D : 16.0D * Math.sqrt(worker.position().distSqr(source.depot().position())));
-            worker.work(elapsed, multiplier);
-            if (!worker.spend(cost)) {
-                worker.status("fetching_hoe");
-                return;
-            }
-            if (source.depot() != null) {
-                source.depot().removeItem(source.slot(), 1);
-            }
-            updated.set(HiredJobInventory.MAINHAND_SLOT, source.available().copyWithCount(1));
-            worker.updateInventory(level.registryAccess(), updated);
-            worker.status("equipped_hoe");
-            return;
-        }
-        worker.status("missing_hoe");
     }
 
     private static boolean storeDrops(SettlementWorkerState worker, NonNullList<ItemStack> items, List<ItemStack> drops) {

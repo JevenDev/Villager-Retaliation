@@ -25,6 +25,7 @@ final class SettlementManagementValidation {
             case Brew ignored -> SettlementPermission.STAFF;
             case SaveWorker ignored -> SettlementPermission.STAFF;
             case SaveWorksite ignored -> SettlementPermission.STAFF;
+            case SaveEquipment ignored -> SettlementPermission.STAFF;
             case ResetWorker ignored -> SettlementPermission.STAFF;
             case FillStaffing ignored -> SettlementPermission.STAFF;
             case WorkerEnabled ignored -> SettlementPermission.STAFF;
@@ -56,6 +57,7 @@ final class SettlementManagementValidation {
             case WorkerEnabled worker -> duty(town, worker.resident(), worker.area());
             case SaveWorker worker -> duty(town, worker.resident(), worker.area());
             case ResetWorker worker -> duty(town, worker.resident(), worker.area());
+            case SaveEquipment equipment -> equipment(town, equipment);
             case SaveWorksite worksite -> town.areas().containsKey(worksite.area()) ? "" : "area_missing";
             case FillStaffing worksite -> town.worksitePlans().containsKey(worksite.area()) ? "" : "area_missing";
             case Brew worker -> duty(town, worker.resident(), worker.area());
@@ -94,6 +96,14 @@ final class SettlementManagementValidation {
             case Home home -> home.assign() ? member(player, town, home.resident()) : "";
             default -> "";
         };
+    }
+
+    private static String equipment(SettlementRecord town, SaveEquipment request) {
+        var area = town.workplace(request.area());
+        if (area == null || !town.worksitePlans().containsKey(area.id())) return "area_missing";
+        var existing = town.equipmentPlans().get(area.id());
+        if (request.revision() != (existing == null ? -1 : existing.revision())) return "state_changed";
+        return request.configuration() == null || request.configuration().validFor(area.type().role()) ? "" : "worker_settings";
     }
 
     private static String duty(SettlementRecord town, java.util.UUID resident, java.util.UUID area) {

@@ -89,6 +89,8 @@ public final class CombatWorker implements HiredRoleWorker {
             VillagerRetaliationHandler.clearCustomTarget(villager);
         }
         if (!hasActiveTarget(villager)) {
+            var equipment = com.jvn.villagerretaliation.settlement.SettlementEquipmentService.tick(level, villager, context, PATROL_SPEED);
+            if (equipment != null) return equipment;
             WorkResult ammoResult = HiredRangedAmmo.ensureReady(level, villager, context, PATROL_SPEED);
             if (ammoResult != null) {
                 return ammoResult;

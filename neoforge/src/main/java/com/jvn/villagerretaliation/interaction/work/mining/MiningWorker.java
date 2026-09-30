@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work.mining;
 
+import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
@@ -195,9 +196,10 @@ public final class MiningWorker extends AbstractBlockWorker {
                 level,
                 villager,
                 context,
-                stack -> MiningBlockRules.isUsableMiningTool(mode, stack, targetState),
+                HiredEquipmentNeed.mining(mode, targetState),
                 stack -> effectiveDestroySpeed(stack, targetState),
                 0.55D);
+        if (toolResult.blocker() != null) return toolResult.blocker();
         if (toolResult.status() != ToolStorageStatus.READY && toolResult.status() != ToolStorageStatus.COLLECTED) {
             if (toolResult.status() == ToolStorageStatus.MOVING) {
                 return WorkResult.progressed("interaction.work.status.collecting_tool");

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
@@ -149,12 +150,14 @@ final class SettlementBackgroundMining {
                 return;
             }
             var block = mine.getBlockState(target.position());
-            var tool = context.inventory().equipBestTool(
-                    stack -> MiningBlockRules.isUsableMiningTool(mode, stack, block),
+            var equipment = HiredEquipmentNeed.mining(mode, block);
+            equipment.remember(state);
+            var tool = SettlementBackgroundTools.equipTool(worker, context.inventory(),
+                    equipment,
                     stack -> MiningBlockRules.destroySpeed(stack, block));
             if (tool.isEmpty()) {
                 SettlementBackgroundTools.fetchTool(level, town, worker, context.inventory(), depots,
-                        stack -> MiningBlockRules.isUsableMiningTool(mode, stack, block),
+                        equipment,
                         stack -> MiningBlockRules.destroySpeed(stack, block), MiningBlockRules.requiredMiningToolLabel(mode, block), budget);
                 return;
             }

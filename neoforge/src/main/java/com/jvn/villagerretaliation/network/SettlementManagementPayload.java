@@ -199,6 +199,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.writeVarInt(area.fixtures());
                 buffer.writeVarInt(area.workers());
                 SettlementManagementActionPayload.writeWorksitePlan(buffer, area.plan());
+                SettlementManagementActionPayload.writeEquipmentPlan(buffer, area.equipment());
             }
             case Station station -> buffer.writeBlockPos(station.position());
             case Depot depot -> {
@@ -379,7 +380,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             }
             case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
                     buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
-                    SettlementManagementActionPayload.readWorksitePlan(buffer));
+                    SettlementManagementActionPayload.readWorksitePlan(buffer), SettlementManagementActionPayload.readEquipmentPlan(buffer));
             case STATIONS -> new Station(id, name, buffer.readBlockPos());
             case DEPOTS -> {
                 UUID area = buffer.readUUID();
@@ -742,7 +743,14 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
 
     public record Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
                        int priority, boolean enabled, int beds, int fixtures, int workers,
-                       com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan) implements Entry {
+                       com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan,
+                       com.jvn.villagerretaliation.settlement.SettlementEquipmentPlan equipment) implements Entry {
+        public Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
+                    int priority, boolean enabled, int beds, int fixtures, int workers,
+                    com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan) {
+            this(id, name, kind, min, max, priority, enabled, beds, fixtures, workers, plan, null);
+        }
+
         public Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
                     int priority, boolean enabled, int beds, int fixtures, int workers) {
             this(id, name, kind, min, max, priority, enabled, beds, fixtures, workers, null);

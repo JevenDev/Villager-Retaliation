@@ -84,7 +84,7 @@ final class SettlementBackgroundAnimalHandling {
                 boolean shear = animal instanceof Sheep;
                 ItemStack tool = ItemStack.EMPTY;
                 if (shear) {
-                    tool = inventory.equipBestTool(stack -> stack.is(Items.SHEARS),
+                    tool = SettlementBackgroundTools.equipTool(worker, inventory, stack -> stack.is(Items.SHEARS),
                             stack -> stack.getMaxDamage() - stack.getDamageValue());
                     if (tool.isEmpty()) {
                         SettlementBackgroundTools.fetchTool(level, town, worker, inventory, depots, stack -> stack.is(Items.SHEARS),

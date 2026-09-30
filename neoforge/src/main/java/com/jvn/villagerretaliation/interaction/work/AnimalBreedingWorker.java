@@ -258,9 +258,10 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 level,
                 villager,
                 context,
-                AnimalBreedingWorker::isCullWeapon,
+                HiredEquipmentNeed.of(HiredEquipmentNeed.Kind.CULLING),
                 AnimalBreedingWorker::cullWeaponScore,
                 0.45D);
+        if (weaponResult.blocker() != null) return weaponResult.blocker();
         if (weaponResult.status() == ToolStorageStatus.MOVING) {
             return WorkResult.progressed("interaction.work.animal_breeding.collecting_cull_weapon");
         }
@@ -638,11 +639,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                     level,
                     villager,
                     context,
-                    stack -> stack.is(Items.SHEARS),
+                    HiredEquipmentNeed.of(HiredEquipmentNeed.Kind.SHEARS),
                     stack -> stack.isDamageableItem()
                             ? stack.getMaxDamage() - stack.getDamageValue()
                             : 0.0D,
                     0.45D);
+            if (shearsResult.blocker() != null) return shearsResult.blocker();
             if (shearsResult.status() == ToolStorageStatus.MOVING) {
                 return WorkResult.progressed(target.collectingSupplyMessageKey());
             }

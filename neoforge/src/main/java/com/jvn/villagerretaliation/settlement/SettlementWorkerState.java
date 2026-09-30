@@ -27,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 public final class SettlementWorkerState {
     private static final String VERSION_TAG = "VillagerRetaliationSettlementWorkVersion";
     private final UUID id;
+    private final SettlementEntityChanges equipmentChanges = new SettlementEntityChanges();
     private UUID area;
     private UUID huntingTarget;
     private boolean huntingEngaged;
@@ -200,9 +201,9 @@ public final class SettlementWorkerState {
         HiredWorkSkillGrowthService.onPractice(level, villager, null, this.role, HiredWorkStateStore.state(villager), List.of());
         this.settings = HiredWorkStateStore.state(villager).copy();
         if (this.role == HiredVillagerRole.BUILDER) this.settings.remove("SettlementConstructionPosition");
-        if (this.role == HiredVillagerRole.FISHING || this.role == HiredVillagerRole.LOGGING
+        if (this.role == HiredVillagerRole.FARMING || this.role == HiredVillagerRole.FISHING || this.role == HiredVillagerRole.LOGGING
                 || this.role == HiredVillagerRole.MINING || this.role == HiredVillagerRole.ANIMAL_HANDLING
-                || this.role == HiredVillagerRole.HUNTING || this.role == HiredVillagerRole.BUILDER) {
+                || this.role == HiredVillagerRole.HUNTING || this.role == HiredVillagerRole.BUILDER || this.role == HiredVillagerRole.COMBAT) {
             this.entityContext = villager.saveWithoutId(new CompoundTag());
         }
         if (this.role == HiredVillagerRole.FISHING) {
@@ -247,6 +248,13 @@ public final class SettlementWorkerState {
         SettlementBrewingService.restore(this, villager);
         if (villager.getPersistentData().getLong(VERSION_TAG) >= this.version) {
             return false;
+        }
+        long appliedVersion = villager.getPersistentData().getLong(VERSION_TAG);
+        if (this.equipmentChanges.pending(appliedVersion)) {
+            var merged = villager.saveWithoutId(new CompoundTag());
+            this.equipmentChanges.apply(merged, this.entityContext, appliedVersion);
+            villager.load(merged);
+            HiredJobInventory.clearRuntimeState(villager);
         }
         HiredJobInventory.getJobInventory(villager).restoreSnapshot(this.inventory);
         com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.copyDelivery(this.settings, HiredWorkStateStore.state(villager));
@@ -312,6 +320,16 @@ public final class SettlementWorkerState {
 
     void inventorySnapshot(CompoundTag snapshot) {
         this.inventory = snapshot.copy();
+    }
+
+    void rememberEquipment(Villager villager, CompoundTag before) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Equipment changed for a different worker");
+        var after = villager.saveWithoutId(new CompoundTag());
+        long next = this.version + 1L;
+        if (this.equipmentChanges.record(before, after, next)) {
+            this.version = next;
+            this.entityContext = after;
+        }
     }
 
     void rememberPayments(Villager villager) {
@@ -410,6 +428,7 @@ public final class SettlementWorkerState {
         tag.putString("Role", this.role.name());
         tag.putLong("Position", this.position.asLong());
         tag.put("Inventory", this.inventory.copy());
+        tag.put("EquipmentChanges", this.equipmentChanges.save());
         tag.put("Settings", this.settings.copy());
         if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
         if (this.miningAccess != null) tag.put("MiningAccess", this.miningAccess.save());
@@ -449,6 +468,15 @@ public final class SettlementWorkerState {
         state.miningAccess = SettlementMiningAccess.load(tag.getCompound("MiningAccess"));
         state.checkedAt = Math.max(0L, tag.getLong("CheckedAt"));
         state.version = Math.max(0L, tag.getLong("Version"));
+        if (tag.contains("EquipmentChanges")) {
+            if (!(tag.get("EquipmentChanges") instanceof net.minecraft.nbt.ListTag changes)
+                    || !changes.isEmpty() && changes.getElementType() != Tag.TAG_COMPOUND)
+                throw new IllegalArgumentException("Invalid saved equipment handoff");
+            state.equipmentChanges.load(changes, state.version);
+            if (state.equipmentChanges.pending(0) && (!state.entityContext.hasUUID("UUID")
+                    || !state.id.equals(state.entityContext.getUUID("UUID"))))
+                throw new IllegalArgumentException("Equipment handoff has a different worker identity");
+        }
         state.brewingVersion = Math.max(0L, tag.getLong("BrewingVersion"));
         state.progress = Math.clamp(tag.getDouble("Progress"), 0.0D, 24_000.0D);
         state.aptitude = Math.clamp(tag.getInt("Aptitude"), 0, 100);

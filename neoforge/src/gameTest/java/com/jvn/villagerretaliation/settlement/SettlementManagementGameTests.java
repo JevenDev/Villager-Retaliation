@@ -59,6 +59,20 @@ public final class SettlementManagementGameTests {
         helper.assertValueEqual(issue.target(), Page.RESIDENTS, "the issue links to residents");
         helper.assertValueEqual(issue.targetId(), worker.id(), "navigation identifies the resident exactly");
         helper.assertValueEqual(issue.area(), area.id(), "quick controls carry the observed assignment");
+        var equipment = snapshot(fixture, Page.DEMAND, 0, "").entries().stream().map(SettlementManagementPayload.Demand.class::cast)
+                .filter(demand -> demand.consumer().equals(worker.id())
+                        && demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.EQUIPMENT)
+                .findFirst().orElseThrow();
+        helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 0, equipment.id().toString()).total(), 0,
+                "the same missing equipment is explained once by its existing worker issue");
+        helper.assertValueEqual(issue.detail(), equipment.advice(), "the worker issue carries authoritative supply and allocation recovery");
+        worker.status("missing_materials");
+        helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 0, equipment.id().toString()).total(), 1,
+                "an unrelated worker blocker does not hide the equipment shortage");
+        worker.status("resting");
+        helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 0, equipment.id().toString()).total(), 1,
+                "resting workers retain their independent equipment supply issue");
+        worker.status("missing_hoe");
         roundTrip(helper, SettlementManagementPayload.STREAM_CODEC, page);
         roundTrip(helper, SettlementManagementRequestPayload.STREAM_CODEC,
                 new SettlementManagementRequestPayload(town.id().value(), Page.ISSUES, 0, "", 3, false));

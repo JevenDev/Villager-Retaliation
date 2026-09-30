@@ -10,6 +10,55 @@
   },
   "messages": [
     {
+      "key": "interaction.work.status.fetching_equipment",
+      "lines": [
+        "collecting equipment for my assigned loadout"
+      ],
+      "id": "global.messages.12_work_status.fetching_equipment"
+    },
+    {
+      "key": "interaction.work.status.equipped_equipment",
+      "lines": [
+        "equipped the replacement from my approved supplies"
+      ],
+      "id": "global.messages.12_work_status.equipped_equipment"
+    },
+    {
+      "key": "interaction.work.status.missing_equipment",
+      "lines": [
+        "waiting for the selected equipment in my approved supplies"
+      ],
+      "id": "global.messages.12_work_status.missing_equipment"
+    },
+    {
+      "key": "interaction.work.status.equipment_storage_unreachable",
+      "lines": [
+        "waiting for a safe route to the equipment storage"
+      ],
+      "id": "global.messages.12_work_status.equipment_storage_unreachable"
+    },
+    {
+      "key": "interaction.work.status.equipment_busy",
+      "lines": [
+        "waiting until borrowed equipment is returned or the inventory is closed"
+      ],
+      "id": "global.messages.12_work_status.equipment_busy"
+    },
+    {
+      "key": "interaction.work.status.equipment_manual",
+      "lines": [
+        "keeping the manually selected equipment"
+      ],
+      "id": "global.messages.12_work_status.equipment_manual"
+    },
+    {
+      "key": "interaction.work.status.equipment_capacity",
+      "lines": [
+        "waiting for inventory space to store displaced equipment safely"
+      ],
+      "id": "global.messages.12_work_status.equipment_capacity"
+    },
+    {
       "key": "interaction.work.temporary.target_missing",
       "lines": [
         "waiting for the selected target to be loaded"

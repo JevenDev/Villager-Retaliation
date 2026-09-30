@@ -26,6 +26,10 @@ public final class VillagerEquipmentDurability {
     private VillagerEquipmentDurability() {
     }
 
+    public static boolean isUsable(ItemStack stack) {
+        return !stack.isEmpty() && (!stack.isDamageableItem() || stack.getDamageValue() < stack.getMaxDamage());
+    }
+
     public static void hurtArmor(AbstractVillager villager, DamageSource source, float damageAmount) {
         if (villager.level().isClientSide || damageAmount <= 0.0F || source.is(DamageTypeTags.BYPASSES_ARMOR)) {
             return;

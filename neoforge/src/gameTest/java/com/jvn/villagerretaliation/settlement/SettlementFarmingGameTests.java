@@ -219,6 +219,8 @@ public final class SettlementFarmingGameTests {
             fixture.worker().restore(fixture.villager());
             helper.assertTrue(HiredJobInventory.getJobInventory(fixture.villager()).getItem(HiredJobInventory.MAINHAND_SLOT).isEmpty(),
                     "the broken hoe stays absent when the native worker returns");
+            helper.assertTrue(fixture.villager().getMainHandItem().isEmpty(),
+                    "the broken background tool cannot remain in the native hand");
             helper.assertValueEqual(HiredJobInventory.getJobInventory(fixture.villager()).countItem(Items.IRON_AXE), 1,
                     "the native worker receives the preserved former hand tool");
         });

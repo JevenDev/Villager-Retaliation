@@ -15,15 +15,63 @@ final class SettlementBackgroundTools {
     private SettlementBackgroundTools() {
     }
 
+    static ItemStack equipTool(SettlementWorkerState worker, HiredJobInventory inventory,
+                               Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> score) {
+        if (inventory.equipmentBlocker(net.minecraft.world.entity.EquipmentSlot.MAINHAND) != HiredJobInventory.EquipmentBlocker.NONE
+                || inventory.findTool(predicate).isEmpty()) return ItemStack.EMPTY;
+        var owner = inventory.villager();
+        var current = inventory.getItem(HiredJobInventory.MAINHAND_SLOT);
+        if (com.jvn.villagerretaliation.util.VillagerEquipmentDurability.isUsable(current) && predicate.test(current)
+                && current.getCount() == owner.getMainHandItem().getCount()
+                && ItemStack.isSameItemSameComponents(current, owner.getMainHandItem())
+                && com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(owner)
+                && !com.jvn.villagerretaliation.party.PartyQuickCommandService.hasWeaponsUnequipped(owner))
+            return inventory.equipBestTool(predicate, score);
+        var before = owner.saveWithoutId(new CompoundTag());
+        var selected = inventory.equipBestTool(predicate, score);
+        worker.rememberEquipment(inventory.villager(), before);
+        return selected;
+    }
+
+    static void fetchTool(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,
+                          List<SettlementDepot> depots, Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> score,
+                          String kind, SettlementWorkBudget budget) {
+        var owner = worker.context(level, town);
+        if (owner == null) {
+            worker.status("awaiting_worker_observation");
+            return;
+        }
+        var inventory = HiredJobInventory.getJobInventory(owner);
+        fetchTool(level, town, worker, inventory, depots, predicate, score, kind, budget);
+        var snapshot = inventory.captureSnapshot();
+        if (!snapshot.equals(worker.inventory())) worker.changed();
+        worker.inventorySnapshot(snapshot);
+    }
+
     static boolean fetchTool(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory,
                              List<SettlementDepot> depots, Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> score, String kind, SettlementWorkBudget budget) {
+        return fetchEquipment(level, town, worker, inventory, depots, predicate, score, kind,
+                net.minecraft.world.entity.EquipmentSlot.MAINHAND, budget);
+    }
+
+    static boolean fetchEquipment(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, HiredJobInventory inventory,
+                                  List<SettlementDepot> depots, Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> score,
+                                  String kind, net.minecraft.world.entity.EquipmentSlot slot, SettlementWorkBudget budget) {
+        var blocker = inventory.equipmentBlocker(slot);
+        if (blocker != HiredJobInventory.EquipmentBlocker.NONE) {
+            worker.status("equipment_" + blocker.name().toLowerCase(java.util.Locale.ROOT));
+            return true;
+        }
         var updated = items(inventory);
         var supplies = SettlementProductionInventory.supplies(level, town, worker, updated, depots);
         int selected = -1;
         double best = Double.NEGATIVE_INFINITY;
         for (int index = 0; index < supplies.size(); index++) {
             var source = supplies.get(index);
-            if (predicate.test(source.available()) && score.applyAsDouble(source.available()) > best && allowed(level, supplies, index)) {
+            if (com.jvn.villagerretaliation.util.VillagerEquipmentDurability.isUsable(source.available())
+                    && predicate.test(source.available()) && (source.depot() == null
+                    || com.jvn.villagerretaliation.inventory.VillagerItemFilterService.mayWithdraw(inventory.villager(), source.available()))
+                    && score.applyAsDouble(source.available()) > best && allowed(level, supplies, index)) {
                 selected = index;
                 best = score.applyAsDouble(source.available());
             }
@@ -33,10 +81,8 @@ final class SettlementBackgroundTools {
             return false;
         }
         var source = supplies.get(selected);
-        if (source.depot() == null) updated.get(source.slot()).shrink(1);
-        var previous = updated.get(HiredJobInventory.MAINHAND_SLOT);
-        updated.set(HiredJobInventory.MAINHAND_SLOT, ItemStack.EMPTY);
-        if (!SettlementProductionInventory.insertSupplies(worker, updated, List.of(previous))) {
+        var replacement = source.available().copyWithCount(1);
+        if (source.depot() != null && !inventory.canEquipReplacement(slot, replacement)) {
             worker.status("supply_full");
             return true;
         }
@@ -45,9 +91,22 @@ final class SettlementBackgroundTools {
             worker.status("fetching_" + kind);
             return true;
         }
-        if (source.depot() != null) source.depot().removeItem(source.slot(), 1);
-        updated.set(HiredJobInventory.MAINHAND_SLOT, source.available().copyWithCount(1));
-        replaceItems(level, inventory, updated);
+        if (source.depot() == null) {
+            var before = inventory.villager().saveWithoutId(new CompoundTag());
+            if (inventory.equipBestEquipment(slot, predicate, score).isEmpty()) {
+                worker.status("supply_full");
+                return true;
+            }
+            worker.rememberEquipment(inventory.villager(), before);
+        } else {
+            var before = inventory.villager().saveWithoutId(new CompoundTag());
+            if (!inventory.equipReplacement(slot, replacement)) {
+                worker.status("supply_full");
+                return true;
+            }
+            source.depot().removeItem(source.slot(), 1);
+            worker.rememberEquipment(inventory.villager(), before);
+        }
         worker.status("equipped_" + kind);
         return true;
     }

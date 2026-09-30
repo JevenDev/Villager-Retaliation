@@ -129,6 +129,9 @@ public final class SettlementManagementService {
                     project.project(), project.revision(), project.priority(), project.assistants());
             case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
             case SettlementManagementActionPayload.Brew brew -> SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order());
+            case SettlementManagementActionPayload.SaveEquipment save -> save.configuration() == null
+                    ? town.removeEquipmentPlan(player.getUUID(), save.area(), save.revision())
+                    : town.setEquipmentPlan(player.getUUID(), save.area(), save.configuration(), save.revision());
             case SettlementManagementActionPayload.SaveWorksite save -> SettlementWorksiteService.configure(
                     player, town, save.area(), save.plan(), save.adopt());
             case SettlementManagementActionPayload.ResetWorker reset -> SettlementWorksiteService.reset(
@@ -420,7 +423,7 @@ public final class SettlementManagementService {
             entries.add(new SettlementManagementPayload.Area(area.id(), display(area.name()), area.type(), area.min(), area.max(),
                     area.priority(), area.enabled(), survey == null ? 0 : survey.beds().size(),
                     survey == null ? 0 : survey.workstations().size(),
-                    (int) town.duties().values().stream().filter(area.id()::equals).count(), town.worksitePlans().get(area.id())));
+                    (int) town.duties().values().stream().filter(area.id()::equals).count(), town.worksitePlans().get(area.id()), town.equipmentPlans().get(area.id())));
         }
     }
 

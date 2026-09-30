@@ -134,6 +134,7 @@ final class SettlementPolicyPlanner {
         var target = policy.configuration().target();
         var consumer = target.kind() == SettlementSupplyPolicy.TargetKind.STOCK ? policy.id() : target.consumer();
         var result = snapshot.demands().stream().filter(demand -> demand.consumer().equals(consumer)
+                && (target.kind() != SettlementSupplyPolicy.TargetKind.EQUIPMENT || demand.kind() == WorkSupplyDemand.Kind.EQUIPMENT)
                 && (target.requirement() == null || target.requirement().equals(demand.supply().id())))
                 .map(demand -> input(demand.supply().id(), demand.supply())).toList();
         if (!result.isEmpty()) return result;

@@ -54,6 +54,19 @@ final class SettlementPolicyValidation {
         }
         if (target.kind() == SettlementSupplyPolicy.TargetKind.FOOD)
             return target.consumer().equals(town.id().value()) ? "" : "policy_consumer_missing";
+        if (target.kind() == SettlementSupplyPolicy.TargetKind.EQUIPMENT) {
+            var equipment = town.equipmentPlans().get(target.consumer());
+            var area = town.workplace(equipment == null ? town.duties().get(target.consumer()) : target.consumer());
+            if (area == null || !com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.supports(area.type().role()))
+                return "policy_consumer_missing";
+            if (equipment != null && !equipment.blocker().isEmpty()) return equipment.blocker();
+            if (equipment != null && !town.permits(equipment.authority(), SettlementPermission.STAFF)) return "policy_permission_changed";
+            var settings = town.worksitePlans().get(area.id());
+            if (!area.enabled() || settings != null && !settings.settings().enabled()
+                    || equipment != null && !equipment.active()) return "policy_consumer_paused";
+            return equipment != null || SettlementEquipmentDemand.describe(level, town, target.consumer()) != null
+                    ? "" : "policy_consumer_paused";
+        }
         if (town.managedSupplyOrder(target.consumer()) != null) return "policy_consumer_managed";
         var project = town.projects().get(target.consumer());
         if (project != null) return project.status() == SettlementProject.Status.CANCELLED ? "policy_consumer_missing" : "";

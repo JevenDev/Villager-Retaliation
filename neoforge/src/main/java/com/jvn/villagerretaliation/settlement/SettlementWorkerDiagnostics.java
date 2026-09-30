@@ -19,7 +19,7 @@ public final class SettlementWorkerDiagnostics {
                 : status.contains("observation") || status.contains("observed") || status.endsWith("needs_world")
                         || status.equals("tree_needs_native_growth") || status.equals("project.site_unloaded")
                         || status.equals("project.pending_world") ? Severity.OBSERVATION
-                : status.startsWith("simulation_") ? Severity.INFO : Severity.WARNING;
+                : status.startsWith("simulation_") || status.equals("equipment_busy") ? Severity.INFO : Severity.WARNING;
         return new Diagnostic(severity, recovery);
     }
 
@@ -56,6 +56,16 @@ public final class SettlementWorkerDiagnostics {
             case "fishing_selected_unavailable" -> "Visit the selected water and check for an open surface and a reachable dry shore inside the work area.";
             case "fishing_spot_claimed" -> "Another fisher is using the selected water. Add another spot or wait for the current cast.";
             case "tree_claimed" -> "Another worker is finishing this tree.";
+            case "equipment_busy" ->
+                    "Wait for borrowed equipment to be returned and close the worker's inventory.";
+            case "equipment_manual" ->
+                    "Keep the manual equipment choice or clear it before the loadout can use that slot.";
+            case "equipment_capacity" ->
+                    "Free inventory space to store the displaced equipment safely.";
+            case "missing_equipment" ->
+                    "Supply the selected guard equipment in an approved supply depot or the worker's job inventory.";
+            case "equipment_storage_unreachable" ->
+                    "Clear a safe route to the guard's approved equipment storage.";
             case "missing_hoe" ->
                     "Farmer needs a hoe in job gear or a supply depot.";
             case "missing_rod", "missing_fishing_rod" ->

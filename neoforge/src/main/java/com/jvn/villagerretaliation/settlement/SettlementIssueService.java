@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload.Issue;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload.IssueKind;
 import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page;
@@ -49,6 +50,7 @@ final class SettlementIssueService {
                     "population_configuration", SettlementPopulationRequirements.problem(), Page.RESIDENTS, null, null, null, false));
         }
         var social = VillagerSocialGraphSavedData.get(level);
+        var coveredEquipment = new java.util.HashSet<UUID>();
         var foodDemand = demands.stream().filter(demand -> demand.kind()
                 == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD).findFirst().orElse(null);
         for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime())) {
@@ -73,8 +75,14 @@ final class SettlementIssueService {
             if (!blockedWorker(work.status())) continue;
             var area = town.duties().get(member.id());
             if (area == null) continue;
+            var equipment = demands.stream().filter(demand -> demand.consumer().equals(member.id())
+                    && equipmentIssue(demand, work.status())).toList();
+            equipment.forEach(demand -> coveredEquipment.add(demand.id()));
+            String detail = equipment.isEmpty() ? work.diagnostic() : equipment.stream()
+                    .map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Demand::advice)
+                    .collect(java.util.stream.Collectors.joining(" "));
             issues.add(new Issue(identity(town, "worker:" + member.id()), bounded(name, 128), IssueKind.WORKER,
-                    bounded(work.status(), 128), bounded(work.diagnostic(), 512), Page.RESIDENTS, member.id(), member.id(), area, true));
+                    bounded(work.status(), 128), bounded(detail, 512), Page.RESIDENTS, member.id(), member.id(), area, true));
         }
         for (var project : town.projects().values()) {
             if (!project.reservesFootprint()) continue;
@@ -93,7 +101,7 @@ final class SettlementIssueService {
                     IssueKind.TRADE, cause, "", Page.TRADE, order.id(), null, null, false));
         }
         for (var demand : demands) {
-            if (demand.cause() == SettlementSupplyRecovery.Cause.READY) continue;
+            if (demand.cause() == SettlementSupplyRecovery.Cause.READY || coveredEquipment.contains(demand.id())) continue;
             issues.add(new Issue(demand.id(), demand.name(), IssueKind.SUPPLY, demand.cause().name().toLowerCase(Locale.ROOT),
                     demand.advice(), Page.DEMAND, demand.id(), null, demand.area(), false));
         }
@@ -104,6 +112,28 @@ final class SettlementIssueService {
                             + ", queued refresh jobs: " + SettlementSimulationService.metrics(level).queued(), Page.SUMMARY, null, null, null, false));
         }
         return List.copyOf(issues);
+    }
+
+    private static boolean equipmentIssue(com.jvn.villagerretaliation.network.SettlementManagementPayload.Demand demand, String status) {
+        if (demand.kind() != com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.EQUIPMENT
+                || demand.cause() == SettlementSupplyRecovery.Cause.READY) return false;
+        if (java.util.Set.of("workforce.missing_tools", "missing_equipment", "missing_tool",
+                "missing_placement_tool", "missing_clear_tool").contains(status)) return true;
+        var kind = switch (status) {
+            case "missing_hoe" -> HiredEquipmentNeed.Kind.HOE;
+            case "missing_rod", "missing_fishing_rod" -> HiredEquipmentNeed.Kind.ROD;
+            case "missing_axe" -> HiredEquipmentNeed.Kind.AXE;
+            case "missing_leaf_tool" -> HiredEquipmentNeed.Kind.LEAVES;
+            case "missing_pickaxe" -> HiredEquipmentNeed.Kind.PICKAXE;
+            case "missing_shovel" -> HiredEquipmentNeed.Kind.SHOVEL;
+            case "missing_shears" -> HiredEquipmentNeed.Kind.SHEARS;
+            case "missing_hunting_weapon" -> HiredEquipmentNeed.Kind.HUNTING;
+            case "missing_cull_weapon" -> HiredEquipmentNeed.Kind.CULLING;
+            case "missing_ranged_ammo" -> HiredEquipmentNeed.Kind.AMMUNITION;
+            default -> null;
+        };
+        return kind != null && demand.alternatives().stream()
+                .anyMatch(HiredEquipmentNeed.of(kind));
     }
 
     static boolean blockedWorker(String status) {

@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.reputation.CourierDeliveryTracker;
+import com.jvn.villagerretaliation.util.VillagerEquipmentDurability;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.ArrayList;
@@ -140,7 +141,7 @@ public final class HiredJobInventory implements Container {
         }
     }
 
-    Villager villager() {
+    public Villager villager() {
         return this.villager;
     }
 
@@ -186,7 +187,10 @@ public final class HiredJobInventory implements Container {
         }
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
-            if (equipmentSlot != null && (!this.items.get(slot).isEmpty() || !restored.get(slot).isEmpty())) {
+            if (equipmentSlot != null && !hasTemporaryEquipment(this.villager, equipmentSlot)
+                    && (!this.items.get(slot).isEmpty() || !restored.get(slot).isEmpty())
+                    && (this.villager.getItemBySlot(equipmentSlot).isEmpty()
+                    || isCurrentJobEquipment(this.villager.getItemBySlot(equipmentSlot), this.items.get(slot)))) {
                 VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, restored.get(slot));
             }
         }
@@ -230,7 +234,7 @@ public final class HiredJobInventory implements Container {
     }
 
     public static void synchronizeEquipmentDurability(Villager villager, EquipmentSlot equipmentSlot) {
-        if (villager == null || equipmentSlot == null) {
+        if (villager == null || equipmentSlot == null || hasTemporaryEquipment(villager, equipmentSlot)) {
             return;
         }
         int slot = jobSlotForEquipmentSlot(equipmentSlot);
@@ -654,54 +658,98 @@ public final class HiredJobInventory implements Container {
             if (stowedPartyVillagerWeapon(stack)) {
                 continue;
             }
-            if (!stack.isEmpty() && predicate.test(stack)) {
+            if (VillagerEquipmentDurability.isUsable(stack) && predicate.test(stack)) {
                 return stack;
             }
         }
         return ItemStack.EMPTY;
     }
 
+    public enum EquipmentBlocker { NONE, BUSY, MANUAL, CAPACITY }
+
+    public static boolean hasTemporaryEquipment(Villager villager, EquipmentSlot slot) {
+        return slot == EquipmentSlot.MAINHAND && (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                || VillagerDefensiveLoadoutService.hasBorrowedGuardShield(villager))
+                || slot == EquipmentSlot.OFFHAND && VillagerDefensiveLoadoutService.hasBorrowedTotem(villager);
+    }
+
+    public EquipmentBlocker equipmentBlocker(EquipmentSlot slot) {
+        if (hasTemporaryEquipment(this.villager, slot) || VillagerInventoryContainer.hasOpenInventory(this.villager))
+            return EquipmentBlocker.BUSY;
+        if (slot == EquipmentSlot.OFFHAND && VillagerDefensiveLoadoutService.hasManualOffhandOverride(this.villager))
+            return EquipmentBlocker.MANUAL;
+        var current = this.villager.getItemBySlot(slot);
+        return !current.isEmpty() && !isCurrentJobEquipment(current, jobEquipmentItem(slot))
+                && !VillagerInventoryAccess.canAddItems(this.villager, List.of(current))
+                ? EquipmentBlocker.CAPACITY : EquipmentBlocker.NONE;
+    }
+
     public ItemStack equipBestTool(Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> scorer) {
-        int bestSlot = -1;
+        return equipBestEquipment(EquipmentSlot.MAINHAND, predicate, scorer);
+    }
+
+    public ItemStack equipBestEquipment(EquipmentSlot equipmentSlot, Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> scorer) {
+        int equipmentIndex = jobSlotForEquipmentSlot(equipmentSlot);
+        if (equipmentIndex < 0 || equipmentBlocker(equipmentSlot) != EquipmentBlocker.NONE) return ItemStack.EMPTY;
+        ItemStack current = this.items.get(equipmentIndex);
+        boolean retained = VillagerEquipmentDurability.isUsable(current) && !stowedPartyVillagerWeapon(current) && predicate.test(current);
+        int bestSlot = retained ? equipmentIndex : -1;
         double bestScore = Double.NEGATIVE_INFINITY;
         for (int slot : TOOL_SLOT_SEARCH_ORDER) {
-            if (slot != MAINHAND_SLOT && !isSupplySlot(slot)) {
-                continue;
-            }
+            if (retained) break;
+            if (!isSupplySlot(slot)) continue;
             ItemStack stack = this.items.get(slot);
-            if (stowedPartyVillagerWeapon(stack)) {
-                continue;
-            }
-            if (stack.isEmpty() || !predicate.test(stack)) {
-                continue;
-            }
+            if (stowedPartyVillagerWeapon(stack) || !VillagerEquipmentDurability.isUsable(stack) || !predicate.test(stack)) continue;
             double score = scorer.applyAsDouble(stack);
             if (score > bestScore) {
                 bestScore = score;
                 bestSlot = slot;
             }
         }
-        if (bestSlot < 0) {
-            return ItemStack.EMPTY;
+        if (bestSlot < 0) return ItemStack.EMPTY;
+        if (bestSlot == equipmentIndex) {
+            if (!sameStack(this.villager.getItemBySlot(equipmentSlot), current)
+                    || equipmentSlot == EquipmentSlot.MAINHAND && !VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(this.villager))
+                setEquipmentItem(equipmentIndex, equipmentSlot, current);
+            return current;
         }
-        if (bestSlot == MAINHAND_SLOT) {
-            ItemStack selected = this.items.get(MAINHAND_SLOT);
-            if (!VillagerRetaliationVillagerEquipment.mainHandMatchesStack(this.villager, selected)
-                    || !VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(this.villager)) {
-                VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, EquipmentSlot.MAINHAND, selected);
-            }
-            return selected;
+        ItemStack selected = this.items.get(bestSlot).copyWithCount(1);
+        return exchangeEquipment(equipmentSlot, selected, bestSlot, false) ? this.items.get(equipmentIndex) : ItemStack.EMPTY;
+    }
+
+    public boolean canEquipReplacement(EquipmentSlot slot, ItemStack replacement) {
+        return exchangeEquipment(slot, replacement, -1, true);
+    }
+
+    public boolean equipReplacement(EquipmentSlot slot, ItemStack replacement) {
+        return exchangeEquipment(slot, replacement, -1, false);
+    }
+
+    private boolean exchangeEquipment(EquipmentSlot slot, ItemStack replacement, int source, boolean simulate) {
+        int equipmentIndex = jobSlotForEquipmentSlot(slot);
+        if (equipmentIndex < 0 || replacement.getCount() != 1 || !VillagerEquipmentDurability.isUsable(replacement)
+                || stowedPartyVillagerWeapon(replacement) || equipmentBlocker(slot) != EquipmentBlocker.NONE) return false;
+        var simulated = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+        var types = this.slotTypes.clone();
+        for (int index = 0; index < SLOT_COUNT; index++) simulated.set(index, this.items.get(index).copy());
+        if (source >= 0) simulated.get(source).shrink(1);
+        ItemStack displaced = this.items.get(equipmentIndex).copy();
+        if (source >= 0 && simulated.get(source).isEmpty()) simulated.set(source, displaced);
+        else {
+            simulateSupplyInsertIntoPreferredRegions(simulated, types, displaced);
+            if (!displaced.isEmpty()) return false;
         }
-        ItemStack selected = this.items.get(bestSlot);
-        ItemStack previousMainhand = this.items.get(MAINHAND_SLOT);
-        this.items.set(MAINHAND_SLOT, selected);
-        this.items.set(bestSlot, previousMainhand);
-        VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, EquipmentSlot.MAINHAND, selected);
-        setChanged();
-        return selected;
+        if (simulate) return true;
+        for (int index = MAIN_GRID_START; index < FILTER_SLOT; index++) {
+            this.items.set(index, simulated.get(index));
+            this.slotTypes[index] = types[index];
+        }
+        setEquipmentItem(equipmentIndex, slot, replacement.copy());
+        return true;
     }
 
     public void syncMainHandEquipment() {
+        if (hasTemporaryEquipment(this.villager, EquipmentSlot.MAINHAND)) return;
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, EquipmentSlot.MAINHAND, this.items.get(MAINHAND_SLOT));
         setChanged();
     }
@@ -830,6 +878,20 @@ public final class HiredJobInventory implements Container {
         return insertSupply(stack, true, JOB_ITEM_KIND_SUPPLY);
     }
 
+    public int supplyCapacityFromStorage(ItemStack stack, int maximum) {
+        if (stack.isEmpty() || maximum <= 0) return 0;
+        var simulated = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+        var types = new HiredJobInventorySlotType[SLOT_COUNT];
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            simulated.set(slot, this.items.get(slot).copy());
+            types[slot] = slotType(slot);
+        }
+        var remainder = stack.copyWithCount(maximum);
+        markAsStorageJobItem(remainder, JOB_ITEM_KIND_SUPPLY, activeContractId().orElse(null));
+        simulateSupplyInsertIntoPreferredRegions(simulated, types, remainder);
+        return maximum - remainder.getCount();
+    }
+
     private ItemStack insertSupply(ItemStack stack, boolean markJobItem, String jobItemKind) {
         return insertSupply(stack, markJobItem, jobItemKind, true);
     }
@@ -880,7 +942,8 @@ public final class HiredJobInventory implements Container {
             markWithActiveContract(remainder);
         }
         ItemStack mainhand = this.items.get(MAINHAND_SLOT);
-        if (!ProtectedVillagerProperty.isProtected(mainhand)) {
+        if (!ProtectedVillagerProperty.isProtected(mainhand) && !stowedPartyVillagerWeapon(remainder)
+                && equipmentBlocker(EquipmentSlot.MAINHAND) == EquipmentBlocker.NONE) {
             if (mainhand.isEmpty()) {
                 int moved = Math.min(remainder.getCount(), remainder.getMaxStackSize());
                 setItem(MAINHAND_SLOT, remainder.copyWithCount(moved));
@@ -1664,7 +1727,7 @@ public final class HiredJobInventory implements Container {
         boolean changed = false;
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
-            if (equipmentSlot == null) {
+            if (equipmentSlot == null || hasTemporaryEquipment(this.villager, equipmentSlot)) {
                 continue;
             }
 
@@ -1719,6 +1782,7 @@ public final class HiredJobInventory implements Container {
     }
 
     private void updateLiveEquipmentAfterJobSlotChange(EquipmentSlot equipmentSlot, ItemStack previousJobStack) {
+        if (hasTemporaryEquipment(this.villager, equipmentSlot)) return;
         ItemStack remainingJobStack = jobEquipmentItem(equipmentSlot);
         if (!remainingJobStack.isEmpty()) {
             VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, remainingJobStack);
@@ -1728,6 +1792,7 @@ public final class HiredJobInventory implements Container {
     }
 
     private void clearLiveEquipmentIfOwnedByJob(EquipmentSlot equipmentSlot, ItemStack previousJobStack) {
+        if (hasTemporaryEquipment(this.villager, equipmentSlot)) return;
         ItemStack current = this.villager.getItemBySlot(equipmentSlot);
         if (current.isEmpty() || isCurrentJobEquipment(current, previousJobStack)) {
             VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, ItemStack.EMPTY);
@@ -1745,7 +1810,7 @@ public final class HiredJobInventory implements Container {
         boolean changed = false;
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
-            if (equipmentSlot == null) {
+            if (equipmentSlot == null || hasTemporaryEquipment(this.villager, equipmentSlot)) {
                 continue;
             }
 
@@ -1767,6 +1832,7 @@ public final class HiredJobInventory implements Container {
                 continue;
             }
 
+            if (equipmentBlocker(equipmentSlot) != EquipmentBlocker.NONE) continue;
             storeDisplacedEquipment(current);
             VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, jobStack);
         }

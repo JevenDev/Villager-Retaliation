@@ -39,6 +39,7 @@ public final class SettlementRecord {
     private final Map<UUID, HiredProductionQueue> productionQueues = new LinkedHashMap<>();
     private final Map<UUID, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue> transferQueues = new LinkedHashMap<>();
     private final Map<UUID, SettlementSupplyPolicy> supplyPolicies = new LinkedHashMap<>();
+    private final Map<UUID, SettlementEquipmentPlan> equipmentPlans = new LinkedHashMap<>();
     private Map<UUID, ManagedSupplyOrder> managedSupplyOrders;
     private Map<UUID, List<ManagedGathering>> managedGathering;
     private long supplyRevision;
@@ -792,6 +793,37 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.supplyPolicies);
     }
 
+    public Map<UUID, SettlementEquipmentPlan> equipmentPlans() {
+        return Collections.unmodifiableMap(this.equipmentPlans);
+    }
+
+    boolean setEquipmentPlan(UUID actor, UUID areaId, SettlementEquipmentPlan.Configuration configuration, long expectedRevision) {
+        var area = this.areas.get(areaId);
+        var previous = this.equipmentPlans.get(areaId);
+        if (!permits(actor, SettlementPermission.STAFF) || area == null || configuration == null
+                || !configuration.validFor(area.type().role()) || !this.worksitePlans.containsKey(areaId)
+                || this.revision == Long.MAX_VALUE || expectedRevision != (previous == null ? -1 : previous.revision())) return false;
+        this.equipmentPlans.put(areaId, new SettlementEquipmentPlan(configuration, actor, Math.addExact(this.revision, 1), ""));
+        supplyChanged();
+        return true;
+    }
+
+    boolean removeEquipmentPlan(UUID actor, UUID areaId, long expectedRevision) {
+        var plan = this.equipmentPlans.get(areaId);
+        if (!permits(actor, SettlementPermission.STAFF) || plan == null || plan.revision() != expectedRevision) return false;
+        this.equipmentPlans.remove(areaId);
+        supplyChanged();
+        return true;
+    }
+
+    void validateEquipmentAuthority(UUID areaId) {
+        var plan = this.equipmentPlans.get(areaId);
+        if (plan != null && plan.active() && !plan.authorized(this)) {
+            this.equipmentPlans.put(areaId, plan.suspend());
+            supplyChanged();
+        }
+    }
+
     public long supplyRevision() { return this.supplyRevision; }
 
     void supplyChanged() {
@@ -1070,6 +1102,7 @@ public final class SettlementRecord {
         } else {
             this.delegates.put(delegate, updated);
         }
+        this.equipmentPlans.keySet().forEach(this::validateEquipmentAuthority);
         changed();
         return true;
     }
@@ -1112,6 +1145,7 @@ public final class SettlementRecord {
         this.delegates.clear();
         this.leadershipOffer = null;
         this.leader = successor;
+        this.equipmentPlans.keySet().forEach(this::validateEquipmentAuthority);
         changed();
     }
 
@@ -1143,6 +1177,7 @@ public final class SettlementRecord {
         SettlementArea previous = this.areas.put(area.id(), area);
         if (previous != null && previous.type() != area.type()) {
             this.worksitePlans.remove(area.id());
+            this.equipmentPlans.remove(area.id());
             this.productionQueues.remove(area.id());
             this.transferQueues.remove(area.id());
         }
@@ -1175,6 +1210,7 @@ public final class SettlementRecord {
         this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.surveys.remove(area);
         this.worksitePlans.remove(area);
+        this.equipmentPlans.remove(area);
         this.productionQueues.remove(area);
         this.transferQueues.remove(area);
         this.cachedHousingCapacity = -1;
@@ -1283,6 +1319,13 @@ public final class SettlementRecord {
         var policyTags = new ListTag();
         this.supplyPolicies.values().forEach(policy -> policyTags.add(policy.save(provider)));
         tag.put("SupplyPolicies", policyTags);
+        var equipmentTags = new ListTag();
+        this.equipmentPlans.forEach((area, plan) -> {
+            var entry = plan.save();
+            entry.putUUID("Area", area);
+            equipmentTags.add(entry);
+        });
+        tag.put("EquipmentPlans", equipmentTags);
         ListTag projectTags = new ListTag();
         this.projects.values().forEach(project -> projectTags.add(project.save()));
         tag.put("Projects", projectTags);
@@ -1735,6 +1778,18 @@ public final class SettlementRecord {
         if (tag.contains("SupplyPolicies") && (!(tag.get("SupplyPolicies") instanceof ListTag list)
                 || list.size() > SettlementSupplyPolicy.MAX_POLICIES || !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND))
             throw new IllegalArgumentException("Invalid supply policies");
+        if (tag.contains("EquipmentPlans") && (!(tag.get("EquipmentPlans") instanceof ListTag list)
+                || list.size() > MAX_AREAS || !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND))
+            throw new IllegalArgumentException("Invalid equipment plans");
+        for (Tag raw : tag.getList("EquipmentPlans", Tag.TAG_COMPOUND)) {
+            var entry = (CompoundTag) raw;
+            if (!entry.hasUUID("Area")) throw new IllegalArgumentException("Equipment plan has no worksite");
+            var area = record.areas.get(entry.getUUID("Area"));
+            var plan = SettlementEquipmentPlan.load(entry);
+            if (area == null || plan.revision() > record.revision || !plan.configuration().validFor(area.type().role()) || !record.worksitePlans.containsKey(area.id())
+                    || record.equipmentPlans.putIfAbsent(area.id(), plan) != null)
+                throw new IllegalArgumentException("Equipment plan has invalid worksite ownership");
+        }
         var managedOrders = new java.util.HashSet<UUID>();
         for (Tag raw : tag.getList("SupplyPolicies", Tag.TAG_COMPOUND)) {
             var policy = SettlementSupplyPolicy.load((CompoundTag) raw, provider, record::supplyChanged);

@@ -55,6 +55,7 @@ public final class SettlementWorkerScreen extends VillagerWindowScreen {
     private Button brewing;
     private Button productionOrders;
     private Button fishingSpots;
+    private Button equipment;
     private Component feedback = Component.empty();
 
     public SettlementWorkerScreen(SettlementManagementScreen parent, SettlementManagementPayload.Resident resident) {
@@ -192,6 +193,12 @@ public final class SettlementWorkerScreen extends VillagerWindowScreen {
         }).bounds(this.left + 28, bottom - 48, 24, 20).build());
         addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(this.left, bottom - 20, 94, 20).build());
+        if (this.worksite != null && this.worksite.plan() != null
+                && com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.supports(this.draft.role())) {
+            this.equipment = addRenderableWidget(VillagerUi.buttonBuilder(SettlementEquipmentScreen.text("button"),
+                    ignored -> this.minecraft.setScreen(new SettlementEquipmentScreen(this)))
+                    .bounds(this.left + 100, bottom - 20, this.panelWidth - 200, 20).build());
+        }
         if (this.resident != null && this.resident.worksitePlan()) {
             this.reset = addRenderableWidget(VillagerUi.buttonBuilder(text("worksite_reset"), ignored -> {
                 this.draft = this.draft.withOverrides(0);
@@ -317,6 +324,7 @@ public final class SettlementWorkerScreen extends VillagerWindowScreen {
                 : this.desiredStaff >= 0 && this.desiredStaff <= SettlementWorksitePlan.MAX_STAFF
                         && (this.worksite.plan() == null || this.desiredStaff != this.worksite.plan().desiredStaff()
                                 || !this.draft.equals(this.worksite.plan().settings()) || !this.links.equals(this.worksite.plan().links())));
+        if (this.equipment != null) this.equipment.active = !this.parent.submitting();
         if (this.brewing != null) {
             this.brewing.active = allowed && this.draft.equals(this.resident.settings());
         }
