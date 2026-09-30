@@ -50,6 +50,15 @@ final class SettlementManagementClientChecks {
         require(browser.rows(List.of(row)).size() == 1, "observation blockers appear in the browser attention filter");
         browser.updateAttention(List.of());
         require(browser.rows(List.of(row)).isEmpty(), "resolved issues leave the attention filter");
+        var unknownSupply = new SettlementManagementPayload.Supply(UUID.randomUUID(), "Bread", BlockPos.ZERO,
+                null, area, "Bakery storage", new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BREAD),
+                -1L, -1L, 12, "unloaded");
+        require(SettlementSupplyView.detail(unknownSupply).getString().equals("Stored Unknown | Incoming Unknown | Target 12 | Short Unknown"),
+                "unavailable observations never render as zero stock or a definite shortage");
+        var observedSupply = new SettlementManagementPayload.Supply(unknownSupply.id(), unknownSupply.name(), unknownSupply.position(),
+                null, area, unknownSupply.storageName(), unknownSupply.item(), 5L, 3L, 12, "available");
+        require(SettlementSupplyView.detail(observedSupply).getString().equals("Stored 5 | Incoming 3 | Target 12 | Short 4"),
+                "updated supply observations display stored and incoming amounts separately");
         verifyProductionTracking();
         verifyTransferTracking();
     }

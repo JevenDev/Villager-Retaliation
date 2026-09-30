@@ -20,36 +20,42 @@ public final class SettlementProductionStock {
         var depot = SettlementStock.outputs(town).stream().filter(candidate -> candidate.position().equals(order.storage())
                 && links.permitsOutput(candidate.id()) && candidate.rulesObserved()).findFirst().orElse(null);
         if (depot == null) return -1L;
-        long count = depot.count(stack -> HiredProductionStock.matches(order.output(), stack));
+        long incoming = incoming(level, town, order.storage(), order.output(), queue);
+        return incoming < 0L ? -1L : depot.count(stack -> HiredProductionStock.matches(order.output(), stack)) + incoming;
+    }
+
+    static long incoming(ServerLevel level, SettlementRecord town, net.minecraft.core.BlockPos destination,
+                         net.minecraft.world.item.ItemStack sample, HiredProductionQueue excluded) {
+        long count = 0L;
         var commitments = com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(level);
-        commitments.refresh(level, order.storage());
-        long incoming = commitments.count(order.storage(), order.output(), null);
+        commitments.refresh(level, destination);
+        long incoming = commitments.count(destination, sample, null);
         if (incoming < 0L) return -1L;
         count += incoming;
-        var transferWorkers = new java.util.HashSet<>(commitments.contributors(order.storage(), order.output()));
+        var transferWorkers = new java.util.HashSet<>(commitments.contributors(destination, sample));
         for (var transfers : town.transferQueues().values()) {
-            count += transfers.pending(order.output(), order.storage());
+            count += transfers.pending(sample, destination);
             for (var allocation : transfers.allocations()) transferWorkers.add(allocation.worker());
         }
-        count += AssignedStorageService.reservedItemsExcluding(level, depot.position(), transferWorkers,
-                VillagerFilterPolicy.TransferOperation.RECEIVE, stack -> HiredProductionStock.matches(order.output(), stack));
+        count += AssignedStorageService.reservedItemsExcluding(level, destination, transferWorkers,
+                VillagerFilterPolicy.TransferOperation.RECEIVE, stack -> HiredProductionStock.matches(sample, stack));
         for (var other : town.productionQueues().values()) {
-            if (other != queue) count += other.pending(order.output(), order.storage());
+            if (other != excluded) count += other.pending(sample, destination);
         }
         for (var worker : town.workers().values()) {
             if (!town.duties().containsKey(worker.id())) continue;
             if (level.getEntity(worker.id()) instanceof Villager loaded) {
-                if (!order.storage().equals(HiredProductionStock.destination(HiredWorkStateStore.state(loaded)))) continue;
+                if (!destination.equals(HiredProductionStock.destination(HiredWorkStateStore.state(loaded)))) continue;
                 var inventory = HiredJobInventory.getJobInventory(loaded);
                 for (int slot : inventory.outputSlots()) {
                     var stack = inventory.getItem(slot);
-                    if (HiredProductionStock.matches(order.output(), stack)) count += stack.getCount();
+                    if (HiredProductionStock.matches(sample, stack)) count += stack.getCount();
                 }
-            } else if (order.storage().equals(HiredProductionStock.destination(worker.settings()))) {
+            } else if (destination.equals(HiredProductionStock.destination(worker.settings()))) {
                 var inventory = worker.items(level.registryAccess());
                 for (int slot : worker.outputSlots()) {
                     var stack = inventory.get(slot);
-                    if (HiredProductionStock.matches(order.output(), stack)) count += stack.getCount();
+                    if (HiredProductionStock.matches(sample, stack)) count += stack.getCount();
                 }
             }
         }

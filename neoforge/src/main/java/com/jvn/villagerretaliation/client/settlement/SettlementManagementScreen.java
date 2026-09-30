@@ -41,6 +41,10 @@ public final class SettlementManagementScreen extends Screen {
     private final net.minecraft.client.multiplayer.ClientLevel level = net.minecraft.client.Minecraft.getInstance().level;
     private boolean viewRequested;
     private Button worldView;
+    private UUID pendingFocusArea;
+    private UUID pendingStorageArea;
+    private Component supplyContext = Component.empty();
+    private net.minecraft.core.BlockPos pendingFocusPosition;
     private UUID selected;
     private Component feedback = Component.empty();
     private long feedbackUntil;
@@ -112,6 +116,13 @@ public final class SettlementManagementScreen extends Screen {
             updateSearch();
             populateRows();
             updateActions();
+        }
+        if (this.pendingStorageArea != null && this.minecraft.screen == this && currentPage()) {
+            UUID area = this.pendingStorageArea;
+            this.pendingStorageArea = null;
+            if (selectedEntry() instanceof SettlementManagementPayload.Area selected && selected.id().equals(area) && selected.kind().role() != null) {
+                this.minecraft.setScreen(new SettlementStorageScreen(this, SettlementViewClient.view(this), selected, null));
+            }
         }
         if (this.pendingResident != null && this.minecraft.screen == this && currentPage()) {
             UUID resident = this.pendingResident;
@@ -228,9 +239,9 @@ public final class SettlementManagementScreen extends Screen {
         this.worldView.visible = this.snapshot.header() != null && this.assigning == null && this.choosingBed == null;
         this.worldView.setTooltip(Tooltip.create(text("world_view_hint")));
         int y = this.top + 28;
-        int navigationHeight = Math.min(20, (this.panelHeight - 56) / (Page.values().length - 2) - 2);
+        int navigationHeight = Math.min(20, (this.panelHeight - 56) / (Page.values().length - 3) - 2);
         for (Page page : Page.values()) {
-            if (page == Page.STATIONS || page == Page.STORAGE) continue;
+            if (page == Page.STATIONS || page == Page.STORAGE || page == Page.SUPPLY_LINKS) continue;
             if (page != Page.TOWNS && this.snapshot.header() == null || this.assigning != null && page != Page.AREAS
                     || this.choosingBed != null && page != Page.RESIDENTS) {
                 continue;
@@ -246,7 +257,7 @@ public final class SettlementManagementScreen extends Screen {
         this.search.setMaxLength(64);
         this.search.setHint(text("search"));
         updateSearch();
-        this.search.visible = this.desiredPage != Page.SUMMARY;
+        this.search.visible = this.desiredPage != Page.SUMMARY && this.desiredPage != Page.SUPPLY_LINKS;
         this.search.active = this.search.visible;
         this.search.setResponder(this::searchChanged);
         addRenderableWidget(this.search);
@@ -281,7 +292,7 @@ public final class SettlementManagementScreen extends Screen {
     private int extraActionHeight() {
         int count = switch (this.desiredPage) {
             case RESIDENTS -> 7;
-            case SUMMARY, AREAS -> 5;
+            case SUMMARY, AREAS, SUPPLY_LINKS -> 5;
             case PROJECTS, ISSUES -> 4;
             default -> 3;
         };
@@ -374,6 +385,7 @@ public final class SettlementManagementScreen extends Screen {
 
     void navigate(Page page, int index, String query) {
         this.pendingResident = null;
+        this.pendingStorageArea = null;
         this.desiredPage = page;
         this.desiredIndex = Math.max(0, index);
         this.query = query;
@@ -414,6 +426,18 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         switch (this.desiredPage) {
+            case SUPPLIES -> {
+                action(0, "supply_details", selected instanceof SettlementManagementPayload.Supply);
+                action(1, "supply_storage", selected instanceof SettlementManagementPayload.Supply supply && supply.area() != null);
+                action(2, "supply_projects", permits(SettlementPermission.VIEW));
+            }
+            case SUPPLY_LINKS -> {
+                action(0, "supply_open", selected instanceof SettlementManagementPayload.SupplyLink);
+                action(1, "supply_worksite", selected instanceof SettlementManagementPayload.SupplyLink);
+                action(2, "supply_focus", selected instanceof SettlementManagementPayload.SupplyLink);
+                action(3, "supply_storage", selected instanceof SettlementManagementPayload.SupplyLink);
+                action(4, "page.supplies", true);
+            }
             case ISSUES -> {
                 action(0, "issue_open", selected instanceof SettlementManagementPayload.Issue);
                 if (selected instanceof SettlementManagementPayload.Issue issue) {
@@ -528,6 +552,20 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         switch (this.desiredPage) {
+            case SUPPLIES -> {
+                if (action == 2) navigate(Page.PROJECTS, 0, "");
+                else if (selected instanceof SettlementManagementPayload.Supply supply) {
+                    if (action == 0) {
+                        this.supplyContext = name(supply);
+                        navigate(Page.SUPPLY_LINKS, 0, supply.id().toString());
+                    } else if (supply.depot() != null) navigate(Page.DEPOTS, 0, supply.depot().toString());
+                    else if (supply.area() != null) openSupplyStorage(supply.area());
+                }
+            }
+            case SUPPLY_LINKS -> {
+                if (action == 4) navigate(Page.SUPPLIES, 0, "");
+                else if (selected instanceof SettlementManagementPayload.SupplyLink link) SettlementSupplyView.open(this, link, action);
+            }
             case ISSUES -> {
                 if (selected instanceof SettlementManagementPayload.Issue issue) {
                     if (action == 0) {
@@ -678,6 +716,26 @@ public final class SettlementManagementScreen extends Screen {
         }
     }
 
+    void openSupplyStorage(UUID area) {
+        navigateTo(Page.AREAS, area.toString());
+        this.pendingStorageArea = area;
+    }
+
+    void focusSupply(UUID area, net.minecraft.core.BlockPos position) {
+        if (SettlementViewClient.focusSupply(this, area, position, true)) return;
+        this.pendingFocusArea = area;
+        this.pendingFocusPosition = position;
+        this.viewRequested = true;
+        submit(new SettlementManagementActionPayload.View());
+    }
+
+    void applySupplyFocus(SettlementViewScreen view) {
+        if (this.pendingFocusPosition == null) return;
+        view.focusSupply(this.pendingFocusArea, this.pendingFocusPosition);
+        this.pendingFocusArea = null;
+        this.pendingFocusPosition = null;
+    }
+
     private void edit(SettlementEditScreen.Mode mode, Entry selected) {
         this.minecraft.setScreen(new SettlementEditScreen(this, mode, selected));
     }
@@ -743,6 +801,9 @@ public final class SettlementManagementScreen extends Screen {
         if (this.desiredPage == Page.SUMMARY && this.snapshot.header() != null) {
             fitted(graphics, text("summary_hint"), this.contentLeft, this.top + 34, this.contentWidth, 0xD0D0D0);
         }
+        if (this.desiredPage == Page.SUPPLY_LINKS) {
+            renderFeedback(graphics, this.font, this.supplyContext, this.contentLeft, this.top + 34, this.contentWidth, mouseX, mouseY);
+        }
         int pages = Math.max(1, (this.snapshot.total() + SettlementManagementRequestPayload.PAGE_SIZE - 1) / SettlementManagementRequestPayload.PAGE_SIZE);
         renderFeedback(graphics, this.font, this.feedback.getString().isEmpty() ? text("page_count", this.desiredIndex + 1, pages) : this.feedback,
                 this.contentLeft + 60, this.top + this.panelHeight - 40 - extraActionHeight(),
@@ -784,6 +845,8 @@ public final class SettlementManagementScreen extends Screen {
                         issue.name().isBlank() ? text("unnamed_resident") : Component.literal(issue.name()));
             };
         }
+        if (entry instanceof SettlementManagementPayload.Supply supply) return Component.literal(supply.name() + " / " + supply.storageName());
+        if (entry instanceof SettlementManagementPayload.SupplyLink link) return enumText("supply_kind", link.kind()).append(": ").append(link.name());
         if (entry instanceof SettlementManagementPayload.History history) {
             Component subject = history.kind() == com.jvn.villagerretaliation.settlement.SettlementEvent.Type.STAGE_ADVANCED
                     ? text("stage." + history.name().toLowerCase(Locale.ROOT)) : Component.literal(history.name());
@@ -805,6 +868,8 @@ public final class SettlementManagementScreen extends Screen {
 
     static Component detail(Entry entry) {
         return switch (entry) {
+            case SettlementManagementPayload.Supply supply -> SettlementSupplyView.detail(supply);
+            case SettlementManagementPayload.SupplyLink link -> SettlementSupplyView.detail(link);
             case SettlementManagementPayload.Issue issue -> {
                 if (issue.kind() == SettlementManagementPayload.IssueKind.WORKER && !issue.detail().isBlank()) {
                     yield Component.literal(issue.detail());
@@ -926,7 +991,11 @@ public final class SettlementManagementScreen extends Screen {
             fitted(graphics, this.secondary, x + 3, y + 15, width - 8, 0xD0D0D0);
             if (hovered) {
                 List<Component> lines = new ArrayList<>(List.of(this.primary, this.secondary));
-                if (this.entry instanceof SettlementManagementPayload.Issue issue) {
+                if (this.entry instanceof SettlementManagementPayload.Supply supply) {
+                    lines.addAll(SettlementSupplyView.tooltip(supply));
+                } else if (this.entry instanceof SettlementManagementPayload.SupplyLink link) {
+                    lines.addAll(SettlementSupplyView.tooltip(link));
+                } else if (this.entry instanceof SettlementManagementPayload.Issue issue) {
                     lines.add(enumText("severity", issue.diagnostic().severity()));
                     if (!issue.diagnostic().recovery().isBlank()) lines.add(Component.literal(issue.diagnostic().recovery()));
                     if (!issue.detail().isBlank() && issue.kind() != SettlementManagementPayload.IssueKind.WORKER) lines.add(issue.kind() == SettlementManagementPayload.IssueKind.PROJECT

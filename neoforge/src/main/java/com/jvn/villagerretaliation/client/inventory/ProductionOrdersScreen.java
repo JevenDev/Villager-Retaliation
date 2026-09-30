@@ -36,10 +36,15 @@ public final class ProductionOrdersScreen extends Screen implements ProductionCl
     }
 
     public ProductionOrdersScreen(Screen previous, ProductionTarget target, Runnable close) {
+        this(previous, target, close, null);
+    }
+
+    public ProductionOrdersScreen(Screen previous, ProductionTarget target, Runnable close, UUID selected) {
         super(Component.literal("Production orders"));
         this.previous = previous;
         this.close = close;
         this.state = new ProductionClientState(target);
+        this.selected = selected;
     }
 
     public Screen previous() { return this.previous; }
@@ -188,7 +193,8 @@ public final class ProductionOrdersScreen extends Screen implements ProductionCl
             else if (state.snapshot() != null) state.snapshot().legacy().forEach(legacy -> addEntry(new Row(legacy)));
             var selection = children().stream().filter(row -> row.id.equals(selected)).findFirst().orElse(null);
             if (selection == null && !children().isEmpty()) selection = children().getFirst();
-            setSelected(selection);
+            if (state.snapshot() != null) setSelected(selection);
+            else super.setSelected(null);
             setScrollAmount(scroll);
         }
 

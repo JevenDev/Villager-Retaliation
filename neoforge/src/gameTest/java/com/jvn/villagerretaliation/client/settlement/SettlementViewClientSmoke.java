@@ -69,6 +69,9 @@ public final class SettlementViewClientSmoke {
     private static UUID brewer;
     private static UUID productionArea;
     private static UUID transferArea;
+    private static UUID supplyRow;
+    private static UUID supplyTransfer;
+    private static boolean suppliesChecked;
     private static UUID crewAssistant;
     private static SettlementViewScreen crewView;
     private static double crewX;
@@ -953,6 +956,15 @@ public final class SettlementViewClientSmoke {
             require(screen == productionView && screen.focusX() == originalX && screen.focusZ() == originalZ
                             && screen.viewHeight() == originalHeight && screen.cameraYaw() == originalYaw,
                     "transfer controls restore the same map camera and selection");
+            if (!suppliesChecked) {
+                button(screen, "Food supply").onPress();
+                screen.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
+                screen.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
+                screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
+                ticks = 0;
+                phase = 170;
+                return;
+            }
             button(screen, "Browse settlement").onPress();
             require(!screen.inspector().visible(), "browsing hides the inspector without clearing the map selection");
             var targets = java.util.List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(fixture.resident(), null));
@@ -962,6 +974,87 @@ public final class SettlementViewClientSmoke {
             SettlementViewClient.openPanels(screen);
             minecraft.setScreen(form);
             phase = 107;
+        } else if (phase == 170 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUPPLIES && ++ticks >= 5) {
+            var supply = screen.snapshot().entries().stream()
+                    .filter(com.jvn.villagerretaliation.network.SettlementManagementPayload.Supply.class::isInstance)
+                    .map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Supply.class::cast)
+                    .filter(row -> row.position().equals(fixture.center().offset(-3, 0, 4)) && row.name().equals("Construction iron"))
+                    .findFirst().orElseThrow();
+            require(supply.stored() == 0 && supply.incoming() == 0 && supply.target() == 0,
+                    "a paused finite delivery creates no stock target or unreserved incoming goods");
+            supplyRow = supply.id();
+            screen.restoreSelection(supplyRow);
+            for (int width : new int[] {320, 426, minecraft.getWindow().getGuiScaledWidth()}) {
+                screen.init(minecraft, width, minecraft.getWindow().getGuiScaledHeight());
+                requireButtonsFit(screen);
+            }
+            require(minecraft.getCameraEntity() != minecraft.player, "the Supplies page retains the world camera");
+            capture("supplies-overview");
+            button(screen, "Sources").onPress();
+            ticks = 0;
+            phase = 171;
+        } else if (phase == 171 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUPPLY_LINKS && ++ticks >= 5) {
+            var link = screen.snapshot().entries().stream()
+                    .filter(com.jvn.villagerretaliation.network.SettlementManagementPayload.SupplyLink.class::isInstance)
+                    .map(com.jvn.villagerretaliation.network.SettlementManagementPayload.SupplyLink.class::cast)
+                    .filter(row -> row.kind() == com.jvn.villagerretaliation.network.SettlementManagementPayload.SupplyLinkKind.TRANSFER)
+                    .findFirst().orElseThrow();
+            require(link.status().equals("paused") && link.area().equals(transferArea), "the overview explains the actual paused delivery");
+            supplyTransfer = link.id();
+            screen.restoreSelection(supplyTransfer);
+            for (int width : new int[] {320, 426, minecraft.getWindow().getGuiScaledWidth()}) {
+                screen.init(minecraft, width, minecraft.getWindow().getGuiScaledHeight());
+                requireButtonsFit(screen);
+            }
+            capture("supply-sources");
+            button(screen, "Open source").onPress();
+            ticks = 0;
+            phase = 172;
+        } else if (phase == 172 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.TransferOrdersScreen screen
+                && screen.state().editable() && ++ticks >= 5) {
+            require(button(screen, "Resume").active, "the delivery link opens the paused order");
+            screen.onClose();
+            ticks = 0;
+            phase = 173;
+        } else if (phase == 173 && minecraft.screen instanceof SettlementManagementScreen screen && ++ticks >= 5) {
+            screen.restoreSelection(supplyTransfer);
+            button(screen, "Storage").onPress();
+            ticks = 0;
+            phase = 174;
+        } else if (phase == 174 && minecraft.screen instanceof SettlementStorageScreen screen && ++ticks >= 5) {
+            requireButtonsFit(screen);
+            require(minecraft.getCameraEntity() != minecraft.player, "linked storage controls retain the world view");
+            screen.onClose();
+            ticks = 0;
+            phase = 175;
+        } else if (phase == 175 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            button(screen, "Settlement menu").onPress();
+            screen.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
+            screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
+            ticks = 0;
+            phase = 176;
+        } else if (phase == 176 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUPPLIES && ++ticks >= 5) {
+            screen.restoreSelection(supplyRow);
+            button(screen, "Sources").onPress();
+            ticks = 0;
+            phase = 177;
+        } else if (phase == 177 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUPPLY_LINKS && ++ticks >= 5) {
+            screen.restoreSelection(supplyTransfer);
+            button(screen, "Show on map").onPress();
+            ticks = 0;
+            phase = 178;
+        } else if (phase == 178 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen == productionView && screen.focusX() == fixture.center().getX() - 4.0D
+                            && screen.focusZ() == fixture.center().getZ() + 5.5D,
+                    "a supply source focuses its linked worksite on the same map");
+            screen.focus(originalX, originalZ);
+            suppliesChecked = true;
+            ticks = 0;
+            phase = 160;
         } else if (phase == 107 && minecraft.screen instanceof SettlementTemporaryTaskScreen screen) {
             requireButtonsFit(screen);
             var personal = new com.jvn.villagerretaliation.client.inventory.ClipboardFishingTaskScreen(screen, fixture.resident(), true);

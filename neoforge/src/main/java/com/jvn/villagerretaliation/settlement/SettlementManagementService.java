@@ -199,6 +199,8 @@ public final class SettlementManagementService {
                     var storage = SettlementStorageService.snapshot(player, town, request.query());
                     if (storage != null) entries.add(storage);
                 }
+                case SUPPLIES -> entries.addAll(SettlementSupplyService.supplies(player, town));
+                case SUPPLY_LINKS -> entries.addAll(SettlementSupplyService.links(player, town, request.query()));
                 case ISSUES -> entries.addAll(issues);
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
@@ -223,9 +225,13 @@ public final class SettlementManagementService {
                 }
             }
         }
-        String needle = request.page() == Page.STATIONS || request.page() == Page.STORAGE ? "" : request.query().strip().toLowerCase(Locale.ROOT);
+        String needle = request.page() == Page.STATIONS || request.page() == Page.STORAGE || request.page() == Page.SUPPLY_LINKS ? "" : request.query().strip().toLowerCase(Locale.ROOT);
         var matching = entries.stream().filter(entry -> searchable(entry).toLowerCase(Locale.ROOT).contains(needle));
         Comparator<Entry> order = Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(Entry::id);
+        if (request.page() == Page.SUPPLIES) order = Comparator.<Entry>comparingInt(entry -> {
+            var supply = (SettlementManagementPayload.Supply) entry;
+            return supply.shortage() > 0 ? 0 : supply.shortage() < 0 ? 1 : 2;
+        }).thenComparing(entry -> ((SettlementManagementPayload.Supply) entry).storageName()).thenComparing(order);
         if (request.page() == Page.PROJECTS) order = Comparator.<Entry>comparingInt(entry ->
                 ((SettlementManagementPayload.Project) entry).status() == SettlementProject.Status.ACTIVE ? 0 : 1)
                 .thenComparing(Comparator.<Entry>comparingInt(entry -> ((SettlementManagementPayload.Project) entry).priority()).reversed())
@@ -434,6 +440,7 @@ public final class SettlementManagementService {
         return entry.name() + " " + entry.id() + switch (entry) {
             case SettlementManagementPayload.Issue issue -> " " + issue.kind().name() + " " + issue.cause() + " "
                     + issue.detail() + " " + issue.targetId() + " " + issue.resident() + " " + issue.area();
+            case SettlementManagementPayload.Supply supply -> " " + supply.storageName() + " " + supply.position().toShortString();
             case SettlementManagementPayload.Resident resident -> " " + resident.profession().getPath();
             case SettlementManagementPayload.Bed bed -> " " + bed.position().toShortString() + " " + bed.residentName() + " " + bed.resident();
             case SettlementManagementPayload.Area area -> " " + area.kind().name();

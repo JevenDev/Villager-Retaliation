@@ -144,6 +144,7 @@ public final class SettlementCityAcceptanceScenario {
         require(general.isEmpty(), "production output begins empty");
         level.setBlockAndUpdate(new BlockPos(0, -61, 0), Blocks.STONE.defaultBlockState());
         player.connection.teleport(center.getX() + 0.5D, center.getY(), center.getZ() + 3.5D, 0, 0);
+        fixture.verifySupplies(player);
         fixture.checkpoints.put("founded", fixture.snapshot());
         return fixture;
     }
@@ -177,6 +178,7 @@ public final class SettlementCityAcceptanceScenario {
             this.phase = Phase.UNLOADING;
         } else if (this.phase == Phase.UNLOADING) {
             if (!unloaded()) return;
+            verifySupplies(player);
             this.checkpoints.put(this.town.stage() + "-unloaded", snapshot());
             this.phase = Phase.SUPPORT;
             this.phaseStarted = now;
@@ -198,9 +200,9 @@ public final class SettlementCityAcceptanceScenario {
             if (now - this.phaseStarted < 400 || this.residents.stream().anyMatch(id -> !(this.level.getEntity(id) instanceof Villager))) return;
             require(this.transitions == 4 && population() == 75 && this.town.homes().size() == 75, "City returns with all 75 approved residents and homes");
             require(this.nativeProductionBread > INITIAL_BREAD && count(Items.IRON_INGOT) == 256, "production and hauling preserve the real resource balances");
-            require(this.town.projects().values().stream().anyMatch(project -> project.placed() > 0), "the civic builder made real progress");
+            require(constructionProjects().stream().anyMatch(project -> project.placed() > 0), "the civic builder made real progress");
             int verified = 0;
-            for (var project : this.town.projects().values()) for (int index = 0; index < project.placed(); index++) {
+            for (var project : constructionProjects()) for (int index = 0; index < project.placed(); index++) {
                 var block = this.plan.blocks().get(index);
                 if (!block.requiresMaterial() || block.requiresToolAction()) continue;
                 require(this.level.getBlockState(this.plan.worldPos(project.origin(), block)).is(block.state().getBlock()), "return reconciles the constructed house");
@@ -216,11 +218,25 @@ public final class SettlementCityAcceptanceScenario {
                     "history records all four earned stages in order");
             require(SettlementRecord.load(this.town.save(this.level.registryAccess()), this.level.registryAccess(), () -> {}).history().equals(this.town.history()),
                     "returned city history survives save loading unchanged");
+            verifySupplies(player);
             this.checkpoints.put("returned", snapshot());
             this.phase = Phase.VIEW;
             this.level.getServer().tickRateManager().setTickRate(20.0F);
             SettlementManagementService.open(player, this.town.id());
         }
+    }
+
+    private void verifySupplies(ServerPlayer player) {
+        var supply = SettlementSupplyService.supplies(player, this.town).stream()
+                .filter(row -> this.destination.id().equals(row.depot()) && row.item().is(Items.IRON_INGOT)).findFirst().orElseThrow();
+        require(supply.stored() == this.destination.count(stack -> stack.is(Items.IRON_INGOT)),
+                "the City supply overview preserves physical stock across loaded and background phases");
+        require(supply.target() == 256 && supply.incoming() >= 0 && supply.shortage() >= 0,
+                "the City hauling target and incoming commitments remain observable");
+        var restored = SettlementRecord.load(this.town.save(this.level.registryAccess()), this.level.registryAccess(), () -> {});
+        var reloaded = SettlementSupplyService.supplies(player, restored).stream().filter(row -> row.id().equals(supply.id())).findFirst().orElseThrow();
+        require(reloaded.stored() == supply.stored() && reloaded.incoming() == supply.incoming(),
+                "a City save round trip preserves displayed supply facts");
     }
 
     private void prepareResidents(ServerPlayer player) {
@@ -287,8 +303,12 @@ public final class SettlementCityAcceptanceScenario {
                 this.town.housingCapacity(), this.town.homes().size(), this.town.duties().size(),
                 count(Items.WHEAT), SettlementStock.count(this.town, stack -> stack.is(Items.WHEAT)), count(Items.CARROT),
                 count(Items.BREAD), count(Items.IRON_INGOT), count(Items.OAK_PLANKS),
-                this.town.projects().values().stream().mapToInt(SettlementProject::placed).sum(),
+                constructionProjects().stream().mapToInt(SettlementProject::placed).sum(),
                 status.sustainedTicks(), status.foodDays(), this.town.history().size(), status.missing(), Map.copyOf(blockers));
+    }
+
+    private List<SettlementProject> constructionProjects() {
+        return java.util.stream.Stream.concat(this.town.projects().values().stream(), this.town.projectHistory().values().stream()).toList();
     }
 
     private int population() {

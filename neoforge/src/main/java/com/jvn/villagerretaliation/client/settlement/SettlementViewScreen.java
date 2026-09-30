@@ -634,6 +634,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         updateActions();
     }
 
+    void focusSupply(UUID areaId, BlockPos position) {
+        var area = this.areas.get(areaId);
+        if (area != null) inspect(area);
+        else select(new Pick(position, null), null);
+        focus(area == null ? position.getX() + 0.5D : (area.min().getX() + area.max().getX() + 1) / 2.0D,
+                area == null ? position.getZ() + 0.5D : (area.min().getZ() + area.max().getZ() + 1) / 2.0D);
+    }
+
     private BlockPos issuePosition(SettlementManagementPayload.Issue issue) {
         var resident = this.roster.get(issue.resident());
         if (resident != null) return resident.position();
@@ -2400,11 +2408,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 if (this.header.shortageTicks() > 0) details.add(SettlementManagementScreen.text("shortage",
                         String.format(java.util.Locale.ROOT, "%.1f", this.header.shortageTicks() / 24_000.0D)));
                 actions.add(menuAction(Component.literal("Farms"), true, () -> browse(Page.AREAS, SettlementViewBrowser.kindFilter(SettlementAreaType.FARM))));
+                actions.add(menuAction(SettlementManagementScreen.enumText("page", Page.SUPPLIES), ready, () -> openManagement(Page.SUPPLIES, "")));
                 actions.add(menuAction(Component.literal("Depots"), true, () -> browse(Page.DEPOTS, "All")));
                 actions.add(menuAction(Component.literal("Settlement issues"), true, () -> browse(Page.ISSUES, "All")));
             }
             case NAVIGATION -> {
                 details.add(Component.literal(this.header.name()));
+                actions.add(menuAction(SettlementManagementScreen.enumText("page", Page.SUPPLIES), ready, () -> openManagement(Page.SUPPLIES, "")));
                 for (var page : List.of(Page.RESIDENTS, Page.AREAS, Page.PROJECTS, Page.DEPOTS, Page.TRADE, Page.ISSUES)) {
                     actions.add(menuAction(SettlementManagementScreen.enumText("page", page), true, () -> browse(page, "All")));
                 }

@@ -55,6 +55,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case ISSUES -> entry instanceof Issue;
                 case STATIONS -> entry instanceof Station;
                 case STORAGE -> entry instanceof Storage;
+                case SUPPLIES -> entry instanceof Supply;
+                case SUPPLY_LINKS -> entry instanceof SupplyLink;
                 case SUMMARY -> false;
             };
             if (!valid) {
@@ -83,6 +85,28 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         buffer.writeUUID(entry.id());
         buffer.writeUtf(entry.name(), 128);
         switch (entry) {
+            case Supply supply -> {
+                buffer.writeBlockPos(supply.position());
+                writeOptionalId(buffer, supply.depot());
+                writeOptionalId(buffer, supply.area());
+                buffer.writeUtf(supply.storageName(), 128);
+                ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, supply.item());
+                buffer.writeLong(supply.stored());
+                buffer.writeLong(supply.incoming());
+                buffer.writeVarInt(supply.target());
+                buffer.writeUtf(supply.status(), 64);
+            }
+            case SupplyLink link -> {
+                buffer.writeUUID(link.supply());
+                buffer.writeEnum(link.kind());
+                writeOptionalId(buffer, link.area());
+                writeOptionalId(buffer, link.targetId());
+                buffer.writeBlockPos(link.position());
+                buffer.writeLong(link.incoming());
+                buffer.writeVarInt(link.target());
+                buffer.writeUtf(link.status(), 64);
+                buffer.writeUtf(link.detail(), 512);
+            }
             case Storage storage -> {
                 buffer.writeUUID(storage.area());
                 writeOptionalId(buffer, storage.resident());
@@ -236,6 +260,12 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         UUID id = buffer.readUUID();
         String name = buffer.readUtf(128);
         return switch (page) {
+            case SUPPLIES -> new Supply(id, name, buffer.readBlockPos(), readOptionalId(buffer), readOptionalId(buffer),
+                    buffer.readUtf(128), ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer), buffer.readLong(), buffer.readLong(),
+                    buffer.readVarInt(), buffer.readUtf(64));
+            case SUPPLY_LINKS -> new SupplyLink(id, name, buffer.readUUID(), buffer.readEnum(SupplyLinkKind.class),
+                    readOptionalId(buffer), readOptionalId(buffer), buffer.readBlockPos(), buffer.readLong(),
+                    buffer.readVarInt(), buffer.readUtf(64), buffer.readUtf(512));
             case STORAGE -> {
                 var area = buffer.readUUID();
                 var resident = readOptionalId(buffer);
@@ -442,9 +472,40 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
     }
 
-    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History, Issue, Station, Storage {
+    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History, Issue, Station, Storage, Supply, SupplyLink {
         UUID id();
         String name();
+    }
+
+    public record Supply(UUID id, String name, BlockPos position, UUID depot, UUID area, String storageName,
+                         ItemStack item, long stored, long incoming, int target, String status) implements Entry {
+        public Supply {
+            if (id == null || name == null || name.length() > 128 || position == null || storageName == null
+                    || storageName.length() > 128 || item == null || stored < -1 || incoming < -1 || target < 0
+                    || target > 4096 || status == null || status.length() > 64) throw new IllegalArgumentException("Invalid supply row");
+            position = position.immutable();
+            item = item.copyWithCount(1);
+        }
+
+        @Override
+        public ItemStack item() { return this.item.copy(); }
+
+        public long shortage() { return this.stored < 0 || this.incoming < 0 ? -1 : Math.max(0L, this.target - this.stored - this.incoming); }
+    }
+
+    public enum SupplyLinkKind { STORAGE_TARGET, PRODUCTION, TRANSFER, WORKSITE, INPUT_STORAGE, PROJECT }
+
+    public record SupplyLink(UUID id, String name, UUID supply, SupplyLinkKind kind, UUID area, UUID targetId,
+                             BlockPos position, long incoming, int target, String status, String detail) implements Entry {
+        public SupplyLink {
+            if (id == null || name == null || name.length() > 128 || supply == null || kind == null || position == null
+                    || incoming < 0 || target < 0 || target > 4096 || status == null || status.length() > 64
+                    || detail == null || detail.length() > 512 || area == null
+                    || kind != SupplyLinkKind.WORKSITE && targetId == null && kind != SupplyLinkKind.INPUT_STORAGE) {
+                throw new IllegalArgumentException("Invalid supply link");
+            }
+            position = position.immutable();
+        }
     }
 
     public record Storage(UUID id, String name, UUID area, UUID resident, SettlementStorageLinks links,

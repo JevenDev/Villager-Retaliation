@@ -70,6 +70,7 @@ public final class SettlementViewClient {
         minecraft.options.setCameraType(CameraType.FIRST_PERSON);
         minecraft.setCameraEntity(camera);
         minecraft.setScreen(active);
+        parent.applySupplyFocus(active);
     }
 
     public static void acceptBatch(com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload payload) {
@@ -123,6 +124,17 @@ public final class SettlementViewClient {
 
     static boolean panelsOpen(SettlementViewScreen view) {
         return active == view && panels;
+    }
+
+    static SettlementViewScreen view(SettlementManagementScreen management) {
+        return active != null && management.root() == active.parent().root() ? active : null;
+    }
+
+    static boolean focusSupply(SettlementManagementScreen management, java.util.UUID area, BlockPos position, boolean resume) {
+        if (active == null || management.root() != active.parent().root()) return false;
+        active.focusSupply(area, position);
+        if (resume) resume(management);
+        return true;
     }
 
     static boolean resume(SettlementManagementScreen management) {

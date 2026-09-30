@@ -35,10 +35,15 @@ public final class TransferOrdersScreen extends Screen implements TransferClient
     }
 
     public TransferOrdersScreen(Screen previous, ProductionTarget target, Runnable close) {
+        this(previous, target, close, null);
+    }
+
+    public TransferOrdersScreen(Screen previous, ProductionTarget target, Runnable close, UUID selected) {
         super(Component.literal("Transfer orders"));
         this.previous = previous;
         this.close = close;
         this.state = new TransferClientState(target);
+        this.selected = selected;
     }
 
     public Screen previous() { return this.previous; }
@@ -176,7 +181,8 @@ public final class TransferOrdersScreen extends Screen implements TransferClient
             if (state.queue() != null) state.queue().orders().forEach(order -> addEntry(new Row(order)));
             var selection = children().stream().filter(row -> row.id.equals(selected)).findFirst().orElse(null);
             if (selection == null && !children().isEmpty()) selection = children().getFirst();
-            setSelected(selection);
+            if (state.snapshot() != null) setSelected(selection);
+            else super.setSelected(null);
             setScrollAmount(scroll);
         }
 

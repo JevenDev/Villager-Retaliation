@@ -68,6 +68,14 @@ public final class SettlementSupplyChainGameTests {
             var cook = worker(helper, town, kitchen, kitchen.min(), Items.AIR);
             var partner = worker(helper, town, kitchen, kitchen.min().east(), Items.AIR);
             var order = order(helper, town, kitchen, "bread", HiredProductionOrder.Mode.MAINTAIN_STOCK, 1, food.position());
+            var viewer = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
+                    new com.mojang.authlib.GameProfile(town.leader(), "SupplyViewer"));
+            var shortage = SettlementSupplyService.supplies(viewer, town).stream()
+                    .filter(row -> row.position().equals(food.position()) && row.item().is(Items.BREAD)).findFirst().orElseThrow();
+            helper.assertValueEqual(shortage.shortage(), 1L, "the meal target appears before wheat arrives");
+            helper.assertTrue(SettlementSupplyService.links(viewer, town, shortage.id().toString()).stream()
+                    .anyMatch(link -> link.kind() == com.jvn.villagerretaliation.network.SettlementManagementPayload.SupplyLinkKind.INPUT_STORAGE
+                            && fixture.supply().position().equals(link.position())), "the bread shortage links to the kitchen's actual wheat storage");
             var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
             for (int tick = 0; tick < 40; tick++) {
                 SettlementBackgroundTransfers.tick(level, restored, restored.workers().get(courier.id()), 200, 1.0D);
@@ -79,6 +87,11 @@ public final class SettlementSupplyChainGameTests {
             helper.assertValueEqual(restored.depots().get(food.id()).count(stack -> stack.is(Items.BREAD)), 1, "the requested meal reaches food storage");
             helper.assertValueEqual(count(helper, restored, Items.WHEAT), 0, "one native bread recipe consumes exactly three harvested wheat");
             helper.assertValueEqual(count(helper, restored, Items.BREAD), 1, "stock accounting prevents duplicate meals");
+            var fulfilled = SettlementSupplyService.supplies(viewer, restored).stream()
+                    .filter(row -> row.id().equals(shortage.id())).findFirst().orElseThrow();
+            helper.assertValueEqual(fulfilled.stored(), 1L, "the overview observes the finished meal after reload");
+            helper.assertValueEqual(fulfilled.incoming(), 0L, "completed work is no longer incoming");
+            helper.assertValueEqual(fulfilled.shortage(), 0L, "the real supply chain resolves its displayed shortage");
             for (var plot : restored.fields().values()) helper.assertTrue(plot.reconcile(fixture.chunk()), "returned crops accept their durable harvest receipts");
             var returning = EntityType.VILLAGER.create(level);
             returning.setUUID(cook.id());

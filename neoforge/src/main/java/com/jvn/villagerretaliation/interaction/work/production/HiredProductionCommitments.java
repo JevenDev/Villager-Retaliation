@@ -122,6 +122,12 @@ public final class HiredProductionCommitments extends SavedData {
         return count;
     }
 
+    public List<ItemStack> samples(BlockPos destination) {
+        if (this.rejected != null) return List.of();
+        return this.workers.values().stream().flatMap(worker -> worker.incoming().stream())
+                .filter(incoming -> incoming.destination().equals(destination)).map(incoming -> incoming.sample().copy()).toList();
+    }
+
     public Set<UUID> contributors(BlockPos destination, ItemStack sample) {
         return this.workers.entrySet().stream().filter(entry -> entry.getValue().incoming().stream()
                 .anyMatch(incoming -> incoming.matches(destination, sample))).map(Map.Entry::getKey).collect(java.util.stream.Collectors.toSet());

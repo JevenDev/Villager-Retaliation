@@ -295,6 +295,7 @@ public final class SettlementStorageScreen extends Screen {
         this.previous.active = this.offset > 0;
         this.next.active = this.offset + this.rows.size() < links.size();
         this.edits.forEach(button -> button.active = allowed);
+        this.edits.getFirst().active &= this.view != null;
         boolean selection = this.selected >= 0 && this.selected < links.size();
         for (int index : new int[] {1, 2, 3, 4}) this.edits.get(index).active &= selection;
         this.save.active = allowed && !this.uncertain;
@@ -328,7 +329,9 @@ public final class SettlementStorageScreen extends Screen {
     }
 
     @Override
-    public void onClose() { if (!this.parent.submitting()) SettlementViewClient.resume(this.parent); }
+    public void onClose() {
+        if (!this.parent.submitting() && !SettlementViewClient.resume(this.parent)) this.minecraft.setScreen(this.parent);
+    }
     @Override
     public boolean isPauseScreen() { return false; }
 

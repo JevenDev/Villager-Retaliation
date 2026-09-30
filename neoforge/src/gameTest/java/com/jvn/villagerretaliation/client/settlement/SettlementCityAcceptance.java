@@ -76,7 +76,7 @@ public final class SettlementCityAcceptance {
         if (minecraft.screen instanceof SettlementViewScreen screen) {
             if (++viewTicks == 1) {
                 body = minecraft.player.position();
-                screen.mouseScrolled(40, 80, 0, -100);
+                screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, -100);
                 screen.keyPressed(GLFW.GLFW_KEY_D, 0, 0);
             }
             if (viewTicks == 40) screen.keyReleased(GLFW.GLFW_KEY_D, 0, 0);
@@ -84,9 +84,7 @@ public final class SettlementCityAcceptance {
                 require(minecraft.getCameraEntity() instanceof Marker, "City management uses the dedicated camera");
                 require(screen.viewHeight() == SettlementViewWindow.MAX_HEIGHT, "the earned City supports bounded maximum zoom");
                 require(minecraft.player.position().distanceToSqr(body) < 1.0D, "RTS movement leaves the player body in place");
-                String label = Component.translatable("villagerretaliation.gui.settlement_view.center").getString();
-                screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
-                        .filter(button -> button.active && button.getMessage().getString().equals(label)).findFirst().orElseThrow().onPress();
+                screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
             }
             if (viewTicks == 120) {
                 require(minecraft.player.position().distanceToSqr(body) < 1.0D, "recentering leaves the player body in place");

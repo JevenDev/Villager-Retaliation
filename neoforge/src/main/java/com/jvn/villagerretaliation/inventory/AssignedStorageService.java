@@ -270,6 +270,19 @@ public final class AssignedStorageService {
         return "available";
     }
 
+    public static List<ItemStack> observedContents(ServerLevel level, BlockPos position, ServerPlayer actor) {
+        String status = containerStatus(level, position, GENERAL_PURPOSE, actor);
+        if (!status.equals("available") && !status.equals("full")) return null;
+        var candidate = VillagerInventoryOverflowService.ContainerCandidate.resolve(level, position);
+        if (candidate == null) return null;
+        var contents = new ArrayList<ItemStack>();
+        for (int slot = 0; slot < candidate.container().getContainerSize(); slot++) {
+            var stack = candidate.container().getItem(slot);
+            if (!stack.isEmpty()) contents.add(stack.copy());
+        }
+        return List.copyOf(contents);
+    }
+
     public static boolean isValidContainer(ServerLevel level, BlockPos pos) {
         return level != null
                 && pos != null
