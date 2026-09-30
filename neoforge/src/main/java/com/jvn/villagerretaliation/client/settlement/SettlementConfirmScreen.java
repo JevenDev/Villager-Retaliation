@@ -3,21 +3,22 @@ package com.jvn.villagerretaliation.client.settlement;
 import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-final class SettlementConfirmScreen extends VillagerWindowScreen {
-    private final SettlementManagementScreen parent;
+final class SettlementConfirmScreen extends VillagerWindowScreen implements SettlementPolicyClient.Child {
+    private final Screen parent;
     private final Component confirmationMessage;
     private final Runnable accepted;
 
-    SettlementConfirmScreen(SettlementManagementScreen parent, Component title, Component message, Runnable accepted) {
+    SettlementConfirmScreen(Screen parent, Component title, Component message, Runnable accepted) {
         super(title);
         this.parent = parent;
         this.confirmationMessage = message;
         this.accepted = accepted;
     }
 
-    SettlementManagementScreen parent() { return this.parent; }
+    @Override public Screen previousPolicy() { return this.parent; }
 
     @Override
     protected void init() {

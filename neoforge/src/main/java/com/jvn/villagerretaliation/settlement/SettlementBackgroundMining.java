@@ -30,6 +30,16 @@ final class SettlementBackgroundMining {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
+        if (SettlementGatheringPolicy.hold(level, town, worker, elapsed, multiplier)) return;
+        var before = SettlementGatheringPolicy.before(level, town, worker);
+        try {
+            workTick(level, town, worker, elapsed, multiplier);
+        } finally {
+            SettlementGatheringPolicy.received(level, town, worker, before);
+        }
+    }
+
+    private static void workTick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var area = town.areas().get(worker.area());
         var mine = town.mines().get(worker.area());
         if (mine == null || area == null || !mine.matches(area)) {
@@ -101,6 +111,7 @@ final class SettlementBackgroundMining {
         var mode = HiredMiningMode.fromState(context.state());
         var view = new SettlementMiningView(level, mine);
         for (int action = 0; action < MAX_ACTIONS; action++) {
+            if (!SettlementGatheringPolicy.action(level, town, worker, context.inventory())) return;
             SettlementMinePhysics.advance(level, mine);
             var state = context.state();
             BlockPos origin = state.contains(POSITION) ? BlockPos.of(state.getLong(POSITION)) : worker.position();

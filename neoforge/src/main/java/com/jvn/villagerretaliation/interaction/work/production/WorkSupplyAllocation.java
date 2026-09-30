@@ -56,6 +56,14 @@ public final class WorkSupplyAllocation {
                     .mapToLong(Grant::count).sum();
         }
 
+        public long incomingAllowance(Set<UUID> consumers, BlockPos source, ItemStack sample) {
+            long count = this.balances.stream().filter(balance -> balance.stock.known() && balance.matches(source, sample))
+                    .mapToLong(balance -> balance.incoming).sum();
+            return count + this.grants.stream().filter(grant -> grant.incoming() && consumers.contains(grant.consumer())
+                            && grant.source().equals(source) && ItemStack.isSameItemSameComponents(grant.sample(), sample))
+                    .mapToLong(Grant::count).sum();
+        }
+
         public UUID competitor(Set<UUID> consumers, BlockPos source, ItemStack sample) {
             return this.grants.stream().filter(grant -> !grant.incoming() && !consumers.contains(grant.consumer())
                             && grant.source().equals(source) && ItemStack.isSameItemSameComponents(grant.sample(), sample))
@@ -78,6 +86,7 @@ public final class WorkSupplyAllocation {
         for (var state : ordered) supply(state, state.demand.protectedMinimum(), balances, grants);
         for (var state : ordered) if (state.demand.kind() != WorkSupplyDemand.Kind.STOCK_RESERVE)
             supply(state, state.demand.requirement().quantity(), balances, grants);
+        var floors = new java.util.HashMap<Floor, Long>();
         for (var state : ordered) if (state.demand.kind() == WorkSupplyDemand.Kind.STOCK_RESERVE) {
             long covered = 0;
             for (var balance : balances) {
@@ -85,6 +94,12 @@ public final class WorkSupplyAllocation {
                 long value = state.demand.requirement().value(balance.stock.sample());
                 if (value > 0) covered += value * (balance.stock.reserved() + balance.stock.available() - balance.available
                         + balance.stock.incoming() - balance.incoming);
+            }
+            var alternatives = state.demand.requirement().alternatives();
+            if (state.demand.requirement().unit() == WorkSupplyRequirement.Unit.ITEMS && alternatives.size() == 1) {
+                var floor = new Floor(Set.copyOf(state.demand.sources()), alternatives.getFirst());
+                covered = Math.max(covered, floors.getOrDefault(floor, 0L));
+                floors.merge(floor, state.demand.targetReserve(), Math::max);
             }
             state.quantity = Math.max(0, state.demand.targetReserve() - covered);
             supply(state, state.quantity, balances, grants);
@@ -135,6 +150,13 @@ public final class WorkSupplyAllocation {
                 grants.add(new Grant(state.demand.id(), state.demand.consumer(), balance.stock.position(), balance.stock.sample(), count, incoming));
             }
         }
+    }
+
+    private record Floor(Set<BlockPos> sources, ItemStack sample) {
+        @Override public boolean equals(Object other) {
+            return other instanceof Floor floor && sources.equals(floor.sources) && ItemStack.isSameItemSameComponents(sample, floor.sample);
+        }
+        @Override public int hashCode() { return 31 * sources.hashCode() + ItemStack.hashItemAndComponents(sample); }
     }
 
     private static final class State {

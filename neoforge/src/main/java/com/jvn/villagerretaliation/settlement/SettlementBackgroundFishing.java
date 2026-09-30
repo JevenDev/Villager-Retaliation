@@ -91,6 +91,16 @@ public final class SettlementBackgroundFishing {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier, long now) {
+        if (SettlementGatheringPolicy.hold(level, town, worker, elapsed, multiplier)) return;
+        var before = SettlementGatheringPolicy.before(level, town, worker);
+        try {
+            workTick(level, town, worker, elapsed, multiplier, now);
+        } finally {
+            SettlementGatheringPolicy.received(level, town, worker, before);
+        }
+    }
+
+    private static void workTick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier, long now) {
         migrateExperience(level, town, worker);
         var state = worker.settings();
         if (level.getEntity(worker.id()) instanceof Villager villager) {

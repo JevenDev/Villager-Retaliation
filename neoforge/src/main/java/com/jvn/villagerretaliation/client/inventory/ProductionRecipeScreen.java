@@ -29,6 +29,10 @@ import net.minecraft.world.item.ItemStack;
 
 public final class ProductionRecipeScreen extends VillagerWindowScreen implements ProductionClient.Receiver {
     private final ProductionOrdersScreen previous;
+    private final net.minecraft.client.gui.screens.Screen selectionParent;
+    private final HiredVillagerRole selectionRole;
+    private final java.util.function.Consumer<HiredProductionRecipe> choose;
+    private final HiredProductionRecipe initialRecipe;
     private final Map<Integer, ResourceLocation> alternatives = new LinkedHashMap<>();
     private final List<VillagerItemSlot> ingredients = new ArrayList<>();
     private List<Choice> catalog;
@@ -47,7 +51,24 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
     public ProductionRecipeScreen(ProductionOrdersScreen previous) {
         super(Component.literal("Choose a production recipe"));
         this.previous = previous;
+        this.selectionParent = null;
+        this.selectionRole = null;
+        this.choose = null;
+        this.initialRecipe = null;
     }
+
+    public ProductionRecipeScreen(net.minecraft.client.gui.screens.Screen previous, HiredVillagerRole role,
+                                  HiredProductionRecipe initial, java.util.function.Consumer<HiredProductionRecipe> choose) {
+        super(Component.translatable("villagerretaliation.gui.settlement.policy.choose_recipe"));
+        this.previous = null;
+        this.selectionParent = java.util.Objects.requireNonNull(previous);
+        this.selectionRole = java.util.Objects.requireNonNull(role);
+        this.choose = java.util.Objects.requireNonNull(choose);
+        this.initialRecipe = initial;
+        if (initial != null) this.alternatives.putAll(initial.alternatives());
+    }
+
+    public net.minecraft.client.gui.screens.Screen parent() { return this.previous == null ? this.selectionParent : this.previous; }
 
     public ProductionOrdersScreen previous() { return this.previous; }
 
@@ -55,7 +76,7 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
     protected void init() {
         initWindow(360, 320);
         if (this.catalog == null) {
-            var role = this.previous.state().snapshot().role();
+            var role = this.previous == null ? this.selectionRole : this.previous.state().snapshot().role();
             if (role == HiredVillagerRole.BREWING) {
                 this.catalog = HiredBrewingRecipeCatalog.routes(this.minecraft.level).stream()
                         .map(route -> new Choice(HiredProductionRecipe.brewing(route.itemId(), route.potionId()), route.output(), route.potionId() + " / " + route.itemId())).toList();
@@ -66,6 +87,10 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
                         .filter(choice -> choice.recipe().supports(this.minecraft.level, role)).toList();
             }
         }
+        if (this.initialRecipe != null && this.selected == null) this.selected = this.catalog.stream().filter(choice ->
+                java.util.Objects.equals(choice.recipe().recipe(), this.initialRecipe.recipe())
+                        && java.util.Objects.equals(choice.recipe().brewingItem(), this.initialRecipe.brewingItem())
+                        && java.util.Objects.equals(choice.recipe().potion(), this.initialRecipe.potion())).findFirst().orElse(null);
         var search = addRenderableWidget(new EditBox(this.font, this.left, this.top + 22, this.panelWidth, 20, Component.literal("Search recipes")));
         search.setMaxLength(96);
         search.setHint(Component.literal("Search by item or recipe"));
@@ -79,11 +104,11 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
         for (int index = 0; index < 9; index++) {
             int slot = index;
             this.ingredients.add(addRenderableWidget(new VillagerItemSlot(
-                    this.left + index * 20, this.top + this.panelHeight - 112, () -> ingredientItem(slot),
+                    this.left + index * 20, this.top + this.panelHeight - (this.choose == null ? 112 : 72), () -> ingredientItem(slot),
                     button -> cycleIngredient(slot, button == 1 ? -1 : 1), direction -> cycleIngredient(slot, direction))));
         }
         this.output = addRenderableWidget(new VillagerItemSlot(
-                this.left + this.panelWidth - 20, this.top + this.panelHeight - 112,
+                this.left + this.panelWidth - 20, this.top + this.panelHeight - (this.choose == null ? 112 : 72),
                 () -> this.selected == null ? ItemStack.EMPTY : this.selected.output(), ignored -> { }, null));
         this.modeButton = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> {
             this.mode = HiredProductionOrder.Mode.values()[(this.mode.ordinal() + 1) % HiredProductionOrder.Mode.values().length];
@@ -155,6 +180,13 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
     }
 
     private void submit() {
+        if (this.choose != null) {
+            if (this.selected != null) {
+                this.minecraft.setScreen(this.selectionParent);
+                this.choose.accept(recipe());
+            }
+            return;
+        }
         if (this.selected != null && this.save.active) this.previous.submit(new ProductionRequestPayload.Append(
                 recipe(), this.mode, this.mode == HiredProductionOrder.Mode.CONTINUOUS ? 1 : amount(), this.storage));
         updateActions();
@@ -162,8 +194,8 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
 
     private void updateActions() {
         if (this.save == null) return;
-        var state = this.previous.state();
-        boolean editable = state.editable();
+        var state = this.previous == null ? null : this.previous.state();
+        boolean editable = this.choose != null || state.editable();
         for (int slot = 0; slot < this.ingredients.size(); slot++) {
             var button = this.ingredients.get(slot);
             var choices = ingredientChoices(slot);
@@ -178,6 +210,14 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
         }
         this.output.setMessage(this.selected == null ? Component.literal("Recipe output") : this.selected.output().getHoverName());
         this.output.setTooltip(Tooltip.create(this.output.getMessage()));
+        if (this.choose != null) {
+            this.modeButton.visible = false;
+            this.amount.visible = false;
+            this.storageButton.visible = false;
+            this.save.setMessage(Component.translatable("villagerretaliation.gui.settlement.policy.select"));
+            this.save.active = this.selected != null;
+            return;
+        }
         this.modeButton.setMessage(Component.literal(ProductionOrdersScreen.mode(this.mode)));
         this.modeButton.active = editable;
         this.amount.active = editable && this.mode != HiredProductionOrder.Mode.CONTINUOUS;
@@ -196,20 +236,20 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
 
     @Override
     public void tick() {
-        this.previous.tick();
+        if (this.previous != null) this.previous.tick();
         updateActions();
     }
 
     @Override
     public void acceptProduction(ProductionSnapshotPayload payload) {
-        if (!this.previous.acceptSnapshot(payload)) return;
+        if (this.previous == null || !this.previous.acceptSnapshot(payload)) return;
         if (payload.applied()) this.minecraft.setScreen(this.previous);
         else updateActions();
     }
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(this.previous);
+        this.minecraft.setScreen(parent());
     }
 
     @Override
@@ -221,8 +261,8 @@ public final class ProductionRecipeScreen extends VillagerWindowScreen implement
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
-        graphics.drawString(this.font, "Quantity", this.left + this.panelWidth - 120, this.top + this.panelHeight - 82, 0xFFFFFF);
-        String feedback = this.previous.state().feedback();
+        if (this.choose == null) graphics.drawString(this.font, "Quantity", this.left + this.panelWidth - 120, this.top + this.panelHeight - 82, 0xFFFFFF);
+        String feedback = this.previous == null ? "" : this.previous.state().feedback();
         if (feedback.isEmpty() && this.selected != null) feedback = this.selected.recipe().recipe() == null
                 ? "Brew up to 3 bottles per native batch." : "Each complete recipe makes " + this.selected.output().getCount() + ". Final batches stay whole.";
         graphics.drawString(this.font, this.font.plainSubstrByWidth(feedback, this.panelWidth), this.left, this.top + this.panelHeight - 40, 0xCCCCCC);

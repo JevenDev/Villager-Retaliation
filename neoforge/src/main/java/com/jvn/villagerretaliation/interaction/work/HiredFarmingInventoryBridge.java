@@ -307,7 +307,8 @@ public final class HiredFarmingInventoryBridge {
         if (!com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(villager)
                 || com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.activeRole(level, villager) != HiredVillagerRole.FARMING) return true;
         var state = HiredWorkStateStore.state(villager);
-        return state.getBoolean("Enabled") && HiredFarmingOptions.harvestCrops(state);
+        return state.getBoolean("Enabled") && HiredFarmingOptions.harvestCrops(state)
+                && com.jvn.villagerretaliation.settlement.SettlementGatheringPolicy.inspect(level, villager).allowed();
     }
 
     private static void addPlantingSlots(

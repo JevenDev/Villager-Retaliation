@@ -111,7 +111,6 @@ public final class SettlementManagementClient {
             case SettlementWorksiteAdoptionScreen form -> form.previous().parent();
             case SettlementTemporaryTaskScreen form -> form.parent();
             case SettlementWorksiteLinksScreen form -> form.parent().parent();
-            case SettlementConfirmScreen confirmation -> confirmation.parent();
             case SettlementBlueprintScreen blueprints -> blueprints.parent();
             case SettlementBuildingScreen building -> building.parent();
             case SettlementBrewingScreen brewing -> brewing.parent();

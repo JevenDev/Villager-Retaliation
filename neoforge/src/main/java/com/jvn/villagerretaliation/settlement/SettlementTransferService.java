@@ -23,6 +23,8 @@ public final class SettlementTransferService {
         if (queue == null || queue.revision() != revision) return "Transfer orders changed";
         var allocated = queue.allocations();
         if (!queue.edit(id, edit, index)) return "Transfer has undelivered cargo or is unavailable";
+        if (edit == HiredTransferQueue.Edit.PAUSE || edit == HiredTransferQueue.Edit.CANCEL || edit == HiredTransferQueue.Edit.REMOVE)
+            SettlementPolicyManagementService.manuallyStopped(player.serverLevel(), town, id);
         for (var allocation : allocated) {
             if (!allocation.started() && queue.allocation(allocation.worker()) == null) {
                 com.jvn.villagerretaliation.inventory.AssignedStorageService.releaseCourierClaims(allocation.worker());

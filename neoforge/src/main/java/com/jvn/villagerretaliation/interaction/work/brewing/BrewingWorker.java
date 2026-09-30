@@ -346,8 +346,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         }
         if (allocation != null && allocation.started()) return productionBatch(level, villager, context, queue, allocation);
         var positions = productionStands(level, villager, context);
-        for (var order : queue.orders()) {
-            if (!order.runnable()) continue;
+        for (var order : queue.executionOrders()) {
             var route = HiredBrewingRecipeCatalog.find(level, order.recipe().brewingItem(), order.recipe().potion()).orElse(null);
             if (route == null || !ItemStack.matches(order.output(), route.output())) {
                 queue.blocker(order.id(), "recipe_unavailable");

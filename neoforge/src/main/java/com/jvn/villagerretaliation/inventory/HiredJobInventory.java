@@ -930,6 +930,7 @@ public final class HiredJobInventory implements Container {
             removeJobItemMarker(remainder);
         }
         boolean changed = insertOutputIntoPreferredRegions(remainder);
+        com.jvn.villagerretaliation.settlement.SettlementGatheringPolicy.received(this.villager, stack, stack.getCount() - remainder.getCount());
         if (remainder.isEmpty()) {
             setChanged();
             return ItemStack.EMPTY;

@@ -25,8 +25,7 @@ final class HiredTransferWorker {
         if (allocation == null && context.inventory().hasOutputItems()) return null;
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         if (allocation == null) {
-            for (var order : queue.orders()) {
-                if (!order.runnable()) continue;
+            for (var order : queue.executionOrders()) {
                 long stock = HiredTransferService.stock(level, villager, order);
                 if (stock < 0) { queue.blocker(order.id(), "transfer_storage_unobserved"); continue; }
                 if (queue.available(order.id(), stock) <= 0) {
@@ -154,6 +153,7 @@ final class HiredTransferWorker {
     }
 
     private static String validate(ServerLevel level, Villager villager, HiredTransferQueue queue, HiredTransferQueue.Order order, boolean delivering) {
+        if (!delivering && !queue.runnable(order.id())) return "policy_suspended";
         if (!delivering && com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(level, order.source().position(), order.destination().position()))
             return "transfer_storage_changed";
         if (!delivering && !level.hasChunkAt(order.source().position()) || !level.hasChunkAt(order.destination().position()))

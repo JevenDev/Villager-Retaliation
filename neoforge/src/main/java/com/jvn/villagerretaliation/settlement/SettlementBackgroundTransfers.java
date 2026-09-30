@@ -27,8 +27,7 @@ final class SettlementBackgroundTransfers {
         var items = worker.items(level.registryAccess());
         if (worker.outputSlots().stream().anyMatch(slot -> !items.get(slot).isEmpty())) return false;
         var stocks = new SettlementSupplyStock.Snapshot(level, town);
-        for (var order : queue.orders()) {
-            if (!order.runnable()) continue;
+        for (var order : queue.executionOrders()) {
             if (order.source().depot() == null || order.destination().depot() == null) {
                 queue.blocker(order.id(), "transfer_storage_unobserved");
                 continue;

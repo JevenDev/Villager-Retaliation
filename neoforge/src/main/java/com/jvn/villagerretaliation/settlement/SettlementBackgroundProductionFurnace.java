@@ -72,8 +72,7 @@ final class SettlementBackgroundProductionFurnace {
         if (allocation == null && SettlementBackgroundSmelting.finishExisting(level, town, worker, elapsed, multiplier)) return true;
         var carried = worker.items(level.registryAccess());
         var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
-        for (var order : queue.orders()) {
-            if (!order.runnable()) continue;
+        for (var order : queue.executionOrders()) {
             if (!order.recipe().supports(level, worker.role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
                 queue.blocker(order.id(), "recipe_unavailable");
                 continue;

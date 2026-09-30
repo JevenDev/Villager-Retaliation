@@ -50,7 +50,7 @@ final class SettlementBackgroundCrafting {
                 .min(Comparator.comparingDouble(pos -> pos.distSqr(worker.position()))).orElse(null);
         if (table == null && worker.role() != HiredVillagerRole.COOK) {
             releaseProduction(level, queue, worker, selected);
-            if (queue != null) for (var order : queue.orders()) if (order.runnable()) queue.blocker(order.id(), "no_crafting_table");
+            if (queue != null) for (var order : queue.executionOrders()) queue.blocker(order.id(), "no_crafting_table");
             worker.status("no_crafting_table");
             return false;
         }
@@ -58,9 +58,8 @@ final class SettlementBackgroundCrafting {
         var items = worker.items(level.registryAccess());
         ItemStack filter = items.get(HiredJobInventory.FILTER_SLOT);
         var targets = queue == null ? CraftsmanWorker.targets(level, filter)
-                : java.util.stream.IntStream.range(0, queue.orders().size())
-                    .filter(index -> queue.orders().get(index).runnable() && (selected == null || selected.id().equals(queue.orders().get(index).id())))
-                    .mapToObj(index -> new CraftsmanWorker.Target(index, queue.orders().get(index).output())).toList();
+                : queue.executionOrders().stream().filter(order -> selected == null || selected.id().equals(order.id()))
+                    .map(order -> new CraftsmanWorker.Target(queue.orders().indexOf(order), order.output())).toList();
         if (worker.role() == HiredVillagerRole.COOK) {
             targets = targets.stream().filter(target -> CookingWorker.isFood(target.stack())).toList();
         }

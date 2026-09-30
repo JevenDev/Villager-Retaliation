@@ -38,6 +38,10 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementWorksitePlan> worksitePlans = new LinkedHashMap<>();
     private final Map<UUID, HiredProductionQueue> productionQueues = new LinkedHashMap<>();
     private final Map<UUID, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue> transferQueues = new LinkedHashMap<>();
+    private final Map<UUID, SettlementSupplyPolicy> supplyPolicies = new LinkedHashMap<>();
+    private Map<UUID, ManagedSupplyOrder> managedSupplyOrders;
+    private Map<UUID, List<ManagedGathering>> managedGathering;
+    private long supplyRevision;
     private final Map<UUID, SettlementProject> projects = new LinkedHashMap<>();
     private final Map<UUID, SettlementProject> projectHistory = new LinkedHashMap<>();
     private final Set<UUID> retiredProjects = new java.util.LinkedHashSet<>();
@@ -784,6 +788,69 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.transferQueues);
     }
 
+    public Map<UUID, SettlementSupplyPolicy> supplyPolicies() {
+        return Collections.unmodifiableMap(this.supplyPolicies);
+    }
+
+    public long supplyRevision() { return this.supplyRevision; }
+
+    void supplyChanged() {
+        this.supplyRevision = Math.addExact(this.supplyRevision, 1);
+        this.managedSupplyOrders = null;
+        this.managedGathering = null;
+        changed();
+    }
+
+    ManagedSupplyOrder managedSupplyOrder(UUID order) {
+        if (this.managedSupplyOrders == null) {
+            var index = new LinkedHashMap<UUID, ManagedSupplyOrder>();
+            for (var policy : this.supplyPolicies.values()) for (var binding : policy.bindings())
+                if (binding.order() != null) index.put(binding.order(), new ManagedSupplyOrder(policy, binding.id()));
+            this.managedSupplyOrders = Map.copyOf(index);
+        }
+        return this.managedSupplyOrders.get(order);
+    }
+
+    record ManagedSupplyOrder(SettlementSupplyPolicy policy, UUID binding) { }
+
+    List<ManagedGathering> managedGathering(UUID area) {
+        if (this.managedGathering == null) {
+            var index = new LinkedHashMap<UUID, List<ManagedGathering>>();
+            for (var policy : this.supplyPolicies.values()) {
+                var bound = new java.util.HashSet<SettlementSupplyPolicy.Step>();
+                for (var binding : policy.bindings()) if (binding.step().kind() == SettlementSupplyPolicy.StepKind.GATHER) {
+                    bound.add(binding.step());
+                    index.computeIfAbsent(binding.step().area(), ignored -> new ArrayList<>())
+                            .add(new ManagedGathering(policy, binding.step(), binding));
+                }
+                if (policy.state() == SettlementSupplyPolicy.State.ACTIVE) for (var step : policy.configuration().steps())
+                    if (step.kind() == SettlementSupplyPolicy.StepKind.GATHER && !bound.contains(step))
+                        index.computeIfAbsent(step.area(), ignored -> new ArrayList<>()).add(new ManagedGathering(policy, step, null));
+            }
+            var copy = new LinkedHashMap<UUID, List<ManagedGathering>>();
+            index.forEach((id, entries) -> copy.put(id, List.copyOf(entries)));
+            this.managedGathering = Map.copyOf(copy);
+        }
+        return this.managedGathering.getOrDefault(area, List.of());
+    }
+
+    record ManagedGathering(SettlementSupplyPolicy policy, SettlementSupplyPolicy.Step step, SettlementSupplyPolicy.Binding binding) { }
+
+    boolean addSupplyPolicy(SettlementSupplyPolicy policy) {
+        if (this.supplyPolicies.size() >= SettlementSupplyPolicy.MAX_POLICIES
+                || this.supplyPolicies.putIfAbsent(policy.id(), policy) != null) return false;
+        supplyChanged();
+        return true;
+    }
+
+    boolean removeSupplyPolicy(UUID id) {
+        var policy = this.supplyPolicies.get(id);
+        if (policy == null || !policy.bindings().isEmpty()) return false;
+        this.supplyPolicies.remove(id);
+        supplyChanged();
+        return true;
+    }
+
     com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue beginTransfers(UUID actor, UUID areaId) {
         var area = workplace(areaId);
         if (!permits(actor, SettlementPermission.STAFF) || !permits(actor, SettlementPermission.LOGISTICS)
@@ -792,6 +859,7 @@ public final class SettlementRecord {
         if (queue == null) {
             queue = new com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue(areaId,
                     com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Scope.WORKSITE, ignored -> changed());
+            SettlementPolicyExecution.configure(this, queue);
             this.transferQueues.put(areaId, queue);
             changed();
         }
@@ -806,6 +874,7 @@ public final class SettlementRecord {
         var queue = this.productionQueues.get(areaId);
         if (queue == null) {
             queue = new HiredProductionQueue(areaId, HiredProductionQueue.Scope.WORKSITE, area.type().role(), ignored -> changed());
+            SettlementPolicyExecution.configure(this, queue);
             this.productionQueues.put(areaId, queue);
             changed();
         }
@@ -813,6 +882,7 @@ public final class SettlementRecord {
     }
 
     void installProductionMigration(UUID area, HiredProductionQueue queue, Map<UUID, SettlementWorkerState> workers) {
+        SettlementPolicyExecution.configure(this, queue);
         this.productionQueues.put(area, queue);
         this.workers.putAll(workers);
         changed();
@@ -1210,6 +1280,9 @@ public final class SettlementRecord {
         var transferTags = new ListTag();
         this.transferQueues.values().forEach(queue -> transferTags.add(queue.save(provider)));
         tag.put("TransferQueues", transferTags);
+        var policyTags = new ListTag();
+        this.supplyPolicies.values().forEach(policy -> policyTags.add(policy.save(provider)));
+        tag.put("SupplyPolicies", policyTags);
         ListTag projectTags = new ListTag();
         this.projects.values().forEach(project -> projectTags.add(project.save()));
         tag.put("Projects", projectTags);
@@ -1636,6 +1709,7 @@ public final class SettlementRecord {
         }
         for (Tag raw : tag.getList("ProductionQueues", Tag.TAG_COMPOUND)) {
             var queue = HiredProductionQueue.load((CompoundTag) raw, provider, ignored -> record.changed());
+            SettlementPolicyExecution.configure(record, queue);
             var area = record.areas.get(queue.owner());
             if (queue.scope() != HiredProductionQueue.Scope.WORKSITE || area == null || area.type().role() != queue.role()
                     || !record.worksitePlans.containsKey(area.id()) || record.productionQueues.putIfAbsent(area.id(), queue) != null
@@ -1649,6 +1723,7 @@ public final class SettlementRecord {
         for (Tag raw : tag.getList("TransferQueues", Tag.TAG_COMPOUND)) {
             var queue = com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.load(
                     (CompoundTag) raw, provider, ignored -> record.changed());
+            SettlementPolicyExecution.configure(record, queue);
             var area = record.areas.get(queue.owner());
             if (queue.scope() != com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Scope.WORKSITE
                     || area == null || area.type() != SettlementAreaType.DEPOT || !record.worksitePlans.containsKey(area.id())
@@ -1656,6 +1731,16 @@ public final class SettlementRecord {
                     || queue.allocations().stream().anyMatch(allocation -> !allocation.started() && !area.id().equals(record.duties.get(allocation.worker())))) {
                 throw new IllegalArgumentException("Transfer queue has invalid ownership");
             }
+        }
+        if (tag.contains("SupplyPolicies") && (!(tag.get("SupplyPolicies") instanceof ListTag list)
+                || list.size() > SettlementSupplyPolicy.MAX_POLICIES || !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND))
+            throw new IllegalArgumentException("Invalid supply policies");
+        var managedOrders = new java.util.HashSet<UUID>();
+        for (Tag raw : tag.getList("SupplyPolicies", Tag.TAG_COMPOUND)) {
+            var policy = SettlementSupplyPolicy.load((CompoundTag) raw, provider, record::supplyChanged);
+            if (record.supplyPolicies.putIfAbsent(policy.id(), policy) != null
+                    || policy.bindings().stream().anyMatch(binding -> binding.order() != null && !managedOrders.add(binding.order())))
+                throw new IllegalArgumentException("Supply policies duplicate an identity or managed order");
         }
         for (Tag raw : tag.getList("WorkerSettings", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) raw;

@@ -31,6 +31,7 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
     private Button cancel;
     private Button remove;
     private Button refresh;
+    private Button supplyPolicy;
 
     public ProductionOrdersScreen(Screen previous, ProductionTarget target) {
         this(previous, target, () -> net.minecraft.client.Minecraft.getInstance().setScreen(previous));
@@ -67,6 +68,14 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
         this.refresh = button("Refresh", this.left + 74, this.top + this.panelHeight - 28, 78, () -> submit(new ProductionRequestPayload.View()));
         this.add = button("Add order", this.left + 160, this.top + this.panelHeight - 28, this.panelWidth - 160,
                 () -> this.minecraft.setScreen(new ProductionRecipeScreen(this)));
+        if (this.state.target().town() != null) this.supplyPolicy = addRenderableWidget(VillagerUi.buttonBuilder(
+                Component.translatable("villagerretaliation.gui.settlement.policy.create"), ignored -> {
+                    var order = selectedOrder();
+                    if (order != null) this.minecraft.setScreen(new com.jvn.villagerretaliation.client.settlement.SettlementPoliciesScreen(this,
+                            this.state.target().town(), new com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target(
+                                    com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.CONSUMER,
+                                    order.id(), null, null, ItemStack.EMPTY, 0)));
+                }).bounds(this.left + this.panelWidth - 124, this.top + 20, 124, 20).build());
         updateActions();
         poll();
     }
@@ -131,6 +140,7 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
         this.pause.setMessage(Component.literal(order != null && order.paused() ? "Resume" : "Pause"));
         this.cancel.active = editable && order != null && !order.cancelled() && !order.complete();
         this.remove.active = editable && order != null && queue.allocations().stream().noneMatch(allocation -> allocation.order().equals(order.id()) && allocation.started());
+        if (this.supplyPolicy != null) this.supplyPolicy.active = !this.state.busy() && order != null && !order.cancelled() && !order.complete();
         this.refresh.active = !this.state.busy();
         this.add.active = editable && (queue == null || queue.orders().size() < 32);
     }

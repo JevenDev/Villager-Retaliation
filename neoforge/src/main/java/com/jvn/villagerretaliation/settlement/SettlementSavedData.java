@@ -22,9 +22,10 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class SettlementSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_settlements";
-    private static final int FORMAT_VERSION = 67;
+    private static final int FORMAT_VERSION = 68;
     final SettlementSimulationService simulation = new SettlementSimulationService();
     final SettlementAllocationService allocation = new SettlementAllocationService();
+    final Map<UUID, UUID> policyRequests = new java.util.HashMap<>();
     private final Map<VillageAllegianceId, SettlementRecord> settlements = new LinkedHashMap<>();
     private final SettlementRecovery recovery = new SettlementRecovery();
     private final Map<VillageAllegianceId, CompoundTag> retired = new LinkedHashMap<>();

@@ -85,6 +85,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return;
         }
 
+        if (!com.jvn.villagerretaliation.settlement.SettlementGatheringPolicy.inspect(level, villager).allowed()) return;
         if (!hasHuntingWeaponReadyForTarget(villager, context)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, context.workCenter());
             return;

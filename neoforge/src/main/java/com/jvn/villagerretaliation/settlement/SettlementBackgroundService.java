@@ -34,6 +34,7 @@ public final class SettlementBackgroundService {
         jobs.add(() -> SettlementConstructionSiteService.update(level, town));
         jobs.add(town::maintainProjects);
         for (var depot : town.depots().values()) jobs.add(() -> SettlementDepotService.observeRules(level, depot));
+        if (!town.supplyPolicies().isEmpty()) jobs.add(SettlementWork.lazy(() -> SettlementPolicyService.cycle(level, town)));
         SettlementAllocationService.schedule(level, town, jobs);
         for (var resident : town.duties().keySet()) jobs.add(() -> updateWorker(level, town, resident, now));
         jobs.add(() -> SettlementProjectileService.update(level, town, now));

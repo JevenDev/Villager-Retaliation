@@ -1,0 +1,69 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_supply"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.supply.policy_quota_met",
+      "lines": [
+        "I've gathered the amount the supply policy requested. I'm waiting for the next shortage."
+      ],
+      "id": "global.messages.work_supply.policy_quota_met"
+    },
+    {
+      "key": "interaction.work.supply.policy_suspended",
+      "lines": [
+        "My supply policy is paused. I'll finish carrying what I already gathered."
+      ],
+      "id": "global.messages.work_supply.policy_suspended"
+    },
+    {
+      "key": "interaction.work.supply.policy_deposit_disabled",
+      "lines": [
+        "I need automatic output delivery enabled before I can follow this supply policy."
+      ],
+      "id": "global.messages.work_supply.policy_deposit_disabled"
+    },
+    {
+      "key": "interaction.work.supply.delivering",
+      "lines": [
+        "I've finished gathering for now. I'm taking the output to its approved storage."
+      ],
+      "id": "global.messages.work_supply.delivering"
+    },
+    {
+      "key": "interaction.work.supply.output_full",
+      "lines": [
+        "The approved storage has no room for my output. I'll wait with it here."
+      ],
+      "id": "global.messages.work_supply.output_full"
+    },
+    {
+      "key": "interaction.work.supply.output_storage_unavailable",
+      "lines": [
+        "I need the approved storage and incoming supplies checked before I gather more."
+      ],
+      "id": "global.messages.work_supply.output_storage_unavailable"
+    },
+    {
+      "key": "interaction.work.supply.policy_destination_unlinked",
+      "lines": [
+        "My supply policy's output storage is no longer linked to this worksite."
+      ],
+      "id": "global.messages.work_supply.policy_destination_unlinked"
+    },
+    {
+      "key": "interaction.work.supply.awaiting_output_delivery",
+      "lines": [
+        "I'll deliver what I'm already carrying before using a different destination."
+      ],
+      "id": "global.messages.work_supply.awaiting_output_delivery"
+    }
+  ]
+}

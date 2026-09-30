@@ -229,7 +229,9 @@ public final class HiredVillagerWorkService {
             HiredWorkerBrain.clearFailure(session.context());
         }
 
-        WorkResult result = session.worker().tick(level, villager, hirer, session.context());
+        WorkResult result = session.worker() instanceof com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker worker
+                ? worker.supplyQuota(level, villager, session.context()) : null;
+        if (result == null) result = session.worker().tick(level, villager, hirer, session.context());
         setStatus(session.state(), result.status(), result.replacements());
         if (hirer != null) {
             maybeNotifyStorageFull(level, villager, hirer, session.context(), session.state());

@@ -18,6 +18,16 @@ final class SettlementBackgroundHunting {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
+        if (SettlementGatheringPolicy.hold(level, town, worker, elapsed, multiplier)) return;
+        var before = SettlementGatheringPolicy.before(level, town, worker);
+        try {
+            workTick(level, town, worker, elapsed, multiplier);
+        } finally {
+            SettlementGatheringPolicy.received(level, town, worker, before);
+        }
+    }
+
+    private static void workTick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var area = town.areas().get(worker.area());
         if (area == null || !area.enabled() || !SettlementHuntingTargetService.contains(town, area, worker.position())) return;
         var owner = worker.context(level, town);

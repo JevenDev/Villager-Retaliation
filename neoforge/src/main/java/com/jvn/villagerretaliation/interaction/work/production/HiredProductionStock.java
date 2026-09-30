@@ -56,9 +56,13 @@ public final class HiredProductionStock {
     }
 
     public static boolean prepareDestination(CompoundTag state, boolean carryingOutput, HiredProductionOrder order) {
-        if (carryingOutput && !Objects.equals(destination(state), order.storage())) return false;
-        if (order.storage() == null) state.remove(DELIVERY_STORAGE);
-        else state.putLong(DELIVERY_STORAGE, order.storage().asLong());
+        return prepareDestination(state, carryingOutput, order.storage());
+    }
+
+    public static boolean prepareDestination(CompoundTag state, boolean carryingOutput, BlockPos storage) {
+        if (carryingOutput && !Objects.equals(destination(state), storage)) return false;
+        if (storage == null) state.remove(DELIVERY_STORAGE);
+        else state.putLong(DELIVERY_STORAGE, storage.asLong());
         return true;
     }
 

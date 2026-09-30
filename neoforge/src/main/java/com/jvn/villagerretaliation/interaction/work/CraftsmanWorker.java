@@ -172,12 +172,11 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         var table = nearestCraftingTable(level, villager, context);
         if (table == null) {
             releaseProduction(villager, context, queue);
-            for (var order : queue.orders()) if (order.runnable()) queue.blocker(order.id(), "no_crafting_table");
+            for (var order : queue.executionOrders()) queue.blocker(order.id(), "no_crafting_table");
             return WorkResult.idle("interaction.work.craftsman.no_table");
         }
         var current = queue.allocation(villager.getUUID());
-        for (var order : queue.orders()) {
-            if (!order.runnable()) continue;
+        for (var order : queue.executionOrders()) {
             long stock = HiredProductionStock.count(level, villager, queue, order);
             if (stock < 0L) {
                 queue.blocker(order.id(), "output_storage_unavailable");

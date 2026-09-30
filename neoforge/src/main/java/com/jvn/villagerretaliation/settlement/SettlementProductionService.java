@@ -45,7 +45,10 @@ public final class SettlementProductionService {
         if (!permits(player, town, areaId)) return "Worksite permission or assignment changed";
         var queue = town.productionQueues().get(areaId);
         if (queue == null || queue.configurationRevision() != revision) return "Production orders changed";
-        return HiredProductionService.edit(queue, order, edit, index) ? "" : "Order has unfinished production or is unavailable";
+        if (!HiredProductionService.edit(queue, order, edit, index)) return "Order has unfinished production or is unavailable";
+        if (edit == HiredProductionService.Edit.PAUSE || edit == HiredProductionService.Edit.CANCEL || edit == HiredProductionService.Edit.REMOVE)
+            SettlementPolicyManagementService.manuallyStopped(player.serverLevel(), town, order);
+        return "";
     }
 
     public static ProductionSnapshotPayload snapshot(ServerPlayer player,

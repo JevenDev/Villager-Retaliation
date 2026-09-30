@@ -50,6 +50,8 @@ public final class SettlementDemandService {
         private final List<Definition> definitions = new ArrayList<>();
         private final Map<UUID, Long> started = new LinkedHashMap<>();
         private WorkSupplyAllocation.Result allocation;
+        private final Map<UUID, Long> gathered = new LinkedHashMap<>();
+        private final Map<UUID, java.util.function.BooleanSupplier> consumersCurrent = new LinkedHashMap<>();
         private final net.minecraft.server.level.ServerPlayer viewer;
 
         private Snapshot(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer) {
@@ -57,6 +59,7 @@ public final class SettlementDemandService {
             this.viewer = viewer;
             this.town = town;
             this.stock = new SettlementSupplyStock.Snapshot(level, town);
+            for (var policy : town.supplyPolicies().values()) for (var binding : policy.bindings()) this.gathered.put(binding.id(), binding.gathered());
         }
 
         public boolean visible(BlockPos position) {
@@ -78,6 +81,37 @@ public final class SettlementDemandService {
         java.util.Set<UUID> consumers(UUID worker) {
             return this.definitions.stream().filter(definition -> definition.workers().contains(worker))
                     .map(definition -> definition.request().consumer()).collect(java.util.stream.Collectors.toSet());
+        }
+
+        long gathered(UUID binding) { return this.gathered.getOrDefault(binding, 0L); }
+
+        boolean current(UUID consumer) {
+            var check = this.consumersCurrent.get(consumer);
+            return check == null || check.getAsBoolean();
+        }
+
+        void acceptProduction(HiredProductionQueue queue, HiredProductionOrder order) {
+            var allocations = queue.allocations().stream().filter(value -> value.order().equals(order.id())).toList();
+            this.consumersCurrent.put(order.id(), () -> queue.order(order.id()) == order
+                    && allocations.equals(queue.allocations().stream().filter(value -> value.order().equals(order.id())).toList()));
+        }
+
+        void acceptTransfer(com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue queue,
+                            com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Order order) {
+            var allocations = queue.allocations().stream().filter(value -> value.order().equals(order.id())).toList();
+            this.consumersCurrent.put(order.id(), () -> queue.order(order.id()) == order
+                    && allocations.equals(queue.allocations().stream().filter(value -> value.order().equals(order.id())).toList()));
+        }
+
+        Snapshot policyDraft(UUID policy, SettlementSupplyPolicy.Configuration configuration) {
+            var draft = new Snapshot(this.level, this.town, this.viewer);
+            for (var definition : this.definitions)
+                if (definition.request().kind() != Kind.STOCK_RESERVE || !definition.request().consumer().equals(policy)) draft.evaluate(definition);
+            draft.policyReserve(policy, configuration);
+            draft.started.putAll(this.started);
+            draft.consumersCurrent.putAll(this.consumersCurrent);
+            draft.allocate();
+            return draft;
         }
 
         Snapshot refresh() {
@@ -241,7 +275,7 @@ public final class SettlementDemandService {
                          List<BlockPos> sources, List<UUID> workers, List<ItemStack> privateSupplies, long progress, long immediate, String blocker,
                          long reserve, int priority, BlockPos destination) {
             var request = new WorkSupplyDemand(WorkSupplyDemand.identity(this.level.registryAccess(), consumer, kind, requirement),
-                    consumer, kind, requirement, Math.min(immediate, requirement.quantity()), reserve, kind == Kind.FOOD ? reserve : 0,
+                    consumer, kind, requirement, Math.min(immediate, requirement.quantity()), reserve, kind == Kind.FOOD ? reserve : SettlementPolicyExecution.essential(this.town, consumer) ? requirement.quantity() : 0,
                     priority, 0, 0, 0, 0, true, sources, destination, WorkSupplyDemand.Blocker.of(blocker));
             evaluate(new Definition(area, name, request, workers, privateSupplies, progress), privateSupplies);
         }
@@ -296,8 +330,7 @@ public final class SettlementDemandService {
         private int priority(UUID consumer, UUID area) {
             var project = this.town.projects().get(consumer);
             if (project != null) return project.priority();
-            var workplace = this.town.areas().get(area);
-            return workplace == null ? 5 : workplace.priority();
+            return SettlementPolicyExecution.priority(this.town, area, consumer);
         }
 
         private BlockPos destination(UUID consumer, UUID area, Kind kind) {
@@ -308,6 +341,7 @@ public final class SettlementDemandService {
 
         private void food() {
             long target = SettlementFoodService.reserveNutrition(this.level, this.town);
+            this.consumersCurrent.put(this.town.id().value(), () -> target == SettlementFoodService.reserveNutrition(this.level, this.town));
             if (target == 0) return;
             var sources = SettlementStock.supplies(this.town).stream()
                     .map(depot -> SettlementSupplyStock.positions(this.level, depot.position()).getFirst()).distinct().toList();
@@ -326,12 +360,29 @@ public final class SettlementDemandService {
             }
         }
 
+        private void policyReserves() {
+            for (var policy : this.town.supplyPolicies().values()) {
+                if (policy.state() != SettlementSupplyPolicy.State.ACTIVE || !SettlementPolicyExecution.authorized(this.town, policy)) continue;
+                policyReserve(policy.id(), policy.configuration());
+            }
+        }
+
+        private void policyReserve(UUID id, SettlementSupplyPolicy.Configuration configuration) {
+            var target = configuration.target();
+            if (target.kind() != SettlementSupplyPolicy.TargetKind.STOCK) return;
+            var position = SettlementSupplyStock.positions(this.level, target.storage()).getFirst();
+            add(id, this.town.id().value(), Kind.STOCK_RESERVE, configuration.name(),
+                    WorkSupplyRequirement.exact("policy_stock", target.sample(), target.amount()),
+                    List.of(position), List.of(), new ArrayList<>(), 0, target.amount(), "", target.amount(), configuration.priority(), position);
+        }
+
         private void production(SettlementArea area, HiredProductionQueue queue, HiredProductionOrder order) {
+            acceptProduction(queue, order);
             var sources = SettlementSupplyStock.storages(this.level, this.town, area.id(), false);
             var workers = workers(area.id());
             var plan = this.town.worksitePlans().get(area.id());
             boolean enabled = area.enabled() && (plan == null || plan.settings().enabled());
-            boolean active = enabled && order.runnable();
+            boolean active = enabled && queue.runnable(order.id());
             long stock = order.mode() == HiredProductionOrder.Mode.MAINTAIN_STOCK
                     ? SettlementProductionStock.count(this.level, this.town, queue, order, this.stock) : 0;
             if (active && stock < 0) unknown(order.id(), area.id(), Kind.PRODUCTION, area.name(), sources, "output_storage_unavailable");
@@ -437,6 +488,11 @@ public final class SettlementDemandService {
         }
 
         private void project(SettlementProject project) {
+            var status = project.status();
+            int placed = project.placed();
+            long revision = project.crewRevision();
+            this.consumersCurrent.put(project.id(), () -> this.town.projects().get(project.id()) == project
+                    && project.status() == status && project.placed() == placed && project.crewRevision() == revision);
             if (!project.active()) return;
             var area = this.town.areas().get(project.area());
             if (area == null || !area.enabled()) return;
@@ -479,7 +535,12 @@ public final class SettlementDemandService {
     }
 
     static Runnable plan(ServerLevel level, SettlementRecord town, java.util.function.Consumer<Snapshot> ready) {
-        var snapshot = new Snapshot(level, town, null);
+        return plan(level, town, null, ready);
+    }
+
+    static Runnable plan(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer,
+                         java.util.function.Consumer<Snapshot> ready) {
+        var snapshot = new Snapshot(level, town, viewer);
         var work = planning(snapshot, town);
         work.add(() -> ready.accept(snapshot));
         return new SettlementWork(work);
@@ -493,7 +554,7 @@ public final class SettlementDemandService {
         for (var queue : town.productionQueues().values()) {
             var area = town.areas().get(queue.owner());
             if (area != null) for (var order : queue.orders())
-                consumers.add(new Consumer(area.priority(), order.id(), () -> snapshot.production(area, queue, order)));
+                consumers.add(new Consumer(SettlementPolicyExecution.priority(town, area.id(), order.id()), order.id(), () -> snapshot.production(area, queue, order)));
         }
         for (var worker : linkedPersonalWorkers(snapshot.level, town)) {
             var role = com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.assignedRole(snapshot.level, worker);
@@ -506,6 +567,7 @@ public final class SettlementDemandService {
         consumers.sort(Comparator.comparingInt(Consumer::priority).reversed().thenComparing(Consumer::id));
         consumers.forEach(consumer -> work.add(consumer.run()));
         work.add(snapshot::stockReserves);
+        work.add(snapshot::policyReserves);
         work.add(snapshot::allocate);
         return work;
     }

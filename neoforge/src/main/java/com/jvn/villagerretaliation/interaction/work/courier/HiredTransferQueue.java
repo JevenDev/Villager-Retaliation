@@ -21,6 +21,9 @@ public final class HiredTransferQueue {
     private final Consumer<HiredTransferQueue> changed;
     private final List<Order> orders = new ArrayList<>();
     private final LinkedHashMap<UUID, Allocation> allocations = new LinkedHashMap<>();
+    private java.util.function.Predicate<UUID> executionAllowed = ignored -> true;
+    private java.util.function.ToIntFunction<UUID> executionPriority = ignored -> 0;
+    private java.util.function.ToLongFunction<UUID> executionCeiling = ignored -> Long.MAX_VALUE;
     private long revision;
 
     public HiredTransferQueue(UUID owner, Scope scope, Consumer<HiredTransferQueue> changed) {
@@ -37,6 +40,39 @@ public final class HiredTransferQueue {
     public Order order(UUID id) { return this.orders.stream().filter(order -> order.id().equals(id)).findFirst().orElse(null); }
     public Allocation allocation(UUID worker) {
         return this.allocations.values().stream().filter(allocation -> allocation.worker().equals(worker)).findFirst().orElse(null);
+    }
+
+    public void executionPolicy(java.util.function.Predicate<UUID> allowed, java.util.function.ToIntFunction<UUID> priority) {
+        executionPolicy(allowed, priority, ignored -> Long.MAX_VALUE);
+    }
+
+    public void executionPolicy(java.util.function.Predicate<UUID> allowed, java.util.function.ToIntFunction<UUID> priority,
+                                java.util.function.ToLongFunction<UUID> ceiling) {
+        this.executionCeiling = Objects.requireNonNull(ceiling);
+        this.executionAllowed = Objects.requireNonNull(allowed);
+        this.executionPriority = Objects.requireNonNull(priority);
+    }
+
+    public boolean runnable(UUID id) {
+        var order = order(id);
+        return order != null && order.runnable() && this.executionAllowed.test(id);
+    }
+
+    public List<Order> executionOrders() {
+        return this.orders.stream().filter(order -> runnable(order.id()))
+                .sorted(java.util.Comparator.comparingInt((Order order) -> this.executionPriority.applyAsInt(order.id())).reversed()).toList();
+    }
+
+    public boolean maintainTarget(UUID id, int amount) {
+        var order = order(id);
+        if (order == null || order.mode() != Mode.MAINTAIN_STOCK || amount < 1 || amount > MAX_AMOUNT
+                || order.cancelled() || this.revision == Long.MAX_VALUE) return false;
+        if (amount == order.amount()) return true;
+        if (amount < order.amount()) releasePlannedOrder(id);
+        replace(new Order(order.id(), order.source(), order.destination(), order.sample(), amount, order.picked(),
+                order.delivered(), order.paused(), order.cancelled(), order.blocker(), order.mode()));
+        configured();
+        return true;
     }
 
     public boolean append(Order order) {
@@ -80,12 +116,13 @@ public final class HiredTransferQueue {
 
     public int available(UUID id, long destinationStock) {
         var order = order(id);
-        if (order == null || !order.runnable()) return 0;
+        if (!runnable(id)) return 0;
         int reserved = this.allocations.values().stream().filter(allocation -> allocation.order().equals(id) && !allocation.started())
                 .mapToInt(Allocation::amount).sum();
         long deficit = order.mode() == Mode.FINITE ? order.amount() - order.picked() - reserved
                 : destinationStock < 0 ? 0 : Math.max(0, order.amount() - destinationStock);
-        return (int) Math.max(0, Math.min(MAX_AMOUNT, Math.min(deficit, Long.MAX_VALUE - order.picked() - reserved)));
+        long allowance = Math.max(0, Math.max(0, this.executionCeiling.applyAsLong(id) - order.picked()) - reserved);
+        return (int) Math.max(0, Math.min(MAX_AMOUNT, Math.min(deficit, allowance)));
     }
 
     public Allocation reserve(UUID worker, UUID id, int maximum) { return reserve(worker, id, maximum, -1); }
@@ -114,6 +151,7 @@ public final class HiredTransferQueue {
         var allocation = this.allocations.get(id);
         if (allocation == null || allocation.started() || amount < 1 || amount > allocation.amount()) return false;
         var order = order(allocation.order());
+        if (!runnable(order.id()) || amount > Math.max(0, this.executionCeiling.applyAsLong(order.id()) - order.picked())) return false;
         replace(order.state(order.picked() + amount, order.delivered(), order.paused(), order.cancelled(), ""));
         this.allocations.put(id, new Allocation(id, allocation.worker(), allocation.order(), amount, true));
         this.changed.accept(this);

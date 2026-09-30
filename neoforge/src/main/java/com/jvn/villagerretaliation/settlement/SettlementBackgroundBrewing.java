@@ -230,8 +230,7 @@ final class SettlementBackgroundBrewing {
         var carried = worker.items(level.registryAccess());
         var depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
         var supplies = SettlementProductionInventory.supplies(level, town, worker, carried, depots);
-        for (var order : queue.orders()) {
-            if (!order.runnable()) continue;
+        for (var order : queue.executionOrders()) {
             var route = HiredBrewingRecipeCatalog.find(level, order.recipe().brewingItem(), order.recipe().potion()).orElse(null);
             if (route == null || !ItemStack.matches(order.output(), route.output())) {
                 queue.blocker(order.id(), "recipe_unavailable");

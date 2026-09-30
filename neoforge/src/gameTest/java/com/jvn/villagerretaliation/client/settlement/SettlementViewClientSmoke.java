@@ -66,6 +66,7 @@ public final class SettlementViewClientSmoke {
     private static CompletableFuture<Void> appearanceReload;
     private static CompletableFuture<Void> navigationCheck;
     private static Fixture fixture;
+    private static SettlementPolicyClientChecks policyChecks;
     private static ProjectFixture projectFixture;
     private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
     private static UUID brewer;
@@ -1713,7 +1714,17 @@ public final class SettlementViewClientSmoke {
             verifyViewBounds(screen);
             minecraft.options.guiScale().set(2);
             minecraft.resizeDisplay();
-            screen.onClose();
+            openOverview(screen);
+            ticks = 0;
+            phase = 200;
+        } else if (phase == 200 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUMMARY && ++ticks >= 5) {
+            button(screen, "villagerretaliation.gui.settlement.policy.title").onPress();
+            policyChecks = new SettlementPolicyClientChecks(fixture.town(), productionArea, fixture.center().offset(2, 0, 2),
+                    SettlementViewClientSmoke::capture);
+            phase = 201;
+        } else if (phase == 201 && policyChecks.tick(minecraft)) {
+            minecraft.screen.onClose();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
             } catch (IOException exception) {

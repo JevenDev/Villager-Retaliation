@@ -44,6 +44,16 @@ final class SettlementBackgroundLogging {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
+        if (SettlementGatheringPolicy.hold(level, town, worker, elapsed, multiplier)) return;
+        var before = SettlementGatheringPolicy.before(level, town, worker);
+        try {
+            workTick(level, town, worker, elapsed, multiplier);
+        } finally {
+            SettlementGatheringPolicy.received(level, town, worker, before);
+        }
+    }
+
+    private static void workTick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var area = town.areas().get(worker.area());
         var forest = town.forests().get(worker.area());
         if (forest == null || area == null || !forest.matches(area)) {
@@ -131,6 +141,7 @@ final class SettlementBackgroundLogging {
         }
         owner.setPos(plan.origin().getBottomCenter());
         for (int action = 0; action < MAX_ACTIONS; action++) {
+            if (!SettlementGatheringPolicy.action(level, town, worker, context.inventory())) return;
             plan = LoggingHarvestPlan.read(context);
             if (plan == null) return;
             if (plan.hasLogs()) {
@@ -156,6 +167,7 @@ final class SettlementBackgroundLogging {
                 var harvest = stripped == null ? block : stripped;
                 double cost = blockCost(level, forest, position, block, axe, context.skillWorkSpeedPercent());
                 if (!harvest(level, worker, forest, owner, context, position, harvest, axe, cost, stripped != null, "cutting_tree", budget)) return;
+                com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker.clearStoredTarget(context.state());
                 LoggingHarvestPlan.removeLog(context, position);
                 LoggingHarvestPlan.incrementLogsCut(context);
             } else if (plan.hasLeaves()) {
@@ -175,6 +187,7 @@ final class SettlementBackgroundLogging {
                         && SettlementBackgroundTools.fetchTool(level, town, worker, context.inventory(), depots, LoggingWorker::isLeafHarvestTool,
                                 LoggingWorker::leafToolScore, "leaf_tool", budget)) return;
                 if (!harvest(level, worker, forest, owner, context, position, block, tool, 10.0D, false, "clearing_tree_leaves", budget)) return;
+                com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker.clearStoredTarget(context.state());
                 LoggingHarvestPlan.removeLeaf(context, position);
             } else if (!plan.sapling().isEmpty() && plan.saplings().length > 0) {
                 var position = BlockPos.of(plan.saplings()[0]);

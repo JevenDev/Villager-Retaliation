@@ -83,8 +83,7 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
             if (legacy != null && legacy.progressed()) return legacy;
         }
         var positions = stationPositions(level, villager, context);
-        for (var order : queue.orders()) {
-            if (!order.runnable()) continue;
+        for (var order : queue.executionOrders()) {
             if (!order.recipe().supports(level, role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
                 queue.blocker(order.id(), "recipe_unavailable");
                 continue;

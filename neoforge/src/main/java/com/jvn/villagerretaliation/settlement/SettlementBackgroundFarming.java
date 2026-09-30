@@ -22,6 +22,16 @@ final class SettlementBackgroundFarming {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
+        if (SettlementGatheringPolicy.hold(level, town, worker, elapsed, multiplier)) return;
+        var before = SettlementGatheringPolicy.before(level, town, worker);
+        try {
+            workTick(level, town, worker, elapsed, multiplier);
+        } finally {
+            SettlementGatheringPolicy.received(level, town, worker, before);
+        }
+    }
+
+    private static void workTick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
         boolean autoDeposit = !worker.settings().contains("AutoDepositOutputs") || worker.settings().getBoolean("AutoDepositOutputs");
         var carried = worker.items(level.registryAccess());

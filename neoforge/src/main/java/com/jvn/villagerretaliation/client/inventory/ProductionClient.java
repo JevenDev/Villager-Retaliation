@@ -16,8 +16,9 @@ public final class ProductionClient {
 
     public static net.minecraft.client.gui.screens.Screen rootScreen(net.minecraft.client.gui.screens.Screen screen) {
         while (true) {
-            if (screen instanceof ProductionOrdersScreen orders) screen = orders.previous();
-            else if (screen instanceof ProductionRecipeScreen recipes) screen = recipes.previous();
+            if (screen instanceof com.jvn.villagerretaliation.client.settlement.SettlementPolicyClient.Child child) screen = child.previousPolicy();
+            else if (screen instanceof ProductionOrdersScreen orders) screen = orders.previous();
+            else if (screen instanceof ProductionRecipeScreen recipes) screen = recipes.parent();
             else if (screen instanceof ProductionStorageScreen storage) screen = storage.previous();
             else if (screen instanceof FishingSpotsScreen fishing) screen = fishing.previous();
             else if (screen instanceof TransferOrdersScreen transfers) screen = transfers.previous();

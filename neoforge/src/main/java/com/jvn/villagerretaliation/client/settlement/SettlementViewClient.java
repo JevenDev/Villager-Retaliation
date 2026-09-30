@@ -113,7 +113,8 @@ public final class SettlementViewClient {
 
     public static boolean renderPanelBackground(net.minecraft.client.gui.GuiGraphics graphics, int left, int top, int width, int height) {
         if (!connectedPanel()) return false;
-        active.renderPanelBackdrop(graphics, Minecraft.getInstance().screen.width);
+        if (top - 8 >= SettlementViewLayout.HEADER_HEIGHT)
+            active.renderPanelBackdrop(graphics, Minecraft.getInstance().screen.width);
         SettlementViewUi.frame(graphics, left - 8, top - 8, width + 16, height + 16);
         return true;
     }

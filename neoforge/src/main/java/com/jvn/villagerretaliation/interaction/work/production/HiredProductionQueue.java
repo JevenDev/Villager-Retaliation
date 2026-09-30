@@ -23,6 +23,9 @@ public final class HiredProductionQueue {
     private final Consumer<HiredProductionQueue> changed;
     private final List<HiredProductionOrder> orders = new ArrayList<>();
     private final LinkedHashMap<UUID, Allocation> allocations = new LinkedHashMap<>();
+    private java.util.function.Predicate<UUID> executionAllowed = ignored -> true;
+    private java.util.function.ToIntFunction<UUID> executionPriority = ignored -> 0;
+    private java.util.function.ToLongFunction<UUID> executionCeiling = ignored -> Long.MAX_VALUE;
     private long revision;
     private long configurationRevision;
 
@@ -44,6 +47,39 @@ public final class HiredProductionQueue {
     public long configurationRevision() { return this.configurationRevision; }
     public List<HiredProductionOrder> orders() { return List.copyOf(this.orders); }
     public List<Allocation> allocations() { return List.copyOf(this.allocations.values()); }
+
+    public void executionPolicy(java.util.function.Predicate<UUID> allowed, java.util.function.ToIntFunction<UUID> priority) {
+        executionPolicy(allowed, priority, ignored -> Long.MAX_VALUE);
+    }
+
+    public void executionPolicy(java.util.function.Predicate<UUID> allowed, java.util.function.ToIntFunction<UUID> priority,
+                                java.util.function.ToLongFunction<UUID> ceiling) {
+        this.executionCeiling = Objects.requireNonNull(ceiling);
+        this.executionAllowed = Objects.requireNonNull(allowed);
+        this.executionPriority = Objects.requireNonNull(priority);
+    }
+
+    public boolean runnable(UUID id) {
+        var order = order(id);
+        return order != null && order.runnable() && this.executionAllowed.test(id);
+    }
+
+    public List<HiredProductionOrder> executionOrders() {
+        return this.orders.stream().filter(order -> runnable(order.id()))
+                .sorted(java.util.Comparator.comparingInt((HiredProductionOrder order) -> this.executionPriority.applyAsInt(order.id())).reversed()).toList();
+    }
+
+    public boolean maintainTarget(UUID id, int amount) {
+        var order = order(id);
+        if (order == null || order.mode() != HiredProductionOrder.Mode.MAINTAIN_STOCK || amount < 1 || amount > HiredProductionOrder.MAX_AMOUNT
+                || order.cancelled()) return false;
+        if (amount == order.amount()) return true;
+        if (amount < order.amount()) releaseUnstarted(id);
+        replace(new HiredProductionOrder(order.id(), order.recipe(), order.mode(), amount, order.storage(), order.output(),
+                order.produced(), order.paused(), order.cancelled(), order.blocker()));
+        configured();
+        return true;
+    }
 
     public HiredProductionOrder order(UUID id) {
         return this.orders.stream().filter(order -> order.id().equals(id)).findFirst().orElse(null);
@@ -123,13 +159,14 @@ public final class HiredProductionQueue {
     public long available(UUID id, long stock) {
         if (stock < 0L) throw new IllegalArgumentException("Negative production stock");
         var order = order(id);
-        if (order == null || !order.runnable()) return 0L;
-        return switch (order.mode()) {
+        if (!runnable(id)) return 0L;
+        long requested = switch (order.mode()) {
             case CONTINUOUS -> HiredProductionOrder.MAX_AMOUNT;
             case BATCH -> Math.max(0L, order.amount() - order.produced() - pending(id));
             case MAINTAIN_STOCK -> Math.max(0L, order.amount() - Math.min(stock, Integer.MAX_VALUE)
                     - pending(order.output(), order.storage()));
         };
+        return Math.min(requested, Math.max(0, Math.max(0, this.executionCeiling.applyAsLong(id) - order.produced()) - pending(id)));
     }
 
     public Allocation reserve(UUID worker, UUID orderId, int batchSize, int maxBatches, long stock, BlockPos station) {
@@ -166,7 +203,10 @@ public final class HiredProductionQueue {
         if (allocation == null) return false;
         if (allocation.started()) return true;
         var order = order(allocation.order());
-        if (!order.runnable()) return false;
+        if (!runnable(order.id())) return false;
+        long started = this.allocations.values().stream().filter(value -> value.order().equals(order.id()) && value.started())
+                .mapToLong(Allocation::remaining).sum();
+        if (allocation.remaining() > Math.max(0, Math.max(0, this.executionCeiling.applyAsLong(order.id()) - order.produced()) - started)) return false;
         this.allocations.put(id, new Allocation(id, allocation.worker(), allocation.order(), allocation.remaining(), true, allocation.station(), allocation.machine()));
         changed();
         return true;

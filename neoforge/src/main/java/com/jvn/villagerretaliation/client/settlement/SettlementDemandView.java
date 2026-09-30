@@ -37,6 +37,23 @@ final class SettlementDemandView {
 
     static void open(SettlementManagementScreen parent, Demand demand, int action) {
         var client = Minecraft.getInstance();
+        if (action == 6) {
+            var kind = switch (demand.kind()) {
+                case FOOD -> com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.FOOD;
+                case EQUIPMENT -> com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.EQUIPMENT;
+                case STOCK_RESERVE -> com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.STOCK;
+                default -> com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.CONSUMER;
+            };
+            com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target target = null;
+            if (kind != com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.STOCK)
+                target = new com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target(kind, demand.consumer(), demand.id(), null,
+                        net.minecraft.world.item.ItemStack.EMPTY, 0);
+            else if (!demand.sources().isEmpty() && !demand.alternatives().isEmpty())
+                target = new com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target(kind, null, null, demand.sources().getFirst(),
+                        demand.alternatives().getFirst(), (int) Math.clamp(demand.targetReserve(), 1, 4096));
+            client.setScreen(new SettlementPoliciesScreen(parent, parent.snapshot().header().id(), target));
+            return;
+        }
         if (action == 5 && demand.competingConsumer() != null) {
             parent.navigateTo(Page.DEMAND, demand.competingConsumer().toString());
             return;

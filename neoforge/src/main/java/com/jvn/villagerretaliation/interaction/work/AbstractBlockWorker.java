@@ -78,6 +78,22 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         }
     }
 
+    public WorkResult supplyQuota(ServerLevel level, Villager villager, HiredWorkContext context) {
+        var decision = com.jvn.villagerretaliation.settlement.SettlementGatheringPolicy.inspect(level, villager);
+        if (decision.allowed()) return null;
+        if (context.inventory().hasOutputItems()) {
+            if (!context.autoDepositOutputs()) return WorkResult.idle("interaction.work.supply.policy_deposit_disabled");
+            var delivery = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
+            if (delivery == DepositResult.MOVING || delivery == DepositResult.DEPOSITED)
+                return WorkResult.progressed("interaction.work.supply.delivering");
+            return WorkResult.idle("interaction.work.supply.output_full");
+        }
+        pause(level, villager, context);
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        HiredWorkerBrain.setFailure(context, decision.blocker(), 0);
+        return WorkResult.idle("interaction.work.supply." + decision.blocker());
+    }
+
     protected boolean storeDrops(ServerLevel level, HiredWorkContext context, Villager villager, BlockPos pos, ItemStack tool) {
         HiredPathTarget target = bestWorkTarget(level, villager, context, pos);
         return target != null && storeDrops(level, context, villager, target, tool);

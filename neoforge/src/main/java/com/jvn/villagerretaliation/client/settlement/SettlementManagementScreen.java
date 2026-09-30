@@ -291,9 +291,10 @@ public final class SettlementManagementScreen extends Screen {
 
     private int extraActionHeight() {
         int count = switch (this.desiredPage) {
-            case RESIDENTS -> 7;
-            case SUMMARY, AREAS, SUPPLY_LINKS, DEMAND -> 5;
-            case PROJECTS, ISSUES -> 4;
+            case RESIDENTS, DEMAND -> 7;
+            case SUMMARY -> 6;
+            case AREAS, SUPPLY_LINKS, PROJECTS -> 5;
+            case SUPPLIES, ISSUES -> 4;
             default -> 3;
         };
         return ((count - 1) / actionColumns()) * 24;
@@ -434,9 +435,11 @@ public final class SettlementManagementScreen extends Screen {
                 action(4, "demand_transfer", selected instanceof SettlementManagementPayload.Demand demand && demand.courier() != null
                         && permits(SettlementPermission.STAFF) && permits(SettlementPermission.LOGISTICS));
                 action(5, "demand_competitor", selected instanceof SettlementManagementPayload.Demand demand && demand.competingConsumer() != null);
+                action(6, "policy.create", selected instanceof SettlementManagementPayload.Demand);
             }
             case SUPPLIES -> {
                 action(0, "supply_details", selected instanceof SettlementManagementPayload.Supply);
+                action(3, "policy.create", selected instanceof SettlementManagementPayload.Supply supply && !supply.item().isEmpty());
                 action(1, "supply_storage", selected instanceof SettlementManagementPayload.Supply supply && supply.area() != null);
                 action(2, "supply_projects", permits(SettlementPermission.VIEW));
             }
@@ -473,6 +476,7 @@ public final class SettlementManagementScreen extends Screen {
                         && selected instanceof SettlementManagementPayload.Project project && project.status() == SettlementProject.Status.ACTIVE);
                 action(2, "project_builder", selected != null);
                 action(3, "project_crew", selected instanceof SettlementManagementPayload.Project);
+                action(4, "policy.create", selected instanceof SettlementManagementPayload.Project);
                 this.actions[3].setMessage(Component.literal("Crew and priority"));
 
             }
@@ -482,6 +486,7 @@ public final class SettlementManagementScreen extends Screen {
                 action(1, "treasury", permits(SettlementPermission.TREASURY));
                 action(2, "budget", permits(SettlementPermission.TREASURY));
                 action(3, "page.issues", permits(SettlementPermission.VIEW));
+                action(5, "policy.title", permits(SettlementPermission.VIEW));
                 action(4, this.snapshot.header() != null && this.snapshot.header().manualManagement() ? "enable_autonomy" : "manage_manually", leader());
             }
             case RESIDENTS -> {
@@ -567,7 +572,12 @@ public final class SettlementManagementScreen extends Screen {
             case SUPPLIES -> {
                 if (action == 2) navigate(Page.PROJECTS, 0, "");
                 else if (selected instanceof SettlementManagementPayload.Supply supply) {
-                    if (action == 0) {
+                    if (action == 3) {
+                        this.minecraft.setScreen(new SettlementPoliciesScreen(this, this.snapshot.header().id(),
+                                new com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target(
+                                        com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.STOCK, null, null,
+                                        supply.position(), supply.item(), Math.max(1, supply.target()))));
+                    } else if (action == 0) {
                         this.supplyContext = name(supply);
                         navigate(Page.SUPPLY_LINKS, 0, supply.id().toString());
                     } else if (supply.depot() != null) navigate(Page.DEPOTS, 0, supply.depot().toString());
@@ -621,7 +631,11 @@ public final class SettlementManagementScreen extends Screen {
                 } else if (action == 1 && selected != null) {
                     confirm("cancel_project", selected, () -> submit(new SettlementManagementActionPayload.CancelProject(selected.id())));
                 } else if (selected instanceof SettlementManagementPayload.Project project) {
-                    if (action == 3) this.minecraft.setScreen(new SettlementProjectScreen(this, project, null));
+                    if (action == 4) this.minecraft.setScreen(new SettlementPoliciesScreen(this, this.snapshot.header().id(),
+                            new com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target(
+                                    com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.CONSUMER, project.id(), null, null,
+                                    net.minecraft.world.item.ItemStack.EMPTY, 0)));
+                    else if (action == 3) this.minecraft.setScreen(new SettlementProjectScreen(this, project, null));
                     else navigate(Page.RESIDENTS, 0, project.builder().toString());
                 }
             }
@@ -631,7 +645,9 @@ public final class SettlementManagementScreen extends Screen {
                 }
             }
             case SUMMARY -> {
-                if (action == 0) {
+                if (action == 5) {
+                    this.minecraft.setScreen(new SettlementPoliciesScreen(this, this.snapshot.header().id()));
+                } else if (action == 0) {
                     submit(new SettlementManagementActionPayload.Advance());
                 } else if (action == 3) {
                     navigate(Page.ISSUES, 0, "");

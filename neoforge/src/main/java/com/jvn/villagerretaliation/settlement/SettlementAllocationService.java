@@ -69,6 +69,7 @@ public final class SettlementAllocationService {
     static Decision inspect(ServerLevel level, SettlementRecord town, UUID worker, UUID consumer,
                             BlockPos position, BlockPos destination, ItemStack sample) {
         if (sample.isEmpty()) return new Decision(0, null, "");
+        if (!SettlementPolicyExecution.acquisitionAllowed(town, worker, consumer)) return new Decision(0, null, "policy_suspended");
         if (SettlementSavedData.get(level).readOnly() || !town.territory().active()) return new Decision(0, null, "allocation_unavailable");
         var ready = ready(level, town);
         if (ready == null) return new Decision(0, null, "allocation_pending");
@@ -176,7 +177,7 @@ public final class SettlementAllocationService {
             var queue = town.productionQueues().get(area);
             var allocation = queue == null ? null : queue.allocation(worker);
             if (allocation != null) consumers.add(allocation.order());
-            else if (queue != null) queue.orders().stream().filter(order -> order.runnable()).forEach(order -> consumers.add(order.id()));
+            else if (queue != null) queue.executionOrders().forEach(order -> consumers.add(order.id()));
         }
         for (var depot : town.depots().values()) if (depot.position().equals(position) && depot.purpose().providesSupplies()
                 && town.duties().containsKey(worker)) consumers.add(depot.id());
@@ -249,8 +250,10 @@ public final class SettlementAllocationService {
                                  Map<UUID, SettlementWorkerSettings> settings, Map<UUID, UUID> duties,
                                  List<QueueConfiguration> production, List<QueueConfiguration> transfers,
                                  List<ProjectConfiguration> projects, List<DepotConfiguration> depots,
-                                 UUID leader, Map<UUID, Set<SettlementPermission>> delegates) {
+                                 UUID leader, Map<UUID, Set<SettlementPermission>> delegates, long supplyRevision, Map<UUID, Integer> policyPriorities) {
         boolean priorityChanged(Configuration next) {
+            for (var policy : this.policyPriorities.entrySet())
+                if (next.policyPriorities.containsKey(policy.getKey()) && !policy.getValue().equals(next.policyPriorities.get(policy.getKey()))) return true;
             for (var area : this.areas.values()) {
                 var updated = next.areas.get(area.id());
                 if (updated != null && area.priority() != updated.priority()) return true;
@@ -268,7 +271,9 @@ public final class SettlementAllocationService {
                     town.transferQueues().values().stream().map(queue -> new QueueConfiguration(queue.owner(), queue.revision())).toList(),
                     town.projects().values().stream().map(project -> new ProjectConfiguration(project.id(), project.active(), project.priority())).toList(),
                     town.depots().values().stream().map(depot -> new DepotConfiguration(depot.id(), depot.area(), depot.position(), depot.purpose(),
-                            depot.priority(), depot.stockTargets())).toList(), town.leader(), Map.copyOf(town.delegates()));
+                            depot.priority(), depot.stockTargets())).toList(), town.leader(), Map.copyOf(town.delegates()), town.supplyRevision(),
+                    town.supplyPolicies().values().stream().collect(java.util.stream.Collectors.toMap(SettlementSupplyPolicy::id,
+                            policy -> policy.configuration().priority())));
         }
     }
 }

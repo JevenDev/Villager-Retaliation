@@ -24,6 +24,16 @@ final class SettlementBackgroundAnimalHandling {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
+        if (SettlementGatheringPolicy.hold(level, town, worker, elapsed, multiplier)) return;
+        var before = SettlementGatheringPolicy.before(level, town, worker);
+        try {
+            workTick(level, town, worker, elapsed, multiplier);
+        } finally {
+            SettlementGatheringPolicy.received(level, town, worker, before);
+        }
+    }
+
+    private static void workTick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var area = town.areas().get(worker.area());
         if (area == null || !area.enabled()) return;
         var depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
@@ -44,6 +54,7 @@ final class SettlementBackgroundAnimalHandling {
             var feeding = SettlementBackgroundBreeding.feed(level, town, worker, inventory, depots, budget);
             if (feeding == SettlementBackgroundBreeding.Result.ACTED) return;
             for (int action = 0; action < 4; action++) {
+                if (!SettlementGatheringPolicy.action(level, town, worker, inventory)) return;
                 var candidates = town.livestock().values().stream()
                         .filter(animal -> animal.area().equals(area.id()) && area.contains(animal.position()) && !animal.unsafe())
                         .sorted(Comparator.comparingDouble(animal -> animal.position().distSqr(worker.position()))).toList();
