@@ -12,27 +12,29 @@ final class SettlementOverviewMap {
     record Marker(SettlementManagementPayload.Entry entry, BlockPos position, boolean lastKnown, int color) { }
     int left;
     int top;
-    int size;
+    int width;
+    int height;
     private BlockPos center = BlockPos.ZERO;
     private int radius = 1;
     private List<Marker> markers = List.of();
 
-    void layout(int viewportWidth, int height, BlockPos center, int radius) {
-        this.size = Math.clamp(Math.min(viewportWidth / 3, (height - 140) / 2), 52, 112);
-        this.left = viewportWidth - this.size - 8;
-        this.top = height - this.size - 80;
+    void layout(int left, int top, int width, int height, BlockPos center, int radius) {
+        this.left = left;
+        this.top = top;
+        this.width = width;
+        this.height = height;
         this.center = center;
         this.radius = radius;
     }
 
     boolean contains(double x, double y) {
-        return x >= this.left && x < this.left + this.size && y >= this.top && y < this.top + this.size;
+        return x >= this.left && x < this.left + this.width && y >= this.top && y < this.top + this.height;
     }
 
-    double worldX(double x) { return this.center.getX() - this.radius + (x - this.left) * this.radius * 2 / this.size; }
-    double worldZ(double y) { return this.center.getZ() - this.radius + (y - this.top) * this.radius * 2 / this.size; }
-    int x(double value) { return this.left + (int) Math.round((value - this.center.getX() + this.radius) * this.size / (2 * this.radius)); }
-    int y(double value) { return this.top + (int) Math.round((value - this.center.getZ() + this.radius) * this.size / (2 * this.radius)); }
+    double worldX(double x) { return this.center.getX() - this.radius + (x - this.left) * this.radius * 2 / this.width; }
+    double worldZ(double y) { return this.center.getZ() - this.radius + (y - this.top) * this.radius * 2 / this.height; }
+    int x(double value) { return this.left + (int) Math.round((value - this.center.getX() + this.radius) * this.width / (2 * this.radius)); }
+    int y(double value) { return this.top + (int) Math.round((value - this.center.getZ() + this.radius) * this.height / (2 * this.radius)); }
 
     Marker marker(double x, double y) {
         Marker closest = null;
@@ -49,9 +51,9 @@ final class SettlementOverviewMap {
                 List<SettlementManagementPayload.Project> projects, List<Marker> markers,
                 double cameraX, double cameraZ, float yaw, int mouseX, int mouseY) {
         this.markers = List.copyOf(markers);
-        g.fill(this.left, this.top, this.left + this.size, this.top + this.size, 0xEE101010);
-        g.renderOutline(this.left, this.top, this.size, this.size, 0xFF999999);
-        g.enableScissor(this.left + 1, this.top + 1, this.left + this.size - 1, this.top + this.size - 1);
+        SettlementViewUi.frame(g, this.left - 3, this.top - 3, this.width + 6, this.height + 6);
+        g.fill(this.left, this.top, this.left + this.width, this.top + this.height, 0xFF17241C);
+        g.enableScissor(this.left + 1, this.top + 1, this.left + this.width - 1, this.top + this.height - 1);
         for (var plot : plots) {
             var chunk = plot.chunk();
             g.fill(x(chunk.getMinBlockX()), y(chunk.getMinBlockZ()), x(chunk.getMaxBlockX() + 1), y(chunk.getMaxBlockZ() + 1),
@@ -73,7 +75,10 @@ final class SettlementOverviewMap {
             g.fill(dx, dy, dx + 1, dy + 1, 0xFFFFFFFF);
         }
         g.disableScissor();
-        g.drawString(font, "N", this.left + 3, this.top + 3, 0xFFFFFF);
+        g.drawString(font, "N", this.left + this.width / 2 - 3, this.top + 3, 0xFFFFFF);
+        g.drawString(font, "S", this.left + this.width / 2 - 3, this.top + this.height - 11, 0xFFFFFF);
+        g.drawString(font, "W", this.left + 3, this.top + this.height / 2 - 4, 0xFFFFFF);
+        g.drawString(font, "E", this.left + this.width - 9, this.top + this.height / 2 - 4, 0xFFFFFF);
         if (contains(mouseX, mouseY)) {
             var marker = marker(mouseX, mouseY);
             if (marker != null) g.renderTooltip(font, Component.literal(SettlementManagementScreen.name(marker.entry()).getString()

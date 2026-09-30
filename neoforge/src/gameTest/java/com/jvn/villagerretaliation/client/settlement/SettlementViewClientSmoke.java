@@ -144,7 +144,7 @@ public final class SettlementViewClientSmoke {
                 originalHeight = screen.viewHeight();
                 minecraft.options.broadcastOptions();
             }
-            if (screen.viewHeight() != SettlementViewWindow.MAX_HEIGHT) screen.mouseScrolled(40, 80, 0, -100);
+            if (screen.viewHeight() != SettlementViewWindow.MAX_HEIGHT) screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, -100);
             if (ticks < 120 && (screen.viewHeight() != SettlementViewWindow.MAX_HEIGHT
                     || Math.abs(screen.cameraHeight() - screen.viewHeight()) >= 0.1D
                     || !maxZoomResidentRendered || !screen.terrainLoaded()
@@ -170,7 +170,7 @@ public final class SettlementViewClientSmoke {
                     "the remote bed exceeds its ordinary rendering distance");
             require(renderBedVertices(zoomBed) > 0, "the native bed renderer emits geometry at maximum town zoom");
             capture("maximum-zoom-resident");
-            screen.mouseScrolled(40, 80, 0, 100);
+            screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, 100);
             ticks = 0;
             phase = 62;
         } else if (phase == 62 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30
@@ -181,7 +181,7 @@ public final class SettlementViewClientSmoke {
             require(Math.abs(minecraft.gameRenderer.getMainCamera().getXRot() - SettlementViewScreen.PITCH) < 3.0F,
                     "the centered settlement camera has an isometric-style tilt");
             capture("minimum-zoom");
-            screen.mouseScrolled(40, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
+            screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
             ticks = 0;
             originalYaw = screen.cameraYaw();
             screen.keyPressed(GLFW.GLFW_KEY_E, 0, 0);
@@ -269,7 +269,7 @@ public final class SettlementViewClientSmoke {
                 capture("shared-workplace");
                 screen.keyReleased(GLFW.GLFW_KEY_W, 0, 0);
                 require(screen.focusX() < originalX, "panning changes the remote camera position");
-                screen.mouseScrolled(40, 80, 0, 1);
+                screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, 1);
                 require(screen.viewHeight() < originalHeight, "scrolling changes the zoom");
             }
             if (ticks == 20) {
@@ -1064,9 +1064,9 @@ public final class SettlementViewClientSmoke {
             dragWorld(screen, handle, handle.add(0, -1.4, 0));
             require(draft.anchor.getY() == fixture.center().getY(), "the prefab returns to ground height");
             originalX = screen.focusX();
-            screen.mouseClicked(40, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
-            screen.mouseDragged(44, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 4, 0);
-            screen.mouseReleased(44, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+            screen.mouseClicked(screen.viewportWidth() / 2.0D, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+            screen.mouseDragged(screen.viewportWidth() / 2.0D + 4, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 4, 0);
+            screen.mouseReleased(screen.viewportWidth() / 2.0D + 4, 120, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
             require(screen.focusX() != originalX && draft.placed, "camera dragging remains available during prefab adjustment");
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(minecraft.screen == screen && screen.parent().buildingDraft() == null, "Escape cancels the draft without leaving town view");
@@ -1564,6 +1564,12 @@ public final class SettlementViewClientSmoke {
         require(screen.selectedResidents().isEmpty(), "an empty control group clears selection");
         screen.keyPressed(GLFW.GLFW_KEY_1, 0, 0);
         require(screen.selectedResidents().contains(fixture.resident()), "control groups restore their residents");
+        var selectedBeforeChrome = screen.selectedResidents();
+        screen.mouseClicked(screen.viewportWidth() / 2.0D, 5, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseReleased(screen.viewportWidth() / 2.0D, 5, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseClicked(3, 70, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseReleased(3, 70, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(screen.selectedResidents().equals(selectedBeforeChrome), "status and tool rail backgrounds do not select the world");
         screen.keyPressed(GLFW.GLFW_KEY_1, 0, 0);
         require(Math.abs(screen.focusX() - entity.blockPosition().getX()) < 1, "double recall focuses its members");
         screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
@@ -1585,6 +1591,9 @@ public final class SettlementViewClientSmoke {
         literalButton(screen, ">").onPress();
         require(screen.viewportWidth() > expanded, "collapsing the entire sidebar reclaims its viewport");
         capture("browser-collapsed");
+        literalButton(screen, "Residents").onPress();
+        require(screen.viewportWidth() == expanded && !screen.inspector().visible(), "the resident tool reopens the settlement browser");
+        literalButton(screen, ">").onPress();
         literalButton(screen, "<").onPress();
         require(screen.viewportWidth() == expanded, "reopening restores the sidebar viewport");
         literalButton(screen, "Map").onPress();
@@ -1592,11 +1601,10 @@ public final class SettlementViewClientSmoke {
         var restored = SettlementViewPreferences.forSettlement(fixture.town().value());
         require(restored.groups.getFirst().contains(fixture.resident()), "control groups survive preference reload");
         require(restored.sidebar && restored.map, "visibility preferences survive reload");
-        var map = new SettlementOverviewMap();
-        map.layout(screen.viewportWidth(), screen.height, fixture.center(), 32);
+        var map = screen.overviewMap();
         double oldX = screen.focusX();
-        screen.mouseClicked(map.left + 3, map.top + map.size - 3, 0);
-        screen.mouseReleased(map.left + 3, map.top + map.size - 3, 0);
+        screen.mouseClicked(map.left + 3, map.top + map.height - 3, 0);
+        screen.mouseReleased(map.left + 3, map.top + map.height - 3, 0);
         require(screen.focusX() != oldX, "overview terrain pans without moving the player");
         screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
         button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
@@ -1609,9 +1617,17 @@ public final class SettlementViewClientSmoke {
         var minecraft = Minecraft.getInstance();
         for (int[] size : java.util.List.of(new int[]{320, 240}, new int[]{426, 240}, new int[]{640, 360})) {
             screen.resize(minecraft, size[0], size[1]);
-            for (var child : screen.children()) {
-                if (child instanceof Button b && b.visible) require(b.getX() >= 0 && b.getRight() <= size[0]
-                        && b.getY() >= 0 && b.getBottom() <= size[1], "visible view controls fit narrow layouts");
+            var controls = screen.children().stream().filter(net.minecraft.client.gui.components.AbstractWidget.class::isInstance)
+                    .map(net.minecraft.client.gui.components.AbstractWidget.class::cast).filter(widget -> widget.visible).toList();
+            for (var control : controls) {
+                require(control.getX() >= 0 && control.getRight() <= size[0] && control.getY() >= 0 && control.getBottom() <= size[1],
+                        "visible view controls fit narrow layouts");
+                for (var other : controls) {
+                    if (control == other) continue;
+                    require(control.getRight() <= other.getX() || other.getRight() <= control.getX()
+                            || control.getBottom() <= other.getY() || other.getBottom() <= control.getY(),
+                            "worldview controls do not overlap");
+                }
             }
         }
         screen.resize(minecraft, minecraft.getWindow().getGuiScaledWidth(), minecraft.getWindow().getGuiScaledHeight());
@@ -1668,7 +1684,9 @@ public final class SettlementViewClientSmoke {
         for (var button : buttons) {
             require(button.getX() >= 0 && button.getY() >= 0 && button.getRight() <= screen.width
                     && button.getBottom() <= screen.height, "management buttons remain inside the window");
-            require(Minecraft.getInstance().font.width(button.getMessage()) <= button.getWidth() - 4, "management button labels fit");
+            if (button instanceof SettlementViewUi.IconButton || button instanceof SettlementViewUi.EntryButton)
+                require(button.getTooltip() != null, "icon and portrait controls expose their full labels");
+            else require(Minecraft.getInstance().font.width(button.getMessage()) <= button.getWidth() - 4, "management button labels fit");
             for (var other : buttons) {
                 if (button == other) continue;
                 require(button.getRight() <= other.getX() || other.getRight() <= button.getX()
@@ -1885,9 +1903,9 @@ public final class SettlementViewClientSmoke {
         screen.mouseReleased(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         require(!draft.dragging() && !draft.nodes().equals(original), "a valid drop remains in the draft until Save");
         var moved = draft.nodes();
-        screen.mouseClicked(40, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
-        screen.mouseDragged(46, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 6, 0);
-        screen.mouseReleased(46, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+        screen.mouseClicked(screen.viewportWidth() / 2.0D, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+        screen.mouseDragged(screen.viewportWidth() / 2.0D + 6, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 6, 0);
+        screen.mouseReleased(screen.viewportWidth() / 2.0D + 6, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
         require(screen.focusX() != focusX || screen.focusZ() != focusZ, "middle dragging still pans during route editing");
         require(draft.nodes().equals(moved), "panning leaves route nodes unchanged");
     }

@@ -50,7 +50,9 @@ final class SettlementSelectionInspector {
     private Button back;
     private int left;
     private int width;
-    private int height;
+    private int top;
+    private int contentTop;
+    private boolean compact;
     private int scroll;
     private int totalLines;
     private int visibleLines;
@@ -64,35 +66,48 @@ final class SettlementSelectionInspector {
         this.editRoute = editRoute;
     }
 
-    void init(int left, int width, int height, Consumer<AbstractWidget> add) {
+    void init(int left, int width, int top, int bottom, Consumer<AbstractWidget> add) {
         this.left = left + 8;
         this.width = width - 16;
-        this.height = height;
+        this.top = top;
+        this.compact = bottom - top < 150;
+        this.contentTop = top + (this.compact ? 40 : 82);
         this.tabs.clear();
         for (var section : Section.values()) {
             int index = section.ordinal();
-            int count = index < 2 ? 2 : 3;
-            int column = index < 2 ? index : index - 2;
+            int count = this.compact ? 5 : index < 2 ? 2 : 3;
+            int column = this.compact ? index : index < 2 ? index : index - 2;
             int buttonWidth = (this.width - (count - 1) * 2) / count;
             String label = section.name().charAt(0) + section.name().substring(1).toLowerCase(java.util.Locale.ROOT);
-            var button = Button.builder(Component.literal(label), ignored -> {
+            var icon = switch (section) {
+                case OVERVIEW -> net.minecraft.world.item.Items.MAP;
+                case STAFF -> net.minecraft.world.item.Items.VILLAGER_SPAWN_EGG;
+                case ORDERS -> net.minecraft.world.item.Items.BOOK;
+                case SETTINGS -> net.minecraft.world.item.Items.COMPARATOR;
+                case STORAGE -> net.minecraft.world.item.Items.CHEST;
+            };
+            boolean showLabel = Minecraft.getInstance().font.width(label) <= buttonWidth - 6;
+            var button = new SettlementViewUi.IconButton(Component.literal(label), this.left + column * (buttonWidth + 2),
+                    top + (this.compact || index < 2 ? 4 : 24), buttonWidth, 18,
+                    showLabel ? net.minecraft.world.item.ItemStack.EMPTY : new net.minecraft.world.item.ItemStack(icon),
+                    showLabel, !showLabel && section == Section.STAFF, () -> this.section == section, () -> {
                 this.section = section;
                 this.scroll = 0;
                 update();
-            }).bounds(this.left + column * (buttonWidth + 2), index < 2 ? 24 : 46, buttonWidth, 18).build();
+            });
             this.tabs.add(button);
             add.accept(button);
         }
         this.primary = Button.builder(Component.empty(), ignored -> this.action.accept(this.section))
-                .bounds(this.left, height - 114, this.width, 18).build();
+                .bounds(this.left, bottom - 66, this.width, 18).build();
         this.routeEditor = Button.builder(Component.literal("Edit persistent route"), ignored -> this.editRoute.run())
-                .bounds(this.left, height - 136, this.width, 18).build();
+                .bounds(this.left, bottom - 66, this.width, 18).build();
         add.accept(this.routeEditor);
         add.accept(this.primary);
         this.back = Button.builder(Component.literal("Browse settlement"), ignored -> {
             this.suppressed = true;
             this.browse.run();
-        }).bounds(this.left, height - 92, this.width, 18).build();
+        }).bounds(this.left, bottom - 44, this.width, 18).build();
         add.accept(this.back);
     }
 
@@ -102,6 +117,7 @@ final class SettlementSelectionInspector {
     com.jvn.villagerretaliation.client.inventory.TransferClientState transfers() { return this.transfers; }
     boolean sharedWorksite() { return this.worksite != null && this.worksite.plan() != null; }
     void reveal() { this.suppressed = false; }
+    void browse() { this.suppressed = true; }
 
     void update(Header header, Entry selected, Area worksite, List<Resident> staff,
                 List<Entry> depots, List<Entry> trades, boolean sidebar, boolean busy) {
@@ -155,12 +171,16 @@ final class SettlementSelectionInspector {
         this.primary.visible = this.visible;
         this.routeEditor.visible = this.visible && this.worksite != null
                 && com.jvn.villagerretaliation.settlement.SettlementGuardOrder.supports(this.worksite.kind().role());
+        this.primary.setWidth(this.routeEditor.visible ? (this.width - 2) / 2 : this.width);
+        this.routeEditor.setX(this.primary.getRight() + 2);
+        this.routeEditor.setWidth((this.width - 2) / 2);
+        this.routeEditor.setMessage(Component.literal("Edit route"));
         this.routeEditor.active = this.header.permissions().contains(SettlementPermission.STAFF);
         this.routeEditor.setTooltip(Tooltip.create(Component.literal(this.selected instanceof Resident
                 ? "Edit this worker's route override. Reset restores worksite inheritance." : "Edit the default route for this worksite.")));
         this.back.visible = this.visible;
         String label = switch (this.section) {
-            case OVERVIEW -> "Focus selection";
+            case OVERVIEW -> "Focus";
             case STAFF -> this.selected instanceof Project ? "Crew and priority"
                     : this.selected instanceof Area && this.worksite != null && this.worksite.plan() != null ? "Fill staffing" : "Staff actions";
             case ORDERS -> this.transfers != null ? "Edit transfers" : this.production != null ? "Edit production" : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST
@@ -404,15 +424,27 @@ final class SettlementSelectionInspector {
     void render(GuiGraphics graphics, Font font, int mouseX, int mouseY) {
         if (!this.visible) return;
         String name = this.selected == null ? this.staff.size() + " residents" : SettlementManagementScreen.name(this.selected).getString();
-        graphics.drawString(font, font.plainSubstrByWidth(name, this.width), this.left, 70, 0xFFFFFF);
+        int titleTop = this.top + (this.compact ? 26 : 46);
+        int textLeft = this.left;
+        if (!this.compact && this.selected instanceof Resident resident) {
+            SettlementViewUi.frame(graphics, this.left, titleTop, 30, 30);
+            SettlementViewUi.portrait(graphics, this.left + 5, titleTop + 5, 20);
+            textLeft += 36;
+            graphics.drawString(font, font.plainSubstrByWidth(SettlementViewUi.profession(resident),
+                    this.width - 36), textLeft, titleTop + 13, 0xB9C1CB);
+            graphics.fill(textLeft, titleTop + 25, this.left + this.width, titleTop + 28, 0xFF10151A);
+            graphics.fill(textLeft, titleTop + 25, textLeft + Math.clamp(Math.round(SettlementViewUi.healthFraction(resident) * (this.width - 36)), 0, this.width - 36),
+                    titleTop + 28, 0xFF67CF75);
+        }
+        graphics.drawString(font, font.plainSubstrByWidth(name, this.left + this.width - textLeft), textLeft, titleTop + 2, 0xFFFFFF);
         var wrapped = new ArrayList<Wrapped>();
         for (var line : this.lines) for (var part : font.split(line.text(), this.width - 6)) wrapped.add(new Wrapped(part, line));
         this.totalLines = wrapped.size();
-        this.visibleLines = Math.max(1, (this.height - (this.routeEditor.visible ? 226 : 204)) / (font.lineHeight + 2));
+        this.visibleLines = Math.max(0, (this.primary.getY() - this.contentTop) / (font.lineHeight + 2));
         this.scroll = Math.clamp(this.scroll, 0, Math.max(0, this.totalLines - this.visibleLines));
         this.hits.clear();
         for (int row = 0; row < this.visibleLines && this.scroll + row < wrapped.size(); row++) {
-            int y = 84 + row * (font.lineHeight + 2);
+            int y = this.contentTop + row * (font.lineHeight + 2);
             var part = wrapped.get(this.scroll + row);
             graphics.drawString(font, part.text(), this.left, y, part.line().resident() == null ? 0xCCCCCC : 0x99DDEE);
             this.hits.add(new Hit(y, part.line()));
@@ -420,7 +452,7 @@ final class SettlementSelectionInspector {
         if (this.totalLines > this.visibleLines) {
             int track = Math.max(12, this.visibleLines * (font.lineHeight + 2));
             int thumb = Math.max(4, track * this.visibleLines / this.totalLines);
-            int y = 84 + (track - thumb) * this.scroll / Math.max(1, this.totalLines - this.visibleLines);
+            int y = this.contentTop + (track - thumb) * this.scroll / Math.max(1, this.totalLines - this.visibleLines);
             graphics.fill(this.left + this.width - 2, y, this.left + this.width, y + thumb, 0xFF999999);
         }
         this.primary.setTooltip(Tooltip.create(Component.literal(this.primary.getMessage().getString())));

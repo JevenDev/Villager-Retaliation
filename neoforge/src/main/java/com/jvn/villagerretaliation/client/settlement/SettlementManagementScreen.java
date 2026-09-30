@@ -788,7 +788,7 @@ public final class SettlementManagementScreen extends Screen {
                 : Component.literal(entry.name());
     }
 
-    private static Component profession(net.minecraft.resources.ResourceLocation id) {
+    static Component profession(net.minecraft.resources.ResourceLocation id) {
         return VillagerProfessionUtil.parse(id.toString()).<Component>map(profession -> Component.translatableWithFallback(
                 VillagerProfessionUtil.translationKey(profession, "entity.minecraft.villager.none"),
                 VillagerProfessionUtil.displayName(profession, text("unemployed").getString()))).orElse(text("unemployed"));
