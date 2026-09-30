@@ -133,8 +133,7 @@ final class SettlementViewPopup {
     void render(GuiGraphics graphics, Font font, int mouseX, int mouseY, float partialTick) {
         graphics.pose().pushPose();
         graphics.pose().translate(0, 0, 200);
-        graphics.fill(this.left - 1, this.top - 1, this.left + this.width + 1, this.top + this.height + 1, 0xFF777777);
-        graphics.fill(this.left, this.top, this.left + this.width, this.top + this.height, 0xF0181818);
+        SettlementViewUi.frame(graphics, this.left, this.top, this.width, this.height);
         graphics.enableScissor(this.left, this.top + 4, this.left + this.width, this.top + this.height - 4);
         int y = this.top + 8 - this.scroll;
         for (var line : this.lines) {
@@ -154,7 +153,7 @@ final class SettlementViewPopup {
     }
 
     enum Kind {
-        RESIDENT, AREA, DRAFT, CHOOSER, ACTIONS, ASSIGN, CONFIRM_ASSIGN, RESULTS, OVERLAYS
+        RESIDENT, AREA, DRAFT, CHOOSER, ACTIONS, ASSIGN, CONFIRM_ASSIGN, RESULTS, OVERLAYS, OVERVIEW, TREASURY, FOOD, NAVIGATION
     }
 
     record Target(Kind kind, UUID id, List<UUID> choices) {

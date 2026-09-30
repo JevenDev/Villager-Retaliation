@@ -210,10 +210,12 @@ public final class SettlementManagementScreen extends Screen {
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(700, this.width - 24);
-        this.panelHeight = Math.min(420, this.height - 24);
-        this.left = (this.width - this.panelWidth) / 2;
-        this.top = (this.height - this.panelHeight) / 2;
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(700, this.width - 24),
+                Math.min(420, this.height - 24), false);
+        this.panelWidth = layout.width();
+        this.panelHeight = layout.height();
+        this.left = layout.left();
+        this.top = layout.top();
         this.contentLeft = this.left + 102;
         this.contentWidth = this.panelWidth - 102;
         this.worldView = addRenderableWidget(Button.builder(text("world_view"), ignored -> {
@@ -713,6 +715,7 @@ public final class SettlementManagementScreen extends Screen {
     @Override
     public void onClose() {
         this.pendingResident = null;
+        if (this.parent == null && SettlementViewClient.resume(this)) return;
         this.minecraft.setScreen(this.parent);
     }
 
@@ -723,8 +726,10 @@ public final class SettlementManagementScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xD0101010);
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xD0101010);
+        }
     }
 
     @Override

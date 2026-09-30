@@ -68,10 +68,12 @@ public final class SettlementProjectScreen extends Screen {
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(480, this.width - 24);
-        this.panelHeight = Math.min(344, this.height - 16);
-        this.left = (this.width - this.panelWidth) / 2;
-        this.top = (this.height - this.panelHeight) / 2;
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(480, this.width - 24),
+                Math.min(344, this.height - 16), true);
+        this.panelWidth = layout.width();
+        this.panelHeight = layout.height();
+        this.left = layout.left();
+        this.top = layout.top();
         this.priorityButton = addRenderableWidget(Button.builder(Component.empty(), ignored -> {
             this.priority = (this.priority + 1) % 10;
             updateRows();
@@ -236,8 +238,10 @@ public final class SettlementProjectScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.fill(this.left - 6, this.top - 6, this.left + this.panelWidth + 6, this.top + this.panelHeight + 6, 0xD0101010);
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+            graphics.fill(this.left - 6, this.top - 6, this.left + this.panelWidth + 6, this.top + this.panelHeight + 6, 0xD0101010);
+        }
     }
 
     @Override

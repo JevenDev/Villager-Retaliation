@@ -67,6 +67,17 @@ final class SettlementViewUi {
         return text.isEmpty() ? text : Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 
+    static final class HeaderButton extends Button {
+        HeaderButton(Component message, int left, int width, Runnable action) {
+            super(left, 2, width, 30, message, ignored -> action.run(), DEFAULT_NARRATION);
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            if (isHoveredOrFocused()) graphics.renderOutline(getX(), getY(), getWidth(), getHeight(), 0xFF81B6FF);
+        }
+    }
+
     static final class IconButton extends Button {
         private final ItemStack icon;
         private final BooleanSupplier selected;
@@ -156,7 +167,9 @@ final class SettlementViewUi {
                 }
             } else {
                 ItemStack icon = new ItemStack(this.entry instanceof SettlementManagementPayload.Project ? Items.BRICKS
-                        : this.entry instanceof SettlementManagementPayload.Issue ? Items.REDSTONE_TORCH : Items.OAK_FENCE);
+                        : this.entry instanceof SettlementManagementPayload.Issue ? Items.REDSTONE_TORCH
+                        : this.entry instanceof SettlementManagementPayload.Depot ? Items.CHEST
+                        : this.entry instanceof SettlementManagementPayload.Order order ? net.minecraft.core.registries.BuiltInRegistries.ITEM.get(order.item()) : Items.OAK_FENCE);
                 item(graphics, icon, getX() + 5, getY() + (getHeight() - 16) / 2, 16);
                 detail = readable(SettlementViewBrowser.kind(this.entry));
                 if (this.entry instanceof SettlementManagementPayload.Issue issue) {

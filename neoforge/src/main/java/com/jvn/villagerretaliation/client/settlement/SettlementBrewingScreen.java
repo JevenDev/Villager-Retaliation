@@ -34,6 +34,8 @@ public final class SettlementBrewingScreen extends Screen {
     private Button cancel;
     private int left;
     private int panelWidth;
+    private int top;
+    private int panelHeight;
 
     public SettlementBrewingScreen(SettlementWorkerScreen previous, SettlementManagementPayload.Resident resident) {
         super(text("brewing_title", resident.name().isBlank() ? text("unnamed_resident") : Component.literal(resident.name())));
@@ -61,14 +63,17 @@ public final class SettlementBrewingScreen extends Screen {
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(520, this.width - 32);
-        this.left = (this.width - this.panelWidth) / 2;
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(520, this.width - 32), this.height - 24, true);
+        this.panelWidth = layout.width();
+        this.left = layout.left();
+        this.top = layout.top();
+        this.panelHeight = layout.height();
         this.recipes = HiredBrewingRecipeCatalog.routes(this.minecraft.level);
         if (this.selected == null && this.resident.brewingOrder() != null) {
             var order = this.resident.brewingOrder();
             this.selected = HiredBrewingRecipeCatalog.find(this.minecraft.level, order.item(), order.potion()).orElse(null);
         }
-        var search = addRenderableWidget(new EditBox(this.font, this.left, 36, this.panelWidth, 20, text("search")));
+        var search = addRenderableWidget(new EditBox(this.font, this.left, this.top + 24, this.panelWidth, 20, text("search")));
         search.setMaxLength(64);
         search.setHint(text("search"));
         search.setValue(this.query);
@@ -78,7 +83,7 @@ public final class SettlementBrewingScreen extends Screen {
             this.list.refresh();
         });
         this.list.refresh();
-        int controls = this.height - 104;
+        int controls = this.top + this.panelHeight - 92;
         this.amount = addRenderableWidget(new EditBox(this.font, this.left + 54, controls, 64, 20, text("brewing_amount")));
         this.amount.setMaxLength(4);
         this.amount.setFilter(value -> value.isEmpty() || value.chars().allMatch(Character::isDigit));
@@ -93,12 +98,12 @@ public final class SettlementBrewingScreen extends Screen {
         }).bounds(this.left + 124, controls, this.panelWidth - 124, 20).build());
         int third = (this.panelWidth - 8) / 3;
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
-                .bounds(this.left, this.height - 28, third, 20).build());
+                .bounds(this.left, this.top + this.panelHeight - 16, third, 20).build());
         this.cancel = addRenderableWidget(Button.builder(text("brewing_cancel"), ignored -> submit(null))
-                .bounds(this.left + third + 4, this.height - 28, third, 20).build());
+                .bounds(this.left + third + 4, this.top + this.panelHeight - 16, third, 20).build());
         this.save = addRenderableWidget(Button.builder(text("brewing_order"), ignored -> submit(new SettlementBrewingOrder(
                 this.selected.itemId(), this.selected.potionId(), this.continuous ? 1 : amount(), this.continuous)))
-                .bounds(this.left + (third + 4) * 2, this.height - 28, third, 20).build());
+                .bounds(this.left + (third + 4) * 2, this.top + this.panelHeight - 16, third, 20).build());
         updateActions();
         setInitialFocus(search);
     }
@@ -147,12 +152,20 @@ public final class SettlementBrewingScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 16, 0xFFFFFF);
-        graphics.drawString(this.font, text("brewing_amount"), this.left, this.height - 98, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.font.plainSubstrByWidth(this.title.getString(), this.panelWidth),
+                this.left + this.panelWidth / 2, this.top + 4, 0xFFFFFF);
+        graphics.drawString(this.font, text("brewing_amount"), this.left, this.top + this.panelHeight - 86, 0xFFFFFF);
         graphics.drawWordWrap(this.font, this.feedback.getString().isEmpty() ? text("brewing_hint") : this.feedback,
-                this.left, this.height - 76, this.panelWidth, 0xD0D0D0);
+                this.left, this.top + this.panelHeight - 64, this.panelWidth, 0xD0D0D0);
         var hovered = this.list.hovered();
         if (hovered != null) {
             graphics.renderTooltip(this.font, hovered.route.output(), mouseX, mouseY);
@@ -165,7 +178,7 @@ public final class SettlementBrewingScreen extends Screen {
 
     private final class Recipes extends ObjectSelectionList<Recipe> {
         private Recipes() {
-            super(SettlementBrewingScreen.this.minecraft, panelWidth, Math.max(32, SettlementBrewingScreen.this.height - 176), 64, 36);
+            super(SettlementBrewingScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 152), top + 52, 36);
             setX(left);
         }
 

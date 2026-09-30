@@ -21,6 +21,8 @@ public final class SettlementBuildingScreen extends Screen {
     private int left;
     private int panelWidth;
     private int materialTop;
+    private int top;
+    private int panelHeight;
 
     SettlementBuildingScreen(SettlementManagementScreen parent) {
         super(SettlementManagementScreen.text("choose_building_builder"));
@@ -37,30 +39,35 @@ public final class SettlementBuildingScreen extends Screen {
         this.draft.failure = payload.failure();
         if (payload.applied()) {
             this.parent.clearBuildingDraft();
-            this.minecraft.setScreen(this.parent);
-            this.parent.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
+            if (!SettlementViewClient.resume(this.parent)) {
+                this.minecraft.setScreen(this.parent);
+                this.parent.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
+            }
         }
     }
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(520, this.width - 24);
-        this.left = (this.width - this.panelWidth) / 2;
-        int builderHeight = Math.clamp((this.height - 170) / 2, 32, 100);
-        this.materialTop = 86 + builderHeight + 22;
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(520, this.width - 24), this.height - 16, true);
+        this.panelWidth = layout.width();
+        this.left = layout.left();
+        this.top = layout.top();
+        this.panelHeight = layout.height();
+        int builderHeight = Math.clamp((this.panelHeight - 206) / 2, 26, 80);
+        this.materialTop = this.top + 78 + builderHeight + 22;
         this.builders = addRenderableWidget(new Builders(builderHeight));
         this.materials = addRenderableWidget(new Materials());
         int third = (this.panelWidth - 12) / 3;
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
-                .bounds(this.left, this.height - 28, third, 20).build());
+                .bounds(this.left, this.top + this.panelHeight - 20, third, 20).build());
         addRenderableWidget(Button.builder(SettlementManagementScreen.text("change_prefab"), ignored -> this.parent.newBuilding())
-                .bounds(this.left + third + 6, this.height - 28, third, 20).build());
+                .bounds(this.left + third + 6, this.top + this.panelHeight - 20, third, 20).build());
         this.request = addRenderableWidget(Button.builder(SettlementManagementScreen.text("request_build"), ignored -> {
             if (!this.draft.ready() || this.parent.submitting()) return;
             this.draft.submitting();
             this.parent.submit(new SettlementManagementActionPayload.CommissionBuilding(this.draft.request, this.draft.structure,
                     this.draft.anchor, this.draft.rotation, this.draft.builder));
-        }).bounds(this.left + (third + 6) * 2, this.height - 28, third, 20).build());
+        }).bounds(this.left + (third + 6) * 2, this.top + this.panelHeight - 20, third, 20).build());
         refresh();
     }
 
@@ -101,27 +108,34 @@ public final class SettlementBuildingScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
-        graphics.drawString(this.font, this.font.plainSubstrByWidth(this.draft.label, this.panelWidth), this.left, 28, 0xD0D0D0);
+        graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
+        graphics.drawString(this.font, this.font.plainSubstrByWidth(this.draft.label, this.panelWidth), this.left, this.top + 20, 0xD0D0D0);
         if (this.draft.preview != null) {
-            graphics.drawString(this.font, SettlementManagementScreen.text("building_price", this.draft.preview.price(), this.draft.preview.funds().mixedFraction()), this.left, 44, 0xD0D0D0);
+            graphics.drawString(this.font, SettlementManagementScreen.text("building_price", this.draft.preview.price(), this.draft.preview.funds().mixedFraction()), this.left, this.top + 36, 0xD0D0D0);
         }
-        graphics.drawString(this.font, SettlementManagementScreen.text("building_builders"), this.left, 68, 0xFFFFFF);
-        if (this.candidates.isEmpty()) graphics.drawString(this.font, SettlementManagementScreen.text("building_no_builders"), this.left + 6, 91, 0xB0B0B0);
+        graphics.drawString(this.font, SettlementManagementScreen.text("building_builders"), this.left, this.top + 60, 0xFFFFFF);
+        if (this.candidates.isEmpty()) graphics.drawString(this.font, SettlementManagementScreen.text("building_no_builders"), this.left + 6, this.top + 83, 0xB0B0B0);
         graphics.drawString(this.font, SettlementManagementScreen.text("building_materials"), this.left, this.materialTop - 14, 0xFFFFFF);
         String failure = this.draft.failure.isEmpty() && this.draft.preview != null ? this.draft.preview.failure() : this.draft.failure;
         if (failure.isEmpty() && this.draft.preview != null && this.draft.preview.funds().compareTo(com.jvn.villagerretaliation.sell.CurrencyAmount.of(this.draft.preview.price(), 1)) < 0) failure = "funds";
         Component hint = this.draft.submitting ? SettlementManagementScreen.text("saving") : failure.isEmpty()
                 ? SettlementManagementScreen.text("building_supply_hint") : Component.translatableWithFallback("villagerretaliation.gui.settlement.failure." + failure,
                         SettlementManagementScreen.text("building_failure_" + failure).getString());
-        graphics.drawWordWrap(this.font, hint, this.left, this.height - 63, this.panelWidth, failure.isEmpty() ? 0xB8B8B8 : 0xFF9999);
+        graphics.drawWordWrap(this.font, hint, this.left, this.top + this.panelHeight - 55, this.panelWidth, failure.isEmpty() ? 0xB8B8B8 : 0xFF9999);
     }
 
     private final class Builders extends ObjectSelectionList<BuilderRow> {
         Builders(int height) {
-            super(SettlementBuildingScreen.this.minecraft, panelWidth, height, 84, 22);
+            super(SettlementBuildingScreen.this.minecraft, panelWidth, height, top + 76, 22);
             setX(left);
         }
         void refresh() {
@@ -153,7 +167,7 @@ public final class SettlementBuildingScreen extends Screen {
 
     private final class Materials extends ObjectSelectionList<MaterialRow> {
         Materials() {
-            super(SettlementBuildingScreen.this.minecraft, panelWidth, Math.max(32, SettlementBuildingScreen.this.height - materialTop - 76), materialTop, 20);
+            super(SettlementBuildingScreen.this.minecraft, panelWidth, Math.max(32, top + panelHeight - materialTop - 68), materialTop, 20);
             setX(left);
         }
         void refresh() {

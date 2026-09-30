@@ -182,6 +182,7 @@ public final class SettlementViewClientSmoke {
             require(Math.abs(minecraft.gameRenderer.getMainCamera().getXRot() - SettlementViewScreen.PITCH) < 3.0F,
                     "the centered settlement camera has an isometric-style tilt");
             SettlementOverviewMapClientChecks.verify(screen, fixture.center());
+            SettlementViewPanelClientChecks.verify(screen);
             capture("terrain-overview-map");
             capture("minimum-zoom");
             screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
@@ -1146,6 +1147,9 @@ public final class SettlementViewClientSmoke {
                 && button(screen, "villagerretaliation.gui.settlement.request_build").active) {
             button(screen, "villagerretaliation.gui.settlement.request_build").onPress();
             phase = 20;
+        } else if (phase == 20 && minecraft.screen instanceof SettlementViewScreen screen) {
+            openOverview(screen);
+            screen.parent().navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
         } else if (phase == 20 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS
                 && screen.snapshot().entries().stream().anyMatch(entry -> entry.id().equals(projectFixture.project()))) {
@@ -1678,6 +1682,8 @@ public final class SettlementViewClientSmoke {
     private static void openOverview(SettlementViewScreen screen) {
         if (screen.inspector().visible()) button(screen, "Browse settlement").onPress();
         button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+        screen.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals("Settlement administration"))
+                .findFirst().orElseThrow().onPress();
     }
 
     private static void selectFirstRow(SettlementManagementScreen screen) {
@@ -1702,7 +1708,8 @@ public final class SettlementViewClientSmoke {
                     && button.getBottom() <= screen.height, "management buttons remain inside the window");
             if (button instanceof SettlementViewUi.IconButton || button instanceof SettlementViewUi.EntryButton)
                 require(button.getTooltip() != null, "icon and portrait controls expose their full labels");
-            else require(Minecraft.getInstance().font.width(button.getMessage()) <= button.getWidth() - 4, "management button labels fit");
+            else if (!(button instanceof SettlementViewUi.HeaderButton))
+                require(Minecraft.getInstance().font.width(button.getMessage()) <= button.getWidth() - 4, "management button labels fit");
             for (var other : buttons) {
                 if (button == other) continue;
                 require(button.getRight() <= other.getX() || other.getRight() <= button.getX()

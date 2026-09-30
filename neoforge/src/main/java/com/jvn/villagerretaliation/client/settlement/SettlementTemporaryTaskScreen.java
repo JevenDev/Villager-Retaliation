@@ -54,9 +54,10 @@ public final class SettlementTemporaryTaskScreen extends Screen {
     @Override
     protected void init() {
         this.bounds.clear();
-        this.panelWidth = Math.min(360, this.width - 32);
-        this.left = (this.width - this.panelWidth) / 2;
-        this.top = (this.height - 204) / 2;
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(360, this.width - 32), 204, true);
+        this.panelWidth = layout.width();
+        this.left = layout.left();
+        this.top = layout.top();
         addRenderableWidget(Button.builder(Component.literal(this.kind.label()), button -> {
             this.kind = HiredTemporaryTask.Kind.values()[(this.kind.ordinal() + 1) % HiredTemporaryTask.Kind.values().length];
             button.setMessage(Component.literal(this.kind.label()));
@@ -114,7 +115,9 @@ public final class SettlementTemporaryTaskScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + 208, 0xEF151A20);
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, 204)) {
+            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + 208, 0xEF151A20);
+        }
     }
 
     @Override

@@ -101,6 +101,22 @@ public final class SettlementViewClient {
         }
     }
 
+    static boolean connectedPanel() {
+        var management = SettlementManagementClient.current();
+        return active != null && panels && management != null && management.root() == active.parent().root();
+    }
+
+    static SettlementViewPanelLayout panelLayout(int width, int height, int preferredWidth, int preferredHeight, boolean compact) {
+        return SettlementViewPanelLayout.create(width, height, preferredWidth, preferredHeight, connectedPanel(), compact);
+    }
+
+    static boolean renderPanelBackground(net.minecraft.client.gui.GuiGraphics graphics, int left, int top, int width, int height) {
+        if (!connectedPanel()) return false;
+        active.renderPanelBackdrop(graphics, Minecraft.getInstance().screen.width);
+        SettlementViewUi.frame(graphics, left - 8, top - 8, width + 16, height + 16);
+        return true;
+    }
+
     static void openPanels(SettlementViewScreen view) {
         panels = active == view;
     }
@@ -132,7 +148,7 @@ public final class SettlementViewClient {
 
     public static float projectionOffset() {
         var minecraft = Minecraft.getInstance();
-        return active != null && minecraft.screen == active && minecraft.getCameraEntity() == camera && active.width > 0
+        return active != null && (minecraft.screen == active || connectedPanel()) && minecraft.getCameraEntity() == camera && active.width > 0
                 ? (float) (active.width - active.viewportWidth()) / active.width : 0;
     }
 

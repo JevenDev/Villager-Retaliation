@@ -90,10 +90,12 @@ public final class SettlementStorageScreen extends Screen {
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(610, this.width - 24);
-        this.panelHeight = Math.min(430, this.height - 20);
-        this.left = (this.width - this.panelWidth) / 2;
-        this.top = (this.height - this.panelHeight) / 2;
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(610, this.width - 24),
+                Math.min(430, this.height - 20), true);
+        this.panelWidth = layout.width();
+        this.panelHeight = layout.height();
+        this.left = layout.left();
+        this.top = layout.top();
         this.rows.clear();
         this.edits.clear();
         this.policyButtons.clear();
@@ -332,8 +334,10 @@ public final class SettlementStorageScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xE0101010);
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xE0101010);
+        }
     }
 
     @Override

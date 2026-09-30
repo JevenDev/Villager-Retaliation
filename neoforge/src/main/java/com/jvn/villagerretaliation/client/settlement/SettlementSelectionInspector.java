@@ -155,7 +155,8 @@ final class SettlementSelectionInspector {
             case OVERVIEW -> true;
             case STAFF -> !this.staff.isEmpty() || this.worksite != null || this.selected instanceof Project;
             case ORDERS -> this.worksite != null || this.selected instanceof Resident;
-            case SETTINGS -> this.worksite != null || this.selected instanceof Resident resident && resident.settings() != null;
+            case SETTINGS -> this.worksite != null || this.selected instanceof Depot || this.selected instanceof Order
+                    || this.selected instanceof Resident resident && resident.settings() != null;
             case STORAGE -> this.worksite != null && this.worksite.kind().role() != null;
         };
     }
@@ -180,7 +181,7 @@ final class SettlementSelectionInspector {
                 ? "Edit this worker's route override. Reset restores worksite inheritance." : "Edit the default route for this worksite.")));
         this.back.visible = this.visible;
         String label = switch (this.section) {
-            case OVERVIEW -> "Focus";
+            case OVERVIEW -> this.selected instanceof Order ? "Edit trade order" : "Focus";
             case STAFF -> this.selected instanceof Project ? "Crew and priority"
                     : this.selected instanceof Area && this.worksite != null && this.worksite.plan() != null ? "Fill staffing" : "Staff actions";
             case ORDERS -> this.transfers != null ? "Edit transfers" : this.production != null ? "Edit production" : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST
@@ -190,7 +191,8 @@ final class SettlementSelectionInspector {
                     || this.worksite.kind() == SettlementAreaType.HUNTING_GROUNDS) ? "Shared route"
                     : this.worksite != null && this.worksite.kind() == SettlementAreaType.CONSTRUCTION ? "Project details"
                     : this.worksite != null && this.worksite.kind() == SettlementAreaType.DEPOT ? "Manage logistics" : "Temporary task";
-            case SETTINGS -> this.selected instanceof Resident ? "Worker settings" : this.worksite != null && this.worksite.plan() == null
+            case SETTINGS -> this.selected instanceof Depot ? "Depot settings" : this.selected instanceof Order ? "Trade settings"
+                    : this.selected instanceof Resident ? "Worker settings" : this.worksite != null && this.worksite.plan() == null
                     ? "Preview adoption" : "Worksite settings";
             case STORAGE -> "Edit storage links";
         };
@@ -199,6 +201,10 @@ final class SettlementSelectionInspector {
                 || this.header.permissions().contains(this.section == Section.STORAGE ? SettlementPermission.STAFF
                 : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST && this.section == Section.ORDERS
                 ? SettlementPermission.VIEW : SettlementPermission.STAFF);
+        if (this.section == Section.OVERVIEW && this.selected instanceof Order)
+            this.primary.active = this.header.permissions().contains(SettlementPermission.TRADE);
+        if (this.section == Section.SETTINGS && (this.selected instanceof Depot || this.selected instanceof Order))
+            this.primary.active = this.header.permissions().contains(this.selected instanceof Depot ? SettlementPermission.LOGISTICS : SettlementPermission.TRADE);
         if (this.section == Section.STAFF && this.selected instanceof Project) this.primary.active = this.header.permissions().contains(SettlementPermission.VIEW);
         if (this.section == Section.SETTINGS && this.selected instanceof Resident resident && resident.settings() == null) this.primary.active = false;
         if (this.section == Section.ORDERS && this.production == null && this.worksite != null
@@ -354,6 +360,10 @@ final class SettlementSelectionInspector {
     }
 
     private void settings() {
+        if (this.selected instanceof Depot || this.selected instanceof Order) {
+            line(SettlementManagementScreen.detail(this.selected));
+            return;
+        }
         var settings = this.selected instanceof Resident resident ? resident.settings()
                 : this.worksite == null ? null : (this.worksite.plan() == null ? SettlementWorksitePlan.defaults(this.worksite.kind().role()) : this.worksite.plan()).settings();
         if (this.selected instanceof Resident resident) line(resident.worksitePlan()

@@ -13,6 +13,10 @@ final class SettlementWorksiteAdoptionScreen extends Screen {
     private final SettlementWorkerScreen previous;
     private final List<Component> preview = new ArrayList<>();
     private Button adopt;
+    private int left;
+    private int panelWidth;
+    private int top;
+    private int panelHeight;
 
     SettlementWorksiteAdoptionScreen(SettlementWorkerScreen previous, SettlementWorksitePlan plan) {
         super(Component.literal("Review worksite adoption"));
@@ -48,15 +52,20 @@ final class SettlementWorksiteAdoptionScreen extends Screen {
 
     @Override
     protected void init() {
-        int width = Math.min(500, this.width - 24);
-        int left = (this.width - width) / 2;
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(500, this.width - 24), this.height - 24, true);
+        this.panelWidth = layout.width();
+        this.left = layout.left();
+        this.top = layout.top();
+        this.panelHeight = layout.height();
+        int width = this.panelWidth;
+        int left = this.left;
         addRenderableWidget(new Preview(left, width));
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
-                .bounds(left, this.height - 28, 100, 20).build());
+                .bounds(left, this.top + this.panelHeight - 16, 100, 20).build());
         this.adopt = addRenderableWidget(Button.builder(Component.literal("Adopt shared plan"), ignored -> {
             this.minecraft.setScreen(this.previous);
             this.previous.savePlan();
-        }).bounds(left + width - 140, this.height - 28, 140, 20).build());
+        }).bounds(left + width - 140, this.top + this.panelHeight - 16, 140, 20).build());
         tick();
     }
 
@@ -73,14 +82,21 @@ final class SettlementWorksiteAdoptionScreen extends Screen {
     public boolean isPauseScreen() { return false; }
 
     @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 14, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
     }
 
     private final class Preview extends ObjectSelectionList<Row> {
         private Preview(int left, int width) {
-            super(SettlementWorksiteAdoptionScreen.this.minecraft, width, SettlementWorksiteAdoptionScreen.this.height - 76, 38, 13);
+            super(SettlementWorksiteAdoptionScreen.this.minecraft, width, Math.max(32, panelHeight - 52), top + 26, 13);
             setX(left);
             for (var paragraph : preview) {
                 for (var line : font.split(paragraph, width - 20)) addEntry(new Row(line, paragraph));

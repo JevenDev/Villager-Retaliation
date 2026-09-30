@@ -273,6 +273,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     void acceptOverview(com.jvn.villagerretaliation.network.SettlementViewOverviewPayload payload) {
         if (!this.snapshots.accept(payload, Util.getMillis())) return;
         this.header = this.snapshots.header();
+        if (this.inspected instanceof SettlementManagementPayload.Depot || this.inspected instanceof SettlementManagementPayload.Order) {
+            var selected = this.inspected;
+            var page = selected instanceof SettlementManagementPayload.Depot ? Page.DEPOTS : Page.TRADE;
+            this.inspected = this.snapshots.entries(page).stream().filter(entry -> entry.id().equals(selected.id())).findFirst().orElse(null);
+            if (this.inspected instanceof SettlementManagementPayload.Depot depot) {
+                this.selectedBlock = depot.position();
+                this.selectedArea = depot.area();
+            }
+        }
         this.browser.updateAttention(this.snapshots.entries(Page.ISSUES));
         this.roster.clear();
         for (var entry : this.snapshots.entries(Page.RESIDENTS)) {
@@ -371,13 +380,24 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
         }
         int nameWidth = Math.clamp(this.width / 5, 82, 144);
-        addRenderableWidget(new Button(2, 2, nameWidth - 4, 30, text("overview"),
-                ignored -> openManagement(Page.SUMMARY, ""), narration -> narration.get()) {
-            @Override
-            protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-                if (isHoveredOrFocused()) graphics.renderOutline(getX(), getY(), getWidth(), getHeight(), 0xFF81B6FF);
-            }
-        });
+        addRenderableWidget(new SettlementViewUi.HeaderButton(text("overview"), 2, nameWidth - 4,
+                () -> openHeaderPopup(SettlementViewPopup.Kind.OVERVIEW, 4)));
+        var metrics = List.of("Treasury", "Residents", "Beds", "Food supply", "Issues");
+        int available = this.width - nameWidth - 96;
+        for (int index = 0; index < metrics.size(); index++) {
+            int metric = index;
+            int left = nameWidth + available * index / metrics.size();
+            int width = available * (index + 1) / metrics.size() - (left - nameWidth);
+            addRenderableWidget(new SettlementViewUi.HeaderButton(Component.literal(metrics.get(index)), left, width, () -> {
+                switch (metric) {
+                    case 0 -> openHeaderPopup(SettlementViewPopup.Kind.TREASURY, left);
+                    case 1 -> browse(Page.RESIDENTS, "All");
+                    case 2 -> browse(Page.AREAS, SettlementViewBrowser.kindFilter(SettlementAreaType.HOME));
+                    case 3 -> openHeaderPopup(SettlementViewPopup.Kind.FOOD, left);
+                    case 4 -> browse(Page.ISSUES, "All");
+                }
+            }));
+        }
         addRenderableWidget(Button.builder(Component.literal(this.preferences.sidebar ? ">" : "<"), ignored -> {
             this.preferences.sidebar = !this.preferences.sidebar;
             savePreferences();
@@ -411,6 +431,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.overlayButton = addRenderableWidget(tool(Component.literal("Overlays"),
                 toolTop + (this.layout.railSize + 2) * 5, net.minecraft.world.item.Items.SPYGLASS, false,
                 () -> this.preferences.workOverlay || this.preferences.issueOverlay, () -> openActionPopup(SettlementViewPopup.Kind.OVERLAYS)));
+        addRenderableWidget(tool(Component.literal("Settlement menu"), toolTop + (this.layout.railSize + 2) * 6,
+                net.minecraft.world.item.Items.BOOK, false, () -> this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.NAVIGATION,
+                () -> openHeaderPopup(SettlementViewPopup.Kind.NAVIGATION, this.layout.worldLeft)));
         this.claimFree = addRenderableWidget(Button.builder(text("plot_free"), ignored -> claimPlot(true))
                 .bounds(this.layout.worldLeft, this.layout.commandBottom - 44, Math.max(40, (this.panelLeft - this.layout.worldLeft - 10) / 2), 20).build());
         this.buyPlot = addRenderableWidget(Button.builder(text("plot_buy", 0), ignored -> claimPlot(false))
@@ -481,14 +504,22 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void browseResidents() {
+        browse(Page.RESIDENTS, "All");
+    }
+
+    private void browse(Page page, String filter) {
+        this.popup = null;
+        clearControls();
         if (!this.preferences.sidebar) {
             this.preferences.sidebar = true;
             savePreferences();
             rebuildWidgets();
         }
         this.inspector.browse();
-        this.browser.page = Page.RESIDENTS;
-        this.browser.filter = "All";
+        this.browser.page = page;
+        this.browser.filter = filter;
+        this.browser.query = "";
+        this.search.setValue("");
         this.browser.scroll = 0;
         updateInspector();
     }
@@ -552,11 +583,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void updateBrowserRows() {
         if (this.filterButton == null) return;
         var rows = this.browser.rows(this.snapshots.entries(this.browser.page));
-        this.filterButton.setMessage(Component.literal(this.browser.filter + " (" + rows.size() + ")"));
+        this.filterButton.setMessage(Component.literal((this.browser.page == Page.DEPOTS || this.browser.page == Page.TRADE
+                ? SettlementManagementScreen.enumText("page", this.browser.page).getString() + " / " : "")
+                + this.browser.filter + " (" + rows.size() + ")"));
         if (this.search != null) this.search.setHint(Component.literal("Search " + switch (this.browser.page) {
             case RESIDENTS -> "residents...";
             case AREAS -> "areas...";
             case PROJECTS -> "buildings...";
+            case DEPOTS -> "depots...";
+            case TRADE -> "trade orders...";
             default -> "issues...";
         }));
         this.browser.scroll = Math.clamp(this.browser.scroll, 0, Math.max(0, rows.size() - this.browserRows.size()));
@@ -589,7 +624,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.selection.select(List.of(), false);
             syncSelection();
             this.selectedArea = null;
-            if (position == null) openManagement(issue.target(), issue.targetId() == null ? "" : issue.targetId().toString());
+        } else if (entry instanceof SettlementManagementPayload.Depot depot) {
+            select(new Pick(depot.position(), null), depot.area());
+            this.inspected = depot;
+        } else if (entry instanceof SettlementManagementPayload.Order) {
+            select(new Pick(null, null), null);
+            this.inspected = entry;
         }
         updateActions();
     }
@@ -809,9 +849,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.popup != null) this.popup.render(graphics, this.font, mouseX, mouseY, partialTick);
     }
 
-    private void renderChrome(GuiGraphics graphics, int mouseX, int mouseY) {
-        SettlementViewUi.frame(graphics, 0, 0, this.width, SettlementViewLayout.HEADER_HEIGHT);
-        int nameWidth = Math.clamp(this.width / 5, 82, 144);
+    void renderPanelBackdrop(GuiGraphics graphics, int width) {
+        renderHeader(graphics, -1, -1, width);
+    }
+
+    private void renderHeader(GuiGraphics graphics, int mouseX, int mouseY, int screenWidth) {
+        SettlementViewUi.frame(graphics, 0, 0, screenWidth, SettlementViewLayout.HEADER_HEIGHT);
+        int nameWidth = Math.clamp(screenWidth / 5, 82, 144);
         SettlementViewUi.item(graphics, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.RED_BANNER), 7, 7, 18);
         graphics.drawString(this.font, this.font.plainSubstrByWidth(this.header.name(), nameWidth - 34), 29, 7, 0xFFFFFF);
         graphics.drawString(this.font, this.font.plainSubstrByWidth(SettlementManagementScreen.enumText("stage", this.header.stage()).getString(),
@@ -821,7 +865,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var values = List.of(this.header.balance().decimal(2), Integer.toString(this.header.population()), Integer.toString(this.header.housing()),
                 String.format(java.util.Locale.ROOT, "%.1f", this.header.foodDays()), Integer.toString(this.header.issues()));
         var labels = List.of("Treasury", "Residents", "Beds", "Food days", "Issues");
-        int available = this.width - nameWidth - 96;
+        int available = screenWidth - nameWidth - 96;
         for (int index = 0; index < icons.size(); index++) {
             int left = nameWidth + available * index / icons.size();
             int width = available * (index + 1) / icons.size() - (left - nameWidth);
@@ -839,9 +883,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         long time = this.minecraft.level.getDayTime();
         long clock = Math.floorMod(time + 6_000L, 24_000L);
-        graphics.drawString(this.font, "Day " + (Math.floorDiv(time, 24_000L) + 1), this.width - 90, 7, 0xFFFFFF);
+        graphics.drawString(this.font, "Day " + (Math.floorDiv(time, 24_000L) + 1), screenWidth - 90, 7, 0xFFFFFF);
         graphics.drawString(this.font, String.format(java.util.Locale.ROOT, "%02d:%02d", clock / 1_000L, clock % 1_000L * 60L / 1_000L),
-                this.width - 90, 20, 0xB9C1CB);
+                screenWidth - 90, 20, 0xB9C1CB);
+    }
+
+    private void renderChrome(GuiGraphics graphics, int mouseX, int mouseY) {
+        renderHeader(graphics, mouseX, mouseY, this.width);
         if (this.preferences.sidebar) {
             SettlementViewUi.frame(graphics, this.panelLeft + 2, SettlementViewLayout.HEADER_HEIGHT + 2,
                     this.panelWidth - 4, this.layout.contentBottom - SettlementViewLayout.HEADER_HEIGHT);
@@ -850,7 +898,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         this.panelWidth - 4, this.height - this.overviewMap.top + 20);
             }
         }
-        SettlementViewUi.frame(graphics, 3, SettlementViewLayout.HEADER_HEIGHT + 3, this.layout.railSize + 6, (this.layout.railSize + 2) * 6 + 4);
+        SettlementViewUi.frame(graphics, 3, SettlementViewLayout.HEADER_HEIGHT + 3, this.layout.railSize + 6, (this.layout.railSize + 2) * 7 + 4);
         var commands = contextButtons().stream().filter(button -> button.visible).toList();
         if (!commands.isEmpty()) {
             int left = commands.stream().mapToInt(Button::getX).min().orElse(0) - 3;
@@ -960,8 +1008,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private Component selectedName() {
-        if (this.inspected instanceof SettlementManagementPayload.Issue issue) return SettlementManagementScreen.name(issue).copy()
-                .append("\n").append(SettlementManagementScreen.detail(issue));
+        if (this.inspected != null) return SettlementManagementScreen.name(this.inspected).copy()
+                .append("\n").append(SettlementManagementScreen.detail(this.inspected));
         if (this.selection.size() > 1) {
             var rows = this.selection.residents().stream().map(this.roster::get).filter(java.util.Objects::nonNull).toList();
             long paused = rows.stream().filter(row -> row.status().equals("paused")).count();
@@ -1027,10 +1075,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.changePrefab.visible = manipulating && draft != null;
         }
         if (this.manage != null) {
+            this.manage.setMessage(this.inspected instanceof SettlementManagementPayload.Depot ? Component.literal("Depot settings")
+                    : this.inspected instanceof SettlementManagementPayload.Order ? Component.literal("Edit trade order") : text("manage_selection"));
             this.manage.setTooltip(net.minecraft.client.gui.components.Tooltip.create(selectedName()));
-            this.manage.active = !this.commands.busy() && (this.inspected instanceof SettlementManagementPayload.Issue || this.resident != null
+            this.manage.active = !this.commands.busy() && (this.inspected != null || this.resident != null
                     || this.projects.containsKey(this.selectedArea)
                     || this.selectedArea != null && this.areas.containsKey(this.selectedArea) && permits(SettlementPermission.BUILD));
+            if (this.inspected instanceof SettlementManagementPayload.Depot) this.manage.active &= permits(SettlementPermission.LOGISTICS) && !this.parent.submitting();
+            if (this.inspected instanceof SettlementManagementPayload.Order) this.manage.active &= permits(SettlementPermission.TRADE) && !this.parent.submitting();
             this.drawArea.active = permits(SettlementPermission.BUILD) && !this.commands.busy();
             this.drawArea.setMessage(text(this.interaction.is(Mode.DRAW_AREA) ? "cancel_area" : "draw_area"));
         }
@@ -1131,6 +1183,19 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.snapshots.refresh();
         this.residentRefreshAt = 0;
         updateActions();
+    }
+
+    private void openHeaderPopup(SettlementViewPopup.Kind kind, int left) {
+        clearControls();
+        this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(kind, null), left, SettlementViewLayout.HEADER_HEIGHT + 4);
+        refreshPopup();
+    }
+
+    private SettlementViewPopup.Action menuAction(Component label, boolean enabled, Runnable action) {
+        return new SettlementViewPopup.Action(label, enabled, () -> {
+            this.popup = null;
+            action.run();
+        });
     }
 
     private void openActionPopup(SettlementViewPopup.Kind kind) {
@@ -2306,6 +2371,47 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         List<SettlementViewPopup.Action> actions = new ArrayList<>();
         boolean ready = !this.commands.busy();
         switch (target.kind()) {
+            case OVERVIEW -> {
+                details.add(Component.literal(this.header.name()));
+                details.add(SettlementManagementScreen.text("stage", SettlementManagementScreen.enumText("stage", this.header.stage())));
+                details.add(SettlementManagementScreen.text("population", this.header.population(), this.header.housing()));
+                details.add(SettlementManagementScreen.text("food", String.format(java.util.Locale.ROOT, "%.1f", this.header.foodDays())));
+                details.add(SettlementManagementScreen.text("support", String.format(java.util.Locale.ROOT, "%.1f", this.header.supportTicks() / 24_000.0D),
+                        String.format(java.util.Locale.ROOT, "%.1f", this.header.requiredTicks() / 24_000.0D)));
+                for (var missing : this.header.missing()) details.add(SettlementManagementScreen.enumText("requirement", missing));
+                actions.add(menuAction(Component.literal("Residents"), true, this::browseResidents));
+                actions.add(menuAction(Component.literal("Construction"), true, () -> browse(Page.PROJECTS, "All")));
+                actions.add(menuAction(Component.literal("Issues (" + this.header.issues() + ")"), true, () -> browse(Page.ISSUES, "All")));
+                actions.add(menuAction(Component.literal("Settlement administration"), ready, () -> openManagement(Page.SUMMARY, "")));
+            }
+            case TREASURY -> {
+                details.add(SettlementManagementScreen.text("treasury_balance", this.header.balance().mixedFraction()));
+                details.add(SettlementManagementScreen.text("treasury_limits", this.header.reserve().mixedFraction(),
+                        this.header.spent().mixedFraction(), this.header.budget().mixedFraction()));
+                actions.add(menuAction(SettlementManagementScreen.text("form.treasury"), ready && permits(SettlementPermission.TREASURY),
+                        () -> this.minecraft.setScreen(new SettlementEditScreen(management(), SettlementEditScreen.Mode.TREASURY, null))));
+                actions.add(menuAction(SettlementManagementScreen.text("form.budget"), ready && permits(SettlementPermission.TREASURY),
+                        () -> this.minecraft.setScreen(new SettlementEditScreen(management(), SettlementEditScreen.Mode.BUDGET, null))));
+                actions.add(menuAction(Component.literal("Trade orders"), true, () -> browse(Page.TRADE, "All")));
+            }
+            case FOOD -> {
+                details.add(SettlementManagementScreen.text("food", String.format(java.util.Locale.ROOT, "%.1f", this.header.foodDays())));
+                details.add(SettlementManagementScreen.text("food_hint"));
+                if (this.header.shortageTicks() > 0) details.add(SettlementManagementScreen.text("shortage",
+                        String.format(java.util.Locale.ROOT, "%.1f", this.header.shortageTicks() / 24_000.0D)));
+                actions.add(menuAction(Component.literal("Farms"), true, () -> browse(Page.AREAS, SettlementViewBrowser.kindFilter(SettlementAreaType.FARM))));
+                actions.add(menuAction(Component.literal("Depots"), true, () -> browse(Page.DEPOTS, "All")));
+                actions.add(menuAction(Component.literal("Settlement issues"), true, () -> browse(Page.ISSUES, "All")));
+            }
+            case NAVIGATION -> {
+                details.add(Component.literal(this.header.name()));
+                for (var page : List.of(Page.RESIDENTS, Page.AREAS, Page.PROJECTS, Page.DEPOTS, Page.TRADE, Page.ISSUES)) {
+                    actions.add(menuAction(SettlementManagementScreen.enumText("page", page), true, () -> browse(page, "All")));
+                }
+                for (var page : List.of(Page.BEDS, Page.APPLICANTS, Page.DELEGATES, Page.HISTORY, Page.SUMMARY)) {
+                    actions.add(menuAction(SettlementManagementScreen.enumText("page", page), ready, () -> openManagement(page, "")));
+                }
+            }
             case RESIDENT -> {
                 var current = this.resident != null && this.resident.id().equals(target.id()) ? this.resident : null;
                 if (current == null) {
@@ -2392,7 +2498,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                                 + project.blocker().replace("interaction.work.builder.", ""), SettlementManagementScreen.text("project_blocked").getString()));
                     }
                     if (!project.missingMaterials().isBlank()) details.add(SettlementManagementScreen.text("project_missing", project.missingMaterials()));
-                    actions.add(contextAction("manage_selection", ready, () -> openManagement(Page.PROJECTS, project.id().toString())));
+                    actions.add(contextAction("manage_selection", ready, () -> this.minecraft.setScreen(new SettlementProjectScreen(management(), project, this))));
                     actions.add(new SettlementViewPopup.Action(SettlementManagementScreen.text("project_builder"), ready,
                             () -> openManagement(Page.RESIDENTS, project.builder().toString())));
                     if (permits(SettlementPermission.BUILD)) {
@@ -2501,7 +2607,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var selected = inspectorSelection();
         var area = selected instanceof SettlementManagementPayload.Area value ? value
                 : selected instanceof SettlementManagementPayload.Resident value ? this.areas.get(value.area())
-                : selected instanceof SettlementManagementPayload.Project value ? this.areas.get(value.area()) : null;
+                : selected instanceof SettlementManagementPayload.Project value ? this.areas.get(value.area())
+                : selected instanceof SettlementManagementPayload.Depot value ? this.areas.get(value.area()) : null;
         return area != null && area.kind().role() != null ? area : null;
     }
 
@@ -2536,7 +2643,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var selected = inspectorSelection();
         var area = inspectorWorksite();
         switch (section) {
-            case OVERVIEW -> focusSelection();
+            case OVERVIEW -> {
+                if (selected instanceof SettlementManagementPayload.Order) manageSelection();
+                else focusSelection();
+            }
             case STAFF -> {
                 if (selected instanceof SettlementManagementPayload.Project project) {
                     this.minecraft.setScreen(new SettlementProjectScreen(management(), project, this));
@@ -2579,7 +2689,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 }
             }
             case SETTINGS -> {
-                if (selected instanceof SettlementManagementPayload.Resident resident && resident.settings() != null) {
+                if (selected instanceof SettlementManagementPayload.Depot || selected instanceof SettlementManagementPayload.Order) {
+                    manageSelection();
+                } else if (selected instanceof SettlementManagementPayload.Resident resident && resident.settings() != null) {
                     this.minecraft.setScreen(new SettlementWorkerScreen(management(), resident, this));
                 } else if (area != null) this.minecraft.setScreen(new SettlementWorkerScreen(management(), area, this));
             }
@@ -2626,6 +2738,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void manageSelection() {
+        if (this.inspected instanceof SettlementManagementPayload.Depot depot) {
+            this.minecraft.setScreen(new SettlementEditScreen(management(), SettlementEditScreen.Mode.DEPOT, depot));
+            return;
+        }
+        if (this.inspected instanceof SettlementManagementPayload.Order order) {
+            this.minecraft.setScreen(new SettlementEditScreen(management(), SettlementEditScreen.Mode.ORDER, order));
+            return;
+        }
         if (this.inspected instanceof SettlementManagementPayload.Issue issue) {
             openManagement(issue.target(), issue.targetId() == null ? "" : issue.targetId().toString());
             return;
@@ -2633,7 +2753,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.resident != null) {
             openManagement(Page.RESIDENTS, this.resident.id().toString());
         } else if (this.projects.containsKey(this.selectedArea)) {
-            openManagement(Page.PROJECTS, this.selectedArea.toString());
+            this.minecraft.setScreen(new SettlementProjectScreen(management(), this.projects.get(this.selectedArea), this));
         } else if (this.areas.containsKey(this.selectedArea)) {
             this.parent.clearBuildingDraft();
             this.editingArea = this.areas.get(this.selectedArea);

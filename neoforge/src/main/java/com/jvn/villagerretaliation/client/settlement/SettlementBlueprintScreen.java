@@ -19,6 +19,8 @@ public final class SettlementBlueprintScreen extends Screen {
     private Button draft;
     private int left;
     private int panelWidth;
+    private int top;
+    private int panelHeight;
 
     public SettlementBlueprintScreen(SettlementManagementScreen parent) {
         super(SettlementManagementScreen.text("building_prefabs"));
@@ -33,9 +35,12 @@ public final class SettlementBlueprintScreen extends Screen {
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(500, this.width - 32);
-        this.left = (this.width - this.panelWidth) / 2;
-        EditBox search = new EditBox(this.font, this.left, 36, this.panelWidth, 20, SettlementManagementScreen.text("search"));
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(500, this.width - 32), this.height - 24, true);
+        this.panelWidth = layout.width();
+        this.left = layout.left();
+        this.top = layout.top();
+        this.panelHeight = layout.height();
+        EditBox search = new EditBox(this.font, this.left, this.top + 24, this.panelWidth, 20, SettlementManagementScreen.text("search"));
         search.setMaxLength(64);
         search.setHint(SettlementManagementScreen.text("search"));
         search.setValue(this.query);
@@ -51,9 +56,9 @@ public final class SettlementBlueprintScreen extends Screen {
             if (this.selected != null) {
                 this.parent.placeBuilding(this.selected);
             }
-        }).bounds(this.left, this.height - 28, half, 20).build());
+        }).bounds(this.left, this.top + this.panelHeight - 16, half, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
-                .bounds(this.left + half + 6, this.height - 28, half, 20).build());
+                .bounds(this.left + half + 6, this.top + this.panelHeight - 16, half, 20).build());
         updateButton();
         setInitialFocus(search);
     }
@@ -71,7 +76,7 @@ public final class SettlementBlueprintScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(this.parent);
+        if (!SettlementViewClient.resume(this.parent)) this.minecraft.setScreen(this.parent);
     }
 
     @Override
@@ -80,16 +85,23 @@ public final class SettlementBlueprintScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 16, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 4, 0xFFFFFF);
         Component message = SettlementManagementScreen.text("building_prefab_hint");
-        graphics.drawWordWrap(this.font, message, this.left, this.height - 80, this.panelWidth, 0xD0D0D0);
+        graphics.drawWordWrap(this.font, message, this.left, this.top + this.panelHeight - 68, this.panelWidth, 0xD0D0D0);
     }
 
     private final class Blueprints extends ObjectSelectionList<BlueprintRow> {
         private Blueprints() {
-            super(SettlementBlueprintScreen.this.minecraft, panelWidth, Math.max(32, SettlementBlueprintScreen.this.height - 150), 64, 26);
+            super(SettlementBlueprintScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 126), top + 52, 26);
             setX(left);
         }
 

@@ -34,6 +34,7 @@ import net.minecraft.world.item.Items;
 public final class SettlementEditScreen extends Screen {
     private final SettlementManagementScreen parent;
     private final SettlementViewScreen view;
+    private final boolean returnToView;
     private final Mode mode;
     private final Entry original;
     private final UUID id;
@@ -61,6 +62,7 @@ public final class SettlementEditScreen extends Screen {
         super(SettlementManagementScreen.enumText("form", mode));
         this.parent = parent;
         this.view = view;
+        this.returnToView = Minecraft.getInstance().screen instanceof SettlementViewScreen;
         this.mode = mode;
         this.original = original;
         this.id = original == null ? UUID.randomUUID() : original.id();
@@ -122,10 +124,12 @@ public final class SettlementEditScreen extends Screen {
 
     @Override
     protected void init() {
-        this.panelWidth = Math.min(440, this.width - 32);
-        this.panelHeight = Math.min(258, this.height - 24);
-        this.left = (this.width - this.panelWidth) / 2;
-        this.top = (this.height - this.panelHeight) / 2;
+        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(440, this.width - 32),
+                Math.min(258, this.height - 24), true);
+        this.panelWidth = layout.width();
+        this.panelHeight = layout.height();
+        this.left = layout.left();
+        this.top = layout.top();
         this.labels.clear();
         int x = this.left;
         int y = this.top + 26;
@@ -338,10 +342,10 @@ public final class SettlementEditScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (this.view != null && this.parent.submitting()) {
+        if ((this.view != null || this.returnToView) && this.parent.submitting()) {
             return;
         }
-        if (this.view == null || !SettlementViewClient.resume(this.parent)) {
+        if (this.view == null && !this.returnToView || !SettlementViewClient.resume(this.parent)) {
             this.minecraft.setScreen(this.parent);
         }
     }
@@ -353,8 +357,10 @@ public final class SettlementEditScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xD0101010);
+        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xD0101010);
+        }
     }
 
     @Override

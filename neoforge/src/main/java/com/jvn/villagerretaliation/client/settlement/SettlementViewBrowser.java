@@ -57,12 +57,18 @@ final class SettlementViewBrowser {
         return false;
     }
 
+    static String kindFilter(com.jvn.villagerretaliation.settlement.SettlementAreaType type) {
+        return type.name().toLowerCase(Locale.ROOT);
+    }
+
     static String kind(SettlementManagementPayload.Entry entry) {
         return switch (entry) {
             case SettlementManagementPayload.Resident r -> r.profession().getPath();
             case SettlementManagementPayload.Area a -> a.kind().name().toLowerCase(Locale.ROOT);
             case SettlementManagementPayload.Project p -> p.status().name().toLowerCase(Locale.ROOT);
             case SettlementManagementPayload.Issue i -> i.kind().name().toLowerCase(Locale.ROOT);
+            case SettlementManagementPayload.Depot d -> d.purpose().name().toLowerCase(Locale.ROOT);
+            case SettlementManagementPayload.Order o -> o.direction().name().toLowerCase(Locale.ROOT);
             default -> "";
         };
     }
@@ -72,6 +78,7 @@ final class SettlementViewBrowser {
             case SettlementManagementPayload.Resident r -> r.status() + " " + r.presence().name() + " " + r.diagnostic();
             case SettlementManagementPayload.Project p -> p.blocker();
             case SettlementManagementPayload.Issue i -> i.cause() + " " + i.detail();
+            case SettlementManagementPayload.Order o -> o.result() + " " + o.item();
             default -> "";
         };
     }
