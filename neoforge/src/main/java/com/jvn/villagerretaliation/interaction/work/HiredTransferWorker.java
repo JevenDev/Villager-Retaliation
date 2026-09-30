@@ -26,14 +26,20 @@ final class HiredTransferWorker {
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         if (allocation == null) {
             for (var order : queue.orders()) {
-                if (queue.available(order.id()) <= 0) continue;
+                if (!order.runnable()) continue;
+                long stock = HiredTransferService.stock(level, villager, order);
+                if (stock < 0) { queue.blocker(order.id(), "transfer_storage_unobserved"); continue; }
+                if (queue.available(order.id(), stock) <= 0) {
+                    if (order.mode() == HiredTransferQueue.Mode.MAINTAIN_STOCK) queue.blocker(order.id(), "transfer_satisfied");
+                    continue;
+                }
                 if (context.state().getCompound("TransferRetryAfter").getLong(order.id().toString()) > level.getGameTime()) continue;
                 String invalid = validate(level, villager, queue, order, false);
                 if (!invalid.isEmpty()) {
                     queue.blocker(order.id(), invalid);
                     continue;
                 }
-                allocation = queue.reserve(villager.getUUID(), order.id(), HiredVillagerRoles.courierTransferLimit(context.aptitude()));
+                allocation = queue.reserve(villager.getUUID(), order.id(), HiredVillagerRoles.courierTransferLimit(context.aptitude()), stock);
                 if (allocation == null) continue;
                 bind(level, villager, order);
                 AssignedStorageService.releaseCourierClaims(villager);
@@ -56,7 +62,7 @@ final class HiredTransferWorker {
                 return null;
             }
             String reason = queue.orders().stream().filter(HiredTransferQueue.Order::runnable)
-                    .map(HiredTransferQueue.Order::blocker).filter(value -> !value.isEmpty()).findFirst().orElse("");
+                    .map(HiredTransferQueue.Order::blocker).filter(value -> !value.isEmpty() && !value.equals("transfer_satisfied")).findFirst().orElse("");
             if (!reason.isEmpty()) return blocked(level, villager, context, reason);
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             HiredWorkerBrain.clearFailure(context);
@@ -66,6 +72,22 @@ final class HiredTransferWorker {
         var order = queue.order(allocation.order());
         String invalid = validate(level, villager, queue, order, allocation.started());
         if (!invalid.isEmpty()) return blocked(level, villager, context, queue, order, invalid);
+        if (!allocation.started() && order.mode() == HiredTransferQueue.Mode.MAINTAIN_STOCK) {
+            long stock = HiredTransferService.stock(level, villager, order);
+            if (stock < 0) return blocked(level, villager, context, queue, order, "transfer_storage_unobserved");
+            int needed = (int) Math.max(0, Math.min(allocation.amount(), order.amount() - stock + allocation.amount()));
+            if (needed == 0) {
+                queue.releasePlanned(villager.getUUID());
+                AssignedStorageService.releaseCourierClaims(villager);
+                queue.blocker(order.id(), "transfer_satisfied");
+                VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+                HiredWorkerBrain.clearFailure(context);
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+                return WorkResult.idle("interaction.work.transfer.waiting");
+            }
+            queue.resizePlanned(allocation.id(), needed);
+            allocation = queue.allocation(villager.getUUID());
+        }
         bind(level, villager, order);
         if (allocation.started()) {
             if (cargo(context, order) < allocation.amount()) {
@@ -126,15 +148,19 @@ final class HiredTransferWorker {
     }
 
     private static String validate(ServerLevel level, Villager villager, HiredTransferQueue queue, HiredTransferQueue.Order order, boolean delivering) {
+        if (!delivering && com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(level, order.source().position(), order.destination().position()))
+            return "transfer_storage_changed";
+        if (!delivering && !level.hasChunkAt(order.source().position()) || !level.hasChunkAt(order.destination().position()))
+            return "transfer_storage_unloaded";
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
         boolean permitted;
         if (duty == null) {
             permitted = HiredTransferService.personalEndpoint(level, villager, order.destination(), false)
                     && (delivering || HiredTransferService.personalEndpoint(level, villager, order.source(), true));
         } else if (delivering) {
-            permitted = SettlementTransferService.destination(duty.town(), duty.area().id(), order)
-                    && SettlementTransferService.destination(duty.town(), queue.owner(), order);
-        } else permitted = SettlementTransferService.endpoints(duty.town(), duty.area().id(), order);
+            permitted = SettlementTransferService.destination(level, duty.town(), duty.area().id(), order, villager.getUUID())
+                    && SettlementTransferService.destination(level, duty.town(), queue.owner(), order, null);
+        } else permitted = SettlementTransferService.endpoints(level, duty.town(), duty.area().id(), order, villager.getUUID());
         if (!permitted) return "transfer_storage_changed";
         return !delivering && !level.hasChunkAt(order.source().position()) || !level.hasChunkAt(order.destination().position())
                 ? "transfer_storage_unloaded" : "";

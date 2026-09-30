@@ -100,6 +100,23 @@ public final class SettlementTransferManagementGameTests {
                 helper.assertValueEqual(restored.request(), request.request(), "snapshots acknowledge the exact request");
                 helper.assertValueEqual(restored.queue(), snapshot.queue(), "queue progress survives the wire format");
                 helper.assertTrue(restored.applied() && restored.editable(), "the accepted action retains its authority result");
+                helper.assertValueEqual(append.mode(), HiredTransferQueue.Mode.FINITE, "legacy constructors retain finite deliveries");
+                var queue = fixture.town().transferQueues().get(fixture.area().id());
+                var recurring = new TransferRequestPayload(request.target(), UUID.randomUUID(), queue.revision(),
+                        new TransferRequestPayload.Append(command.source(), command.destination(), sample, 31, HiredTransferQueue.Mode.MAINTAIN_STOCK));
+                TransferRequestPayload.STREAM_CODEC.encode(buffer, recurring);
+                var recurringDecoded = TransferRequestPayload.STREAM_CODEC.decode(buffer);
+                helper.assertValueEqual(((TransferRequestPayload.Append) recurringDecoded.command()).mode(),
+                        HiredTransferQueue.Mode.MAINTAIN_STOCK, "recurring mode survives the request");
+                helper.assertTrue(TransferManagementService.apply(fixture.leader(), recurringDecoded).isEmpty(), "the decoded recurring order is valid");
+                helper.assertFalse(TransferManagementService.apply(fixture.leader(), recurringDecoded).isEmpty(), "stale recurring requests cannot duplicate orders");
+                var recurringSnapshot = TransferManagementService.snapshot(fixture.leader(), recurringDecoded, true, "");
+                TransferSnapshotPayload.STREAM_CODEC.encode(buffer, recurringSnapshot);
+                var recurringRestored = TransferSnapshotPayload.STREAM_CODEC.decode(buffer);
+                var restoredQueue = HiredTransferQueue.load(recurringRestored.queue(), level.registryAccess(), ignored -> {});
+                helper.assertValueEqual(restoredQueue.orders().getLast().mode(), HiredTransferQueue.Mode.MAINTAIN_STOCK, "snapshots retain recurring mode");
+                helper.assertValueEqual(restoredQueue.orders().getLast().amount(), 31, "snapshots retain the destination target");
+                helper.assertValueEqual(recurringRestored.stocks(), recurringSnapshot.stocks(), "destination stock and incoming quantities survive the wire format");
                 boolean rejected = false;
                 try { new TransferRequestPayload.Append(command.source(), command.destination(), sample, 4097); }
                 catch (IllegalArgumentException invalid) { rejected = true; }

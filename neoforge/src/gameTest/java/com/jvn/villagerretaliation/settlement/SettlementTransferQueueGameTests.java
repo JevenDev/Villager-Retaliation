@@ -46,7 +46,7 @@ public final class SettlementTransferQueueGameTests {
         helper.assertValueEqual(restored.order(order.id()).pending(), 3, "saving retains the remaining cargo receipt");
         helper.assertTrue(restored.delivered(first.id(), 3), "cancelled orders still accept the cargo already picked up");
         helper.assertFalse(restored.delivered(first.id(), 3), "a delivery receipt cannot replay");
-        helper.assertValueEqual(restored.order(order.id()).delivered(), 5, "only the real collected quantity was delivered");
+        helper.assertValueEqual(restored.order(order.id()).delivered(), 5L, "only the real collected quantity was delivered");
         helper.assertTrue(restored.edit(order.id(), HiredTransferQueue.Edit.REMOVE, 0), "the settled cancelled order can be removed");
         helper.succeed();
     }
@@ -89,7 +89,7 @@ public final class SettlementTransferQueueGameTests {
         invalid(helper, () -> HiredTransferQueue.load(saved, helper.getLevel().registryAccess(), ignored -> {}));
         helper.assertValueEqual(saved.getList("Allocations", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).getInt("Amount"), 7,
                 "rejected data is preserved for recovery");
-        before.putInt("Version", 2);
+        before.putInt("Version", 3);
         invalid(helper, () -> HiredTransferQueue.load(before, helper.getLevel().registryAccess(), ignored -> {}));
         queue.detach(allocation.worker());
         helper.assertValueEqual(queue.order(order.id()).blocker(), "transfer_worker_changed", "a reassignment exposes the unsettled cargo");
@@ -183,6 +183,43 @@ public final class SettlementTransferQueueGameTests {
         } finally {
             villager.discard();
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "transfer_queue")
+    public static void recurringReceiptsExceedFiniteLimitsAndMigrateOldOrders(GameTestHelper helper) {
+        var queue = queue();
+        var endpoints = order(4);
+        var order = HiredTransferQueue.Order.create(endpoints.source(), endpoints.destination(), endpoints.sample(), 4096, HiredTransferQueue.Mode.MAINTAIN_STOCK);
+        queue.append(order);
+        for (int trip = 0; trip < 3; trip++) {
+            var allocation = queue.reserve(UUID.randomUUID(), order.id(), 4096, 0);
+            helper.assertTrue(allocation != null, "consumption makes a recurring order runnable again");
+            queue.picked(allocation.id(), 4096);
+            queue.delivered(allocation.id(), 4096);
+        }
+        var saved = queue.save(helper.getLevel().registryAccess());
+        var restored = HiredTransferQueue.load(saved, helper.getLevel().registryAccess(), ignored -> {});
+        helper.assertValueEqual(restored.order(order.id()).delivered(), 12288L, "cumulative receipts exceed the finite-order cap");
+        helper.assertValueEqual(restored.available(order.id(), 4096), 0, "stored stock satisfies the target");
+        helper.assertValueEqual(restored.available(order.id(), 4090), 6, "only the destination deficit is allocated");
+        helper.assertTrue(restored.order(order.id()).runnable() && !restored.order(order.id()).complete(), "satisfied recurring orders remain enabled");
+        var legacy = queue();
+        var finite = order(10);
+        legacy.append(finite);
+        var picked = legacy.reserve(UUID.randomUUID(), finite.id(), 6);
+        legacy.picked(picked.id(), 6);
+        legacy.delivered(picked.id(), 2);
+        var old = legacy.save(helper.getLevel().registryAccess());
+        old.putInt("Version", 1);
+        var entry = old.getList("Orders", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+        entry.remove("Mode");
+        entry.putInt("Picked", 6);
+        entry.putInt("Delivered", 2);
+        var migrated = HiredTransferQueue.load(old, helper.getLevel().registryAccess(), ignored -> {});
+        helper.assertValueEqual(migrated.order(finite.id()).mode(), HiredTransferQueue.Mode.FINITE, "old saves default to finite deliveries");
+        helper.assertValueEqual(migrated.allocation(picked.worker()).id(), picked.id(), "migration preserves the allocation identity");
+        helper.assertValueEqual(migrated.order(finite.id()).pending(), 4, "migration preserves unsettled cargo");
         helper.succeed();
     }
 

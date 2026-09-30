@@ -10,10 +10,7 @@ public final class SettlementTransferService {
 
     public static String append(ServerPlayer player, SettlementRecord town, UUID area, long revision, HiredTransferQueue.Order requested) {
         if (!permits(player, town, area)) return "Courier worksite permission changed";
-        var links = SettlementWorksiteService.links(town, area);
-        if (depot(town, requested.source()) == null || depot(town, requested.destination()) == null
-                || !links.permitsSupply(requested.source().depot()) || !links.permitsOutput(requested.destination().depot())
-                || !depot(town, requested.destination()).purpose().accepts(requested.sample())) return "Choose permitted source and destination depots";
+        if (!endpoints(player.serverLevel(), town, area, requested, null)) return "Choose permitted source and destination storage";
         var queue = town.transferQueues().get(area);
         if (queue == null ? revision != 0L : queue.revision() != revision) return "Transfer orders changed";
         if (queue == null) queue = town.beginTransfers(player.getUUID(), area);
@@ -63,9 +60,49 @@ public final class SettlementTransferService {
 
     public static void bind(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.Villager villager,
                             SettlementRecord town, HiredTransferQueue.Order order) {
-        SettlementLogisticsService.bind(villager, new SettlementHaulTask(
-                order.source().depot(), order.destination().depot(), order.sample(), order.amount(), false));
+        if (order.source().depot() != null && order.destination().depot() != null) {
+            SettlementLogisticsService.bind(villager, new SettlementHaulTask(
+                    order.source().depot(), order.destination().depot(), order.sample(), order.amount(), false));
+        } else SettlementLogisticsService.clear(villager);
         SettlementDepotService.synchronizeStorage(level, villager, town);
+    }
+
+    public static boolean endpoint(net.minecraft.server.level.ServerLevel level, SettlementRecord town, UUID area,
+                                   HiredTransferQueue.Endpoint endpoint, boolean source, UUID worker) {
+        var workplace = town.workplace(area);
+        if (workplace == null) return false;
+        var plan = town.worksitePlans().get(area);
+        var configured = worker == null ? plan == null ? SettlementStorageLinks.AUTOMATIC : plan.settings().storage()
+                : SettlementStorageService.effective(town, worker);
+        var depot = depot(town, endpoint);
+        if (endpoint.depot() != null && depot == null) return false;
+        if (!configured.automatic()) return configured.entries().stream().anyMatch(link ->
+                (source ? link.purpose().supplies() : link.purpose().outputs())
+                && SettlementSupplyStock.sameStorage(level, endpoint.position(), link.position())
+                && (depot != null ? depot.rulesObserved()
+                        : SettlementStorageService.permitted(level, town, workplace.type().role(), link)));
+        var links = worker == null ? SettlementWorksiteService.links(town, area) : SettlementWorksiteService.links(town, area, worker);
+        return depot != null && (source ? links.permitsSupply(depot.id()) : links.permitsOutput(depot.id()));
+    }
+
+    public static boolean destination(net.minecraft.server.level.ServerLevel level, SettlementRecord town, UUID area,
+                                      HiredTransferQueue.Order order, UUID worker) {
+        var depot = depot(town, order.destination());
+        return endpoint(level, town, area, order.destination(), false, worker)
+                && (depot == null || depot.purpose().accepts(order.sample()));
+    }
+
+    public static boolean endpoints(net.minecraft.server.level.ServerLevel level, SettlementRecord town, UUID area,
+                                    HiredTransferQueue.Order order, UUID worker) {
+        return !SettlementSupplyStock.sameStorage(level, order.source().position(), order.destination().position())
+                && endpoint(level, town, area, order.source(), true, worker)
+                && destination(level, town, area, order, worker);
+    }
+
+    public static long stock(net.minecraft.server.level.ServerLevel level, SettlementRecord town, HiredTransferQueue.Order order) {
+        if (order.mode() == HiredTransferQueue.Mode.FINITE) return 0;
+        var facts = SettlementSupplyStock.observe(level, town, order.destination().position(), order.sample(), null);
+        return facts.known() ? facts.stored() + facts.incoming() : -1;
     }
 
     public static boolean permits(ServerPlayer player, SettlementRecord town, UUID area) {

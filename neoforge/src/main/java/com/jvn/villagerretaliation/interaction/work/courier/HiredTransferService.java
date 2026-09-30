@@ -60,7 +60,8 @@ public final class HiredTransferService {
         if (!com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(player.serverLevel()).available(villager.getUUID())) {
             return "Production stock data requires recovery";
         }
-        if (requested.source().depot() != null || requested.destination().depot() != null
+        if (com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(player.serverLevel(), requested.source().position(), requested.destination().position())
+                || requested.source().depot() != null || requested.destination().depot() != null
                 || !personalEndpoint(player.serverLevel(), villager, requested.source(), true)
                 || !personalEndpoint(player.serverLevel(), villager, requested.destination(), false)) return "Choose assigned source and destination storage";
         var access = access(player.serverLevel(), villager);
@@ -102,7 +103,7 @@ public final class HiredTransferService {
     public static boolean personalEndpoint(ServerLevel level, Villager villager, HiredTransferQueue.Endpoint endpoint, boolean source) {
         if (endpoint.depot() != null || level.isOutsideBuildHeight(endpoint.position()) || !level.getWorldBorder().isWithinBounds(endpoint.position())) return false;
         return AssignedStorageService.assignedStorage(level, villager).stream().anyMatch(record ->
-                record.dimension().equals(level.dimension()) && record.pos().equals(endpoint.position())
+                record.dimension().equals(level.dimension()) && com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(level, record.pos(), endpoint.position())
                         && HiredVillagerContractService.currentContractHirer(villager).filter(record.hirerId()::equals).isPresent()
                         && (record.purpose().equals(source ? AssignedStorageService.SUPPLY_PURPOSE : AssignedStorageService.OUTPUT_PURPOSE)
                                 || record.purpose().equals(AssignedStorageService.GENERAL_PURPOSE))
@@ -121,9 +122,45 @@ public final class HiredTransferService {
         var order = access.queue().order(allocation.order());
         boolean providing = operation == com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation.PROVIDE;
         if (providing && allocation.started() || !order.matches(sample)
-                || !(providing ? order.source() : order.destination()).position().equals(position)) return 0;
-        return Math.max(0, allocation.amount() - additional.stream().filter(order::matches)
+                || !com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(level, (providing ? order.source() : order.destination()).position(), position)) return 0;
+        int limit = allocation.amount();
+        var duty = SettlementWorkforceService.duty(villager).orElse(null);
+        if (providing && duty != null) {
+            var depot = com.jvn.villagerretaliation.settlement.SettlementTransferService.depot(duty.town(), order.source());
+            var facts = com.jvn.villagerretaliation.settlement.SettlementSupplyStock.observe(level, duty.town(), position, sample, null);
+            if (!facts.known()) return 0;
+            long other = Math.max(0, facts.outgoing() - allocation.amount());
+            limit = (int) Math.min(limit, Math.max(0, facts.stored() - other - (depot == null ? 0 : Math.max(0, depot.stockTarget(sample)))));
+        }
+        return Math.max(0, limit - additional.stream().filter(order::matches)
                 .mapToInt(net.minecraft.world.item.ItemStack::getCount).sum());
+    }
+
+    public static long stock(ServerLevel level, Villager villager, HiredTransferQueue.Order order) {
+        if (order.mode() == HiredTransferQueue.Mode.FINITE) return 0;
+        var facts = facts(level, villager, order);
+        return facts.known() ? facts.stored() + facts.incoming() : -1;
+    }
+
+    public static com.jvn.villagerretaliation.settlement.SettlementSupplyStock.Facts facts(ServerLevel level, Villager villager, HiredTransferQueue.Order order) {
+        var duty = SettlementWorkforceService.duty(villager).orElse(null);
+        if (duty != null) return com.jvn.villagerretaliation.settlement.SettlementSupplyStock.observe(level, duty.town(), order.destination().position(), order.sample(), null);
+        var commitments = com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(level);
+        com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.observe(villager);
+        long incoming = 0;
+        var owners = new java.util.HashSet<UUID>();
+        for (var position : com.jvn.villagerretaliation.settlement.SettlementSupplyStock.positions(level, order.destination().position())) {
+            commitments.refresh(level, position);
+            long count = commitments.count(position, order.sample(), null);
+            if (count < 0) return new com.jvn.villagerretaliation.settlement.SettlementSupplyStock.Facts(-1, -1, -1, "transfer_storage_unobserved");
+            incoming += count;
+            owners.addAll(commitments.contributors(position, order.sample()));
+        }
+        long stored = AssignedStorageService.productionStockAt(villager, order.destination().position(), order::matches, owners);
+        if (stored < 0) return new com.jvn.villagerretaliation.settlement.SettlementSupplyStock.Facts(-1, -1, -1, "transfer_storage_unobserved");
+        int claims = AssignedStorageService.reservedItemsExcluding(level, order.destination().position(), owners,
+                com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation.RECEIVE, order::matches);
+        return new com.jvn.villagerretaliation.settlement.SettlementSupplyStock.Facts(Math.max(0, stored - claims), 0, incoming + claims, "available");
     }
 
     public static void releasePlanned(ServerLevel level, Villager villager) {

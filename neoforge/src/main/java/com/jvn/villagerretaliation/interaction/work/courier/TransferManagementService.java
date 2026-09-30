@@ -46,7 +46,7 @@ public final class TransferManagementService {
             return "Courier permission or assignment changed";
         }
         if (request.command() instanceof TransferRequestPayload.Append append) {
-            var order = HiredTransferQueue.Order.create(append.source(), append.destination(), append.sample(), append.amount());
+            var order = HiredTransferQueue.Order.create(append.source(), append.destination(), append.sample(), append.amount(), append.mode());
             return villager != null ? HiredTransferService.appendPersonal(player, villager, request.revision(), order)
                     : SettlementTransferService.append(player, town, target.subject(), request.revision(), order);
         }
@@ -61,6 +61,7 @@ public final class TransferManagementService {
         var target = request.target();
         var storages = new ArrayList<TransferSnapshotPayload.Storage>();
         var products = new ArrayList<TransferSnapshotPayload.Product>();
+        var stocks = new ArrayList<TransferSnapshotPayload.Stock>();
         HiredTransferQueue queue;
         String title;
         String blocker;
@@ -73,6 +74,10 @@ public final class TransferManagementService {
             blocker = access.blocker();
             title = villager.getName().getString();
             editable = blocker.isEmpty();
+            if (queue != null) for (var order : queue.orders()) {
+                var facts = HiredTransferService.facts(level, villager, order);
+                stocks.add(new TransferSnapshotPayload.Stock(order.id(), facts.stored(), facts.incoming()));
+            }
             var positions = AssignedStorageService.assignedStorage(level, villager).stream()
                     .filter(record -> record.dimension().equals(level.dimension())).map(record -> record.pos()).distinct().limit(128).toList();
             for (var position : positions) {
@@ -82,7 +87,8 @@ public final class TransferManagementService {
                 if (!source && !destination) continue;
                 boolean loaded = level.hasChunkAt(position);
                 storages.add(new TransferSnapshotPayload.Storage(endpoint, position.toShortString(), source, destination, loaded));
-                if (source && loaded && level.getBlockEntity(position) instanceof Container container) samples(products, endpoint, container);
+                var contents = AssignedStorageService.observedContents(level, position, player);
+                if (source && contents != null) samples(products, endpoint, new net.minecraft.world.SimpleContainer(contents.toArray(net.minecraft.world.item.ItemStack[]::new)));
             }
         } else {
             var data = SettlementSavedData.get(level);
@@ -99,22 +105,38 @@ public final class TransferManagementService {
             blocker = data.readOnly() ? "Settlement data requires recovery"
                     : plan == null ? "Adopt worksite settings before adding shared transfers" : "";
             editable = blocker.isEmpty() && SettlementTransferService.permits(player, town, area.id());
-            for (var depot : town.depots().values()) {
+            var configured = plan == null ? com.jvn.villagerretaliation.settlement.SettlementStorageLinks.AUTOMATIC : plan.settings().storage();
+            var positions = new java.util.LinkedHashSet<net.minecraft.core.BlockPos>();
+            if (configured.automatic()) town.depots().values().forEach(depot -> positions.add(depot.position()));
+            else configured.entries().forEach(link -> positions.add(com.jvn.villagerretaliation.settlement.SettlementSupplyStock.positions(level, link.position()).getFirst()));
+            for (var position : positions) {
                 if (storages.size() >= 128) break;
-                var depotArea = town.areas().get(depot.area());
-                if (depotArea == null || !depotArea.enabled()) continue;
-                boolean source = links.permitsSupply(depot.id());
-                boolean destination = links.permitsOutput(depot.id());
+                var depot = town.depots().values().stream().filter(value -> value.position().equals(position)).findFirst().orElse(null);
+                var endpoint = new HiredTransferQueue.Endpoint(position, depot == null ? null : depot.id());
+                boolean source = configured.automatic() ? depot != null && links.permitsSupply(depot.id())
+                        : configured.entries().stream().anyMatch(link -> link.purpose().supplies()
+                                && com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(level, position, link.position()));
+                boolean destination = configured.automatic() ? depot != null && links.permitsOutput(depot.id())
+                        : configured.entries().stream().anyMatch(link -> link.purpose().outputs()
+                                && com.jvn.villagerretaliation.settlement.SettlementSupplyStock.sameStorage(level, position, link.position()));
                 if (!source && !destination) continue;
-                var endpoint = new HiredTransferQueue.Endpoint(depot.position(), depot.id());
-                storages.add(new TransferSnapshotPayload.Storage(endpoint, ProductionManagementService.title(depotArea.name() + " " + depot.position().toShortString()),
-                        source, destination, depot.rulesObserved()));
-                if (source && depot.rulesObserved()) samples(products, endpoint, depot);
+                var contents = com.jvn.villagerretaliation.settlement.SettlementSupplyStock.contents(level, town, position);
+                if (AssignedStorageService.containerLoaded(level, position)
+                        && !com.jvn.villagerretaliation.inventory.PartyContainerLootService.isAvailable(level, position, player)) contents = null;
+                storages.add(new TransferSnapshotPayload.Storage(endpoint, position.toShortString(), source, destination, contents != null));
+                if (source && contents != null) samples(products, endpoint, new net.minecraft.world.SimpleContainer(contents.toArray(net.minecraft.world.item.ItemStack[]::new)));
+            }
+            var supply = new com.jvn.villagerretaliation.settlement.SettlementSupplyStock.Snapshot(level, town);
+            if (queue != null) for (var order : queue.orders()) {
+                var facts = supply.observe(order.destination().position(), order.sample(), null);
+                boolean visible = !AssignedStorageService.containerLoaded(level, order.destination().position())
+                        || com.jvn.villagerretaliation.inventory.PartyContainerLootService.isAvailable(level, order.destination().position(), player);
+                stocks.add(new TransferSnapshotPayload.Stock(order.id(), visible ? facts.stored() : -1, visible ? facts.incoming() : -1));
             }
         }
         return new TransferSnapshotPayload(level.dimension().location(), target, request.request(), applied,
                 ProductionManagementService.title(title), editable, blocker, feedback,
-                queue == null ? null : queue.save(level.registryAccess()), storages, products);
+                queue == null ? null : queue.save(level.registryAccess()), storages, products, stocks);
     }
 
     private static void samples(List<TransferSnapshotPayload.Product> products, HiredTransferQueue.Endpoint endpoint, Container container) {

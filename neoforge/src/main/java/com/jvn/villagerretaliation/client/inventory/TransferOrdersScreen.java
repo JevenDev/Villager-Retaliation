@@ -19,6 +19,7 @@ public final class TransferOrdersScreen extends Screen implements TransferClient
     private final Runnable close;
     private final TransferClientState state;
     private UUID selected;
+    private TransferRequestPayload.Append draft;
     private Orders list;
     private Button add;
     private Button up;
@@ -45,6 +46,8 @@ public final class TransferOrdersScreen extends Screen implements TransferClient
         this.state = new TransferClientState(target);
         this.selected = selected;
     }
+
+    public void draft(TransferRequestPayload.Append draft) { this.draft = draft; }
 
     public Screen previous() { return this.previous; }
     public TransferClientState state() { return this.state; }
@@ -102,6 +105,11 @@ public final class TransferOrdersScreen extends Screen implements TransferClient
         if (!this.state.accept(payload, this.minecraft.level.registryAccess())) return false;
         if (this.list != null) this.list.refresh();
         updateActions();
+        if (this.draft != null && this.state.editable()) {
+            var pending = this.draft;
+            this.draft = null;
+            this.minecraft.setScreen(new TransferEditorScreen(this, pending));
+        }
         return true;
     }
 
@@ -126,9 +134,9 @@ public final class TransferOrdersScreen extends Screen implements TransferClient
         int index = order == null ? -1 : queue.orders().indexOf(order);
         this.up.active = editable && index > 0;
         this.down.active = editable && index >= 0 && index + 1 < queue.orders().size();
-        this.pause.active = editable && order != null && !order.cancelled() && order.delivered() < order.amount();
+        this.pause.active = editable && order != null && !order.cancelled() && !order.complete();
         this.pause.setMessage(Component.literal(order != null && order.paused() ? "Resume" : "Pause"));
-        this.cancel.active = editable && order != null && !order.cancelled() && order.delivered() < order.amount();
+        this.cancel.active = editable && order != null && !order.cancelled() && !order.complete();
         this.remove.active = editable && order != null && queue.allocations().stream().noneMatch(allocation -> allocation.order().equals(order.id()) && allocation.started());
         this.refresh.active = !this.state.busy();
         this.add.active = editable && (queue == null || queue.orders().size() < 32);
@@ -164,8 +172,9 @@ public final class TransferOrdersScreen extends Screen implements TransferClient
 
     static String status(HiredTransferQueue.Order order) {
         if (order.cancelled()) return "Cancelled";
-        if (order.delivered() >= order.amount()) return "Complete";
+        if (order.complete()) return "Complete";
         if (order.paused()) return "Paused";
+        if (order.blocker().equals("transfer_satisfied")) return "Satisfied";
         return order.blocker().isEmpty() ? "Ready" : order.blocker().replace('_', ' ');
     }
 
@@ -212,8 +221,14 @@ public final class TransferOrdersScreen extends Screen implements TransferClient
         private Row(HiredTransferQueue.Order order) {
             this.id = order.id();
             this.output = order.sample();
-            this.quantity = "Deliver " + order.amount() + " / Delivered " + order.delivered() + " / In transit " + order.pending();
-            this.status = TransferOrdersScreen.status(order);
+            var stock = state.snapshot() == null ? null : state.snapshot().stocks().stream().filter(value -> value.order().equals(order.id())).findFirst().orElse(null);
+            boolean recurring = order.mode() == HiredTransferQueue.Mode.MAINTAIN_STOCK;
+            this.quantity = (recurring ? "Maintain " : "Deliver ") + order.amount() + " / Delivered " + order.delivered() + " / In transit " + order.pending();
+            String progress = stock == null ? "" : " / Stored " + (stock.stored() < 0 ? "unknown" : stock.stored())
+                    + " / Incoming " + (stock.incoming() < 0 ? "unknown" : stock.incoming());
+            this.status = (recurring && !order.paused() && !order.cancelled() && stock != null
+                    && stock.stored() >= 0 && stock.incoming() >= 0 && stock.stored() + stock.incoming() >= order.amount()
+                    ? "Satisfied" : TransferOrdersScreen.status(order)) + progress;
             this.details = java.util.List.of(this.output.getHoverName(), Component.literal(this.quantity),
                     Component.literal(this.status), Component.literal("Source: " + order.source().position().toShortString()),
                     Component.literal("Destination: " + order.destination().position().toShortString()));

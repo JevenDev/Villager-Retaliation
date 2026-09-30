@@ -82,7 +82,7 @@ public final class SettlementSupplyChainGameTests {
                 SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(cook.id()), 200, 1.0D);
                 SettlementBackgroundCrafting.tick(level, restored, restored.workers().get(partner.id()), 200, 1.0D);
             }
-            helper.assertValueEqual(restored.transferQueues().get(storage.id()).order(transfer.id()).delivered(), 3, "one finite shipment supplies the kitchen");
+            helper.assertValueEqual(restored.transferQueues().get(storage.id()).order(transfer.id()).delivered(), 3L, "one finite shipment supplies the kitchen");
             helper.assertValueEqual(restored.productionQueues().get(kitchen.id()).order(order.id()).produced(), 1L, "two cooks share one maintained meal target");
             helper.assertValueEqual(restored.depots().get(food.id()).count(stack -> stack.is(Items.BREAD)), 1, "the requested meal reaches food storage");
             helper.assertValueEqual(count(helper, restored, Items.WHEAT), 0, "one native bread recipe consumes exactly three harvested wheat");
@@ -139,7 +139,7 @@ public final class SettlementSupplyChainGameTests {
             var courier = worker(helper, town, storage, storage.min(), Items.AIR);
             var shipment = transfer(town, storage, finished, fixture.depot(), Items.OAK_PLANKS, 16);
             for (int tick = 0; tick < 10; tick++) SettlementBackgroundTransfers.tick(level, town, courier, 200, 1.0D);
-            helper.assertValueEqual(town.transferQueues().get(storage.id()).order(shipment.id()).delivered(), 16, "one finite material transfer supplies construction");
+            helper.assertValueEqual(town.transferQueues().get(storage.id()).order(shipment.id()).delivered(), 16L, "one finite material transfer supplies construction");
             SettlementBackgroundConstruction.tick(level, town, fixture.worker(), 400, 1.0D);
             SettlementBackgroundConstruction.tick(level, town, town.workers().get(assistant.getUUID()), 400, 1.0D);
             var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});

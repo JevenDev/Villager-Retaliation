@@ -16,6 +16,8 @@ public final class TransferEditorScreen extends Screen implements TransferClient
     private HiredTransferQueue.Endpoint destination;
     private ItemStack sample = ItemStack.EMPTY;
     private String quantity = "16";
+    private HiredTransferQueue.Mode mode = HiredTransferQueue.Mode.FINITE;
+    private Button modeButton;
     private boolean saving;
     private Button sourceButton;
     private Button destinationButton;
@@ -28,6 +30,15 @@ public final class TransferEditorScreen extends Screen implements TransferClient
     public TransferEditorScreen(TransferOrdersScreen previous) {
         super(Component.literal("Add transfer"));
         this.previous = previous;
+    }
+
+    public TransferEditorScreen(TransferOrdersScreen previous, TransferRequestPayload.Append draft) {
+        this(previous);
+        this.source = draft.source();
+        this.destination = draft.destination();
+        this.sample = draft.sample();
+        this.quantity = Integer.toString(draft.amount());
+        this.mode = draft.mode();
     }
 
     public TransferOrdersScreen previous() { return this.previous; }
@@ -49,6 +60,10 @@ public final class TransferEditorScreen extends Screen implements TransferClient
         amount.setFilter(value -> value.matches("[0-9]*"));
         amount.setValue(this.quantity);
         amount.setResponder(value -> { this.quantity = value; update(); });
+        this.modeButton = addRenderableWidget(Button.builder(Component.literal(modeLabel()), ignored -> {
+            this.mode = this.mode == HiredTransferQueue.Mode.FINITE ? HiredTransferQueue.Mode.MAINTAIN_STOCK : HiredTransferQueue.Mode.FINITE;
+            update();
+        }).bounds(this.left + 110, this.top + 138, this.panelWidth - 110, 20).build());
         button("Back", this.height - 28, 78, this::onClose);
         this.save = addRenderableWidget(Button.builder(Component.literal("Add transfer"), ignored -> submit())
                 .bounds(this.left + this.panelWidth - 116, this.height - 28, 116, 20).build());
@@ -96,6 +111,8 @@ public final class TransferEditorScreen extends Screen implements TransferClient
         this.destinationButton.setMessage(Component.literal(label(this.destination, "Choose destination")));
         this.itemButton.setMessage(Component.literal(this.sample.isEmpty() ? "Choose exact item"
                 : this.font.plainSubstrByWidth(this.sample.getHoverName().getString(), this.panelWidth - 12)));
+        this.modeButton.setMessage(Component.literal(modeLabel()));
+        this.modeButton.active = editable;
         this.sourceButton.active = editable;
         this.destinationButton.active = editable;
         this.itemButton.active = editable;
@@ -104,9 +121,11 @@ public final class TransferEditorScreen extends Screen implements TransferClient
                 && amount() >= 1 && amount() <= HiredTransferQueue.MAX_AMOUNT;
     }
 
+    private String modeLabel() { return this.mode == HiredTransferQueue.Mode.FINITE ? "Deliver once" : "Maintain destination stock"; }
+
     private void submit() {
         if (!this.save.active) return;
-        this.saving = this.previous.submit(new TransferRequestPayload.Append(this.source, this.destination, this.sample, amount()));
+        this.saving = this.previous.submit(new TransferRequestPayload.Append(this.source, this.destination, this.sample, amount(), this.mode));
         update();
     }
 
@@ -135,7 +154,7 @@ public final class TransferEditorScreen extends Screen implements TransferClient
         graphics.drawString(this.font, "Source storage", this.left, this.top, 0xCCCCCC);
         graphics.drawString(this.font, "Destination storage", this.left, this.top + 42, 0xCCCCCC);
         graphics.drawString(this.font, "Item with exact components", this.left, this.top + 84, 0xCCCCCC);
-        graphics.drawString(this.font, "Quantity (1 to 4096)", this.left, this.top + 126, 0xCCCCCC);
+        graphics.drawString(this.font, this.mode == HiredTransferQueue.Mode.FINITE ? "Quantity (1 to 4096)" : "Destination target (1 to 4096)", this.left, this.top + 126, 0xCCCCCC);
         String feedback = this.previous.state().feedback();
         if (feedback.isEmpty()) feedback = "Collected cargo finishes delivery after cancellation.";
         graphics.drawWordWrap(this.font, Component.literal(feedback), this.left, this.top + 168, this.panelWidth, 0xBBBBBB);

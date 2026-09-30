@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
-        String title, boolean editable, String blocker, String feedback, CompoundTag queue, List<Storage> storages, List<Product> products)
+        String title, boolean editable, String blocker, String feedback, CompoundTag queue, List<Storage> storages, List<Product> products, List<Stock> stocks)
         implements CustomPacketPayload {
     public static final Type<TransferSnapshotPayload> TYPE = VillagerPayloads.type("transfer_snapshot");
     public static final StreamCodec<RegistryFriendlyByteBuf, TransferSnapshotPayload> STREAM_CODEC =
@@ -29,7 +29,13 @@ public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarg
         queue = queue == null ? null : queue.copy();
         storages = List.copyOf(storages);
         products = List.copyOf(products);
-        if (storages.size() > 128 || products.size() > 256) throw new IllegalArgumentException("Oversized transfer snapshot");
+        stocks = List.copyOf(stocks);
+        if (storages.size() > 128 || products.size() > 256 || stocks.size() > HiredTransferQueue.MAX_ORDERS) throw new IllegalArgumentException("Oversized transfer snapshot");
+    }
+
+    public TransferSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
+            String title, boolean editable, String blocker, String feedback, CompoundTag queue, List<Storage> storages, List<Product> products) {
+        this(dimension, target, request, applied, title, editable, blocker, feedback, queue, storages, products, List.of());
     }
 
     @Override
@@ -52,6 +58,12 @@ public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarg
             buffer.writeBoolean(storage.source());
             buffer.writeBoolean(storage.destination());
             buffer.writeBoolean(storage.available());
+        }
+        buffer.writeVarInt(payload.stocks().size());
+        for (var stock : payload.stocks()) {
+            buffer.writeUUID(stock.order());
+            buffer.writeLong(stock.stored());
+            buffer.writeLong(stock.incoming());
         }
         buffer.writeVarInt(payload.products().size());
         for (var product : payload.products()) {
@@ -79,10 +91,13 @@ public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarg
         int count = VillagerPayloads.readCollectionSize(buffer, 128, "Transfer storage");
         for (int index = 0; index < count; index++) storages.add(new Storage(TransferRequestPayload.readEndpoint(buffer),
                 buffer.readUtf(128), buffer.readBoolean(), buffer.readBoolean(), buffer.readBoolean()));
+        var stocks = new ArrayList<Stock>();
+        count = VillagerPayloads.readCollectionSize(buffer, HiredTransferQueue.MAX_ORDERS, "Transfer stock");
+        for (int index = 0; index < count; index++) stocks.add(new Stock(buffer.readUUID(), buffer.readLong(), buffer.readLong()));
         var products = new ArrayList<Product>();
         count = VillagerPayloads.readCollectionSize(buffer, 256, "Transfer products");
         for (int index = 0; index < count; index++) products.add(new Product(TransferRequestPayload.readEndpoint(buffer), ItemStack.STREAM_CODEC.decode(buffer)));
-        return new TransferSnapshotPayload(dimension, target, request, applied, title, editable, blocker, feedback, queue, storages, products);
+        return new TransferSnapshotPayload(dimension, target, request, applied, title, editable, blocker, feedback, queue, storages, products, stocks);
     }
 
     @Override
@@ -92,6 +107,13 @@ public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarg
         public Storage {
             Objects.requireNonNull(endpoint);
             if (name == null || name.length() > 128 || !source && !destination) throw new IllegalArgumentException("Invalid transfer storage");
+        }
+    }
+
+    public record Stock(UUID order, long stored, long incoming) {
+        public Stock {
+            Objects.requireNonNull(order);
+            if (stored < -1 || incoming < -1) throw new IllegalArgumentException("Invalid transfer stock");
         }
     }
 

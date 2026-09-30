@@ -32,6 +32,7 @@ public record TransferRequestPayload(ProductionTarget target, UUID request, long
                 writeEndpoint(buffer, append.destination());
                 ItemStack.STREAM_CODEC.encode(buffer, append.sample());
                 buffer.writeVarInt(append.amount());
+                buffer.writeEnum(append.mode());
             }
             case Edit edit -> {
                 buffer.writeEnum(Kind.EDIT);
@@ -48,7 +49,7 @@ public record TransferRequestPayload(ProductionTarget target, UUID request, long
         long revision = buffer.readVarLong();
         Command command = switch (buffer.readEnum(Kind.class)) {
             case VIEW -> new View();
-            case APPEND -> new Append(readEndpoint(buffer), readEndpoint(buffer), ItemStack.STREAM_CODEC.decode(buffer), buffer.readVarInt());
+            case APPEND -> new Append(readEndpoint(buffer), readEndpoint(buffer), ItemStack.STREAM_CODEC.decode(buffer), buffer.readVarInt(), buffer.readEnum(HiredTransferQueue.Mode.class));
             case EDIT -> new Edit(buffer.readUUID(), buffer.readEnum(HiredTransferQueue.Edit.class), buffer.readVarInt());
         };
         return new TransferRequestPayload(target, request, revision, command);
@@ -69,10 +70,13 @@ public record TransferRequestPayload(ProductionTarget target, UUID request, long
 
     public sealed interface Command permits View, Append, Edit {}
     public record View() implements Command {}
-    public record Append(HiredTransferQueue.Endpoint source, HiredTransferQueue.Endpoint destination, ItemStack sample, int amount) implements Command {
+    public record Append(HiredTransferQueue.Endpoint source, HiredTransferQueue.Endpoint destination, ItemStack sample, int amount, HiredTransferQueue.Mode mode) implements Command {
         public Append {
-            var order = HiredTransferQueue.Order.create(source, destination, sample, amount);
+            var order = HiredTransferQueue.Order.create(source, destination, sample, amount, mode);
             sample = order.sample();
+        }
+        public Append(HiredTransferQueue.Endpoint source, HiredTransferQueue.Endpoint destination, ItemStack sample, int amount) {
+            this(source, destination, sample, amount, HiredTransferQueue.Mode.FINITE);
         }
         @Override
         public ItemStack sample() { return this.sample.copy(); }

@@ -42,8 +42,7 @@ public final class HiredTransferQueue {
     public boolean append(Order order) {
         if (this.revision == Long.MAX_VALUE || order == null || this.orders.size() >= MAX_ORDERS || order(order.id()) != null
                 || order.picked() != 0 || order.delivered() != 0 || order.paused() || order.cancelled() || !order.blocker().isEmpty()
-                || (order.source().depot() != null) != (this.scope == Scope.WORKSITE)
-                || (order.destination().depot() != null) != (this.scope == Scope.WORKSITE)) return false;
+                || this.scope == Scope.PERSONAL && (order.source().depot() != null || order.destination().depot() != null)) return false;
         this.orders.add(order);
         configured();
         return true;
@@ -77,17 +76,23 @@ public final class HiredTransferQueue {
         return true;
     }
 
-    public int available(UUID id) {
+    public int available(UUID id) { return available(id, -1); }
+
+    public int available(UUID id, long destinationStock) {
         var order = order(id);
         if (order == null || !order.runnable()) return 0;
         int reserved = this.allocations.values().stream().filter(allocation -> allocation.order().equals(id) && !allocation.started())
                 .mapToInt(Allocation::amount).sum();
-        return Math.max(0, order.amount() - order.picked() - reserved);
+        long deficit = order.mode() == Mode.FINITE ? order.amount() - order.picked() - reserved
+                : destinationStock < 0 ? 0 : Math.max(0, order.amount() - destinationStock);
+        return (int) Math.max(0, Math.min(MAX_AMOUNT, Math.min(deficit, Long.MAX_VALUE - order.picked() - reserved)));
     }
 
-    public Allocation reserve(UUID worker, UUID id, int maximum) {
+    public Allocation reserve(UUID worker, UUID id, int maximum) { return reserve(worker, id, maximum, -1); }
+
+    public Allocation reserve(UUID worker, UUID id, int maximum, long destinationStock) {
         Objects.requireNonNull(worker);
-        int amount = Math.min(Math.min(MAX_AMOUNT, maximum), available(id));
+        int amount = Math.min(Math.min(MAX_AMOUNT, maximum), available(id, destinationStock));
         if (amount < 1 || allocation(worker) != null || this.allocations.size() >= (this.scope == Scope.PERSONAL ? 1 : MAX_ORDERS)) return null;
         var allocation = new Allocation(UUID.randomUUID(), worker, id, amount, false);
         this.allocations.put(allocation.id(), allocation);
@@ -171,7 +176,7 @@ public final class HiredTransferQueue {
 
     public CompoundTag save(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
-        tag.putInt("Version", 1);
+        tag.putInt("Version", 2);
         tag.putUUID("Owner", this.owner);
         tag.putString("Scope", this.scope.name());
         tag.putLong("Revision", this.revision);
@@ -183,8 +188,9 @@ public final class HiredTransferQueue {
             saved.put("Destination", order.destination().save());
             saved.put("Sample", order.sample().save(provider));
             saved.putInt("Amount", order.amount());
-            saved.putInt("Picked", order.picked());
-            saved.putInt("Delivered", order.delivered());
+            saved.putString("Mode", order.mode().name());
+            saved.putLong("Picked", order.picked());
+            saved.putLong("Delivered", order.delivered());
             saved.putBoolean("Paused", order.paused());
             saved.putBoolean("Cancelled", order.cancelled());
             saved.putString("Blocker", order.blocker());
@@ -206,10 +212,11 @@ public final class HiredTransferQueue {
     }
 
     public static HiredTransferQueue load(CompoundTag tag, HolderLookup.Provider provider, Consumer<HiredTransferQueue> changed) {
-        if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 1 || !tag.hasUUID("Owner")
+        if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 2) || !tag.hasUUID("Owner")
                 || !tag.contains("Scope", Tag.TAG_STRING) || !tag.contains("Revision", Tag.TAG_LONG) || tag.getLong("Revision") < 0L) {
             throw new IllegalArgumentException("Invalid transfer queue");
         }
+        int version = tag.getInt("Version");
         var queue = new HiredTransferQueue(tag.getUUID("Owner"), Scope.valueOf(tag.getString("Scope")), changed);
         queue.revision = tag.getLong("Revision");
         for (String key : List.of("Orders", "Allocations")) {
@@ -220,16 +227,17 @@ public final class HiredTransferQueue {
             var saved = (CompoundTag) raw;
             if (!saved.hasUUID("Id") || queue.order(saved.getUUID("Id")) != null || !saved.contains("Source", Tag.TAG_COMPOUND)
                     || !saved.contains("Destination", Tag.TAG_COMPOUND) || !saved.contains("Sample", Tag.TAG_COMPOUND)
-                    || !saved.contains("Amount", Tag.TAG_INT) || !saved.contains("Picked", Tag.TAG_INT)
-                    || !saved.contains("Delivered", Tag.TAG_INT) || !saved.contains("Paused", Tag.TAG_BYTE)
-                    || !saved.contains("Cancelled", Tag.TAG_BYTE) || !saved.contains("Blocker", Tag.TAG_STRING)) {
+                    || !saved.contains("Amount", Tag.TAG_INT) || !saved.contains("Picked", version == 1 ? Tag.TAG_INT : Tag.TAG_LONG)
+                    || !saved.contains("Delivered", version == 1 ? Tag.TAG_INT : Tag.TAG_LONG) || !saved.contains("Paused", Tag.TAG_BYTE)
+                    || !saved.contains("Cancelled", Tag.TAG_BYTE) || !saved.contains("Blocker", Tag.TAG_STRING)
+                    || version == 2 && !saved.contains("Mode", Tag.TAG_STRING)) {
                 throw new IllegalArgumentException("Invalid saved transfer order");
             }
             var order = new Order(saved.getUUID("Id"), Endpoint.load(saved.getCompound("Source")), Endpoint.load(saved.getCompound("Destination")),
-                    ItemStack.parseOptional(provider, saved.getCompound("Sample")), saved.getInt("Amount"), saved.getInt("Picked"),
-                    saved.getInt("Delivered"), saved.getBoolean("Paused"), saved.getBoolean("Cancelled"), saved.getString("Blocker"));
-            if ((order.source().depot() != null) != (queue.scope == Scope.WORKSITE)
-                    || (order.destination().depot() != null) != (queue.scope == Scope.WORKSITE)) throw new IllegalArgumentException("Transfer endpoint ownership changed");
+                    ItemStack.parseOptional(provider, saved.getCompound("Sample")), saved.getInt("Amount"), saved.getLong("Picked"),
+                    saved.getLong("Delivered"), saved.getBoolean("Paused"), saved.getBoolean("Cancelled"), saved.getString("Blocker"),
+                    version == 1 ? Mode.FINITE : Mode.valueOf(saved.getString("Mode")));
+            if (queue.scope == Scope.PERSONAL && (order.source().depot() != null || order.destination().depot() != null)) throw new IllegalArgumentException("Transfer endpoint ownership changed");
             queue.orders.add(order);
         }
         for (Tag raw : tag.getList("Allocations", Tag.TAG_COMPOUND)) {
@@ -252,7 +260,8 @@ public final class HiredTransferQueue {
                     .mapToInt(Allocation::amount).sum();
             int planned = queue.allocations.values().stream().filter(allocation -> allocation.order().equals(order.id()) && !allocation.started())
                     .mapToInt(Allocation::amount).sum();
-            if (order.picked() - order.delivered() != pending || planned + order.picked() > order.amount()) {
+            if (order.picked() - order.delivered() != pending || order.mode() == Mode.FINITE && planned + order.picked() > order.amount()
+                    || planned > Long.MAX_VALUE - order.picked()) {
                 throw new IllegalArgumentException("Transfer quantities do not match their receipts");
             }
         }
@@ -260,6 +269,7 @@ public final class HiredTransferQueue {
     }
 
     public enum Scope { PERSONAL, WORKSITE }
+    public enum Mode { FINITE, MAINTAIN_STOCK }
     public enum Edit { MOVE, PAUSE, RESUME, CANCEL, REMOVE }
 
     public record Endpoint(BlockPos position, UUID depot) {
@@ -276,28 +286,37 @@ public final class HiredTransferQueue {
         }
     }
 
-    public record Order(UUID id, Endpoint source, Endpoint destination, ItemStack sample, int amount, int picked, int delivered,
-                        boolean paused, boolean cancelled, String blocker) {
+    public record Order(UUID id, Endpoint source, Endpoint destination, ItemStack sample, int amount, long picked, long delivered,
+                        boolean paused, boolean cancelled, String blocker, Mode mode) {
         public Order {
             Objects.requireNonNull(id);
+            Objects.requireNonNull(mode);
             Objects.requireNonNull(source);
             Objects.requireNonNull(destination);
             if (source.position().equals(destination.position()) || source.depot() != null && source.depot().equals(destination.depot()) || sample == null || sample.isEmpty() || amount < 1 || amount > MAX_AMOUNT
-                    || picked < 0 || picked > amount || delivered < 0 || delivered > picked || blocker == null || blocker.length() > 128) {
+                    || picked < 0 || mode == Mode.FINITE && picked > amount || delivered < 0 || delivered > picked || blocker == null || blocker.length() > 128) {
                 throw new IllegalArgumentException("Invalid transfer order");
             }
             sample = com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.product(sample).copyWithCount(1);
         }
+        public Order(UUID id, Endpoint source, Endpoint destination, ItemStack sample, int amount, long picked, long delivered,
+                     boolean paused, boolean cancelled, String blocker) {
+            this(id, source, destination, sample, amount, picked, delivered, paused, cancelled, blocker, Mode.FINITE);
+        }
         public static Order create(Endpoint source, Endpoint destination, ItemStack sample, int amount) {
-            return new Order(UUID.randomUUID(), source, destination, sample, amount, 0, 0, false, false, "");
+            return create(source, destination, sample, amount, Mode.FINITE);
+        }
+        public static Order create(Endpoint source, Endpoint destination, ItemStack sample, int amount, Mode mode) {
+            return new Order(UUID.randomUUID(), source, destination, sample, amount, 0, 0, false, false, "", mode);
         }
         @Override
         public ItemStack sample() { return this.sample.copy(); }
         public boolean matches(ItemStack stack) { return com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.matches(this.sample, stack); }
-        public boolean runnable() { return !this.paused && !this.cancelled && this.picked < this.amount; }
-        public int pending() { return this.picked - this.delivered; }
-        Order state(int picked, int delivered, boolean paused, boolean cancelled, String blocker) {
-            return new Order(this.id, this.source, this.destination, this.sample, this.amount, picked, delivered, paused, cancelled, blocker);
+        public boolean runnable() { return !this.paused && !this.cancelled && (this.mode == Mode.MAINTAIN_STOCK || this.picked < this.amount); }
+        public boolean complete() { return this.mode == Mode.FINITE && this.delivered >= this.amount; }
+        public int pending() { return Math.toIntExact(this.picked - this.delivered); }
+        Order state(long picked, long delivered, boolean paused, boolean cancelled, String blocker) {
+            return new Order(this.id, this.source, this.destination, this.sample, this.amount, picked, delivered, paused, cancelled, blocker, this.mode);
         }
     }
 
