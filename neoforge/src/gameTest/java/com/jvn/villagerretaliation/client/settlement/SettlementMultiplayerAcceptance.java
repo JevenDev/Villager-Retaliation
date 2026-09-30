@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.VillagerWorkAppearance;
 import com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue;
 import com.jvn.villagerretaliation.interaction.work.courier.TransferManagementService;
 import com.jvn.villagerretaliation.network.ProductionTarget;
@@ -50,6 +51,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Marker;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -86,6 +88,7 @@ public final class SettlementMultiplayerAcceptance {
     private static boolean reported;
     private static boolean configured;
     private static boolean hostViewing;
+    private static boolean hostAppearanceChecked;
     private static int simultaneousTicks;
     private static int peakTickets;
     private static int peakSends;
@@ -128,12 +131,17 @@ public final class SettlementMultiplayerAcceptance {
                 }
                 if (minecraft.screen instanceof SettlementManagementScreen screen && !screen.expectingView()
                         && screen.snapshot().header() != null) button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+                if (minecraft.screen instanceof SettlementViewScreen && appearanceResident(minecraft) != null) {
+                    verifyAppearance(minecraft);
+                    hostAppearanceChecked = true;
+                }
             } else if (hostViewing && !hostPhase.equals("view_only")) {
                 if (minecraft.screen instanceof SettlementViewScreen screen) screen.onClose();
                 hostViewing = false;
             }
             if (read("host-state.txt").equals("finished")) {
                 require(peerProcess != null && !peerProcess.isAlive(), "the second native client has exited");
+                require(hostAppearanceChecked, "the host received the restored toolsmith's farming outfit");
                 write("result.txt", "Settlement multiplayer acceptance passed\n");
                 write("acceptance.json", new Gson().toJson(Map.of(
                         "transport", "Two native clients using a TCP listener bound only to loopback",
@@ -143,7 +151,8 @@ public final class SettlementMultiplayerAcceptance {
                                 "remote body remains vulnerable and unmoved", "damage closes view and releases chunks",
                                 "normal close releases chunks", "disconnect releases server tickets",
                                 "competing shared transfer edits reject stale revisions", "finite and recurring orders survive TCP transport",
-                                "replayed append and revoked logistics edits preserve the shared queue"),
+                                "replayed append and revoked logistics edits preserve the shared queue",
+                                "both clients receive a restored toolsmith's farming outfit through late tracking"),
                         "simultaneousTicks", simultaneousTicks,
                         "peakSharedTickets", peakTickets,
                         "peakChunkPacketsPerTick", peakSends,
@@ -362,6 +371,25 @@ public final class SettlementMultiplayerAcceptance {
         require(SettlementWorkforceService.assign(level, player, id, resident, post.id()), "the multiplayer resident is a civic guard");
         SettlementCareService.onUnloaded(resident);
         var town = SettlementSavedData.get(level).get(id).orElseThrow();
+        var farm = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Appearance field",
+                CENTER.offset(-5, 0, -5), CENTER.offset(-2, 2, -2), 5, true);
+        com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, town, farm.min(), farm.max());
+        require(SettlementBuildingService.register(player, id, farm), "the appearance worksite is registered");
+        var farmer = EntityType.VILLAGER.create(level);
+        farmer.setPos(CENTER.offset(-3, 0, -3).getBottomCenter());
+        farmer.setNoAi(true);
+        farmer.setVillagerData(farmer.getVillagerData().setProfession(VillagerProfession.TOOLSMITH).setLevel(3));
+        farmer.setVillagerXp(27);
+        VillageAllegianceApi.assignKnown(level, farmer, id, AllegianceAssignmentSource.EXPLICIT_API);
+        require(level.addFreshEntity(farmer), "the appearance resident is loaded");
+        require(SettlementWorkforceService.assign(level, player, id, farmer, farm.id()), "the toolsmith is assigned farming");
+        var appearanceSave = farmer.saveWithoutId(new net.minecraft.nbt.CompoundTag());
+        farmer.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+        farmer = EntityType.VILLAGER.create(level);
+        farmer.load(appearanceSave);
+        require(level.addFreshEntity(farmer), "the farmer reloads before either client tracks it");
+        require(farmer.getVillagerData().getProfession() == VillagerProfession.TOOLSMITH && farmer.getVillagerXp() == 27,
+                "reloading the assigned outfit retains the actual profession and trade experience");
         var courier = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Shared courier",
                 CENTER.offset(-6, 0, 4), CENTER.offset(-3, 2, 6), 5, true);
         com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, town, courier.min(), courier.max());
@@ -385,7 +413,7 @@ public final class SettlementMultiplayerAcceptance {
             }
             server.setUsesAuthentication(false);
             server.getConnection().startTcpServerListener(loopback, port);
-            var result = new Fixture(id.value(), resident.getUUID(), post.id(), courier.id(), source, destination, port);
+            var result = new Fixture(id.value(), resident.getUUID(), post.id(), courier.id(), source, destination, farmer.getUUID(), port);
             write("fixture.json", new Gson().toJson(result));
             return result;
         } catch (IOException exception) {
@@ -428,6 +456,23 @@ public final class SettlementMultiplayerAcceptance {
         require(minecraft.player.position().distanceToSqr(BODY) < 1.0D, "RTS controls do not move the peer's body");
         require(SettlementViewChunks.get(minecraft.level, CENTER.getX() >> 4, CENTER.getZ() >> 4) != null, "remote chunks reach the peer");
         require(resident(minecraft) != null, "remote resident entities reach the peer");
+        verifyAppearance(minecraft);
+    }
+
+    private static void verifyAppearance(Minecraft minecraft) {
+        var farmer = appearanceResident(minecraft);
+        require(farmer != null, "the restored farmer reaches the viewing client");
+        require(farmer.getVillagerData().getProfession() == VillagerProfession.TOOLSMITH,
+                "tracking preserves the actual toolsmith profession");
+        require(VillagerWorkAppearance.profession(farmer) == VillagerProfession.FARMER,
+                "tracking immediately supplies the farming outfit on both clients");
+    }
+
+    private static Villager appearanceResident(Minecraft minecraft) {
+        for (var entity : minecraft.level.entitiesForRendering()) {
+            if (entity instanceof Villager villager && villager.getUUID().equals(fixture.farmer())) return villager;
+        }
+        return null;
     }
 
     private static void verifyBody(ServerPlayer peer) {
@@ -518,6 +563,6 @@ public final class SettlementMultiplayerAcceptance {
         if (!condition) throw new IllegalStateException(message);
     }
 
-    private record Fixture(UUID town, UUID resident, UUID area, UUID courier, UUID source, UUID destination, int port) {
+    private record Fixture(UUID town, UUID resident, UUID area, UUID courier, UUID source, UUID destination, UUID farmer, int port) {
     }
 }

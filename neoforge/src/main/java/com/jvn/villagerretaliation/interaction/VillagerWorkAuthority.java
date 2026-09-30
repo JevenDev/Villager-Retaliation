@@ -10,10 +10,20 @@ import net.minecraft.world.entity.npc.Villager;
 public record VillagerWorkAuthority(boolean active, HiredVillagerRole role, Optional<UUID> owner,
                                     boolean civic, boolean awaitingAutoPayment, boolean oneOffBuilderJob) {
     public static VillagerWorkAuthority resolve(ServerLevel level, Villager villager) {
-        var contract = HiredVillagerContractService.snapshot(level, villager);
-        if (contract.hired()) {
-            return new VillagerWorkAuthority(true, contract.role(), contract.hirer(), false,
-                    contract.awaitingAutoPayment(), contract.oneOffBuilderJob());
+        return resolve(level, villager, true);
+    }
+
+    public static HiredVillagerRole assignedRole(ServerLevel level, Villager villager) {
+        return resolve(level, villager, false).role();
+    }
+
+    private static VillagerWorkAuthority resolve(ServerLevel level, Villager villager, boolean inferLegacyRole) {
+        var contract = HireContractStore.load(villager).filter(HireContract::isActiveOrAwaitingAutoPayment).orElse(null);
+        if (contract != null) {
+            HiredVillagerRole role = contract.role();
+            if (role == null && inferLegacyRole) role = HiredVillagerRoles.defaultRole(level, villager);
+            return new VillagerWorkAuthority(true, role, contract.owner(), false,
+                    contract.isAwaitingAutoPayment(), contract.oneOffBuilderJob());
         }
         return SettlementWorkforceService.duty(villager)
                 .map(duty -> new VillagerWorkAuthority(true, duty.area().type().role(),

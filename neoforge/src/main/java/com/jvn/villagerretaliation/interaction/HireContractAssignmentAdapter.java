@@ -35,11 +35,13 @@ public final class HireContractAssignmentAdapter {
 
     public static void roleChanged(Villager villager, HiredVillagerRole role) {
         VillagerAssignmentStore.setRole(villager, role);
+        VillagerWorkAppearance.refresh(villager);
     }
 
     public static void contractEnded(Villager villager) {
         if (VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED) {
             VillagerAssignmentStore.unassign(villager);
         }
+        VillagerWorkAppearance.refresh(villager);
     }
 }

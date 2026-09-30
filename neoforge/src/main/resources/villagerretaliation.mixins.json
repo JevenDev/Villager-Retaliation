@@ -63,6 +63,7 @@
     "VillagerHiredNavigationMixin",
     "VillagerGossipMixin",
     "VillagerJobInventoryMixin",
+    "VillagerWorkAppearanceMixin",
     "VillagerMakeLoveMixin",
     "VillagerFamilyAccessor",
     "VillagerBrainTickMixin",

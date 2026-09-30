@@ -584,6 +584,7 @@ public final class VillagerRetaliationEvents {
                 com.jvn.villagerretaliation.settlement.SettlementCareService.onActive(regular);
                 com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.observe(regular);
                 com.jvn.villagerretaliation.duel.DuelService.recoverPendingVillager(regular);
+                com.jvn.villagerretaliation.interaction.VillagerWorkAppearance.refresh(regular);
             }
         }
         com.jvn.villagerretaliation.duel.DuelService.onEntityJoinLevel(event);

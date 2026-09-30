@@ -4,12 +4,10 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
 import com.jvn.villagerretaliation.client.model.HumanoidCompatVillagerModel;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
+import com.jvn.villagerretaliation.interaction.VillagerWorkAppearance;
 import com.mojang.blaze3d.vertex.PoseStack;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.Util;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
@@ -19,7 +17,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.npc.VillagerDataHolder;
@@ -30,14 +27,6 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class VillagerRetaliationProfessionLayer<T extends AbstractVillager & VillagerDataHolder> extends RenderLayer<T, BaseVillagerModel<T>> {
-    private static final Int2ObjectMap<ResourceLocation> LEVEL_LOCATIONS = Util.make(new Int2ObjectOpenHashMap<>(), levels -> {
-        levels.put(1, ResourceLocation.withDefaultNamespace("stone"));
-        levels.put(2, ResourceLocation.withDefaultNamespace("iron"));
-        levels.put(3, ResourceLocation.withDefaultNamespace("gold"));
-        levels.put(4, ResourceLocation.withDefaultNamespace("emerald"));
-        levels.put(5, ResourceLocation.withDefaultNamespace("diamond"));
-    });
-
     private final Object2ObjectMap<VillagerType, VillagerMetaDataSection.Hat> vanillaTypeHatCache = new Object2ObjectOpenHashMap<>();
     private final Object2ObjectMap<VillagerType, VillagerMetaDataSection.Hat> retaliationTypeHatCache = new Object2ObjectOpenHashMap<>();
     private final Object2ObjectMap<VillagerProfession, VillagerMetaDataSection.Hat> vanillaProfessionHatCache = new Object2ObjectOpenHashMap<>();
@@ -76,7 +65,7 @@ public class VillagerRetaliationProfessionLayer<T extends AbstractVillager & Vil
                 && !(this.getParentModel() instanceof HumanoidCompatVillagerModel<?>);
         VillagerData villagerData = villager.getVillagerData();
         VillagerType type = villagerData.getType();
-        VillagerProfession profession = villagerData.getProfession();
+        VillagerProfession profession = VillagerWorkAppearance.profession(villager);
         VillagerMetaDataSection.Hat typeHat = getHatData(
                 useRetaliationTextures ? this.retaliationTypeHatCache : this.vanillaTypeHatCache,
                 useRetaliationTextures,
@@ -93,46 +82,36 @@ public class VillagerRetaliationProfessionLayer<T extends AbstractVillager & Vil
         );
 
         BaseVillagerModel<T> model = this.getParentModel();
-        model.hatVisible(professionHat == VillagerMetaDataSection.Hat.NONE
-                || professionHat == VillagerMetaDataSection.Hat.PARTIAL && typeHat != VillagerMetaDataSection.Hat.FULL);
-        renderColoredCutoutModel(
-                model,
-                getResourceLocation(useRetaliationTextures, "type", BuiltInRegistries.VILLAGER_TYPE.getKey(type)),
-                poseStack,
-                buffer,
-                packedLight,
-                villager,
-                -1
-        );
-        model.hatVisible(true);
+        var headParts = model.getHead().getAllParts().toList();
+        boolean[] visible = new boolean[headParts.size()];
+        for (int index = 0; index < visible.length; index++) visible[index] = headParts.get(index).visible;
+        try {
+            model.hatVisible(professionHat == VillagerMetaDataSection.Hat.NONE
+                    || professionHat == VillagerMetaDataSection.Hat.PARTIAL && typeHat != VillagerMetaDataSection.Hat.FULL);
+            renderColoredCutoutModel(
+                    model,
+                    getResourceLocation(useRetaliationTextures, "type", BuiltInRegistries.VILLAGER_TYPE.getKey(type)),
+                    poseStack,
+                    buffer,
+                    packedLight,
+                    villager,
+                    -1
+            );
+            model.hatVisible(true);
 
-        if (profession == VillagerProfession.NONE || villager.isBaby()) {
-            return;
+            if (profession == VillagerProfession.NONE) return;
+            renderColoredCutoutModel(
+                    model,
+                    getResourceLocation(useRetaliationTextures, "profession", BuiltInRegistries.VILLAGER_PROFESSION.getKey(profession)),
+                    poseStack,
+                    buffer,
+                    packedLight,
+                    villager,
+                    -1
+            );
+        } finally {
+            for (int index = 0; index < visible.length; index++) headParts.get(index).visible = visible[index];
         }
-
-        renderColoredCutoutModel(
-                model,
-                getResourceLocation(useRetaliationTextures, "profession", BuiltInRegistries.VILLAGER_PROFESSION.getKey(profession)),
-                poseStack,
-                buffer,
-                packedLight,
-                villager,
-                -1
-        );
-        if (profession == VillagerProfession.NITWIT) {
-            return;
-        }
-
-        ResourceLocation levelLocation = LEVEL_LOCATIONS.get(Mth.clamp(villagerData.getLevel(), 1, LEVEL_LOCATIONS.size()));
-        renderColoredCutoutModel(
-                model,
-                getResourceLocation(useRetaliationTextures, "profession_level", levelLocation),
-                poseStack,
-                buffer,
-                packedLight,
-                villager,
-                -1
-        );
     }
 
     private <K> VillagerMetaDataSection.Hat getHatData(

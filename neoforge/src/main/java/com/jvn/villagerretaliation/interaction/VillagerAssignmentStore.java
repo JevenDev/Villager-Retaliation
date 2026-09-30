@@ -119,6 +119,7 @@ public final class VillagerAssignmentStore {
         putPos(tag, HOME_ANCHOR_TAG, homeAnchor);
         villager.getPersistentData().put(ASSIGNMENT_TAG, tag);
         villager.setPersistenceRequired();
+        VillagerWorkAppearance.refresh(villager);
         return snapshot(villager);
     }
 
@@ -141,6 +142,7 @@ public final class VillagerAssignmentStore {
         villager.getPersistentData().put(ASSIGNMENT_TAG, tag);
         removeLegacyRecruitmentKeys(villager.getPersistentData());
         villager.setPersistenceRequired();
+        VillagerWorkAppearance.refresh(villager);
         return snapshot(villager);
     }
 
@@ -185,6 +187,7 @@ public final class VillagerAssignmentStore {
         tag.putLong(REVISION_TAG, before.revision() + 1L);
         tag.putInt(SCHEMA_VERSION_TAG, VillagerAssignmentSnapshot.CURRENT_SCHEMA_VERSION);
         villager.setPersistenceRequired();
+        VillagerWorkAppearance.refresh(villager);
         return snapshot(villager);
     }
 
@@ -217,6 +220,7 @@ public final class VillagerAssignmentStore {
         villager.getPersistentData().put(ASSIGNMENT_TAG, tag);
         clearRecruitmentCommand(villager);
         villager.setPersistenceRequired();
+        VillagerWorkAppearance.refresh(villager);
         return snapshot(villager);
     }
 
@@ -401,6 +405,7 @@ public final class VillagerAssignmentStore {
         if (child == null) return;
         child.getPersistentData().remove(ASSIGNMENT_TAG);
         clearRecruitmentCommand(child);
+        VillagerWorkAppearance.refresh(child);
     }
 
     private static int distanceFromStart(Villager villager) {

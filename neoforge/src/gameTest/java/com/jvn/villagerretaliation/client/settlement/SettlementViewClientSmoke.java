@@ -63,6 +63,7 @@ public final class SettlementViewClientSmoke {
     private static final String OUTPUT = "villagerretaliation.settlementClientSmoke";
     private static CompletableFuture<Fixture> preparation;
     private static CompletableFuture<Void> serverCheck;
+    private static CompletableFuture<Void> appearanceReload;
     private static Fixture fixture;
     private static ProjectFixture projectFixture;
     private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
@@ -126,6 +127,14 @@ public final class SettlementViewClientSmoke {
             return;
         }
         if (phase == 0 && minecraft.screen == null) {
+            if (appearanceReload == null) {
+                VillagerWorkAppearanceClientChecks.verify();
+                appearanceReload = minecraft.reloadResourcePacks();
+                return;
+            }
+            if (!appearanceReload.isDone()) return;
+            appearanceReload.join();
+            VillagerWorkAppearanceClientChecks.verify();
             minecraft.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
             minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             minecraft.options.renderDistance().set(6);
@@ -201,7 +210,7 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 3;
         } else if (phase == 3 && minecraft.screen instanceof SettlementViewScreen screen && visibleResident(minecraft) != null) {
-            if (++ticks < 30) {
+            if (++ticks < 30 || screen.getNarrationMessage().getString().contains("Overview stale / loading")) {
                 return;
             }
             require(minecraft.getCameraEntity() instanceof Marker, "the view owns a separate camera");
