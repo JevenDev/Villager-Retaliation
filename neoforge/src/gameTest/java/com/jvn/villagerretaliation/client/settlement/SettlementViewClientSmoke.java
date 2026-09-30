@@ -1921,6 +1921,19 @@ public final class SettlementViewClientSmoke {
         screen.mouseDragged(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, destination.x - from.x, destination.y - from.y);
         screen.mouseReleased(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         require(!draft.dragging() && !draft.nodes().equals(original), "a valid drop remains in the draft until Save");
+        var beforeBoundary = draft.nodes();
+        var boundaryFrom = screenPoint(screen, beforeBoundary.getLast().getCenter());
+        var beyondBoundary = screenPoint(screen, fixture.center().offset(-15, 0, 9).getBottomCenter());
+        screen.mouseClicked(boundaryFrom.x, boundaryFrom.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseDragged(beyondBoundary.x, beyondBoundary.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, beyondBoundary.x - boundaryFrom.x, beyondBoundary.y - boundaryFrom.y);
+        var boundaryPreview = draft.nodes().getLast();
+        require(draft.dragging() && com.jvn.villagerretaliation.interaction.HiredRoute.canConnect(draft.nodes().getFirst(), boundaryPreview)
+                && draft.nodes().getFirst().distSqr(boundaryPreview) >= 225, "long drags preview a point at the connection boundary");
+        screen.mouseReleased(beyondBoundary.x, beyondBoundary.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(draft.nodes().getLast().equals(boundaryPreview), "releasing beyond the limit keeps the boundary preview");
+        draft.beginDrag(1);
+        draft.dragTo(beforeBoundary.getLast());
+        require(draft.finishDrag(position -> true), "the smoke route can return inside the boundary");
         var releaseDestination = screenPoint(screen, fixture.center().offset(10, 0, 9).getBottomCenter());
         var movedFrom = screenPoint(screen, draft.nodes().getLast().getCenter());
         screen.mouseClicked(movedFrom.x, movedFrom.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
@@ -1941,7 +1954,7 @@ public final class SettlementViewClientSmoke {
     }
 
     private static double gizmoScale(SettlementViewScreen screen) {
-        return Math.clamp(screen.cameraHeight() * 0.055, 1.2, 8);
+        return Math.clamp(screen.cameraHeight() * 0.075, 1.8, 12);
     }
 
     private static Vec3 screenPoint(SettlementViewScreen screen, Vec3 position) {

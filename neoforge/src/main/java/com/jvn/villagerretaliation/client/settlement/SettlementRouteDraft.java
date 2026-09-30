@@ -80,7 +80,15 @@ public final class SettlementRouteDraft {
     public void dragTo(BlockPos position) {
         if (dragging() && position != null) {
             restoreDrag();
-            replace(this.selected, position.immutable());
+            var neighbors = this.selected < this.nodes.size() ? nodeNeighbors(this.selected, false) : new ArrayList<BlockPos>();
+            if (this.selected < this.nodes.size()) {
+                var anchor = this.nodes.get(this.selected);
+                for (var branch : this.branches) if (branch.anchor().equals(anchor)) neighbors.add(branch.end());
+            } else {
+                var branch = this.branches.get((this.selected - this.nodes.size()) / 2);
+                neighbors.add((this.selected - this.nodes.size()) % 2 == 0 ? branch.end() : branch.anchor());
+            }
+            replace(this.selected, nearestConnectedPosition(position, neighbors));
         }
     }
 
@@ -122,7 +130,67 @@ public final class SettlementRouteDraft {
     public void insertAfterSelection() { this.insert = !this.insert; this.branch = false; }
     public void branchFromSelection() { this.branch = !this.branch; this.insert = false; }
 
+    private int placementIndex() {
+        return this.insert && this.selected >= 0 && this.selected < this.nodes.size() ? this.selected + 1 : this.nodes.size();
+    }
+
+    public List<BlockPos> placementNeighbors() {
+        if (this.branch) return this.selected >= 0 && this.selected < this.nodes.size() ? List.of(this.nodes.get(this.selected)) : List.of();
+        return nodeNeighbors(placementIndex(), true);
+    }
+
+    public BlockPos placementPosition(BlockPos position) {
+        return nearestConnectedPosition(position, placementNeighbors());
+    }
+
+    private ArrayList<BlockPos> nodeNeighbors(int index, boolean inserting) {
+        var neighbors = new ArrayList<BlockPos>();
+        if (index > 0) neighbors.add(this.nodes.get(index - 1));
+        int next = inserting ? index : index + 1;
+        if (next < this.nodes.size()) neighbors.add(this.nodes.get(next));
+        if (this.loop && !this.nodes.isEmpty()) {
+            if (index == 0) neighbors.add(this.nodes.getLast());
+            else if (next == this.nodes.size()) neighbors.add(this.nodes.getFirst());
+        }
+        return neighbors;
+    }
+
+    private static BlockPos nearestConnectedPosition(BlockPos position, List<BlockPos> neighbors) {
+        if (neighbors.stream().allMatch(neighbor -> HiredRoute.canConnect(neighbor, position))) return position.immutable();
+        int radius = HiredRoute.MAX_NODE_DISTANCE;
+        int minX = neighbors.stream().mapToInt(BlockPos::getX).max().orElseThrow() - radius;
+        int maxX = neighbors.stream().mapToInt(BlockPos::getX).min().orElseThrow() + radius;
+        int minZ = neighbors.stream().mapToInt(BlockPos::getZ).max().orElseThrow() - radius;
+        int maxZ = neighbors.stream().mapToInt(BlockPos::getZ).min().orElseThrow() + radius;
+        BlockPos closest = position.immutable();
+        double distance = Double.MAX_VALUE;
+        // search block positions so rounding cannot push diagonal connections past the limit
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                int minY = Integer.MIN_VALUE, maxY = Integer.MAX_VALUE;
+                for (var neighbor : neighbors) {
+                    int dx = x - neighbor.getX(), dz = z - neighbor.getZ();
+                    int remaining = HiredRoute.MAX_NODE_DISTANCE_SQR - dx * dx - dz * dz;
+                    if (remaining < 0) { minY = 1; maxY = 0; break; }
+                    int height = (int) Math.sqrt(remaining);
+                    minY = Math.max(minY, neighbor.getY() - height);
+                    maxY = Math.min(maxY, neighbor.getY() + height);
+                }
+                if (minY > maxY) continue;
+                int y = Math.clamp(position.getY(), minY, maxY);
+                double dx = x - (double) position.getX(), dy = y - (double) position.getY(), dz = z - (double) position.getZ();
+                double candidate = dx * dx + dy * dy + dz * dz;
+                if (candidate < distance) {
+                    distance = candidate;
+                    closest = new BlockPos(x, y, z);
+                }
+            }
+        }
+        return closest;
+    }
+
     public String place(BlockPos position) {
+        position = placementPosition(position);
         if (this.branch) {
             if (this.selected < 0 || this.selected >= this.nodes.size()) return "Select a route node as the branch anchor";
             if (this.branches.size() >= HiredRoute.MAX_BRANCHES) return "Branch limit reached";
@@ -135,7 +203,7 @@ public final class SettlementRouteDraft {
         }
         if (this.nodes.size() >= HiredRoute.MAX_NODES) return "Route node limit reached";
         if (this.nodes.contains(position)) return "Select or drag the existing node";
-        int index = this.insert && this.selected >= 0 && this.selected < this.nodes.size() ? this.selected + 1 : this.nodes.size();
+        int index = placementIndex();
         if (index > 0 && !HiredRoute.canConnect(this.nodes.get(index - 1), position)
                 || index < this.nodes.size() && !HiredRoute.canConnect(position, this.nodes.get(index))
                 || this.loop && !this.nodes.isEmpty() && index == this.nodes.size() && !HiredRoute.canConnect(position, this.nodes.getFirst())) {

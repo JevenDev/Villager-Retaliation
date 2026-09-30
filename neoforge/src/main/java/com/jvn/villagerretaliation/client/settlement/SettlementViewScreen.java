@@ -138,6 +138,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private boolean routeDragHit;
     private double routeDragX;
     private double routeDragY;
+    private BlockPos routePlacementPreview;
     private final List<Button> routeButtons = new ArrayList<>();
     private final SettlementViewCommandTracker commands = new SettlementViewCommandTracker();
     private SettlementViewBatchPayload assignmentReview;
@@ -753,6 +754,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         synchronizeGizmo();
         if (this.gizmo != null && worldContains(mouseX, mouseY) && !SettlementViewClient.panelsOpen(this)) this.gizmo.hover(ray(mouseX, mouseY));
+        this.routePlacementPreview = this.routeDraft != null && !this.routeDraft.dragging() && this.hovered.position() != null
+                && routeHandle(mouseX, mouseY) < 0 ? this.routeDraft.placementPosition(this.hovered.position().above()) : null;
         if (this.routeDraft != null) {
             var handles = this.routeDraft.handles();
             for (int index = 0; index < handles.size(); index++) {
@@ -1405,7 +1408,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         } else {
             this.gizmo = null;
         }
-        if (this.gizmo != null) this.gizmo.scale(this.cameraHeight * 0.055);
+        if (this.gizmo != null) this.gizmo.scale(this.cameraHeight * 0.075);
     }
 
     private boolean allowedGizmoBounds(AABB bounds) {
@@ -1968,6 +1971,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     Vec3.atCenterOf(nodes.getLast()), Vec3.atCenterOf(nodes.getFirst()), 1, green, 0.2F, 1);
             for (var branch : this.routeDraft.branches()) SettlementSelectionGizmo.line(pose, lines,
                     Vec3.atCenterOf(branch.anchor()), Vec3.atCenterOf(branch.end()), 1, green, 0.2F, 1);
+            if (this.routePlacementPreview != null && !this.routeDraft.dragging()) {
+                LevelRenderer.renderLineBox(pose, lines, new AABB(this.routePlacementPreview).deflate(0.1), 1, 0.85F, 0.2F, 0.65F);
+                for (var neighbor : this.routeDraft.placementNeighbors()) SettlementSelectionGizmo.line(pose, lines,
+                        Vec3.atCenterOf(neighbor), Vec3.atCenterOf(this.routePlacementPreview), 1, 0.85F, 0.2F, 0.65F);
+            }
             var handles = this.routeDraft.handles();
             for (int index = 0; index < handles.size(); index++) {
                 boolean selected = index == this.routeDraft.selected();

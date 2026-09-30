@@ -287,8 +287,11 @@ public final class SettlementWorksiteRouteGameTests {
         var draft = new com.jvn.villagerretaliation.client.settlement.SettlementRouteDraft(HiredVillagerRole.COURIER, original);
         draft.beginDrag(1);
         draft.dragTo(start.east(30));
-        helper.assertFalse(draft.finishDrag(position -> true), "invalid long connections reject the drag");
-        helper.assertValueEqual(draft.route(), original, "invalid drops restore the exact previous position");
+        helper.assertValueEqual(draft.nodes().getLast(), start.east(16), "long drags preview the sixteen-block boundary");
+        helper.assertTrue(draft.finishDrag(position -> true), "long drags commit the boundary position");
+        draft.beginDrag(1);
+        draft.dragTo(start.east(8));
+        helper.assertTrue(draft.finishDrag(position -> true), "the node can move back inside the boundary");
         draft.beginDrag(1);
         draft.dragTo(start.east(10));
         draft.cancelDrag();
@@ -350,9 +353,9 @@ public final class SettlementWorksiteRouteGameTests {
             helper.assertFalse(draft.validation().isEmpty(), "a single patrol node still cannot be saved");
             draft.clear();
             draft.place(start);
-            helper.assertFalse(draft.place(start.east(17)).isEmpty(), "placements beyond sixteen blocks are rejected for every role");
-            helper.assertValueEqual(draft.nodes(), List.of(start), "rejected placements leave the draft unchanged");
-            draft.place(start.east(16));
+            helper.assertValueEqual(draft.placementPosition(start.east(30)), start.east(16), "placement previews stop at sixteen blocks");
+            helper.assertTrue(draft.place(start.east(30)).isEmpty(), "placements beyond sixteen blocks use the boundary for every role");
+            helper.assertValueEqual(draft.nodes(), List.of(start, start.east(16)), "placed nodes match the clamped preview");
             helper.assertTrue(draft.validation().isEmpty(), "exactly sixteen blocks is permitted");
             draft.select(0);
             draft.insertAfterSelection();
@@ -361,9 +364,9 @@ public final class SettlementWorksiteRouteGameTests {
             draft.place(start.east(8));
             helper.assertValueEqual(draft.nodes(), List.of(start, start.east(8), start.east(16)), "a valid insertion retains route order");
             draft.beginDrag(1);
-            draft.dragTo(start.south(20));
-            helper.assertFalse(draft.finishDrag(position -> true), "dragging cannot break either neighboring connection");
-            helper.assertValueEqual(draft.nodes().get(1), start.east(8), "invalid drags restore the node");
+            draft.dragTo(start.east(8).south(20));
+            helper.assertValueEqual(draft.nodes().get(1), start.east(8).south(13), "middle nodes follow the shared boundary of both neighbors");
+            helper.assertTrue(draft.finishDrag(position -> true), "boundary drops keep both neighboring connections valid");
             draft.beginDrag(1);
             draft.dragTo(start.east(8).south());
             helper.assertTrue(draft.finishDrag(position -> true), "a valid drag remains in the draft");
@@ -372,9 +375,41 @@ public final class SettlementWorksiteRouteGameTests {
             draft.place(start);
             draft.place(start.east(8));
             draft.toggleLoop();
-            helper.assertFalse(draft.place(start.east(24)).isEmpty(), "appending to a loop must also connect to its first node");
-            helper.assertValueEqual(draft.nodes(), List.of(start, start.east(8)), "an invalid closing connection leaves the loop intact");
+            helper.assertTrue(draft.place(start.east(24)).isEmpty(), "appending to a loop also clamps to its first node");
+            helper.assertValueEqual(draft.nodes(), List.of(start, start.east(8), start.east(16)), "the clamped node preserves the closing connection");
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "worksite_routes")
+    public static void routeBoundariesFollowPointerDirectionAndPreserveBranchConnections(GameTestHelper helper) {
+        var start = new BlockPos(-8, 70, -4);
+        var draft = new com.jvn.villagerretaliation.client.settlement.SettlementRouteDraft(HiredVillagerRole.COMBAT, null);
+        draft.place(start);
+        draft.place(start.east(8));
+        draft.beginDrag(1);
+        draft.dragTo(start.east(30));
+        helper.assertValueEqual(draft.nodes().getLast(), start.east(16), "the node follows the east boundary");
+        draft.dragTo(start.south(30));
+        helper.assertValueEqual(draft.nodes().getLast(), start.south(16), "the boundary position follows the pointer around the anchor");
+        draft.dragTo(start.offset(-30, 0, -30));
+        helper.assertValueEqual(draft.nodes().getLast(), start.offset(-11, 0, -11), "diagonal boundary positions remain within sixteen blocks");
+        helper.assertTrue(draft.finishDrag(position -> true), "diagonal boundary drops retain their preview");
+        draft.select(0);
+        draft.branchFromSelection();
+        draft.place(start.south(30));
+        helper.assertValueEqual(draft.branches().getFirst().end(), start.south(16), "branch placement clamps to its anchor");
+        draft.beginDrag(3);
+        draft.dragTo(start.north(30));
+        helper.assertValueEqual(draft.branches().getFirst().end(), start.north(16), "branch endpoints follow the same distance boundary");
+        helper.assertTrue(draft.finishDrag(position -> true), "branch endpoint drops retain their boundary position");
+        draft.beginDrag(0);
+        draft.dragTo(start.south(30));
+        helper.assertTrue(HiredRoute.canConnect(draft.nodes().getFirst(), draft.branches().getFirst().end()), "moving an anchor preserves its branch distance");
+        helper.assertTrue(draft.finishDrag(position -> true), "anchor drops preserve all connected distances");
+        draft.beginDrag(1);
+        draft.dragTo(start.east(30));
+        helper.assertFalse(draft.finishDrag(position -> false), "invalid map surfaces still reject drops");
         helper.succeed();
     }
 
