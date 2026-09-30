@@ -63,9 +63,12 @@ public final class HiredProductionStock {
     }
 
     public static long count(ServerLevel level, Villager villager, HiredProductionQueue queue, HiredProductionOrder order) {
-        if (order.mode() != HiredProductionOrder.Mode.MAINTAIN_STOCK) return 0L;
         var duty = SettlementWorkforceService.duty(villager).orElse(null);
-        if (duty != null) return SettlementProductionStock.count(level, duty.town(), queue, order);
+        if (duty != null) {
+            if (order.storage() != null && !com.jvn.villagerretaliation.settlement.SettlementSupplyStock.workerOutput(level, duty.town(), villager, order.storage())) return -1L;
+            return SettlementProductionStock.count(level, duty.town(), queue, order);
+        }
+        if (order.mode() != HiredProductionOrder.Mode.MAINTAIN_STOCK) return 0L;
         var commitments = HiredProductionCommitments.get(level);
         HiredProductionCommitments.observe(villager);
         commitments.refresh(level, order.storage());

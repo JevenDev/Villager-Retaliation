@@ -27,10 +27,8 @@ public final class SettlementProductionService {
         var role = town.areas().get(areaId).type().role();
         var error = HiredProductionService.validate(player.serverLevel(), role, requested);
         if (!error.isEmpty()) return error;
-        var links = SettlementWorksiteService.links(town, areaId);
-        if (requested.storage() != null && SettlementStock.outputs(town).stream()
-                .noneMatch(depot -> depot.position().equals(requested.storage()) && links.permitsOutput(depot.id()))) {
-            return "Choose a permitted output depot";
+        if (requested.storage() != null && !SettlementSupplyStock.permitsOutput(player.serverLevel(), town, areaId, requested.storage())) {
+            return "Choose permitted output storage";
         }
         var queue = town.productionQueues().get(areaId);
         if (queue == null ? revision != 0L : queue.configurationRevision() != revision) return "Production orders changed";
@@ -65,10 +63,9 @@ public final class SettlementProductionService {
             return ProductionManagementService.unavailable(player, request, "This worksite does not have production orders");
         }
         var queue = town.productionQueues().get(area.id());
-        var links = SettlementWorksiteService.links(town, area.id());
-        var storages = SettlementStock.outputs(town).stream().filter(depot -> links.permitsOutput(depot.id())).limit(128)
-                .map(depot -> new ProductionSnapshotPayload.Storage(depot.position(),
-                        town.areas().get(depot.area()).name() + " " + depot.position().toShortString(), depot.rulesObserved())).toList();
+        var storages = SettlementSupplyStock.storages(level, town, area.id(), true).stream().limit(128)
+                .map(position -> new ProductionSnapshotPayload.Storage(position, position.toShortString(),
+                        SettlementSupplyStock.contents(level, town, position) != null)).toList();
         var legacy = new ArrayList<ProductionSnapshotPayload.Legacy>();
         int legacyCount = 0;
         String blocker = data.readOnly() ? "Settlement data requires recovery"

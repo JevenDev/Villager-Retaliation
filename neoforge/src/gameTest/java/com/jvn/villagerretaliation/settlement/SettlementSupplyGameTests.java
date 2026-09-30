@@ -257,6 +257,53 @@ public final class SettlementSupplyGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_supplies")
+    public static void internalTransfersDoNotInflatePurchasingStock(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        fixture.source().setItem(0, new ItemStack(Items.BREAD, 10));
+        var queue = town.beginTransfers(town.leader(), fixture.storage().id());
+        var order = HiredTransferQueue.Order.create(new HiredTransferQueue.Endpoint(fixture.source().position(), fixture.source().id()),
+                new HiredTransferQueue.Endpoint(fixture.destination().position(), fixture.destination().id()), new ItemStack(Items.BREAD), 6);
+        queue.append(order);
+        var allocation = queue.reserve(UUID.randomUUID(), order.id(), 6);
+        var pool = List.of(fixture.source(), fixture.destination());
+        helper.assertValueEqual(SettlementSupplyStock.projected(helper.getLevel(), town, pool, new ItemStack(Items.BREAD)), 10L,
+                "planned internal cargo is already part of stored stock");
+        fixture.source().removeItem(0, 6);
+        queue.picked(allocation.id(), 6);
+        helper.assertValueEqual(SettlementSupplyStock.projected(helper.getLevel(), town, pool, new ItemStack(Items.BREAD)), 10L,
+                "picked internal cargo replaces its source stock once");
+        fixture.destination().setItem(0, new ItemStack(Items.BREAD, 6));
+        queue.delivered(allocation.id(), 6);
+        helper.assertValueEqual(SettlementSupplyStock.projected(helper.getLevel(), town, pool, new ItemStack(Items.BREAD)), 10L,
+                "delivery preserves the purchasing balance");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_supplies")
+    public static void maintainedCivicProductionAcceptsOrdinaryOutputStorage(GameTestHelper helper) {
+        SettlementHaulingGameTests.withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var workshop = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.WORKSHOP).findFirst().orElseThrow();
+            var position = workshop.min().above();
+            level.setBlockAndUpdate(position, net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState());
+            var container = (net.minecraft.world.Container) level.getBlockEntity(position);
+            container.setItem(0, new ItemStack(Items.STICK, 8));
+            var defaults = SettlementWorksitePlan.defaults(workshop.type().role());
+            var storage = new SettlementStorageLinks(false, List.of(new SettlementStorageLinks.Link(position, SettlementStorageLinks.Purpose.OUTPUT, 0)));
+            town.setWorksitePlan(town.leader(), workshop.id(), new SettlementWorksitePlan(defaults.settings().withStorage(storage), 1));
+            var order = HiredProductionOrder.create(level, HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("stick"), Map.of()),
+                    HiredProductionOrder.Mode.MAINTAIN_STOCK, 16, position);
+            helper.assertValueEqual(SettlementProductionService.append(fixture.leader(), town, workshop.id(), 0, order), "", "ordinary output storage accepts a shared order");
+            var queue = town.productionQueues().get(workshop.id());
+            helper.assertValueEqual(SettlementProductionStock.count(level, town, queue, order), 8L, "maintained stock counts the live chest");
+            level.setBlockAndUpdate(position, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+            helper.assertValueEqual(SettlementProductionStock.count(level, town, queue, order), -1L, "missing output remains unknown");
+        });
+    }
+
     private static Supply breadSupply(ServerPlayer player, SettlementRecord town, BlockPos position) {
         return SettlementSupplyService.supplies(player, town).stream().filter(row -> row.position().equals(position)
                 && row.item().is(Items.BREAD) && !row.item().has(DataComponents.CUSTOM_NAME)).findFirst().orElseThrow();

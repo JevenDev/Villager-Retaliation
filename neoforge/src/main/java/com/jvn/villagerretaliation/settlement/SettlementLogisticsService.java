@@ -135,6 +135,7 @@ public final class SettlementLogisticsService {
                                              UUID worker, net.minecraft.core.BlockPos position,
                                              java.util.function.Predicate<ItemStack> mayWithdraw, boolean background) {
         var links = SettlementWorksiteService.links(town, town.duties().get(worker), worker);
+        var stocks = new SettlementSupplyStock.Snapshot(level, town);
         for (SettlementDepot destination : depots) {
             if (!links.permitsOutput(destination.id())) continue;
             if (destination.stockTargets().isEmpty() && destination.purpose() != SettlementDepotPurpose.FOOD) {
@@ -155,9 +156,8 @@ public final class SettlementLogisticsService {
                             - AssignedStorageService.reservedItemCount(level, source.position(), worker,
                                     VillagerFilterPolicy.TransferOperation.PROVIDE, sample);
                     available = Math.min(available, framedAllowance(level, source, sample, VillagerFilterPolicy.TransferOperation.PROVIDE, background));
-                    int reserved = AssignedStorageService.reservedItemCount(level, destination.position(), worker,
-                            VillagerFilterPolicy.TransferOperation.RECEIVE, sample);
-                    if (target > destination.count(stack -> ItemStack.isSameItemSameComponents(stack, sample)) + reserved
+                    var stock = stocks.observe(destination.position(), sample, null);
+                    if (stock.known() && target > stock.stored() + stock.incoming()
                             && available > 0 && SettlementStock.capacity(List.of(destination), sample) > 0
                             && framedAllowance(level, destination, sample, VillagerFilterPolicy.TransferOperation.RECEIVE, background) > 0) {
                         return new SettlementHaulTask(source.id(), destination.id(), sample, target, false);

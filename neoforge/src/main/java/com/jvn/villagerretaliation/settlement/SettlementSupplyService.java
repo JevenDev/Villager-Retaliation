@@ -64,13 +64,14 @@ final class SettlementSupplyService {
             }
         }
         var result = new ArrayList<Supply>();
+        var stock = new SettlementSupplyStock.Snapshot(level, town);
         for (var entry : rows.entrySet()) {
             var key = entry.getKey();
             var store = stores.get(key.position());
             long stored = store.contents() == null ? -1L : store.contents().stream()
                     .filter(stack -> HiredProductionStock.matches(key.item(), stack)).mapToLong(ItemStack::getCount).sum();
             long incoming = key.item().isEmpty() || store.contents() == null ? -1L
-                    : SettlementProductionStock.incoming(level, town, key.position(), key.item(), null);
+                    : stock.observe(key.position(), key.item(), null).incoming();
             String status = store.status();
             if (incoming < 0 && stored >= 0) status = "incoming_unavailable";
             String itemName = key.item().isEmpty() ? store.name() : key.item().getHoverName().getString();
@@ -100,7 +101,7 @@ final class SettlementSupplyService {
                 String status = order.cancelled() ? "cancelled" : order.paused() || !enabled(town, area) ? "paused"
                         : order.blocker().isEmpty() ? "active" : "blocked";
                 String detail = order.blocker();
-                if (depot == null || !SettlementWorksiteService.links(town, area.id()).permitsOutput(depot.id())) {
+                if (!SettlementSupplyStock.permitsOutput(level, town, area.id(), supply.position())) {
                     status = "output_unavailable";
                 }
                 link(links, supply, SupplyLinkKind.PRODUCTION, area.name(), area.id(), order.id(), area.center(), pending,

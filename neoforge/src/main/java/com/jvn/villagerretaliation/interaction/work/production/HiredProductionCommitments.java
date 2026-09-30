@@ -81,7 +81,7 @@ public final class HiredProductionCommitments extends SavedData {
                 if (queue.scope() == HiredTransferQueue.Scope.PERSONAL && contract.equals(queue.owner())) {
                     for (var allocation : queue.allocations()) {
                         var order = queue.order(allocation.order());
-                        add(incoming, order.destination().position(), order.sample(), allocation.amount());
+                        add(incoming, order.destination().position(), order.sample(), allocation.amount(), allocation.started() ? null : order.source().position());
                     }
                 }
             }
@@ -133,24 +133,34 @@ public final class HiredProductionCommitments extends SavedData {
                 .anyMatch(incoming -> incoming.matches(destination, sample))).map(Map.Entry::getKey).collect(java.util.stream.Collectors.toSet());
     }
 
+    public long internalTransfers(Set<BlockPos> pool, ItemStack sample) {
+        return this.workers.values().stream().flatMap(worker -> worker.incoming().stream())
+                .filter(value -> value.source() != null && pool.contains(value.source()) && pool.contains(value.destination())
+                        && HiredProductionStock.matches(sample, value.sample())).mapToLong(Incoming::amount).sum();
+    }
+
     private static void add(List<Incoming> incoming, BlockPos destination, ItemStack sample, int amount) {
+        add(incoming, destination, sample, amount, null);
+    }
+
+    private static void add(List<Incoming> incoming, BlockPos destination, ItemStack sample, int amount, BlockPos source) {
         if (destination == null || sample.isEmpty() || amount <= 0) return;
         var product = HiredProductionStock.product(sample).copyWithCount(1);
         for (int index = 0; index < incoming.size(); index++) {
             var previous = incoming.get(index);
-            if (previous.matches(destination, product)) {
-                incoming.set(index, new Incoming(destination, product, Math.addExact(previous.amount(), amount)));
+            if (previous.matches(destination, product) && java.util.Objects.equals(previous.source(), source)) {
+                incoming.set(index, new Incoming(destination, product, Math.addExact(previous.amount(), amount), source));
                 return;
             }
         }
         if (incoming.size() >= MAX_DELIVERIES) throw new IllegalArgumentException("Too many production deliveries");
-        incoming.add(new Incoming(destination, product, amount));
+        incoming.add(new Incoming(destination, product, amount, source));
     }
 
     public static HiredProductionCommitments load(CompoundTag tag, HolderLookup.Provider provider) {
         var data = new HiredProductionCommitments();
         try {
-            if (tag.getInt("Version") != 1 || !(tag.get("Workers") instanceof ListTag workers)
+            if ((tag.getInt("Version") < 1 || tag.getInt("Version") > 2) || !(tag.get("Workers") instanceof ListTag workers)
                     || workers.size() > MAX_WORKERS || !workers.isEmpty() && workers.getElementType() != Tag.TAG_COMPOUND) {
                 throw new IllegalArgumentException("Invalid production commitments");
             }
@@ -164,11 +174,11 @@ public final class HiredProductionCommitments extends SavedData {
                 for (var rawDelivery : incoming) {
                     var delivery = (CompoundTag) rawDelivery;
                     if (!delivery.contains("Position", Tag.TAG_LONG) || !delivery.contains("Amount", Tag.TAG_INT)
-                            || !delivery.contains("Sample", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid production delivery");
+                            || !delivery.contains("Sample", Tag.TAG_COMPOUND) || delivery.contains("Source") && !delivery.contains("Source", Tag.TAG_LONG)) throw new IllegalArgumentException("Invalid production delivery");
                     var sample = ItemStack.parseOptional(provider, delivery.getCompound("Sample"));
                     if (sample.isEmpty() || sample.getCount() != 1) throw new IllegalArgumentException("Invalid production delivery item");
-                    var value = new Incoming(BlockPos.of(delivery.getLong("Position")), sample, delivery.getInt("Amount"));
-                    if (deliveries.stream().anyMatch(existing -> existing.matches(value.destination(), value.sample()))) {
+                    var value = new Incoming(BlockPos.of(delivery.getLong("Position")), sample, delivery.getInt("Amount"), delivery.contains("Source") ? BlockPos.of(delivery.getLong("Source")) : null);
+                    if (deliveries.stream().anyMatch(existing -> existing.matches(value.destination(), value.sample()) && java.util.Objects.equals(existing.source(), value.source()))) {
                         throw new IllegalArgumentException("Duplicate production delivery");
                     }
                     deliveries.add(value);
@@ -187,7 +197,7 @@ public final class HiredProductionCommitments extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         if (this.rejected != null) return this.rejected.copy();
-        tag.putInt("Version", 1);
+        tag.putInt("Version", 2);
         var workers = new ListTag();
         this.workers.forEach((id, snapshot) -> {
             var worker = new CompoundTag();
@@ -198,6 +208,7 @@ public final class HiredProductionCommitments extends SavedData {
                 var delivery = new CompoundTag();
                 delivery.putLong("Position", value.destination().asLong());
                 delivery.putInt("Amount", value.amount());
+                if (value.source() != null) delivery.putLong("Source", value.source().asLong());
                 delivery.put("Sample", value.sample().save(provider));
                 incoming.add(delivery);
             }
@@ -208,7 +219,7 @@ public final class HiredProductionCommitments extends SavedData {
         return tag;
     }
 
-    private record Incoming(BlockPos destination, ItemStack sample, int amount) {
+    private record Incoming(BlockPos destination, ItemStack sample, int amount, BlockPos source) {
         private Incoming {
             if (amount < 1 || amount > 1_048_576) throw new IllegalArgumentException("Invalid production delivery quantity");
         }
@@ -224,7 +235,7 @@ public final class HiredProductionCommitments extends SavedData {
             for (int index = 0; index < this.incoming.size(); index++) {
                 var first = this.incoming.get(index);
                 var second = other.incoming.get(index);
-                if (first.amount() != second.amount() || !first.matches(second.destination(), second.sample())) return false;
+                if (first.amount() != second.amount() || !first.matches(second.destination(), second.sample()) || !java.util.Objects.equals(first.source(), second.source())) return false;
             }
             return true;
         }

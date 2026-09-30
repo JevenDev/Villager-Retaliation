@@ -1,0 +1,195 @@
+package com.jvn.villagerretaliation.settlement;
+
+import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
+import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
+
+public final class SettlementSupplyStock {
+    private SettlementSupplyStock() { }
+
+    public static final class Snapshot {
+        private final ServerLevel level;
+        private final SettlementRecord town;
+        private final java.util.Map<BlockPos, List<ItemStack>> contents = new java.util.HashMap<>();
+        private final java.util.Map<Key, Facts> facts = new java.util.HashMap<>();
+
+        public Snapshot(ServerLevel level, SettlementRecord town) {
+            this.level = level;
+            this.town = town;
+        }
+
+        public Facts observe(BlockPos position, ItemStack sample, HiredProductionQueue excluded) {
+            var canonical = positions(this.level, position).getFirst();
+            var key = new Key(canonical, HiredProductionStock.product(sample).copyWithCount(1), excluded);
+            if (!this.contents.containsKey(canonical)) this.contents.put(canonical, contents(this.level, this.town, canonical));
+            return this.facts.computeIfAbsent(key, ignored -> SettlementSupplyStock.observe(this.level, this.town, canonical, sample, excluded, this.contents.get(canonical)));
+        }
+    }
+
+    private record Key(BlockPos position, ItemStack sample, HiredProductionQueue excluded) {
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Key key && position.equals(key.position) && excluded == key.excluded
+                    && ItemStack.isSameItemSameComponents(sample, key.sample);
+        }
+        @Override
+        public int hashCode() { return java.util.Objects.hash(position, ItemStack.hashItemAndComponents(sample), excluded); }
+    }
+
+    public record Facts(long stored, long outgoing, long incoming, String status) {
+        public boolean known() { return stored >= 0 && outgoing >= 0 && incoming >= 0; }
+        public long available() { return known() ? Math.max(0, stored - outgoing) : -1; }
+        public long projected() { return known() ? Math.max(0, stored - outgoing + incoming) : -1; }
+    }
+
+    public static List<BlockPos> positions(ServerLevel level, BlockPos position) {
+        var positions = AssignedStorageService.containerPositions(level, position);
+        return positions.isEmpty() ? List.of(position) : positions.stream().sorted().toList();
+    }
+
+    public static boolean sameStorage(ServerLevel level, BlockPos first, BlockPos second) {
+        return first != null && second != null && (first.equals(second) || positions(level, first).contains(second));
+    }
+
+    public static Facts observe(ServerLevel level, SettlementRecord town, BlockPos position, ItemStack sample,
+                                HiredProductionQueue excluded) {
+        return observe(level, town, position, sample, excluded, contents(level, town, position));
+    }
+
+    private static Facts observe(ServerLevel level, SettlementRecord town, BlockPos position, ItemStack sample,
+                                 HiredProductionQueue excluded, List<ItemStack> contents) {
+        if (contents == null) return new Facts(-1, -1, -1, "storage_unavailable");
+        long stored = contents.stream().filter(stack -> HiredProductionStock.matches(sample, stack)).mapToLong(ItemStack::getCount).sum();
+        long incoming = 0;
+        for (var alias : positions(level, position)) {
+            long count = incomingAt(level, town, alias, sample, excluded);
+            if (count < 0) return new Facts(stored, -1, -1, "incoming_unavailable");
+            incoming += count;
+        }
+        var commitments = com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(level);
+        var incomingOwners = new java.util.HashSet<UUID>();
+        for (var alias : positions(level, position)) incomingOwners.addAll(commitments.contributors(alias, sample));
+        for (var queue : town.transferQueues().values()) for (var allocation : queue.allocations()) incomingOwners.add(allocation.worker());
+        incoming += AssignedStorageService.reservedItemsExcluding(level, position, incomingOwners,
+                VillagerFilterPolicy.TransferOperation.RECEIVE, stack -> HiredProductionStock.matches(sample, stack));
+        var owners = new java.util.HashSet<UUID>();
+        long outgoing = 0;
+        for (var queue : town.transferQueues().values()) for (var allocation : queue.allocations()) {
+            var order = queue.order(allocation.order());
+            if (!allocation.started() && sameStorage(level, position, order.source().position()) && order.matches(sample)) {
+                outgoing += allocation.amount();
+                owners.add(allocation.worker());
+            }
+        }
+        outgoing += AssignedStorageService.reservedItemsExcluding(level, position, owners,
+                VillagerFilterPolicy.TransferOperation.PROVIDE, stack -> HiredProductionStock.matches(sample, stack));
+        return new Facts(stored, outgoing, incoming, incoming < 0 ? "incoming_unavailable" : "available");
+    }
+
+    public static List<ItemStack> contents(ServerLevel level, SettlementRecord town, BlockPos position) {
+        var actor = SettlementStorageService.actor(level, town);
+        var depot = town.depots().values().stream().filter(candidate -> candidate.position().equals(position)).findFirst().orElse(null);
+        if (depot == null) return AssignedStorageService.observedContents(level, position, actor);
+        var area = town.areas().get(depot.area());
+        if (area == null || !town.owns(area) || !area.enabled() || !depot.rulesObserved()
+                || AssignedStorageService.containerLoaded(level, position) && !PartyContainerLootService.isAvailable(level, position, actor)) return null;
+        var contents = new ArrayList<ItemStack>();
+        for (int slot = 0; slot < depot.getContainerSize(); slot++) if (!depot.getItem(slot).isEmpty()) contents.add(depot.getItem(slot).copy());
+        return List.copyOf(contents);
+    }
+
+    public static List<BlockPos> storages(ServerLevel level, SettlementRecord town, UUID area, boolean output) {
+        var plan = town.worksitePlans().get(area);
+        if (plan != null && !plan.settings().storage().automatic()) {
+            var result = new LinkedHashSet<BlockPos>();
+            for (var link : plan.settings().storage().entries()) {
+                if (output ? link.purpose().outputs() : link.purpose().supplies()) result.add(positions(level, link.position()).getFirst());
+            }
+            return List.copyOf(result);
+        }
+        var links = SettlementWorksiteService.links(town, area);
+        return (output ? SettlementStock.outputs(town) : SettlementStock.supplies(town)).stream()
+                .filter(depot -> output ? links.permitsOutput(depot.id()) : links.permitsSupply(depot.id()))
+                .map(SettlementDepot::position).toList();
+    }
+
+    public static boolean workerOutput(ServerLevel level, SettlementRecord town, Villager worker, BlockPos position) {
+        var area = town.duties().get(worker.getUUID());
+        var storage = SettlementStorageService.effective(town, worker.getUUID());
+        if (storage.automatic()) return town.depots().values().stream().anyMatch(depot -> depot.position().equals(position)
+                && SettlementWorksiteService.links(town, area, worker.getUUID()).permitsOutput(depot.id()));
+        return storage.entries().stream().anyMatch(link -> link.purpose().outputs() && sameStorage(level, link.position(), position)
+                && SettlementStorageService.permitted(level, town, town.workplace(area).type().role(), link));
+    }
+
+    public static boolean permitsOutput(ServerLevel level, SettlementRecord town, UUID area, BlockPos position) {
+        if (position == null || !storages(level, town, area, true).stream().anyMatch(value -> sameStorage(level, value, position))) return false;
+        if (town.depots().values().stream().anyMatch(depot -> depot.position().equals(position))) return true;
+        var workplace = town.workplace(area);
+        return workplace != null && SettlementStorageService.permitted(level, town, workplace.type().role(),
+                new SettlementStorageLinks.Link(position, SettlementStorageLinks.Purpose.OUTPUT, 0));
+    }
+
+    public static long projected(ServerLevel level, SettlementRecord town, List<SettlementDepot> depots, ItemStack sample) {
+        long total = 0;
+        Set<BlockPos> pool = depots.stream().map(SettlementDepot::position).collect(java.util.stream.Collectors.toSet());
+        for (var depot : depots) {
+            var facts = observe(level, town, depot.position(), sample, null);
+            if (!facts.known()) return -1;
+            total += facts.stored() + facts.incoming();
+        }
+        // unpicked internal transfers are still included in their source inventory
+        for (var queue : town.transferQueues().values()) for (var allocation : queue.allocations()) {
+            var order = queue.order(allocation.order());
+            if (!allocation.started() && pool.contains(order.source().position()) && pool.contains(order.destination().position())
+                    && order.matches(sample)) total -= allocation.amount();
+        }
+        total -= com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(level).internalTransfers(pool, sample);
+        return Math.max(0, total);
+    }
+
+    private static long incomingAt(ServerLevel level, SettlementRecord town, net.minecraft.core.BlockPos destination,
+                         net.minecraft.world.item.ItemStack sample, HiredProductionQueue excluded) {
+        long count = 0L;
+        var commitments = com.jvn.villagerretaliation.interaction.work.production.HiredProductionCommitments.get(level);
+        commitments.refresh(level, destination);
+        long incoming = commitments.count(destination, sample, null);
+        if (incoming < 0L) return -1L;
+        count += incoming;
+        for (var transfers : town.transferQueues().values()) count += transfers.pending(sample, destination);
+        for (var other : town.productionQueues().values()) {
+            if (other != excluded) count += other.pending(sample, destination);
+        }
+        for (var worker : town.workers().values()) {
+            if (!town.duties().containsKey(worker.id())) continue;
+            if (level.getEntity(worker.id()) instanceof Villager loaded) {
+                if (!destination.equals(HiredProductionStock.destination(HiredWorkStateStore.state(loaded)))) continue;
+                var inventory = HiredJobInventory.getJobInventory(loaded);
+                for (int slot : inventory.outputSlots()) {
+                    var stack = inventory.getItem(slot);
+                    if (HiredProductionStock.matches(sample, stack)) count += stack.getCount();
+                }
+            } else if (destination.equals(HiredProductionStock.destination(worker.settings()))) {
+                var inventory = worker.items(level.registryAccess());
+                for (int slot : worker.outputSlots()) {
+                    var stack = inventory.get(slot);
+                    if (HiredProductionStock.matches(sample, stack)) count += stack.getCount();
+                }
+            }
+        }
+        return count;
+    }
+}

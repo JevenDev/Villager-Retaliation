@@ -232,7 +232,9 @@ public final class SettlementTradeService {
         }
         List<SettlementDepot> depots = SettlementStock.supplies(town);
         Predicate<ItemStack> matches = stack -> ItemStack.isSameItemSameComponents(sample, stack);
-        int needed = Math.max(0, order.stockTarget() - SettlementStock.count(depots, matches));
+        long projected = SettlementSupplyStock.projected(level, town, depots, sample);
+        if (projected < 0) return Result.blocked(Status.UNAVAILABLE);
+        int needed = (int) Math.max(0L, order.stockTarget() - projected);
         if (needed == 0) {
             return Result.blocked(Status.STOCK_TARGET);
         }
