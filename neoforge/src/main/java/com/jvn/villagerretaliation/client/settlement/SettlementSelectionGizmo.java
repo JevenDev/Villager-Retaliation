@@ -18,7 +18,7 @@ public final class SettlementSelectionGizmo {
     static final RenderType LINES = RenderType.create("settlement_gizmo", DefaultVertexFormat.POSITION_COLOR_NORMAL,
             VertexFormat.Mode.LINES, 1536, RenderType.CompositeState.builder()
                     .setShaderState(RenderStateShard.RENDERTYPE_LINES_SHADER)
-                    .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(1.5)))
+                    .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(2.0)))
                     .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                     .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
@@ -113,7 +113,7 @@ public final class SettlementSelectionGizmo {
         var directions = directions();
         for (var direction : directions) {
             var position = position(direction);
-            var hit = new AABB(position, position).inflate(this.scale * 0.17).clip(ray.origin(), ray.end());
+            var hit = new AABB(position, position).inflate(this.scale * 0.22).clip(ray.origin(), ray.end());
             if (hit.isPresent() && hit.get().distanceToSqr(ray.origin()) < distance) {
                 distance = hit.get().distanceToSqr(ray.origin());
                 this.hovered = new Handle(direction, false);
@@ -121,7 +121,7 @@ public final class SettlementSelectionGizmo {
         }
         if (this.mode == Mode.TRANSFORM && this.rotatable) {
             var point = planePoint(ray, pivot().y);
-            if (point != null && Math.abs(point.subtract(pivot()).horizontalDistance() - this.scale * 1.4) < this.scale * 0.14
+            if (point != null && Math.abs(point.subtract(pivot()).horizontalDistance() - this.scale * 1.4) < this.scale * 0.18
                     && point.distanceToSqr(ray.origin()) < distance) this.hovered = new Handle(Direction.UP, true);
         }
         return this.hovered != null;
@@ -200,7 +200,7 @@ public final class SettlementSelectionGizmo {
             float green = direction.getAxis() == Direction.Axis.Y ? 0.75F : 0.45F;
             float blue = direction.getAxis() == Direction.Axis.Z ? 0.85F : 0.4F;
             var end = position(direction);
-            double radius = this.scale * (highlighted ? 0.09 : 0.065);
+            double radius = this.scale * (highlighted ? 0.11 : 0.085);
             if (this.mode == Mode.TRANSFORM) {
                 line(pose, lines, pivot(), end, red, green, blue, highlighted ? 1 : 0.7F);
                 var axis = Vec3.atLowerCornerOf(direction.getNormal());

@@ -9,7 +9,6 @@ import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 
 public final class SettlementRouteDraft {
-    private final HiredVillagerRole role;
     private final List<BlockPos> nodes = new ArrayList<>();
     private final List<HiredRoute.Branch> branches = new ArrayList<>();
     private SettlementGuardOrder.Mode mode;
@@ -21,7 +20,6 @@ public final class SettlementRouteDraft {
     private boolean branch;
 
     public SettlementRouteDraft(HiredVillagerRole role, SettlementGuardOrder route) {
-        this.role = role;
         this.mode = route == null ? SettlementGuardOrder.Mode.PATROL : route.mode();
         if (route != null) {
             this.nodes.addAll(route.points());
@@ -49,14 +47,20 @@ public final class SettlementRouteDraft {
     }
 
     public String validation() {
+        return validation(true);
+    }
+
+    private String validation(boolean complete) {
         if (this.mode != SettlementGuardOrder.Mode.PATROL && !this.branches.isEmpty()) return "Add a second route node before branching";
-        if (this.nodes.size() == 1 && this.mode == SettlementGuardOrder.Mode.PATROL) return "Place at least two route nodes";
+        if (complete && this.nodes.size() == 1 && this.mode == SettlementGuardOrder.Mode.PATROL) return "Place at least two route nodes";
         if (new java.util.HashSet<>(this.nodes).size() != this.nodes.size()) return "Route nodes must have different positions";
         if (this.loop && (this.nodes.size() < 2 || !HiredRoute.canConnect(this.nodes.getLast(), this.nodes.getFirst())))
             return "The closing loop must be within 16 blocks";
         var shared = new HiredRoute(this.nodes, this.loop, this.branches);
         if (!shared.branches().equals(this.branches)) return "Branches must attach to the route and extend at most 16 blocks";
-        if (this.role == HiredVillagerRole.COURIER && !shared.equals(shared.validatedChain())) return "Courier nodes must connect within 16 blocks";
+        for (int index = 1; index < this.nodes.size(); index++) {
+            if (!HiredRoute.canConnect(this.nodes.get(index - 1), this.nodes.get(index))) return "Route nodes must connect within 16 blocks";
+        }
         return "";
     }
 
@@ -82,7 +86,7 @@ public final class SettlementRouteDraft {
 
     public boolean finishDrag(Predicate<BlockPos> permitted) {
         if (!dragging()) return true;
-        boolean valid = validation().isEmpty() && handles().stream().allMatch(permitted);
+        boolean valid = validation(false).isEmpty() && handles().stream().allMatch(permitted);
         if (!valid) restoreDrag();
         this.dragNodes = null;
         this.dragBranches = null;
@@ -132,6 +136,11 @@ public final class SettlementRouteDraft {
         if (this.nodes.size() >= HiredRoute.MAX_NODES) return "Route node limit reached";
         if (this.nodes.contains(position)) return "Select or drag the existing node";
         int index = this.insert && this.selected >= 0 && this.selected < this.nodes.size() ? this.selected + 1 : this.nodes.size();
+        if (index > 0 && !HiredRoute.canConnect(this.nodes.get(index - 1), position)
+                || index < this.nodes.size() && !HiredRoute.canConnect(position, this.nodes.get(index))
+                || this.loop && !this.nodes.isEmpty() && index == this.nodes.size() && !HiredRoute.canConnect(position, this.nodes.getFirst())) {
+            return "Place the node within 16 blocks of its neighbors";
+        }
         this.nodes.add(index, position.immutable());
         this.selected = index;
         this.insert = false;

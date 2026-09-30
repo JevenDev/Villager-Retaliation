@@ -337,6 +337,47 @@ public final class SettlementWorksiteRouteGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "worksite_routes")
+    public static void routeDraftPlacementAndDraggingRespectNeighborDistances(GameTestHelper helper) {
+        var start = new BlockPos(0, 70, 0);
+        for (var role : List.of(HiredVillagerRole.COMBAT, HiredVillagerRole.HUNTING, HiredVillagerRole.COURIER)) {
+            var draft = new com.jvn.villagerretaliation.client.settlement.SettlementRouteDraft(role, null);
+            draft.place(start);
+            draft.beginDrag(0);
+            draft.dragTo(start.north());
+            helper.assertTrue(draft.finishDrag(position -> true), "the first node can move before the route is complete");
+            helper.assertValueEqual(draft.nodes(), List.of(start.north()), "the first node retains its dropped position");
+            helper.assertFalse(draft.validation().isEmpty(), "a single patrol node still cannot be saved");
+            draft.clear();
+            draft.place(start);
+            helper.assertFalse(draft.place(start.east(17)).isEmpty(), "placements beyond sixteen blocks are rejected for every role");
+            helper.assertValueEqual(draft.nodes(), List.of(start), "rejected placements leave the draft unchanged");
+            draft.place(start.east(16));
+            helper.assertTrue(draft.validation().isEmpty(), "exactly sixteen blocks is permitted");
+            draft.select(0);
+            draft.insertAfterSelection();
+            helper.assertFalse(draft.place(start.west()).isEmpty(), "insertions must connect to both neighbors");
+            helper.assertTrue(draft.inserting() && draft.selected() == 0, "rejected insertion retains the active tool and selection");
+            draft.place(start.east(8));
+            helper.assertValueEqual(draft.nodes(), List.of(start, start.east(8), start.east(16)), "a valid insertion retains route order");
+            draft.beginDrag(1);
+            draft.dragTo(start.south(20));
+            helper.assertFalse(draft.finishDrag(position -> true), "dragging cannot break either neighboring connection");
+            helper.assertValueEqual(draft.nodes().get(1), start.east(8), "invalid drags restore the node");
+            draft.beginDrag(1);
+            draft.dragTo(start.east(8).south());
+            helper.assertTrue(draft.finishDrag(position -> true), "a valid drag remains in the draft");
+            helper.assertValueEqual(draft.nodes().get(1), start.east(8).south(), "the released node keeps its new location");
+            draft.clear();
+            draft.place(start);
+            draft.place(start.east(8));
+            draft.toggleLoop();
+            helper.assertFalse(draft.place(start.east(24)).isEmpty(), "appending to a loop must also connect to its first node");
+            helper.assertValueEqual(draft.nodes(), List.of(start, start.east(8)), "an invalid closing connection leaves the loop intact");
+        }
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper, SettlementAreaType type, boolean remote) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(1, 2, 1));

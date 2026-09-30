@@ -136,6 +136,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private boolean routeUncertain;
     private boolean routeReloading;
     private boolean routeDragHit;
+    private double routeDragX;
+    private double routeDragY;
     private final List<Button> routeButtons = new ArrayList<>();
     private final SettlementViewCommandTracker commands = new SettlementViewCommandTracker();
     private SettlementViewBatchPayload assignmentReview;
@@ -1280,7 +1282,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private int routeHandle(double x, double y) {
         int selected = -1;
-        double distance = 8;
+        double distance = 10;
         var handles = this.routeDraft.handles();
         for (int index = 0; index < handles.size(); index++) {
             var point = project(Vec3.atCenterOf(handles.get(index)));
@@ -1676,9 +1678,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return true;
             int handle = routeHandle(x, y);
             if (handle >= 0) {
+                if (this.search != null) this.search.setFocused(false);
+                setFocused(null);
                 clearControls();
                 this.routeDraft.beginDrag(handle);
                 this.routeDragHit = true;
+                this.routeDragX = x;
+                this.routeDragY = y;
             } else {
                 var position = pick(x, y).position();
                 this.guardFeedback = Component.literal(position == null ? "No loaded map surface at this position"
@@ -1773,6 +1779,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.routeDraft != null && this.routeDraft.dragging()) {
             var position = worldContains(x, y) ? pick(x, y).position() : null;
             this.routeDragHit = position != null;
+            this.routeDragX = x;
+            this.routeDragY = y;
             if (position != null) this.routeDraft.dragTo(position.above());
             this.guardFeedback = Component.literal(position == null ? "No map surface. Release restores the original node." : this.routeDraft.validation());
             updateRouteButtons();
@@ -1812,6 +1820,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public boolean mouseReleased(double x, double y, int button) {
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.routeDraft != null && this.routeDraft.dragging()) {
+            if (x != this.routeDragX || y != this.routeDragY) mouseDragged(x, y, button, 0, 0);
             boolean valid = this.routeDraft.finishDrag(position -> this.routeDragHit && worldContains(x, y)
                     && !this.minecraft.level.isOutsideBuildHeight(position));
             this.guardFeedback = Component.literal(valid ? "Draft updated. Save applies the route." : "Invalid drop. Original node restored.");

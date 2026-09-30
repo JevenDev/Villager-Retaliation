@@ -93,6 +93,7 @@ public final class SettlementViewClientSmoke {
             GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_LEFT};
     private static final int[] PAN_X = {-1, -1, 1, 1, -1, -1, 1, 1};
     private static final int[] PAN_Z = {1, -1, -1, 1, 1, -1, -1, 1};
+    private static Vec3 routeDrop;
     private static Vec3 body;
     private static Entity zoomResident;
     private static Vec3 zoomCamera;
@@ -587,6 +588,19 @@ public final class SettlementViewClientSmoke {
             phase = 125;
         } else if (phase == 125 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
             exerciseRouteEditor(screen);
+            var from = screenPoint(screen, screen.routeDraft().nodes().getLast().getCenter());
+            routeDrop = screenPoint(screen, fixture.center().offset(11, 0, 9).getBottomCenter());
+            screen.children().stream().filter(child -> child instanceof net.minecraft.client.gui.components.EditBox)
+                    .findFirst().orElseThrow().setFocused(true);
+            screen.mouseClicked(from.x, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            screen.mouseDragged(routeDrop.x, routeDrop.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, routeDrop.x - from.x, routeDrop.y - from.y);
+            ticks = 0;
+            phase = 1251;
+        } else if (phase == 1251 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+            require(screen.routeDraft().dragging(), "node dragging survives rendered frames after leaving search focus");
+            screen.mouseReleased(routeDrop.x, routeDrop.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            require(screen.routeDraft().nodes().getLast().getX() == fixture.center().getX() + 11,
+                    "a drop after several rendered frames retains its new position");
             capture("shared-worksite-patrol");
             screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
             ticks = 0;
@@ -1889,6 +1903,9 @@ public final class SettlementViewClientSmoke {
         var destination = screenPoint(screen, fixture.center().offset(9, 0, 9).getBottomCenter());
         double focusX = screen.focusX(), focusZ = screen.focusZ();
         screen.mouseClicked(from.x, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseReleased(from.x, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(draft.nodes().equals(original), "clicking a node selects it without moving it");
+        screen.mouseClicked(from.x, from.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         screen.mouseDragged(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, destination.x - from.x, destination.y - from.y);
         require(draft.dragging() && !draft.nodes().equals(original), "holding and dragging a node updates the live route preview");
         require(screen.focusX() == focusX && screen.focusZ() == focusZ, "node dragging does not pan the map");
@@ -1904,6 +1921,13 @@ public final class SettlementViewClientSmoke {
         screen.mouseDragged(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, destination.x - from.x, destination.y - from.y);
         screen.mouseReleased(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         require(!draft.dragging() && !draft.nodes().equals(original), "a valid drop remains in the draft until Save");
+        var releaseDestination = screenPoint(screen, fixture.center().offset(10, 0, 9).getBottomCenter());
+        var movedFrom = screenPoint(screen, draft.nodes().getLast().getCenter());
+        screen.mouseClicked(movedFrom.x, movedFrom.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(draft.dragging(), "the moved node can be picked up again");
+        screen.mouseReleased(releaseDestination.x, releaseDestination.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(!draft.dragging() && draft.nodes().getLast().getX() == fixture.center().getX() + 10,
+                "release applies the final pointer position even before the next drag event");
         var moved = draft.nodes();
         screen.mouseClicked(screen.viewportWidth() / 2.0D, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
         screen.mouseDragged(screen.viewportWidth() / 2.0D + 6, 150, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 6, 0);
