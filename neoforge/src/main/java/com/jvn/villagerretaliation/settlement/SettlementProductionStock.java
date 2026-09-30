@@ -11,7 +11,13 @@ public final class SettlementProductionStock {
         if (order.mode() != HiredProductionOrder.Mode.MAINTAIN_STOCK) return 0L;
         if (!SettlementSupplyStock.permitsOutput(level, town, queue.owner(), order.storage())) return -1L;
         var facts = SettlementSupplyStock.observe(level, town, order.storage(), order.output(), queue);
-        return facts.known() ? facts.stored() + facts.incoming() : -1L;
+        if (!facts.known()) return -1;
+        long aliases = queue.allocations().stream().filter(allocation -> {
+            var allocated = queue.order(allocation.order());
+            return allocated.matches(order.output()) && !java.util.Objects.equals(allocated.storage(), order.storage())
+                    && SettlementSupplyStock.sameStorage(level, allocated.storage(), order.storage());
+        }).mapToLong(HiredProductionQueue.Allocation::remaining).sum();
+        return facts.stored() + facts.incoming() + aliases;
     }
 
     static long incoming(ServerLevel level, SettlementRecord town, net.minecraft.core.BlockPos destination,

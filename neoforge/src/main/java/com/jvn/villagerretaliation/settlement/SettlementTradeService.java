@@ -87,6 +87,7 @@ public final class SettlementTradeService {
         Map<UUID, Result> results = new LinkedHashMap<>();
         List<SettlementTradeOrder> orders = new ArrayList<>(town.economy().orders().values());
         int capacity = workCapacity(level, town, workers);
+        var protection = SettlementDemandService.inspect(level, town);
         int start = orders.isEmpty() ? 0 : (int) Math.floorMod(gameTime / 200L, orders.size());
         for (int offset = 0; offset < orders.size(); offset++) {
             SettlementTradeOrder order = orders.get((start + offset) % orders.size());
@@ -103,7 +104,7 @@ public final class SettlementTradeService {
                 result = Result.blocked(Status.BUSY);
             } else {
                 result = order.direction() == SettlementTradeOrder.Direction.BUY
-                        ? buy(level, town, order, capacity) : sell(level, town, order, capacity);
+                        ? buy(level, town, order, capacity) : sell(level, town, order, capacity, protection);
                 capacity -= result.count();
             }
             results.put(order.id(), result);
@@ -128,6 +129,7 @@ public final class SettlementTradeService {
             if (!orders.isEmpty()) java.util.Collections.rotate(orders, -(int) Math.floorMod(now / 200L, orders.size()));
             int[] remaining = {workCapacity(level, town, activeClerks(level, town, false))};
             var results = new LinkedHashMap<UUID, Result>();
+            var protection = SettlementDemandService.inspect(level, town);
             return SettlementWork.each(orders, id -> {
                 var order = town.economy().orders().get(id);
                 if (order == null) return;
@@ -140,7 +142,7 @@ public final class SettlementTradeService {
                 else if (remaining[0] == 0) result = Result.blocked(Status.BUSY);
                 else {
                     result = order.direction() == SettlementTradeOrder.Direction.BUY
-                            ? buy(level, town, order, remaining[0]) : sell(level, town, order, remaining[0]);
+                            ? buy(level, town, order, remaining[0]) : sell(level, town, order, remaining[0], protection);
                     remaining[0] -= result.count();
                 }
                 results.put(id, result);
@@ -261,13 +263,17 @@ public final class SettlementTradeService {
         return new Result(Status.TRADED, count, cost);
     }
 
-    private static Result sell(ServerLevel level, SettlementRecord town, SettlementTradeOrder order, int maximum) {
+    private static Result sell(ServerLevel level, SettlementRecord town, SettlementTradeOrder order, int maximum,
+                               SettlementDemandService.Snapshot protection) {
         ItemStack sample = order.sample();
         List<SettlementDepot> depots = SettlementStock.depots(town).stream()
                 .filter(depot -> depot.purpose() == SettlementDepotPurpose.GENERAL
                         || depot.purpose() == SettlementDepotPurpose.OUTPUT).toList();
         Predicate<ItemStack> matches = stack -> ItemStack.isSameItemSameComponents(sample, stack);
-        int surplus = Math.max(0, SettlementStock.count(depots, matches) - order.stockTarget());
+        var allowances = new LinkedHashMap<SettlementDepot, Integer>();
+        for (var depot : depots) allowances.put(depot, Math.min(depot.count(matches), protection.sellable(depot, sample)));
+        int surplus = Math.max(0, Math.min(allowances.values().stream().mapToInt(Integer::intValue).sum(),
+                SettlementStock.count(depots, matches) - order.stockTarget()));
         if (surplus == 0) {
             return Result.blocked(Status.STOCK_TARGET);
         }
@@ -297,13 +303,17 @@ public final class SettlementTradeService {
         }
         var sale = VillageSellMarket.sell(level, town.center(), sample.copyWithCount(count)).orElseThrow();
         int remaining = count;
-        while (remaining > 0) {
-            ItemStack taken = SettlementStock.take(depots, matches, remaining);
-            if (taken.isEmpty()) {
-                throw new IllegalStateException("Validated settlement sale lost its depot stock");
+        for (var entry : allowances.entrySet()) {
+            int allowance = Math.min(remaining, entry.getValue());
+            while (allowance > 0) {
+                ItemStack taken = entry.getKey().withdraw(matches, allowance);
+                if (taken.isEmpty()) throw new IllegalStateException("Validated settlement sale lost its depot stock");
+                remaining -= taken.getCount();
+                allowance -= taken.getCount();
+                protection.sold(entry.getKey(), taken);
             }
-            remaining -= taken.getCount();
         }
+        if (remaining != 0) throw new IllegalStateException("Validated settlement sale exceeded protected surplus");
         CurrencyAmount income = sale.quote().stackPayout();
         town.economy().recordSale(quote.marketGroup(), count, income);
         return new Result(Status.TRADED, count, income);

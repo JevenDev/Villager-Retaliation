@@ -133,10 +133,16 @@ public final class HiredProductionCommitments extends SavedData {
                 .anyMatch(incoming -> incoming.matches(destination, sample))).map(Map.Entry::getKey).collect(java.util.stream.Collectors.toSet());
     }
 
-    public long internalTransfers(Set<BlockPos> pool, ItemStack sample) {
+    public long outgoing(BlockPos source, ItemStack sample) {
         return this.workers.values().stream().flatMap(worker -> worker.incoming().stream())
-                .filter(value -> value.source() != null && pool.contains(value.source()) && pool.contains(value.destination())
-                        && HiredProductionStock.matches(sample, value.sample())).mapToLong(Incoming::amount).sum();
+                .filter(value -> source.equals(value.source()) && HiredProductionStock.matches(sample, value.sample()))
+                .mapToLong(Incoming::amount).sum();
+    }
+
+    public Set<UUID> providers(BlockPos source, ItemStack sample) {
+        return this.workers.entrySet().stream().filter(entry -> entry.getValue().incoming().stream()
+                .anyMatch(value -> source.equals(value.source()) && HiredProductionStock.matches(sample, value.sample())))
+                .map(Map.Entry::getKey).collect(java.util.stream.Collectors.toSet());
     }
 
     private static void add(List<Incoming> incoming, BlockPos destination, ItemStack sample, int amount) {

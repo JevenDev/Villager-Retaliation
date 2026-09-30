@@ -419,7 +419,10 @@ public final class SettlementTradeGameTests {
         BlockPos station = center.east();
         level.setBlockAndUpdate(station, Blocks.LECTERN.defaultBlockState());
         SettlementBuildingService.refresh(level, town, area);
+        level.setBlockAndUpdate(center.south(), com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
         var depot = town.registerDepot(leader.getUUID(), area.id(), center.south(), SettlementDepotPurpose.GENERAL);
+        ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(center.south())).bind(town.id(), depot.id());
+        depot.observeRules(List.of());
         addHousing(town, helper);
         Villager clerk = EntityType.VILLAGER.create(level);
         clerk.setPos(leader.position());

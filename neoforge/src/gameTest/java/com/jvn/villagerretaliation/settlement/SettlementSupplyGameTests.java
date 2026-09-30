@@ -304,6 +304,53 @@ public final class SettlementSupplyGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_supplies")
+    public static void consumerDemandSharesStockAndReleasesProtectionWhenPaused(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        var a = area(town, SettlementAreaType.KITCHEN, "First bakery", 5);
+        var b = area(town, SettlementAreaType.KITCHEN, "Second bakery", 10);
+        var first = bread(helper, town, a, fixture.destination().position(), 4);
+        var second = bread(helper, town, b, fixture.destination().position(), 8);
+        fixture.source().setItem(0, new ItemStack(Items.WHEAT, 30));
+        var demand = SettlementDemandService.inspect(helper.getLevel(), town);
+        helper.assertValueEqual(demand.demands().stream().mapToLong(row -> row.requirement().quantity()).sum(), 36L,
+                "remaining maintained deficits expand to exact native ingredient quantities");
+        helper.assertValueEqual(demand.demands().stream().mapToLong(SettlementDemandService.Demand::supplied).sum(), 30L,
+                "competing consumers share each stored item once");
+        helper.assertValueEqual(demand.sellable(fixture.source(), new ItemStack(Items.WHEAT)), 0, "active consumers protect their covered inputs");
+        town.productionQueues().get(b.id()).pause(second.id(), true);
+        var paused = SettlementDemandService.inspect(helper.getLevel(), town);
+        helper.assertValueEqual(paused.sellable(fixture.source(), new ItemStack(Items.WHEAT)), 18, "pausing releases future demand");
+        fixture.source().setStockTarget(new ItemStack(Items.WHEAT), 15);
+        helper.assertValueEqual(SettlementDemandService.inspect(helper.getLevel(), town).sellable(fixture.source(), new ItemStack(Items.WHEAT)), 15,
+                "stock floors and covered requirements use their maximum");
+        var restored = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+        helper.assertValueEqual(SettlementDemandService.inspect(helper.getLevel(), restored).sellable(restored.depots().get(fixture.source().id()), new ItemStack(Items.WHEAT)), 15,
+                "durable orders preserve demand protection across reload");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_supplies")
+    public static void recipeDemandRoundsBatchesAndKeepsAlternativesGrouped(GameTestHelper helper) {
+        var recipe = HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("stick"), Map.of());
+        var plan = com.jvn.villagerretaliation.interaction.work.production.WorkProductionDemand.describe(helper.getLevel(), recipe, 5, List.of());
+        helper.assertValueEqual(plan.requirements().stream().mapToLong(row -> row.quantity()).sum(), 4L,
+                "five sticks need two native four-stick batches and four planks");
+        helper.assertValueEqual(plan.requirements().size(), 1, "equivalent ingredient groups merge");
+        helper.assertTrue(plan.requirements().getFirst().alternatives().size() > 1, "plank alternatives remain a flexible requirement");
+        var supplied = com.jvn.villagerretaliation.interaction.work.production.WorkProductionDemand.describe(helper.getLevel(), recipe, 5,
+                List.of(new ItemStack(Items.OAK_LOG)));
+        helper.assertValueEqual(supplied.requirements().size(), 1, "native intermediate crafting uses its surplus for the second batch");
+        helper.assertTrue(supplied.requirements().getFirst().alternatives().getFirst().is(Items.OAK_LOG), "the actual log is protected");
+        helper.assertValueEqual(supplied.requirements().getFirst().quantity(), 1L, "intermediate surplus is consumed once");
+        var cooked = com.jvn.villagerretaliation.interaction.work.production.WorkProductionDemand.describe(helper.getLevel(),
+                HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("iron_ingot_from_smelting_raw_iron"), Map.of()), 3, List.of());
+        helper.assertValueEqual(cooked.requirements().stream().filter(row -> row.key().equals("fuel")).findFirst().orElseThrow().quantity(), 600L,
+                "furnace fuel is measured in burn ticks");
+        helper.succeed();
+    }
+
     private static Supply breadSupply(ServerPlayer player, SettlementRecord town, BlockPos position) {
         return SettlementSupplyService.supplies(player, town).stream().filter(row -> row.position().equals(position)
                 && row.item().is(Items.BREAD) && !row.item().has(DataComponents.CUSTOM_NAME)).findFirst().orElseThrow();
