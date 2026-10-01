@@ -12,9 +12,11 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class SettlementEconomy {
     public static final int MAX_ORDERS = 64;
+    private static final int MAX_POLICY_ACCOUNTS = 1_024;
     private final Runnable dirty;
     private final Map<UUID, SettlementTradeOrder> orders = new LinkedHashMap<>();
     private final Map<UUID, CurrencyAmount> orderSpending = new LinkedHashMap<>();
+    private final Map<UUID, CurrencyAmount> policySpending = new LinkedHashMap<>();
     private final Map<ResourceLocation, MarketVolume> markets = new LinkedHashMap<>();
     private Map<UUID, SettlementTradeService.Result> lastResults = Map.of();
     private CurrencyAmount balance = CurrencyAmount.ZERO;
@@ -62,6 +64,10 @@ public final class SettlementEconomy {
 
     public CurrencyAmount orderSpending(UUID id) {
         return this.orderSpending.getOrDefault(id, CurrencyAmount.ZERO);
+    }
+
+    public CurrencyAmount policySpending(UUID policy) {
+        return this.policySpending.getOrDefault(policy, CurrencyAmount.ZERO);
     }
 
     public MarketVolume market(ResourceLocation group) {
@@ -132,6 +138,7 @@ public final class SettlementEconomy {
             this.period = currentPeriod;
             this.spent = CurrencyAmount.ZERO;
             this.orderSpending.clear();
+            this.policySpending.clear();
             this.markets.clear();
         }
         this.lastTradeAt = gameTime;
@@ -140,21 +147,42 @@ public final class SettlementEconomy {
     }
 
     public CurrencyAmount availableBudget(SettlementTradeOrder order) {
+        return availableBudget(order.dailyBudget(), orderSpending(order.id()));
+    }
+
+    public CurrencyAmount availablePolicyBudget(UUID policy, CurrencyAmount dailyLimit) {
+        java.util.Objects.requireNonNull(policy);
+        java.util.Objects.requireNonNull(dailyLimit);
+        if (!this.policySpending.containsKey(policy) && this.policySpending.size() >= MAX_POLICY_ACCOUNTS) return CurrencyAmount.ZERO;
+        return availableBudget(dailyLimit, policySpending(policy));
+    }
+
+    private CurrencyAmount availableBudget(CurrencyAmount dailyLimit, CurrencyAmount paid) {
         return this.balance.subtractClamped(this.reserve)
                 .min(this.dailyBudget.subtractClamped(this.spent))
-                .min(order.dailyBudget().subtractClamped(orderSpending(order.id())));
+                .min(dailyLimit.subtractClamped(paid));
     }
 
     void recordPurchase(SettlementTradeOrder order, ResourceLocation group, int count, CurrencyAmount cost) {
-        if (count <= 0 || cost.compareTo(availableBudget(order)) > 0) {
+        debitPurchase(group, count, cost, availableBudget(order));
+        this.orderSpending.put(order.id(), orderSpending(order.id()).add(cost));
+        this.dirty.run();
+    }
+
+    void recordPolicyPurchase(UUID policy, CurrencyAmount dailyLimit, ResourceLocation group, int count, CurrencyAmount cost) {
+        if (cost.isZero()) throw new IllegalArgumentException("A policy purchase must have a positive cost");
+        debitPurchase(group, count, cost, availablePolicyBudget(policy, dailyLimit));
+        this.policySpending.put(policy, policySpending(policy).add(cost));
+        this.dirty.run();
+    }
+
+    private void debitPurchase(ResourceLocation group, int count, CurrencyAmount cost, CurrencyAmount budget) {
+        if (count <= 0 || cost.compareTo(budget) > 0)
             throw new IllegalStateException("Validated settlement purchase exceeded its budget");
-        }
         this.balance = this.balance.subtract(cost);
         this.spent = this.spent.add(cost);
-        this.orderSpending.put(order.id(), orderSpending(order.id()).add(cost));
         MarketVolume volume = market(group);
         this.markets.put(group, new MarketVolume(Math.addExact(volume.bought(), count), volume.sold()));
-        this.dirty.run();
     }
 
     void recordSale(ResourceLocation group, int count, CurrencyAmount income) {
@@ -169,6 +197,7 @@ public final class SettlementEconomy {
 
     CompoundTag save() {
         CompoundTag tag = new CompoundTag();
+        tag.putInt("Version", 1);
         tag.put("Balance", this.balance.save());
         tag.put("Reserve", this.reserve.save());
         tag.put("DailyBudget", this.dailyBudget.save());
@@ -182,6 +211,14 @@ public final class SettlementEconomy {
             orders.add(entry);
         });
         tag.put("Orders", orders);
+        var policySpending = new ListTag();
+        this.policySpending.forEach((policy, amount) -> {
+            var entry = new CompoundTag();
+            entry.putUUID("Policy", policy);
+            entry.put("Spent", amount.save());
+            policySpending.add(entry);
+        });
+        tag.put("PolicySpending", policySpending);
         ListTag markets = new ListTag();
         this.markets.forEach((group, volume) -> {
             CompoundTag entry = new CompoundTag();
@@ -195,6 +232,9 @@ public final class SettlementEconomy {
     }
 
     static SettlementEconomy load(CompoundTag tag, Runnable dirty) {
+        if (tag.contains("Version") && (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 1)
+                || !tag.contains("Version") && tag.contains("PolicySpending"))
+            throw new IllegalArgumentException("Unsupported settlement purchase accounting version");
         SettlementEconomy economy = new SettlementEconomy(dirty);
         economy.balance = CurrencyAmount.load(tag.getCompound("Balance"));
         economy.reserve = CurrencyAmount.load(tag.getCompound("Reserve"));
@@ -217,6 +257,19 @@ public final class SettlementEconomy {
             ResourceLocation group = ResourceLocation.parse(entry.getString("Group"));
             if (economy.markets.putIfAbsent(group, new MarketVolume(entry.getInt("Bought"), entry.getInt("Sold"))) != null) {
                 throw new IllegalArgumentException("Settlement market group is duplicated");
+            }
+        }
+        if (tag.contains("Version")) {
+            if (!(tag.get("PolicySpending") instanceof ListTag list) || list.size() > MAX_POLICY_ACCOUNTS
+                    || !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND)
+                throw new IllegalArgumentException("Invalid policy spending accounts");
+            for (var raw : list) {
+                var entry = (CompoundTag) raw;
+                if (!entry.hasUUID("Policy") || !entry.contains("Spent", Tag.TAG_COMPOUND))
+                    throw new IllegalArgumentException("Invalid saved policy spending");
+                var amount = SettlementPurchasePlan.currency(entry.getCompound("Spent"));
+                if (amount.isZero() || economy.policySpending.putIfAbsent(entry.getUUID("Policy"), amount) != null)
+                    throw new IllegalArgumentException("Invalid or duplicate policy spending account");
             }
         }
         return economy;

@@ -89,7 +89,7 @@ public final class SettlementPolicyGameTests {
         bindings.add(bindings.getCompound(0).copy());
         expectInvalid(helper, () -> SettlementSupplyPolicy.load(duplicate, provider, () -> {}));
         var future = policy.save(provider);
-        future.putInt("Version", 2);
+        future.putInt("Version", 3);
         expectInvalid(helper, () -> SettlementSupplyPolicy.load(future, provider, () -> {}));
         var invalid = policy.save(provider);
         invalid.getCompound("Configuration").putInt("Priority", 10);
@@ -806,6 +806,267 @@ public final class SettlementPolicyGameTests {
         helper.assertValueEqual(result.blocker(), "policy_destination_unlinked", "policy inspection stays within the town's storage links");
         helper.assertTrue(result.needs().isEmpty() && result.production().isEmpty(), "rejected storage discloses no inventory counts");
         helper.assertTrue(town.supplyPolicies().isEmpty(), "a rejected preview remains read only");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_policy")
+    public static void purchasePermissionsGateActivationAndExpansionWithoutBlockingShutdown(GameTestHelper helper) {
+        var town = policyTown(helper);
+        var player = helper.makeMockServerPlayerInLevel();
+        var management = java.util.Set.of(SettlementPermission.VIEW, SettlementPermission.STAFF, SettlementPermission.LOGISTICS);
+        town.setPermissions(town.leader(), player.getUUID(), management);
+        var depot = town.depots().values().iterator().next();
+        var bakery = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.KITCHEN).findFirst().orElseThrow();
+        var producer = new SettlementSupplyPolicy.Step(UUID.randomUUID(), SettlementSupplyPolicy.StepKind.PRODUCTION, bakery.id(),
+                bake().recipe(), ItemStack.EMPTY, null, depot.position());
+        var draft = stockPolicy(helper, town, producer, 12, 5);
+        var original = draft.configuration();
+        var approval = new SettlementPurchasePlan.Approval(UUID.randomUUID(), null, original.connections().getFirst().requirement(),
+                ResourceLocation.withDefaultNamespace("bread"), depot.position(), com.jvn.villagerretaliation.sell.CurrencyAmount.of(2, 1));
+        var purchases = new SettlementPurchasePlan(true, com.jvn.villagerretaliation.sell.CurrencyAmount.of(20, 1), List.of(approval));
+        var enabled = new SettlementSupplyPolicy.Configuration(original.name(), original.target(), original.priority(),
+                original.steps(), original.connections(), purchases);
+        var rejected = request(player, town, draft.id(), 0, bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Save(enabled, false));
+        helper.assertFalse(rejected.applied(), "a production manager cannot save new spending authority");
+        helper.assertValueEqual(rejected.feedback(), "policy_permission_changed", "purchase permission has an actionable rejection");
+        helper.assertTrue(town.supplyPolicies().isEmpty(), "rejected spending leaves no policy behind");
+        var disabled = new SettlementSupplyPolicy.Configuration(original.name(), original.target(), original.priority(),
+                original.steps(), original.connections(), new SettlementPurchasePlan(false, purchases.dailyBudget(), purchases.approvals()));
+        helper.assertTrue(request(player, town, draft.id(), 0, bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Save(disabled, true)).applied(),
+                "disabled purchase settings do not require trade permission for local production");
+        var policy = town.supplyPolicies().get(draft.id());
+        town.setPermissions(town.leader(), player.getUUID(),
+                java.util.Set.of(SettlementPermission.VIEW, SettlementPermission.STAFF, SettlementPermission.LOGISTICS, SettlementPermission.TRADE));
+        helper.assertTrue(request(player, town, policy.id(), policy.revision(), bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Save(enabled, true)).applied(),
+                "an authorized trader can explicitly enable purchases");
+        town.setPermissions(town.leader(), player.getUUID(), management);
+        helper.assertTrue(request(player, town, policy.id(), policy.revision(), bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Change(SettlementSupplyPolicy.State.PAUSED)).applied(),
+                "revoked trade permission does not prevent pausing spending");
+        long pausedRevision = policy.revision();
+        helper.assertFalse(request(player, town, policy.id(), pausedRevision, bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Change(SettlementSupplyPolicy.State.ACTIVE)).applied(),
+                "existing purchase approvals cannot be reactivated without trade permission");
+        helper.assertValueEqual(policy.revision(), pausedRevision, "rejected activation does not rewrite the saved policy");
+        var expanded = new SettlementSupplyPolicy.Configuration(enabled.name(), enabled.target(), enabled.priority(), enabled.steps(),
+                enabled.connections(), new SettlementPurchasePlan(true, com.jvn.villagerretaliation.sell.CurrencyAmount.of(40, 1), purchases.approvals()));
+        helper.assertFalse(request(player, town, policy.id(), policy.revision(), bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Save(expanded, false)).applied(),
+                "a paused policy cannot gain a larger budget without trade permission");
+        var renamed = new SettlementSupplyPolicy.Configuration("Renamed reserve", enabled.target(), enabled.priority(),
+                enabled.steps(), enabled.connections(), purchases);
+        helper.assertTrue(request(player, town, policy.id(), policy.revision(), bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Save(renamed, false)).applied(),
+                "editing a paused label does not authorize new spending");
+        helper.assertTrue(request(player, town, policy.id(), policy.revision(), bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Save(disabled, true)).applied(),
+                "a manager can disable purchasing and resume local production");
+        helper.assertTrue(SettlementPolicyExecution.authorized(town, policy), "local execution remains authorized without trade");
+        town.setPermissions(town.leader(), player.getUUID(),
+                java.util.Set.of(SettlementPermission.VIEW, SettlementPermission.STAFF, SettlementPermission.LOGISTICS, SettlementPermission.TRADE));
+        helper.assertTrue(request(player, town, policy.id(), policy.revision(), bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Save(enabled, true)).applied(), "purchasing reactivates explicitly");
+        town.setPermissions(town.leader(), player.getUUID(), management);
+        helper.assertTrue(request(player, town, policy.id(), policy.revision(), bakery.id(),
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Change(SettlementSupplyPolicy.State.REMOVING)).applied(),
+                "removing an active purchase policy never needs new spending authority");
+        helper.assertValueEqual(policy.state(), SettlementSupplyPolicy.State.REMOVING, "removal stops future execution");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_policy")
+    public static void tradeRevocationStopsManagedStartsAndPreservesExistingReceipts(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var town = policyTown(helper);
+        var actor = UUID.randomUUID();
+        town.setPermissions(town.leader(), actor,
+                java.util.Set.of(SettlementPermission.STAFF, SettlementPermission.LOGISTICS, SettlementPermission.TRADE));
+        var depot = town.depots().values().iterator().next();
+        var bakery = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.KITCHEN).findFirst().orElseThrow();
+        var producer = new SettlementSupplyPolicy.Step(UUID.randomUUID(), SettlementSupplyPolicy.StepKind.PRODUCTION, bakery.id(),
+                bake().recipe(), ItemStack.EMPTY, null, depot.position());
+        var draft = stockPolicy(helper, town, producer, 12, 5);
+        var original = draft.configuration();
+        var approval = new SettlementPurchasePlan.Approval(UUID.randomUUID(), null, original.connections().getFirst().requirement(),
+                ResourceLocation.withDefaultNamespace("bread"), depot.position(), com.jvn.villagerretaliation.sell.CurrencyAmount.of(2, 1));
+        var configuration = new SettlementSupplyPolicy.Configuration(original.name(), original.target(), original.priority(), original.steps(),
+                original.connections(), new SettlementPurchasePlan(true, com.jvn.villagerretaliation.sell.CurrencyAmount.of(20, 1), List.of(approval)));
+        var policy = new SettlementSupplyPolicy(draft.id(), configuration, actor, town::supplyChanged, town::changed);
+        town.addSupplyPolicy(policy);
+        policy.state(SettlementSupplyPolicy.State.ACTIVE, actor, "", level.getGameTime());
+        finish(SettlementPolicyService.cycle(level, town));
+        var binding = policy.bindings().getFirst();
+        var queue = town.productionQueues().get(bakery.id());
+        var worker = UUID.randomUUID();
+        town.assignDuty(worker, bakery.id());
+        var started = queue.reserve(worker, binding.order(), 1, 1, 0, null);
+        helper.assertTrue(started != null && queue.start(started.id()), "authorized work starts through the existing native queue");
+        var unstarted = queue.reserve(UUID.randomUUID(), binding.order(), 1, 1, 0, null);
+        helper.assertTrue(unstarted != null, "the fixture includes an unstarted reservation");
+        policy.purchaseShortage(approval.id(), new SettlementSupplyPolicy.PurchaseShortage(approval.requirement(), 0, 12));
+        town.setPermissions(town.leader(), actor, java.util.Set.of(SettlementPermission.STAFF, SettlementPermission.LOGISTICS));
+        helper.assertFalse(SettlementPolicyExecution.authorized(town, policy), "trade revocation immediately invalidates purchase authority");
+        helper.assertValueEqual(queue.available(binding.order(), 0), 0L, "revocation prevents new work before the scheduler catches up");
+        helper.assertTrue(SettlementPolicyExecution.acquisitionAllowed(town, worker, binding.order()),
+                "the worker holding a started receipt may finish it safely");
+        helper.assertFalse(SettlementPolicyExecution.acquisitionAllowed(town, UUID.randomUUID(), binding.order()),
+                "a different worker cannot borrow the started receipt exception");
+        finish(SettlementPolicyService.cycle(level, town));
+        helper.assertValueEqual(policy.state(), SettlementSupplyPolicy.State.SUSPENDED, "the policy visibly suspends after revocation");
+        helper.assertValueEqual(policy.blocker(), "policy_permission_changed", "the suspension explains its missing authorization");
+        helper.assertTrue(policy.purchaseShortages().isEmpty(), "suspended purchasing loses accumulated eligibility");
+        helper.assertValueEqual(queue.allocations().size(), 1, "only started work retains its reservation");
+        helper.assertTrue(queue.complete(started.id(), new ItemStack(Items.BREAD)), "the existing receipt completes without losing its output");
+        town.setPermissions(town.leader(), actor,
+                java.util.Set.of(SettlementPermission.STAFF, SettlementPermission.LOGISTICS, SettlementPermission.TRADE));
+        finish(SettlementPolicyService.cycle(level, town));
+        helper.assertValueEqual(policy.state(), SettlementSupplyPolicy.State.SUSPENDED, "restoring trade permission does not silently reactivate spending");
+        var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+        helper.assertValueEqual(restored.supplyPolicies().get(policy.id()).state(), SettlementSupplyPolicy.State.SUSPENDED,
+                "reload preserves the explicit reactivation requirement");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_policy")
+    public static void purchaseMarketPagesExposeEveryCompatibleCommodityWithoutSpendingAuthority(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var town = policyTown(helper);
+        var player = helper.makeMockServerPlayerInLevel();
+        town.setPermissions(town.leader(), player.getUUID(), java.util.Set.of(SettlementPermission.VIEW));
+        var id = UUID.randomUUID();
+        var target = new SettlementSupplyPolicy.Target(SettlementSupplyPolicy.TargetKind.FOOD, town.id().value(), null, null, ItemStack.EMPTY, 0);
+        var configuration = new SettlementSupplyPolicy.Configuration("Food imports", target, 5, List.of(), List.of());
+        var requirement = SettlementFoodService.requirement(0);
+        var requirementId = com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.identity(level.registryAccess(), town.id().value(),
+                com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD, requirement);
+        var expected = com.jvn.villagerretaliation.sell.SellPriceResources.definitions(level.getServer()).keySet().stream()
+                .filter(item -> requirement.value(item.getDefaultInstance()) > 0)
+                .filter(item -> com.jvn.villagerretaliation.sell.SellPriceResources.definition(level.getServer(), item.getDefaultInstance()).isPresent())
+                .filter(item -> com.jvn.villagerretaliation.sell.VillageSellMarket.quote(level, town.center(), item.getDefaultInstance())
+                        .filter(quote -> !quote.baseUnitPrice().isZero()).isPresent())
+                .map(net.minecraft.core.registries.BuiltInRegistries.ITEM::getKey).sorted().toList();
+        helper.assertTrue(expected.size() > 16, "the real food market exceeds the ordinary preview sample limit");
+        var found = new java.util.ArrayList<ResourceLocation>();
+        var before = town.economy().save();
+        com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload last = null;
+        for (int page = 0; page <= expected.size() / com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.MARKET_PAGE_SIZE; page++) {
+            last = request(player, town, id, 0, null,
+                    new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Market(configuration, null, requirementId, "", page));
+            helper.assertTrue(last.market() != null && last.feedback().isEmpty(), "authorized inspection returns a market page");
+            helper.assertFalse(last.trade() || last.editable() || last.applied(), "market inspection grants no spending or production authority");
+            helper.assertTrue(last.market().commodities().size() <= com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.MARKET_PAGE_SIZE,
+                    "market responses stay bounded");
+            helper.assertValueEqual(last.market().depots().size(), 1, "food purchases identify the approved supply depot");
+            found.addAll(last.market().commodities().stream().map(com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.Commodity::item).toList());
+            helper.assertValueEqual(last.market().more(), found.size() < expected.size(), "pagination reports whether another compatible commodity exists");
+            if (!last.market().more()) break;
+        }
+        helper.assertValueEqual(found, expected, "all eligible market alternatives remain selectable in stable order without duplicate pages");
+        var command = new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Market(configuration, null, requirementId, "minecraft:bread", 0);
+        var bread = request(player, town, id, 0, null, command);
+        helper.assertValueEqual(bread.market().commodities().stream().map(com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.Commodity::item).toList(),
+                List.of(ResourceLocation.withDefaultNamespace("bread")), "server-side search keeps the exact compatible commodity");
+        helper.assertValueEqual(town.economy().save(), before, "market queries do not change treasury or market accounting");
+        helper.assertTrue(town.supplyPolicies().isEmpty() && town.productionQueues().isEmpty(), "catalogue inspection creates no policy or managed orders");
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+        try {
+            var payload = new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload(town.id().value(), UUID.randomUUID(), id, 0, null, command);
+            com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.STREAM_CODEC.encode(buffer, payload);
+            helper.assertValueEqual(com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.STREAM_CODEC.decode(buffer), payload,
+                    "market requests preserve draft configuration, requirement, search and page");
+            com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.STREAM_CODEC.encode(buffer, bread);
+            var decoded = com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.STREAM_CODEC.decode(buffer);
+            helper.assertValueEqual(decoded.market(), bread.market(), "market pages preserve exact quotes and approved depot choices");
+            helper.assertValueEqual(decoded.purchases(), bread.purchases(), "purchase allowances survive the snapshot codec");
+            helper.assertValueEqual(decoded.trade(), bread.trade(), "trade permission remains separate on the wire");
+            helper.assertValueEqual(buffer.readableBytes(), 0, "extended policy codecs consume their exact payload");
+        } finally {
+            buffer.release();
+        }
+        expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Market(configuration, null, requirementId, "", -1));
+        expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Market(configuration, null, requirementId, "", 4097));
+        expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Market(configuration, null, requirementId, "x".repeat(97), 0));
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_policy")
+    public static void purchasePreviewReportsExactPricesAllowancesAndWaitingWithoutMutation(GameTestHelper helper) {
+        var town = policyTown(helper);
+        var player = helper.makeMockServerPlayerInLevel();
+        town.setPermissions(town.leader(), player.getUUID(), java.util.Set.of(SettlementPermission.VIEW));
+        town.economy().credit(com.jvn.villagerretaliation.sell.CurrencyAmount.of(100, 1));
+        town.economy().configureBudget(com.jvn.villagerretaliation.sell.CurrencyAmount.of(10, 1), com.jvn.villagerretaliation.sell.CurrencyAmount.of(30, 1));
+        var depot = town.depots().values().iterator().next();
+        var bakery = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.KITCHEN).findFirst().orElseThrow();
+        var step = new SettlementSupplyPolicy.Step(UUID.randomUUID(), SettlementSupplyPolicy.StepKind.PRODUCTION, bakery.id(),
+                bake().recipe(), ItemStack.EMPTY, null, depot.position());
+        var policy = stockPolicy(helper, town, step, 12, 5);
+        var original = policy.configuration();
+        var approval = new SettlementPurchasePlan.Approval(UUID.randomUUID(), null, original.connections().getFirst().requirement(),
+                ResourceLocation.withDefaultNamespace("bread"), depot.position(), com.jvn.villagerretaliation.sell.CurrencyAmount.of(2, 1));
+        var configuration = new SettlementSupplyPolicy.Configuration(original.name(), original.target(), original.priority(), original.steps(), original.connections(),
+                new SettlementPurchasePlan(true, com.jvn.villagerretaliation.sell.CurrencyAmount.of(20, 1), List.of(approval)));
+        var saved = town.economy().save();
+        var response = request(player, town, policy.id(), 0, null, new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Preview(configuration));
+        var purchase = response.purchases().approvals().getFirst();
+        helper.assertValueEqual(purchase.approval(), approval.id(), "purchase previews retain stable approval identities");
+        helper.assertTrue(purchase.known(), "the empty observed depot has a known shortage");
+        helper.assertValueEqual(purchase.missing(), 12L, "purchase previews use native allocated target deficits");
+        helper.assertValueEqual(purchase.waitTicks(), SettlementPurchasePlan.SHORTAGE_TICKS, "a draft starts with the full persistent-shortage delay");
+        helper.assertValueEqual(purchase.unitPrice(), com.jvn.villagerretaliation.sell.VillageSellMarket.quote(helper.getLevel(), town.center(), approval.sample())
+                .orElseThrow().baseUnitPrice().multiply(2), "preview uses the exact native import price");
+        helper.assertValueEqual(purchase.blocker(), "trade_status.stage_locked", "preview explains the native Village-stage restriction");
+        helper.assertValueEqual(response.purchases().available(), com.jvn.villagerretaliation.sell.CurrencyAmount.of(20, 1),
+                "the displayed allowance is bounded by the policy-wide cap");
+        helper.assertTrue(response.purchases().spent().isZero(), "unactivated drafts have spent nothing");
+        helper.assertValueEqual(town.economy().save(), saved, "preview never reserves or spends money");
+        helper.assertTrue(town.supplyPolicies().isEmpty(), "preview does not create purchase authority");
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.STREAM_CODEC.encode(buffer, response);
+            var decoded = com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.STREAM_CODEC.decode(buffer);
+            helper.assertValueEqual(decoded.purchases(), response.purchases(), "prices, shortage timers and budget limits remain exact on the wire");
+            helper.assertValueEqual(decoded.gameTime(), response.gameTime(), "clients receive the authoritative observation time");
+            helper.assertValueEqual(buffer.readableBytes(), 0, "purchase preview decoding leaves no unread fields");
+        } finally {
+            buffer.release();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_policy")
+    public static void marketInspectionRechecksViewAuthorityAndRestrictsReceivingDepots(GameTestHelper helper) {
+        var town = policyTown(helper);
+        var player = helper.makeMockServerPlayerInLevel();
+        town.setPermissions(town.leader(), player.getUUID(), java.util.Set.of(SettlementPermission.VIEW));
+        var depot = town.depots().values().iterator().next();
+        town.registerDepot(town.leader(), depot.area(), depot.position().east(), SettlementDepotPurpose.GENERAL).observeRules(List.of());
+        var bakery = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.KITCHEN).findFirst().orElseThrow();
+        var step = new SettlementSupplyPolicy.Step(UUID.randomUUID(), SettlementSupplyPolicy.StepKind.PRODUCTION, bakery.id(),
+                bake().recipe(), ItemStack.EMPTY, null, depot.position());
+        var policy = stockPolicy(helper, town, step, 12, 5);
+        var requirement = policy.configuration().connections().getFirst().requirement();
+        var command = new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Market(policy.configuration(), null, requirement, "", 0);
+        var response = request(player, town, policy.id(), 0, null, command);
+        helper.assertValueEqual(response.market().depots().stream().map(com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload.Storage::position).toList(),
+                List.of(depot.position()), "the market cannot substitute another depot for an explicitly selected stock source");
+        var invalid = request(player, town, policy.id(), 0, null,
+                new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Market(policy.configuration(), null, UUID.randomUUID(), "", 0));
+        helper.assertValueEqual(invalid.feedback(), "policy_purchase_requirement", "unknown requirement identities are rejected");
+        helper.assertTrue(invalid.market() == null, "invalid requirements disclose no market or depot data");
+        var results = new java.util.ArrayList<com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload>();
+        var work = SettlementPolicyManagementService.prepare(player, new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload(
+                town.id().value(), UUID.randomUUID(), policy.id(), 0, null, command), results::add);
+        work.run();
+        town.setPermissions(town.leader(), player.getUUID(), java.util.Set.of());
+        finish(work);
+        helper.assertValueEqual(results.size(), 1, "revocation still completes the original request once");
+        helper.assertValueEqual(results.getFirst().feedback(), "policy_permission_changed", "permissions are checked again after incremental market scanning");
+        helper.assertTrue(results.getFirst().market() == null && results.getFirst().needs().isEmpty() && results.getFirst().policies().isEmpty(),
+                "revoked inspection returns no private settlement state");
         helper.succeed();
     }
 

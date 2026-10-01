@@ -312,7 +312,8 @@ final class SettlementPolicyClientChecks {
 
     private static SettlementPolicySnapshotPayload reply(SettlementPolicySnapshotPayload source, UUID request) {
         return new SettlementPolicySnapshotPayload(source.dimension(), source.town(), request, false, source.editable(), "", "",
-                source.policies(), source.selected(), source.worksites(), source.storages(), source.consumers(), source.needs(), source.production());
+                source.policies(), source.selected(), source.worksites(), source.storages(), source.consumers(), source.needs(), source.production(),
+                source.trade(), source.gameTime(), source.purchases(), source.market());
     }
 
     private static void require(boolean condition, String message) {

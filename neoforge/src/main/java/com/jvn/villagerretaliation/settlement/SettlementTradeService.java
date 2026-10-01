@@ -109,6 +109,8 @@ public final class SettlementTradeService {
             }
             results.put(order.id(), result);
         }
+        var purchases = SettlementPurchaseService.work(level, town, gameTime, new int[] {capacity});
+        while (!SettlementWork.complete(purchases)) purchases.run();
         town.economy().recordResults(results);
         return Map.copyOf(results);
     }
@@ -130,7 +132,7 @@ public final class SettlementTradeService {
             if (!orders.isEmpty()) java.util.Collections.rotate(orders, -(int) Math.floorMod(now / 200L, orders.size()));
             int[] remaining = {workCapacity(level, town, activeClerks(level, town, false))};
             var results = new LinkedHashMap<UUID, Result>();
-            return SettlementWork.each(orders, id -> {
+            var manual = SettlementWork.each(orders, id -> {
                 var order = town.economy().orders().get(id);
                 if (order == null) return;
                 Result result;
@@ -149,6 +151,8 @@ public final class SettlementTradeService {
                 results.put(id, result);
                 town.economy().recordResults(results);
             });
+            return new SettlementWork(List.of(manual,
+                    SettlementWork.lazy(() -> SettlementPurchaseService.work(level, town, now, remaining))));
         }));
     }
 
@@ -224,44 +228,80 @@ public final class SettlementTradeService {
     }
 
     private static Result buy(ServerLevel level, SettlementRecord town, SettlementTradeOrder order, int maximum) {
-        ItemStack sample = order.sample();
-        var quote = VillageSellMarket.quote(level, town.center(), sample).orElse(null);
-        if (quote == null || quote.baseUnitPrice().isZero()) {
-            return Result.blocked(Status.UNAVAILABLE);
-        }
-        CurrencyAmount price = quote.baseUnitPrice().multiply(2L);
-        if (price.compareTo(order.unitPriceLimit()) > 0) {
-            return Result.blocked(Status.PRICE_LIMIT);
-        }
-        List<SettlementDepot> depots = SettlementStock.supplies(town);
-        Predicate<ItemStack> matches = stack -> ItemStack.isSameItemSameComponents(sample, stack);
+        var sample = order.sample();
+        var depots = SettlementStock.supplies(town);
         long projected = SettlementSupplyStock.projected(level, town, depots, sample);
-        if (projected < 0) return Result.blocked(Status.UNAVAILABLE);
-        int needed = (int) Math.max(0L, order.stockTarget() - projected);
-        if (needed == 0) {
-            return Result.blocked(Status.STOCK_TARGET);
-        }
+        long needed = projected < 0 ? -1 : Math.max(0, order.stockTarget() - projected);
+        return buy(level, town, sample, order.unitPriceLimit(), needed, maximum, depots, SettlementStock.capacity(depots, sample),
+                town.economy().availableBudget(order), (group, count, cost) -> town.economy().recordPurchase(order, group, count, cost));
+    }
+
+    static Result buyPolicy(ServerLevel level, SettlementRecord town, SettlementSupplyPolicy policy,
+                            SettlementPurchasePlan.Approval approval, long needed, int maximum) {
+        if (!SettlementPurchaseService.active(level, town, policy) || !policy.configuration().purchases().approvals().contains(approval))
+            return Result.blocked(Status.DISABLED);
+        var availability = purchaseAvailability(level, town, policy.id(), policy.configuration().purchases(), approval);
+        if (availability != Status.TRADED) return Result.blocked(availability);
+        var clerks = activeClerks(level, town, false);
+        if (clerks.isEmpty()) return Result.blocked(Status.NO_STAFF);
+        int capacity = Math.min(maximum, workCapacity(level, town, clerks));
+        if (capacity <= 0) return Result.blocked(Status.BUSY);
+        var depot = SettlementPurchaseService.depot(level, town, approval);
+        if (depot == null) return Result.blocked(Status.UNAVAILABLE);
+        var sample = approval.sample();
+        int space = SettlementPolicyValidation.capacity(level, town, depot.position(), sample);
+        if (space < 0) return Result.blocked(Status.UNAVAILABLE);
+        return buy(level, town, sample, approval.unitPriceLimit(), needed, capacity, List.of(depot), space,
+                town.economy().availablePolicyBudget(policy.id(), policy.configuration().purchases().dailyBudget()),
+                (group, count, cost) -> town.economy().recordPolicyPurchase(policy.id(), policy.configuration().purchases().dailyBudget(), group, count, cost));
+    }
+
+    static Status purchaseAvailability(ServerLevel level, SettlementRecord town, UUID policy, SettlementPurchasePlan purchases,
+                                       SettlementPurchasePlan.Approval approval) {
+        if (!purchases.enabled()) return Status.DISABLED;
+        if (town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) return Status.STAGE_LOCKED;
+        if (!SettlementWorkforceService.workingHours(level.getDayTime(), town.leader(), HiredVillagerRole.NITWIT)) return Status.CLOSED;
+        if (activeClerks(level, town, false).isEmpty()) return Status.NO_STAFF;
+        var depot = SettlementPurchaseService.depot(level, town, approval);
+        if (depot == null) return Status.UNAVAILABLE;
+        var sample = approval.sample();
+        var quote = VillageSellMarket.quote(level, town.center(), sample).orElse(null);
+        if (quote == null || quote.baseUnitPrice().isZero()) return Status.UNAVAILABLE;
+        var price = quote.baseUnitPrice().multiply(2);
+        if (price.compareTo(approval.unitPriceLimit()) > 0) return Status.PRICE_LIMIT;
+        if (town.economy().market(quote.marketGroup()).bought() >= dailySupply(town.stage())) return Status.MARKET_LIMIT;
+        int space = SettlementPolicyValidation.capacity(level, town, depot.position(), sample);
+        if (space < 0) return Status.UNAVAILABLE;
+        if (space == 0) return Status.NO_SPACE;
+        return affordable(town.economy().availablePolicyBudget(policy, purchases.dailyBudget()), price) == 0 ? Status.BUDGET_LIMIT : Status.TRADED;
+    }
+
+    private static Result buy(ServerLevel level, SettlementRecord town, ItemStack sample, CurrencyAmount unitPriceLimit,
+                              long needed, int maximum, List<SettlementDepot> depots, int space, CurrencyAmount budget, PurchaseLedger ledger) {
+        var quote = VillageSellMarket.quote(level, town.center(), sample).orElse(null);
+        if (quote == null || quote.baseUnitPrice().isZero()) return Result.blocked(Status.UNAVAILABLE);
+        CurrencyAmount price = quote.baseUnitPrice().multiply(2L);
+        if (price.compareTo(unitPriceLimit) > 0) return Result.blocked(Status.PRICE_LIMIT);
+        if (needed < 0) return Result.blocked(Status.UNAVAILABLE);
+        if (needed == 0) return Result.blocked(Status.STOCK_TARGET);
         int available = Math.max(0, dailySupply(town.stage()) - town.economy().market(quote.marketGroup()).bought());
-        if (available == 0) {
-            return Result.blocked(Status.MARKET_LIMIT);
-        }
-        int space = SettlementStock.capacity(depots, sample);
-        if (space == 0) {
-            return Result.blocked(Status.NO_SPACE);
-        }
-        int affordable = affordable(town.economy().availableBudget(order), price);
-        if (affordable == 0) {
-            return Result.blocked(Status.BUDGET_LIMIT);
-        }
-        int count = Math.min(Math.min(Math.min(needed, available), Math.min(space, affordable)),
+        if (available == 0) return Result.blocked(Status.MARKET_LIMIT);
+        if (space == 0) return Result.blocked(Status.NO_SPACE);
+        int affordable = affordable(budget, price);
+        if (affordable == 0) return Result.blocked(Status.BUDGET_LIMIT);
+        int count = (int) Math.min(Math.min(Math.min(needed, available), Math.min(space, affordable)),
                 Math.min(maximum, sample.getMaxStackSize()));
+        if (count <= 0) return Result.blocked(Status.BUSY);
         CurrencyAmount cost = price.multiply(count);
         ItemStack remainder = SettlementStock.deposit(depots, sample.copyWithCount(count));
-        if (!remainder.isEmpty()) {
-            throw new IllegalStateException("Validated settlement purchase exceeded depot capacity");
-        }
-        town.economy().recordPurchase(order, quote.marketGroup(), count, cost);
+        if (!remainder.isEmpty()) throw new IllegalStateException("Validated settlement purchase exceeded depot capacity");
+        ledger.record(quote.marketGroup(), count, cost);
         return new Result(Status.TRADED, count, cost);
+    }
+
+    @FunctionalInterface
+    private interface PurchaseLedger {
+        void record(net.minecraft.resources.ResourceLocation group, int count, CurrencyAmount cost);
     }
 
     private static Result sell(ServerLevel level, SettlementRecord town, SettlementTradeOrder order, int maximum,

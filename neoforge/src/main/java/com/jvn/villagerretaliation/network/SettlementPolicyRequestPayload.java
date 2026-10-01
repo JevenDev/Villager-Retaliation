@@ -18,7 +18,8 @@ public record SettlementPolicyRequestPayload(UUID town, UUID request, UUID polic
         Objects.requireNonNull(request);
         Objects.requireNonNull(command);
         if (revision < 0 || policy == null && !(command instanceof View)) throw new IllegalArgumentException("Invalid policy request");
-        var configuration = command instanceof Preview preview ? preview.configuration() : command instanceof Save save ? save.configuration() : null;
+        var configuration = command instanceof Preview preview ? preview.configuration() : command instanceof Save save ? save.configuration()
+                : command instanceof Market market ? market.configuration() : null;
         if (configuration != null && configuration.steps().stream().anyMatch(step -> step.id().equals(policy)))
             throw new IllegalArgumentException("Policy and step identities must differ");
     }
@@ -40,6 +41,14 @@ public record SettlementPolicyRequestPayload(UUID town, UUID request, UUID polic
                 buffer.writeNbt(save.configuration().save(buffer.registryAccess()));
                 buffer.writeBoolean(save.active());
             }
+            case Market market -> {
+                buffer.writeEnum(Kind.MARKET);
+                buffer.writeNbt(market.configuration().save(buffer.registryAccess()));
+                optionalId(buffer, market.consumer());
+                buffer.writeUUID(market.requirement());
+                buffer.writeUtf(market.query(), 96);
+                buffer.writeVarInt(market.page());
+            }
             case Change change -> {
                 buffer.writeEnum(Kind.CHANGE);
                 buffer.writeEnum(change.state());
@@ -58,6 +67,7 @@ public record SettlementPolicyRequestPayload(UUID town, UUID request, UUID polic
             case PREVIEW -> new Preview(configuration(buffer));
             case SAVE -> new Save(configuration(buffer), buffer.readBoolean());
             case CHANGE -> new Change(buffer.readEnum(SettlementSupplyPolicy.State.class));
+            case MARKET -> new Market(configuration(buffer), optionalId(buffer), buffer.readUUID(), buffer.readUtf(96), buffer.readVarInt());
         };
         return new SettlementPolicyRequestPayload(town, request, policy, revision, area, command);
     }
@@ -79,7 +89,7 @@ public record SettlementPolicyRequestPayload(UUID town, UUID request, UUID polic
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
-    public sealed interface Command permits View, Preview, Save, Change { }
+    public sealed interface Command permits View, Preview, Save, Change, Market { }
     public record View() implements Command { }
     public record Preview(SettlementSupplyPolicy.Configuration configuration) implements Command {
         public Preview { Objects.requireNonNull(configuration); }
@@ -93,5 +103,12 @@ public record SettlementPolicyRequestPayload(UUID town, UUID request, UUID polic
                     && state != SettlementSupplyPolicy.State.REMOVING) throw new IllegalArgumentException("Invalid policy action");
         }
     }
-    private enum Kind { VIEW, PREVIEW, SAVE, CHANGE }
+    public record Market(SettlementSupplyPolicy.Configuration configuration, UUID consumer, UUID requirement, String query, int page) implements Command {
+        public Market {
+            Objects.requireNonNull(configuration);
+            Objects.requireNonNull(requirement);
+            if (query == null || query.length() > 96 || page < 0 || page > 4096) throw new IllegalArgumentException("Invalid purchase market request");
+        }
+    }
+    private enum Kind { VIEW, PREVIEW, SAVE, CHANGE, MARKET }
 }

@@ -4,7 +4,9 @@ import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOr
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -22,6 +24,8 @@ public final class SettlementSupplyPolicy {
     private static final int MAX_HISTORY = 32;
     private final UUID id;
     private final Runnable changed;
+    private final Runnable dirty;
+    private final Map<UUID, PurchaseShortage> purchaseShortages = new LinkedHashMap<>();
     private final List<Binding> bindings = new ArrayList<>();
     private final List<Event> history = new ArrayList<>();
     private Configuration configuration;
@@ -31,10 +35,15 @@ public final class SettlementSupplyPolicy {
     private String blocker = "";
 
     public SettlementSupplyPolicy(UUID id, Configuration configuration, UUID authority, Runnable changed) {
+        this(id, configuration, authority, changed, changed);
+    }
+
+    public SettlementSupplyPolicy(UUID id, Configuration configuration, UUID authority, Runnable changed, Runnable dirty) {
         this.id = Objects.requireNonNull(id);
         this.configuration = Objects.requireNonNull(configuration);
         this.authority = Objects.requireNonNull(authority);
         this.changed = Objects.requireNonNull(changed);
+        this.dirty = Objects.requireNonNull(dirty);
         if (configuration.steps().stream().anyMatch(step -> step.id().equals(id)))
             throw new IllegalArgumentException("Policy and step identities must differ");
     }
@@ -47,10 +56,26 @@ public final class SettlementSupplyPolicy {
     public String blocker() { return this.blocker; }
     public List<Binding> bindings() { return List.copyOf(this.bindings); }
     public List<Event> history() { return List.copyOf(this.history); }
+    public Map<UUID, PurchaseShortage> purchaseShortages() { return Map.copyOf(this.purchaseShortages); }
+
+    void purchaseShortage(UUID approval, PurchaseShortage shortage) {
+        if (shortage != null && (this.state != State.ACTIVE || !this.configuration.purchases().enabled()
+                || this.configuration.purchases().approvals().stream().noneMatch(value -> value.id().equals(approval))))
+            throw new IllegalArgumentException("Purchase shortage has no active approval");
+        var previous = shortage == null ? this.purchaseShortages.remove(approval) : this.purchaseShortages.put(approval, shortage);
+        if (!Objects.equals(previous, shortage)) this.dirty.run();
+    }
+
+    void clearPurchaseShortages() {
+        if (this.purchaseShortages.isEmpty()) return;
+        this.purchaseShortages.clear();
+        this.dirty.run();
+    }
 
     void configure(Configuration configuration, UUID authority, long now) {
         if (configuration.steps().stream().anyMatch(step -> step.id().equals(this.id)))
             throw new IllegalArgumentException("Policy and step identities must differ");
+        clearPurchaseShortages();
         this.configuration = configuration;
         this.authority = Objects.requireNonNull(authority);
         this.revision = Math.addExact(this.revision, 1);
@@ -62,6 +87,7 @@ public final class SettlementSupplyPolicy {
         Objects.requireNonNull(authority);
         if (blocker == null || blocker.length() > 128) throw new IllegalArgumentException("Invalid policy blocker");
         if (this.state == state && this.authority.equals(authority) && this.blocker.equals(blocker)) return;
+        if (state != State.ACTIVE || !this.authority.equals(authority)) clearPurchaseShortages();
         this.state = state;
         this.authority = authority;
         this.blocker = blocker;
@@ -115,7 +141,7 @@ public final class SettlementSupplyPolicy {
 
     public CompoundTag save(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
-        tag.putInt("Version", 1);
+        tag.putInt("Version", 2);
         tag.putUUID("Id", this.id);
         tag.putUUID("Authority", this.authority);
         tag.putLong("Revision", this.revision);
@@ -134,16 +160,32 @@ public final class SettlementSupplyPolicy {
             history.add(entry);
         });
         tag.put("History", history);
+        var shortages = new ListTag();
+        this.purchaseShortages.forEach((approval, shortage) -> {
+            var entry = new CompoundTag();
+            entry.putUUID("Approval", approval);
+            entry.putUUID("Demand", shortage.demand());
+            entry.putLong("Since", shortage.since());
+            entry.putLong("Missing", shortage.missing());
+            shortages.add(entry);
+        });
+        tag.put("PurchaseShortages", shortages);
         return tag;
     }
 
     public static SettlementSupplyPolicy load(CompoundTag tag, HolderLookup.Provider provider, Runnable changed) {
-        if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 1 || !tag.hasUUID("Id") || !tag.hasUUID("Authority")
+        return load(tag, provider, changed, changed);
+    }
+
+    public static SettlementSupplyPolicy load(CompoundTag tag, HolderLookup.Provider provider, Runnable changed, Runnable dirty) {
+        if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") < 1 || tag.getInt("Version") > 2 || !tag.hasUUID("Id") || !tag.hasUUID("Authority")
                 || !tag.contains("Revision", Tag.TAG_LONG) || tag.getLong("Revision") < 0 || !tag.contains("State", Tag.TAG_STRING)
                 || !tag.contains("Blocker", Tag.TAG_STRING) || tag.getString("Blocker").length() > 128
-                || !tag.contains("Configuration", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid saved supply policy");
+                || !tag.contains("Configuration", Tag.TAG_COMPOUND)
+                || tag.getInt("Version") == 1 && tag.getCompound("Configuration").getInt("Version") != 1)
+            throw new IllegalArgumentException("Invalid saved supply policy");
         var policy = new SettlementSupplyPolicy(tag.getUUID("Id"), Configuration.load(tag.getCompound("Configuration"), provider),
-                tag.getUUID("Authority"), changed);
+                tag.getUUID("Authority"), changed, dirty);
         policy.revision = tag.getLong("Revision");
         policy.state = State.valueOf(tag.getString("State"));
         policy.blocker = tag.getString("Blocker");
@@ -165,6 +207,18 @@ public final class SettlementSupplyPolicy {
             previous = event.at();
             policy.history.add(event);
         }
+        if (tag.getInt("Version") >= 2) {
+            for (var raw : list(tag, "PurchaseShortages", SettlementPurchasePlan.MAX_APPROVALS)) {
+                var entry = (CompoundTag) raw;
+                if (!entry.hasUUID("Approval") || !entry.hasUUID("Demand") || !entry.contains("Since", Tag.TAG_LONG)
+                        || !entry.contains("Missing", Tag.TAG_LONG) || policy.state != State.ACTIVE || !policy.configuration.purchases().enabled()
+                        || policy.configuration.purchases().approvals().stream().noneMatch(approval -> approval.id().equals(entry.getUUID("Approval"))))
+                    throw new IllegalArgumentException("Invalid saved purchase shortage");
+                var shortage = new PurchaseShortage(entry.getUUID("Demand"), entry.getLong("Since"), entry.getLong("Missing"));
+                if (policy.purchaseShortages.putIfAbsent(entry.getUUID("Approval"), shortage) != null)
+                    throw new IllegalArgumentException("Duplicate saved purchase shortage");
+            }
+        }
         return policy;
     }
 
@@ -178,10 +232,16 @@ public final class SettlementSupplyPolicy {
     public enum TargetKind { STOCK, CONSUMER, FOOD, EQUIPMENT }
     public enum StepKind { GATHER, PRODUCTION, DELIVERY }
     public enum BindingState { ACTIVE, PARKED, SUSPENDED, DRAINING }
-    public enum EventKind { EDITED, ACTIVATED, PAUSED, SUSPENDED, COMPLETED }
+    public enum EventKind { EDITED, ACTIVATED, PAUSED, SUSPENDED, COMPLETED, PURCHASED }
 
-    public record Configuration(String name, Target target, int priority, List<Step> steps, List<Connection> connections) {
+    public record Configuration(String name, Target target, int priority, List<Step> steps, List<Connection> connections,
+                                SettlementPurchasePlan purchases) {
+        public Configuration(String name, Target target, int priority, List<Step> steps, List<Connection> connections) {
+            this(name, target, priority, steps, connections, SettlementPurchasePlan.DISABLED);
+        }
+
         public Configuration {
+            Objects.requireNonNull(purchases);
             Objects.requireNonNull(target);
             steps = List.copyOf(steps);
             connections = List.copyOf(connections);
@@ -194,7 +254,7 @@ public final class SettlementSupplyPolicy {
 
         public CompoundTag save(HolderLookup.Provider provider) {
             var tag = new CompoundTag();
-            tag.putInt("Version", 1);
+            tag.putInt("Version", 2);
             tag.putString("Name", name);
             tag.putInt("Priority", priority);
             tag.put("Target", target.save(provider));
@@ -210,12 +270,14 @@ public final class SettlementSupplyPolicy {
                 connections.add(entry);
             });
             tag.put("Connections", connections);
+            tag.put("Purchases", this.purchases.save());
             return tag;
         }
 
         public static Configuration load(CompoundTag tag, HolderLookup.Provider provider) {
-            if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 1 || !tag.contains("Name", Tag.TAG_STRING)
-                    || !tag.contains("Priority", Tag.TAG_INT) || !tag.contains("Target", Tag.TAG_COMPOUND))
+            if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") < 1 || tag.getInt("Version") > 2 || !tag.contains("Name", Tag.TAG_STRING)
+                    || !tag.contains("Priority", Tag.TAG_INT) || !tag.contains("Target", Tag.TAG_COMPOUND)
+                    || tag.getInt("Version") >= 2 && !tag.contains("Purchases", Tag.TAG_COMPOUND))
                 throw new IllegalArgumentException("Invalid saved policy configuration");
             var steps = new ArrayList<Step>();
             for (var raw : list(tag, "Steps", MAX_STEPS)) steps.add(Step.load((CompoundTag) raw, provider));
@@ -227,7 +289,8 @@ public final class SettlementSupplyPolicy {
                 connections.add(new Connection(entry.getUUID("Producer"), entry.contains("Consumer") ? entry.getUUID("Consumer") : null,
                         entry.getUUID("Requirement")));
             }
-            return new Configuration(tag.getString("Name"), Target.load(tag.getCompound("Target"), provider), tag.getInt("Priority"), steps, connections);
+            return new Configuration(tag.getString("Name"), Target.load(tag.getCompound("Target"), provider), tag.getInt("Priority"), steps, connections,
+                    tag.getInt("Version") == 1 ? SettlementPurchasePlan.DISABLED : SettlementPurchasePlan.load(tag.getCompound("Purchases")));
         }
     }
 
@@ -372,6 +435,15 @@ public final class SettlementSupplyPolicy {
             return new Binding(tag.getUUID("Id"), Step.load(tag.getCompound("Step"), provider), tag.contains("Order") ? tag.getUUID("Order") : null,
                     BindingState.valueOf(tag.getString("State")), tag.getInt("Target"), tag.getLong("Ceiling"), tag.getLong("Gathered"));
         }
+    }
+
+    public record PurchaseShortage(UUID demand, long since, long missing) {
+        public PurchaseShortage {
+            Objects.requireNonNull(demand);
+            if (since < 0 || missing <= 0) throw new IllegalArgumentException("Invalid policy purchase shortage");
+        }
+
+        public boolean eligible(long now) { return now >= this.since && now - this.since >= SettlementPurchasePlan.SHORTAGE_TICKS; }
     }
 
     public record Event(long at, EventKind kind, String detail) {

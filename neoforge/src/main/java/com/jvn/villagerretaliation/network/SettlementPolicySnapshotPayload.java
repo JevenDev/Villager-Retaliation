@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequire
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementRecord;
 import com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy;
+import com.jvn.villagerretaliation.settlement.SettlementPurchasePlan;
+import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +20,9 @@ import net.minecraft.world.item.ItemStack;
 
 public record SettlementPolicySnapshotPayload(ResourceLocation dimension, UUID town, UUID request, boolean applied, boolean editable,
         String feedback, String blocker, List<Summary> policies, CompoundTag selected, List<Worksite> worksites,
-        List<Storage> storages, List<Consumer> consumers, List<Need> needs, List<Production> production) implements CustomPacketPayload {
+        List<Storage> storages, List<Consumer> consumers, List<Need> needs, List<Production> production,
+        boolean trade, long gameTime, PurchaseAccount purchases, MarketPage market) implements CustomPacketPayload {
+    public static final int MARKET_PAGE_SIZE = 32;
     public static final Type<SettlementPolicySnapshotPayload> TYPE = VillagerPayloads.type("settlement_policy_snapshot");
     public static final StreamCodec<RegistryFriendlyByteBuf, SettlementPolicySnapshotPayload> STREAM_CODEC =
             VillagerPayloads.codec(SettlementPolicySnapshotPayload::encode, SettlementPolicySnapshotPayload::decode);
@@ -27,6 +31,8 @@ public record SettlementPolicySnapshotPayload(ResourceLocation dimension, UUID t
         Objects.requireNonNull(dimension);
         Objects.requireNonNull(town);
         Objects.requireNonNull(request);
+        Objects.requireNonNull(purchases);
+        if (gameTime < 0) throw new IllegalArgumentException("Invalid policy snapshot time");
         code(feedback);
         code(blocker);
         policies = List.copyOf(policies);
@@ -108,6 +114,41 @@ public record SettlementPolicySnapshotPayload(ResourceLocation dimension, UUID t
             buffer.writeLong(step.retained());
             buffer.writeUtf(step.blocker(), 128);
         }
+        buffer.writeBoolean(payload.trade());
+        buffer.writeVarLong(payload.gameTime());
+        payload.purchases().spent().write(buffer);
+        payload.purchases().available().write(buffer);
+        buffer.writeVarInt(payload.purchases().approvals().size());
+        for (var purchase : payload.purchases().approvals()) {
+            buffer.writeUUID(purchase.approval());
+            buffer.writeLong(purchase.missing());
+            buffer.writeBoolean(purchase.known());
+            buffer.writeVarLong(purchase.waitTicks());
+            purchase.unitPrice().write(buffer);
+            buffer.writeUtf(purchase.blocker(), 128);
+        }
+        buffer.writeBoolean(payload.market() != null);
+        if (payload.market() != null) {
+            var market = payload.market();
+            SettlementPolicyRequestPayload.optionalId(buffer, market.consumer());
+            buffer.writeUUID(market.requirement());
+            buffer.writeUtf(market.query(), 96);
+            buffer.writeVarInt(market.page());
+            buffer.writeBoolean(market.more());
+            buffer.writeVarInt(market.commodities().size());
+            for (var commodity : market.commodities()) {
+                buffer.writeResourceLocation(commodity.item());
+                commodity.unitPrice().write(buffer);
+            }
+            buffer.writeVarInt(market.depots().size());
+            for (var depot : market.depots()) {
+                buffer.writeBlockPos(depot.position());
+                buffer.writeUtf(depot.name(), 128);
+                buffer.writeBoolean(depot.source());
+                buffer.writeBoolean(depot.destination());
+                buffer.writeBoolean(depot.known());
+            }
+        }
     }
 
     private static SettlementPolicySnapshotPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -161,14 +202,79 @@ public record SettlementPolicySnapshotPayload(ResourceLocation dimension, UUID t
         size = VillagerPayloads.readCollectionSize(buffer, SettlementSupplyPolicy.MAX_STEPS, "Policy steps");
         for (int index = 0; index < size; index++) production.add(new Production(buffer.readUUID(), ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer),
                 buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readUtf(128)));
+        boolean trade = buffer.readBoolean();
+        long gameTime = buffer.readVarLong();
+        var spent = CurrencyAmount.read(buffer);
+        var available = CurrencyAmount.read(buffer);
+        var purchases = new ArrayList<Purchase>();
+        size = VillagerPayloads.readCollectionSize(buffer, SettlementPurchasePlan.MAX_APPROVALS, "Purchase approvals");
+        for (int index = 0; index < size; index++) purchases.add(new Purchase(buffer.readUUID(), buffer.readLong(), buffer.readBoolean(),
+                buffer.readVarLong(), CurrencyAmount.read(buffer), buffer.readUtf(128)));
+        MarketPage market = null;
+        if (buffer.readBoolean()) {
+            var consumer = SettlementPolicyRequestPayload.optionalId(buffer);
+            var requirement = buffer.readUUID();
+            String query = buffer.readUtf(96);
+            int page = buffer.readVarInt();
+            boolean more = buffer.readBoolean();
+            var commodities = new ArrayList<Commodity>();
+            size = VillagerPayloads.readCollectionSize(buffer, MARKET_PAGE_SIZE, "Market commodities");
+            for (int index = 0; index < size; index++) commodities.add(new Commodity(buffer.readResourceLocation(), CurrencyAmount.read(buffer)));
+            var depots = new ArrayList<Storage>();
+            size = VillagerPayloads.readCollectionSize(buffer, 512, "Purchase depots");
+            for (int index = 0; index < size; index++) depots.add(new Storage(buffer.readBlockPos(), buffer.readUtf(128),
+                    buffer.readBoolean(), buffer.readBoolean(), buffer.readBoolean()));
+            market = new MarketPage(consumer, requirement, query, page, more, commodities, depots);
+        }
         return new SettlementPolicySnapshotPayload(dimension, town, request, applied, editable, feedback, blocker,
-                policies, selected, worksites, storages, consumers, needs, production);
+                policies, selected, worksites, storages, consumers, needs, production, trade, gameTime,
+                new PurchaseAccount(spent, available, purchases), market);
     }
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
     private static void code(String value) {
         if (value == null || value.length() > 128) throw new IllegalArgumentException("Invalid policy text");
+    }
+
+    public record PurchaseAccount(CurrencyAmount spent, CurrencyAmount available, List<Purchase> approvals) {
+        public static final PurchaseAccount EMPTY = new PurchaseAccount(CurrencyAmount.ZERO, CurrencyAmount.ZERO, List.of());
+        public PurchaseAccount {
+            Objects.requireNonNull(spent);
+            Objects.requireNonNull(available);
+            approvals = List.copyOf(approvals);
+            if (approvals.size() > SettlementPurchasePlan.MAX_APPROVALS || approvals.stream().map(Purchase::approval).distinct().count() != approvals.size())
+                throw new IllegalArgumentException("Invalid purchase account snapshot");
+        }
+    }
+    public record Purchase(UUID approval, long missing, boolean known, long waitTicks, CurrencyAmount unitPrice, String blocker) {
+        public Purchase {
+            Objects.requireNonNull(approval);
+            Objects.requireNonNull(unitPrice);
+            code(blocker);
+            if (missing < -1 || known && missing < 0 || waitTicks < 0 || waitTicks > SettlementPurchasePlan.SHORTAGE_TICKS)
+                throw new IllegalArgumentException("Invalid purchase preview");
+        }
+    }
+    public record Commodity(ResourceLocation item, CurrencyAmount unitPrice) {
+        public Commodity {
+            Objects.requireNonNull(item);
+            Objects.requireNonNull(unitPrice);
+            if (unitPrice.isZero() || !net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(item)
+                    || net.minecraft.core.registries.BuiltInRegistries.ITEM.get(item) == net.minecraft.world.item.Items.AIR)
+                throw new IllegalArgumentException("Invalid purchase commodity");
+        }
+        public ItemStack sample() { return new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(item)); }
+    }
+    public record MarketPage(UUID consumer, UUID requirement, String query, int page, boolean more, List<Commodity> commodities, List<Storage> depots) {
+        public MarketPage {
+            Objects.requireNonNull(requirement);
+            commodities = List.copyOf(commodities);
+            depots = List.copyOf(depots);
+            if (query == null || query.length() > 96 || page < 0 || page > 4096 || commodities.size() > MARKET_PAGE_SIZE || depots.size() > 512
+                    || commodities.stream().map(Commodity::item).distinct().count() != commodities.size())
+                throw new IllegalArgumentException("Invalid purchase market page");
+        }
     }
 
     public record Summary(UUID id, String name, long revision, SettlementSupplyPolicy.State state, String blocker) {

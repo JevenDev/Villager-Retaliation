@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload;
 import com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload;
 import com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy;
+import com.jvn.villagerretaliation.settlement.SettlementPurchasePlan;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -79,9 +80,13 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
             button("add_step", 0, this.panelHeight - 100, third, () -> this.minecraft.setScreen(new SettlementPolicyStepScreen(this, null)));
             button("edit_step", third + 4, this.panelHeight - 100, third, () -> this.minecraft.setScreen(new SettlementPolicyStepScreen(this, selectedStep())));
             button("remove_step", 2 * third + 8, this.panelHeight - 100, third, this::removeStep);
-            button("connect", 0, this.panelHeight - 76, third, this::connect);
-            button("disconnect", third + 4, this.panelHeight - 76, third, this::disconnect);
-            button("preview", 2 * third + 8, this.panelHeight - 76, third, () -> { this.showPreview = true; preview(); });
+            int purchaseWidth = this.font.width(SettlementPolicyClient.text("purchases")) + 14;
+            int actionWidth = (this.panelWidth - purchaseWidth - 12) / 3;
+            button("connect", 0, this.panelHeight - 76, actionWidth, this::connect);
+            button("disconnect", actionWidth + 4, this.panelHeight - 76, actionWidth, this::disconnect);
+            button("purchases", 2 * actionWidth + 8, this.panelHeight - 76, purchaseWidth,
+                    () -> this.minecraft.setScreen(new SettlementPolicyPurchasesScreen(this)));
+            button("preview", 2 * actionWidth + purchaseWidth + 12, this.panelHeight - 76, actionWidth, () -> { this.showPreview = true; preview(); });
             button("back", 0, this.panelHeight - 24, third, this::backToList);
             button("save", third + 4, this.panelHeight - 24, third, () -> submit(new SettlementPolicyRequestPayload.Save(configuration(), false)));
             button("activate", 2 * third + 8, this.panelHeight - 24, third, () -> submit(new SettlementPolicyRequestPayload.Save(configuration(), true)));
@@ -197,6 +202,14 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
 
     SettlementSupplyPolicy.Configuration configuration() { return this.draft == null ? null : this.draft.configuration(); }
 
+    UUID policyId() { return this.draft.id; }
+    long policyRevision() { return this.draft.revision; }
+
+    void purchases(SettlementPurchasePlan plan) {
+        this.draft.purchases = plan;
+        changed();
+    }
+
     void step(SettlementSupplyPolicy.Step step) {
         for (int index = 0; index < this.draft.steps.size(); index++) if (this.draft.steps.get(index).id().equals(step.id())) {
             this.draft.steps.set(index, step);
@@ -226,7 +239,7 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
         UUID producer = this.selected;
         this.minecraft.setScreen(new SettlementPolicyChoiceScreen(this, SettlementPolicyClient.text("choose_requirement"), query ->
                 snapshot().needs().stream().filter(need -> !producer.equals(need.step())).map(need ->
-                        new SettlementPolicyChoiceScreen.Choice(Component.literal(need.name()), consumerName(need.step()),
+                        new SettlementPolicyChoiceScreen.Choice(SettlementPolicyClient.needName(need), consumerName(need.step()),
                                 need.samples().isEmpty() ? ItemStack.EMPTY : need.samples().getFirst(), () -> {
                             this.draft.connections.removeIf(edge -> java.util.Objects.equals(edge.consumer(), need.step()) && edge.requirement().equals(need.id()));
                             this.draft.connections.add(new SettlementSupplyPolicy.Connection(producer, need.step(), need.id()));
@@ -352,6 +365,8 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
             this.buttons.get("activate").active = ready && this.state.editable() && configuration() != null && configuration().equals(this.previewed)
                     && snapshot() != null && snapshot().blocker().isEmpty();
             this.buttons.get("preview").active &= ready && configuration() != null;
+            this.buttons.get("purchases").active &= ready && configuration() != null;
+            this.buttons.get("activate").active &= configuration() != null && (!configuration().purchases().enabled() || snapshot() != null && snapshot().trade());
         } else {
             var selected = selectedPolicy();
             this.buttons.get("new").active &= snapshot() != null && snapshot().policies().size() < SettlementSupplyPolicy.MAX_POLICIES;
@@ -437,6 +452,7 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
         int priority = 5;
         SettlementSupplyPolicy.Target target;
         String amount = "16";
+        SettlementPurchasePlan purchases = SettlementPurchasePlan.DISABLED;
         final List<SettlementSupplyPolicy.Step> steps = new ArrayList<>();
         final List<SettlementSupplyPolicy.Connection> connections = new ArrayList<>();
         Draft(UUID id) { this.id = id; }
@@ -449,6 +465,7 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
             this.amount = Integer.toString(this.target.amount());
             this.steps.addAll(policy.configuration().steps());
             this.connections.addAll(policy.configuration().connections());
+            this.purchases = policy.configuration().purchases();
         }
         SettlementSupplyPolicy.Configuration configuration() {
             if (this.target == null || this.name.isBlank()) return null;
@@ -459,7 +476,7 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
                 if (count < 1 || count > 4096) return null;
                 target = new SettlementSupplyPolicy.Target(target.kind(), null, null, target.storage(), target.sample(), count);
             }
-            return new SettlementSupplyPolicy.Configuration(this.name, target, this.priority, this.steps, this.connections);
+            return new SettlementSupplyPolicy.Configuration(this.name, target, this.priority, this.steps, this.connections, this.purchases);
         }
     }
 }

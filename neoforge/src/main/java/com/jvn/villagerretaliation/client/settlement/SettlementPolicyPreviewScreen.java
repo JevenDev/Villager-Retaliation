@@ -31,11 +31,23 @@ final class SettlementPolicyPreviewScreen extends VillagerWindowScreen implement
                     need.known() ? Long.toString(need.missing()) : SettlementPolicyClient.text("unknown").getString());
             var sources = Component.literal(String.join("\n", need.sources().stream().map(position ->
                     SettlementPolicyClient.text("source_value", position.toShortString()).getString()).toList()));
-            this.rows.row(new Row(this.previous.consumerName(need.step()).copy().append(": ").append(need.name()), quantity, sources));
+            this.rows.row(new Row(this.previous.consumerName(need.step()).copy().append(": ").append(SettlementPolicyClient.needName(need)), quantity, sources));
         }
         for (var production : this.snapshot.production()) this.rows.row(new Row(this.previous.consumerName(production.id()),
                 SettlementPolicyClient.text("preview_quantities", production.proposed(), production.requested(), production.retained()),
                 SettlementPolicyClient.blocker(production.blocker())));
+        if (!this.snapshot.purchases().approvals().isEmpty()) {
+            this.rows.row(new Row(SettlementPolicyClient.text("purchases"), SettlementPolicyClient.text("purchase_account",
+                    SettlementEditScreen.currency(this.snapshot.purchases().spent()), SettlementEditScreen.currency(this.snapshot.purchases().available())),
+                    SettlementPolicyClient.text("purchase_budget_help")));
+            for (var purchase : this.snapshot.purchases().approvals()) {
+                var approval = this.previous.configuration().purchases().approvals().stream()
+                        .filter(value -> value.id().equals(purchase.approval())).findFirst().orElse(null);
+                if (approval != null) this.rows.row(new Row(approval.sample().getHoverName(),
+                        SettlementPolicyPurchasesScreen.status(purchase), SettlementPolicyClient.text("purchase_prices",
+                        SettlementEditScreen.currency(approval.unitPriceLimit()), SettlementEditScreen.currency(purchase.unitPrice()))));
+            }
+        }
         addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(this.left, this.top + this.panelHeight - 24, 84, 20).build());
     }

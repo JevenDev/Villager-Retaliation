@@ -255,7 +255,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
         return value;
     }
 
-    private static CurrencyAmount amount(String text) {
+    static CurrencyAmount amount(String text) {
         String value = text.strip();
         if (value.matches("[0-9]{1,16}/[0-9]{1,16}")) {
             String[] parts = value.split("/");
@@ -268,7 +268,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
         return new CurrencyAmount(decimal.unscaledValue(), BigInteger.TEN.pow(decimal.scale()));
     }
 
-    private static String currency(CurrencyAmount amount) {
+    static String currency(CurrencyAmount amount) {
         return amount.isWhole() ? amount.wholeUnits().toString() : amount.numerator() + "/" + amount.denominator();
     }
 

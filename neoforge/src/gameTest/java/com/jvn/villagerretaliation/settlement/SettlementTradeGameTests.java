@@ -386,6 +386,247 @@ public final class SettlementTradeGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void policyPurchasesWaitForShortagesAndKeepBuyingUntilTheDeficitIsFilled(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            fund(town);
+            var policy = stockPurchases(helper, fixture, Items.WHEAT, 12, 5, money(100), money(100));
+            var approval = policy.configuration().purchases().approvals().getFirst();
+            SettlementTradeService.process(level, town, 200);
+            SettlementTradeService.process(level, town, 1_200);
+            helper.assertTrue(town.economy().policySpending(policy.id()).isZero(), "fallback waits for 1,200 ticks of observed shortage");
+            SettlementTradeService.process(level, town, 1_400);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 8, "fallback uses the native clerk capacity");
+            helper.assertValueEqual(policy.purchaseShortages().get(approval.id()).since(), 200L, "its own purchase does not restart the local progress timer");
+            SettlementTradeService.process(level, town, 1_600);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 12, "the next cycle buys only the remaining deficit");
+            helper.assertTrue(policy.purchaseShortages().isEmpty(), "fulfilled demand clears its fallback timer");
+            helper.assertTrue(town.economy().orders().isEmpty(), "policy execution never appends or adopts manual trade orders");
+            helper.assertValueEqual(policy.history().stream().filter(event -> event.kind() == SettlementSupplyPolicy.EventKind.PURCHASED).count(),
+                    2L, "successful purchases enter the bounded policy history");
+            var spent = town.economy().spent();
+            SettlementTradeService.process(level, town, 1_800);
+            helper.assertValueEqual(town.economy().spent(), spent, "completed stock targets do not keep spending");
+            fixture.depot().withdraw(stack -> stack.is(Items.WHEAT), 7);
+            SettlementTradeService.process(level, town, 2_000);
+            fixture.depot().deposit(new ItemStack(Items.WHEAT, 2));
+            SettlementTradeService.process(level, town, 2_400);
+            helper.assertValueEqual(policy.purchaseShortages().get(approval.id()).since(), 2_400L, "local supply progress restarts the next shortage");
+            SettlementTradeService.process(level, town, 3_200);
+            helper.assertValueEqual(town.economy().spent(), spent, "local progress postpones fallback for the full new delay");
+            SettlementTradeService.process(level, town, 3_600);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 12, "a renewed persistent shortage buys exactly five remaining items");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void policyPurchasesShareProtectedNeedsAndRemainingClerkCapacity(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            fund(town);
+            var wheat = stockPurchases(helper, fixture, Items.WHEAT, 12, 9, money(100), money(100));
+            var food = foodPurchases(helper, fixture, 0, money(100));
+            var demand = SettlementDemandService.inspect(level, town).demands().stream()
+                    .filter(row -> row.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD).findFirst().orElseThrow();
+            long bread = (demand.supply().protectedMinimum() - 1) / demand.requirement().value(new ItemStack(Items.BREAD)) + 1;
+            helper.assertTrue(bread > 0 && bread < 8, "the fixture leaves some clerk capacity after its protected food minimum");
+            SettlementTradeService.process(level, town, 200);
+            SettlementTradeService.process(level, town, 1_400);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.BREAD)), (int) bread,
+                    "protected food buys before a higher priority ordinary stock target");
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 8 - (int) bread,
+                    "ordinary purchases share the remaining capacity instead of opening another clerk allowance");
+            helper.assertFalse(town.economy().policySpending(food.id()).isZero(), "food spending belongs to its authorizing policy");
+            helper.assertFalse(town.economy().policySpending(wheat.id()).isZero(), "remaining capacity retains its independent policy ledger");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void sharedFoodPurchasesAggregateBeforeUsingAnotherPolicyBudget(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            fund(town);
+            var price = VillageSellMarket.quote(level, town.center(), new ItemStack(Items.BREAD)).orElseThrow().baseUnitPrice().multiply(2);
+            var first = foodPurchases(helper, fixture, 9, price.multiply(2));
+            var second = foodPurchases(helper, fixture, 1, money(100));
+            var demand = SettlementDemandService.inspect(level, town).demands().stream()
+                    .filter(row -> row.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD).findFirst().orElseThrow();
+            int needed = (int) ((demand.missing() - 1) / demand.requirement().value(new ItemStack(Items.BREAD)) + 1);
+            SettlementTradeService.process(level, town, 200);
+            SettlementTradeService.process(level, town, 1_400);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.BREAD)), needed,
+                    "multiple authorizers buy the shared food deficit once");
+            helper.assertValueEqual(town.economy().policySpending(first.id()), price.multiply(2), "higher policy priority receives scarce spending capacity first");
+            helper.assertValueEqual(town.economy().policySpending(second.id()), price.multiply(needed - 2),
+                    "another approved budget can finish the same persistent shortage without restarting its timer");
+            helper.assertTrue(first.purchaseShortages().isEmpty() && second.purchaseShortages().isEmpty(), "both policies observe the completed shared requirement");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void policyPurchasesRespectPricesDailyCapsReloadAndFiniteMarkets(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            fund(town);
+            var quote = VillageSellMarket.quote(level, town.center(), new ItemStack(Items.WHEAT)).orElseThrow();
+            var price = quote.baseUnitPrice().multiply(2);
+            var policy = stockPurchases(helper, fixture, Items.WHEAT, 256, 5, price.multiply(3), quote.baseUnitPrice());
+            SettlementTradeService.process(level, town, 200);
+            SettlementTradeService.process(level, town, 1_400);
+            helper.assertTrue(town.economy().policySpending(policy.id()).isZero(), "fallback cannot exceed its approved unit price");
+            var original = policy.configuration();
+            var old = original.purchases().approvals().getFirst();
+            var approval = new SettlementPurchasePlan.Approval(old.id(), old.consumer(), old.requirement(), old.item(), old.destination(), price);
+            policy.configure(new SettlementSupplyPolicy.Configuration(original.name(), original.target(), original.priority(), original.steps(), original.connections(),
+                    new SettlementPurchasePlan(true, price.multiply(3), List.of(approval))), town.leader(), level.getGameTime());
+            SettlementTradeService.process(level, town, 1_600);
+            SettlementTradeService.process(level, town, 2_800);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 3, "the policy-wide cap limits exact fractional native purchases");
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            SettlementTradeService.process(level, restored, 3_000);
+            helper.assertValueEqual(restored.economy().policySpending(policy.id()), price.multiply(3), "reload cannot renew the policy's spent daily allowance");
+            helper.assertValueEqual(restored.depots().get(fixture.depot().id()).count(stack -> stack.is(Items.WHEAT)), 3, "reload does not buy beyond the saved cap");
+            policy.configure(new SettlementSupplyPolicy.Configuration(original.name(), original.target(), original.priority(), original.steps(), original.connections(),
+                    new SettlementPurchasePlan(true, money(100), List.of(approval))), town.leader(), level.getGameTime());
+            SettlementTradeService.process(level, town, 3_200);
+            for (long tick = 4_400; tick <= 6_400; tick += 200) SettlementTradeService.process(level, town, tick);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), SettlementTradeService.dailySupply(town.stage()),
+                    "policy budgets do not create a separate or infinite commodity market");
+            helper.assertValueEqual(town.economy().market(quote.marketGroup()).bought(), SettlementTradeService.dailySupply(town.stage()),
+                    "policy purchases consume the native finite market accounting");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void manualPurchasesRemainIndependentAndReducePolicyFallback(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            fund(town);
+            var policy = stockPurchases(helper, fixture, Items.WHEAT, 12, 5, money(100), money(100));
+            SettlementTradeService.process(level, town, 200);
+            var manual = order(Items.WHEAT, SettlementTradeOrder.Direction.BUY, 4, true);
+            helper.assertTrue(SettlementTradeService.putOrder(fixture.leader(), town.id(), manual), "an independent manual order can share the commodity");
+            SettlementTradeService.process(level, town, 1_400);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 4, "manual output is credited before fallback dispatch");
+            helper.assertTrue(town.economy().policySpending(policy.id()).isZero(), "manual supply progress restarts policy fallback without adopting its spending");
+            SettlementTradeService.process(level, town, 2_600);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 12, "the policy later purchases only the remaining eight items");
+            helper.assertValueEqual(town.economy().orders().get(manual.id()), manual, "policy execution preserves the manual order and target");
+            var price = VillageSellMarket.quote(level, town.center(), new ItemStack(Items.WHEAT)).orElseThrow().baseUnitPrice().multiply(2);
+            helper.assertValueEqual(town.economy().orderSpending(manual.id()), price.multiply(4), "manual spending remains independently accounted");
+            helper.assertValueEqual(town.economy().policySpending(policy.id()), price.multiply(8), "the policy is charged only for its own goods");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void policyPurchasesRespectWorkingHoursClerkPausesAndTreasuryReserves(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            fund(town);
+            var policy = stockPurchases(helper, fixture, Items.WHEAT, 12, 5, money(100), money(100));
+            var approval = policy.configuration().purchases().approvals().getFirst();
+            SettlementTradeService.process(level, town, 200);
+            level.setDayTime(18_000);
+            SettlementTradeService.process(level, town, 1_400);
+            helper.assertValueEqual(SettlementTradeService.purchaseAvailability(level, town, policy.id(), policy.configuration().purchases(), approval),
+                    SettlementTradeService.Status.CLOSED, "persistent shortages cannot authorize trade outside working hours");
+            helper.assertTrue(fixture.depot().isEmpty() && town.economy().policySpending(policy.id()).isZero(), "closed markets preserve treasury and stock");
+            level.setDayTime(6_000);
+            var settings = SettlementWorkerConfigurationService.snapshot(level, town, fixture.clerk().getUUID());
+            helper.assertTrue(SettlementWorkerConfigurationService.configure(fixture.leader(), town, fixture.clerk().getUUID(),
+                    fixture.area().id(), settings.with(SettlementWorkerSetting.ENABLED, 0)), "the clerk is explicitly paused");
+            SettlementTradeService.process(level, town, 1_600);
+            helper.assertValueEqual(SettlementTradeService.purchaseAvailability(level, town, policy.id(), policy.configuration().purchases(), approval),
+                    SettlementTradeService.Status.NO_STAFF, "paused clerks cannot execute policy purchases");
+            helper.assertTrue(fixture.depot().isEmpty(), "the shortage timer cannot bypass staffing");
+            SettlementWorkerConfigurationService.configure(fixture.leader(), town, fixture.clerk().getUUID(), fixture.area().id(), settings);
+            var price = VillageSellMarket.quote(level, town.center(), new ItemStack(Items.WHEAT)).orElseThrow().baseUnitPrice().multiply(2);
+            var reserve = town.economy().balance().subtract(price.multiply(2));
+            town.economy().configureBudget(reserve, money(1_000));
+            SettlementTradeService.process(level, town, 1_800);
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 2, "restored staffing can spend only funds above the exact treasury reserve");
+            helper.assertValueEqual(town.economy().balance(), reserve, "the native debit stops at the protected reserve");
+            SettlementTradeService.process(level, town, 2_000);
+            helper.assertValueEqual(town.economy().policySpending(policy.id()), price.multiply(2), "another eligible cycle cannot spend reserved treasury funds");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void scheduledPurchasesRecheckProgressAndAuthorityAtEveryWorkBoundary(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            fund(town);
+            var policy = stockPurchases(helper, fixture, Items.WHEAT, 12, 5, money(100), money(100));
+            var delegate = UUID.randomUUID();
+            boolean purchased = false;
+            for (boolean revoke : List.of(false, true)) for (int boundary = 0; boundary < 64; boundary++) {
+                long now = (1L + boundary + (revoke ? 64 : 0)) * 24_000;
+                fixture.depot().clearContent();
+                town.setPermissions(town.leader(), delegate, java.util.Set.of(SettlementPermission.STAFF, SettlementPermission.LOGISTICS, SettlementPermission.TRADE));
+                policy.configure(policy.configuration(), delegate, now);
+                SettlementTradeService.process(level, town, now);
+                var work = SettlementPurchaseService.work(level, town, now + 1_200, new int[] {8});
+                for (int step = 0; step < boundary && !SettlementWork.complete(work); step++) work.run();
+                var spent = town.economy().policySpending(policy.id());
+                int bought = fixture.depot().count(stack -> stack.is(Items.WHEAT));
+                purchased |= bought > 0;
+                if (revoke) town.setPermissions(town.leader(), delegate, java.util.Set.of(SettlementPermission.VIEW));
+                else fixture.depot().setItem(0, new ItemStack(Items.WHEAT, bought + 8));
+                int steps = 0;
+                do { work.run(); } while (!SettlementWork.complete(work) && ++steps < 4_096);
+                helper.assertTrue(SettlementWork.complete(work), "purchase planning remains bounded");
+                helper.assertValueEqual(town.economy().policySpending(policy.id()), spent,
+                        (revoke ? "revoked authority" : "real local progress") + " stops later spending at scheduler boundary " + boundary);
+                helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), bought + (revoke ? 0 : 8),
+                        "no cached work buys additional goods after invalidation at scheduler boundary " + boundary);
+            }
+            helper.assertTrue(purchased, "the tested boundaries include a real purchase before invalidation");
+        });
+    }
+
+    private static void fund(SettlementRecord town) {
+        town.economy().credit(money(1_000));
+        town.economy().configureBudget(CurrencyAmount.ZERO, money(1_000));
+    }
+
+    private static SettlementSupplyPolicy stockPurchases(GameTestHelper helper, Fixture fixture, Item item, int amount, int priority,
+                                                          CurrencyAmount budget, CurrencyAmount limit) {
+        var id = UUID.randomUUID();
+        var sample = new ItemStack(item);
+        var requirement = com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.exact("policy_stock", sample, amount);
+        var requirementId = com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.identity(helper.getLevel().registryAccess(), id,
+                com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.STOCK_RESERVE, requirement);
+        var target = new SettlementSupplyPolicy.Target(SettlementSupplyPolicy.TargetKind.STOCK, null, null, fixture.depot().position(), sample, amount);
+        return purchases(helper, fixture, id, target, requirementId, item, priority, budget, limit);
+    }
+
+    private static SettlementSupplyPolicy foodPurchases(GameTestHelper helper, Fixture fixture, int priority, CurrencyAmount budget) {
+        var town = fixture.town();
+        var demand = SettlementDemandService.inspect(helper.getLevel(), town).demands().stream()
+                .filter(row -> row.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD).findFirst().orElseThrow();
+        var target = new SettlementSupplyPolicy.Target(SettlementSupplyPolicy.TargetKind.FOOD, town.id().value(), null, null, ItemStack.EMPTY, 0);
+        return purchases(helper, fixture, UUID.randomUUID(), target, demand.supply().id(), Items.BREAD, priority, budget, money(100));
+    }
+
+    private static SettlementSupplyPolicy purchases(GameTestHelper helper, Fixture fixture, UUID id, SettlementSupplyPolicy.Target target,
+            UUID requirement, Item item, int priority, CurrencyAmount budget, CurrencyAmount limit) {
+        var town = fixture.town();
+        var approval = new SettlementPurchasePlan.Approval(UUID.randomUUID(), null, requirement, BuiltInRegistries.ITEM.getKey(item), fixture.depot().position(), limit);
+        var policy = new SettlementSupplyPolicy(id, new SettlementSupplyPolicy.Configuration("Approved imports", target, priority, List.of(), List.of(),
+                new SettlementPurchasePlan(true, budget, List.of(approval))), town.leader(), town::supplyChanged, town::changed);
+        town.addSupplyPolicy(policy);
+        policy.state(SettlementSupplyPolicy.State.ACTIVE, town.leader(), "", helper.getLevel().getGameTime());
+        return policy;
+    }
+
     private static SettlementTradeOrder order(Item item, SettlementTradeOrder.Direction direction, int target, boolean enabled) {
         return new SettlementTradeOrder(UUID.randomUUID(), direction, BuiltInRegistries.ITEM.getKey(item), target,
                 direction == SettlementTradeOrder.Direction.BUY ? money(100) : CurrencyAmount.ZERO, money(100), enabled);

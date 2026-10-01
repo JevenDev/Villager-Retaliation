@@ -18,7 +18,11 @@ public final class SettlementPolicyGraph {
     }
 
     public static Result inspect(SettlementSupplyPolicy.Configuration configuration) {
-        if (configuration.steps().isEmpty()) return invalid("policy_chain_empty", null);
+        if (configuration.steps().isEmpty()) {
+            if (!configuration.connections().isEmpty()) return invalid("policy_connection_missing", null);
+            return configuration.purchases().enabled() && configuration.purchases().approvals().stream().anyMatch(approval -> approval.consumer() == null)
+                    ? new Result(List.of(), "", null) : invalid("policy_chain_empty", null);
+        }
         var steps = new HashMap<UUID, SettlementSupplyPolicy.Step>();
         configuration.steps().forEach(step -> steps.put(step.id(), step));
         var remaining = new HashMap<UUID, Integer>();

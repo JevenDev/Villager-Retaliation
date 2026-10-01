@@ -1792,7 +1792,7 @@ public final class SettlementRecord {
         }
         var managedOrders = new java.util.HashSet<UUID>();
         for (Tag raw : tag.getList("SupplyPolicies", Tag.TAG_COMPOUND)) {
-            var policy = SettlementSupplyPolicy.load((CompoundTag) raw, provider, record::supplyChanged);
+            var policy = SettlementSupplyPolicy.load((CompoundTag) raw, provider, record::supplyChanged, record::changed);
             if (record.supplyPolicies.putIfAbsent(policy.id(), policy) != null
                     || policy.bindings().stream().anyMatch(binding -> binding.order() != null && !managedOrders.add(binding.order())))
                 throw new IllegalArgumentException("Supply policies duplicate an identity or managed order");

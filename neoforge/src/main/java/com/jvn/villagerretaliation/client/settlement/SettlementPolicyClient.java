@@ -24,10 +24,16 @@ public final class SettlementPolicyClient {
         return Component.translatable("villagerretaliation.gui.settlement.policy." + key, args);
     }
 
+    static Component needName(SettlementPolicySnapshotPayload.Need need) {
+        return need.unit() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.NUTRITION
+                ? text("target_food") : Component.literal(need.name());
+    }
+
     static Component blocker(String value) {
         if (value.isEmpty()) return Component.empty();
         String key = "villagerretaliation.gui.settlement.policy.blocker." + value;
         if (net.minecraft.client.resources.language.I18n.exists(key)) return Component.translatable(key);
+        if (value.startsWith("trade_status.")) return Component.translatable("villagerretaliation.gui.settlement." + value);
         String existing = "villagerretaliation.gui.settlement.failure." + value;
         return net.minecraft.client.resources.language.I18n.exists(existing) ? Component.translatable(existing) : text("blocked", value);
     }

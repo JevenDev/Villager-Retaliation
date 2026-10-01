@@ -67,6 +67,7 @@ public final class SettlementViewClientSmoke {
     private static CompletableFuture<Void> navigationCheck;
     private static Fixture fixture;
     private static SettlementPolicyClientChecks policyChecks;
+    private static SettlementPurchaseClientChecks purchaseChecks;
     private static SettlementEquipmentClientChecks equipmentChecks;
     private static ProjectFixture projectFixture;
     private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
@@ -1725,6 +1726,9 @@ public final class SettlementViewClientSmoke {
                     SettlementViewClientSmoke::capture);
             phase = 201;
         } else if (phase == 201 && policyChecks.tick(minecraft)) {
+            purchaseChecks = new SettlementPurchaseClientChecks(fixture.town(), SettlementViewClientSmoke::capture);
+            phase = 203;
+        } else if (phase == 203 && purchaseChecks.tick(minecraft)) {
             equipmentChecks = new SettlementEquipmentClientChecks(fixture.town(), SettlementViewClientSmoke::capture);
             phase = 202;
         } else if (phase == 202 && equipmentChecks.tick(minecraft)) {

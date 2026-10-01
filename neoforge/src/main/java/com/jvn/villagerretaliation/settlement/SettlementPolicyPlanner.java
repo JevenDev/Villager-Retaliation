@@ -58,6 +58,7 @@ final class SettlementPolicyPlanner {
         var retained = new HashMap<UUID, Long>();
         var plans = new LinkedHashMap<UUID, Step>();
         var blockers = new LinkedHashMap<UUID, String>();
+        var purchaseErrors = new ArrayList<String>();
         var jobs = new ArrayList<Runnable>();
         jobs.add(SettlementWork.each(graph.producersFirst(), step -> {
             var output = output(level, step);
@@ -65,6 +66,12 @@ final class SettlementPolicyPlanner {
             var requirements = inputs(level, town, step, Math.max(1, output.getCount()));
             templates.put(step.id(), requirements);
             if (output.isEmpty()) blockers.put(step.id(), "recipe_unavailable");
+        }));
+        if (configuration.purchases().enabled()) jobs.add(SettlementWork.each(configuration.purchases().approvals(), approval -> {
+            var inputs = approval.consumer() == null ? target : templates.getOrDefault(approval.consumer(), List.of());
+            var input = inputs.stream().filter(value -> value.id().equals(approval.requirement())).findFirst().orElse(null);
+            String failure = SettlementPurchaseService.validate(level, town, approval, input);
+            if (!failure.isEmpty()) purchaseErrors.add(failure);
         }));
         jobs.add(() -> {
             for (var edge : configuration.connections()) {
@@ -110,7 +117,8 @@ final class SettlementPolicyPlanner {
                             ? view.gathered(binding.id()) : SettlementPolicyOrders.progress(town, binding), actual, blocker));
         }));
         jobs.add(() -> {
-            String blocker = target.stream().anyMatch(input -> !input.known()) ? "storage_unavailable"
+            String blocker = !purchaseErrors.isEmpty() ? purchaseErrors.getFirst()
+                    : target.stream().anyMatch(input -> !input.known()) ? "storage_unavailable"
                     : plans.values().stream().map(Step::blocker).filter(value -> !value.isEmpty()).findFirst().orElse("");
             for (var edge : configuration.connections()) {
                 if (!blocker.isEmpty()) break;

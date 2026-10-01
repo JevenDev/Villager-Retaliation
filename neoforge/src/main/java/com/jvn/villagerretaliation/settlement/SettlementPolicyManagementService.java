@@ -41,10 +41,12 @@ public final class SettlementPolicyManagementService {
         var original = request.policy() == null ? null : town.supplyPolicies().get(request.policy());
         if (request.command() instanceof SettlementPolicyRequestPayload.View)
             return () -> complete.accept(snapshot(player, town, request, false, "", "", List.of(), List.of()));
-        if (!(request.command() instanceof SettlementPolicyRequestPayload.Preview) && !editable(player, town))
+        if (!(request.command() instanceof SettlementPolicyRequestPayload.Preview) && !(request.command() instanceof SettlementPolicyRequestPayload.Market)
+                && !editable(player, town))
             return () -> complete.accept(unavailable(player, request, "policy_permission_changed"));
         if (SettlementSavedData.get(level).readOnly())
             return () -> complete.accept(unavailable(player, request, "recovery_read_only"));
+        if (request.command() instanceof SettlementPolicyRequestPayload.Market market) return market(player, town, request, market, complete);
         if (request.command() instanceof SettlementPolicyRequestPayload.Change change && change.state() != SettlementSupplyPolicy.State.ACTIVE)
             return () -> {
                 String failure = apply(player, town, request, original == null ? null : original.configuration());
@@ -55,6 +57,7 @@ public final class SettlementPolicyManagementService {
             case SettlementPolicyRequestPayload.Save save -> save.configuration();
             case SettlementPolicyRequestPayload.Change ignored -> original == null ? null : original.configuration();
             case SettlementPolicyRequestPayload.View ignored -> null;
+            case SettlementPolicyRequestPayload.Market market -> market.configuration();
         };
         if (configuration == null) return () -> complete.accept(unavailable(player, request, "policy_missing"));
         var draft = new SettlementSupplyPolicy(request.policy(), configuration, player.getUUID(), () -> {});
@@ -97,20 +100,124 @@ public final class SettlementPolicyManagementService {
                 else failure = apply(player, town, request, configuration);
             }
             var inputs = new ArrayList<SettlementPolicySnapshotPayload.Need>();
-            var target = SettlementPolicyPlanner.targets(level, town, draft, snapshots.getFirst().policyDraft(draft.id(), configuration));
-            for (var need : target) inputs.add(need(null, need));
+            var view = snapshots.getFirst().policyDraft(draft.id(), configuration);
+            var target = SettlementPolicyPlanner.targets(level, town, draft, view);
+            var purchaseNeeds = new java.util.HashMap<PurchaseNeed, SettlementPolicyPlanner.Input>();
+            for (var need : target) {
+                inputs.add(need(null, need));
+                purchaseNeeds.put(new PurchaseNeed(null, need.id()), need);
+            }
             for (var step : configuration.steps()) {
                 var planned = plan.steps().stream().filter(value -> value.definition().id().equals(step.id())).findFirst().orElse(null);
                 var templates = SettlementPolicyPlanner.inputs(level, town, step, planned == null ? 1 : Math.max(1, planned.proposed()));
                 for (var template : templates) {
                     var current = planned == null ? null : planned.inputs().stream().filter(value -> value.id().equals(template.id())).findFirst().orElse(null);
                     inputs.add(need(step.id(), current == null ? template : current));
+                    purchaseNeeds.put(new PurchaseNeed(step.id(), template.id()), current == null ? template : current);
                 }
             }
             var production = plan.steps().stream().map(step -> new SettlementPolicySnapshotPayload.Production(step.definition().id(),
                     step.output(), step.proposed(), step.requested(), step.retained(), previewBlocker(level, town, step))).toList();
-            complete.accept(snapshot(player, town, request, !preview && failure.isEmpty(), failure, blocker, inputs, production));
+            var purchases = configuration.purchases().approvals().stream().map(approval -> purchasePreview(level, town, draft,
+                    town.supplyPolicies().get(draft.id()), approval, purchaseNeeds.get(new PurchaseNeed(approval.consumer(), approval.requirement())), view)).toList();
+            complete.accept(snapshot(player, town, request, !preview && failure.isEmpty(), failure, blocker, inputs, production, purchases, null));
         });
+        return new SettlementWork(work);
+    }
+
+    private static SettlementPolicySnapshotPayload.Purchase purchasePreview(net.minecraft.server.level.ServerLevel level, SettlementRecord town,
+            SettlementSupplyPolicy draft, SettlementSupplyPolicy original, SettlementPurchasePlan.Approval approval,
+            SettlementPolicyPlanner.Input input, SettlementDemandService.Snapshot snapshot) {
+        var quote = com.jvn.villagerretaliation.sell.VillageSellMarket.quote(level, town.center(), approval.sample()).orElse(null);
+        var price = quote == null ? com.jvn.villagerretaliation.sell.CurrencyAmount.ZERO : quote.baseUnitPrice().multiply(2);
+        var demand = SettlementPurchaseService.demand(level, town, draft, approval, snapshot);
+        boolean satisfied = demand == null && approval.consumer() == null && input != null && input.known() && input.missing() == 0;
+        boolean known = satisfied || demand != null && demand.known();
+        long missing = satisfied ? 0 : known ? demand.missing() : -1;
+        var saved = original != null && original.configuration().equals(draft.configuration()) && original.state() == SettlementSupplyPolicy.State.ACTIVE
+                ? original.purchaseShortages().get(approval.id()) : null;
+        long wait = saved == null || demand == null || !saved.demand().equals(demand.id()) || saved.since() > level.getGameTime()
+                || known && missing < saved.missing() ? SettlementPurchasePlan.SHORTAGE_TICKS
+                : Math.max(0, SettlementPurchasePlan.SHORTAGE_TICKS - (level.getGameTime() - saved.since()));
+        String blocker = SettlementPurchaseService.validate(level, town, approval, input);
+        if (!draft.configuration().purchases().enabled()) blocker = "policy_purchase_disabled";
+        else if (blocker.isEmpty() && original != null && original.state() == SettlementSupplyPolicy.State.ACTIVE
+                && !SettlementPolicyExecution.authorized(town, original)) blocker = "policy_permission_changed";
+        else if (blocker.isEmpty() && !known) {
+            var step = draft.configuration().steps().stream().filter(value -> value.id().equals(approval.consumer())).findFirst().orElse(null);
+            blocker = step != null && SettlementPolicyOrders.current(draft, step) == null ? "policy_purchase_pending_order" : "storage_unavailable";
+        } else if (blocker.isEmpty() && missing == 0) blocker = "policy_purchase_satisfied";
+        if (blocker.isEmpty()) {
+            var available = SettlementTradeService.purchaseAvailability(level, town, draft.id(), draft.configuration().purchases(), approval);
+            if (available != SettlementTradeService.Status.TRADED) blocker = "trade_status." + available.name().toLowerCase(java.util.Locale.ROOT);
+            else if (original == null || original.state() != SettlementSupplyPolicy.State.ACTIVE) blocker = "policy_purchase_inactive";
+            else if (wait > 0) blocker = "policy_purchase_waiting";
+        }
+        return new SettlementPolicySnapshotPayload.Purchase(approval.id(), missing, known, missing == 0 ? 0 : wait, price, blocker);
+    }
+
+    private static Runnable market(ServerPlayer player, SettlementRecord town, SettlementPolicyRequestPayload request,
+                                   SettlementPolicyRequestPayload.Market command, java.util.function.Consumer<SettlementPolicySnapshotPayload> complete) {
+        var level = player.serverLevel();
+        var draft = new SettlementSupplyPolicy(request.policy(), command.configuration(), player.getUUID(), () -> {});
+        String target = SettlementPolicyValidation.target(level, town, draft);
+        if (!target.isEmpty()) return () -> complete.accept(unavailable(player, request, target));
+        var step = command.consumer() == null ? null : command.configuration().steps().stream()
+                .filter(value -> value.id().equals(command.consumer())).findFirst().orElse(null);
+        if (command.consumer() != null) {
+            if (step == null) return () -> complete.accept(unavailable(player, request, "policy_purchase_requirement"));
+            String failure = SettlementPolicyValidation.step(level, town, draft, step);
+            if (!failure.isEmpty()) return () -> complete.accept(unavailable(player, request, failure));
+        }
+        var snapshots = new ArrayList<SettlementDemandService.Snapshot>(1);
+        var work = new ArrayList<Runnable>();
+        work.add(SettlementDemandService.plan(level, town, player, snapshots::add));
+        work.add(SettlementWork.lazy(() -> {
+            var inputs = step == null ? SettlementPolicyPlanner.targets(level, town, draft,
+                    snapshots.getFirst().policyDraft(draft.id(), command.configuration())) : SettlementPolicyPlanner.inputs(level, town, step, 1);
+            var input = inputs.stream().filter(value -> value.id().equals(command.requirement())).findFirst().orElse(null);
+            if (input == null) return () -> complete.accept(unavailable(player, request, "policy_purchase_requirement"));
+            var catalogue = com.jvn.villagerretaliation.sell.SellPriceResources.definitions(level.getServer());
+            var items = catalogue.keySet().stream().sorted(Comparator.comparing(net.minecraft.core.registries.BuiltInRegistries.ITEM::getKey)).iterator();
+            var commodities = new ArrayList<SettlementPolicySnapshotPayload.Commodity>();
+            int[] matched = {0};
+            int offset = command.page() * SettlementPolicySnapshotPayload.MARKET_PAGE_SIZE;
+            String query = command.query().strip().toLowerCase(java.util.Locale.ROOT);
+            var scan = SettlementWork.repeat(() -> {
+                if (!items.hasNext() || matched[0] > offset + SettlementPolicySnapshotPayload.MARKET_PAGE_SIZE) return true;
+                var item = items.next();
+                var sample = item.getDefaultInstance();
+                var id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);
+                if ((!id.toString().contains(query) && !sample.getHoverName().getString().toLowerCase(java.util.Locale.ROOT).contains(query))
+                        || input.requirement().value(sample) <= 0
+                        || com.jvn.villagerretaliation.sell.SellPriceResources.definition(level.getServer(), sample).isEmpty()) return false;
+                var quote = com.jvn.villagerretaliation.sell.VillageSellMarket.quote(level, town.center(), sample).orElse(null);
+                if (quote == null || quote.baseUnitPrice().isZero()) return false;
+                int index = matched[0]++;
+                if (index >= offset && commodities.size() < SettlementPolicySnapshotPayload.MARKET_PAGE_SIZE)
+                    commodities.add(new SettlementPolicySnapshotPayload.Commodity(id, quote.baseUnitPrice().multiply(2)));
+                return false;
+            });
+            return new SettlementWork(List.of(scan, () -> {
+                String failure = access(player, town, request);
+                if (!failure.isEmpty()) {
+                    complete.accept(unavailable(player, request, failure));
+                    return;
+                }
+                var depots = SettlementStock.supplies(town).stream()
+                        .filter(depot -> input.sources().stream().anyMatch(source -> SettlementSupplyStock.sameStorage(level, source, depot.position())))
+                        .filter(depot -> !com.jvn.villagerretaliation.inventory.AssignedStorageService.containerLoaded(level, depot.position())
+                                || com.jvn.villagerretaliation.inventory.PartyContainerLootService.isAvailable(level, depot.position(), player))
+                        .sorted(Comparator.comparing(SettlementDepot::id)).limit(512).map(depot -> {
+                            var area = town.areas().get(depot.area());
+                            return new SettlementPolicySnapshotPayload.Storage(depot.position(), text(area.name() + " / " + depot.position().toShortString()),
+                                    true, true, SettlementSupplyStock.contents(level, town, depot.position()) != null);
+                        }).toList();
+                var page = new SettlementPolicySnapshotPayload.MarketPage(command.consumer(), command.requirement(), command.query(), command.page(),
+                        matched[0] > offset + SettlementPolicySnapshotPayload.MARKET_PAGE_SIZE, commodities, depots);
+                complete.accept(snapshot(player, town, request, false, "", "", List.of(need(command.consumer(), input)), List.of(), List.of(), page));
+            }));
+        }));
         return new SettlementWork(work);
     }
 
@@ -135,6 +242,10 @@ public final class SettlementPolicyManagementService {
         if (existing == null && town.supplyPolicies().size() >= SettlementSupplyPolicy.MAX_POLICIES) return "policy_limit";
         boolean activating = request.command() instanceof SettlementPolicyRequestPayload.Change change && change.state() == SettlementSupplyPolicy.State.ACTIVE
                 || request.command() instanceof SettlementPolicyRequestPayload.Save save && save.active();
+        if (configuration != null && configuration.purchases().enabled()
+                && (activating || request.command() instanceof SettlementPolicyRequestPayload.Save
+                        && (existing == null || !existing.configuration().purchases().equals(configuration.purchases())))
+                && !town.permits(player.getUUID(), SettlementPermission.TRADE)) return "policy_permission_changed";
         if (activating) {
             var check = new SettlementSupplyPolicy(request.policy(), configuration, player.getUUID(), () -> {});
             if (existing != null) for (var binding : existing.bindings()) check.bind(binding);
@@ -148,7 +259,7 @@ public final class SettlementPolicyManagementService {
         long now = player.serverLevel().getGameTime();
         if (request.command() instanceof SettlementPolicyRequestPayload.Save) {
             if (existing == null) {
-                existing = new SettlementSupplyPolicy(request.policy(), configuration, player.getUUID(), town::supplyChanged);
+                existing = new SettlementSupplyPolicy(request.policy(), configuration, player.getUUID(), town::supplyChanged, town::changed);
                 existing.configure(configuration, player.getUUID(), now);
                 if (!town.addSupplyPolicy(existing)) return "policy_limit";
             } else existing.configure(configuration, player.getUUID(), now);
@@ -200,6 +311,13 @@ public final class SettlementPolicyManagementService {
     private static SettlementPolicySnapshotPayload snapshot(ServerPlayer player, SettlementRecord town, SettlementPolicyRequestPayload request,
             boolean applied, String feedback, String blocker, List<SettlementPolicySnapshotPayload.Need> needs,
             List<SettlementPolicySnapshotPayload.Production> production) {
+        return snapshot(player, town, request, applied, feedback, blocker, needs, production, List.of(), null);
+    }
+
+    private static SettlementPolicySnapshotPayload snapshot(ServerPlayer player, SettlementRecord town, SettlementPolicyRequestPayload request,
+            boolean applied, String feedback, String blocker, List<SettlementPolicySnapshotPayload.Need> needs,
+            List<SettlementPolicySnapshotPayload.Production> production, List<SettlementPolicySnapshotPayload.Purchase> purchases,
+            SettlementPolicySnapshotPayload.MarketPage market) {
         String failure = access(player, town, request);
         if (!failure.isEmpty()) return unavailable(player, request, failure);
         var level = player.serverLevel();
@@ -247,17 +365,30 @@ public final class SettlementPolicyManagementService {
                 consumers.add(new SettlementPolicySnapshotPayload.Consumer(order.id(), text(order.output().getHoverName().getString()),
                         SettlementSupplyPolicy.TargetKind.CONSUMER));
         }
+        var configuration = switch (request.command()) {
+            case SettlementPolicyRequestPayload.Preview preview -> preview.configuration();
+            case SettlementPolicyRequestPayload.Save save -> save.configuration();
+            case SettlementPolicyRequestPayload.Market requested -> requested.configuration();
+            case SettlementPolicyRequestPayload.View ignored -> selected == null ? null : selected.configuration();
+            case SettlementPolicyRequestPayload.Change ignored -> selected == null ? null : selected.configuration();
+        };
+        var account = configuration == null ? SettlementPolicySnapshotPayload.PurchaseAccount.EMPTY
+                : new SettlementPolicySnapshotPayload.PurchaseAccount(town.economy().policySpending(request.policy()),
+                        town.economy().availablePolicyBudget(request.policy(), configuration.purchases().dailyBudget()), purchases);
         return new SettlementPolicySnapshotPayload(level.dimension().location(), request.town(), request.request(), applied, editable(player, town),
                 feedback, blocker, policies, selected == null ? null : selected.save(level.registryAccess()), worksites, storages,
-                consumers.stream().limit(512).toList(), needs.stream().limit(1024).toList(), production);
+                consumers.stream().limit(512).toList(), needs.stream().limit(1024).toList(), production,
+                !SettlementSavedData.get(level).readOnly() && town.permits(player.getUUID(), SettlementPermission.TRADE), level.getGameTime(), account, market);
     }
 
     private static SettlementPolicySnapshotPayload unavailable(ServerPlayer player, SettlementPolicyRequestPayload request, String feedback) {
         return new SettlementPolicySnapshotPayload(player.serverLevel().dimension().location(), request.town(), request.request(), false, false,
-                feedback, feedback, List.of(), null, List.of(), List.of(), List.of(), List.of(), List.of());
+                feedback, feedback, List.of(), null, List.of(), List.of(), List.of(), List.of(), List.of(),
+                false, player.serverLevel().getGameTime(), SettlementPolicySnapshotPayload.PurchaseAccount.EMPTY, null);
     }
 
     private static String text(String value) { return value.length() > 128 ? value.substring(0, 128) : value; }
+    private record PurchaseNeed(UUID consumer, UUID requirement) { }
     private record RequestKey(UUID player, UUID request) { }
     private record PolicyKey(VillageAllegianceId town) { }
 }

@@ -24,7 +24,8 @@ public final class SettlementPolicyExecution {
 
     public static boolean authorized(SettlementRecord town, SettlementSupplyPolicy policy) {
         return town.permits(policy.authority(), SettlementPermission.STAFF)
-                && town.permits(policy.authority(), SettlementPermission.LOGISTICS);
+                && town.permits(policy.authority(), SettlementPermission.LOGISTICS)
+                && (!policy.configuration().purchases().enabled() || town.permits(policy.authority(), SettlementPermission.TRADE));
     }
 
     public static boolean mayStart(SettlementRecord town, UUID order) {
