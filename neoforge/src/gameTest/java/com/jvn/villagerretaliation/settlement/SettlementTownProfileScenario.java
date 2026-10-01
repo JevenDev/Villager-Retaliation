@@ -81,6 +81,14 @@ public final class SettlementTownProfileScenario {
             var state = position.getY() == center.getY() - 1 ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState();
             if (!level.getBlockState(position).equals(state)) level.setBlock(position, state, 2);
         }
+        for (int x = -46; x <= 62; x++) {
+            level.setBlockAndUpdate(center.offset(x, 0, -46), Blocks.OAK_FENCE.defaultBlockState());
+            level.setBlockAndUpdate(center.offset(x, 0, 46), Blocks.OAK_FENCE.defaultBlockState());
+        }
+        for (int z = -45; z <= 45; z++) {
+            level.setBlockAndUpdate(center.offset(-46, 0, z), Blocks.OAK_FENCE.defaultBlockState());
+            level.setBlockAndUpdate(center.offset(62, 0, z), Blocks.OAK_FENCE.defaultBlockState());
+        }
         var body = new Vec3(0.5D, -60.0D, 0.5D);
         level.setBlockAndUpdate(BlockPos.containing(body).below(), Blocks.STONE.defaultBlockState());
         var registry = VillageAllegianceRegistrySavedData.get(level);

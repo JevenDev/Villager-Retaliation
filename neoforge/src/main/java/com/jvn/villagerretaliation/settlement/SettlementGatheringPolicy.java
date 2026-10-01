@@ -145,6 +145,7 @@ public final class SettlementGatheringPolicy {
     static boolean busy(CompoundTag state) {
         return state.getInt("ProgressTicks") > 0 || state.contains("FishingActiveHookId", Tag.TAG_INT)
                 || state.contains("SettlementFishingCast", Tag.TAG_COMPOUND) || SettlementBackgroundFishing.hasPendingCatch(state)
-                || state.getBoolean("FishingCatchCompleted") || state.hasUUID("HuntingActiveTarget");
+                || state.getBoolean("FishingCatchCompleted") || state.hasUUID("HuntingActiveTarget")
+                || com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.pending(state);
     }
 }

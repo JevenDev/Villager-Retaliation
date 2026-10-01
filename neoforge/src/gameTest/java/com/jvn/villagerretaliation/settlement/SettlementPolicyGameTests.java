@@ -1070,7 +1070,7 @@ public final class SettlementPolicyGameTests {
         helper.succeed();
     }
 
-    private static com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload request(net.minecraft.server.level.ServerPlayer player,
+    static com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload request(net.minecraft.server.level.ServerPlayer player,
             SettlementRecord town, UUID policy, long revision, UUID area, com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload.Command command) {
         var results = new java.util.ArrayList<com.jvn.villagerretaliation.network.SettlementPolicySnapshotPayload>();
         finish(SettlementPolicyManagementService.prepare(player, new com.jvn.villagerretaliation.network.SettlementPolicyRequestPayload(

@@ -442,7 +442,7 @@ public final class SettlementMiningWorkGameTests {
                 position.getY() & 15, position.getZ() & 15, state);
     }
 
-    private static void fixture(GameTestHelper helper, Consumer<Fixture> check) {
+    static void fixture(GameTestHelper helper, Consumer<Fixture> check) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(BlockPos.ZERO);
         var chunk = new LevelChunk(level, new ChunkPos(770_000 + origin.getX() * 4, 770_000 + origin.getZ() * 4));
@@ -491,7 +491,7 @@ public final class SettlementMiningWorkGameTests {
         helper.succeed();
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, LevelChunk chunk, SettlementMine mine, BlockPos ore,
+    record Fixture(SettlementRecord town, SettlementArea area, LevelChunk chunk, SettlementMine mine, BlockPos ore,
                            SettlementDepot supply, SettlementDepot output, SettlementWorkerState worker, Villager villager) {
     }
 }
