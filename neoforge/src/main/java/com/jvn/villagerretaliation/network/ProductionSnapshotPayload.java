@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,7 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 
 public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
         HiredVillagerRole role, String title, boolean editable, String blocker, String feedback, CompoundTag queue,
-        int legacyCount, List<Legacy> legacy, List<Storage> storages, Map<UUID, Long> stock, List<com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement> requirements) implements CustomPacketPayload {
+        int legacyCount, List<Legacy> legacy, List<Storage> storages, Map<UUID, Long> stock, List<com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement> requirements,
+        List<SettlementPolicyOrderLink> managed) implements CustomPacketPayload {
     public static final Type<ProductionSnapshotPayload> TYPE = VillagerPayloads.type("production_snapshot");
     public static final StreamCodec<RegistryFriendlyByteBuf, ProductionSnapshotPayload> STREAM_CODEC =
             VillagerPayloads.codec(ProductionSnapshotPayload::encode, ProductionSnapshotPayload::decode);
@@ -36,6 +38,7 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
         storages = List.copyOf(storages);
         stock = Map.copyOf(stock);
         requirements = List.copyOf(requirements);
+        managed = SettlementPolicyOrderLink.validate(target, managed);
         if (legacy.size() > 32 || legacyCount < legacy.size() || storages.size() > 128 || stock.size() > 32 || requirements.size() > 544
                 || stock.values().stream().anyMatch(count -> count < -1L)) throw new IllegalArgumentException("Oversized production snapshot");
     }
@@ -44,6 +47,14 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
             HiredVillagerRole role, String title, boolean editable, String blocker, String feedback, CompoundTag queue,
             int legacyCount, List<Legacy> legacy, List<Storage> storages, Map<UUID, Long> stock) {
         this(dimension, target, request, applied, role, title, editable, blocker, feedback, queue, legacyCount, legacy, storages, stock, List.of());
+    }
+
+    public ProductionSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
+            HiredVillagerRole role, String title, boolean editable, String blocker, String feedback, CompoundTag queue,
+            int legacyCount, List<Legacy> legacy, List<Storage> storages, Map<UUID, Long> stock,
+            List<com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement> requirements) {
+        this(dimension, target, request, applied, role, title, editable, blocker, feedback, queue, legacyCount, legacy,
+                storages, stock, requirements, List.of());
     }
 
     @Override
@@ -95,7 +106,9 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
             buffer.writeLong(need.availableNow());
             buffer.writeLong(need.committed());
             buffer.writeLong(need.incoming());
+            writeAllocation(buffer, need.allocation());
         }
+        SettlementPolicyOrderLink.write(buffer, payload.managed());
     }
 
     private static ProductionSnapshotPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -131,8 +144,36 @@ public record ProductionSnapshotPayload(ResourceLocation dimension, ProductionTa
         int size = VillagerPayloads.readCollectionSize(buffer, 544, "Production requirements");
         for (int index = 0; index < size; index++) requirements.add(new com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement(
                 buffer.readUUID(), buffer.readUUID(), buffer.readUtf(128), buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.class),
-                buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong()));
-        return new ProductionSnapshotPayload(dimension, target, request, applied, role, title, editable, blocker, feedback, queue, legacyCount, legacy, storages, stock, requirements);
+                buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong(), buffer.readLong(), readAllocation(buffer)));
+        return new ProductionSnapshotPayload(dimension, target, request, applied, role, title, editable, blocker, feedback, queue, legacyCount, legacy, storages, stock, requirements, SettlementPolicyOrderLink.read(buffer));
+    }
+
+    private static void writeAllocation(RegistryFriendlyByteBuf buffer, HiredProductionDemand.Allocation allocation) {
+        buffer.writeLong(allocation.protectedMinimum());
+        buffer.writeLong(allocation.targetReserve());
+        buffer.writeVarInt(allocation.priority());
+        buffer.writeUtf(allocation.blocker(), 128);
+        buffer.writeBoolean(allocation.competitor() != null);
+        if (allocation.competitor() != null) {
+            var other = allocation.competitor();
+            buffer.writeUUID(other.town());
+            buffer.writeUUID(other.consumer());
+            buffer.writeUtf(other.name(), 128);
+            buffer.writeVarInt(other.priority());
+            buffer.writeLong(other.protectedMinimum());
+            buffer.writeEnum(other.unit());
+        }
+    }
+
+    private static HiredProductionDemand.Allocation readAllocation(RegistryFriendlyByteBuf buffer) {
+        long protectedMinimum = buffer.readLong();
+        long targetReserve = buffer.readLong();
+        int priority = buffer.readVarInt();
+        String blocker = buffer.readUtf(128);
+        var competitor = buffer.readBoolean() ? new HiredProductionDemand.Competitor(buffer.readUUID(), buffer.readUUID(),
+                buffer.readUtf(128), buffer.readVarInt(), buffer.readLong(),
+                buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.class)) : null;
+        return new HiredProductionDemand.Allocation(protectedMinimum, targetReserve, priority, blocker, competitor);
     }
 
     @Override

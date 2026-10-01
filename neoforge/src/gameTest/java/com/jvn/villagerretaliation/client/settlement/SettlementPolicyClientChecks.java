@@ -27,6 +27,7 @@ final class SettlementPolicyClientChecks {
     private SettlementPoliciesScreen editor;
     private UUID policy;
     private UUID binding;
+    private com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen managedOrders;
     private int phase;
     private int ticks;
 
@@ -158,8 +159,122 @@ final class SettlementPolicyClientChecks {
                     this.binding = policy.bindings().getFirst().order();
                     return town.productionQueues().get(this.area).order(this.binding) != null;
                 })) return false;
-                click(screen, "back");
+                this.managedOrders = new com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen(this.editor,
+                        new com.jvn.villagerretaliation.network.ProductionTarget(this.town.value(), this.area),
+                        () -> minecraft.setScreen(this.editor), this.binding);
+                minecraft.setScreen(this.managedOrders);
+                this.phase = 100;
+                this.ticks = 0;
+            }
+            case 100 -> {
+                if (screen != this.managedOrders || this.managedOrders.state().snapshot() == null
+                        || !button(screen, "open").active) return false;
+                var links = this.managedOrders.state().snapshot().managed();
+                require(links.size() == 1 && links.getFirst().policy().equals(this.policy)
+                        && links.getFirst().order().equals(this.binding), "native production exposes the exact managed policy link");
+                require(rows(screen).children().stream().anyMatch(row -> row.getNarration().getString().contains(
+                        SettlementPolicyClient.text("managed_label", net.minecraft.world.item.Items.BREAD.getDescription()).getString())),
+                        "managed orders are identifiable in the native queue");
+                bounds(screen);
+                require(minecraft.getCameraEntity() != minecraft.player, "managed orders remain connected to the world view");
+                this.capture.accept("policy-managed-order");
+                click(screen, "open");
                 next();
+            }
+            case 101 -> {
+                if (!(screen instanceof SettlementPoliciesScreen policies) || policies == this.editor || policies.configuration() == null) return false;
+                require(policies.policyId().equals(this.policy) && policies.previousPolicy() == this.managedOrders,
+                        "the order link opens its existing policy and retains the return path");
+                require(policies.configuration().name().equals("Bakery reserve"), "the linked policy loads its current configuration");
+                bounds(screen);
+                this.capture.accept("policy-from-order");
+                screen.onClose();
+                next();
+            }
+            case 102 -> {
+                require(screen instanceof SettlementPoliciesScreen && screen != this.editor, "back returns to the linked policy list");
+                screen.onClose();
+                next();
+            }
+            case 103 -> {
+                require(screen == this.managedOrders, "closing the linked policy restores the same order screen");
+                var pause = screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                        .filter(value -> value.getMessage().getString().equals("Pause")).findFirst().orElseThrow();
+                require(pause.active, "the managed native order can be paused");
+                pause.onPress();
+                next();
+            }
+            case 104 -> {
+                if (this.managedOrders.state().snapshot().managed().getFirst().state() != SettlementSupplyPolicy.State.SUSPENDED) return false;
+                screen.onClose();
+                require(minecraft.screen == this.editor, "closing orders restores the original editor");
+                var management = (SettlementManagementScreen) this.editor.previousPolicy();
+                minecraft.setScreen(management);
+                management.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES, "Bakery reserve");
+                next();
+            }
+            case 105 -> {
+                if (!(screen instanceof SettlementManagementScreen management)
+                        || management.snapshot().page() != com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES) return false;
+                var issue = management.snapshot().entries().stream()
+                        .filter(com.jvn.villagerretaliation.network.SettlementManagementPayload.Issue.class::isInstance)
+                        .map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Issue.class::cast)
+                        .filter(value -> this.policy.equals(value.targetId())).findFirst().orElse(null);
+                if (issue == null) return false;
+                require(issue.cause().equals("policy_order_suspended") && !issue.needsAttention(),
+                        "a deliberate pause remains recoverable without a warning notification");
+                management.restoreSelection(issue.id());
+                var open = screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                        .filter(value -> value.getMessage().getString().equals(SettlementManagementScreen.text("issue_open").getString()))
+                        .findFirst().orElseThrow();
+                require(open.active, "the policy issue exposes its recovery control");
+                this.capture.accept("policy-paused-issue");
+                open.onPress();
+                next();
+            }
+            case 106 -> {
+                if (!(screen instanceof SettlementPoliciesScreen policies) || policies.configuration() == null
+                        || !button(screen, "activate").active) return false;
+                require(policies.policyId().equals(this.policy) && policies.previousPolicy() == this.editor.previousPolicy(),
+                        "the issue opens the affected policy in the existing panel navigation");
+                require(minecraft.getCameraEntity() != minecraft.player, "issue recovery retains the connected world camera");
+                bounds(screen);
+                next();
+            }
+            case 107 -> {
+                if (!button(screen, "activate").active) return false;
+                this.capture.accept("policy-from-issue");
+                click(screen, "activate");
+                this.phase = 109;
+                this.ticks = 0;
+            }
+            case 109 -> {
+                var policies = (SettlementPoliciesScreen) screen;
+                if (policies.snapshot().policies().stream().noneMatch(value ->
+                        value.id().equals(this.policy) && value.state() == SettlementSupplyPolicy.State.ACTIVE)) return false;
+                if (!server(minecraft, () -> {
+                    var town = SettlementSavedData.get(minecraft.getSingleplayerServer().overworld()).get(this.town).orElseThrow();
+                    var policy = town.supplyPolicies().get(this.policy);
+                    if (policy.bindings().size() != 1 || policy.bindings().getFirst().order().equals(this.binding)) return false;
+                    var queue = town.productionQueues().get(this.area);
+                    var replacement = policy.bindings().getFirst().order();
+                    if (queue.order(replacement) == null) return false;
+                    require(queue.order(this.binding) == null && queue.orders().size() == 2,
+                            "explicit reactivation retires the stopped binding without duplicating managed or manual work");
+                    this.binding = replacement;
+                    return true;
+                })) return false;
+                screen.onClose();
+                this.phase = 108;
+                this.ticks = 0;
+            }
+            case 108 -> {
+                screen.onClose();
+                require(minecraft.screen == this.editor.previousPolicy(), "closing issue recovery returns to management");
+                minecraft.setScreen(this.editor);
+                click(this.editor, "back");
+                this.phase = 20;
+                this.ticks = 0;
             }
             case 20 -> {
                 if (this.editor.snapshot().policies().isEmpty()) return false;
@@ -171,8 +286,25 @@ final class SettlementPolicyClientChecks {
             case 21 -> {
                 if (!saved(SettlementSupplyPolicy.State.PAUSED, "Bakery reserve") || !button(screen, "edit").active) return false;
                 this.capture.accept("policy-paused");
-                click(screen, "edit");
+                click(screen, "history");
+                this.phase = 110;
+                this.ticks = 0;
+            }
+            case 110 -> {
+                if (!(screen instanceof SettlementPolicyHistoryScreen)) return false;
+                for (var kind : List.of("history_activated", "history_paused")) require(rows(screen).children().stream()
+                        .anyMatch(row -> row.getNarration().getString().contains(SettlementPolicyClient.text(kind).getString())),
+                        "policy history exposes activation and pause events");
+                bounds(screen);
+                this.capture.accept("policy-history");
+                screen.onClose();
                 next();
+            }
+            case 111 -> {
+                if (screen != this.editor || !button(screen, "edit").active) return false;
+                click(screen, "edit");
+                this.phase = 22;
+                this.ticks = 0;
             }
             case 22 -> {
                 if (this.editor.configuration() == null) return false;
@@ -291,7 +423,8 @@ final class SettlementPolicyClientChecks {
                 require(control.getX() >= 0 && control.getY() >= 0 && control.getRight() <= screen.width && control.getBottom() <= screen.height,
                         "policy controls fit at " + size[0] + " by " + size[1]);
                 for (var other : controls) if (other != control) require(control.getRight() <= other.getX() || other.getRight() <= control.getX()
-                        || control.getBottom() <= other.getY() || other.getBottom() <= control.getY(), "policy controls do not overlap");
+                        || control.getBottom() <= other.getY() || other.getBottom() <= control.getY(), "policy controls do not overlap: "
+                        + control.getMessage().getString() + " / " + other.getMessage().getString() + " at " + size[0] + " by " + size[1]);
             }
             if (screen instanceof VillagerWindowScreen window) SettlementViewPanelClientChecks.verifyWindow(window);
         }

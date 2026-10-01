@@ -2766,7 +2766,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return;
         }
         if (this.inspected instanceof SettlementManagementPayload.Issue issue) {
-            openManagement(issue.target(), issue.targetId() == null ? "" : issue.targetId().toString());
+            if (!SettlementIssueView.open(management(), issue))
+                openManagement(issue.target(), issue.targetId() == null ? "" : issue.targetId().toString());
             return;
         }
         if (this.resident != null) {

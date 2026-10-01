@@ -290,6 +290,10 @@ public final class SettlementAllocationGameTests {
                     com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.Mode.BATCH, 1, null);
             helper.assertValueEqual(com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.appendPersonal(owner, worker, 1, competingOrder), "",
                     "the same personal queue can contain competing requirements");
+            var pendingView = personalSnapshot(owner, worker);
+            helper.assertTrue(pendingView.requirements().stream().allMatch(need ->
+                            need.missing() == -1 && need.allocation().blocker().equals("allocation_pending")),
+                    "unplanned shared allocation is checking rather than a known stock shortage");
             SettlementTestPlots.planSupplies(level, town);
             var snapshot = SettlementDemandService.inspect(level, town);
             var personalDemands = snapshot.demands().stream().filter(demand -> demand.consumer().equals(order.id())
@@ -298,6 +302,42 @@ public final class SettlementAllocationGameTests {
                     3L, "priority five personal demand shares stock after urgent civic work");
             var winningOrder = personalDemands.stream().filter(demand -> demand.supply().availableNow() == 3).findFirst().orElseThrow().consumer();
             var losingOrder = winningOrder.equals(order.id()) ? competingOrder.id() : order.id();
+            var personalRows = SettlementDemandViewService.demands(level, town, snapshot).stream()
+                    .filter(row -> row.consumer().equals(order.id()) || row.consumer().equals(competingOrder.id())).toList();
+            helper.assertValueEqual(personalRows.size(), 2, "both linked personal orders have visible demand controls");
+            helper.assertTrue(personalRows.stream().allMatch(row ->
+                    row.control() == com.jvn.villagerretaliation.network.SettlementManagementPayload.DemandControl.PERSONAL_PRODUCTION
+                            && row.control().personal() && !row.control().worksite() && row.area().equals(worker.getUUID())),
+                    "personal controls retain the worker target and cannot open civic configuration");
+            helper.assertValueEqual(personalRows.stream().filter(row -> row.consumer().equals(winningOrder)).findFirst().orElseThrow().cause(),
+                    SettlementSupplyRecovery.Cause.READY, "a supplied personal job does not ask for a civic assignment");
+            var personalView = personalSnapshot(owner, worker);
+            var winner = personalView.requirements().stream().filter(need -> need.order().equals(winningOrder)).findFirst().orElseThrow();
+            var loser = personalView.requirements().stream().filter(need -> need.order().equals(losingOrder)).findFirst().orElseThrow();
+            helper.assertValueEqual(winner.availableNow(), 3L, "the personal queue shows the exact winning order's allowance");
+            helper.assertValueEqual(loser.availableNow(), 0L, "queue position cannot display another personal order's grant");
+            helper.assertValueEqual(loser.allocation().blocker(), "allocated_elsewhere", "contested supply is distinct from absent stock");
+            helper.assertTrue(loser.allocation().competitor() == null, "a personal contract does not grant access to settlement consumer details");
+            town.setPermissions(town.leader(), owner.getUUID(), java.util.Set.of(SettlementPermission.VIEW));
+            SettlementTestPlots.planSupplies(level, town);
+            personalView = personalSnapshot(owner, worker);
+            loser = personalView.requirements().stream().filter(need -> need.order().equals(losingOrder)).findFirst().orElseThrow();
+            var competitor = loser.allocation().competitor();
+            helper.assertTrue(competitor != null && competitor.town().equals(town.id().value()) && competitor.priority() == 9
+                            && competitor.name().equals("Bakery") && town.productionQueues().values().stream()
+                            .anyMatch(queue -> queue.order(competitor.consumer()) != null),
+                    "VIEW identifies the actual competing consumer and its effective priority");
+            var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+            try {
+                com.jvn.villagerretaliation.network.ProductionSnapshotPayload.STREAM_CODEC.encode(buffer, personalView);
+                var decoded = com.jvn.villagerretaliation.network.ProductionSnapshotPayload.STREAM_CODEC.decode(buffer);
+                helper.assertValueEqual(decoded.requirements(), personalView.requirements(), "quantities and bounded allocation explanations survive the wire");
+                helper.assertTrue(decoded.managed().isEmpty() && decoded.target().town() == null, "inspection never adopts personal work into a policy");
+            } finally { buffer.release(); }
+            town.setPermissions(town.leader(), owner.getUUID(), java.util.Set.of());
+            SettlementTestPlots.planSupplies(level, town);
+            helper.assertTrue(personalSnapshot(owner, worker).requirements().stream().allMatch(need -> need.allocation().competitor() == null),
+                    "revoking VIEW hides competing details in the next personal snapshot");
             helper.assertFalse(com.jvn.villagerretaliation.inventory.AssignedStorageService.reserveProductionInputs(
                     worker, java.util.Map.of(Items.WHEAT, 3), losingOrder), "one order cannot reserve another order's share at the same workplace");
             helper.assertTrue(com.jvn.villagerretaliation.inventory.AssignedStorageService.reserveProductionInputs(
@@ -329,6 +369,83 @@ public final class SettlementAllocationGameTests {
             worker.discard();
         }
         helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_allocation")
+    public static void personalIncomingCreditsOnlyActualSourcesAcrossSettlementsAndAssignments(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var first = town(helper, helper.absolutePos(new BlockPos(1, 2, 1)));
+        var second = town(helper);
+        var towns = List.of(first, second);
+        var sources = towns.stream().map(town -> town.center().above()).toList();
+        var receipts = new java.util.ArrayList<com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Allocation>();
+        for (int index = 0; index < towns.size(); index++) {
+            var town = towns.get(index);
+            var source = sources.get(index);
+            level.setBlockAndUpdate(source, net.minecraft.world.level.block.Blocks.BARREL.defaultBlockState());
+            for (var area : town.areas().values()) if (area.type() == SettlementAreaType.KITCHEN) {
+                var plan = town.worksitePlans().get(area.id());
+                var links = new SettlementStorageLinks(false, List.of(new SettlementStorageLinks.Link(source, SettlementStorageLinks.Purpose.SUPPLY, 0)));
+                town.setWorksitePlan(town.leader(), area.id(), new SettlementWorksitePlan(plan.settings().withStorage(links), plan.desiredStaff(), plan.links()));
+            }
+            var depot = town.depots().values().iterator().next();
+            depot.setItem(0, new ItemStack(Items.WHEAT, 6));
+            town.setWorksitePlan(town.leader(), depot.area(), SettlementWorksitePlan.defaults(com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER));
+            var queue = town.beginTransfers(town.leader(), depot.area());
+            var delivery = com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Order.create(
+                    new com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint(depot.position(), depot.id()),
+                    new com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint(source, null), new ItemStack(Items.WHEAT), 6);
+            helper.assertTrue(queue.append(delivery), "the incoming fixture uses a real native delivery");
+            var allocation = queue.reserve(UUID.randomUUID(), delivery.id(), 6);
+            helper.assertTrue(allocation != null, "each source has a durable incoming receipt");
+            receipts.add(allocation);
+        }
+        var owner = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
+                new com.mojang.authlib.GameProfile(UUID.randomUUID(), "IncomingSupplyOwner"));
+        var worker = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+        worker.setPos(first.center().north().getCenter());
+        worker.setNoAi(true);
+        helper.assertTrue(level.addFreshEntity(worker), "the personal consumer is loaded");
+        var role = com.jvn.villagerretaliation.interaction.HiredVillagerRole.COOK;
+        com.jvn.villagerretaliation.interaction.HireContractStore.save(worker,
+                com.jvn.villagerretaliation.interaction.HireContract.regular(owner.getUUID(), level.getGameTime(), 1, 1, 1, role));
+        try {
+            var links = sources.stream().map(source ->
+                    new com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition(level.dimension(), source)).toList();
+            com.jvn.villagerretaliation.inventory.AssignedStorageService.assign(owner, worker, links, "supply");
+            com.jvn.villagerretaliation.inventory.AssignedStorageService.assign(owner, worker, links, "general");
+            var recipe = com.jvn.villagerretaliation.interaction.work.production.HiredProductionRecipe.exact(
+                    net.minecraft.resources.ResourceLocation.withDefaultNamespace("bread"), java.util.Map.of());
+            var order = com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.create(level, recipe,
+                    com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.Mode.BATCH, 4, null);
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.appendPersonal(owner, worker, 0, order), "",
+                    "the independent personal queue requests twelve wheat");
+            towns.forEach(town -> SettlementTestPlots.planSupplies(level, town));
+            var need = personalSnapshot(owner, worker).requirements().getFirst();
+            helper.assertValueEqual(need.required(), 12L, "linked towns do not duplicate the personal requirement");
+            helper.assertValueEqual(need.availableNow(), 0L, "incoming cargo is not available for pickup");
+            helper.assertValueEqual(need.committed(), 0L, "incoming cargo is not already in the worker's inventory");
+            helper.assertValueEqual(need.incoming(), 6L, "each town contributes only its own source grant after urgent civic demand");
+            helper.assertValueEqual(need.missing(), 6L, "duplicate source purposes and overlapping town snapshots do not erase the shortage");
+            var queue = first.transferQueues().values().iterator().next();
+            queue.releasePlanned(receipts.getFirst().worker());
+            helper.assertTrue(queue.allocation(receipts.getFirst().worker()) == null, "cancelling pickup releases the native incoming receipt");
+            towns.forEach(town -> SettlementTestPlots.planSupplies(level, town));
+            need = personalSnapshot(owner, worker).requirements().getFirst();
+            helper.assertValueEqual(need.incoming(), 3L, "released incoming cargo disappears from the personal explanation");
+            helper.assertValueEqual(need.missing(), 9L, "the released receipt restores the real shortage");
+        } finally {
+            worker.discard();
+        }
+        helper.succeed();
+    }
+
+    private static com.jvn.villagerretaliation.network.ProductionSnapshotPayload personalSnapshot(
+            net.minecraft.server.level.ServerPlayer owner, net.minecraft.world.entity.npc.Villager worker) {
+        return com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService.snapshot(owner,
+                new com.jvn.villagerretaliation.network.ProductionRequestPayload(
+                        new com.jvn.villagerretaliation.network.ProductionTarget(null, worker.getUUID()), UUID.randomUUID(), 0,
+                        new com.jvn.villagerretaliation.network.ProductionRequestPayload.View()), false, "");
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_allocation")

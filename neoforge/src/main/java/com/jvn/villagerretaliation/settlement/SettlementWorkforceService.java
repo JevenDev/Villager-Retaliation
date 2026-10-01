@@ -74,6 +74,7 @@ public final class SettlementWorkforceService {
                 || !SettlementWorkerPoolAssignment.destination(level, town, pool, candidate.villager(), move.to()).isEmpty()) return false;
         if (!assign(level, town, candidate.villager(), move.to())) return false;
         town.recordWorkerPoolMove(pool, move);
+        SettlementPolicyManagementService.staffed(level, town, candidate.villager(), move);
         return true;
     }
 

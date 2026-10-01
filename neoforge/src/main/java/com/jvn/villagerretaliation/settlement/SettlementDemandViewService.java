@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.network.SettlementManagementPayload.Demand;
+import com.jvn.villagerretaliation.network.SettlementManagementPayload.DemandControl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,7 +37,7 @@ final class SettlementDemandViewService {
             if (sample != null && need.value(sample) <= 0 && !products.contains(demand.consumer())) continue;
             var supply = demand.supply();
             String requirement = com.jvn.villagerretaliation.interaction.work.production.WorkSupplyEvaluation.name(need);
-            result.add(new Demand(supply.id(), bounded(demand.name(), 128), demand.consumer(), demand.area(), demand.kind(),
+            result.add(new Demand(supply.id(), bounded(demand.name(), 128), demand.consumer(), demand.area(), demand.kind(), control(town, demand),
                     bounded(requirement, 128), need.unit(), need.quantity(), demand.supplied(), demand.missing(), demand.immediateMissing(),
                     supply.availableNow(), supply.committed(), supply.incoming(), supply.proposed(), supply.targetReserve(), supply.protectedMinimum(), supply.priority(),
                     supply.blocker().competingConsumer(),
@@ -45,6 +46,22 @@ final class SettlementDemandViewService {
                     recovery.courier(), recovery.source(), recovery.destination(), recovery.sample()));
         }
         return List.copyOf(result);
+    }
+
+    private static DemandControl control(SettlementRecord town, SettlementDemandService.Demand demand) {
+        return switch (demand.kind()) {
+            case PROJECT -> DemandControl.PROJECT;
+            case FOOD, STOCK_RESERVE -> DemandControl.RESERVE;
+            case EQUIPMENT -> town.workplace(demand.area()) == null ? DemandControl.PERSONAL_EQUIPMENT
+                    : demand.consumer().equals(demand.area()) ? DemandControl.EQUIPMENT : DemandControl.RESIDENT;
+            case PRODUCTION -> {
+                var transfers = town.transferQueues().get(demand.area());
+                if (transfers != null && transfers.order(demand.consumer()) != null) yield DemandControl.TRANSFER;
+                var production = town.productionQueues().get(demand.area());
+                yield production != null && production.order(demand.consumer()) != null
+                        ? DemandControl.PRODUCTION : DemandControl.PERSONAL_PRODUCTION;
+            }
+        };
     }
 
     private static String bounded(String value, int limit) { return value.length() <= limit ? value : value.substring(0, limit); }

@@ -191,6 +191,12 @@ public final class SettlementReserveDemandGameTests {
             var decoded = com.jvn.villagerretaliation.network.SettlementManagementPayload.STREAM_CODEC.decode(buffer);
             var demand = decoded.entries().stream().map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Demand.class::cast)
                     .filter(row -> row.kind() == WorkSupplyDemand.Kind.FOOD).findFirst().orElseThrow();
+            helper.assertValueEqual(demand.control(), com.jvn.villagerretaliation.network.SettlementManagementPayload.DemandControl.RESERVE,
+                    "food opens the shared reserve controls");
+            var controls = decoded.entries().stream().map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Demand.class::cast).toList();
+            helper.assertTrue(controls.stream().anyMatch(row -> row.consumer().equals(order.id())
+                            && row.control() == com.jvn.villagerretaliation.network.SettlementManagementPayload.DemandControl.PRODUCTION),
+                    "production retains its native worksite controls on the wire");
             helper.assertValueEqual(demand.availableNow(), 4L, "the management snapshot preserves available nutrition");
             helper.assertValueEqual(demand.incoming(), 5L, "the management snapshot preserves future nutrition separately");
             helper.assertValueEqual(demand.proposed(), 0L, "inspection proposes no automatic work");

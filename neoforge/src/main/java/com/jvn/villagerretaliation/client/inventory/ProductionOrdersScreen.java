@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.interaction.work.production.HiredProductionSe
 import com.jvn.villagerretaliation.network.ProductionRequestPayload;
 import com.jvn.villagerretaliation.network.ProductionSnapshotPayload;
 import com.jvn.villagerretaliation.network.ProductionTarget;
+import com.jvn.villagerretaliation.network.SettlementPolicyOrderLink;
 import java.util.UUID;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,6 +33,7 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
     private Button remove;
     private Button refresh;
     private Button supplyPolicy;
+    private Button supplies;
 
     public ProductionOrdersScreen(Screen previous, ProductionTarget target) {
         this(previous, target, () -> net.minecraft.client.Minecraft.getInstance().setScreen(previous));
@@ -71,11 +73,17 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
         if (this.state.target().town() != null) this.supplyPolicy = addRenderableWidget(VillagerUi.buttonBuilder(
                 Component.translatable("villagerretaliation.gui.settlement.policy.create"), ignored -> {
                     var order = selectedOrder();
-                    if (order != null) this.minecraft.setScreen(new com.jvn.villagerretaliation.client.settlement.SettlementPoliciesScreen(this,
+                    var managed = managed(this.selected);
+                    if (managed != null) this.minecraft.setScreen(com.jvn.villagerretaliation.client.settlement.SettlementPoliciesScreen
+                            .forPolicy(this, this.state.target().town(), managed.policy()));
+                    else if (order != null) this.minecraft.setScreen(new com.jvn.villagerretaliation.client.settlement.SettlementPoliciesScreen(this,
                             this.state.target().town(), new com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target(
                                     com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.CONSUMER,
                                     order.id(), null, null, ItemStack.EMPTY, 0)));
                 }).bounds(this.left + this.panelWidth - 124, this.top + 20, 124, 20).build());
+        else this.supplies = addRenderableWidget(VillagerUi.buttonBuilder(ProductionSupplyScreen.text("title"),
+                ignored -> this.minecraft.setScreen(new ProductionSupplyScreen(this, this.selected)))
+                .bounds(this.left + this.panelWidth - 124, this.top + 20, 124, 20).build());
         updateActions();
         poll();
     }
@@ -119,6 +127,17 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
         return this.state.queue() == null || this.selected == null ? null : this.state.queue().order(this.selected);
     }
 
+    private SettlementPolicyOrderLink managed(UUID order) {
+        return this.state.snapshot() == null ? null : this.state.snapshot().managed().stream()
+                .filter(link -> link.order().equals(order)).findFirst().orElse(null);
+    }
+
+    static Component managedDescription(SettlementPolicyOrderLink link) {
+        return Component.translatable("villagerretaliation.gui.settlement.policy.managed_order", link.name(),
+                Component.translatable("villagerretaliation.gui.settlement.policy.state." + link.state().name().toLowerCase(java.util.Locale.ROOT)),
+                Component.translatable("villagerretaliation.gui.settlement.policy.execution." + link.execution().name().toLowerCase(java.util.Locale.ROOT)));
+    }
+
     private void edit(HiredProductionService.Edit edit, int index) {
         if (selectedOrder() != null) submit(new ProductionRequestPayload.Edit(this.selected, edit, index));
     }
@@ -140,7 +159,17 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
         this.pause.setMessage(Component.literal(order != null && order.paused() ? "Resume" : "Pause"));
         this.cancel.active = editable && order != null && !order.cancelled() && !order.complete();
         this.remove.active = editable && order != null && queue.allocations().stream().noneMatch(allocation -> allocation.order().equals(order.id()) && allocation.started());
-        if (this.supplyPolicy != null) this.supplyPolicy.active = !this.state.busy() && order != null && !order.cancelled() && !order.complete();
+        var managed = managed(this.selected);
+        if (this.supplyPolicy != null) {
+            this.supplyPolicy.active = !this.state.busy() && order != null && (managed != null || !order.cancelled() && !order.complete());
+            this.supplyPolicy.setMessage(Component.translatable("villagerretaliation.gui.settlement.policy." + (managed == null ? "create" : "open")));
+        }
+        if (this.supplies != null) this.supplies.active = !this.state.busy() && order != null
+                && this.state.snapshot().requirements().stream().anyMatch(need -> need.order().equals(order.id()));
+        var policyHelp = managed == null ? Component.empty() : Component.literal("\n").append(
+                Component.translatable("villagerretaliation.gui.settlement.policy.managed_stop_help"));
+        this.pause.setTooltip(net.minecraft.client.gui.components.Tooltip.create(this.pause.getMessage().copy().append(policyHelp)));
+        this.cancel.setTooltip(net.minecraft.client.gui.components.Tooltip.create(this.cancel.getMessage().copy().append(policyHelp)));
         this.refresh.active = !this.state.busy();
         this.add.active = editable && (queue == null || queue.orders().size() < 32);
     }
@@ -172,7 +201,8 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
                 : "The first runnable order is processed. Started batches finish after pause or cancellation.";
         graphics.drawWordWrap(this.font, Component.literal(feedback), this.left, this.top + this.panelHeight - 100, this.panelWidth, 0xD0D0D0);
         var hovered = this.list.hovered();
-        if (hovered != null) graphics.renderComponentTooltip(this.font, hovered.details, mouseX, mouseY);
+        if (hovered != null) graphics.renderTooltip(this.font, hovered.details.stream()
+                .flatMap(line -> this.font.split(line, Math.min(340, this.width - 24)).stream()).toList(), mouseX, mouseY);
     }
 
     static String mode(HiredProductionOrder.Mode mode) {
@@ -227,6 +257,7 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
     private final class Row extends ObjectSelectionList.Entry<Row> {
         private final UUID id;
         private final ItemStack output;
+        private final Component label;
         private final String quantity;
         private final String status;
         private final java.util.List<Component> details;
@@ -234,6 +265,9 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
         private Row(HiredProductionOrder order) {
             this.id = order.id();
             this.output = order.output();
+            var managed = managed(order.id());
+            this.label = managed == null ? this.output.getHoverName()
+                    : Component.translatable("villagerretaliation.gui.settlement.policy.managed_label", this.output.getHoverName());
             int pending = state.queue().pending(order.id());
             this.quantity = mode(order.mode()) + (order.mode() == HiredProductionOrder.Mode.CONTINUOUS ? "" : " " + order.amount())
                     + " / Made " + order.produced() + " / Pending " + pending;
@@ -241,7 +275,8 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
             this.status = ProductionOrdersScreen.status(order) + (order.mode() == HiredProductionOrder.Mode.MAINTAIN_STOCK
                     ? " / Stock and deliveries: " + (stock < 0L ? "unknown" : Long.toString(stock)) : "");
             var details = new java.util.ArrayList<Component>();
-            details.add(this.output.getHoverName());
+            details.add(this.label);
+            if (managed != null) details.add(managedDescription(managed));
             details.add(Component.literal(order.recipe().recipe() == null ? order.recipe().potion().toString() : order.recipe().recipe().toString()));
             order.recipe().alternatives().entrySet().stream().sorted(java.util.Map.Entry.comparingByKey()).forEach(entry ->
                     details.add(Component.literal("Ingredient " + (entry.getKey() + 1) + ": ")
@@ -250,10 +285,7 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
             details.add(Component.literal(this.status));
             details.add(Component.literal("Output storage: " + (order.storage() == null ? "automatic" : order.storage().toShortString())));
             for (var need : state.snapshot().requirements()) if (need.order().equals(order.id())) {
-                details.add(Component.translatable("villagerretaliation.gui.settlement.demand_quantities", need.name(), need.required(),
-                        Component.translatable("villagerretaliation.gui.settlement.supply_unit." + need.unit().name().toLowerCase(java.util.Locale.ROOT)),
-                        need.availableNow(), need.committed(), need.incoming(),
-                        need.missing() < 0 ? Component.translatable("villagerretaliation.gui.settlement.supply_unknown") : need.missing()));
+                details.addAll(ProductionSupplyScreen.details(need));
             }
             this.details = java.util.List.copyOf(details);
         }
@@ -261,6 +293,7 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
         private Row(ProductionSnapshotPayload.Legacy legacy) {
             this.id = legacy.worker();
             this.output = legacy.recipe().output(minecraft.level);
+            this.label = this.output.getHoverName();
             this.quantity = "Legacy / " + (legacy.continuous() ? "Continuous" : legacy.amount() + " remaining");
             this.status = legacy.activeBottles() < 0 ? "Active stand needs observation" : legacy.activeBottles() + " active bottles / preserved during conversion";
             this.details = java.util.List.of(this.output.getHoverName(), Component.literal(this.quantity), Component.literal(this.status));
@@ -270,7 +303,7 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
         public void render(GuiGraphics graphics, int index, int top, int rowLeft, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             graphics.renderItem(this.output, rowLeft + 3, top + 4);
-            graphics.drawString(font, font.plainSubstrByWidth(this.output.getHoverName().getString(), rowWidth - 28), rowLeft + 24, top + 3, 0xFFFFFF);
+            graphics.drawString(font, font.plainSubstrByWidth(this.label.getString(), rowWidth - 28), rowLeft + 24, top + 3, 0xFFFFFF);
             graphics.drawString(font, font.plainSubstrByWidth(this.quantity, rowWidth - 28), rowLeft + 24, top + 15, 0xD0D0D0);
             graphics.drawString(font, font.plainSubstrByWidth(this.status, rowWidth - 28), rowLeft + 24, top + 27, 0xAAAAAA);
         }
@@ -284,7 +317,7 @@ public final class ProductionOrdersScreen extends VillagerWindowScreen implement
 
         @Override
         public Component getNarration() {
-            return Component.literal(this.output.getHoverName().getString() + ", " + this.quantity + ", " + this.status);
+            return this.label.copy().append(", " + this.quantity + ", " + this.status);
         }
     }
 }

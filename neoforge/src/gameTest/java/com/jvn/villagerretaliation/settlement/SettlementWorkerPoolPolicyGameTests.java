@@ -79,6 +79,11 @@ public final class SettlementWorkerPoolPolicyGameTests {
         var resident = fixture.residents().getFirst().getUUID();
         helper.assertValueEqual(town.duties().get(resident), forest.id(), "the greatest inherited staffing deficit receives the worker");
         helper.assertValueEqual(town.workerPools().get(pool).history().getLast().priority(), 9, "move history retains downstream urgency");
+        helper.assertValueEqual(policy.history().stream().filter(event -> event.kind() == SettlementSupplyPolicy.EventKind.STAFFED).count(), 1L,
+                "the policy records its confirmed pool assignment once");
+        helper.assertTrue(policy.history().getLast().detail().contains("Forest"), "staffing history names the destination");
+        helper.assertValueEqual(policy.history().getLast().at(), level.getGameTime(),
+                "catch-up staffing uses confirmation time alongside other policy events");
         source.setItem(0, new ItemStack(Items.OAK_LOG, binding.target()));
         drain(SettlementPolicyService.cycle(level, town));
         helper.assertValueEqual(SettlementPolicyOrders.current(policy, gather).state(), SettlementSupplyPolicy.BindingState.PARKED,
@@ -90,6 +95,15 @@ public final class SettlementWorkerPoolPolicyGameTests {
         helper.assertValueEqual(move.demand(), binding.id(), "history identifies the exact completed gathering binding");
         helper.assertValueEqual(town.productionQueues().get(workshop.id()).orders().size(), 1, "staffing creates no duplicate production");
         helper.assertValueEqual(town.transferQueues().get(fixture.stores().id()).orders().size(), 1, "staffing creates no duplicate delivery");
+        helper.assertValueEqual(policy.history().stream().filter(event -> event.kind() == SettlementSupplyPolicy.EventKind.STAFFED).count(), 2L,
+                "the completed-demand move adds one staffing event");
+        helper.assertTrue(policy.history().getLast().detail().contains("Forest -> Workshop"), "the policy explains the reassignment");
+        var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+        helper.assertValueEqual(restored.supplyPolicies().get(policy.id()).history(), policy.history(), "staffing history survives reload");
+        var history = policy.history();
+        helper.assertFalse(SettlementWorkforceService.assignFromPool(level, town, town.workerPools().get(pool), move),
+                "replaying a completed move is rejected");
+        helper.assertValueEqual(policy.history(), history, "rejected movement does not append history");
         helper.assertFalse(level.hasChunkAt(town.center()), "policy staffing never loads background terrain");
         helper.succeed();
     }
@@ -122,6 +136,85 @@ public final class SettlementWorkerPoolPolicyGameTests {
         helper.assertValueEqual(town.duties().get(resident.getUUID()), fixture.farm().id(), "completed delivery releases the worker for the protected shortage");
         helper.assertValueEqual(queue.order(order.id()).delivered(), 6L, "staffing neither loses nor duplicates the delivery receipt");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_pool_policy")
+    public static void policyAndPoolIssuesLinkExactControlsAndReusePersistentNotificationThrottling(GameTestHelper helper) {
+        var fixture = SettlementWorkerPoolAssignmentGameTests.ready(helper, 1);
+        var level = helper.getLevel();
+        var town = fixture.town();
+        var depot = town.registerDepot(town.leader(), fixture.stores().id(), fixture.stores().min(), SettlementDepotPurpose.GENERAL);
+        depot.observeRules(List.of());
+        var step = new SettlementSupplyPolicy.Step(UUID.randomUUID(), SettlementSupplyPolicy.StepKind.GATHER, fixture.farm().id(),
+                null, new ItemStack(Items.WHEAT), null, depot.position());
+        var policy = new SettlementSupplyPolicy(UUID.randomUUID(), new SettlementSupplyPolicy.Configuration("Food chain",
+                new SettlementSupplyPolicy.Target(SettlementSupplyPolicy.TargetKind.STOCK, null, null, depot.position(), new ItemStack(Items.WHEAT), 8),
+                5, List.of(step), List.of()), town.leader(), town::supplyChanged);
+        town.addSupplyPolicy(policy);
+        policy.state(SettlementSupplyPolicy.State.ACTIVE, town.leader(), "", level.getGameTime());
+        UUID delegate = UUID.randomUUID(), poolId = UUID.randomUUID();
+        town.setPermissions(town.leader(), delegate, java.util.Set.of(SettlementPermission.STAFF));
+        helper.assertTrue(town.configureWorkerPool(delegate, poolId, -1, new SettlementWorkerPool.Configuration("Food crew",
+                List.of(fixture.residents().getFirst().getUUID()),
+                List.of(SettlementWorkerPool.Staffing.defaults(town, fixture.farm().id()))), true), "the delegate explicitly authorizes the pool");
+        helper.assertTrue(coordinationIssues(level, town).isEmpty(), "healthy coordination creates no issue");
+        policy.blocker("policy_rechecking");
+        helper.assertTrue(coordinationIssues(level, town).isEmpty(), "a transient allocation refresh creates no issue");
+        policy.state(SettlementSupplyPolicy.State.SUSPENDED, town.leader(), "policy_recipe_unavailable", level.getGameTime());
+        town.setPermissions(town.leader(), delegate, java.util.Set.of());
+        var issues = coordinationIssues(level, town);
+        helper.assertValueEqual(issues.size(), 2, "configuration and authorization blockers are visible together");
+        var policyIssue = issues.stream().filter(issue -> issue.kind()
+                == com.jvn.villagerretaliation.network.SettlementManagementPayload.IssueKind.POLICY).findFirst().orElseThrow();
+        var poolIssue = issues.stream().filter(issue -> issue.kind()
+                == com.jvn.villagerretaliation.network.SettlementManagementPayload.IssueKind.WORKER_POOL).findFirst().orElseThrow();
+        helper.assertValueEqual(policyIssue.targetId(), policy.id(), "the issue opens the exact policy");
+        helper.assertValueEqual(poolIssue.targetId(), poolId, "the issue opens the exact pool");
+        helper.assertValueEqual(poolIssue.cause(), "pool_permission_changed", "the lost staffing authority is explained");
+        helper.assertTrue(issues.stream().allMatch(com.jvn.villagerretaliation.network.SettlementManagementPayload.Issue::needsAttention),
+                "unexpected coordination blockers need attention");
+        var keys = issues.stream().map(issue -> issue.id() + ":" + issue.cause()).collect(java.util.stream.Collectors.toSet());
+        var notifications = new SettlementNotifications.Problems();
+        helper.assertValueEqual(notifications.update(keys, 0), 0, "one observation remains quiet");
+        helper.assertValueEqual(notifications.update(keys, 200), 2, "persistent new coordination blockers notify once");
+        helper.assertValueEqual(notifications.update(keys, 1_600), 0, "unchanged coordination blockers never repeat");
+        var before = town.save(level.registryAccess());
+        helper.assertValueEqual(coordinationIssues(level, town), issues, "repeated inspection retains stable issue identities");
+        helper.assertValueEqual(town.save(level.registryAccess()), before, "issue inspection changes no saved coordination state");
+        var viewer = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
+                new com.mojang.authlib.GameProfile(UUID.randomUUID(), "CoordinationViewer"));
+        var request = new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(town.id().value(),
+                com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES, 0, "", 1, false);
+        helper.assertTrue(SettlementManagementService.snapshot(viewer, request) == null, "outsiders cannot inspect coordination issues");
+        town.setPermissions(town.leader(), viewer.getUUID(), java.util.Set.of(SettlementPermission.VIEW));
+        var snapshot = SettlementManagementService.snapshot(viewer, request);
+        helper.assertTrue(snapshot.entries().contains(policyIssue) && snapshot.entries().contains(poolIssue),
+                "view delegates receive the same authoritative issue targets");
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.SettlementManagementPayload.STREAM_CODEC.encode(buffer, snapshot);
+            var restored = com.jvn.villagerretaliation.network.SettlementManagementPayload.STREAM_CODEC.decode(buffer);
+            helper.assertValueEqual(restored.entries(), snapshot.entries(), "typed coordination issues survive the wire format");
+            helper.assertValueEqual(buffer.readableBytes(), 0, "the snapshot consumes its exact payload");
+        } finally { buffer.release(); }
+        policy.state(SettlementSupplyPolicy.State.SUSPENDED, town.leader(), "policy_order_suspended", level.getGameTime());
+        var stopped = coordinationIssues(level, town).stream().filter(issue -> issue.targetId().equals(policy.id())).findFirst().orElseThrow();
+        helper.assertValueEqual(stopped.id(), policyIssue.id(), "a changed blocker preserves the selected policy issue");
+        helper.assertFalse(stopped.needsAttention(), "a deliberate native-order pause stays visible without warning notifications");
+        policy.state(SettlementSupplyPolicy.State.PAUSED, town.leader(), "", level.getGameTime());
+        helper.assertTrue(town.changeWorkerPool(town.leader(), poolId, town.workerPools().get(poolId).revision(), false),
+                "the owner acknowledges the suspended pool by pausing it");
+        helper.assertTrue(coordinationIssues(level, town).isEmpty(), "paused coordination does not retain old warning issues");
+        town.setPermissions(town.leader(), viewer.getUUID(), java.util.Set.of());
+        helper.assertTrue(SettlementManagementService.snapshot(viewer, request) == null, "revocation hides coordination immediately");
+        helper.succeed();
+    }
+
+    private static List<com.jvn.villagerretaliation.network.SettlementManagementPayload.Issue> coordinationIssues(
+            net.minecraft.server.level.ServerLevel level, SettlementRecord town) {
+        return SettlementIssueService.issues(level, town, SettlementProgressionService.assess(level, town), List.of()).stream()
+                .filter(issue -> issue.kind() == com.jvn.villagerretaliation.network.SettlementManagementPayload.IssueKind.POLICY
+                        || issue.kind() == com.jvn.villagerretaliation.network.SettlementManagementPayload.IssueKind.WORKER_POOL).toList();
     }
 
     private static void drain(Runnable work) {

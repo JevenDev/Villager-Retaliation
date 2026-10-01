@@ -55,6 +55,13 @@ public final class SettlementWorkerPoolsScreen extends VillagerWindowScreen impl
         this.state = new SettlementWorkerPoolClientState(town);
     }
 
+    public static SettlementWorkerPoolsScreen forPool(Screen previous, UUID town, UUID pool) {
+        var screen = new SettlementWorkerPoolsScreen(previous, town);
+        screen.selected = java.util.Objects.requireNonNull(pool);
+        screen.loadSelected = true;
+        return screen;
+    }
+
     @Override public Screen previousPolicy() { return this.previous; }
     SettlementWorkerPoolSnapshotPayload snapshot() { return this.state.snapshot(); }
     SettlementWorkerPool.Configuration configuration() { return this.draft == null ? null : this.draft.configuration(); }

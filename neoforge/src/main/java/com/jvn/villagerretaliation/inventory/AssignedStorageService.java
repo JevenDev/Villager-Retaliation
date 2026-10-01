@@ -721,6 +721,10 @@ public final class AssignedStorageService {
     }
 
     public static List<ItemStack> productionSupplies(Villager villager) {
+        return productionSupplies(villager, null);
+    }
+
+    public static List<ItemStack> productionSupplies(Villager villager, UUID consumer) {
         if (!(villager.level() instanceof ServerLevel level)) return List.of();
         var result = new ArrayList<ItemStack>();
         for (var source : liveInputContainerCandidates(level, villager)) {
@@ -730,7 +734,7 @@ public final class AssignedStorageService {
             for (int slot = 0; slot < source.container().getContainerSize(); slot++) {
                 var stack = source.container().getItem(slot);
                 if (stack.isEmpty()) continue;
-                int count = Math.min(stack.getCount(), sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), reserved));
+                int count = Math.min(stack.getCount(), sourceAllowance(level, source, resolution.rules(), stack, villager.getUUID(), reserved, consumer));
                 if (count > 0) {
                     var accepted = stack.copyWithCount(count);
                     reserved.add(accepted);

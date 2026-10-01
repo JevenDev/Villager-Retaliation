@@ -37,7 +37,8 @@ public final class SettlementSupplyRecovery {
     private static Recovery explain(ServerLevel level, SettlementRecord town, SettlementSupplyStock.Snapshot stock,
                                     java.util.Map<BlockPos, List<ItemStack>> contents, SettlementDemandService.Snapshot projection, SettlementDemandService.Demand demand) {
         var area = town.areas().get(demand.area());
-        var focus = area == null ? town.center() : area.center();
+        var worker = area == null ? level.getEntity(demand.area()) : null;
+        var focus = area != null ? area.center() : worker != null ? worker.blockPosition() : town.center();
         String item = com.jvn.villagerretaliation.interaction.work.production.WorkSupplyEvaluation.name(demand.requirement());
         String prefix = demand.name() + " needs " + item + ". ";
         String blocker = demand.blocker();
@@ -64,7 +65,7 @@ public final class SettlementSupplyRecovery {
                     || demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.STOCK_RESERVE)
                 return result(demand, Cause.READY,
                         net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.demand_reserve_ready").getString(), focus);
-            if (town.duties().values().stream().noneMatch(demand.area()::equals))
+            if (area != null && town.duties().values().stream().noneMatch(demand.area()::equals))
                 return result(demand, Cause.STAFFING, "Inputs are covered. Assign a worker to " + demand.name() + ".", focus);
             return result(demand, Cause.READY, "Inputs are covered for " + demand.name() + ".", focus);
         }

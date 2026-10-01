@@ -276,6 +276,29 @@ public final class SettlementPolicyManagementService {
         return "";
     }
 
+    public static List<com.jvn.villagerretaliation.network.SettlementPolicyOrderLink> orderLinks(SettlementRecord town, List<UUID> orders) {
+        var links = new ArrayList<com.jvn.villagerretaliation.network.SettlementPolicyOrderLink>();
+        for (var id : orders) {
+            var managed = town.managedSupplyOrder(id);
+            if (managed == null) continue;
+            var policy = managed.policy();
+            var binding = policy.bindings().stream().filter(value -> value.id().equals(managed.binding())).findFirst().orElseThrow();
+            links.add(new com.jvn.villagerretaliation.network.SettlementPolicyOrderLink(id, policy.id(), policy.configuration().name(),
+                    binding.id(), policy.state(), binding.state(), policy.blocker()));
+        }
+        return List.copyOf(links);
+    }
+
+    static void staffed(net.minecraft.server.level.ServerLevel level, SettlementRecord town, net.minecraft.world.entity.npc.Villager resident, SettlementWorkerPool.Move move) {
+        var source = move.from() == null ? null : town.workplace(move.from());
+        var destination = town.workplace(move.to());
+        String name = com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(resident).getString();
+        String detail = name + ": " + (source == null ? "" : source.name() + " -> ") + destination.name();
+        for (var policy : town.supplyPolicies().values()) if (policy.configuration().steps().stream()
+                .anyMatch(step -> step.area().equals(move.from()) || step.area().equals(move.to())))
+            policy.event(level.getGameTime(), SettlementSupplyPolicy.EventKind.STAFFED, text(detail));
+    }
+
     static void manuallyStopped(net.minecraft.server.level.ServerLevel level, SettlementRecord town, UUID order) {
         var managed = town.managedSupplyOrder(order);
         if (managed == null) return;

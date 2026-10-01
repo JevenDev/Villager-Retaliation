@@ -31,6 +31,7 @@ final class SettlementWorkerPoolClientChecks {
     private UUID area;
     private UUID pool;
     private String siteName;
+    private boolean issueChecked;
     private int phase;
     private int ticks;
     private long nextServerTick;
@@ -218,6 +219,16 @@ final class SettlementWorkerPoolClientChecks {
             case 20 -> {
                 if (this.editor.configuration() == null || !button(screen, "preview").active) return false;
                 require(!button(screen, "save").active && !button(screen, "activate").active, "view-only inspection cannot save or authorize a draft");
+                if (!this.issueChecked) {
+                    var management = (SettlementManagementScreen) this.editor.previousPolicy();
+                    require(SettlementIssueView.open(management, new com.jvn.villagerretaliation.network.SettlementManagementPayload.Issue(
+                            UUID.randomUUID(), "Server crew", com.jvn.villagerretaliation.network.SettlementManagementPayload.IssueKind.WORKER_POOL,
+                            "pool_permission_changed", "", Page.SUMMARY, this.pool, null, null, false)),
+                            "pool issues use the shared recovery navigation");
+                    this.phase = 100;
+                    this.ticks = 0;
+                    return false;
+                }
                 this.capture.accept("pool-view-only");
                 server(minecraft, () -> {
                     var town = town(minecraft);
@@ -230,6 +241,22 @@ final class SettlementWorkerPoolClientChecks {
                 });
                 this.editor.onClose();
                 next();
+            }
+            case 100 -> {
+                if (!(screen instanceof SettlementWorkerPoolsScreen pools) || pools.configuration() == null) return false;
+                require(pools.snapshot().selected().id().equals(this.pool) && pools.configuration().name().equals("Server crew")
+                                && pools.previousPolicy() == this.editor.previousPolicy(),
+                        "the issue link opens the exact saved pool and retains its management parent");
+                require(!button(screen, "save").active && !button(screen, "activate").active,
+                        "issue navigation preserves viewing permission without granting pool control");
+                require(SettlementViewClient.connectedPanel() && minecraft.getCameraEntity() != minecraft.player,
+                        "pool issue recovery retains the world camera");
+                bounds(screen);
+                this.capture.accept("pool-from-issue");
+                this.issueChecked = true;
+                minecraft.setScreen(this.editor);
+                this.phase = 20;
+                this.ticks = 0;
             }
             case 21 -> {
                 if (!button(screen, "remove").active) return false;

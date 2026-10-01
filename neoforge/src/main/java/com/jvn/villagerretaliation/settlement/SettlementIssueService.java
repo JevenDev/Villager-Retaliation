@@ -105,6 +105,17 @@ final class SettlementIssueService {
             issues.add(new Issue(demand.id(), demand.name(), IssueKind.SUPPLY, demand.cause().name().toLowerCase(Locale.ROOT),
                     demand.advice(), Page.DEMAND, demand.id(), null, demand.area(), false));
         }
+        for (var policy : town.supplyPolicies().values()) {
+            if (policy.state() != SettlementSupplyPolicy.State.ACTIVE && policy.state() != SettlementSupplyPolicy.State.SUSPENDED
+                    || policy.blocker().isEmpty() || policy.blocker().equals("policy_rechecking")) continue;
+            issues.add(new Issue(identity(town, "policy:" + policy.id()), policy.configuration().name(), IssueKind.POLICY,
+                    policy.blocker(), "", Page.SUMMARY, policy.id(), null, null, false));
+        }
+        for (var pool : town.workerPools().values()) {
+            if (pool.state() != SettlementWorkerPool.State.SUSPENDED || pool.blocker().isEmpty()) continue;
+            issues.add(new Issue(identity(town, "worker_pool:" + pool.id()), pool.configuration().name(), IssueKind.WORKER_POOL,
+                    pool.blocker(), "", Page.SUMMARY, pool.id(), null, null, false));
+        }
         String simulation = SettlementSimulationService.suspension(level, town);
         if (!simulation.isEmpty()) {
             issues.add(new Issue(identity(town, "simulation"), "", IssueKind.SIMULATION,

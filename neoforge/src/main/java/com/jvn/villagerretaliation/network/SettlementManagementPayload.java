@@ -90,6 +90,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.writeUUID(demand.consumer());
                 buffer.writeUUID(demand.area());
                 buffer.writeEnum(demand.kind());
+                buffer.writeEnum(demand.control());
                 buffer.writeUtf(demand.requirement(), 128);
                 buffer.writeEnum(demand.unit());
                 buffer.writeLong(demand.required());
@@ -301,6 +302,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 var consumer = buffer.readUUID();
                 var area = buffer.readUUID();
                 var kind = buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.class);
+                var control = buffer.readEnum(DemandControl.class);
                 String requirement = buffer.readUtf(128);
                 var unit = buffer.readEnum(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit.class);
                 long required = buffer.readLong();
@@ -329,7 +331,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 var source = transfer ? TransferRequestPayload.readEndpoint(buffer) : null;
                 var destination = transfer ? TransferRequestPayload.readEndpoint(buffer) : null;
                 var sample = transfer ? ItemStack.STREAM_CODEC.decode(buffer) : ItemStack.EMPTY;
-                yield new Demand(id, name, consumer, area, kind, requirement, unit, required, supplied, missing, immediate,
+                yield new Demand(id, name, consumer, area, kind, control, requirement, unit, required, supplied, missing, immediate,
                         availableNow, committed, incoming, proposed, targetReserve, protectedMinimum, priority, competingConsumer,
                         alternatives, sources, cause, advice, focus, courier, source, destination, sample);
             }
@@ -550,8 +552,28 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         String name();
     }
 
+    public enum DemandControl {
+        PRODUCTION, PERSONAL_PRODUCTION, TRANSFER, PROJECT, RESERVE, EQUIPMENT, RESIDENT, PERSONAL_EQUIPMENT;
+
+        public boolean personal() { return this == PERSONAL_PRODUCTION || this == PERSONAL_EQUIPMENT; }
+
+        public boolean worksite() {
+            return this == PRODUCTION || this == TRANSFER || this == PROJECT || this == EQUIPMENT || this == RESIDENT;
+        }
+
+        boolean accepts(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind kind) {
+            return switch (this) {
+                case PRODUCTION, PERSONAL_PRODUCTION, TRANSFER -> kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PRODUCTION;
+                case PROJECT -> kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PROJECT;
+                case RESERVE -> kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD
+                        || kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.STOCK_RESERVE;
+                case EQUIPMENT, RESIDENT, PERSONAL_EQUIPMENT -> kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.EQUIPMENT;
+            };
+        }
+    }
+
     public record Demand(UUID id, String name, UUID consumer, UUID area,
-                         com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind kind, String requirement,
+                         com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind kind, DemandControl control, String requirement,
                          com.jvn.villagerretaliation.interaction.work.production.WorkSupplyRequirement.Unit unit,
                          long required, long supplied, long missing, long immediateMissing,
                          long availableNow, long committed, long incoming, long proposed, long targetReserve, long protectedMinimum, int priority, UUID competingConsumer,
@@ -561,7 +583,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                          com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint destination, ItemStack sample) implements Entry {
         public Demand {
             if (id == null || name == null || name.length() > 128 || consumer == null || area == null || requirement == null
-                    || requirement.length() > 128 || kind == null || unit == null || required < 0 || supplied < 0 || supplied > required || missing < -1
+                    || requirement.length() > 128 || kind == null || control == null || !control.accepts(kind) || unit == null || required < 0 || supplied < 0 || supplied > required || missing < -1
                     || availableNow < 0 || committed < 0 || incoming < 0 || proposed < 0 || targetReserve < 0
                     || protectedMinimum < 0 || protectedMinimum > required || priority < 0 || priority > 9
                     || availableNow > required || committed > required || incoming > required
@@ -633,7 +655,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     }
 
     public enum IssueKind {
-        PROGRESSION, WORKER, PROJECT, TRADE, RESIDENT, SIMULATION, SUPPLY
+        PROGRESSION, WORKER, PROJECT, TRADE, RESIDENT, SIMULATION, SUPPLY, POLICY, WORKER_POOL
     }
 
     public record Issue(UUID id, String name, IssueKind kind, String cause, String detail,
@@ -650,6 +672,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                                 : target != Page.DEMAND || !cause.equals("resident_hungry") || targetId == null || area == null);
                         case SIMULATION -> target != Page.SUMMARY;
                         case SUPPLY -> target != Page.DEMAND || targetId == null || area == null;
+                        case POLICY, WORKER_POOL -> target != Page.SUMMARY || targetId == null || resident != null || area != null || enabled;
                     }) {
                 throw new IllegalArgumentException("Invalid settlement issue");
             }
@@ -658,6 +681,11 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         public com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Diagnostic diagnostic() {
             if (this.kind == IssueKind.SUPPLY) return new com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Diagnostic(
                     com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Severity.WARNING, this.detail);
+            if (this.kind == IssueKind.POLICY || this.kind == IssueKind.WORKER_POOL)
+                return new com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Diagnostic(
+                        this.kind == IssueKind.POLICY && this.cause.equals("policy_order_suspended")
+                                ? com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Severity.INFO
+                                : com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Severity.WARNING, "");
             if (this.kind == IssueKind.PROGRESSION) {
                 return new com.jvn.villagerretaliation.settlement.SettlementWorkerDiagnostics.Diagnostic(
                         this.cause.equals("population_cap") || this.cause.equals("population_configuration")

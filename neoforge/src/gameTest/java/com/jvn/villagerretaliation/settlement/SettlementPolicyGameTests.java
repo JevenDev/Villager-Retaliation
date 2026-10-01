@@ -1079,6 +1079,94 @@ public final class SettlementPolicyGameTests {
         return results.getFirst();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_policy")
+    public static void managedOrderLinksFollowNativeStateAndRequireCurrentViewingPermission(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var town = policyTown(helper);
+        var viewer = helper.makeMockServerPlayerInLevel();
+        town.setPermissions(town.leader(), viewer.getUUID(), java.util.Set.of(SettlementPermission.VIEW));
+        var depot = town.depots().values().iterator().next();
+        var source = town.registerDepot(town.leader(), depot.area(), depot.position().east(), SettlementDepotPurpose.GENERAL);
+        source.observeRules(List.of());
+        var bakery = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.KITCHEN).findFirst().orElseThrow();
+        var producer = new SettlementSupplyPolicy.Step(UUID.randomUUID(), SettlementSupplyPolicy.StepKind.PRODUCTION, bakery.id(),
+                bake().recipe(), ItemStack.EMPTY, null, depot.position());
+        var productionPolicy = stockPolicy(helper, town, producer, 12, 5);
+        town.addSupplyPolicy(productionPolicy);
+        productionPolicy.state(SettlementSupplyPolicy.State.ACTIVE, town.leader(), "", level.getGameTime());
+        SettlementPolicyOrders.reconcile(level, town, productionPolicy, producer, 12);
+        var production = town.productionQueues().get(bakery.id());
+        var manualProduction = com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.create(level,
+                producer.recipe(), com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder.Mode.BATCH, 3, depot.position());
+        helper.assertTrue(production.append(manualProduction), "manual production remains independently queued");
+        var delivery = new SettlementSupplyPolicy.Step(UUID.randomUUID(), SettlementSupplyPolicy.StepKind.DELIVERY, depot.area(),
+                null, new ItemStack(Items.BREAD), source.position(), depot.position());
+        var deliveryPolicy = stockPolicy(helper, town, delivery, 12, 5);
+        town.addSupplyPolicy(deliveryPolicy);
+        deliveryPolicy.state(SettlementSupplyPolicy.State.ACTIVE, town.leader(), "", level.getGameTime());
+        SettlementPolicyOrders.reconcile(level, town, deliveryPolicy, delivery, 12);
+        var transfers = town.transferQueues().get(depot.area());
+        var manualDelivery = com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Order.create(
+                new com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint(source.position(), source.id()),
+                new com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Endpoint(depot.position(), depot.id()),
+                new ItemStack(Items.BREAD), 3);
+        helper.assertTrue(transfers.append(manualDelivery), "manual deliveries remain independently queued");
+        var demandControls = SettlementDemandViewService.demands(viewer, town);
+        helper.assertTrue(demandControls.stream().anyMatch(row -> row.consumer().equals(deliveryPolicy.bindings().getFirst().order())
+                        && row.control() == com.jvn.villagerretaliation.network.SettlementManagementPayload.DemandControl.TRANSFER),
+                "managed delivery demand opens its native transfer controls");
+        helper.assertFalse(demandControls.stream().anyMatch(row -> row.consumer().equals(manualDelivery.id())),
+                "manual deliveries remain accounted through receipts without policy input demand");
+        var productionView = new com.jvn.villagerretaliation.network.ProductionRequestPayload(
+                new com.jvn.villagerretaliation.network.ProductionTarget(town.id().value(), bakery.id()), UUID.randomUUID(), 0,
+                new com.jvn.villagerretaliation.network.ProductionRequestPayload.View());
+        var transferView = new com.jvn.villagerretaliation.network.TransferRequestPayload(
+                new com.jvn.villagerretaliation.network.ProductionTarget(town.id().value(), depot.area()), UUID.randomUUID(), 0,
+                new com.jvn.villagerretaliation.network.TransferRequestPayload.View());
+        var productionSnapshot = SettlementProductionService.snapshot(viewer, productionView, false, "");
+        var transferSnapshot = com.jvn.villagerretaliation.interaction.work.courier.TransferManagementService.snapshot(viewer, transferView, false, "");
+        helper.assertFalse(productionSnapshot.editable() || transferSnapshot.editable(), "viewers inspect policy links without gaining editing permission");
+        helper.assertValueEqual(productionSnapshot.managed().size(), 1, "manual production has no policy link");
+        helper.assertValueEqual(transferSnapshot.managed().size(), 1, "manual deliveries have no policy link");
+        helper.assertValueEqual(productionSnapshot.managed().getFirst().policy(), productionPolicy.id(), "production links to the exact policy");
+        helper.assertValueEqual(transferSnapshot.managed().getFirst().binding(), deliveryPolicy.bindings().getFirst().id(), "delivery links to the exact execution binding");
+        helper.assertValueEqual(productionSnapshot.managed().getFirst().order(), productionPolicy.bindings().getFirst().order(), "the link identifies the native order");
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.ProductionSnapshotPayload.STREAM_CODEC.encode(buffer, productionSnapshot);
+            helper.assertValueEqual(com.jvn.villagerretaliation.network.ProductionSnapshotPayload.STREAM_CODEC.decode(buffer).managed(),
+                    productionSnapshot.managed(), "production links retain names, identities and states over the wire");
+            com.jvn.villagerretaliation.network.TransferSnapshotPayload.STREAM_CODEC.encode(buffer, transferSnapshot);
+            helper.assertValueEqual(com.jvn.villagerretaliation.network.TransferSnapshotPayload.STREAM_CODEC.decode(buffer).managed(),
+                    transferSnapshot.managed(), "delivery links retain names, identities and states over the wire");
+            helper.assertValueEqual(buffer.readableBytes(), 0, "both snapshots consume their exact payload");
+        } finally { buffer.release(); }
+        town.setPermissions(town.leader(), viewer.getUUID(),
+                java.util.Set.of(SettlementPermission.VIEW, SettlementPermission.STAFF, SettlementPermission.LOGISTICS));
+        helper.assertValueEqual(SettlementProductionService.edit(viewer, town, bakery.id(), production.configurationRevision(),
+                productionPolicy.bindings().getFirst().order(),
+                com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.Edit.PAUSE, 0), "", "staff can pause managed production");
+        helper.assertValueEqual(SettlementTransferService.edit(viewer, town, depot.area(), transfers.revision(),
+                deliveryPolicy.bindings().getFirst().order(),
+                com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Edit.CANCEL, 0), "", "logistics staff can cancel managed delivery");
+        finish(SettlementPolicyService.cycle(level, town));
+        productionSnapshot = SettlementProductionService.snapshot(viewer, productionView, false, "");
+        transferSnapshot = com.jvn.villagerretaliation.interaction.work.courier.TransferManagementService.snapshot(viewer, transferView, false, "");
+        for (var link : List.of(productionSnapshot.managed().getFirst(), transferSnapshot.managed().getFirst())) {
+            helper.assertValueEqual(link.state(), SettlementSupplyPolicy.State.SUSPENDED, "native controls visibly suspend the policy");
+            helper.assertValueEqual(link.execution(), SettlementSupplyPolicy.BindingState.SUSPENDED, "the affected step stays suspended");
+            helper.assertValueEqual(link.blocker(), "policy_order_suspended", "the link explains the required explicit reactivation");
+        }
+        helper.assertTrue(production.orders().size() == 2 && transfers.orders().size() == 2, "evaluation does not recreate manually stopped orders");
+        helper.assertTrue(production.order(manualProduction.id()).runnable() && transfers.order(manualDelivery.id()).runnable(),
+                "manual orders remain independent of managed suspension");
+        town.setPermissions(town.leader(), viewer.getUUID(), java.util.Set.of());
+        helper.assertTrue(SettlementProductionService.snapshot(viewer, productionView, false, "").managed().isEmpty()
+                && com.jvn.villagerretaliation.interaction.work.courier.TransferManagementService.snapshot(viewer, transferView, false, "").managed().isEmpty(),
+                "revoking viewing permission hides all policy links immediately");
+        helper.succeed();
+    }
+
     private static SettlementSupplyPolicy stockPolicy(GameTestHelper helper, SettlementRecord town,
                                                       SettlementSupplyPolicy.Step step, int amount, int priority) {
         return stockPolicy(helper, town, step, new ItemStack(Items.BREAD), amount, priority);

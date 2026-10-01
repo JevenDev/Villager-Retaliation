@@ -62,6 +62,7 @@ public final class TransferManagementService {
         var storages = new ArrayList<TransferSnapshotPayload.Storage>();
         var products = new ArrayList<TransferSnapshotPayload.Product>();
         var stocks = new ArrayList<TransferSnapshotPayload.Stock>();
+        List<com.jvn.villagerretaliation.network.SettlementPolicyOrderLink> managed = List.of();
         HiredTransferQueue queue;
         String title;
         String blocker;
@@ -99,6 +100,8 @@ public final class TransferManagementService {
                 return unavailable(player, request, "Courier worksite is unavailable");
             }
             queue = town.transferQueues().get(area.id());
+            if (queue != null) managed = com.jvn.villagerretaliation.settlement.SettlementPolicyManagementService.orderLinks(town,
+                    queue.orders().stream().map(HiredTransferQueue.Order::id).toList());
             var plan = town.worksitePlans().get(area.id());
             var links = plan == null ? SettlementWorksiteLinks.AUTOMATIC : plan.links();
             title = area.name();
@@ -136,7 +139,7 @@ public final class TransferManagementService {
         }
         return new TransferSnapshotPayload(level.dimension().location(), target, request.request(), applied,
                 ProductionManagementService.title(title), editable, blocker, feedback,
-                queue == null ? null : queue.save(level.registryAccess()), storages, products, stocks);
+                queue == null ? null : queue.save(level.registryAccess()), storages, products, stocks, managed);
     }
 
     private static void samples(List<TransferSnapshotPayload.Product> products, HiredTransferQueue.Endpoint endpoint, Container container) {

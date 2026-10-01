@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
 import com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue;
 import com.jvn.villagerretaliation.network.ProductionTarget;
+import com.jvn.villagerretaliation.network.SettlementPolicyOrderLink;
 import com.jvn.villagerretaliation.network.TransferRequestPayload;
 import com.jvn.villagerretaliation.network.TransferSnapshotPayload;
 import java.util.UUID;
@@ -31,6 +32,7 @@ public final class TransferOrdersScreen extends VillagerWindowScreen implements 
     private Button cancel;
     private Button remove;
     private Button refresh;
+    private Button supplyPolicy;
 
     public TransferOrdersScreen(Screen previous, ProductionTarget target) {
         this(previous, target, () -> net.minecraft.client.Minecraft.getInstance().setScreen(previous));
@@ -69,6 +71,12 @@ public final class TransferOrdersScreen extends VillagerWindowScreen implements 
         this.refresh = button("Refresh", this.left + 74, this.top + this.panelHeight - 28, 78, () -> submit(new TransferRequestPayload.View()));
         this.add = button("Add order", this.left + 160, this.top + this.panelHeight - 28, this.panelWidth - 160,
                 () -> this.minecraft.setScreen(new TransferEditorScreen(this)));
+        if (this.state.target().town() != null) this.supplyPolicy = addRenderableWidget(VillagerUi.buttonBuilder(
+                Component.translatable("villagerretaliation.gui.settlement.policy.open"), ignored -> {
+                    var managed = managed(this.selected);
+                    if (managed != null) this.minecraft.setScreen(com.jvn.villagerretaliation.client.settlement.SettlementPoliciesScreen
+                            .forPolicy(this, this.state.target().town(), managed.policy()));
+                }).bounds(this.left + this.panelWidth - 124, this.top + 20, 124, 20).build());
         updateActions();
         poll();
     }
@@ -117,6 +125,11 @@ public final class TransferOrdersScreen extends VillagerWindowScreen implements 
         return this.state.queue() == null || this.selected == null ? null : this.state.queue().order(this.selected);
     }
 
+    private SettlementPolicyOrderLink managed(UUID order) {
+        return this.state.snapshot() == null ? null : this.state.snapshot().managed().stream()
+                .filter(link -> link.order().equals(order)).findFirst().orElse(null);
+    }
+
     private void edit(HiredTransferQueue.Edit edit, int index) {
         if (selectedOrder() != null) submit(new TransferRequestPayload.Edit(this.selected, edit, index));
     }
@@ -138,6 +151,12 @@ public final class TransferOrdersScreen extends VillagerWindowScreen implements 
         this.pause.setMessage(Component.literal(order != null && order.paused() ? "Resume" : "Pause"));
         this.cancel.active = editable && order != null && !order.cancelled() && !order.complete();
         this.remove.active = editable && order != null && queue.allocations().stream().noneMatch(allocation -> allocation.order().equals(order.id()) && allocation.started());
+        var managed = managed(this.selected);
+        if (this.supplyPolicy != null) this.supplyPolicy.active = !this.state.busy() && managed != null;
+        var policyHelp = managed == null ? Component.empty() : Component.literal("\n").append(
+                Component.translatable("villagerretaliation.gui.settlement.policy.managed_stop_help"));
+        this.pause.setTooltip(net.minecraft.client.gui.components.Tooltip.create(this.pause.getMessage().copy().append(policyHelp)));
+        this.cancel.setTooltip(net.minecraft.client.gui.components.Tooltip.create(this.cancel.getMessage().copy().append(policyHelp)));
         this.refresh.active = !this.state.busy();
         this.add.active = editable && (queue == null || queue.orders().size() < 32);
     }
@@ -214,6 +233,7 @@ public final class TransferOrdersScreen extends VillagerWindowScreen implements 
     private final class Row extends ObjectSelectionList.Entry<Row> {
         private final UUID id;
         private final ItemStack output;
+        private final Component label;
         private final String quantity;
         private final String status;
         private final java.util.List<Component> details;
@@ -221,6 +241,9 @@ public final class TransferOrdersScreen extends VillagerWindowScreen implements 
         private Row(HiredTransferQueue.Order order) {
             this.id = order.id();
             this.output = order.sample();
+            var managed = managed(order.id());
+            this.label = managed == null ? this.output.getHoverName()
+                    : Component.translatable("villagerretaliation.gui.settlement.policy.managed_label", this.output.getHoverName());
             var stock = state.snapshot() == null ? null : state.snapshot().stocks().stream().filter(value -> value.order().equals(order.id())).findFirst().orElse(null);
             boolean recurring = order.mode() == HiredTransferQueue.Mode.MAINTAIN_STOCK;
             this.quantity = (recurring ? "Maintain " : "Deliver ") + order.amount() + " / Delivered " + order.delivered() + " / In transit " + order.pending();
@@ -229,16 +252,21 @@ public final class TransferOrdersScreen extends VillagerWindowScreen implements 
             this.status = (recurring && !order.paused() && !order.cancelled() && stock != null
                     && stock.stored() >= 0 && stock.incoming() >= 0 && stock.stored() + stock.incoming() >= order.amount()
                     ? "Satisfied" : TransferOrdersScreen.status(order)) + progress;
-            this.details = java.util.List.of(this.output.getHoverName(), Component.literal(this.quantity),
-                    Component.literal(this.status), Component.literal("Source: " + order.source().position().toShortString()),
-                    Component.literal("Destination: " + order.destination().position().toShortString()));
+            var details = new java.util.ArrayList<Component>();
+            details.add(this.label);
+            if (managed != null) details.add(ProductionOrdersScreen.managedDescription(managed));
+            details.add(Component.literal(this.quantity));
+            details.add(Component.literal(this.status));
+            details.add(Component.literal("Source: " + order.source().position().toShortString()));
+            details.add(Component.literal("Destination: " + order.destination().position().toShortString()));
+            this.details = java.util.List.copyOf(details);
         }
 
         @Override
         public void render(GuiGraphics graphics, int index, int top, int rowLeft, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             graphics.renderItem(this.output, rowLeft + 3, top + 4);
-            graphics.drawString(font, font.plainSubstrByWidth(this.output.getHoverName().getString(), rowWidth - 28), rowLeft + 24, top + 3, 0xFFFFFF);
+            graphics.drawString(font, font.plainSubstrByWidth(this.label.getString(), rowWidth - 28), rowLeft + 24, top + 3, 0xFFFFFF);
             graphics.drawString(font, font.plainSubstrByWidth(this.quantity, rowWidth - 28), rowLeft + 24, top + 15, 0xD0D0D0);
             graphics.drawString(font, font.plainSubstrByWidth(this.status, rowWidth - 28), rowLeft + 24, top + 27, 0xAAAAAA);
         }
@@ -252,7 +280,7 @@ public final class TransferOrdersScreen extends VillagerWindowScreen implements 
 
         @Override
         public Component getNarration() {
-            return Component.literal(this.output.getHoverName().getString() + ", " + this.quantity + ", " + this.status);
+            return this.label.copy().append(", " + this.quantity + ", " + this.status);
         }
     }
 }

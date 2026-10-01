@@ -102,6 +102,15 @@ public final class SettlementManagementClient {
         }
     }
 
+    public static void inspectDemand(java.util.UUID town, java.util.UUID consumer) {
+        var management = current();
+        if (management != null && management.snapshot().header() != null && management.snapshot().header().id().equals(town)) {
+            Minecraft.getInstance().setScreen(management);
+            management.navigateTo(SettlementManagementRequestPayload.Page.DEMAND, consumer.toString());
+        } else PacketDistributor.sendToServer(new SettlementManagementRequestPayload(
+                town, SettlementManagementRequestPayload.Page.DEMAND, 0, consumer.toString(), 0, true));
+    }
+
     static SettlementManagementScreen current() {
         return switch (com.jvn.villagerretaliation.client.inventory.ProductionClient.rootScreen(Minecraft.getInstance().screen)) {
             case SettlementManagementScreen screen -> screen;

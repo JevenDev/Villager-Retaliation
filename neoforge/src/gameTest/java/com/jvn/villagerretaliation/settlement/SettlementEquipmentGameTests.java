@@ -308,6 +308,13 @@ public final class SettlementEquipmentGameTests {
         var level = helper.getLevel();
         var rows = SettlementDemandService.inspect(level, fixture.town()).demands().stream()
                 .filter(row -> row.consumer().equals(fixture.worker().id())).toList();
+        var controls = SettlementDemandViewService.demands(level, fixture.town());
+        helper.assertTrue(controls.stream().anyMatch(row -> row.consumer().equals(fixture.worker().id())
+                        && row.control() == com.jvn.villagerretaliation.network.SettlementManagementPayload.DemandControl.RESIDENT),
+                "missing guard equipment opens the resident controls");
+        helper.assertTrue(controls.stream().anyMatch(row -> row.consumer().equals(fixture.worker().area())
+                        && row.control() == com.jvn.villagerretaliation.network.SettlementManagementPayload.DemandControl.EQUIPMENT),
+                "spare equipment opens the worksite reserve controls");
         var weapon = matching(rows, new ItemStack(Items.CROSSBOW));
         var armor = matching(rows, new ItemStack(Items.IRON_CHESTPLATE));
         var ammunition = matching(rows, new ItemStack(Items.ARROW));

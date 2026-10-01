@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
-        String title, boolean editable, String blocker, String feedback, CompoundTag queue, List<Storage> storages, List<Product> products, List<Stock> stocks)
+        String title, boolean editable, String blocker, String feedback, CompoundTag queue, List<Storage> storages, List<Product> products, List<Stock> stocks, List<SettlementPolicyOrderLink> managed)
         implements CustomPacketPayload {
     public static final Type<TransferSnapshotPayload> TYPE = VillagerPayloads.type("transfer_snapshot");
     public static final StreamCodec<RegistryFriendlyByteBuf, TransferSnapshotPayload> STREAM_CODEC =
@@ -30,12 +30,19 @@ public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarg
         storages = List.copyOf(storages);
         products = List.copyOf(products);
         stocks = List.copyOf(stocks);
+        managed = SettlementPolicyOrderLink.validate(target, managed);
         if (storages.size() > 128 || products.size() > 256 || stocks.size() > HiredTransferQueue.MAX_ORDERS) throw new IllegalArgumentException("Oversized transfer snapshot");
     }
 
     public TransferSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
             String title, boolean editable, String blocker, String feedback, CompoundTag queue, List<Storage> storages, List<Product> products) {
         this(dimension, target, request, applied, title, editable, blocker, feedback, queue, storages, products, List.of());
+    }
+
+    public TransferSnapshotPayload(ResourceLocation dimension, ProductionTarget target, UUID request, boolean applied,
+            String title, boolean editable, String blocker, String feedback, CompoundTag queue,
+            List<Storage> storages, List<Product> products, List<Stock> stocks) {
+        this(dimension, target, request, applied, title, editable, blocker, feedback, queue, storages, products, stocks, List.of());
     }
 
     @Override
@@ -70,6 +77,7 @@ public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarg
             TransferRequestPayload.writeEndpoint(buffer, product.source());
             ItemStack.STREAM_CODEC.encode(buffer, product.sample());
         }
+        SettlementPolicyOrderLink.write(buffer, payload.managed());
     }
 
     private static TransferSnapshotPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -97,7 +105,7 @@ public record TransferSnapshotPayload(ResourceLocation dimension, ProductionTarg
         var products = new ArrayList<Product>();
         count = VillagerPayloads.readCollectionSize(buffer, 256, "Transfer products");
         for (int index = 0; index < count; index++) products.add(new Product(TransferRequestPayload.readEndpoint(buffer), ItemStack.STREAM_CODEC.decode(buffer)));
-        return new TransferSnapshotPayload(dimension, target, request, applied, title, editable, blocker, feedback, queue, storages, products, stocks);
+        return new TransferSnapshotPayload(dimension, target, request, applied, title, editable, blocker, feedback, queue, storages, products, stocks, SettlementPolicyOrderLink.read(buffer));
     }
 
     @Override

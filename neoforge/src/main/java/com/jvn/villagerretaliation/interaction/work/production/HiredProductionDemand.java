@@ -12,12 +12,37 @@ import net.minecraft.world.item.ItemStack;
 public final class HiredProductionDemand {
     private HiredProductionDemand() { }
 
+    public record Competitor(UUID town, UUID consumer, String name, int priority, long protectedMinimum, WorkSupplyRequirement.Unit unit) {
+        public Competitor {
+            if (town == null || consumer == null || name == null || name.length() > 128 || priority < 0 || priority > 9
+                    || protectedMinimum < 0 || unit == null) throw new IllegalArgumentException("Invalid competing consumer");
+        }
+    }
+
+    public record Allocation(long protectedMinimum, long targetReserve, int priority, String blocker, Competitor competitor) {
+        public Allocation {
+            if (protectedMinimum < 0 || targetReserve < 0 || priority < 0 || priority > 9 || blocker == null || blocker.length() > 128
+                    || competitor != null && !blocker.equals("allocated_elsewhere")) throw new IllegalArgumentException("Invalid production allocation");
+        }
+
+        private Allocation merge(Allocation other) {
+            var explanation = blocker.isEmpty() || blocker.equals("incoming") && !other.blocker().isEmpty() ? other : this;
+            return new Allocation(Math.addExact(protectedMinimum, other.protectedMinimum), Math.max(targetReserve, other.targetReserve),
+                    Math.max(priority, other.priority), explanation.blocker(), explanation.competitor());
+        }
+    }
+
     public record Requirement(UUID id, UUID order, String name, WorkSupplyRequirement.Unit unit, long required, long supplied, long missing,
-                              long availableNow, long committed, long incoming) {
+                              long availableNow, long committed, long incoming, Allocation allocation) {
         public Requirement {
             if (id == null || order == null || name == null || name.length() > 128 || unit == null || required < 0 || supplied < 0
                     || availableNow < 0 || committed < 0 || incoming < 0 || availableNow > required || committed > required || incoming > required
-                    || supplied > required || missing < -1 || missing > required) throw new IllegalArgumentException("Invalid production requirement");
+                    || supplied > required || missing < -1 || missing > required || allocation == null || allocation.protectedMinimum() > required) throw new IllegalArgumentException("Invalid production requirement");
+        }
+
+        public Requirement(UUID id, UUID order, String name, WorkSupplyRequirement.Unit unit, long required, long supplied, long missing,
+                           long availableNow, long committed, long incoming) {
+            this(id, order, name, unit, required, supplied, missing, availableNow, committed, incoming, new Allocation(0, 0, 5, "", null));
         }
 
         public Requirement(UUID order, String name, WorkSupplyRequirement.Unit unit, long required, long supplied, long missing) {
@@ -29,13 +54,14 @@ public final class HiredProductionDemand {
             String name = WorkSupplyEvaluation.name(demand.requirement());
             return new Requirement(demand.id(), demand.consumer(), name.length() > 128 ? name.substring(0, 128) : name,
                     demand.requirement().unit(), demand.requirement().quantity(), demand.supplied(), demand.missing(),
-                    demand.availableNow(), demand.committed(), demand.incoming());
+                    demand.availableNow(), demand.committed(), demand.incoming(), new Allocation(demand.protectedMinimum(),
+                    demand.targetReserve(), demand.priority(), demand.blocker().code(), null));
         }
 
         private Requirement merge(Requirement other) {
             return new Requirement(id, order, name, unit, required + other.required, supplied + other.supplied,
                     missing < 0 || other.missing < 0 ? -1 : missing + other.missing,
-                    availableNow + other.availableNow, committed + other.committed, incoming + other.incoming);
+                    availableNow + other.availableNow, committed + other.committed, incoming + other.incoming, allocation.merge(other.allocation));
         }
     }
 
@@ -61,33 +87,50 @@ public final class HiredProductionDemand {
                     String status = AssignedStorageService.containerStatus(level, record.pos(), record.purpose(), owner);
                     return !status.equals("available") && !status.equals("full");
                 });
+        var shared = com.jvn.villagerretaliation.settlement.SettlementPersonalSupply.inspect(level, worker, owner, sources);
         var result = new ArrayList<Requirement>();
         for (var order : queue.orders()) {
+            var allowed = assigned ? new ArrayList<>(AssignedStorageService.productionSupplies(worker, order.id())) : new ArrayList<ItemStack>();
             for (var allocation : queue.allocations()) {
                 if (!allocation.order().equals(order.id())) continue;
                 if (!allocation.started()) {
-                    describe(level, order, allocation.remaining(), supplies, carried, sources, new ArrayList<>(), 0, 0, unknown, water, result);
+                    describe(level, order, allocation.remaining(), supplies, allowed, carried, sources, new ArrayList<>(), 0, 0, unknown, water, shared, result);
                 } else if (allocation.station() != null) {
                     var progress = WorkProductionProgress.loaded(level, order, allocation);
                     if (!progress.blocker().isEmpty()) { result.add(unavailable(order)); continue; }
-                    describe(level, order, progress.remaining(), supplies, carried, sources, new ArrayList<>(progress.supplies()), progress.burn(), progress.uses(), unknown, water, result);
+                    describe(level, order, progress.remaining(), supplies, allowed, carried, sources, new ArrayList<>(progress.supplies()), progress.burn(), progress.uses(), unknown, water, shared, result);
                 }
             }
             long amount = enabled && order.runnable() ? order.mode() == HiredProductionOrder.Mode.CONTINUOUS ? order.output().getCount()
                     : queue.available(order.id(), stock.getOrDefault(order.id(), -1L)) : 0;
-            describe(level, order, amount, supplies, carried, sources, new ArrayList<>(), 0, 0, unknown, water, result);
+            describe(level, order, amount, supplies, allowed, carried, sources, new ArrayList<>(), 0, 0, unknown, water, shared, result);
         }
         var combined = new java.util.LinkedHashMap<UUID, Requirement>();
         for (var requirement : result) combined.merge(requirement.id(), requirement, Requirement::merge);
         return List.copyOf(combined.values());
     }
+    private static long consume(List<ItemStack> supplies, List<ItemStack> allowed, WorkSupplyRequirement need, long remaining) {
+        for (var supply : supplies) for (var limit : allowed) {
+            if (remaining <= 0) return 0;
+            if (supply.isEmpty() || limit.isEmpty() || !ItemStack.isSameItemSameComponents(supply, limit)) continue;
+            var portion = supply.copyWithCount(Math.min(supply.getCount(), limit.getCount()));
+            int before = portion.getCount();
+            remaining = WorkSupplyEvaluation.consume(List.of(portion), need, remaining);
+            int consumed = before - portion.getCount();
+            supply.shrink(consumed);
+            limit.shrink(consumed);
+        }
+        return remaining;
+    }
+
     private static Requirement unavailable(HiredProductionOrder order) {
         return new Requirement(order.id(), "Station contents unavailable", WorkSupplyRequirement.Unit.ITEMS, 0, 0, -1);
     }
 
     private static void describe(ServerLevel level, HiredProductionOrder order, long amount, List<ItemStack> supplies,
-                                 List<ItemStack> carried, List<net.minecraft.core.BlockPos> sources,
-                                 List<ItemStack> privateSupplies, long burn, long uses, boolean unknown, boolean water, List<Requirement> result) {
+                                 List<ItemStack> allowed, List<ItemStack> carried, List<net.minecraft.core.BlockPos> sources,
+                                 List<ItemStack> privateSupplies, long burn, long uses, boolean unknown, boolean water,
+                                 com.jvn.villagerretaliation.settlement.SettlementPersonalSupply.View shared, List<Requirement> result) {
         if (amount <= 0) return;
         var available = new ArrayList<>(privateSupplies);
         available.addAll(carried);
@@ -104,12 +147,12 @@ public final class HiredProductionDemand {
             remaining = WorkSupplyEvaluation.consume(privateSupplies, need, remaining);
             remaining = WorkSupplyEvaluation.consume(carried, need, remaining);
             long committed = need.quantity() - remaining;
-            remaining = WorkSupplyEvaluation.consume(supplies, need, remaining);
+            remaining = consume(supplies, allowed, need, remaining);
             var demand = new WorkSupplyDemand(WorkSupplyDemand.identity(level.registryAccess(), order.id(), WorkSupplyDemand.Kind.PRODUCTION, need),
                     order.id(), WorkSupplyDemand.Kind.PRODUCTION, need, need.quantity(), 0, 0, 5,
                     need.quantity() - remaining - committed, committed, 0, 0, !unknown || remaining == 0, sources, order.storage(),
                     WorkSupplyDemand.Blocker.of(unknown && remaining > 0 ? "storage_unavailable" : remaining > 0 ? "missing_materials" : ""));
-            result.add(Requirement.from(demand));
+            result.add(shared.explain(demand));
         }
     }
 }

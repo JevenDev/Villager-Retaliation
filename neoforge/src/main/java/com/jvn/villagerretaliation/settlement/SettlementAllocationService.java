@@ -175,7 +175,7 @@ public final class SettlementAllocationService {
         return Math.min(maximum, inspect(level, town, worker, null, source, destination, sample).allowance());
     }
 
-    private static boolean linked(ServerLevel level, SettlementRecord town, BlockPos position) {
+    static boolean linked(ServerLevel level, SettlementRecord town, BlockPos position) {
         if (town.depots().values().stream().anyMatch(depot -> SettlementSupplyStock.sameStorage(level, depot.position(), position))) return true;
         return town.worksitePlans().values().stream().flatMap(plan -> plan.settings().storage().entries().stream())
                 .anyMatch(link -> link.purpose().supplies() && SettlementSupplyStock.sameStorage(level, link.position(), position))

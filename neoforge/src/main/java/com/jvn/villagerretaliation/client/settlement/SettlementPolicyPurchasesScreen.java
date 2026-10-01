@@ -212,10 +212,12 @@ final class SettlementPolicyPurchasesScreen extends VillagerWindowScreen impleme
                 .filter(value -> value.approval().equals(id)).findFirst().orElse(null);
     }
 
-    static Component status(SettlementPolicySnapshotPayload.Purchase purchase) {
+    static Component status(SettlementPolicySnapshotPayload.Purchase purchase, SettlementPolicySnapshotPayload.Need need) {
         return purchase == null ? SettlementPolicyClient.blocker("checking") : SettlementPolicyClient.text("purchase_status",
                 purchase.known() ? Long.toString(purchase.missing()) : SettlementPolicyClient.text("unknown").getString(),
-                purchase.waitTicks(), SettlementPolicyClient.blocker(purchase.blocker()));
+                need == null ? SettlementPolicyClient.text("unknown")
+                        : Component.translatable("villagerretaliation.gui.settlement.supply_unit." + need.unit().name().toLowerCase(java.util.Locale.ROOT)),
+                purchase.waitTicks(), purchase.blocker().isEmpty() ? SettlementPolicyClient.text("ready") : SettlementPolicyClient.blocker(purchase.blocker()));
     }
 
     private Component account() {
@@ -266,13 +268,16 @@ final class SettlementPolicyPurchasesScreen extends VillagerWindowScreen impleme
             return SettlementPolicyClient.text("purchase_prices", SettlementEditScreen.currency(this.approval.unitPriceLimit()),
                     current == null || current.unitPrice().isZero() ? SettlementPolicyClient.text("unknown") : SettlementEditScreen.currency(current.unitPrice()));
         }
-        Component help() {
-            var need = needs().stream().filter(value -> java.util.Objects.equals(value.step(), this.approval.consumer())
+        SettlementPolicySnapshotPayload.Need need() {
+            return needs().stream().filter(value -> java.util.Objects.equals(value.step(), this.approval.consumer())
                     && value.id().equals(this.approval.requirement())).findFirst().orElse(null);
+        }
+        Component help() {
+            var need = need();
             var result = this.approval.sample().getHoverName().copy().append("\n").append(consumerName(this.approval.consumer()))
                     .append(": ").append(need == null ? SettlementPolicyClient.text("missing_step") : SettlementPolicyClient.needName(need))
                     .append("\n").append(SettlementPolicyClient.text("purchase_depot_value", this.approval.destination().toShortString()))
-                    .append("\n").append(prices()).append("\n").append(status(purchase(this.approval.id())));
+                    .append("\n").append(prices()).append("\n").append(status(purchase(this.approval.id()), need()));
             if (need != null) result.append("\n").append(SettlementPolicyClient.text("need_quantities", need.required(),
                     Component.translatable("villagerretaliation.gui.settlement.supply_unit." + need.unit().name().toLowerCase(java.util.Locale.ROOT)),
                     need.available(), need.committed(), need.incoming(), need.known() ? Long.toString(need.missing()) : SettlementPolicyClient.text("unknown")));
@@ -283,7 +288,7 @@ final class SettlementPolicyPurchasesScreen extends VillagerWindowScreen impleme
             graphics.renderItem(this.approval.sample(), left + 3, top + 4);
             graphics.drawString(font, font.plainSubstrByWidth(this.approval.sample().getHoverName().getString(), width - 30), left + 24, top + 4, 0xFFFFFF);
             graphics.drawString(font, font.plainSubstrByWidth(prices().getString(), width - 6), left + 3, top + 18, 0xAAAAAA);
-            graphics.drawString(font, font.plainSubstrByWidth(status(purchase(this.approval.id())).getString(), width - 6), left + 3, top + 30, 0xAAAAAA);
+            graphics.drawString(font, font.plainSubstrByWidth(status(purchase(this.approval.id()), need()).getString(), width - 6), left + 3, top + 30, 0xAAAAAA);
         }
         @Override public boolean mouseClicked(double x, double y, int button) {
             if (button != 0) return false;

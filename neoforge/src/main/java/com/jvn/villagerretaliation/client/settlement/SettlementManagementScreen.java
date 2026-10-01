@@ -428,13 +428,13 @@ public final class SettlementManagementScreen extends Screen {
         switch (this.desiredPage) {
             case DEMAND -> {
                 action(0, "demand_open", selected instanceof SettlementManagementPayload.Demand);
-                action(1, "supply_storage", selected instanceof SettlementManagementPayload.Demand);
+                action(1, "supply_storage", selected instanceof SettlementManagementPayload.Demand demand && !demand.control().personal());
                 action(2, "supply_focus", selected instanceof SettlementManagementPayload.Demand);
-                action(3, "supply_worksite", selected instanceof SettlementManagementPayload.Demand);
+                action(3, "supply_worksite", selected instanceof SettlementManagementPayload.Demand demand && demand.control().worksite());
                 action(4, "demand_transfer", selected instanceof SettlementManagementPayload.Demand demand && demand.courier() != null
                         && permits(SettlementPermission.STAFF) && permits(SettlementPermission.LOGISTICS));
                 action(5, "demand_competitor", selected instanceof SettlementManagementPayload.Demand demand && demand.competingConsumer() != null);
-                action(6, "policy.create", selected instanceof SettlementManagementPayload.Demand);
+                action(6, "policy.create", selected instanceof SettlementManagementPayload.Demand demand && !demand.control().personal());
             }
             case SUPPLIES -> {
                 action(0, "supply_details", selected instanceof SettlementManagementPayload.Supply);
@@ -591,7 +591,8 @@ public final class SettlementManagementScreen extends Screen {
             case ISSUES -> {
                 if (selected instanceof SettlementManagementPayload.Issue issue) {
                     if (action == 0) {
-                        navigate(issue.target(), 0, issue.targetId() == null ? "" : issue.targetId().toString());
+                        if (!SettlementIssueView.open(this, issue))
+                            navigate(issue.target(), 0, issue.targetId() == null ? "" : issue.targetId().toString());
                     } else if (issue.kind() == SettlementManagementPayload.IssueKind.WORKER) {
                         if (action == 1) {
                             submit(new SettlementManagementActionPayload.WorkerEnabled(issue.resident(), issue.area(), !issue.enabled()));
@@ -875,7 +876,7 @@ public final class SettlementManagementScreen extends Screen {
             return switch (issue.kind()) {
                 case PROGRESSION -> text("issue_progression");
                 case SIMULATION -> text("issue_simulation");
-                case WORKER, PROJECT, TRADE, RESIDENT, SUPPLY -> text("issue_" + issue.kind().name().toLowerCase(Locale.ROOT),
+                case WORKER, PROJECT, TRADE, RESIDENT, SUPPLY, POLICY, WORKER_POOL -> text("issue_" + issue.kind().name().toLowerCase(Locale.ROOT),
                         issue.name().isBlank() ? text("unnamed_resident") : Component.literal(issue.name()));
             };
         }
@@ -910,6 +911,8 @@ public final class SettlementManagementScreen extends Screen {
                     yield Component.literal(issue.detail());
                 }
                 String key = switch (issue.kind()) {
+                    case POLICY -> "villagerretaliation.gui.settlement.policy.blocker." + issue.cause();
+                    case WORKER_POOL -> "villagerretaliation.gui.settlement.pool.blocker." + issue.cause();
                     case PROGRESSION -> "villagerretaliation.gui.settlement.requirement." + issue.cause();
                     case PROJECT -> "villagerretaliation.gui.settlement.project_blocker." + issue.cause();
                     case TRADE, RESIDENT, SIMULATION, SUPPLY -> "villagerretaliation.gui.settlement.issue." + issue.cause();

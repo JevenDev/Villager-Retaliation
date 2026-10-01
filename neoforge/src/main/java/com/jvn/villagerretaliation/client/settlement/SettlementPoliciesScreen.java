@@ -52,6 +52,13 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
         }
     }
 
+    public static SettlementPoliciesScreen forPolicy(Screen previous, UUID town, UUID policy) {
+        var screen = new SettlementPoliciesScreen(previous, town);
+        screen.selected = java.util.Objects.requireNonNull(policy);
+        screen.loadSelected = true;
+        return screen;
+    }
+
     @Override public Screen previousPolicy() { return this.previous; }
     SettlementPolicySnapshotPayload snapshot() { return this.state.snapshot(); }
     UUID town() { return this.state.town(); }
@@ -105,6 +112,7 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
             button("pause", 2 * fourth + 8, this.panelHeight - 76, fourth, this::toggle);
             button("remove", 3 * fourth + 12, this.panelHeight - 76, fourth, this::remove);
             button("back", 0, this.panelHeight - 24, 84, this::onClose);
+            button("history", 88, this.panelHeight - 24, 64, this::history);
             button("refresh", this.panelWidth - 100, this.panelHeight - 24, 100, () -> refresh(null, null));
         }
         this.rows.refresh();
@@ -335,6 +343,14 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
                 () -> submit(new SettlementPolicyRequestPayload.Change(SettlementSupplyPolicy.State.REMOVING))));
     }
 
+    private void history() {
+        if (selectedPolicy() == null) return;
+        refresh(null, () -> {
+            if (snapshot().selected() != null) this.minecraft.setScreen(new SettlementPolicyHistoryScreen(this,
+                    SettlementSupplyPolicy.load(snapshot().selected(), this.minecraft.level.registryAccess(), () -> {}), snapshot().gameTime()));
+        });
+    }
+
     private void backToList() {
         this.selected = this.draft == null ? null : this.draft.id;
         this.draft = null;
@@ -371,6 +387,7 @@ public final class SettlementPoliciesScreen extends VillagerWindowScreen impleme
             var selected = selectedPolicy();
             this.buttons.get("new").active &= snapshot() != null && snapshot().policies().size() < SettlementSupplyPolicy.MAX_POLICIES;
             this.buttons.get("edit").active &= ready && selected != null;
+            this.buttons.get("history").active &= ready && selected != null;
             this.buttons.get("pause").active = ready && this.state.editable() && selected != null && selected.state() != SettlementSupplyPolicy.State.REMOVING;
             this.buttons.get("pause").setMessage(SettlementPolicyClient.text(selected != null && selected.state() == SettlementSupplyPolicy.State.ACTIVE ? "pause" : "activate"));
             this.buttons.get("remove").active = this.buttons.get("pause").active;

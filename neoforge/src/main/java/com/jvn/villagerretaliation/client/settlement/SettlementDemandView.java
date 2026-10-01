@@ -38,6 +38,7 @@ final class SettlementDemandView {
     static void open(SettlementManagementScreen parent, Demand demand, int action) {
         var client = Minecraft.getInstance();
         if (action == 6) {
+            if (demand.control().personal()) return;
             var kind = switch (demand.kind()) {
                 case FOOD -> com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.FOOD;
                 case EQUIPMENT -> com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.EQUIPMENT;
@@ -66,10 +67,11 @@ final class SettlementDemandView {
             return;
         }
         if (action == 1) {
+            if (!demand.control().worksite()) return;
             if (demand.cause() == com.jvn.villagerretaliation.settlement.SettlementSupplyRecovery.Cause.STATION)
                 parent.navigateTo(Page.STATIONS, demand.area().toString());
             else parent.openSupplyStorage(demand.area());
-        } else if (action == 3) parent.navigateTo(Page.AREAS, demand.area().toString());
+        } else if (action == 3 && demand.control().worksite()) parent.navigateTo(Page.AREAS, demand.area().toString());
         else if (action == 4 && demand.courier() != null) {
             var orders = new TransferOrdersScreen(parent, new ProductionTarget(parent.snapshot().header().id(), demand.courier()));
             long value = switch (demand.unit()) {
@@ -83,9 +85,18 @@ final class SettlementDemandView {
             orders.draft(new TransferRequestPayload.Append(demand.source(), demand.destination(), demand.sample(), amount));
             client.setScreen(orders);
         } else if (action == 0) {
-            if (demand.project()) parent.navigateTo(Page.PROJECTS, demand.consumer().toString());
-            else client.setScreen(new ProductionOrdersScreen(parent, new ProductionTarget(parent.snapshot().header().id(), demand.area()),
-                    () -> client.setScreen(parent), demand.consumer()));
+            switch (demand.control()) {
+                case PROJECT -> parent.navigateTo(Page.PROJECTS, demand.consumer().toString());
+                case RESERVE -> parent.navigateTo(Page.DEPOTS, "");
+                case RESIDENT -> parent.navigateTo(Page.RESIDENTS, demand.consumer().toString());
+                case EQUIPMENT -> parent.navigateTo(Page.AREAS, demand.area().toString());
+                case PERSONAL_EQUIPMENT -> parent.focusSupply(demand.area(), demand.focus());
+                case TRANSFER -> client.setScreen(new TransferOrdersScreen(parent,
+                        new ProductionTarget(parent.snapshot().header().id(), demand.area()), () -> client.setScreen(parent), demand.consumer()));
+                case PRODUCTION, PERSONAL_PRODUCTION -> client.setScreen(new ProductionOrdersScreen(parent,
+                        new ProductionTarget(demand.control().personal() ? null : parent.snapshot().header().id(), demand.area()),
+                        () -> client.setScreen(parent), demand.consumer()));
+            }
         }
     }
 }

@@ -232,7 +232,7 @@ public final class SettlementSupplyPolicy {
     public enum TargetKind { STOCK, CONSUMER, FOOD, EQUIPMENT }
     public enum StepKind { GATHER, PRODUCTION, DELIVERY }
     public enum BindingState { ACTIVE, PARKED, SUSPENDED, DRAINING }
-    public enum EventKind { EDITED, ACTIVATED, PAUSED, SUSPENDED, COMPLETED, PURCHASED }
+    public enum EventKind { EDITED, ACTIVATED, PAUSED, SUSPENDED, COMPLETED, PURCHASED, STAFFED }
 
     public record Configuration(String name, Target target, int priority, List<Step> steps, List<Connection> connections,
                                 SettlementPurchasePlan purchases) {

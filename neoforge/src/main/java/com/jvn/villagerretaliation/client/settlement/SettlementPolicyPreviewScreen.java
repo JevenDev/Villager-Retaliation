@@ -44,7 +44,9 @@ final class SettlementPolicyPreviewScreen extends VillagerWindowScreen implement
                 var approval = this.previous.configuration().purchases().approvals().stream()
                         .filter(value -> value.id().equals(purchase.approval())).findFirst().orElse(null);
                 if (approval != null) this.rows.row(new Row(approval.sample().getHoverName(),
-                        SettlementPolicyPurchasesScreen.status(purchase), SettlementPolicyClient.text("purchase_prices",
+                        SettlementPolicyPurchasesScreen.status(purchase, this.snapshot.needs().stream()
+                                .filter(need -> java.util.Objects.equals(need.step(), approval.consumer()) && need.id().equals(approval.requirement()))
+                                .findFirst().orElse(null)), SettlementPolicyClient.text("purchase_prices",
                         SettlementEditScreen.currency(approval.unitPriceLimit()), SettlementEditScreen.currency(purchase.unitPrice()))));
             }
         }
@@ -58,7 +60,7 @@ final class SettlementPolicyPreviewScreen extends VillagerWindowScreen implement
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
-        var blocker = SettlementPolicyClient.blocker(this.snapshot.blocker());
+        var blocker = this.snapshot.blocker().isEmpty() ? SettlementPolicyClient.text("ready") : SettlementPolicyClient.blocker(this.snapshot.blocker());
         graphics.drawString(this.font, this.font.plainSubstrByWidth(blocker.getString(), this.panelWidth), this.left, this.top + 24, 0xFFCC88);
         var row = this.rows.hovered();
         if (row != null) graphics.renderTooltip(this.font, this.font.split(row.name.copy().append("\n").append(row.detail).append("\n").append(row.help),
@@ -66,7 +68,7 @@ final class SettlementPolicyPreviewScreen extends VillagerWindowScreen implement
     }
 
     private final class Rows extends VillagerSelectionList<Row> {
-        Rows() { super(SettlementPolicyPreviewScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 82), top + 42, 64); setX(left); }
+        Rows() { super(SettlementPolicyPreviewScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 82), top + 42, 52); setX(left); }
         void row(Row value) { addEntry(value); }
         Row hovered() { return getHovered(); }
         @Override public int getRowWidth() { return getWidth() - 12; }

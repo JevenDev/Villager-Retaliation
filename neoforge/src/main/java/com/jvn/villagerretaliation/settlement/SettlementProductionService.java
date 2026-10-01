@@ -108,7 +108,9 @@ public final class SettlementProductionService {
                 SettlementDemandService.inspect(level, town, player).demands().stream()
                         .filter(demand -> demand.area().equals(area.id()) && demand.kind()
                                 == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PRODUCTION)
-                        .map(demand -> com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement.from(demand.supply())).limit(544).toList());
+                        .map(demand -> com.jvn.villagerretaliation.interaction.work.production.HiredProductionDemand.Requirement.from(demand.supply())).limit(544).toList(),
+                queue == null ? java.util.List.of() : SettlementPolicyManagementService.orderLinks(town,
+                        queue.orders().stream().map(HiredProductionOrder::id).toList()));
     }
 
     private static boolean permits(ServerPlayer player, SettlementRecord town, UUID areaId) {
