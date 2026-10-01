@@ -154,6 +154,7 @@ public final class SettlementConstructionGameTests {
             helper.assertFalse(fixture.town().putArea(fixture.leader().getUUID(), narrowed), "an active project prevents shrinking its area past its footprint");
             var expanded = new SettlementArea(fixture.area().id(), SettlementAreaType.CONSTRUCTION, "Expanded",
                     fixture.area().min().offset(-1, 0, -1), fixture.area().max().offset(1, 0, 1), 5, true);
+            SettlementTestPlots.claim(helper.getLevel(), fixture.town(), expanded.min(), expanded.max());
             helper.assertTrue(fixture.town().putArea(fixture.leader().getUUID(), expanded), "safe area expansion remains available");
             SettlementWorkforceService.reconcile(helper.getLevel(), fixture.builder());
             helper.assertValueEqual(BuilderTaskState.jobId(HiredWorkStateStore.state(fixture.builder())).orElseThrow(), first.id(),

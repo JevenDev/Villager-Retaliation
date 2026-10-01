@@ -58,20 +58,20 @@ public final class SettlementAutonomyGameTests {
     }
 
     @GameTest(template = "empty", batch = "settlement_autonomy")
-    public static void staffingPrioritizesFoodAndAptitudeWithoutChangingPlayerChoices(GameTestHelper helper) {
+    public static void manualFillPrioritizesFoodAndAptitudeWithoutChangingPlayerChoices(GameTestHelper helper) {
         var town = fixture(helper, 3);
         var farm = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.FARM).findFirst().orElseThrow();
         var strongest = town.residents().values().stream().map(state -> state.context(helper.getLevel()))
                 .max(java.util.Comparator.comparingInt(resident -> com.jvn.villagerretaliation.interaction.HiredVillagerRoles
                         .roleScore(helper.getLevel(), resident, farm.type().role()))).orElseThrow();
-        SettlementAutonomyService.update(helper.getLevel(), town);
+        SettlementAutonomyService.fill(helper.getLevel(), town, null);
         helper.assertValueEqual(town.duties().get(strongest.getUUID()), farm.id(), "food service receives the most suitable available resident");
         var duties = java.util.Map.copyOf(town.duties());
-        SettlementAutonomyService.update(helper.getLevel(), town);
+        SettlementAutonomyService.fill(helper.getLevel(), town, null);
         helper.assertValueEqual(town.duties(), duties, "stable staffing never reshuffles occupied jobs");
         town.removeDuty(strongest.getUUID());
         town.rememberManualDuty(strongest.getUUID());
-        SettlementAutonomyService.update(helper.getLevel(), town);
+        SettlementAutonomyService.fill(helper.getLevel(), town, null);
         helper.assertFalse(town.duties().containsKey(strongest.getUUID()), "an explicit player release remains idle");
         var restored = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
         helper.assertTrue(restored.manuallyStaffed(strongest.getUUID()), "player staffing ownership survives reload");
@@ -82,7 +82,7 @@ public final class SettlementAutonomyGameTests {
     @GameTest(template = "empty", batch = "settlement_autonomy")
     public static void readyStageAdvancesOnceUnlessManuallyManaged(GameTestHelper helper) {
         var town = fixture(helper, 5);
-        SettlementAutonomyService.update(helper.getLevel(), town);
+        SettlementAutonomyService.fill(helper.getLevel(), town, null);
         helper.assertTrue(SettlementProgressionService.assess(helper.getLevel(), town).missing().isEmpty(), "the fixture meets real stage requirements");
         long required = SettlementProgressionService.requiredTicks();
         for (long tick = 0L; tick <= required; tick += 200L) town.support().observe(tick, true, false);
@@ -102,11 +102,12 @@ public final class SettlementAutonomyGameTests {
     public static void automaticStaffingRestoresFutureAuthorityWithoutChangingDuties(GameTestHelper helper) {
         var town = fixture(helper, 3);
         var level = helper.getLevel();
+        enroll(helper, town);
         var leader = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
                 new com.mojang.authlib.GameProfile(town.leader(), "StaffingLeader"));
         var residents = town.residents().keySet().stream().sorted().toList();
         residents.forEach(town::rememberManualDuty);
-        SettlementAutonomyService.update(level, town);
+        SettlementWorkerPoolSchedulingGameTests.cycle(helper, town, 100);
         helper.assertTrue(town.duties().isEmpty(), "manual idle choices block automatic assignment");
         var outsider = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
                 new com.mojang.authlib.GameProfile(UUID.randomUUID(), "StaffingViewer"));
@@ -121,7 +122,7 @@ public final class SettlementAutonomyGameTests {
         helper.assertFalse(restored.manuallyStaffed(residents.getFirst()), "automatic authority survives reload");
         helper.assertTrue(restored.manuallyStaffed(residents.getLast()), "other manual choices survive reload");
         helper.assertTrue(SettlementWorkforceService.automaticStaffing(leader, town, null), "bulk restore succeeds");
-        SettlementAutonomyService.update(level, town);
+        SettlementWorkerPoolSchedulingGameTests.cycle(helper, town, 100);
         helper.assertFalse(town.duties().isEmpty(), "eligible idle residents receive suitable work");
         var duties = java.util.Map.copyOf(town.duties());
         duties.keySet().forEach(town::rememberManualDuty);
@@ -141,27 +142,28 @@ public final class SettlementAutonomyGameTests {
     public static void restoredStaffingStillRespectsPersonalCommitmentsDeparturesAndAvailability(GameTestHelper helper) {
         var town = fixture(helper, 1);
         var level = helper.getLevel();
+        enroll(helper, town);
         var id = town.residents().keySet().iterator().next();
         var saved = town.residents().get(id).save();
         saved.putBoolean("PersonalCommitment", true);
         town.recordResident(SettlementResidentState.load(saved));
         town.rememberManualDuty(id);
         town.returnToAutomaticStaffing(town.leader(), id);
-        SettlementAutonomyService.update(level, town);
+        SettlementWorkerPoolSchedulingGameTests.cycle(helper, town, 100);
         helper.assertFalse(town.duties().containsKey(id), "returning authority cannot override a personal commitment");
         saved.putBoolean("PersonalCommitment", false);
         saved.putBoolean("Present", false);
         town.recordResident(SettlementResidentState.load(saved));
-        SettlementAutonomyService.update(level, town);
+        SettlementWorkerPoolSchedulingGameTests.cycle(helper, town, 100);
         helper.assertFalse(town.duties().containsKey(id), "unavailable residents wait for a usable observation");
         saved.putBoolean("Present", true);
         town.recordResident(SettlementResidentState.load(saved));
         town.recordDeparture(new SettlementDeparture(id, "Departing", level.getGameTime(), SettlementDeparture.Reason.FOOD,
                 town.residents().get(id)));
-        SettlementAutonomyService.update(level, town);
+        SettlementWorkerPoolSchedulingGameTests.cycle(helper, town, 100);
         helper.assertFalse(town.duties().containsKey(id), "returning authority cannot cancel a departure");
         town.removeDeparture(id);
-        SettlementAutonomyService.update(level, town);
+        SettlementWorkerPoolSchedulingGameTests.cycle(helper, town, 100);
         helper.assertTrue(town.duties().containsKey(id), "the resident becomes eligible when their commitment and availability allow");
         var successor = UUID.randomUUID();
         town.rememberManualDuty(id);
@@ -170,6 +172,16 @@ public final class SettlementAutonomyGameTests {
         helper.assertTrue(town.manuallyStaffed(id), "leadership changes preserve deliberate staffing choices");
         helper.assertTrue(town.returnToAutomaticStaffing(successor, id), "the new leader can explicitly return staffing authority");
         helper.succeed();
+    }
+
+    private static void enroll(GameTestHelper helper, SettlementRecord town) {
+        helper.getLevel().setDayTime(4_000);
+        var sites = town.areas().values().stream().filter(area -> area.type().role() != null).toList();
+        for (var area : sites) SettlementTestPlots.claim(helper.getLevel(), town, area.min(), area.max());
+        helper.assertTrue(town.configureWorkerPool(town.leader(), UUID.randomUUID(), -1,
+                new SettlementWorkerPool.Configuration("Explicit staffing", List.copyOf(town.residents().keySet()),
+                        sites.stream().map(area -> SettlementWorkerPool.Staffing.defaults(town, area.id())).toList()), true),
+                "the player explicitly enrolls residents and approved worksites");
     }
 
     private static SettlementRecord fixture(GameTestHelper helper, int population) {

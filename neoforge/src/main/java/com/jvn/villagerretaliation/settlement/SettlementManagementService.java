@@ -365,7 +365,7 @@ public final class SettlementManagementService {
                     town.guardOrders().get(member.id()), detailed ? settings : null,
                     detailed && !personal ? SettlementBrewingService.snapshot(level, town, member.id()) : null, diagnostic, town.manuallyStaffed(member.id()),
                     !personal && town.worksitePlans().containsKey(town.duties().get(member.id())),
-                    settings == null ? 0 : Integer.bitCount(settings.overrides()), temporary));
+                    settings == null ? 0 : Integer.bitCount(settings.overrides()), temporary, town.workerPoolFor(member.id())));
         }
     }
 

@@ -252,7 +252,7 @@ final class SettlementSelectionInspector {
             line("Priority: " + this.worksite.priority() + (this.worksite.enabled() ? " / enabled" : " / paused"));
         }
         if (this.selected instanceof Resident resident) {
-            line(resident.manualStaffing() ? "Manual assignment" : "Automatic staffing eligible");
+            line(SettlementManagementScreen.staffing(resident));
             line(resident.worksitePlan() ? resident.overrideCount() + " individual setting overrides" : "Individual worker settings");
             if (!resident.temporary().isEmpty()) line("Temporary: " + resident.temporary());
             if (!resident.diagnostic().isEmpty()) line(resident.diagnostic());
@@ -280,7 +280,7 @@ final class SettlementSelectionInspector {
         if (this.staff.isEmpty()) line("No assigned residents");
         for (var resident : this.staff) {
             this.lines.add(new Line(SettlementManagementScreen.name(resident).copy().append(" / ")
-                    .append(resident.manualStaffing() ? "manual" : "automatic"), resident.id()));
+                    .append(SettlementManagementScreen.staffing(resident)), resident.id()));
             this.lines.add(new Line(Component.literal(resident.status().replace('_', ' ') + " / " + resident.overrideCount() + " overrides"
                     + (resident.temporary().isEmpty() ? "" : " / " + resident.temporary())), resident.id()));
         }

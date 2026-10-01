@@ -239,6 +239,10 @@ public final class SettlementWorkerState {
         return this.miningAccess == null ? null : this.miningAccess.entry(mine, area);
     }
 
+    boolean needsRestore(Villager villager) {
+        return villager.getPersistentData().getLong(VERSION_TAG) < this.version;
+    }
+
     boolean restore(Villager villager) {
         if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Worker handoff has a different identity");
         if (this.huntingBody != null) this.huntingBody.restore(villager, villager.level().getGameTime());

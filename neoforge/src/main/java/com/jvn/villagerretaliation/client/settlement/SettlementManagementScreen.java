@@ -291,8 +291,7 @@ public final class SettlementManagementScreen extends Screen {
 
     private int extraActionHeight() {
         int count = switch (this.desiredPage) {
-            case RESIDENTS, DEMAND -> 7;
-            case SUMMARY -> 6;
+            case RESIDENTS, DEMAND, SUMMARY -> 7;
             case AREAS, SUPPLY_LINKS, PROJECTS -> 5;
             case SUPPLIES, ISSUES -> 4;
             default -> 3;
@@ -487,13 +486,14 @@ public final class SettlementManagementScreen extends Screen {
                 action(2, "budget", permits(SettlementPermission.TREASURY));
                 action(3, "page.issues", permits(SettlementPermission.VIEW));
                 action(5, "policy.title", permits(SettlementPermission.VIEW));
+                action(6, "pool.title", permits(SettlementPermission.VIEW));
                 action(4, this.snapshot.header() != null && this.snapshot.header().manualManagement() ? "enable_autonomy" : "manage_manually", leader());
             }
             case RESIDENTS -> {
                 action(0, "assign", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
                         && !resident.baby() && !resident.roles().isEmpty());
                 action(5, "automatic_staffing", permits(SettlementPermission.STAFF)
-                        && selected instanceof SettlementManagementPayload.Resident resident && resident.manualStaffing());
+                        && selected instanceof SettlementManagementPayload.Resident resident && resident.manualStaffing() && resident.workerPool() != null);
                 action(6, "automatic_staffing_all", permits(SettlementPermission.STAFF));
                 action(1, "release", leader() && selected instanceof SettlementManagementPayload.Resident resident && resident.area() != null);
                 action(3, "worker_settings", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
@@ -645,7 +645,9 @@ public final class SettlementManagementScreen extends Screen {
                 }
             }
             case SUMMARY -> {
-                if (action == 5) {
+                if (action == 6) {
+                    this.minecraft.setScreen(new SettlementWorkerPoolsScreen(this, this.snapshot.header().id()));
+                } else if (action == 5) {
                     this.minecraft.setScreen(new SettlementPoliciesScreen(this, this.snapshot.header().id()));
                 } else if (action == 0) {
                     submit(new SettlementManagementActionPayload.Advance());
@@ -864,6 +866,10 @@ public final class SettlementManagementScreen extends Screen {
         return text(category + "." + value.name().toLowerCase(Locale.ROOT));
     }
 
+    static Component staffing(SettlementManagementPayload.Resident resident) {
+        return text(resident.manualStaffing() ? "staffing_manual" : resident.workerPool() != null ? "staffing_automatic" : "staffing_outside_pool");
+    }
+
     static Component name(Entry entry) {
         if (entry instanceof SettlementManagementPayload.Issue issue) {
             return switch (issue.kind()) {
@@ -918,7 +924,7 @@ public final class SettlementManagementScreen extends Screen {
                     resident.baby() ? text("child") : profession(resident.profession()),
                     enumText("presence", resident.presence()), Component.translatableWithFallback(resident.status().startsWith("workforce.")
                             ? "villagerretaliation.gui.clipboard_workforce.status." + resident.status().substring("workforce.".length())
-                            : "villagerretaliation.gui.settlement.work." + resident.status(), text("work.idle").getString()), text(resident.manualStaffing() ? "staffing_manual" : "staffing_automatic"));
+                            : "villagerretaliation.gui.settlement.work." + resident.status(), text("work.idle").getString()), staffing(resident));
             case SettlementManagementPayload.Bed bed -> text("bed_row", bed.position().toShortString(),
                     bed.resident() != null ? text("bed_owner", bed.residentName().isBlank() ? text("unnamed_resident") : Component.literal(bed.residentName()))
                             : text(bed.available() ? "bed_available" : "bed_unavailable"));

@@ -11,11 +11,6 @@ final class SettlementAutonomyService {
     private SettlementAutonomyService() {
     }
 
-    static void update(ServerLevel level, SettlementRecord town) {
-        if (town.manualManagement()) return;
-        fill(level, town, null);
-    }
-
     static void fill(ServerLevel level, SettlementRecord town, java.util.UUID selectedArea) {
         var missing = SettlementProgressionService.assess(level, town).missing();
         var areas = town.areas().values().stream()

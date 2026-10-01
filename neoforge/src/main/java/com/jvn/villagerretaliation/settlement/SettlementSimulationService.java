@@ -247,7 +247,7 @@ public final class SettlementSimulationService {
                 SettlementCareService.schedule(this.level, this.town, cycleAt, jobs);
                 jobs.add(() -> SettlementDepartureService.process(this.level, this.town, cycleAt));
                 SettlementBackgroundService.schedule(this.level, this.town, cycleAt, jobs);
-                jobs.add(() -> SettlementAutonomyService.update(this.level, this.town));
+                SettlementWorkerPoolService.schedule(this.level, this.town, cycleAt, jobs);
                 jobs.add(() -> SettlementProgressionService.update(this.level, this.town, cycleAt));
                 SettlementPopulationService.schedule(this.level, this.town, cycleAt, jobs);
                 SettlementTradeService.schedule(this.level, this.town, cycleAt, jobs);

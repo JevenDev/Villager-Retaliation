@@ -116,6 +116,10 @@ public final class SettlementManyVillageProfileScenario {
             town.recordResident(SettlementResidentState.capture(villager, town, this.level.getGameTime()));
             residents.add(villager.getUUID());
         }
+        require(town.configureWorkerPool(player.getUUID(), UUID.randomUUID(), -1,
+                new SettlementWorkerPool.Configuration("Courier crew", residents,
+                        List.of(new SettlementWorkerPool.Staffing(workplace.id(), 0, 2))), true), "each village has an explicitly enrolled active pool");
+        for (var resident : residents) require(town.returnToAutomaticStaffing(player.getUUID(), resident), "enrolled residents accept pool control");
         return new Village(town, origin, List.copyOf(residents), destination);
     }
 
@@ -168,6 +172,9 @@ public final class SettlementManyVillageProfileScenario {
         for (int index = 0; index < this.villages.size(); index++) {
             var village = this.villages.get(index);
             var town = village.town;
+            require(town.workerPools().size() == 1 && town.workerPools().values().stream().allMatch(pool -> pool.authorized(town)),
+                    "each village keeps its active worker pool");
+            require(village.residents.stream().allMatch(resident -> town.workerPoolFor(resident) != null), "the full benchmark roster stays enrolled");
             roster += VillageAllegianceRegistrySavedData.get(this.level).residentRoster(town.id(), this.level.getGameTime()).size();
             iron += town.depots().values().stream().mapToInt(depot -> depot.count(stack -> stack.is(Items.IRON_INGOT))).sum();
             for (var id : village.residents) {
@@ -187,7 +194,7 @@ public final class SettlementManyVillageProfileScenario {
         require(iron == TOWNS * IRON_PER_TOWN, "all depot and carried iron is conserved: " + iron);
         require(roster == TOWNS * RESIDENTS_PER_TOWN, "the census remains 1,000: " + roster);
         return new Snapshot(tickingResidents(), unloadedVillages(), roster, iron, SettlementSimulationService.completedCycles(this.level),
-                List.copyOf(deliveries), List.copyOf(careTimes), SettlementSimulationService.metrics(this.level));
+                List.copyOf(deliveries), List.copyOf(careTimes), SettlementSimulationService.metrics(this.level), this.villages.size());
     }
 
     private SettlementArea area(ServerPlayer player, SettlementRecord town, SettlementAreaType type, BlockPos min, BlockPos max) {
@@ -213,6 +220,6 @@ public final class SettlementManyVillageProfileScenario {
     }
 
     public record Snapshot(int ticking, int unloadedVillages, int census, int iron, long completedCycles,
-                           List<Integer> deliveries, List<Long> careTimes, SettlementSimulationService.Metrics scheduler) {
+                           List<Integer> deliveries, List<Long> careTimes, SettlementSimulationService.Metrics scheduler, int activePools) {
     }
 }

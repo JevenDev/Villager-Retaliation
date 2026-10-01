@@ -170,10 +170,11 @@ public final class SettlementWorksiteGameTests {
         helper.assertTrue(SettlementWorksiteService.configure(leader, town, farm.id(),
                 new SettlementWorksitePlan(defaults.settings(), 3), true), "a worksite can request multiple workers");
         town.setManualManagement(town.leader(), true);
-        SettlementAutonomyService.update(helper.getLevel(), town);
+        SettlementWorkerPoolSchedulingGameTests.cycle(helper, town, 100);
         helper.assertTrue(town.duties().isEmpty(), "manual management waits for an explicit fill action");
         helper.assertTrue(SettlementWorksiteService.fill(leader, town, farm.id()), "the leader can fill the selected worksite");
         helper.assertValueEqual(town.duties().size(), 3, "staffing stops at the target");
+        helper.assertTrue(town.duties().keySet().stream().allMatch(town::manuallyStaffed), "explicit fill pins every selected assignment");
         helper.assertTrue(town.duties().values().stream().allMatch(farm.id()::equals), "fill does not staff other workplaces");
         helper.assertFalse(town.duties().containsKey(residents.getFirst()), "manual idle choices remain untouched");
         helper.assertFalse(town.duties().containsKey(residents.get(1)), "personal commitments cannot be purchased or reassigned by fill");

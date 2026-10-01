@@ -69,6 +69,7 @@ public final class SettlementViewClientSmoke {
     private static SettlementPolicyClientChecks policyChecks;
     private static SettlementPurchaseClientChecks purchaseChecks;
     private static SettlementEquipmentClientChecks equipmentChecks;
+    private static SettlementWorkerPoolClientChecks poolChecks;
     private static ProjectFixture projectFixture;
     private static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project projectSnapshot;
     private static UUID brewer;
@@ -1732,6 +1733,9 @@ public final class SettlementViewClientSmoke {
             equipmentChecks = new SettlementEquipmentClientChecks(fixture.town(), SettlementViewClientSmoke::capture);
             phase = 202;
         } else if (phase == 202 && equipmentChecks.tick(minecraft)) {
+            poolChecks = new SettlementWorkerPoolClientChecks(fixture.town(), fixture.resident(), SettlementViewClientSmoke::capture);
+            phase = 204;
+        } else if (phase == 204 && poolChecks.tick(minecraft)) {
             minecraft.screen.onClose();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
@@ -1918,7 +1922,8 @@ public final class SettlementViewClientSmoke {
                     || button instanceof com.jvn.villagerretaliation.client.ui.VillagerItemSlot)
                 require(button.getTooltip() != null, "shared controls expose full labels when their rendered text is clipped");
             else if (!(button instanceof SettlementViewUi.HeaderButton))
-                require(Minecraft.getInstance().font.width(button.getMessage()) <= button.getWidth() - 4, "management button labels fit");
+                require(Minecraft.getInstance().font.width(button.getMessage()) <= button.getWidth() - 4,
+                        "management button label fits: " + button.getMessage().getString() + " in " + button.getWidth());
             for (var other : buttons) {
                 if (button == other) continue;
                 require(button.getRight() <= other.getX() || other.getRight() <= button.getX()

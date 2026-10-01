@@ -40,6 +40,9 @@ public final class SettlementRecord {
     private final Map<UUID, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue> transferQueues = new LinkedHashMap<>();
     private final Map<UUID, SettlementSupplyPolicy> supplyPolicies = new LinkedHashMap<>();
     private final Map<UUID, SettlementEquipmentPlan> equipmentPlans = new LinkedHashMap<>();
+    private final Map<UUID, SettlementWorkerPool> workerPools = new LinkedHashMap<>();
+    private final Map<UUID, Long> workerPoolCooldowns = new LinkedHashMap<>();
+    private Map<UUID, UUID> workerPoolMembers;
     private Map<UUID, ManagedSupplyOrder> managedSupplyOrders;
     private Map<UUID, List<ManagedGathering>> managedGathering;
     private long supplyRevision;
@@ -91,6 +94,7 @@ public final class SettlementRecord {
     private long simulationResumedAt;
     private boolean manualManagement;
     private final Set<UUID> manualDuties = new java.util.HashSet<>();
+    private final Map<UUID, Long> manualDutyRevisions = new LinkedHashMap<>();
 
     SettlementRecord(VillageAllegianceId id, ResourceLocation dimension, BlockPos center,
                      UUID leader, long foundedAt, Runnable dirty) {
@@ -150,12 +154,21 @@ public final class SettlementRecord {
     }
 
     void rememberManualDuty(UUID resident) {
-        if (this.manualDuties.add(resident)) changed();
+        this.manualDuties.add(resident);
+        this.manualDutyRevisions.put(resident, Math.addExact(this.revision, 1));
+        changed();
+    }
+
+    long manualDutyRevision(UUID resident) {
+        return this.manualDutyRevisions.getOrDefault(resident, -1L);
     }
 
     boolean returnToAutomaticStaffing(UUID actor, UUID resident) {
         if (!permits(actor, SettlementPermission.STAFF) || resident == null) return false;
-        if (this.manualDuties.remove(resident)) changed();
+        if (this.manualDuties.remove(resident)) {
+            this.manualDutyRevisions.remove(resident);
+            changed();
+        }
         return true;
     }
 
@@ -356,6 +369,19 @@ public final class SettlementRecord {
     void removeResident(UUID resident) {
         boolean removed = this.residents.remove(resident) != null;
         removed |= this.manualDuties.remove(resident);
+        removed |= this.manualDutyRevisions.remove(resident) != null;
+        removed |= this.workerPoolCooldowns.remove(resident) != null;
+        for (var pool : List.copyOf(this.workerPools.values())) {
+            if (!pool.configuration().residents().contains(resident)) continue;
+            var configuration = new SettlementWorkerPool.Configuration(pool.configuration().name(),
+                    pool.configuration().residents().stream().filter(id -> !id.equals(resident)).toList(), pool.configuration().worksites());
+            boolean empty = pool.state() == SettlementWorkerPool.State.ACTIVE && !configuration.staffable();
+            this.workerPools.put(pool.id(), new SettlementWorkerPool(pool.id(), configuration, pool.authority(),
+                    Math.addExact(this.revision, 1), empty ? SettlementWorkerPool.State.SUSPENDED : pool.state(),
+                    empty ? "pool_no_residents" : pool.blocker(), pool.history()));
+            this.workerPoolMembers = null;
+            changed();
+        }
         removed |= this.homes.remove(resident) != null;
         this.cachedHomeOwners = null;
         removed |= this.courtships.values().removeIf(attempt -> attempt.involves(resident));
@@ -793,6 +819,106 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.supplyPolicies);
     }
 
+    public Map<UUID, SettlementWorkerPool> workerPools() {
+        return Collections.unmodifiableMap(this.workerPools);
+    }
+
+    public UUID workerPoolFor(UUID resident) {
+        if (this.workerPoolMembers == null) {
+            this.workerPoolMembers = new java.util.HashMap<>();
+            this.workerPools.forEach((id, pool) -> pool.configuration().residents().forEach(member -> this.workerPoolMembers.put(member, id)));
+        }
+        return this.workerPoolMembers.get(resident);
+    }
+
+    String workerPoolConfigurationFailure(UUID id, SettlementWorkerPool.Configuration configuration, boolean active) {
+        if (configuration.residents().stream().anyMatch(resident -> !this.residents.containsKey(resident))) return "pool_resident_missing";
+        if (configuration.residents().stream().anyMatch(resident -> workerPoolFor(resident) != null && !id.equals(workerPoolFor(resident))))
+            return "pool_resident_enrolled";
+        if (!active) return "";
+        if (configuration.residents().isEmpty()) return "pool_no_residents";
+        if (!configuration.staffable()) return "pool_no_worksites";
+        for (var staffing : configuration.worksites()) {
+            var area = this.areas.get(staffing.area());
+            var plan = this.worksitePlans.get(staffing.area());
+            if (area == null || area.type().role() == null || !area.enabled() || !owns(area)
+                    || plan != null && !plan.settings().enabled()) return "pool_worksite_unavailable";
+        }
+        return "";
+    }
+
+    boolean configureWorkerPool(UUID actor, UUID id, long expected, SettlementWorkerPool.Configuration configuration, boolean active) {
+        if (id == null || configuration == null || !permits(actor, SettlementPermission.STAFF) || this.revision == Long.MAX_VALUE)
+            return false;
+        var previous = this.workerPools.get(id);
+        if (expected != (previous == null ? -1 : previous.revision())
+                || previous == null && this.workerPools.size() >= SettlementWorkerPool.MAX_POOLS
+                || !workerPoolConfigurationFailure(id, configuration, active).isEmpty()) return false;
+        this.workerPools.put(id, new SettlementWorkerPool(id, configuration, actor, Math.addExact(this.revision, 1),
+                active ? SettlementWorkerPool.State.ACTIVE : SettlementWorkerPool.State.PAUSED, "",
+                previous == null ? List.of() : previous.history()));
+        this.workerPoolMembers = null;
+        changed();
+        return true;
+    }
+
+    boolean changeWorkerPool(UUID actor, UUID id, long expected, boolean active) {
+        var pool = this.workerPools.get(id);
+        if (pool == null || expected != pool.revision() || !permits(actor, SettlementPermission.STAFF)
+                || this.revision == Long.MAX_VALUE || !workerPoolConfigurationFailure(id, pool.configuration(), active).isEmpty()) return false;
+        var state = active ? SettlementWorkerPool.State.ACTIVE : SettlementWorkerPool.State.PAUSED;
+        if (pool.state() == state && pool.authority().equals(actor)) return true;
+        this.workerPools.put(id, pool.state(state, actor, Math.addExact(this.revision, 1), ""));
+        changed();
+        return true;
+    }
+
+    boolean removeWorkerPool(UUID actor, UUID id, long expected) {
+        var pool = this.workerPools.get(id);
+        if (pool == null || expected != pool.revision() || !permits(actor, SettlementPermission.STAFF)) return false;
+        this.workerPools.remove(id);
+        this.workerPoolMembers = null;
+        changed();
+        return true;
+    }
+
+    void suspendWorkerPool(UUID id, String blocker) {
+        var pool = this.workerPools.get(id);
+        if (pool == null || pool.state() != SettlementWorkerPool.State.ACTIVE) return;
+        this.workerPools.put(id, pool.state(SettlementWorkerPool.State.SUSPENDED, pool.authority(), Math.addExact(this.revision, 1), blocker));
+        changed();
+    }
+
+    void validateWorkerPoolAuthorities() {
+        for (var pool : List.copyOf(this.workerPools.values()))
+            if (!permits(pool.authority(), SettlementPermission.STAFF)) suspendWorkerPool(pool.id(), "pool_permission_changed");
+    }
+
+    public long workerPoolCooldown(UUID resident, long now) {
+        var previous = this.workerPoolCooldowns.get(resident);
+        if (previous == null) return this.workerPoolCooldowns.size() >= SettlementWorkerPool.MAX_POOLS * SettlementWorkerPool.MAX_RESIDENTS
+                ? SettlementWorkerPool.COOLDOWN_TICKS : 0;
+        return now < previous ? SettlementWorkerPool.COOLDOWN_TICKS : Math.max(0, SettlementWorkerPool.COOLDOWN_TICKS - (now - previous));
+    }
+
+    void reconcileWorkerPoolCooldowns(long now) {
+        if (now < 0) throw new IllegalArgumentException("Invalid staffing time");
+        boolean removed = this.workerPoolCooldowns.entrySet().removeIf(entry -> now >= entry.getValue()
+                && now - entry.getValue() >= SettlementWorkerPool.COOLDOWN_TICKS);
+        boolean rolledBack = this.workerPoolCooldowns.values().stream().anyMatch(previous -> previous > now);
+        if (rolledBack) this.workerPoolCooldowns.replaceAll((resident, previous) -> Math.min(previous, now));
+        if (removed || rolledBack) changed();
+    }
+
+    void recordWorkerPoolMove(SettlementWorkerPool pool, SettlementWorkerPool.Move move) {
+        if (!pool.authorized(this) || !pool.configuration().residents().contains(move.resident())
+                || !move.to().equals(this.duties.get(move.resident())) || workerPoolCooldown(move.resident(), move.at()) > 0)
+            throw new IllegalStateException("Staffing move lost its pool authorization");
+        this.workerPools.put(pool.id(), pool.moved(move));
+        this.workerPoolCooldowns.put(move.resident(), move.at());
+        changed();
+    }
+
     public Map<UUID, SettlementEquipmentPlan> equipmentPlans() {
         return Collections.unmodifiableMap(this.equipmentPlans);
     }
@@ -963,6 +1089,7 @@ public final class SettlementRecord {
             this.guardOrders.remove(resident);
             this.temporaryGuardOrders.remove(resident);
             this.workerSettings.remove(resident);
+            if (this.manualDuties.contains(resident)) this.manualDutyRevisions.put(resident, Math.addExact(this.revision, 1));
             changed();
         }
         return true;
@@ -983,6 +1110,7 @@ public final class SettlementRecord {
         this.guardOrders.remove(resident);
         this.temporaryGuardOrders.remove(resident);
         this.workerSettings.remove(resident);
+        if (this.manualDuties.contains(resident)) this.manualDutyRevisions.put(resident, Math.addExact(this.revision, 1));
         changed();
         return true;
     }
@@ -1103,6 +1231,7 @@ public final class SettlementRecord {
             this.delegates.put(delegate, updated);
         }
         this.equipmentPlans.keySet().forEach(this::validateEquipmentAuthority);
+        validateWorkerPoolAuthorities();
         changed();
         return true;
     }
@@ -1146,6 +1275,7 @@ public final class SettlementRecord {
         this.leadershipOffer = null;
         this.leader = successor;
         this.equipmentPlans.keySet().forEach(this::validateEquipmentAuthority);
+        validateWorkerPoolAuthorities();
         changed();
     }
 
@@ -1319,6 +1449,18 @@ public final class SettlementRecord {
         var policyTags = new ListTag();
         this.supplyPolicies.values().forEach(policy -> policyTags.add(policy.save(provider)));
         tag.put("SupplyPolicies", policyTags);
+        tag.putInt("WorkerPoolVersion", 1);
+        var poolTags = new ListTag();
+        this.workerPools.values().forEach(pool -> poolTags.add(pool.save()));
+        tag.put("WorkerPools", poolTags);
+        var cooldownTags = new ListTag();
+        this.workerPoolCooldowns.forEach((resident, at) -> {
+            var entry = new CompoundTag();
+            entry.putUUID("Resident", resident);
+            entry.putLong("At", at);
+            cooldownTags.add(entry);
+        });
+        tag.put("WorkerPoolCooldowns", cooldownTags);
         var equipmentTags = new ListTag();
         this.equipmentPlans.forEach((area, plan) -> {
             var entry = plan.save();
@@ -1353,6 +1495,14 @@ public final class SettlementRecord {
         var manualDutyTags = new ListTag();
         this.manualDuties.stream().sorted().forEach(id -> manualDutyTags.add(net.minecraft.nbt.NbtUtils.createUUID(id)));
         tag.put("ManualDuties", manualDutyTags);
+        var manualRevisionTags = new ListTag();
+        this.manualDutyRevisions.forEach((resident, revision) -> {
+            var entry = new CompoundTag();
+            entry.putUUID("Resident", resident);
+            entry.putLong("Revision", revision);
+            manualRevisionTags.add(entry);
+        });
+        tag.put("ManualDutyRevisions", manualRevisionTags);
         tag.putLong("SimulationResumedAt", this.simulationResumedAt);
         tag.put("Support", this.support.save());
         ListTag supportServices = new ListTag();
@@ -1470,6 +1620,17 @@ public final class SettlementRecord {
         record.radius = Math.max(savedRadius, record.stage.radius());
         record.manualManagement = tag.getBoolean("ManualManagement");
         for (var id : tag.getList("ManualDuties", Tag.TAG_INT_ARRAY)) record.manualDuties.add(net.minecraft.nbt.NbtUtils.loadUUID(id));
+        if (tag.contains("ManualDutyRevisions")) {
+            for (var raw : SettlementWorkerPool.list(tag, "ManualDutyRevisions", record.manualDuties.size())) {
+                var entry = (CompoundTag) raw;
+                if (!entry.hasUUID("Resident") || !entry.contains("Revision", Tag.TAG_LONG) || entry.getLong("Revision") < 0
+                        || entry.getLong("Revision") > record.revision || !record.manualDuties.contains(entry.getUUID("Resident"))
+                        || record.manualDutyRevisions.putIfAbsent(entry.getUUID("Resident"), entry.getLong("Revision")) != null)
+                    throw new IllegalArgumentException("Invalid saved manual duty revision");
+            }
+            if (record.manualDutyRevisions.size() != record.manualDuties.size())
+                throw new IllegalArgumentException("Manual duties are missing their revisions");
+        } else record.manualDuties.forEach(resident -> record.manualDutyRevisions.put(resident, record.revision));
         record.simulationResumedAt = Math.max(0L, tag.getLong("SimulationResumedAt"));
         record.support = SettlementSupportState.load(tag.getCompound("Support"));
         var supportStage = record.stage.next().orElse(record.stage);
@@ -1789,6 +1950,26 @@ public final class SettlementRecord {
             if (area == null || plan.revision() > record.revision || !plan.configuration().validFor(area.type().role()) || !record.worksitePlans.containsKey(area.id())
                     || record.equipmentPlans.putIfAbsent(area.id(), plan) != null)
                 throw new IllegalArgumentException("Equipment plan has invalid worksite ownership");
+        }
+        if (tag.contains("WorkerPoolVersion")) {
+            if (!tag.contains("WorkerPoolVersion", Tag.TAG_INT) || tag.getInt("WorkerPoolVersion") != 1)
+                throw new IllegalArgumentException("Unsupported worker pool version");
+            var enrolled = new java.util.HashSet<UUID>();
+            for (var raw : SettlementWorkerPool.list(tag, "WorkerPools", SettlementWorkerPool.MAX_POOLS)) {
+                var pool = SettlementWorkerPool.load((CompoundTag) raw);
+                if (pool.revision() > record.revision || record.workerPools.putIfAbsent(pool.id(), pool) != null
+                        || pool.configuration().residents().stream().anyMatch(resident -> !record.residents.containsKey(resident) || !enrolled.add(resident)))
+                    throw new IllegalArgumentException("Worker pools duplicate an identity or enroll an unknown resident");
+            }
+            for (var raw : SettlementWorkerPool.list(tag, "WorkerPoolCooldowns", SettlementWorkerPool.MAX_POOLS * SettlementWorkerPool.MAX_RESIDENTS)) {
+                var entry = (CompoundTag) raw;
+                if (!entry.hasUUID("Resident") || !entry.contains("At", Tag.TAG_LONG) || entry.getLong("At") < 0
+                        || !record.residents.containsKey(entry.getUUID("Resident"))
+                        || record.workerPoolCooldowns.putIfAbsent(entry.getUUID("Resident"), entry.getLong("At")) != null)
+                    throw new IllegalArgumentException("Invalid saved worker pool cooldown");
+            }
+        } else if (tag.contains("WorkerPools") || tag.contains("WorkerPoolCooldowns")) {
+            throw new IllegalArgumentException("Worker pools have no version");
         }
         var managedOrders = new java.util.HashSet<UUID>();
         for (Tag raw : tag.getList("SupplyPolicies", Tag.TAG_COMPOUND)) {

@@ -206,12 +206,21 @@ public final class SettlementLifecycleGameTests {
             var town = fixture.town();
             town.economy().credit(CurrencyAmount.of(20, 1));
             town.rememberManualDuty(fixture.builder().getUUID());
+            UUID delegate = UUID.randomUUID(), poolId = UUID.randomUUID();
+            town.setPermissions(town.leader(), delegate, Set.of(SettlementPermission.STAFF));
+            helper.assertTrue(town.configureWorkerPool(delegate, poolId, -1,
+                    new SettlementWorkerPool.Configuration("Construction crew", List.of(fixture.builder().getUUID()),
+                            List.of(new SettlementWorkerPool.Staffing(fixture.area().id(), 0, 1))), true),
+                    "the source delegate authorizes an explicitly enrolled pool");
+            long pinRevision = town.manualDutyRevision(fixture.builder().getUUID());
+            long poolRevision = town.workerPools().get(poolId).revision();
             fixture.project().reservePayment(5);
             fixture.project().earnPayment();
             var placement = new SettlementConstructionPlacement(List.of(new SettlementConstructionPlacement.Part(
                     fixture.origin(), Blocks.AIR.defaultBlockState(), Blocks.OAK_PLANKS.defaultBlockState(), null)));
             fixture.site().queue(placement);
             var target = neighbor(helper, town, town.center().east(48));
+            helper.assertTrue(town.revision() > target.revision(), "the source has newer staffing records than the target");
             var source = level.getServer().createCommandSourceStack().withPermission(2);
             var blocked = SettlementLifecycleService.preview(source, town.id(), SettlementLifecycleService.Operation.DISSOLVE, null, null);
             helper.assertTrue(blocked.token() == null, "active work, debt and pending placements block dissolution");
@@ -220,6 +229,21 @@ public final class SettlementLifecycleGameTests {
             helper.assertValueEqual(SettlementLifecycleService.confirm(source, preview.token()), "", "the managed merger succeeds");
             var merged = SettlementSavedData.get(level).get(target.id()).orElseThrow();
             var project = merged.projects().get(fixture.project().id());
+            helper.assertTrue(merged.revision() > poolRevision, "the merged revision covers the source staffing records");
+            helper.assertValueEqual(merged.manualDutyRevision(fixture.builder().getUUID()), pinRevision, "the pin keeps its observed revision");
+            var pool = merged.workerPools().get(poolId);
+            helper.assertValueEqual(pool.configuration().residents(), List.of(fixture.builder().getUUID()), "explicit enrollment survives merger");
+            helper.assertValueEqual(pool.state(), SettlementWorkerPool.State.SUSPENDED, "revoked source delegates cannot keep pools active");
+            helper.assertValueEqual(pool.blocker(), "pool_permission_changed", "the merged pool explains its lost authority");
+            helper.assertTrue(pool.revision() > poolRevision, "suspension invalidates pre-merger pool edits");
+            var player = FakePlayerFactory.get(level, new GameProfile(town.leader(), "PoolMergeLeader"));
+            var responses = new java.util.ArrayList<com.jvn.villagerretaliation.network.SettlementWorkerPoolSnapshotPayload>();
+            var request = new com.jvn.villagerretaliation.network.SettlementWorkerPoolRequestPayload(town.id().value(), UUID.randomUUID(),
+                    poolId, poolRevision, "", 0, new com.jvn.villagerretaliation.network.SettlementWorkerPoolRequestPayload.View());
+            var inspection = SettlementWorkerPoolManagementService.prepare(player, request, responses::add);
+            do { inspection.run(); } while (!SettlementWork.complete(inspection));
+            helper.assertValueEqual(responses.getFirst().feedback(), "town_missing", "old source pool screens cannot inspect the merged target");
+            helper.assertTrue(responses.getFirst().pools().isEmpty(), "stale source requests reveal no merged pool state");
             helper.assertTrue(project.active() && project.site().pending(), "active work and pending world actions survive");
             helper.assertTrue(project.paymentEarned() && !project.paymentDelivered() && project.fee() == 5, "earned payment remains owed exactly once");
             helper.assertValueEqual(project.town(), target.id().value(), "project authority follows the new canonical town");

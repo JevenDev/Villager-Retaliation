@@ -62,6 +62,7 @@ final class SettlementLifecyclePlan {
         if (!connected(owned)) throw new IllegalArgumentException("Claim a connecting border before merging these towns.");
         var from = source.save(level.registryAccess());
         var into = target.save(level.registryAccess());
+        into.putLong("Revision", Math.max(source.revision(), target.revision()));
         for (String key : from.getAllKeys()) {
             if (!(from.get(key) instanceof ListTag list) || Set.of("Delegates", "SupportServices").contains(key)) continue;
             var combined = ((ListTag) into.get(key)).copy();
@@ -74,6 +75,15 @@ final class SettlementLifecyclePlan {
                 combined.add(entry);
             }
             into.put(key, combined);
+        }
+        for (Tag raw : into.getList("WorkerPools", Tag.TAG_COMPOUND)) {
+            var pool = (CompoundTag) raw;
+            if (pool.getString("State").equals(SettlementWorkerPool.State.ACTIVE.name())
+                    && !target.permits(pool.getUUID("Authority"), SettlementPermission.STAFF)) {
+                pool.putString("State", SettlementWorkerPool.State.SUSPENDED.name());
+                pool.putString("Blocker", "pool_permission_changed");
+                pool.putLong("Revision", Math.addExact(into.getLong("Revision"), 1L));
+            }
         }
         long[] oldRetired = from.getLongArray("RetiredProjects"), newRetired = into.getLongArray("RetiredProjects");
         long[] retired = java.util.Arrays.copyOf(newRetired, newRetired.length + oldRetired.length);
@@ -125,7 +135,7 @@ final class SettlementLifecyclePlan {
     static boolean emptyForRelocation(ServerLevel level, SettlementRecord town) {
         var tag = town.save(level.registryAccess());
         return tag.getAllKeys().stream().filter(key -> tag.get(key) instanceof ListTag)
-                .filter(key -> !Set.of("Delegates", "History", "ProjectHistory", "SupportServices", "ManualDuties").contains(key))
+                .filter(key -> !Set.of("Delegates", "History", "ProjectHistory", "SupportServices", "ManualDuties", "ManualDutyRevisions").contains(key))
                 .allMatch(key -> ((ListTag) tag.get(key)).isEmpty());
     }
 

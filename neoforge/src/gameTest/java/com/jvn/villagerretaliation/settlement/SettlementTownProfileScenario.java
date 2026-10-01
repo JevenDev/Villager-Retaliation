@@ -200,6 +200,15 @@ public final class SettlementTownProfileScenario {
         var offer = town.offerLeadership(player.getUUID(), offlineLeader, 0L);
         require(offer != null && town.acceptLeadership(offlineLeader, offer.id(), 0L), "the fixture transfers to an offline leader");
         require(town.setPermissions(offlineLeader, player.getUUID(), EnumSet.allOf(SettlementPermission.class)), "the observer receives delegated access");
+        var permitted = town.areas().values().stream().filter(area -> area.type().role() != null)
+                .map(area -> new SettlementWorkerPool.Staffing(area.id(), 0, SettlementWorksitePlan.MAX_STAFF)).toList();
+        for (int index = 0; index < 4; index++) {
+            var members = List.copyOf(fixture.residents.subList(index * 25, (index + 1) * 25));
+            require(town.configureWorkerPool(offlineLeader, UUID.randomUUID(), -1,
+                    new SettlementWorkerPool.Configuration("Work crew " + index, members, permitted), true), "the performance fixture enrolls four active pools");
+            for (var resident : members) if (!fixture.builders.contains(resident))
+                require(town.returnToAutomaticStaffing(offlineLeader, resident), "only the builders remain manually pinned");
+        }
         player.connection.teleport(body.x, body.y, body.z, 0.0F, 0.0F);
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         SettlementManagementService.open(player, id);
@@ -261,6 +270,8 @@ public final class SettlementTownProfileScenario {
     }
 
     public Snapshot snapshot(ServerPlayer player) {
+        require(this.town.workerPools().size() == 4 && this.town.workerPools().values().stream().allMatch(pool -> pool.authorized(this.town)),
+                "the four configured worker pools stay authorized throughout the profile");
         int loaded = 0;
         int ticking = 0;
         int aiEnabled = 0;
@@ -297,7 +308,8 @@ public final class SettlementTownProfileScenario {
                 wheat, this.town.depots().values().stream().mapToInt(depot -> depot.count(stack -> stack.is(Items.BREAD))).sum(),
                 this.town.projects().values().stream().mapToInt(SettlementProject::placed).sum(),
                 this.level.getServer().getPlayerList().getPlayer(this.town.leader()) == null,
-                player.position().distanceToSqr(this.body), Map.copyOf(blockers));
+                player.position().distanceToSqr(this.body), Map.copyOf(blockers), this.town.workerPools().size(),
+                (int) this.residents.stream().filter(resident -> this.town.workerPoolFor(resident) != null).count());
     }
 
     public int verifyReturnedWorld() {
@@ -353,6 +365,6 @@ public final class SettlementTownProfileScenario {
 
     public record Snapshot(int loaded, int ticking, int aiEnabled, int census, int homes, int workers, int iron,
                            int deliveredIron, int wheat, int bread, int placed, boolean leaderOffline,
-                           double bodyDisplacementSquared, Map<String, Integer> projectBlockers) {
+                           double bodyDisplacementSquared, Map<String, Integer> projectBlockers, int activePools, int poolMembers) {
     }
 }

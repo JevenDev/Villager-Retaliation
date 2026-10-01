@@ -116,7 +116,8 @@ public final class SettlementManyVillageProfile {
                         "every unloaded village completes physical hauling during measurement: " + index);
                 for (int index = 0; index < 950; index++) require(end.careTimes().get(index) - start.careTimes().get(index) >= 800L,
                         "every background resident advances throughout measurement: " + index);
-                require(end.completedCycles() - start.completedCycles() >= 500L, "the scheduler completes at least five cycles per village on average");
+                require(end.completedCycles() - start.completedCycles() >= 500L,
+                        "the scheduler completes at least five cycles per village on average: " + (end.completedCycles() - start.completedCycles()));
                 VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.set(originalCap);
                 stage = Stage.DONE;
             }

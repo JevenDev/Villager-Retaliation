@@ -59,14 +59,22 @@ public final class SettlementWorkforceService {
         return true;
     }
 
-    static boolean assignAutonomously(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
-        return !town.manualManagement() && villager != null && !town.manuallyStaffed(villager.getUUID())
-                && !town.duties().containsKey(villager.getUUID()) && assign(level, town, villager, areaId);
+    static boolean fillAssignment(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
+        if (villager == null || town.manuallyStaffed(villager.getUUID()) || town.duties().containsKey(villager.getUUID())
+                || !assign(level, town, villager, areaId)) return false;
+        town.rememberManualDuty(villager.getUUID());
+        return true;
     }
 
-    static boolean fillAssignment(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
-        return villager != null && !town.manuallyStaffed(villager.getUUID())
-                && !town.duties().containsKey(villager.getUUID()) && assign(level, town, villager, areaId);
+    static boolean assignFromPool(ServerLevel level, SettlementRecord town, SettlementWorkerPool pool, SettlementWorkerPool.Move move) {
+        if (!pool.authorized(town) || !java.util.Objects.equals(move.from(), town.duties().get(move.resident()))
+                || !pool.history().isEmpty() && pool.history().getLast().at() == move.at()) return false;
+        var candidate = SettlementWorkerPoolAssignment.inspect(level, town, pool, move.resident(), move.at());
+        if (!candidate.eligible()
+                || !SettlementWorkerPoolAssignment.destination(level, town, pool, candidate.villager(), move.to()).isEmpty()) return false;
+        if (!assign(level, town, candidate.villager(), move.to())) return false;
+        town.recordWorkerPoolMove(pool, move);
+        return true;
     }
 
     private static boolean assign(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
@@ -129,9 +137,10 @@ public final class SettlementWorkforceService {
                 || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return false;
         var members = VillageAllegianceRegistrySavedData.get(player.serverLevel())
                 .residentRoster(town.id(), player.serverLevel().getGameTime());
-        if (resident != null && members.stream().noneMatch(member -> member.id().equals(resident))) return false;
+        if (resident != null && (town.workerPoolFor(resident) == null
+                || members.stream().noneMatch(member -> member.id().equals(resident)))) return false;
         for (var member : members) {
-            if (resident == null || resident.equals(member.id())) {
+            if (town.workerPoolFor(member.id()) != null && (resident == null || resident.equals(member.id()))) {
                 town.returnToAutomaticStaffing(player.getUUID(), member.id());
             }
         }

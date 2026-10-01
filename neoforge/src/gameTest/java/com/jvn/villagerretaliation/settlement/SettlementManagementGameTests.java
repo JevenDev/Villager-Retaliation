@@ -605,7 +605,7 @@ public final class SettlementManagementGameTests {
                 new SettlementManagementPayload.Town(id, "Town", SettlementStage.CITY, 175, position),
                 new SettlementManagementPayload.Resident(id, "Ada", ResourceLocation.withDefaultNamespace("farmer"), false,
                         Presence.UNLOADED, position, id, 13, 17.5F, "workforce.missing_tools", List.of(HiredVillagerRole.FARMING), null, null, null,
-                        "Farmer needs a hoe before field work can continue."),
+                        "Farmer needs a hoe before field work can continue.", true, false, 0, "", id),
                 new SettlementManagementPayload.Area(id, "Field", SettlementAreaType.FARM, position, position.above(), 7, true, 0, 1, 2),
                 new SettlementManagementPayload.Depot(id, "Depot", id, position, SettlementDepotPurpose.FOOD, 6, 3, 130,
                         List.of(new SettlementManagementPayload.StockTarget("Bread", 64))),

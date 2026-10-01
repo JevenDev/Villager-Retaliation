@@ -213,7 +213,7 @@ final class SettlementPurchaseClientChecks {
             }
             case 23 -> {
                 this.purchases = (SettlementPolicyPurchasesScreen) screen;
-                if (!this.purchases.ready()) return false;
+                if (!this.purchases.ready() || !button(screen, "refresh").active) return false;
                 server(minecraft, () -> {
                     var town = town(minecraft);
                     this.delegates = Map.copyOf(town.delegates());
@@ -227,7 +227,7 @@ final class SettlementPurchaseClientChecks {
                 next();
             }
             case 24 -> {
-                if (!this.purchases.ready() || this.purchases.snapshot().editable()) return false;
+                if (!this.purchases.ready() || this.purchases.snapshot().editable() || !button(screen, "refresh").active) return false;
                 require(!this.purchases.snapshot().trade() && !button(screen, "purchase_apply").active
                                 && !field(screen, "purchase_budget").active && !button(screen, "purchase_on").active,
                         "a refreshed view-only editor cannot change or approve purchases");

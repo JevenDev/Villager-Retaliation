@@ -229,6 +229,11 @@ public final class LoggingHarvestPlan {
         removePosition(context.state(), LOGS_TAG, position);
     }
 
+    public static boolean pending(CompoundTag state) {
+        return state.contains(ORIGIN_TAG) || state.contains(HARVEST_POS_TAG) || state.contains(LOGS_TAG)
+                || state.contains(LEAVES_TAG) || state.contains(SAPLINGS_TAG) || state.contains(LOGS_CUT_TAG);
+    }
+
     public static void copyState(CompoundTag source, CompoundTag destination) {
         for (String key : List.of(ORIGIN_TAG, HARVEST_POS_TAG, LOGS_TAG, LEAVES_TAG, SAPLINGS_TAG, SAPLING_ITEM_TAG,
                 STRIP_LOGS_TAG, LOG_FAMILY_TAG, LOGS_CUT_TAG, VERSION_TAG, WORK_MIN_TAG, WORK_MAX_TAG, "LoggingTreeDepositPending")) {
