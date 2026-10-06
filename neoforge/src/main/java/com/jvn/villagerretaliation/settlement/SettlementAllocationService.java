@@ -76,7 +76,15 @@ public final class SettlementAllocationService {
         var canonical = SettlementSupplyStock.positions(level, position).getFirst();
         var snapshot = ready.refresh(canonical);
         var consumers = new HashSet<>(consumers(town, worker, consumer, destination == null ? canonical : null));
-        if (worker != null && consumer == null) consumers.addAll(snapshot.consumers(worker));
+        if (worker != null && consumer == null) {
+            var assigned = snapshot.consumers(worker);
+            if (!town.duties().containsKey(worker)) consumers.addAll(assigned);
+            else if (destination == null) snapshot.demands().stream().filter(demand ->
+                    (demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PLANTING
+                            || demand.requirement().key().startsWith("animal_feed:"))
+                            && assigned.contains(demand.consumer()) && demand.sources().contains(canonical)
+                            && demand.requirement().value(sample) > 0).forEach(demand -> consumers.add(demand.consumer()));
+        }
         if (worker != null && consumer == null && destination == null) {
             var area = town.duties().get(worker);
             boolean needsEquipment = area != null && snapshot.demands().stream().anyMatch(demand ->
