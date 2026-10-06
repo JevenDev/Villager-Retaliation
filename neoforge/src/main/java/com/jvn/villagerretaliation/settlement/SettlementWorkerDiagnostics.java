@@ -66,6 +66,10 @@ public final class SettlementWorkerDiagnostics {
                     "Supply the selected guard equipment in an approved supply depot or the worker's job inventory.";
             case "equipment_storage_unreachable" ->
                     "Clear a safe route to the guard's approved equipment storage.";
+            case "planting_restricted" ->
+                    net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.planting_recovery_restricted").getString();
+            case "missing_planting_item" ->
+                    net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.planting_recovery_missing").getString();
             case "missing_hoe" ->
                     "Farmer needs a hoe in job gear or a supply depot.";
             case "missing_rod", "missing_fishing_rod" ->

@@ -52,6 +52,8 @@ final class SettlementBackgroundFarming {
                 .sorted(Comparator.comparingInt(SettlementBackgroundFarming::priority)
                         .thenComparingDouble(plot -> plot.position().distSqr(worker.position()))).toList();
         boolean missingSeeds = false;
+        SettlementPlanting.Decision blocked = null;
+        boolean configured = area != null && (area.crops().enabled() || area.crops().demand());
         for (var plot : plots) {
             if (!SettlementFieldService.available(level, plot)) {
                 continue;
@@ -120,7 +122,8 @@ final class SettlementBackgroundFarming {
                 }
             }
             if (!harvest && seed.isEmpty()) {
-                missingSeeds |= plannedCrop != HiredFarmingOptions.Crop.ANY || HiredFarmingOptions.crop(worker.settings()) != HiredFarmingOptions.Crop.ANY;
+                missingSeeds |= configured || plannedCrop != HiredFarmingOptions.Crop.ANY || HiredFarmingOptions.crop(worker.settings()) != HiredFarmingOptions.Crop.ANY;
+                if (blocked == null) blocked = planting;
                 continue;
             }
             if (!storeDrops(town, worker, updated, drops)) {
@@ -130,7 +133,9 @@ final class SettlementBackgroundFarming {
             }
             worker.work(elapsed, multiplier);
             if (!worker.spend(cost)) {
-                worker.status(harvest ? "harvesting" : "planting");
+                if (configured && !seed.isEmpty())
+                    worker.plantingStatus(harvest ? "harvesting" : "planting", SettlementPlanting.actual(planting, seed), "");
+                else worker.status(harvest ? "harvesting" : "planting");
                 return;
             }
             if (selected >= 0 && supplies.get(selected).depot() != null) {
@@ -142,11 +147,19 @@ final class SettlementBackgroundFarming {
             if (!seed.isEmpty()) plot.clearPlanting();
             if (SettlementFarmPlants.fruit(crop)) SettlementFieldService.releaseFruit(level, town, plot);
             worker.practice(level, HiredWorkPractice.farming(harvest ? seed.isEmpty() ? "harvest" : "harvest_replant" : "plant"));
-            worker.status(harvest ? "harvested" : "planted");
+            if (configured && !seed.isEmpty())
+                worker.plantingStatus(harvest ? "harvested" : "planted", SettlementPlanting.actual(planting, seed), "");
+            else if (configured && replant) {
+                String blocker = SettlementPlanting.blocker(worker.settings(), planting);
+                worker.plantingStatus(blocker.equals("restricted") ? "planting_restricted" : "missing_planting_item", planting, blocker);
+            } else worker.status(harvest ? "harvested" : "planted");
             return;
         }
         if (autoDeposit && depositBatch(level, town, worker, elapsed, multiplier, depots)) return;
-        worker.status(missingSeeds ? "missing_planting_item" : plots.isEmpty() ? "no_observed_field" : "waiting_for_crops");
+        if (configured && missingSeeds && blocked != null) {
+            String blocker = SettlementPlanting.blocker(worker.settings(), blocked);
+            worker.plantingStatus(blocker.equals("restricted") ? "planting_restricted" : "missing_planting_item", blocked, blocker);
+        } else worker.status(missingSeeds ? "missing_planting_item" : plots.isEmpty() ? "no_observed_field" : "waiting_for_crops");
     }
 
     private static boolean depositBatch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,

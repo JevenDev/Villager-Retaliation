@@ -756,6 +756,62 @@
         "Right now, that needs attention before I can keep working. I need a composter nearby."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.needs_farmer_job_site.025"
+    },
+    {
+      "key": "interaction.work.farming.planting_mix",
+      "lines": [
+        "I am planting {crop} for this farm's crop mix."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.planting_mix.026"
+    },
+    {
+      "key": "interaction.work.farming.planting_cooking",
+      "lines": [
+        "I am planting {crop} for our cooking orders."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.planting_cooking.027"
+    },
+    {
+      "key": "interaction.work.farming.planting_feed",
+      "lines": [
+        "I am planting {crop} for animal breeding."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.planting_feed.028"
+    },
+    {
+      "key": "interaction.work.farming.planting_food",
+      "lines": [
+        "I am planting {crop} for our food reserves."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.planting_food.029"
+    },
+    {
+      "key": "interaction.work.farming.planting_selected",
+      "lines": [
+        "I am planting {crop} as requested."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.planting_selected.030"
+    },
+    {
+      "key": "interaction.work.farming.planting_available",
+      "lines": [
+        "I am planting {crop} from the supplies I have."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.planting_available.031"
+    },
+    {
+      "key": "interaction.work.farming.planting_missing",
+      "lines": [
+        "I need planting items for {crop}. Put them in my job supplies or linked input storage, and check its filters."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.planting_missing.032"
+    },
+    {
+      "key": "interaction.work.farming.planting_restricted",
+      "lines": [
+        "This plot calls for {crop}, but my crop setting does not allow it. Change my setting or the farm's crop mix."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.planting_restricted.033"
     }
   ]
 }

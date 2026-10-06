@@ -1201,7 +1201,35 @@ public final class SettlementViewClientSmoke {
             capture("area-transform");
             button(screen, "villagerretaliation.gui.settlement_view.gizmo_area_settings").onPress();
             require(minecraft.screen instanceof SettlementEditScreen, "adjusted area bounds open the existing settings form");
-            minecraft.screen.onClose();
+            var form = (SettlementEditScreen) minecraft.screen;
+            for (int attempt = 0; attempt < com.jvn.villagerretaliation.settlement.SettlementAreaType.values().length; attempt++) {
+                var type = form.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                        .filter(control -> control.getMessage().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents text
+                                && text.getKey().startsWith("villagerretaliation.gui.settlement.area.")).findFirst().orElseThrow();
+                if (type.getMessage().getString().equals(Component.translatable("villagerretaliation.gui.settlement.area.farm").getString())) break;
+                type.onPress();
+            }
+            button(form, "villagerretaliation.gui.settlement.crop_settings").onPress();
+            var fields = form.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).toList();
+            require(fields.size() == 6, "farm settings expose the six crop percentages");
+            fields.get(0).setValue("50");
+            fields.get(1).setValue("25");
+            fields.get(2).setValue("25");
+            button(form, "villagerretaliation.gui.settlement.crop_demand").onPress();
+            button(form, "villagerretaliation.gui.settlement.crop_reserve_0").onPress();
+            requireButtonsFit(form);
+            button(form, "villagerretaliation.gui.settlement.crop_back").onPress();
+            button(form, "villagerretaliation.gui.settlement.crop_settings").onPress();
+            require(form.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).map(net.minecraft.client.gui.components.EditBox::getValue).toList()
+                    .equals(java.util.List.of("50", "25", "25", "0", "0", "0")), "crop percentages survive toggles, resizing and page changes");
+            require(button(form, "villagerretaliation.gui.settlement.crop_reserve_1").active, "the selected reserve survives page changes");
+            ticks = 0;
+            phase = 721;
+        } else if (phase == 721 && minecraft.screen instanceof SettlementEditScreen form && ++ticks >= 5) {
+            capture("farm-planting-settings");
+            form.onClose();
             ticks = 0;
             phase = 73;
         } else if (phase == 73 && minecraft.screen instanceof SettlementViewScreen) {

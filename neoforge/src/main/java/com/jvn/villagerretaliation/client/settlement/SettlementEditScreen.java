@@ -143,18 +143,18 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                     }).bounds(x, y, this.panelWidth, 20).build());
                     int third = (this.panelWidth - 12) / 3;
                     for (int crop = 0; crop < 6; crop++)
-                        field("crop_" + crop, x + (crop % 3) * (third + 6), y + 30 + (crop / 3) * 38, third, 3);
-                    this.labels.add(new Label(text("crop_total"), x, y + 110));
+                        field("crop_" + crop, x + (crop % 3) * (third + 6), y + 26 + (crop / 3) * 34, third, 3);
+                    this.labels.add(new Label(text("crop_total"), x, y + 95));
                     var demand = addRenderableWidget(VillagerUi.buttonBuilder(text("crop_demand",
                             text(this.demandPlanting ? "enabled" : "disabled")), ignored -> {
                         this.demandPlanting = !this.demandPlanting;
                         rebuildWidgets();
-                    }).bounds(x, y + 128, this.panelWidth, 20).build());
+                    }).bounds(x, y + 108, this.panelWidth, 20).build());
                     demand.setTooltip(Tooltip.create(text("crop_demand_hint")));
                     var reserve = addRenderableWidget(VillagerUi.buttonBuilder(text("crop_reserve_" + this.reserveCycles), ignored -> {
                         this.reserveCycles = (this.reserveCycles + 1) % 3;
                         rebuildWidgets();
-                    }).bounds(x, y + 154, this.panelWidth, 20).build());
+                    }).bounds(x, y + 132, this.panelWidth, 20).build());
                     reserve.setTooltip(Tooltip.create(text("crop_reserve_hint")));
                     break;
                 }

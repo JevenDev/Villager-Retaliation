@@ -53,7 +53,8 @@ public final class SettlementFieldPlot {
     private SettlementPlanting.Decision planting;
 
     SettlementPlanting.Decision planting(SettlementCropPlan plan) {
-        return plan.equals(this.plantingPlan) ? this.planting : null;
+        return this.plantingPlan != null && plan.percentages().equals(this.plantingPlan.percentages())
+                && plan.demand() == this.plantingPlan.demand() ? this.planting : null;
     }
 
     void planting(SettlementCropPlan plan, SettlementPlanting.Decision decision) {

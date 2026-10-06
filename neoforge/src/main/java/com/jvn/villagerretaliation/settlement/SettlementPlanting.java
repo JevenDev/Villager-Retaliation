@@ -34,6 +34,33 @@ public final class SettlementPlanting {
         }
     }
 
+    public static String blocker(CompoundTag state, Decision decision) {
+        Crop restriction = HiredFarmingOptions.crop(state);
+        return decision.crop() != Crop.ANY && restriction != Crop.ANY && restriction != decision.crop() ? "restricted" : "missing";
+    }
+
+    public static void report(CompoundTag state, Decision decision, String blocker) {
+        String crop = net.minecraft.network.chat.Component.translatable(
+                "villagerretaliation.gui.settlement.crop." + decision.crop().name().toLowerCase(java.util.Locale.ROOT)).getString();
+        String reason = blocker.isEmpty() ? decision.reason() : blocker;
+        state.putString("SettlementPlantingMessage", "interaction.work.farming.planting_" + reason);
+        state.putString("SettlementPlantingCrop", crop);
+        state.putString("SettlementPlantingDetail", net.minecraft.network.chat.Component.translatable(
+                "villagerretaliation.gui.settlement.planting_" + reason, crop).getString());
+    }
+
+    public static String message(CompoundTag state) { return state.getString("SettlementPlantingMessage"); }
+    public static String description(CompoundTag state) { return state.getString("SettlementPlantingDetail"); }
+    public static java.util.Map<String, String> replacements(CompoundTag state) {
+        return java.util.Map.of("crop", state.getString("SettlementPlantingCrop"));
+    }
+
+    public static Decision actual(Decision decision, ItemStack seed) {
+        if (decision.crop() != Crop.ANY) return decision;
+        for (var crop : Crop.values()) if (crop != Crop.ANY && seed.is(crop.seed())) return new Decision(crop, decision.reason());
+        return decision;
+    }
+
     public static Crop crop(Villager villager, BlockPos soil) {
         return decision(villager, soil).crop();
     }

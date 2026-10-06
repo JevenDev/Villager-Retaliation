@@ -15,6 +15,11 @@ record SettlementWorkStatus(String status, String diagnostic) {
         var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
         if (villager.isSleeping() || brain.status().equals("interaction.work.status.sleeping")
                 || brain.status().equals("interaction.work.status.tired")) return new SettlementWorkStatus("resting", "");
+        if (session.role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.FARMING
+                && brain.status().startsWith("interaction.work.farming.planting_"))
+            return new SettlementWorkStatus(brain.status().endsWith("_missing") ? "missing_planting_item"
+                    : brain.status().endsWith("_restricted") ? "planting_restricted" : "planting",
+                    SettlementPlanting.description(session.state()));
         if (brain.taskState() == HiredWorkerTaskState.MOVING_TO_TARGET || brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA)
             return new SettlementWorkStatus("workforce.pathing", "");
         if (brain.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE || brain.taskState() == HiredWorkerTaskState.DEPOSITING)

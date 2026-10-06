@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.settlement.SettlementPlanting;
 import com.jvn.villagerretaliation.interaction.HiredJobSite;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
@@ -208,7 +209,14 @@ public final class FarmingWorker extends AbstractBlockWorker {
     }
 
     private WorkResult gatherSeeds(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos cropTarget) {
-        var selected = com.jvn.villagerretaliation.settlement.SettlementPlanting.crop(villager, cropTarget.below());
+        var decision = SettlementPlanting.decision(villager, cropTarget.below());
+        var selected = decision.crop();
+        if (SettlementPlanting.planned(villager) && SettlementPlanting.blocker(context.state(), decision).equals("restricted")) {
+            SettlementPlanting.report(context.state(), decision, "restricted");
+            HiredWorkerBrain.setFailure(context, "planting_restricted", 0L);
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
+            return WorkResult.idle(SettlementPlanting.message(context.state()), SettlementPlanting.replacements(context.state()));
+        }
         int amount = com.jvn.villagerretaliation.settlement.SettlementPlantingReserve.collectionAmount(villager, selected);
         var need = new HiredProductionMaterials.Need(stack -> HiredFarmingInventoryBridge.isPlantingItem(villager, stack)
                 && com.jvn.villagerretaliation.settlement.SettlementPlanting.permits(context.state(), selected, stack), amount,
@@ -240,6 +248,10 @@ public final class FarmingWorker extends AbstractBlockWorker {
             case MISSING -> {
                 HiredWorkerBrain.setFailure(context, "missing_planting_item", 0L);
                 setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
+                if (SettlementPlanting.planned(villager)) {
+                    SettlementPlanting.report(context.state(), decision, "missing");
+                    yield WorkResult.idle(SettlementPlanting.message(context.state()), SettlementPlanting.replacements(context.state()));
+                }
                 yield WorkResult.idle("interaction.work.farming.missing_planting_item");
             }
         };
@@ -322,13 +334,16 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.farming.output_full_blocked");
         }
 
-        ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context);
+        ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context, cropTarget);
         boolean replanted = HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget);
         if (replanted) {
             swingWorkItem(level, villager, plantingItem);
         }
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
+        if (replanted && SettlementPlanting.planned(villager))
+            return WorkResult.progressedWithPractice(SettlementPlanting.message(context.state()), SettlementPlanting.replacements(context.state()),
+                    HiredWorkPractice.farming("harvest_replant"));
         return WorkResult.progressedWithPractice(
                 replanted
                         ? "interaction.work.farming.completed_crop"
@@ -399,7 +414,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
             return WorkResult.idle("interaction.work.farming.target_changed");
         }
-        ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context);
+        ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context, cropTarget);
         if (!HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget)) {
             return gatherSeeds(level, villager, context, cropTarget);
         }
@@ -408,8 +423,10 @@ public final class FarmingWorker extends AbstractBlockWorker {
         swingWorkItem(level, villager, plantingItem);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
-        return WorkResult.progressedWithPractice(
-                "interaction.work.farming.tending_fields", HiredWorkPractice.farming("plant"));
+        return SettlementPlanting.planned(villager)
+                ? WorkResult.progressedWithPractice(SettlementPlanting.message(context.state()), SettlementPlanting.replacements(context.state()),
+                        HiredWorkPractice.farming("plant"))
+                : WorkResult.progressedWithPractice("interaction.work.farming.tending_fields", HiredWorkPractice.farming("plant"));
     }
 
     private WorkResult guideSoilTillTarget(

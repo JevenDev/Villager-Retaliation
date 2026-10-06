@@ -375,6 +375,12 @@ public final class SettlementWorkerState {
         }
     }
 
+    void plantingStatus(String status, SettlementPlanting.Decision decision, String blocker) {
+        status(status);
+        SettlementPlanting.report(this.settings, decision, blocker);
+        this.diagnostic = SettlementPlanting.description(this.settings);
+    }
+
     boolean supportsService() {
         return !this.unsafe && !this.serviceBlocked;
     }

@@ -75,6 +75,8 @@ public final class PersonalWorkerDiagnostics {
             return miningDiagnostic(brain, inventoryFull, noStorage, missingMaterials, materialStorageUnreachable);
         }
         if (role == HiredVillagerRole.FARMING) {
+            if (brain.status().startsWith("interaction.work.farming.planting_"))
+                return com.jvn.villagerretaliation.settlement.SettlementPlanting.description(state);
             return farmingDiagnostic(brain);
         }
         if (role == HiredVillagerRole.FISHING) {

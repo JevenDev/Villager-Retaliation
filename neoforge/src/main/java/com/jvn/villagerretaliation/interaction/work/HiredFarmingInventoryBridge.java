@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.settlement.SettlementPlanting;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
@@ -169,13 +170,15 @@ public final class HiredFarmingInventoryBridge {
             HiredWorkContext context,
             BlockPos cropPos) {
         HiredJobInventory inventory = context.inventory();
+        var decision = SettlementPlanting.decision(villager, cropPos.below());
         for (int slot : plantingSlots(villager, inventory, context.state())) {
             ItemStack stack = inventory.getItem(slot);
             if (stack.isEmpty() || !com.jvn.villagerretaliation.settlement.SettlementPlanting.permits(context.state(),
-                    com.jvn.villagerretaliation.settlement.SettlementPlanting.crop(villager, cropPos.below()), stack)) {
+                    decision.crop(), stack)) {
                 continue;
             }
             if (placePlant(level, villager, cropPos, stack)) {
+                SettlementPlanting.report(context.state(), SettlementPlanting.actual(decision, stack), "");
                 inventory.removeItem(slot, 1);
                 com.jvn.villagerretaliation.settlement.SettlementPlanting.planted(villager, cropPos.below());
                 return true;
@@ -185,9 +188,14 @@ public final class HiredFarmingInventoryBridge {
     }
 
     public static ItemStack plantingItem(Villager villager, HiredWorkContext context) {
+        return plantingItem(villager, context, null);
+    }
+
+    public static ItemStack plantingItem(Villager villager, HiredWorkContext context, BlockPos target) {
+        var crop = target == null ? HiredFarmingOptions.Crop.ANY : SettlementPlanting.crop(villager, target.below());
         for (int slot : plantingSlots(villager, context.inventory(), context.state())) {
             ItemStack stack = context.inventory().getItem(slot);
-            if (!stack.isEmpty()) {
+            if (!stack.isEmpty() && SettlementPlanting.permits(context.state(), crop, stack)) {
                 return stack.copyWithCount(1);
             }
         }

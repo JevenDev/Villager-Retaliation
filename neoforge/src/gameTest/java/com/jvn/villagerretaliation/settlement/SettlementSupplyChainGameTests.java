@@ -1149,6 +1149,10 @@ public final class SettlementSupplyChainGameTests {
             restored.depots().get(fixture.supply().id()).setItem(0, new ItemStack(Items.WHEAT, 64));
             helper.assertValueEqual(SettlementPlanting.choose(level, restored, farm, saved, saved.position(), state), first,
                     "supplied stock and saving do not oscillate an assigned empty plot");
+            var largerReserve = new SettlementArea(farm.id(), farm.type(), farm.name(), farm.min(), farm.max(), farm.priority(), true,
+                    new SettlementCropPlan(plan.percentages(), true, 2));
+            helper.assertValueEqual(SettlementPlanting.choose(level, restored, largerReserve, saved, saved.position(), state), first,
+                    "changing only the reserve size preserves the plot's planting choice");
             state.putString(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.CROP_TAG, "CARROT");
             helper.assertFalse(SettlementPlanting.permits(state, first.crop(), new ItemStack(Items.WHEAT_SEEDS)),
                     "a saved choice cannot bypass a changed worker restriction");

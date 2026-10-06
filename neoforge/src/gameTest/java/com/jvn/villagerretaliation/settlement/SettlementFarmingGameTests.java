@@ -358,11 +358,55 @@ public final class SettlementFarmingGameTests {
             fixture.plot().change(fixture.plot().soil(), ((CropBlock) Blocks.WHEAT).getStateForAge(7));
             SettlementBackgroundFarming.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertTrue(fixture.plot().crop().is(Blocks.POTATOES), "harvesting plants the selected crop instead of the first loot seed");
+            helper.assertTrue(fixture.worker().diagnostic().contains("potatoes") && fixture.worker().diagnostic().contains("crop mix"),
+                    "settlement status explains the chosen crop and mix");
             fixture.plot().change(fixture.plot().soil(), Blocks.AIR.defaultBlockState());
             fixture.worker().settings().putString(HiredFarmingOptions.CROP_TAG, "WHEAT");
             SettlementBackgroundFarming.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertTrue(fixture.plot().crop().isAir(), "worker restrictions remain authoritative");
             helper.assertValueEqual(carried(helper, fixture, Items.POTATO), 1, "blocked planting consumes no seed");
+            helper.assertValueEqual(fixture.worker().status(), "planting_restricted", "conflicting settings have a distinct recovery status");
+            helper.assertTrue(fixture.worker().diagnostic().contains("worker") && fixture.worker().diagnostic().contains("potatoes"),
+                    "the conflict identifies the crop and setting to change");
+            helper.assertValueEqual(SettlementWorkerState.load(fixture.worker().save()).diagnostic(), fixture.worker().diagnostic(),
+                    "planting details survive background handoff saves");
+            fixture.worker().settings().putString(HiredFarmingOptions.CROP_TAG, "ANY");
+            SettlementBackgroundFarming.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(fixture.plot().crop().is(Blocks.POTATOES), "resolving the restriction resumes the same planned crop");
+            fixture.plot().change(fixture.plot().soil(), Blocks.AIR.defaultBlockState());
+            SettlementBackgroundFarming.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(fixture.worker().status(), "missing_planting_item", "exhausted planting stock is reported separately");
+            helper.assertTrue(fixture.worker().diagnostic().contains("potatoes") && fixture.worker().diagnostic().contains("filters"),
+                    "missing stock points to matching supplies and storage rules");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void plantingReasonsReachLoadedWorkerAndSettlementViews(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(fixture.villager());
+            var context = com.jvn.villagerretaliation.interaction.HiredWorkSession.active(helper.getLevel(), fixture.villager());
+            for (var reason : List.of("mix", "cooking", "feed", "food")) {
+                SettlementPlanting.report(state, new SettlementPlanting.Decision(HiredFarmingOptions.Crop.CARROT, reason), "");
+                state.putString("Status", SettlementPlanting.message(state));
+                state.putString("WorkerTaskState", "idle");
+                var work = SettlementWorkStatus.observe(helper.getLevel(), fixture.villager());
+                helper.assertValueEqual(work.status(), "planting", "planting reasons remain ordinary work");
+                helper.assertTrue(work.diagnostic().contains("carrots"), "the settlement view names the selected crop");
+                var brain = com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(state, helper.getLevel().getGameTime());
+                var facts = com.jvn.villagerretaliation.interaction.HiredWorkerFacts.observe(context, brain);
+                helper.assertValueEqual(com.jvn.villagerretaliation.interaction.PersonalWorkerDiagnostics.describe(context, brain, facts),
+                        work.diagnostic(), "worker and settlement views share the planting explanation");
+                helper.assertValueEqual(SettlementPlanting.replacements(state).get("crop"), "carrots", "dialogue receives the selected crop");
+            }
+            SettlementPlanting.report(state, new SettlementPlanting.Decision(HiredFarmingOptions.Crop.CARROT, "food"), "missing");
+            state.putString("Status", SettlementPlanting.message(state));
+            state.putString("WorkerTaskState", "waiting_for_materials");
+            helper.assertValueEqual(SettlementWorkStatus.observe(helper.getLevel(), fixture.villager()).status(), "missing_planting_item",
+                    "missing planting supplies become an actionable settlement issue");
+            state.putString("Status", "interaction.work.status.sleeping");
+            helper.assertValueEqual(SettlementWorkStatus.observe(helper.getLevel(), fixture.villager()).diagnostic(), "",
+                    "resting does not retain an obsolete planting complaint");
         });
     }
 
