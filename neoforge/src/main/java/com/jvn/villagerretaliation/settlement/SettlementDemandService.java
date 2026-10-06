@@ -113,11 +113,13 @@ public final class SettlementDemandService {
             draft.equipmentRequirements.putAll(this.equipmentRequirements);
             draft.productionInputs.putAll(this.productionInputs);
             for (var definition : this.definitions) if (definition.request().kind() == Kind.FOOD) draft.evaluate(definition);
+            draft.animalFeed();
             this.equipmentWorkers.forEach(draft::equipment);
             this.equipmentReserves.forEach(draft::equipmentReserve);
             refreshTransfers(draft);
             for (var definition : this.definitions)
-                if (definition.request().kind() != Kind.EQUIPMENT && definition.request().kind() != Kind.FOOD
+                if (!definition.request().requirement().key().startsWith("animal_feed:")
+                        && definition.request().kind() != Kind.EQUIPMENT && definition.request().kind() != Kind.FOOD
                         && !this.transfers.containsKey(definition.request().consumer())
                         && (definition.request().kind() != Kind.STOCK_RESERVE || !definition.request().consumer().equals(policy))) draft.evaluate(definition);
             draft.policyReserve(policy, configuration);
@@ -136,11 +138,13 @@ public final class SettlementDemandService {
             refreshed.equipmentRequirements.putAll(this.equipmentRequirements);
             refreshed.productionInputs.putAll(this.productionInputs);
             for (var definition : this.definitions) if (definition.request().kind() == Kind.FOOD) refreshed.evaluate(definition);
+            refreshed.animalFeed();
             this.equipmentWorkers.forEach(refreshed::equipment);
             this.equipmentReserves.forEach(refreshed::equipmentReserve);
             refreshTransfers(refreshed);
             for (var definition : this.definitions)
-                if (definition.request().kind() != Kind.EQUIPMENT && definition.request().kind() != Kind.FOOD
+                if (!definition.request().requirement().key().startsWith("animal_feed:")
+                        && definition.request().kind() != Kind.EQUIPMENT && definition.request().kind() != Kind.FOOD
                         && !this.transfers.containsKey(definition.request().consumer())) refreshed.evaluate(definition);
             if (source != null) refreshed.store(source);
             refreshed.started.putAll(this.started);
@@ -441,6 +445,16 @@ public final class SettlementDemandService {
                     sources, List.of(), new ArrayList<>(), 0, target, "");
         }
 
+        private void animalFeed() {
+            if (this.town.areas().values().stream().noneMatch(area -> area.enabled() && area.crops().demand())) return;
+            for (var area : this.town.areas().values()) if (area.type() == SettlementAreaType.ANIMAL_PEN) {
+                var sources = SettlementSupplyStock.storages(this.level, this.town, area.id(), false);
+                for (var need : SettlementBreedingDemand.describe(this.level, this.town, area))
+                    add(area.id(), area.id(), Kind.PRODUCTION, area.name(), need.requirement(), sources,
+                            need.workers(), new ArrayList<>(), 0, need.requirement().quantity(), "");
+            }
+        }
+
         private void stockReserves() {
             for (var depot : SettlementStock.depots(this.town)) for (var target : depot.stockTargets()) {
                 var position = SettlementSupplyStock.positions(this.level, depot.position()).getFirst();
@@ -670,6 +684,7 @@ public final class SettlementDemandService {
     private static List<Runnable> planning(Snapshot snapshot, SettlementRecord town) {
         var work = new ArrayList<Runnable>();
         work.add(snapshot::food);
+        work.add(snapshot::animalFeed);
         for (var entry : town.duties().entrySet()) {
             var area = town.workplace(entry.getValue());
             if (area != null && com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.supports(area.type().role()))

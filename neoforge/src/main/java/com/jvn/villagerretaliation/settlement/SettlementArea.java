@@ -18,7 +18,7 @@ public record SettlementArea(
 
     public SettlementArea {
         Objects.requireNonNull(crops, "crops");
-        if (type != SettlementAreaType.FARM && crops.enabled()) throw new IllegalArgumentException("Crop plans require a farm");
+        if (type != SettlementAreaType.FARM && (crops.enabled() || crops.demand())) throw new IllegalArgumentException("Crop plans require a farm");
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(min, "min");

@@ -1117,6 +1117,93 @@ public final class SettlementSupplyChainGameTests {
         if (remaining == 0) throw new IllegalStateException("The configured supply policy did not finish its bounded work");
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "supply_chain")
+    public static void demandPlantingCreditsGrowingAndReservedPlotsOnceAcrossReload(GameTestHelper helper) {
+        SettlementFarmingGameTests.fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var root = fixture.plot().position();
+            var plan = new SettlementCropPlan(List.of(100, 0, 0, 0, 0, 0), true);
+            var farm = new SettlementArea(fixture.area().id(), SettlementAreaType.FARM, "Demand field",
+                    root, root.offset(3, 1, 0), 5, true, plan);
+            helper.assertTrue(town.putArea(town.leader(), farm), "demand planting is enabled explicitly");
+            town.configureDepot(town.leader(), fixture.supply().id(), SettlementDepotPurpose.GENERAL, 5);
+            fixture.plot().change(fixture.plot().soil(), Blocks.WHEAT.defaultBlockState());
+            var one = plantingPlot(helper, fixture, farm, root.east());
+            var two = plantingPlot(helper, fixture, farm, root.east(2));
+            var three = plantingPlot(helper, fixture, farm, root.east(3));
+            var kitchen = area(helper, town, SettlementAreaType.KITCHEN, "Bakery", root.north(4), root.offset(2, 2, -2));
+            table(town, kitchen);
+            worker(helper, town, kitchen, kitchen.min(), Items.AIR);
+            order(helper, town, kitchen, "bread", HiredProductionOrder.Mode.BATCH, 1, fixture.output().position());
+            var state = fixture.worker().settings();
+            var first = SettlementPlanting.choose(level, town, farm, one, one.position(), state);
+            helper.assertValueEqual(first.reason(), "cooking", "the actual bread order selects wheat");
+            helper.assertValueEqual(first.crop(), com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.WHEAT, "the recipe input is plantable");
+            helper.assertValueEqual(SettlementPlanting.choose(level, town, farm, two, two.position(), state).reason(), "cooking",
+                    "one growing plot leaves only two plots of recipe demand");
+            helper.assertValueEqual(SettlementPlanting.choose(level, town, farm, three, three.position(), state).reason(), "mix",
+                    "the third empty plot cannot claim the same recipe shortage again");
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            var saved = restored.fields().get(one.position());
+            restored.depots().get(fixture.supply().id()).setItem(0, new ItemStack(Items.WHEAT, 64));
+            helper.assertValueEqual(SettlementPlanting.choose(level, restored, farm, saved, saved.position(), state), first,
+                    "supplied stock and saving do not oscillate an assigned empty plot");
+            state.putString(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.CROP_TAG, "CARROT");
+            helper.assertFalse(SettlementPlanting.permits(state, first.crop(), new ItemStack(Items.WHEAT_SEEDS)),
+                    "a saved choice cannot bypass a changed worker restriction");
+            helper.assertFalse(level.hasChunkAt(root), "demand planning does not load fields");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "supply_chain")
+    public static void demandPlantingUsesObservedBreedingPairsAndFoodReserves(GameTestHelper helper) {
+        SettlementFarmingGameTests.fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var root = fixture.plot().position();
+            var farm = new SettlementArea(fixture.area().id(), SettlementAreaType.FARM, "Feed field", root, root.above(), 5, true,
+                    new SettlementCropPlan(List.of(100, 0, 0, 0, 0, 0), true));
+            town.putArea(town.leader(), farm);
+            town.configureDepot(town.leader(), fixture.supply().id(), SettlementDepotPurpose.GENERAL, 5);
+            var pen = area(helper, town, SettlementAreaType.ANIMAL_PEN, "Cows", root.south(4), root.offset(2, 2, 6));
+            worker(helper, town, pen, pen.min(), Items.AIR);
+            for (int index = 0; index < 2; index++) {
+                var cow = EntityType.COW.create(level);
+                cow.setPos(pen.min().east(index).getCenter());
+                town.recordLivestock(SettlementLivestock.capture(cow, pen.id(), 0L));
+            }
+            var needs = SettlementDemandService.inspect(level, town).demands().stream()
+                    .filter(need -> need.requirement().key().startsWith("animal_feed:")).toList();
+            helper.assertValueEqual(needs.size(), 1, "the observed pair creates one shared feed requirement");
+            helper.assertValueEqual(needs.getFirst().missing(), 2L, "one item per eligible animal is required");
+            fixture.plot().change(fixture.plot().soil(), Blocks.AIR.defaultBlockState());
+            var selected = SettlementPlanting.choose(level, town, farm, fixture.plot(), root, fixture.worker().settings());
+            helper.assertValueEqual(selected.reason(), "feed", "wheat is planted for the observed cows");
+            fixture.supply().setItem(0, new ItemStack(Items.WHEAT, 2));
+            helper.assertValueEqual(SettlementDemandService.inspect(level, town).demands().stream()
+                    .filter(need -> need.requirement().key().startsWith("animal_feed:")).findFirst().orElseThrow().missing(), 0L,
+                    "existing supplies satisfy the breeding requirement");
+            var foodFarm = new SettlementArea(farm.id(), farm.type(), farm.name(), farm.min(), farm.max(), 5, true,
+                    new SettlementCropPlan(List.of(0, 100, 0, 0, 0, 0), true));
+            town.putArea(town.leader(), foodFarm);
+            helper.assertTrue(SettlementFoodService.reserveNutrition(level, town) > 0, "known residents require food reserves");
+            helper.assertValueEqual(SettlementPlanting.choose(level, town, foodFarm, fixture.plot(), root, fixture.worker().settings()).reason(),
+                    "food", "a changed plan can choose carrots for real nutrition demand");
+        });
+    }
+
+    private static SettlementFieldPlot plantingPlot(GameTestHelper helper, SettlementFarmingGameTests.Fixture fixture,
+                                                    SettlementArea farm, BlockPos position) {
+        set(fixture.chunk(), position, Blocks.FARMLAND.defaultBlockState().setValue(FarmBlock.MOISTURE, 7));
+        set(fixture.chunk(), position.above(), Blocks.AIR.defaultBlockState());
+        var saved = SettlementFieldPlot.capture(helper.getLevel(), farm.id(), position, fixture.chunk(), 0L).save();
+        saved.putInt("BlockLight", 15);
+        var plot = SettlementFieldPlot.load(saved);
+        fixture.town().recordField(plot);
+        return plot;
+    }
+
     private static SettlementArea area(GameTestHelper helper, SettlementRecord town, SettlementAreaType type, String name, BlockPos min, BlockPos max) {
         SettlementTestPlots.claim(helper.getLevel(), town, min, max);
         var area = new SettlementArea(UUID.randomUUID(), type, name, min, max, 5, true);

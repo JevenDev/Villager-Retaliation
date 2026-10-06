@@ -1,4 +1,6 @@
 {
+  "villagerretaliation.gui.settlement.crop_demand": "Plant for settlement needs: %s",
+  "villagerretaliation.gui.settlement.crop_demand_hint": "Prioritize cooking, breeding feed, and food reserves within the allowed crop types. Growing crops stay in place.",
   "villagerretaliation.gui.settlement.crop_settings": "Planting settings",
   "villagerretaliation.gui.settlement.crop_back": "Back to area",
   "villagerretaliation.gui.settlement.field.crop_0_hint": "Share of the farm, from 0 to 100. All shares must total 100 or all be zero.",

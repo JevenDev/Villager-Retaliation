@@ -49,6 +49,23 @@ public final class SettlementFieldPlot {
     private double drying;
     private boolean pending;
     private boolean conflict;
+    private SettlementCropPlan plantingPlan;
+    private SettlementPlanting.Decision planting;
+
+    SettlementPlanting.Decision planting(SettlementCropPlan plan) {
+        return plan.equals(this.plantingPlan) ? this.planting : null;
+    }
+
+    void planting(SettlementCropPlan plan, SettlementPlanting.Decision decision) {
+        this.plantingPlan = plan;
+        this.planting = decision;
+    }
+
+    void clearPlanting() {
+        this.plantingPlan = null;
+        this.planting = null;
+    }
+
 
     private SettlementFieldPlot(UUID id, UUID area, BlockPos position) {
         this.id = id;
@@ -186,6 +203,7 @@ public final class SettlementFieldPlot {
         }
         if (this.crop != previous) {
             this.growth = 0.0D;
+            if (!this.crop.isAir() && (previous == null || previous.isAir() || !this.crop.is(previous.getBlock()))) clearPlanting();
         }
         this.checkedAt = Math.max(this.checkedAt, SettlementChunkReceipts.lastTick(chunk));
     }
@@ -434,6 +452,10 @@ public final class SettlementFieldPlot {
         tag.putDouble("Drying", this.drying);
         tag.putBoolean("Pending", this.pending);
         tag.putBoolean("Conflict", this.conflict);
+        if (this.planting != null) {
+            tag.put("PlantingPlan", this.plantingPlan.save());
+            tag.put("Planting", this.planting.save());
+        }
         return tag;
     }
 
@@ -476,6 +498,12 @@ public final class SettlementFieldPlot {
         plot.drying = fraction(tag.getDouble("Drying"));
         plot.pending = tag.getBoolean("Pending");
         plot.conflict = tag.getBoolean("Conflict");
+        if (tag.contains("Planting") || tag.contains("PlantingPlan")) {
+            if (!tag.contains("Planting", Tag.TAG_COMPOUND) || !tag.contains("PlantingPlan", Tag.TAG_COMPOUND))
+                throw new IllegalArgumentException("Incomplete planting decision");
+            plot.plantingPlan = SettlementCropPlan.load(tag.getCompound("PlantingPlan"));
+            plot.planting = SettlementPlanting.Decision.load(tag.getCompound("Planting"));
+        }
         return plot;
     }
 

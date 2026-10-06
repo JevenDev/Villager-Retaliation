@@ -76,7 +76,7 @@ public final class SettlementAllocationService {
         var canonical = SettlementSupplyStock.positions(level, position).getFirst();
         var snapshot = ready.refresh(canonical);
         var consumers = new HashSet<>(consumers(town, worker, consumer, destination == null ? canonical : null));
-        if (worker != null && consumer == null && !town.duties().containsKey(worker)) consumers.addAll(snapshot.consumers(worker));
+        if (worker != null && consumer == null) consumers.addAll(snapshot.consumers(worker));
         if (worker != null && consumer == null && destination == null) {
             var area = town.duties().get(worker);
             boolean needsEquipment = area != null && snapshot.demands().stream().anyMatch(demand ->

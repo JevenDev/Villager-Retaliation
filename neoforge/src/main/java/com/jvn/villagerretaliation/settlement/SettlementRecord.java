@@ -219,7 +219,7 @@ public final class SettlementRecord {
 
     private SettlementArea effectiveArea(SettlementArea area) {
         return area == null || !this.territory.migrated() || owns(area) || !area.enabled() ? area
-                : new SettlementArea(area.id(), area.type(), area.name(), area.min(), area.max(), area.priority(), false);
+                : new SettlementArea(area.id(), area.type(), area.name(), area.min(), area.max(), area.priority(), false, area.crops());
     }
 
     public SettlementEconomy economy() {

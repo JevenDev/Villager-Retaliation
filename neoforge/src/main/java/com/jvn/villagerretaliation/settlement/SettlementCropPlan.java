@@ -7,7 +7,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
-public record SettlementCropPlan(List<Integer> percentages) {
+public record SettlementCropPlan(List<Integer> percentages, boolean demand) {
+    public SettlementCropPlan(List<Integer> percentages) { this(percentages, false); }
     public static final SettlementCropPlan NONE = new SettlementCropPlan(List.of(0, 0, 0, 0, 0, 0));
 
     public SettlementCropPlan {
@@ -17,7 +18,7 @@ public record SettlementCropPlan(List<Integer> percentages) {
                 || total != 0 && total != 100) throw new IllegalArgumentException("Crop percentages must total 100 or zero");
     }
 
-    public boolean enabled() { return !equals(NONE); }
+    public boolean enabled() { return percentages.stream().anyMatch(value -> value > 0); }
 
     public boolean permits(Crop crop) {
         return crop != Crop.ANY && (!enabled() || percentages.get(crop.ordinal() - 1) > 0);
@@ -38,20 +39,22 @@ public record SettlementCropPlan(List<Integer> percentages) {
 
     public CompoundTag save() {
         var tag = new CompoundTag();
+        tag.putBoolean("Demand", demand);
         tag.putIntArray("Percentages", percentages.stream().mapToInt(Integer::intValue).toArray());
         return tag;
     }
 
     public static SettlementCropPlan load(CompoundTag tag) {
         if (!tag.contains("Percentages", Tag.TAG_INT_ARRAY)) throw new IllegalArgumentException("Missing crop percentages");
-        return new SettlementCropPlan(java.util.Arrays.stream(tag.getIntArray("Percentages")).boxed().toList());
+        if (tag.contains("Demand") && !tag.contains("Demand", Tag.TAG_BYTE)) throw new IllegalArgumentException("Invalid demand mode");
+        return new SettlementCropPlan(java.util.Arrays.stream(tag.getIntArray("Percentages")).boxed().toList(), tag.getBoolean("Demand"));
     }
 
-    public void write(RegistryFriendlyByteBuf buffer) { percentages.forEach(buffer::writeVarInt); }
+    public void write(RegistryFriendlyByteBuf buffer) { percentages.forEach(buffer::writeVarInt); buffer.writeBoolean(demand); }
 
     public static SettlementCropPlan read(RegistryFriendlyByteBuf buffer) {
         var values = new java.util.ArrayList<Integer>();
         for (int i = 1; i < Crop.values().length; i++) values.add(buffer.readVarInt());
-        return new SettlementCropPlan(values);
+        return new SettlementCropPlan(values, buffer.readBoolean());
     }
 }

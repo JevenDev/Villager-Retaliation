@@ -49,6 +49,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
     private ResourceLocation item = BuiltInRegistries.ITEM.getKey(Items.AIR);
     private boolean enabled;
     private boolean cropSettings;
+    private boolean demandPlanting;
     private boolean deposit = true;
     private Component error = Component.empty();
     private Button save;
@@ -79,6 +80,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
         this.enabled = mode == Mode.AREA;
         if (original instanceof SettlementManagementPayload.Area area) {
             for (int crop = 0; crop < 6; crop++) this.values.put("crop_" + crop, Integer.toString(area.crops().percentages().get(crop)));
+            this.demandPlanting = area.crops().demand();
             this.areaType = area.kind();
             this.enabled = area.enabled();
             this.values.put("start", coordinates(area.min()));
@@ -141,6 +143,12 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                     for (int crop = 0; crop < 6; crop++)
                         field("crop_" + crop, x + (crop % 3) * (third + 6), y + 30 + (crop / 3) * 38, third, 3);
                     this.labels.add(new Label(text("crop_total"), x, y + 110));
+                    var demand = addRenderableWidget(VillagerUi.buttonBuilder(text("crop_demand",
+                            text(this.demandPlanting ? "enabled" : "disabled")), ignored -> {
+                        this.demandPlanting = !this.demandPlanting;
+                        rebuildWidgets();
+                    }).bounds(x, y + 128, this.panelWidth, 20).build());
+                    demand.setTooltip(Tooltip.create(text("crop_demand_hint")));
                     break;
                 }
                 field("name", x, y, this.panelWidth, 48);
@@ -238,7 +246,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                             min, max, number("priority", 0, 9), this.enabled,
                             this.areaType == SettlementAreaType.FARM
                                     ? new com.jvn.villagerretaliation.settlement.SettlementCropPlan(
-                                            java.util.stream.IntStream.range(0, 6).mapToObj(crop -> number("crop_" + crop, 0, 100)).toList())
+                                            java.util.stream.IntStream.range(0, 6).mapToObj(crop -> number("crop_" + crop, 0, 100)).toList(), this.demandPlanting)
                                     : com.jvn.villagerretaliation.settlement.SettlementCropPlan.NONE));
                 }
                 case DEPOT -> new SettlementManagementActionPayload.ConfigureDepot(this.id, this.purpose, number("priority", 0, 9));

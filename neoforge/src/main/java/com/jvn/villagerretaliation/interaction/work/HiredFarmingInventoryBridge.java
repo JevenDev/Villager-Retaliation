@@ -177,6 +177,7 @@ public final class HiredFarmingInventoryBridge {
             }
             if (placePlant(level, villager, cropPos, stack)) {
                 inventory.removeItem(slot, 1);
+                com.jvn.villagerretaliation.settlement.SettlementPlanting.planted(villager, cropPos.below());
                 return true;
             }
         }

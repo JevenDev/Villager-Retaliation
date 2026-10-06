@@ -57,7 +57,6 @@ final class SettlementBackgroundFarming {
                 continue;
             }
             BlockState crop = plot.crop();
-            var plannedCrop = area.crops().crop(area, plot.position());
             boolean harvest = plot.harvestable() && HiredFarmingOptions.harvestCrops(worker.settings());
             boolean plant = plot.canPlant() && HiredFarmingOptions.plantCrops(worker.settings());
             boolean till = crop.isAir() && !plot.soil().is(Blocks.FARMLAND) && SettlementFieldPlot.supportedSoil(plot.soil())
@@ -80,6 +79,8 @@ final class SettlementBackgroundFarming {
                 worker.status("tilled");
                 return;
             }
+            var planting = SettlementPlanting.choose(level, town, area, plot, plot.position(), worker.settings());
+            var plannedCrop = planting.crop();
             List<ItemStack> drops = harvest
                     ? new ArrayList<>(Block.getDrops(crop, level, plot.position().above(), null, null, updated.get(HiredJobInventory.MAINHAND_SLOT)))
                     : new ArrayList<>();
@@ -138,6 +139,7 @@ final class SettlementBackgroundFarming {
             }
             plot.change(plot.soil(), seed.isEmpty() ? Blocks.AIR.defaultBlockState() : plantFor(seed));
             commit(level, worker, plot, updated);
+            if (!seed.isEmpty()) plot.clearPlanting();
             if (SettlementFarmPlants.fruit(crop)) SettlementFieldService.releaseFruit(level, town, plot);
             worker.practice(level, HiredWorkPractice.farming(harvest ? seed.isEmpty() ? "harvest" : "harvest_replant" : "plant"));
             worker.status(harvest ? "harvested" : "planted");
