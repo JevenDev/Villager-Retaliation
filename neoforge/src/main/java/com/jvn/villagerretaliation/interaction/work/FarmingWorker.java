@@ -177,6 +177,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         if (HiredFarmingOptions.plantCrops(context.state()) && (HiredFarmingInventoryBridge.hasJobPlantingItem(villager, context)
+                || com.jvn.villagerretaliation.settlement.SettlementPlanting.planned(villager)
                 || HiredFarmingOptions.crop(context.state()) != HiredFarmingOptions.Crop.ANY
                 || com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.FARM_PATCH))) {
             FieldSearchResult plantSearch = findNextFieldTarget(level, villager, context, jobSite, false);
@@ -186,7 +187,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 return WorkResult.progressed("interaction.work.farming.searching_scan");
             }
             if (plantSearch.target() != null) {
-                if (!HiredFarmingInventoryBridge.hasJobPlantingItem(villager, context)) return gatherSeeds(level, villager, context);
+                if (!HiredFarmingInventoryBridge.hasJobPlantingItem(villager, context)) return gatherSeeds(level, villager, context, plantSearch.target());
                 return guideFieldTarget(level, villager, context, plantSearch.target(), "field_plant_target_found");
             }
         }
@@ -206,9 +207,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return WorkResult.idle("interaction.work.farming.waiting_for_growth");
     }
 
-    private WorkResult gatherSeeds(ServerLevel level, Villager villager, HiredWorkContext context) {
+    private WorkResult gatherSeeds(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos cropTarget) {
+        var selected = com.jvn.villagerretaliation.settlement.SettlementPlanting.crop(villager, cropTarget.below());
         var need = new HiredProductionMaterials.Need(stack -> HiredFarmingInventoryBridge.isPlantingItem(villager, stack)
-                && HiredFarmingOptions.permitsSeed(context.state(), stack), 8, HiredFarmingOptions.crop(context.state()).label());
+                && com.jvn.villagerretaliation.settlement.SettlementPlanting.permits(context.state(), selected, stack), 8,
+                selected == HiredFarmingOptions.Crop.ANY ? HiredFarmingOptions.crop(context.state()).label() : selected.label());
         var acquired = context.useAssignedStorageForSupplies()
                 ? HiredProductionMaterials.acquireFromAssignedStorage(level, villager, context, List.of(need), 0.45D, 8,
                         HiredProductionMaterials.StorageFilterPolicy.RESPECT_INPUT_FILTER)
@@ -397,9 +400,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
         ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context);
         if (!HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget)) {
-            HiredWorkerBrain.setFailure(context, "missing_planting_item", 0L);
-            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, cropTarget);
-            return WorkResult.idle("interaction.work.farming.missing_planting_item");
+            return gatherSeeds(level, villager, context, cropTarget);
         }
 
         faceBlock(villager, cropTarget);

@@ -423,7 +423,7 @@ public final class SettlementManagementService {
             entries.add(new SettlementManagementPayload.Area(area.id(), display(area.name()), area.type(), area.min(), area.max(),
                     area.priority(), area.enabled(), survey == null ? 0 : survey.beds().size(),
                     survey == null ? 0 : survey.workstations().size(),
-                    (int) town.duties().values().stream().filter(area.id()::equals).count(), town.worksitePlans().get(area.id()), town.equipmentPlans().get(area.id())));
+                    (int) town.duties().values().stream().filter(area.id()::equals).count(), town.worksitePlans().get(area.id()), town.equipmentPlans().get(area.id()), area.crops()));
         }
     }
 

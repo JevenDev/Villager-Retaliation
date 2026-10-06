@@ -7,11 +7,18 @@ import net.minecraft.nbt.CompoundTag;
 
 public record SettlementArea(
         UUID id, SettlementAreaType type, String name, BlockPos min, BlockPos max,
-        int priority, boolean enabled) {
+        int priority, boolean enabled, SettlementCropPlan crops) {
+    public SettlementArea(UUID id, SettlementAreaType type, String name, BlockPos min, BlockPos max,
+                          int priority, boolean enabled) {
+        this(id, type, name, min, max, priority, enabled, SettlementCropPlan.NONE);
+    }
+
     public static final int MAX_VOLUME = 65_536;
     public static final int MAX_NAME_LENGTH = 48;
 
     public SettlementArea {
+        Objects.requireNonNull(crops, "crops");
+        if (type != SettlementAreaType.FARM && crops.enabled()) throw new IllegalArgumentException("Crop plans require a farm");
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(min, "min");
@@ -71,12 +78,14 @@ public record SettlementArea(
         tag.putLong("Max", max.asLong());
         tag.putInt("Priority", priority);
         tag.putBoolean("Enabled", enabled);
+        tag.put("Crops", crops.save());
         return tag;
     }
 
     public static SettlementArea load(CompoundTag tag) {
         return new SettlementArea(tag.getUUID("Id"), SettlementAreaType.valueOf(tag.getString("Type")),
                 tag.getString("Name"), BlockPos.of(tag.getLong("Min")), BlockPos.of(tag.getLong("Max")),
-                tag.getInt("Priority"), tag.getBoolean("Enabled"));
+                tag.getInt("Priority"), tag.getBoolean("Enabled"),
+                tag.contains("Crops") ? SettlementCropPlan.load(tag.getCompound("Crops")) : SettlementCropPlan.NONE);
     }
 }

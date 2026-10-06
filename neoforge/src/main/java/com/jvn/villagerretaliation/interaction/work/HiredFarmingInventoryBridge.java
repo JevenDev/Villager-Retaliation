@@ -171,7 +171,8 @@ public final class HiredFarmingInventoryBridge {
         HiredJobInventory inventory = context.inventory();
         for (int slot : plantingSlots(villager, inventory, context.state())) {
             ItemStack stack = inventory.getItem(slot);
-            if (stack.isEmpty()) {
+            if (stack.isEmpty() || !com.jvn.villagerretaliation.settlement.SettlementPlanting.permits(context.state(),
+                    com.jvn.villagerretaliation.settlement.SettlementPlanting.crop(villager, cropPos.below()), stack)) {
                 continue;
             }
             if (placePlant(level, villager, cropPos, stack)) {
@@ -307,7 +308,8 @@ public final class HiredFarmingInventoryBridge {
         if (!com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(villager)
                 || com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.activeRole(level, villager) != HiredVillagerRole.FARMING) return true;
         var state = HiredWorkStateStore.state(villager);
-        return state.getBoolean("Enabled") && HiredFarmingOptions.harvestCrops(state)
+        return !com.jvn.villagerretaliation.settlement.SettlementPlanting.planned(villager)
+                && state.getBoolean("Enabled") && HiredFarmingOptions.harvestCrops(state)
                 && com.jvn.villagerretaliation.settlement.SettlementGatheringPolicy.inspect(level, villager).allowed();
     }
 

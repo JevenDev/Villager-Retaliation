@@ -65,6 +65,7 @@ public final class HiredFarmingOptions {
         }
 
         public String label() { return this.label; }
+        public net.minecraft.world.item.Item seed() { return this.seed; }
     }
 
     public static boolean enabled(CompoundTag state, String optionId) {

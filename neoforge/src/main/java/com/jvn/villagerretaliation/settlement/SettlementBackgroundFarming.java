@@ -57,6 +57,7 @@ final class SettlementBackgroundFarming {
                 continue;
             }
             BlockState crop = plot.crop();
+            var plannedCrop = area.crops().crop(area, plot.position());
             boolean harvest = plot.harvestable() && HiredFarmingOptions.harvestCrops(worker.settings());
             boolean plant = plot.canPlant() && HiredFarmingOptions.plantCrops(worker.settings());
             boolean till = crop.isAir() && !plot.soil().is(Blocks.FARMLAND) && SettlementFieldPlot.supportedSoil(plot.soil())
@@ -89,7 +90,7 @@ final class SettlementBackgroundFarming {
                     && (!harvest || crop.getBlock() instanceof CropBlock);
             if (harvest && replant) {
                 for (ItemStack drop : drops) {
-                    if (plantFor(drop) != null && HiredFarmingOptions.permitsSeed(worker.settings(), drop)) {
+                    if (plantFor(drop) != null && SettlementPlanting.permits(worker.settings(), plannedCrop, drop)) {
                         seed = drop.copyWithCount(1);
                         drop.shrink(1);
                         break;
@@ -100,7 +101,7 @@ final class SettlementBackgroundFarming {
                 List<Integer> consumed = new ArrayList<>(java.util.Collections.nCopies(supplies.size(), 0));
                 for (int index = 0; index < supplies.size(); index++) {
                     var source = supplies.get(index);
-                    if (plantFor(source.available()) == null || !HiredFarmingOptions.permitsSeed(worker.settings(), source.available())) {
+                    if (plantFor(source.available()) == null || !SettlementPlanting.permits(worker.settings(), plannedCrop, source.available())) {
                         continue;
                     }
                     consumed.set(index, 1);
@@ -118,7 +119,7 @@ final class SettlementBackgroundFarming {
                 }
             }
             if (!harvest && seed.isEmpty()) {
-                missingSeeds |= HiredFarmingOptions.crop(worker.settings()) != HiredFarmingOptions.Crop.ANY;
+                missingSeeds |= plannedCrop != HiredFarmingOptions.Crop.ANY || HiredFarmingOptions.crop(worker.settings()) != HiredFarmingOptions.Crop.ANY;
                 continue;
             }
             if (!storeDrops(worker, updated, drops)) {

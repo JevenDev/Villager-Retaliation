@@ -202,6 +202,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.writeVarInt(area.workers());
                 SettlementManagementActionPayload.writeWorksitePlan(buffer, area.plan());
                 SettlementManagementActionPayload.writeEquipmentPlan(buffer, area.equipment());
+                area.crops().write(buffer);
             }
             case Station station -> buffer.writeBlockPos(station.position());
             case Depot depot -> {
@@ -383,7 +384,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             }
             case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
                     buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
-                    SettlementManagementActionPayload.readWorksitePlan(buffer), SettlementManagementActionPayload.readEquipmentPlan(buffer));
+                    SettlementManagementActionPayload.readWorksitePlan(buffer), SettlementManagementActionPayload.readEquipmentPlan(buffer),
+                    com.jvn.villagerretaliation.settlement.SettlementCropPlan.read(buffer));
             case STATIONS -> new Station(id, name, buffer.readBlockPos());
             case DEPOTS -> {
                 UUID area = buffer.readUUID();
@@ -781,7 +783,16 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     public record Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
                        int priority, boolean enabled, int beds, int fixtures, int workers,
                        com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan,
-                       com.jvn.villagerretaliation.settlement.SettlementEquipmentPlan equipment) implements Entry {
+                       com.jvn.villagerretaliation.settlement.SettlementEquipmentPlan equipment,
+                       com.jvn.villagerretaliation.settlement.SettlementCropPlan crops) implements Entry {
+        public Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
+                    int priority, boolean enabled, int beds, int fixtures, int workers,
+                    com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan,
+                    com.jvn.villagerretaliation.settlement.SettlementEquipmentPlan equipment) {
+            this(id, name, kind, min, max, priority, enabled, beds, fixtures, workers, plan, equipment,
+                    com.jvn.villagerretaliation.settlement.SettlementCropPlan.NONE);
+        }
+
         public Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
                     int priority, boolean enabled, int beds, int fixtures, int workers,
                     com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan) {

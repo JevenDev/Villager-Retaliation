@@ -301,6 +301,71 @@ public final class SettlementFarmingGameTests {
         vegetableHarvest(helper, Blocks.BEETROOTS, Items.BEETROOT);
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void cropPlansRetainStableRowsAndSurviveStorageAndPackets(GameTestHelper helper) {
+        var mix = new SettlementCropPlan(List.of(50, 25, 25, 0, 0, 0));
+        var min = new BlockPos(-12, 64, -8);
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Mixed farm", min, min.offset(3, 1, 3), 5, true, mix);
+        var counts = new java.util.EnumMap<HiredFarmingOptions.Crop, Integer>(HiredFarmingOptions.Crop.class);
+        for (int z = 0; z < 4; z++) for (int x = 0; x < 4; x++) {
+            var crop = mix.crop(area, min.offset(x, 0, z));
+            counts.merge(crop, 1, Integer::sum);
+            helper.assertValueEqual(crop, mix.crop(area, min.offset(x, 1, z)), "height does not scramble crop rows");
+        }
+        helper.assertValueEqual(counts.get(HiredFarmingOptions.Crop.WHEAT), 8, "half of the plots grow wheat");
+        helper.assertValueEqual(counts.get(HiredFarmingOptions.Crop.CARROT), 4, "one quarter grows carrots");
+        helper.assertValueEqual(counts.get(HiredFarmingOptions.Crop.POTATO), 4, "one quarter grows potatoes");
+        helper.assertValueEqual(SettlementArea.load(area.save()), area, "area saves retain crop percentages");
+        var legacy = area.save();
+        legacy.remove("Crops");
+        helper.assertFalse(SettlementArea.load(legacy).crops().enabled(), "old farms do not acquire a plan");
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            mix.write(buffer);
+            helper.assertValueEqual(SettlementCropPlan.read(buffer), mix, "network fields retain the exact crop plan");
+        } finally {
+            buffer.release();
+        }
+        boolean rejected = false;
+        try {
+            new SettlementCropPlan(List.of(50, 25, 24, 0, 0, 0));
+        } catch (IllegalArgumentException expected) {
+            rejected = true;
+        }
+        helper.assertTrue(rejected, "incomplete mixes are rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void cropPlanChangesOnlyMatureOrEmptyPlotsAndHonorsRestrictions(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var area = fixture.area();
+            var plan = new SettlementCropPlan(List.of(0, 0, 100, 0, 0, 0));
+            var configured = new SettlementArea(area.id(), area.type(), area.name(), area.min(), area.max(), area.priority(), true, plan);
+            helper.assertFalse(fixture.town().putArea(UUID.randomUUID(), configured), "unauthorized players cannot change planting");
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), configured), "the owner can set a crop plan");
+            helper.assertValueEqual(SettlementPlanting.crop(fixture.villager(), fixture.plot().position()), HiredFarmingOptions.Crop.POTATO,
+                    "loaded workers resolve the shared area plan");
+            helper.assertFalse(com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge.permitsVanillaHarvest(helper.getLevel(), fixture.villager()),
+                    "vanilla planting cannot bypass the area plan");
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            var items = fixture.worker().items(helper.getLevel().registryAccess());
+            items.set(fixture.worker().supplySlots().getFirst(), new ItemStack(Items.POTATO, 2));
+            fixture.worker().updateInventory(helper.getLevel().registryAccess(), items);
+            fixture.plot().change(fixture.plot().soil(), Blocks.WHEAT.defaultBlockState());
+            SettlementBackgroundFarming.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(fixture.plot().crop().is(Blocks.WHEAT), "growing crops remain unchanged");
+            fixture.plot().change(fixture.plot().soil(), ((CropBlock) Blocks.WHEAT).getStateForAge(7));
+            SettlementBackgroundFarming.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(fixture.plot().crop().is(Blocks.POTATOES), "harvesting plants the selected crop instead of the first loot seed");
+            fixture.plot().change(fixture.plot().soil(), Blocks.AIR.defaultBlockState());
+            fixture.worker().settings().putString(HiredFarmingOptions.CROP_TAG, "WHEAT");
+            SettlementBackgroundFarming.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(fixture.plot().crop().isAir(), "worker restrictions remain authoritative");
+            helper.assertValueEqual(carried(helper, fixture, Items.POTATO), 1, "blocked planting consumes no seed");
+        });
+    }
+
     private static void vegetableHarvest(GameTestHelper helper, net.minecraft.world.level.block.Block block,
                                          net.minecraft.world.item.Item produce) {
         fixture(helper, fixture -> {

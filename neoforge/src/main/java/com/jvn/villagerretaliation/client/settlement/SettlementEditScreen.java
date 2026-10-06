@@ -48,6 +48,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
     private SettlementTradeOrder.Direction direction = SettlementTradeOrder.Direction.BUY;
     private ResourceLocation item = BuiltInRegistries.ITEM.getKey(Items.AIR);
     private boolean enabled;
+    private boolean cropSettings;
     private boolean deposit = true;
     private Component error = Component.empty();
     private Button save;
@@ -72,10 +73,12 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
         this.values.put("amount", "1");
         this.values.put("stock", "64");
         this.values.put("price", "0");
+        for (int crop = 0; crop < 6; crop++) this.values.put("crop_" + crop, "0");
         this.values.put("daily", currency(parent.snapshot().header().budget()));
         this.values.put("reserve", currency(parent.snapshot().header().reserve()));
         this.enabled = mode == Mode.AREA;
         if (original instanceof SettlementManagementPayload.Area area) {
+            for (int crop = 0; crop < 6; crop++) this.values.put("crop_" + crop, Integer.toString(area.crops().percentages().get(crop)));
             this.areaType = area.kind();
             this.enabled = area.enabled();
             this.values.put("start", coordinates(area.min()));
@@ -129,6 +132,17 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
         int half = (this.panelWidth - 6) / 2;
         switch (this.mode) {
             case AREA -> {
+                if (this.cropSettings && this.areaType == SettlementAreaType.FARM) {
+                    addRenderableWidget(VillagerUi.buttonBuilder(text("crop_back"), ignored -> {
+                        this.cropSettings = false;
+                        rebuildWidgets();
+                    }).bounds(x, y, this.panelWidth, 20).build());
+                    int third = (this.panelWidth - 12) / 3;
+                    for (int crop = 0; crop < 6; crop++)
+                        field("crop_" + crop, x + (crop % 3) * (third + 6), y + 30 + (crop / 3) * 38, third, 3);
+                    this.labels.add(new Label(text("crop_total"), x, y + 110));
+                    break;
+                }
                 field("name", x, y, this.panelWidth, 48);
                 cycle("area_type", x, y + 38, half, SettlementManagementScreen.enumText("area", this.areaType), () -> {
                     this.areaType = next(SettlementAreaType.values(), this.areaType);
@@ -138,6 +152,12 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                 toggle(x + half + 70, y + 50, this.panelWidth - half - 70);
                 positionField("start", y + 76);
                 positionField("end", y + 114);
+                if (this.areaType == SettlementAreaType.FARM) {
+                    addRenderableWidget(VillagerUi.buttonBuilder(text("crop_settings"), ignored -> {
+                        this.cropSettings = true;
+                        rebuildWidgets();
+                    }).bounds(x, y + 152, this.panelWidth, 20).build());
+                }
             }
             case DEPOT -> {
                 cycle("purpose", x, y, this.panelWidth, SettlementManagementScreen.enumText("depot", this.purpose), () -> {
@@ -215,7 +235,11 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                     BlockPos min = new BlockPos(Math.min(first.getX(), second.getX()), Math.min(first.getY(), second.getY()), Math.min(first.getZ(), second.getZ()));
                     BlockPos max = new BlockPos(Math.max(first.getX(), second.getX()), Math.max(first.getY(), second.getY()), Math.max(first.getZ(), second.getZ()));
                     yield new SettlementManagementActionPayload.SaveArea(new SettlementArea(this.id, this.areaType, this.values.get("name"),
-                            min, max, number("priority", 0, 9), this.enabled));
+                            min, max, number("priority", 0, 9), this.enabled,
+                            this.areaType == SettlementAreaType.FARM
+                                    ? new com.jvn.villagerretaliation.settlement.SettlementCropPlan(
+                                            java.util.stream.IntStream.range(0, 6).mapToObj(crop -> number("crop_" + crop, 0, 100)).toList())
+                                    : com.jvn.villagerretaliation.settlement.SettlementCropPlan.NONE));
                 }
                 case DEPOT -> new SettlementManagementActionPayload.ConfigureDepot(this.id, this.purpose, number("priority", 0, 9));
                 case STOCK -> new SettlementManagementActionPayload.StockTarget(this.id, number("stock", 0, 4_096));

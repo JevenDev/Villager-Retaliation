@@ -207,6 +207,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 buffer.writeBlockPos(area.max());
                 buffer.writeVarInt(area.priority());
                 buffer.writeBoolean(area.enabled());
+                area.crops().write(buffer);
             }
             case RemoveArea remove -> {
                 buffer.writeEnum(Kind.REMOVE_AREA);
@@ -317,7 +318,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             case APPLICANT -> new Applicant(buffer.readUUID(), buffer.readBoolean());
             case SAVE_AREA -> new SaveArea(new SettlementArea(buffer.readUUID(), buffer.readEnum(SettlementAreaType.class),
                     buffer.readUtf(SettlementArea.MAX_NAME_LENGTH), buffer.readBlockPos(), buffer.readBlockPos(),
-                    buffer.readVarInt(), buffer.readBoolean()));
+                    buffer.readVarInt(), buffer.readBoolean(), com.jvn.villagerretaliation.settlement.SettlementCropPlan.read(buffer)));
             case REMOVE_AREA -> new RemoveArea(buffer.readUUID());
             case CONFIGURE_DEPOT -> new ConfigureDepot(buffer.readUUID(), buffer.readEnum(SettlementDepotPurpose.class), buffer.readVarInt());
             case STOCK_TARGET -> new StockTarget(buffer.readUUID(), buffer.readVarInt());
