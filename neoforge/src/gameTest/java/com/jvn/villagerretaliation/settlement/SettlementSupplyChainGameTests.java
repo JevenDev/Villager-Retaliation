@@ -1193,6 +1193,61 @@ public final class SettlementSupplyChainGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "supply_chain")
+    public static void plantingCycleReserveIsSharedProtectedAndSaved(GameTestHelper helper) {
+        SettlementFarmingGameTests.fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var root = fixture.plot().position();
+            helper.assertValueEqual(SettlementPlantingReserve.quota(town, fixture.area(), fixture.worker().id(), new ItemStack(Items.WHEAT_SEEDS)),
+                    -1, "old farms retain the eight-item inventory behavior");
+            var farm = new SettlementArea(fixture.area().id(), SettlementAreaType.FARM, "Reserved field", root, root.offset(3, 1, 0), 5, true,
+                    new SettlementCropPlan(List.of(50, 25, 25, 0, 0, 0), false, 1));
+            town.putArea(town.leader(), farm);
+            for (int i = 1; i < 4; i++) plantingPlot(helper, fixture, farm, root.east(i));
+            var partner = worker(helper, town, farm, root.east(), Items.DIAMOND_HOE);
+            var targets = SettlementPlantingReserve.targets(town, farm);
+            helper.assertValueEqual(targets.get(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.WHEAT), 2,
+                    "the next cycle needs two wheat seeds");
+            helper.assertValueEqual(targets.get(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.CARROT), 1,
+                    "carrots have their own planting reserve");
+            helper.assertValueEqual(targets.get(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.POTATO), 1,
+                    "potatoes have their own planting reserve");
+            for (var item : List.of(Items.WHEAT_SEEDS, Items.CARROT, Items.POTATO)) {
+                int total = SettlementPlantingReserve.quota(town, farm, fixture.worker().id(), new ItemStack(item))
+                        + SettlementPlantingReserve.quota(town, farm, partner.id(), new ItemStack(item));
+                helper.assertValueEqual(total, item == Items.WHEAT_SEEDS ? 2 : 1, "workers split one farm reserve without duplication");
+            }
+            fixture.supply().setItem(0, new ItemStack(Items.WHEAT_SEEDS, 64));
+            var snapshot = SettlementDemandService.inspect(level, town);
+            var seeds = snapshot.demands().stream().filter(need -> need.requirement().key().equals("planting_reserve")
+                    && need.requirement().value(new ItemStack(Items.WHEAT_SEEDS)) > 0).findFirst().orElseThrow();
+            helper.assertValueEqual(seeds.supply().protectedMinimum(), 2L, "planting stock participates in protected allocation");
+            helper.assertValueEqual(snapshot.sellable(fixture.supply(), new ItemStack(Items.WHEAT_SEEDS)), 62,
+                    "sales leave enough seed for the whole next cycle");
+            SettlementTestPlots.planSupplies(level, town);
+            helper.assertValueEqual(SettlementAllocationService.inspect(level, town, null, UUID.randomUUID(),
+                    fixture.supply().position(), new ItemStack(Items.WHEAT_SEEDS)).allowance(), 62,
+                    "unrelated consumers cannot take protected seeds");
+            helper.assertValueEqual(SettlementAllocationService.inspect(level, town, fixture.worker().id(), null,
+                    fixture.supply().position(), new ItemStack(Items.WHEAT_SEEDS)).allowance(), 64,
+                    "the farm can use its own planting reserve");
+            var inventory = HiredJobInventory.getJobInventory(fixture.villager());
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge.storeFarmDrops(
+                    fixture.villager(), inventory, List.of(new ItemStack(Items.WHEAT_SEEDS, 8), new ItemStack(Items.CARROT, 8), new ItemStack(Items.POTATO, 8))),
+                    "harvest storage retains the configured crop supplies");
+            for (var item : List.of(Items.WHEAT_SEEDS, Items.CARROT, Items.POTATO)) {
+                int retained = inventory.supplySlots().stream().map(inventory::getItem).filter(stack -> stack.is(item)).mapToInt(ItemStack::getCount).sum();
+                helper.assertValueEqual(retained, SettlementPlantingReserve.quota(town, farm, fixture.worker().id(), new ItemStack(item)),
+                        "loaded farmers keep only their share of each crop reserve");
+            }
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            helper.assertValueEqual(restored.areas().get(farm.id()).crops().cycles(), 1, "cycle settings survive saving");
+            helper.assertValueEqual(SettlementPlantingReserve.targets(restored, restored.areas().get(farm.id())), targets,
+                    "background operation keeps the same farm-wide reserve");
+        });
+    }
+
     private static SettlementFieldPlot plantingPlot(GameTestHelper helper, SettlementFarmingGameTests.Fixture fixture,
                                                     SettlementArea farm, BlockPos position) {
         set(fixture.chunk(), position, Blocks.FARMLAND.defaultBlockState().setValue(FarmBlock.MOISTURE, 7));

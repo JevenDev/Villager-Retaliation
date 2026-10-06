@@ -50,6 +50,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
     private boolean enabled;
     private boolean cropSettings;
     private boolean demandPlanting;
+    private int reserveCycles;
     private boolean deposit = true;
     private Component error = Component.empty();
     private Button save;
@@ -81,6 +82,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
         if (original instanceof SettlementManagementPayload.Area area) {
             for (int crop = 0; crop < 6; crop++) this.values.put("crop_" + crop, Integer.toString(area.crops().percentages().get(crop)));
             this.demandPlanting = area.crops().demand();
+            this.reserveCycles = area.crops().cycles();
             this.areaType = area.kind();
             this.enabled = area.enabled();
             this.values.put("start", coordinates(area.min()));
@@ -149,6 +151,11 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                         rebuildWidgets();
                     }).bounds(x, y + 128, this.panelWidth, 20).build());
                     demand.setTooltip(Tooltip.create(text("crop_demand_hint")));
+                    var reserve = addRenderableWidget(VillagerUi.buttonBuilder(text("crop_reserve_" + this.reserveCycles), ignored -> {
+                        this.reserveCycles = (this.reserveCycles + 1) % 3;
+                        rebuildWidgets();
+                    }).bounds(x, y + 154, this.panelWidth, 20).build());
+                    reserve.setTooltip(Tooltip.create(text("crop_reserve_hint")));
                     break;
                 }
                 field("name", x, y, this.panelWidth, 48);
@@ -246,7 +253,7 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                             min, max, number("priority", 0, 9), this.enabled,
                             this.areaType == SettlementAreaType.FARM
                                     ? new com.jvn.villagerretaliation.settlement.SettlementCropPlan(
-                                            java.util.stream.IntStream.range(0, 6).mapToObj(crop -> number("crop_" + crop, 0, 100)).toList(), this.demandPlanting)
+                                            java.util.stream.IntStream.range(0, 6).mapToObj(crop -> number("crop_" + crop, 0, 100)).toList(), this.demandPlanting, this.reserveCycles)
                                     : com.jvn.villagerretaliation.settlement.SettlementCropPlan.NONE));
                 }
                 case DEPOT -> new SettlementManagementActionPayload.ConfigureDepot(this.id, this.purpose, number("priority", 0, 9));

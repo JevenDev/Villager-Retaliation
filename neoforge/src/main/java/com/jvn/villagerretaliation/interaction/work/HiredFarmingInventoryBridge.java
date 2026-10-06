@@ -253,7 +253,7 @@ public final class HiredFarmingInventoryBridge {
     private static ItemStack insertFarmPickup(Villager villager, HiredJobInventory inventory, ItemStack stack) {
         ItemStack remainder = stack.copy();
         if (isPlantingItem(villager, remainder)) {
-            int reserveNeeded = Math.max(0, PLANTING_RESERVE - countPlantingItems(villager, inventory.supplySlots(), inventory));
+            int reserveNeeded = reserveNeeded(villager, inventory, remainder);
             if (reserveNeeded > 0) {
                 ItemStack reserve = remainder.copyWithCount(Math.min(reserveNeeded, remainder.getCount()));
                 ItemStack reserveRemainder = inventory.insertPlainSupply(reserve);
@@ -272,11 +272,16 @@ public final class HiredFarmingInventoryBridge {
     private static boolean canAcceptFarmPickup(Villager villager, HiredJobInventory inventory, ItemStack stack) {
         ItemStack sample = stack.copyWithCount(1);
         if (isPlantingItem(villager, sample)
-                && countPlantingItems(villager, inventory.supplySlots(), inventory) < PLANTING_RESERVE
+                && reserveNeeded(villager, inventory, sample) > 0
                 && inventory.canStorePlainSupplies(List.of(sample))) {
             return true;
         }
         return inventory.canStorePlainOutputs(List.of(sample));
+    }
+
+    private static int reserveNeeded(Villager villager, HiredJobInventory inventory, ItemStack sample) {
+        int configured = com.jvn.villagerretaliation.settlement.SettlementPlantingReserve.needed(villager, inventory, sample);
+        return configured >= 0 ? configured : Math.max(0, PLANTING_RESERVE - countPlantingItems(villager, inventory.supplySlots(), inventory));
     }
 
     private static int countPlantingItems(Villager villager, List<Integer> slots, HiredJobInventory inventory) {

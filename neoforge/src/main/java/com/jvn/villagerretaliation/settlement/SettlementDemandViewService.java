@@ -51,10 +51,12 @@ final class SettlementDemandViewService {
     private static DemandControl control(SettlementRecord town, SettlementDemandService.Demand demand) {
         return switch (demand.kind()) {
             case PROJECT -> DemandControl.PROJECT;
+            case PLANTING -> DemandControl.WORKSITE;
             case FOOD, STOCK_RESERVE -> DemandControl.RESERVE;
             case EQUIPMENT -> town.workplace(demand.area()) == null ? DemandControl.PERSONAL_EQUIPMENT
                     : demand.consumer().equals(demand.area()) ? DemandControl.EQUIPMENT : DemandControl.RESIDENT;
             case PRODUCTION -> {
+                if (demand.requirement().key().startsWith("animal_feed:")) yield DemandControl.WORKSITE;
                 var transfers = town.transferQueues().get(demand.area());
                 if (transfers != null && transfers.order(demand.consumer()) != null) yield DemandControl.TRANSFER;
                 var production = town.productionQueues().get(demand.area());

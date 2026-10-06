@@ -44,7 +44,7 @@ public record WorkSupplyDemand(UUID id, UUID consumer, Kind kind, WorkSupplyRequ
                 List.copyOf(combinedSources), destination, blocker.code().isEmpty() ? other.blocker : blocker);
     }
 
-    public enum Kind { PRODUCTION, PROJECT, FOOD, EQUIPMENT, STOCK_RESERVE }
+    public enum Kind { PRODUCTION, PROJECT, FOOD, EQUIPMENT, STOCK_RESERVE, PLANTING }
     public enum Action { NONE, SUPPLY, OBSERVE, INSPECT_STATION, FREE_CAPACITY, RESUME, CONFIGURE_STORAGE, INSPECT_COMPETITOR }
 
     public record Blocker(String code, Action action, UUID competingConsumer) {

@@ -555,17 +555,19 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     }
 
     public enum DemandControl {
-        PRODUCTION, PERSONAL_PRODUCTION, TRANSFER, PROJECT, RESERVE, EQUIPMENT, RESIDENT, PERSONAL_EQUIPMENT;
+        PRODUCTION, PERSONAL_PRODUCTION, TRANSFER, PROJECT, RESERVE, EQUIPMENT, RESIDENT, PERSONAL_EQUIPMENT, WORKSITE;
 
         public boolean personal() { return this == PERSONAL_PRODUCTION || this == PERSONAL_EQUIPMENT; }
 
         public boolean worksite() {
-            return this == PRODUCTION || this == TRANSFER || this == PROJECT || this == EQUIPMENT || this == RESIDENT;
+            return this == PRODUCTION || this == TRANSFER || this == PROJECT || this == EQUIPMENT || this == RESIDENT || this == WORKSITE;
         }
 
         boolean accepts(com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind kind) {
             return switch (this) {
                 case PRODUCTION, PERSONAL_PRODUCTION, TRANSFER -> kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PRODUCTION;
+                case WORKSITE -> kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PLANTING
+                        || kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PRODUCTION;
                 case PROJECT -> kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PROJECT;
                 case RESERVE -> kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD
                         || kind == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.STOCK_RESERVE;

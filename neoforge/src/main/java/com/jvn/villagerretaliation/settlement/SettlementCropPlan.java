@@ -7,11 +7,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
-public record SettlementCropPlan(List<Integer> percentages, boolean demand) {
+public record SettlementCropPlan(List<Integer> percentages, boolean demand, int cycles) {
+    public SettlementCropPlan(List<Integer> percentages, boolean demand) { this(percentages, demand, 0); }
     public SettlementCropPlan(List<Integer> percentages) { this(percentages, false); }
     public static final SettlementCropPlan NONE = new SettlementCropPlan(List.of(0, 0, 0, 0, 0, 0));
 
     public SettlementCropPlan {
+        if (cycles < 0 || cycles > 2) throw new IllegalArgumentException("Invalid planting reserve cycles");
         percentages = List.copyOf(percentages);
         int total = percentages.stream().mapToInt(Integer::intValue).sum();
         if (percentages.size() != Crop.values().length - 1 || percentages.stream().anyMatch(value -> value < 0 || value > 100)
@@ -40,6 +42,7 @@ public record SettlementCropPlan(List<Integer> percentages, boolean demand) {
     public CompoundTag save() {
         var tag = new CompoundTag();
         tag.putBoolean("Demand", demand);
+        tag.putInt("Cycles", cycles);
         tag.putIntArray("Percentages", percentages.stream().mapToInt(Integer::intValue).toArray());
         return tag;
     }
@@ -47,14 +50,15 @@ public record SettlementCropPlan(List<Integer> percentages, boolean demand) {
     public static SettlementCropPlan load(CompoundTag tag) {
         if (!tag.contains("Percentages", Tag.TAG_INT_ARRAY)) throw new IllegalArgumentException("Missing crop percentages");
         if (tag.contains("Demand") && !tag.contains("Demand", Tag.TAG_BYTE)) throw new IllegalArgumentException("Invalid demand mode");
-        return new SettlementCropPlan(java.util.Arrays.stream(tag.getIntArray("Percentages")).boxed().toList(), tag.getBoolean("Demand"));
+        if (tag.contains("Cycles") && !tag.contains("Cycles", Tag.TAG_INT)) throw new IllegalArgumentException("Invalid planting reserve cycles");
+        return new SettlementCropPlan(java.util.Arrays.stream(tag.getIntArray("Percentages")).boxed().toList(), tag.getBoolean("Demand"), tag.getInt("Cycles"));
     }
 
-    public void write(RegistryFriendlyByteBuf buffer) { percentages.forEach(buffer::writeVarInt); buffer.writeBoolean(demand); }
+    public void write(RegistryFriendlyByteBuf buffer) { percentages.forEach(buffer::writeVarInt); buffer.writeBoolean(demand); buffer.writeVarInt(cycles); }
 
     public static SettlementCropPlan read(RegistryFriendlyByteBuf buffer) {
         var values = new java.util.ArrayList<Integer>();
         for (int i = 1; i < Crop.values().length; i++) values.add(buffer.readVarInt());
-        return new SettlementCropPlan(values, buffer.readBoolean());
+        return new SettlementCropPlan(values, buffer.readBoolean(), buffer.readVarInt());
     }
 }

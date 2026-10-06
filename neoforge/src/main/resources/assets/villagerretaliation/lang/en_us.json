@@ -1,4 +1,8 @@
 {
+  "villagerretaliation.gui.settlement.crop_reserve_0": "Planting reserve: 8 carried items per farmer",
+  "villagerretaliation.gui.settlement.crop_reserve_1": "Planting reserve: next cycle",
+  "villagerretaliation.gui.settlement.crop_reserve_2": "Planting reserve: next two cycles",
+  "villagerretaliation.gui.settlement.crop_reserve_hint": "Protect one planting item per observed plot per cycle. The farm shares this reserve across its farmers and supply storage. Existing farms keep the eight-item default.",
   "villagerretaliation.gui.settlement.crop_demand": "Plant for settlement needs: %s",
   "villagerretaliation.gui.settlement.crop_demand_hint": "Prioritize cooking, breeding feed, and food reserves within the allowed crop types. Growing crops stay in place.",
   "villagerretaliation.gui.settlement.crop_settings": "Planting settings",

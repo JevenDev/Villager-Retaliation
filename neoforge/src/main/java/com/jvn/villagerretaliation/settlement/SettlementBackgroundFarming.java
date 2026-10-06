@@ -123,7 +123,7 @@ final class SettlementBackgroundFarming {
                 missingSeeds |= plannedCrop != HiredFarmingOptions.Crop.ANY || HiredFarmingOptions.crop(worker.settings()) != HiredFarmingOptions.Crop.ANY;
                 continue;
             }
-            if (!storeDrops(worker, updated, drops)) {
+            if (!storeDrops(town, worker, updated, drops)) {
                 if (autoDeposit && depositBatch(level, town, worker, elapsed, multiplier, depots)) return;
                 worker.status("output_full");
                 return;
@@ -162,11 +162,14 @@ final class SettlementBackgroundFarming {
                 : plot.soil().is(Blocks.FARMLAND) && plot.crop().isAir() ? 1 : 2;
     }
 
-    private static boolean storeDrops(SettlementWorkerState worker, NonNullList<ItemStack> items, List<ItemStack> drops) {
+    private static boolean storeDrops(SettlementRecord town, SettlementWorkerState worker, NonNullList<ItemStack> items, List<ItemStack> drops) {
         int reserved = worker.supplySlots().stream().map(items::get).filter(stack -> plantFor(stack) != null).mapToInt(ItemStack::getCount).sum();
         for (ItemStack drop : drops) {
-            if (plantFor(drop) != null && reserved < 8) {
-                int count = Math.min(drop.getCount(), 8 - reserved);
+            int configured = SettlementPlantingReserve.needed(town, town.areas().get(worker.area()), worker.id(),
+                    worker.supplySlots().stream().map(items::get).toList(), drop);
+            int needed = configured < 0 ? 8 - reserved : configured;
+            if (plantFor(drop) != null && needed > 0) {
+                int count = Math.min(drop.getCount(), needed);
                 var trial = NonNullList.withSize(items.size(), ItemStack.EMPTY);
                 for (int slot = 0; slot < items.size(); slot++) {
                     trial.set(slot, items.get(slot).copy());

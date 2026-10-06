@@ -209,11 +209,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
     private WorkResult gatherSeeds(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos cropTarget) {
         var selected = com.jvn.villagerretaliation.settlement.SettlementPlanting.crop(villager, cropTarget.below());
+        int amount = com.jvn.villagerretaliation.settlement.SettlementPlantingReserve.collectionAmount(villager, selected);
         var need = new HiredProductionMaterials.Need(stack -> HiredFarmingInventoryBridge.isPlantingItem(villager, stack)
-                && com.jvn.villagerretaliation.settlement.SettlementPlanting.permits(context.state(), selected, stack), 8,
+                && com.jvn.villagerretaliation.settlement.SettlementPlanting.permits(context.state(), selected, stack), amount,
                 selected == HiredFarmingOptions.Crop.ANY ? HiredFarmingOptions.crop(context.state()).label() : selected.label());
         var acquired = context.useAssignedStorageForSupplies()
-                ? HiredProductionMaterials.acquireFromAssignedStorage(level, villager, context, List.of(need), 0.45D, 8,
+                ? HiredProductionMaterials.acquireFromAssignedStorage(level, villager, context, List.of(need), 0.45D, amount,
                         HiredProductionMaterials.StorageFilterPolicy.RESPECT_INPUT_FILTER)
                 : new HiredProductionMaterials.Acquisition(HiredProductionMaterials.Status.MISSING, null, 0);
         return switch (acquired.status()) {

@@ -89,7 +89,7 @@ final class SettlementDemandView {
                 case PROJECT -> parent.navigateTo(Page.PROJECTS, demand.consumer().toString());
                 case RESERVE -> parent.navigateTo(Page.DEPOTS, "");
                 case RESIDENT -> parent.navigateTo(Page.RESIDENTS, demand.consumer().toString());
-                case EQUIPMENT -> parent.navigateTo(Page.AREAS, demand.area().toString());
+                case EQUIPMENT, WORKSITE -> parent.navigateTo(Page.AREAS, demand.area().toString());
                 case PERSONAL_EQUIPMENT -> parent.focusSupply(demand.area(), demand.focus());
                 case TRANSFER -> client.setScreen(new TransferOrdersScreen(parent,
                         new ProductionTarget(parent.snapshot().header().id(), demand.area()), () -> client.setScreen(parent), demand.consumer()));

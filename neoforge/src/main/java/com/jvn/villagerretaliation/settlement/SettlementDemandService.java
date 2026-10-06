@@ -114,11 +114,13 @@ public final class SettlementDemandService {
             draft.productionInputs.putAll(this.productionInputs);
             for (var definition : this.definitions) if (definition.request().kind() == Kind.FOOD) draft.evaluate(definition);
             draft.animalFeed();
+            draft.plantingReserves();
             this.equipmentWorkers.forEach(draft::equipment);
             this.equipmentReserves.forEach(draft::equipmentReserve);
             refreshTransfers(draft);
             for (var definition : this.definitions)
                 if (!definition.request().requirement().key().startsWith("animal_feed:")
+                        && !definition.request().requirement().key().equals("planting_reserve")
                         && definition.request().kind() != Kind.EQUIPMENT && definition.request().kind() != Kind.FOOD
                         && !this.transfers.containsKey(definition.request().consumer())
                         && (definition.request().kind() != Kind.STOCK_RESERVE || !definition.request().consumer().equals(policy))) draft.evaluate(definition);
@@ -139,11 +141,13 @@ public final class SettlementDemandService {
             refreshed.productionInputs.putAll(this.productionInputs);
             for (var definition : this.definitions) if (definition.request().kind() == Kind.FOOD) refreshed.evaluate(definition);
             refreshed.animalFeed();
+            refreshed.plantingReserves();
             this.equipmentWorkers.forEach(refreshed::equipment);
             this.equipmentReserves.forEach(refreshed::equipmentReserve);
             refreshTransfers(refreshed);
             for (var definition : this.definitions)
                 if (!definition.request().requirement().key().startsWith("animal_feed:")
+                        && !definition.request().requirement().key().equals("planting_reserve")
                         && definition.request().kind() != Kind.EQUIPMENT && definition.request().kind() != Kind.FOOD
                         && !this.transfers.containsKey(definition.request().consumer())) refreshed.evaluate(definition);
             if (source != null) refreshed.store(source);
@@ -445,6 +449,27 @@ public final class SettlementDemandService {
                     sources, List.of(), new ArrayList<>(), 0, target, "");
         }
 
+        private void plantingReserves() {
+            for (var area : this.town.areas().values()) if (area.type() == SettlementAreaType.FARM) {
+                var sources = SettlementSupplyStock.storages(this.level, this.town, area.id(), false);
+                for (var target : SettlementPlantingReserve.targets(this.town, area).entrySet()) {
+                    var alternatives = java.util.Arrays.stream(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.values())
+                            .filter(crop -> crop != com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.ANY
+                                    && !SettlementPlantingReserve.workers(this.town, area, crop).isEmpty())
+                            .map(crop -> new ItemStack(crop.seed())).toList();
+                    var requirement = target.getKey() == com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.ANY
+                            ? new WorkSupplyRequirement("planting_reserve", alternatives, target.getValue(), WorkSupplyRequirement.Unit.ITEMS,
+                                    stack -> alternatives.stream().anyMatch(sample -> sample.is(stack.getItem())), null)
+                            : WorkSupplyRequirement.exact("planting_reserve", new ItemStack(target.getKey().seed()), target.getValue());
+                    var request = new WorkSupplyDemand(WorkSupplyDemand.identity(this.level.registryAccess(), area.id(), Kind.PLANTING, requirement),
+                            area.id(), Kind.PLANTING, requirement, target.getValue(), target.getValue(), target.getValue(),
+                            area.priority(), 0, 0, 0, 0, true, sources, null, WorkSupplyDemand.Blocker.of(""));
+                    evaluate(new Definition(area.id(), area.name(), request,
+                            SettlementPlantingReserve.workers(this.town, area, target.getKey()), List.of(), 0));
+                }
+            }
+        }
+
         private void animalFeed() {
             if (this.town.areas().values().stream().noneMatch(area -> area.enabled() && area.crops().demand())) return;
             for (var area : this.town.areas().values()) if (area.type() == SettlementAreaType.ANIMAL_PEN) {
@@ -685,6 +710,7 @@ public final class SettlementDemandService {
         var work = new ArrayList<Runnable>();
         work.add(snapshot::food);
         work.add(snapshot::animalFeed);
+        work.add(snapshot::plantingReserves);
         for (var entry : town.duties().entrySet()) {
             var area = town.workplace(entry.getValue());
             if (area != null && com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.supports(area.type().role()))

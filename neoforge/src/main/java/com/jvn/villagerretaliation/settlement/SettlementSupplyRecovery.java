@@ -62,7 +62,8 @@ public final class SettlementSupplyRecovery {
             if (demand.immediateMissing() > 0) return result(demand, Cause.COMMITTED,
                     net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.demand_incoming", prefix).getString(), focus);
             if (demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.FOOD
-                    || demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.STOCK_RESERVE)
+                    || demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.STOCK_RESERVE
+                    || demand.kind() == com.jvn.villagerretaliation.interaction.work.production.WorkSupplyDemand.Kind.PLANTING)
                 return result(demand, Cause.READY,
                         net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement.demand_reserve_ready").getString(), focus);
             if (area != null && town.duties().values().stream().noneMatch(demand.area()::equals))

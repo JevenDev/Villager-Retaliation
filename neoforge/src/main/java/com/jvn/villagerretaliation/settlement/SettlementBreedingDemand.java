@@ -15,11 +15,19 @@ final class SettlementBreedingDemand {
 
     record Need(WorkSupplyRequirement requirement, List<UUID> workers) { }
 
+    private static SettlementWorkerSettings settings(SettlementRecord town, UUID worker) {
+        var configured = town.effectiveWorkerSettings(worker);
+        if (configured != null) return configured;
+        var observed = town.workers().get(worker);
+        return SettlementWorkerSettings.capture(com.jvn.villagerretaliation.interaction.HiredVillagerRole.ANIMAL_HANDLING,
+                observed == null ? new net.minecraft.nbt.CompoundTag() : observed.settings());
+    }
+
     static List<Need> describe(ServerLevel level, SettlementRecord town, SettlementArea area) {
         if (!area.enabled() || !town.owns(area)) return List.of();
         var workers = town.duties().entrySet().stream().filter(entry -> area.id().equals(entry.getValue()))
                 .map(java.util.Map.Entry::getKey).filter(id -> {
-                    var settings = town.effectiveWorkerSettings(id);
+                    var settings = settings(town, id);
                     return settings != null && settings.enabled() && settings.options().get(SettlementWorkerSetting.BREED_ANIMALS) != 0;
                 }).sorted().toList();
         if (workers.isEmpty()) return List.of();
@@ -40,7 +48,7 @@ final class SettlementBreedingDemand {
                 var two = animals.get(second);
                 if (paired.contains(two.getUUID()) || one.getType() != two.getType() || one.distanceToSqr(two) > 9.0D) continue;
                 var eligible = workers.stream().filter(id -> HiredAnimalBreedingTargets.matches(one,
-                        town.effectiveWorkerSettings(id).animals())).toList();
+                        settings(town, id).animals())).toList();
                 if (eligible.isEmpty()) continue;
                 var alternatives = BuiltInRegistries.ITEM.stream().map(ItemStack::new)
                         .filter(stack -> one.isFood(stack) && two.isFood(stack)).toList();
