@@ -48,6 +48,22 @@ final class CampaignStateCodec {
             var discoveries = new CompoundTag();
             progress.discoveredOutcomes().forEach(discoveries::putString);
             player.put("DiscoveredOutcomes", discoveries);
+            var milestones = new ListTag();
+            progress.milestones().forEach((milestoneId, value) -> {
+                var milestone = new CompoundTag();
+                milestone.putString("Milestone", milestoneId);
+                milestone.putString("Route", value.route().name());
+                milestone.putString("Outcome", value.outcome());
+                milestone.putLong("EnteredAt", value.enteredAt());
+                milestone.putLong("CompletedAt", value.completedAt());
+                if (value.worldOperation() != null) milestone.putUUID("WorldOperation", value.worldOperation());
+                if (value.completionOperation() != null) milestone.putUUID("CompletionOperation", value.completionOperation());
+                milestones.add(milestone);
+            });
+            player.put("Milestones", milestones);
+            var quests = new ListTag();
+            progress.completedQuests().stream().sorted().forEach(questId -> quests.add(StringTag.valueOf(questId.toString())));
+            player.put("CompletedQuests", quests);
             players.add(player);
         });
         tag.put("Players", players);
@@ -102,8 +118,35 @@ final class CampaignStateCodec {
                 discoveries.put(milestone, outcome);
             }
             require(discoveries.keySet().containsAll(participation), "participants must know the outcome");
-            require(players.putIfAbsent(entry.getUUID("Player"), new CampaignInstance.PlayerRecord(personalRevision, participation, discoveries)) == null,
-                    "duplicate player record");
+            Map<String, CampaignInstance.MilestoneProgress> milestones = new LinkedHashMap<>();
+            Set<UUID> completions = new HashSet<>();
+            for (Tag milestoneTag : list(entry, "Milestones", Tag.TAG_COMPOUND)) {
+                var milestone = (CompoundTag) milestoneTag;
+                String id = text(milestone, "Milestone");
+                var route = CampaignInstance.Route.valueOf(text(milestone, "Route"));
+                require(milestone.contains("Outcome", Tag.TAG_STRING), "missing personal outcome");
+                String outcome = milestone.getString("Outcome");
+                UUID worldOperation = optionalId(milestone, "WorldOperation");
+                UUID completion = optionalId(milestone, "CompletionOperation");
+                long completedAt = number(milestone, "CompletedAt");
+                require(completion == null ? completedAt == -1L : !outcome.isBlank() && completions.add(completion),
+                        "invalid personal completion receipt");
+                if (worldOperation != null) {
+                    var committed = outcomes.get(id);
+                    require(committed != null && committed.operationId().equals(worldOperation) && committed.outcome().equals(outcome),
+                            "personal progress differs from the committed world outcome");
+                    require(discoveries.containsKey(id), "resolved personal progress must know the outcome");
+                } else require(route != CampaignInstance.Route.CATCH_UP, "catch-up requires a world outcome");
+                require(milestones.putIfAbsent(id, new CampaignInstance.MilestoneProgress(route, outcome, worldOperation,
+                        number(milestone, "EnteredAt"), completion, completedAt)) == null, "duplicate personal milestone");
+            }
+            Set<ResourceLocation> completedQuests = new HashSet<>();
+            for (Tag questTag : list(entry, "CompletedQuests", Tag.TAG_STRING)) {
+                var quest = ResourceLocation.tryParse(questTag.getAsString());
+                require(quest != null && completedQuests.add(quest), "invalid or duplicate completed quest");
+            }
+            require(players.putIfAbsent(entry.getUUID("Player"), new CampaignInstance.PlayerRecord(personalRevision,
+                    participation, discoveries, milestones, completedQuests)) == null, "duplicate player record");
         }
         return new CampaignInstance(campaign, tag.getUUID("Instance"), tag.getInt("DefinitionRevision"),
                 text(tag, "Fingerprint"), text(tag, "Title"), number(tag, "CreatedAt"), worldRevision, outcomes, players);
@@ -114,6 +157,11 @@ final class CampaignStateCodec {
         var list = (ListTag) tag.get(key);
         require(list.isEmpty() || list.getElementType() == elementType, "invalid list " + key);
         return list;
+    }
+
+    private static UUID optionalId(CompoundTag tag, String key) {
+        require(!tag.contains(key) || tag.hasUUID(key), "invalid identity " + key);
+        return tag.hasUUID(key) ? tag.getUUID(key) : null;
     }
 
     private static String text(CompoundTag tag, String key) {

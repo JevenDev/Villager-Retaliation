@@ -19,16 +19,32 @@ public record CampaignInstance(ResourceLocation campaignId, UUID instanceId, int
             long revision, long committedAt, Origin origin) {
     }
 
-    public record PlayerRecord(long revision, Set<String> participation, Map<String, String> discoveredOutcomes) {
+    public record PlayerRecord(long revision, Set<String> participation, Map<String, String> discoveredOutcomes,
+            Map<String, MilestoneProgress> milestones, Set<ResourceLocation> completedQuests) {
         public PlayerRecord {
             participation = Set.copyOf(participation);
             discoveredOutcomes = Collections.unmodifiableMap(new LinkedHashMap<>(discoveredOutcomes));
+            milestones = Collections.unmodifiableMap(new LinkedHashMap<>(milestones));
+            completedQuests = Set.copyOf(completedQuests);
+        }
+
+        public PlayerRecord(long revision, Set<String> participation, Map<String, String> discoveredOutcomes) {
+            this(revision, participation, discoveredOutcomes, Map.of(), Set.of());
         }
 
         public static PlayerRecord empty() {
             return new PlayerRecord(0L, Set.of(), Map.of());
         }
     }
+
+    public record MilestoneProgress(Route route, String outcome, UUID worldOperation, long enteredAt,
+            UUID completionOperation, long completedAt) {
+        public boolean completed() {
+            return this.completionOperation != null;
+        }
+    }
+
+    public enum Route { ORIGINAL, CATCH_UP }
 
     public enum Origin { PLAYER_DECISION, WORLD_OBSERVATION }
 }

@@ -27,7 +27,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class CampaignSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 1;
+    public static final int CURRENT_DATA_VERSION = 2;
     static final String DATA_NAME = "villagerretaliation_campaigns";
     private final Path directory;
     private Map<ResourceLocation, CampaignInstance> instances = Map.of();
@@ -59,12 +59,10 @@ public final class CampaignSavedData extends SavedData {
     static CampaignSavedData load(CompoundTag tag, Path directory) {
         var data = new CampaignSavedData(directory);
         try {
-            if (tag.isEmpty()) return data;
-            CampaignStateCodec.require(tag.contains("DataVersion", Tag.TAG_INT)
-                    && tag.getInt("DataVersion") == CURRENT_DATA_VERSION, "unsupported campaign save version");
+            var migrated = CampaignSaveMigrations.migrate(tag);
             Map<ResourceLocation, CampaignInstance> instances = new LinkedHashMap<>();
             Set<UUID> identities = new HashSet<>();
-            for (Tag raw : CampaignStateCodec.list(tag, "Campaigns", Tag.TAG_COMPOUND)) {
+            for (Tag raw : CampaignStateCodec.list(migrated, "Campaigns", Tag.TAG_COMPOUND)) {
                 var instance = CampaignStateCodec.load((CompoundTag) raw);
                 CampaignStateCodec.require(identities.add(instance.instanceId()), "duplicate campaign instance identity");
                 CampaignStateCodec.require(instances.putIfAbsent(instance.campaignId(), instance) == null, "duplicate campaign instance");
@@ -134,13 +132,22 @@ public final class CampaignSavedData extends SavedData {
         Map<String, CampaignInstance.OutcomeCommit> outcomes = new LinkedHashMap<>(current.outcomes());
         outcomes.put(milestoneId, committed);
         Map<UUID, CampaignInstance.PlayerRecord> players = new LinkedHashMap<>(current.players());
-        for (UUID participant : participants) {
-            var previous = players.getOrDefault(participant, CampaignInstance.PlayerRecord.empty());
+        Set<UUID> affected = new HashSet<>(participants);
+        players.forEach((id, player) -> {
+            if (player.milestones().containsKey(milestoneId)) affected.add(id);
+        });
+        for (UUID playerId : affected) {
+            var previous = players.getOrDefault(playerId, CampaignInstance.PlayerRecord.empty());
+            boolean participant = participants.contains(playerId);
             Set<String> participation = new HashSet<>(previous.participation());
-            participation.add(milestoneId);
+            if (participant) participation.add(milestoneId);
             Map<String, String> discoveries = new LinkedHashMap<>(previous.discoveredOutcomes());
             discoveries.put(milestoneId, outcomeId);
-            players.put(participant, new CampaignInstance.PlayerRecord(previous.revision() + 1L, participation, discoveries));
+            Map<String, CampaignInstance.MilestoneProgress> milestones = new LinkedHashMap<>(previous.milestones());
+            if (milestones.containsKey(milestoneId)) milestones.put(milestoneId,
+                    CampaignProgression.reconcile(milestones.get(milestoneId), committed, participant));
+            players.put(playerId, new CampaignInstance.PlayerRecord(previous.revision() + 1L, participation, discoveries,
+                    milestones, previous.completedQuests()));
         }
         var next = replace(current, committed.revision(), outcomes, players);
         persist(next);
@@ -151,15 +158,95 @@ public final class CampaignSavedData extends SavedData {
         String issue = compatibility(definition);
         if (!issue.isBlank()) throw new IOException(issue);
         var current = this.instances.get(definition.id());
-        if (current == null || !current.outcomes().containsKey(milestoneId)) return false;
+        if (current == null || playerId == null || !current.outcomes().containsKey(milestoneId)) return false;
         var player = current.players().getOrDefault(playerId, CampaignInstance.PlayerRecord.empty());
         if (player.discoveredOutcomes().containsKey(milestoneId)) return false;
         Map<String, String> discoveries = new LinkedHashMap<>(player.discoveredOutcomes());
         discoveries.put(milestoneId, current.outcomes().get(milestoneId).outcome());
         Map<UUID, CampaignInstance.PlayerRecord> players = new LinkedHashMap<>(current.players());
-        players.put(playerId, new CampaignInstance.PlayerRecord(player.revision() + 1L, player.participation(), discoveries));
+        players.put(playerId, new CampaignInstance.PlayerRecord(player.revision() + 1L, player.participation(), discoveries,
+                player.milestones(), player.completedQuests()));
         persist(replace(current, current.worldRevision(), current.outcomes(), players));
         return true;
+    }
+
+    synchronized ProgressResult enterMilestone(CampaignDefinition definition, UUID playerId, String milestoneId, long gameTime) throws IOException {
+        var current = this.instances.get(definition.id());
+        String issue = compatibility(definition);
+        if (!issue.isBlank() || current == null) return progressResult(Status.UNAVAILABLE, null, issue.isBlank() ? "Campaign instance has not started" : issue);
+        var milestone = definition.milestones().get(milestoneId);
+        if (milestone == null || playerId == null) return progressResult(Status.INVALID_REQUEST, null, "Unknown milestone or player");
+        var player = current.players().getOrDefault(playerId, CampaignInstance.PlayerRecord.empty());
+        if (player.milestones().containsKey(milestoneId)) return progressResult(Status.ALREADY_SATISFIED,
+                CampaignProgression.entry(definition, current, playerId, milestoneId), "");
+        var chapter = CampaignProgression.chapter(definition, current, playerId, milestone.chapter());
+        if (!chapter.available()) return new ProgressResult(Status.UNAVAILABLE, null, chapter.blockers());
+        var outcome = current.outcomes().get(milestoneId);
+        Map<String, CampaignInstance.MilestoneProgress> milestones = new LinkedHashMap<>(player.milestones());
+        milestones.put(milestoneId, CampaignProgression.enter(outcome, gameTime));
+        Map<String, String> discoveries = new LinkedHashMap<>(player.discoveredOutcomes());
+        if (outcome != null) discoveries.put(milestoneId, outcome.outcome());
+        var next = replacePlayer(current, playerId, new CampaignInstance.PlayerRecord(player.revision() + 1L, player.participation(),
+                discoveries, milestones, player.completedQuests()));
+        persist(next);
+        return progressResult(Status.APPLIED, CampaignProgression.entry(definition, next, playerId, milestoneId), "");
+    }
+
+    synchronized ProgressResult completeMilestone(CampaignDefinition definition, UUID playerId, String milestoneId,
+            CampaignInstance.Route expectedRoute, String outcomeId, UUID completionOperation, long gameTime) throws IOException {
+        var current = this.instances.get(definition.id());
+        String issue = compatibility(definition);
+        if (!issue.isBlank() || current == null) return progressResult(Status.UNAVAILABLE, null, issue.isBlank() ? "Campaign instance has not started" : issue);
+        var milestone = definition.milestones().get(milestoneId);
+        var player = current.players().get(playerId);
+        var progress = player == null ? null : player.milestones().get(milestoneId);
+        if (milestone == null || progress == null || !milestone.outcomes().containsKey(outcomeId) || completionOperation == null) {
+            return progressResult(Status.INVALID_REQUEST, null, "Personal completion requires an entered milestone, authored outcome, and operation id");
+        }
+        var entry = CampaignProgression.entry(definition, current, playerId, milestoneId);
+        if (progress.completed()) return progressResult(Status.ALREADY_SATISFIED, entry, "");
+        if (progress.route() != expectedRoute) return progressResult(Status.STALE, entry, "Milestone route changed. Refresh the authored entry before continuing.");
+        var worldOutcome = current.outcomes().get(milestoneId);
+        if (milestone.irreversible() && (worldOutcome == null || !worldOutcome.outcome().equals(outcomeId)
+                || !worldOutcome.operationId().equals(progress.worldOperation()))) {
+            return progressResult(Status.UNAVAILABLE, entry, "Personal completion must follow the authoritative world outcome");
+        }
+        if (player.milestones().values().stream().anyMatch(value -> completionOperation.equals(value.completionOperation()))) {
+            return progressResult(Status.INVALID_REQUEST, entry, "Completion operation already belongs to another milestone");
+        }
+        Map<String, CampaignInstance.MilestoneProgress> milestones = new LinkedHashMap<>(player.milestones());
+        milestones.put(milestoneId, new CampaignInstance.MilestoneProgress(progress.route(), outcomeId, progress.worldOperation(),
+                progress.enteredAt(), completionOperation, gameTime));
+        var completedQuests = CampaignProgression.completedQuests(definition, milestones, player.completedQuests());
+        var next = replacePlayer(current, playerId, new CampaignInstance.PlayerRecord(player.revision() + 1L, player.participation(),
+                player.discoveredOutcomes(), milestones, completedQuests));
+        persist(next);
+        return progressResult(Status.APPLIED, CampaignProgression.entry(definition, next, playerId, milestoneId), "");
+    }
+
+    synchronized boolean completeQuest(CampaignDefinition definition, UUID playerId, ResourceLocation quest) throws IOException {
+        String issue = compatibility(definition);
+        if (!issue.isBlank()) throw new IOException(issue);
+        var current = this.instances.get(definition.id());
+        if (current == null || playerId == null || !definition.questBundles().contains(quest)) return false;
+        var player = current.players().getOrDefault(playerId, CampaignInstance.PlayerRecord.empty());
+        if (player.completedQuests().contains(quest)) return false;
+        Set<ResourceLocation> completed = new HashSet<>(player.completedQuests());
+        completed.add(quest);
+        var reconciled = CampaignProgression.completedQuests(definition, player.milestones(), completed);
+        persist(replacePlayer(current, playerId, new CampaignInstance.PlayerRecord(player.revision() + 1L, player.participation(),
+                player.discoveredOutcomes(), player.milestones(), reconciled)));
+        return true;
+    }
+
+    private static CampaignInstance replacePlayer(CampaignInstance current, UUID playerId, CampaignInstance.PlayerRecord player) {
+        Map<UUID, CampaignInstance.PlayerRecord> players = new LinkedHashMap<>(current.players());
+        players.put(playerId, player);
+        return replace(current, current.worldRevision(), current.outcomes(), players);
+    }
+
+    private static ProgressResult progressResult(Status status, CampaignProgression.Entry entry, String diagnostic) {
+        return new ProgressResult(status, entry, diagnostic.isBlank() ? java.util.List.of() : java.util.List.of(diagnostic));
     }
 
     private static CampaignInstance replace(CampaignInstance current, long revision,
@@ -212,7 +299,13 @@ public final class CampaignSavedData extends SavedData {
         return new CommitResult(status, instance == null ? -1L : instance.worldRevision(), outcome, diagnostic);
     }
 
-    public enum Status { APPLIED, ALREADY_COMMITTED, STALE, UNAVAILABLE, INVALID_REQUEST }
+    public enum Status { APPLIED, ALREADY_SATISFIED, ALREADY_COMMITTED, STALE, UNAVAILABLE, INVALID_REQUEST }
+
+    public record ProgressResult(Status status, CampaignProgression.Entry entry, java.util.List<String> blockers) {
+        public ProgressResult {
+            blockers = java.util.List.copyOf(blockers);
+        }
+    }
 
     public record CommitResult(Status status, long worldRevision, CampaignInstance.OutcomeCommit committed, String diagnostic) {
     }
