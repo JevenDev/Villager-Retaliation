@@ -43,6 +43,31 @@ public final class SceneLifecycleIntegration {
         }
     }
 
+    public static void supersedeQuestRun(ServerLevel level, UUID player, ResourceLocation questId, UUID runId)
+            throws java.io.IOException {
+        SceneSavedData data = SceneSavedData.get(level);
+        if (data.futureVersion()) throw new java.io.IOException("The scene save has an unsupported future version.");
+        boolean affected = false;
+        for (SceneInstance scene : data.all()) {
+            if (!questId.equals(scene.owningQuestId()) || !java.util.Objects.equals(runId, scene.owningQuestInstance())
+                    || !ownedBy(scene, player)) continue;
+            SceneTransitionService.supersede(data, scene, level.getGameTime());
+            affected = true;
+        }
+        for (var continuation : data.continuations()) {
+            if (!questId.equals(continuation.questId()) || !java.util.Objects.equals(runId, continuation.questRunId())
+                    || !player.equals(continuation.playerId())) continue;
+            if (!continuation.completionReceipt()) {
+                continuation.finish(com.jvn.villagerretaliation.action.ActionResult.unavailable(
+                        "the quest path was superseded by campaign catch-up", Set.of(),
+                        com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY));
+                data.changed();
+            }
+            affected = true;
+        }
+        if (affected) data.persistCampaignHandoff(level);
+    }
+
     public static <T> T withOriginatingScene(
             UUID sceneId, java.util.function.Supplier<T> operation) {
         UUID previous = ORIGINATING_SCENE.get();

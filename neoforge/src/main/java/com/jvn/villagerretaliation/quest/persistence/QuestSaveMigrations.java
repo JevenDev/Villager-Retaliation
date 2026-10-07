@@ -42,6 +42,14 @@ public final class QuestSaveMigrations {
             case 5 -> 6;
             case 6 -> 7;
             case 7 -> 8;
+            case 8 -> {
+                for (Tag raw : data.getList("Entries", Tag.TAG_COMPOUND)) {
+                    if (raw instanceof CompoundTag entry && !entry.getString("CampaignEntryStage").isBlank()) {
+                        entry.putBoolean("CampaignLegacyEntry", true);
+                    }
+                }
+                yield 9;
+            }
             default -> throw new IllegalStateException("No quest save migration from version " + version);
         };
     }

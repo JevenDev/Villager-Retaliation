@@ -10,6 +10,11 @@ import com.jvn.villagerretaliation.scene.runtime.SceneAuditEntry;
 import com.jvn.villagerretaliation.scene.runtime.SceneContinuation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.nio.file.Files;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.neoforge.common.IOUtilities;
 import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -282,6 +287,18 @@ public final class SceneSavedData extends SavedData {
 
     public void changed() {
         if (!futureVersion) setDirty();
+    }
+
+    public void persistCampaignHandoff(ServerLevel level) throws IOException {
+        if (futureVersion) throw new IOException("The scene save has an unsupported future version.");
+        CompoundTag wrapper = new CompoundTag();
+        wrapper.put("data", save(new CompoundTag(), level.registryAccess()));
+        NbtUtils.addCurrentDataVersion(wrapper);
+        IOUtilities.waitUntilIOWorkerComplete();
+        var directory = level.getServer().getWorldPath(LevelResource.ROOT).resolve("data");
+        Files.createDirectories(directory);
+        IOUtilities.writeNbtCompressed(wrapper, directory.resolve(DATA_NAME + ".dat"));
+        setDirty(false);
     }
 
     public boolean futureVersion() {

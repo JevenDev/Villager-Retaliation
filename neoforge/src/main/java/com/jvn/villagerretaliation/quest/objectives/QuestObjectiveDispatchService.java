@@ -16,7 +16,7 @@ public final class QuestObjectiveDispatchService {
     }
 
     public static boolean poll(QuestObjectiveEvaluationContext context, Consumer<QuestDefinition.Objective> completed) {
-        if (!CampaignQuestAccess.contentIssue(context.level(), context.definition(), context.progress()).isBlank()) return false;
+        if (!CampaignQuestAccess.executionIssue(context.level(), context.player() == null ? null : context.player().getUUID(), context.definition(), context.progress()).isBlank()) return false;
         VillagerQuestSavedData.QuestProgress progress = context.progress();
         boolean changed = false;
         for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(context.definition(), progress)) {
@@ -31,7 +31,7 @@ public final class QuestObjectiveDispatchService {
 
     public static boolean dispatch(QuestObjectiveEvaluationContext context, QuestObjectiveEvent event,
             Consumer<QuestDefinition.Objective> completed) {
-        if (!CampaignQuestAccess.contentIssue(context.level(), context.definition(), context.progress()).isBlank()) return false;
+        if (!CampaignQuestAccess.executionIssue(context.level(), context.player() == null ? null : context.player().getUUID(), context.definition(), context.progress()).isBlank()) return false;
         VillagerQuestSavedData.QuestProgress progress = context.progress();
         boolean changed = false;
         for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(context.definition(), progress)) {

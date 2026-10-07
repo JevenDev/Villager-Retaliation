@@ -132,6 +132,213 @@ public final class CampaignQuestEntryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void activePlayerChangesPathsBeforeOldEffectsCanContinue(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int before = fixture.player.totalExperience;
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original quest starts");
+            var progress = fixture.progress(QUEST);
+            UUID run = progress.questRunId();
+            progress.markObjectiveComplete("started.decide");
+            progress.addObjectiveCounter("started.decide", 12);
+            progress.requestStageEntry("started");
+            progress.requestStageTransition("catch_up");
+            progress.deferLifecycleEvent(com.jvn.villagerretaliation.quest.QuestDefinition.TriggerEvent.STARTED);
+            fixture.resolve();
+            var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), fixture.player, fixture.villager);
+            var blocked = VillagerQuestService.performAction(context, QUEST, VillagerActionDefinition.QuestAction.TURN_IN).orElseThrow();
+            helper.assertValueEqual(blocked.status(), "unavailable", "the old choice is rejected before reconciliation runs");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 300, "old pending entry cannot replay");
+            var quest = fixture.definition(QUEST);
+            helper.assertTrue(CampaignQuestReconciliation.reconcile(fixture.player, quest, progress), "active quest adopts catch-up");
+            helper.assertValueEqual(progress.currentStage(), "catch_up", "authored catch-up stage is selected");
+            helper.assertValueEqual(progress.questRunId(), run, "personal quest identity survives the handoff");
+            helper.assertFalse(progress.objectiveComplete("started.decide"), "old objective completion cannot substitute for catch-up");
+            helper.assertValueEqual(progress.objectiveCounter("started.decide"), 0, "old counters cannot substitute for catch-up");
+            helper.assertTrue(progress.pendingLifecycleEvents().isEmpty() && progress.pendingStageTransition().isBlank(), "old pending work is discarded");
+            helper.assertFalse(CampaignQuestReconciliation.reconcile(fixture.player, quest, progress), "outcome receipt prevents another handoff");
+            VillagerQuestService.performAction(context, QUEST, VillagerActionDefinition.QuestAction.REMIND);
+            helper.assertValueEqual(fixture.player.totalExperience - before, 305, "only alternate entry effects run");
+            VillagerQuestService.performAction(context, QUEST, VillagerActionDefinition.QuestAction.REMIND);
+            helper.assertValueEqual(fixture.player.totalExperience - before, 305, "refresh cannot replay the alternate entry");
+            var restored = VillagerQuestSavedData.load(VillagerQuestSavedData.get(helper.getLevel())
+                    .save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+            helper.assertTrue(CampaignQuestReconciliation.pending(helper.getLevel(), fixture.player.getUUID(), quest,
+                    restored.get(fixture.player.getUUID(), QUEST)) == null, "reload retains the applied outcome receipt");
+            progress.markObjectiveComplete("catch_up.learn");
+            helper.assertValueEqual(VillagerQuestService.performAction(context, QUEST, VillagerActionDefinition.QuestAction.TURN_IN).orElseThrow().status(),
+                    "completed", "catch-up completes the personal quest");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 305, "original completion effects are not awarded");
+            helper.assertTrue(fixture.data.instances().get(CAMPAIGN).players().get(fixture.player.getUUID()).participation().isEmpty(),
+                    "the absent player receives no participation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void activeOriginalWaitsForItsSeparateCatchUpQuest(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, ALTERNATE)) {
+            int before = fixture.player.totalExperience;
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original quest starts");
+            fixture.resolve();
+            var original = fixture.progress(QUEST);
+            helper.assertTrue(CampaignQuestReconciliation.reconcile(fixture.player, fixture.definition(QUEST), original), "original adopts the alternate quest");
+            helper.assertValueEqual(original.campaignWaitingQuest(), ALTERNATE.toString(), "waiting state names the authored quest");
+            helper.assertValueEqual(original.state(), VillagerQuestSavedData.QuestState.ACTIVE, "waiting does not falsely fail or complete the quest");
+            var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), fixture.player, fixture.villager);
+            helper.assertValueEqual(VillagerQuestService.performAction(context, QUEST, VillagerActionDefinition.QuestAction.TURN_IN).orElseThrow().status(),
+                    "unavailable", "original cannot turn in while catch-up remains unfinished");
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, ALTERNATE, true).started(), "alternate can be accepted at its provider");
+            fixture.progress(ALTERNATE).markObjectiveComplete("catch_up.learn");
+            helper.assertValueEqual(VillagerQuestService.performAction(context, ALTERNATE, VillagerActionDefinition.QuestAction.TURN_IN).orElseThrow().status(),
+                    "completed", "alternate completes");
+            helper.assertTrue(CampaignQuestReconciliation.reconcile(fixture.player, fixture.definition(QUEST), original), "personal equivalence completes the waiting original");
+            helper.assertValueEqual(original.completionCount(), 1, "original completes personally once");
+            helper.assertFalse(CampaignQuestReconciliation.reconcile(fixture.player, fixture.definition(QUEST), original), "repeat reconciliation is inert");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 1305, "only original acceptance and alternate personal rewards apply");
+            helper.assertTrue(fixture.data.instances().get(CAMPAIGN).players().get(fixture.player.getUUID()).participation().isEmpty(),
+                    "personal equivalence cannot award participation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void participantsKeepTheirOriginalPath(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original quest starts");
+            fixture.resolve(Set.of(fixture.player.getUUID()));
+            var progress = fixture.progress(QUEST);
+            helper.assertFalse(CampaignQuestReconciliation.reconcile(fixture.player, fixture.definition(QUEST), progress), "participants are not redirected");
+            helper.assertValueEqual(progress.currentStage(), "started", "participant retains original objective");
+            helper.assertFalse(progress.campaignAlternateEntry(), "participant retains original reward rules");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void supersededScenesCannotRunFailureBranchesOrResumeOldActions(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original quest starts");
+            var progress = fixture.progress(QUEST);
+            var scene = com.jvn.villagerretaliation.scene.compiler.SceneCompiler.compile(
+                    com.jvn.villagerretaliation.scene.compiler.SceneParser.parse(CAMPAIGN, JsonParser.parseString("""
+                            {"schema":"villagerretaliation:scene/v1","id":"test:catch_up_scene","definition_version":1,
+                             "ownership":"player","entry_step":"finish","cancellation_policy":"run_failure_step",
+                             "steps":[{"id":"finish","type":"villagerretaliation:scene_complete","failure_step":"recover"},
+                                      {"id":"recover","type":"villagerretaliation:scene_complete"}]}
+                            """).getAsJsonObject()).resource()).scene();
+            helper.assertTrue(scene != null, "scene fixture compiles");
+            var scenes = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(helper.getLevel());
+            var owner = new com.jvn.villagerretaliation.scene.runtime.SceneOwner(
+                    com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER, fixture.player.getUUID(), null, null, "");
+            var running = scenes.start(scene, "catch-up-fixture", owner, progress.questRunId(), Set.of(fixture.player.getUUID()), Map.of(),
+                    helper.getLevel().getGameTime(), QUEST).instance();
+            running.bindCampaign(CAMPAIGN);
+            var otherRun = scenes.start(scene, "other-run", owner, UUID.randomUUID(), Set.of(fixture.player.getUUID()), Map.of(),
+                    helper.getLevel().getGameTime(), QUEST).instance();
+            var continuation = scenes.suspendContinuation(running, fixture.player.getUUID(), fixture.villager.getUUID(),
+                    "old-entry", List.of(), 0, Map.of(), QUEST, progress.questRunId());
+            fixture.resolve();
+            com.jvn.villagerretaliation.scene.runtime.SceneStepEngine.process(helper.getLevel().getServer(), scenes, running, scene,
+                    helper.getLevel().getGameTime());
+            helper.assertTrue(running.campaignPaused(), "scene cannot advance between world commit and reconciliation");
+            helper.assertTrue(CampaignQuestReconciliation.reconcile(fixture.player, fixture.definition(QUEST), progress), "scene handoff succeeds");
+            helper.assertValueEqual(running.state(), com.jvn.villagerretaliation.scene.runtime.SceneState.CANCELLED, "superseded scene terminates");
+            helper.assertValueEqual(running.currentStep(), "finish", "cancellation does not enter its authored failure branch");
+            com.jvn.villagerretaliation.scene.runtime.SceneStepEngine.process(helper.getLevel().getServer(), scenes, running, scene,
+                    helper.getLevel().getGameTime());
+            helper.assertValueEqual(running.state(), com.jvn.villagerretaliation.scene.runtime.SceneState.CANCELLED, "stale scene work cannot revive a superseded path");
+            helper.assertFalse(otherRun.state().terminal(), "another run is unaffected");
+            helper.assertTrue(continuation.completionReceipt(), "old continuation is settled");
+            helper.assertValueEqual(continuation.actionStatus(), com.jvn.villagerretaliation.action.ActionStatus.UNAVAILABLE, "old actions cannot resume");
+            var restored = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.load(scenes.save(new CompoundTag(), helper.getLevel().registryAccess()),
+                    helper.getLevel().registryAccess());
+            helper.assertTrue(restored.get(running.id()).orElseThrow().state().terminal()
+                    && restored.continuation(continuation.id()).orElseThrow().completionReceipt(), "reload retains scene and continuation cancellation");
+            com.jvn.villagerretaliation.scene.runtime.SceneTransitionService.supersede(scenes, otherRun, helper.getLevel().getGameTime());
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void campaignQuestWritesRemainBlockedUntilStorageRecovers(GameTestHelper helper) throws IOException {
+        Path directory = Files.createTempDirectory("campaign-quest-write-");
+        Path blocked = directory.resolve("blocked");
+        Files.createFile(blocked);
+        var data = new VillagerQuestSavedData();
+        UUID player = UUID.randomUUID();
+        var progress = data.getOrCreate(player, QUEST);
+        progress.bindCampaign(CAMPAIGN);
+        UUID operation = UUID.randomUUID();
+        progress.enterCampaignCatchUp("catch_up", null, operation);
+        data.requireCampaignPersistence();
+        try {
+            try {
+                data.persistCampaignProgress(blocked, helper.getLevel().registryAccess());
+                throw new AssertionError("a file cannot be used as the save directory");
+            } catch (IOException expected) {
+                helper.assertTrue(data.campaignPersistencePending(), "failed durable write remains pending");
+            }
+            data.persistCampaignProgress(directory, helper.getLevel().registryAccess());
+            helper.assertFalse(data.campaignPersistencePending(), "successful retry releases the execution gate");
+            var saved = net.minecraft.nbt.NbtIo.readCompressed(directory.resolve("villagerretaliation_quests.dat"),
+                    net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            var restored = VillagerQuestSavedData.load(saved.getCompound("data"), helper.getLevel().registryAccess());
+            helper.assertTrue(restored.get(player, QUEST).appliedCampaignCatchUp(operation), "receipt reaches durable storage");
+            helper.assertValueEqual(restored.get(player, QUEST).pendingStageEntry(), "catch_up", "entry resumes after reload");
+        } finally {
+            Files.deleteIfExists(blocked);
+            Files.deleteIfExists(directory.resolve("villagerretaliation_quests.dat"));
+            Files.deleteIfExists(directory);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void aReloadedActiveQuestCatchesUpOnTheNextProgressTick(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int before = fixture.player.totalExperience;
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original quest starts");
+            var saved = VillagerQuestSavedData.get(helper.getLevel()).save(new CompoundTag(), helper.getLevel().registryAccess());
+            fixture.resolve();
+            var restored = VillagerQuestSavedData.load(saved, helper.getLevel().registryAccess());
+            fixture.server.overworld().getDataStorage().set("villagerretaliation_quests", restored);
+            fixture.player.tickCount = 0;
+            VillagerQuestService.onPlayerTick(fixture.player);
+            helper.assertValueEqual(fixture.progress(QUEST).currentStage(), "catch_up", "restored active progress reconciles after an absent player's milestone resolves");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 305, "the next progress tick runs only the catch-up entry");
+            VillagerQuestService.onPlayerTick(fixture.player);
+            helper.assertValueEqual(fixture.player.totalExperience - before, 305, "later ticks cannot repeat the entry reward");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void existingCatchUpEntriesMigrateWithoutReplayingActions(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.resolve();
+            int before = fixture.player.totalExperience;
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "catch-up starts");
+            fixture.progress(QUEST).addObjectiveCounter("catch_up.learn", 2);
+            var saved = VillagerQuestSavedData.get(helper.getLevel()).save(new CompoundTag(), helper.getLevel().registryAccess());
+            saved.putInt("DataVersion", 8);
+            for (var raw : saved.getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                ((CompoundTag) raw).remove("CampaignCatchUpOperations");
+            }
+            var restored = VillagerQuestSavedData.load(saved, helper.getLevel().registryAccess());
+            fixture.server.overworld().getDataStorage().set("villagerretaliation_quests", restored);
+            helper.assertTrue(fixture.progress(QUEST).campaignLegacyEntry(), "version eight marks its existing catch-up entry for receipt migration");
+            helper.assertTrue(CampaignQuestReconciliation.reconcile(fixture.player, fixture.definition(QUEST), fixture.progress(QUEST)), "migration saves the existing route receipt");
+            helper.assertValueEqual(fixture.progress(QUEST).objectiveCounter("catch_up.learn"), 2, "migration preserves catch-up progress");
+            helper.assertTrue(fixture.progress(QUEST).pendingStageEntry().isBlank(), "migration does not request another entry execution");
+            helper.assertFalse(fixture.progress(QUEST).campaignLegacyEntry(), "migration is acknowledged once");
+            var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), fixture.player, fixture.villager);
+            VillagerQuestService.performAction(context, QUEST, VillagerActionDefinition.QuestAction.REMIND);
+            helper.assertValueEqual(fixture.player.totalExperience - before, 5, "existing catch-up entry reward cannot replay during migration");
+        }
+        helper.succeed();
+    }
+
     private static CompiledQuest quest(ResourceLocation id) {
         var raw = JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"test:entry_quest","localization_prefix":"quest.entry_fixture.",
@@ -152,6 +359,8 @@ public final class CampaignQuestEntryGameTests {
         private final QuestContentCatalog previous;
         private final QuestContentLoadReport report;
         private final CampaignSavedData previousData;
+        private final VillagerQuestSavedData previousQuests;
+        private final com.jvn.villagerretaliation.scene.persistence.SceneSavedData previousScenes;
         private final Path directory;
         private final CampaignSavedData data;
         private final CampaignContentCatalog.Entry content;
@@ -163,6 +372,10 @@ public final class CampaignQuestEntryGameTests {
             this.previous = QuestContentCatalogs.current(server);
             this.report = QuestContentCatalogs.loadReport(server);
             this.previousData = CampaignSavedData.get(helper.getLevel());
+            this.previousQuests = VillagerQuestSavedData.get(helper.getLevel());
+            server.overworld().getDataStorage().set("villagerretaliation_quests", new VillagerQuestSavedData());
+            this.previousScenes = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(helper.getLevel());
+            server.overworld().getDataStorage().set("villagerretaliation_scenes", new com.jvn.villagerretaliation.scene.persistence.SceneSavedData());
             this.directory = Files.createTempDirectory("campaign-entry-");
             this.data = CampaignSavedData.load(new CompoundTag(), directory);
             this.player = helper.makeMockServerPlayerInLevel();
@@ -195,14 +408,26 @@ public final class CampaignQuestEntryGameTests {
         }
 
         private void resolve() throws IOException {
+            resolve(Set.of());
+        }
+
+        private com.jvn.villagerretaliation.quest.QuestDefinition definition(ResourceLocation id) {
+            return com.jvn.villagerretaliation.quest.VillagerQuestResources.quest(server, id).orElseThrow();
+        }
+
+        private void resolve(Set<UUID> participants) throws IOException {
             data.open(content, 1L);
             data.commitWorldOutcome(content, "dragon", "defeated", UUID.randomUUID(), 0L,
-                    CampaignInstance.Origin.PLAYER_DECISION, Set.of(), 2L);
+                    CampaignInstance.Origin.PLAYER_DECISION, participants, 2L);
         }
 
         @Override
         public void close() throws IOException {
             server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, previousData);
+            server.overworld().getDataStorage().set("villagerretaliation_quests", previousQuests);
+            previousQuests.setDirty();
+            previousScenes.setDirty();
+            server.overworld().getDataStorage().set("villagerretaliation_scenes", previousScenes);
             QuestContentCatalogs.installForTests(server, previous, report);
             CampaignResources.clearCache();
             VillagerQuestSavedData.get(server.overworld()).remove(player.getUUID(), QUEST);

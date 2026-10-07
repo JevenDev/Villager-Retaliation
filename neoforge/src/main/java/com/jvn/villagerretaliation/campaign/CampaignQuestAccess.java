@@ -39,6 +39,25 @@ public final class CampaignQuestAccess {
                 VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), quest.id()));
     }
 
+    public static String executionIssue(DialogueContext context, QuestDefinition quest) {
+        if (context == null) return contentIssue(context, quest);
+        return executionIssue(context.level(), context.player().getUUID(), quest,
+                VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), quest.id()));
+    }
+
+    public static String executionIssue(ServerLevel level, UUID playerId, QuestDefinition quest,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return CampaignQuestReconciliation.executionIssue(level, playerId, quest, progress);
+    }
+
+    public static String executionIssue(MinecraftServer server, ResourceLocation questId, ResourceLocation savedCampaign, UUID playerId) {
+        String issue = contentIssue(server, questId, savedCampaign);
+        if (!issue.isBlank() || server == null || playerId == null || questId == null) return issue;
+        var quest = VillagerQuestResources.quest(server, questId).orElse(null);
+        return quest == null ? "" : executionIssue(server.overworld(), playerId, quest,
+                VillagerQuestSavedData.get(server.overworld()).get(playerId, questId));
+    }
+
     public static ResourceLocation campaignFor(MinecraftServer server, ResourceLocation questId) {
         return questId == null ? null : VillagerQuestResources.quest(server, questId).map(QuestDefinition::campaign).orElse(null);
     }

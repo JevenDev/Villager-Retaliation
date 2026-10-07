@@ -85,8 +85,8 @@ public final class QuestTriggerDispatcher {
         }
 
         if ((definition.campaign() != null || !progress.campaignId().isBlank()) && (triggerContext.dialogueContext() == null
-                || !CampaignQuestAccess.contentIssue(
-                        triggerContext.dialogueContext().level(), definition, progress).isBlank())) return QuestTriggerDispatchResult.empty();
+                || !CampaignQuestAccess.executionIssue(
+                        triggerContext.dialogueContext().level(), triggerContext.dialogueContext().player().getUUID(), definition, progress).isBlank())) return QuestTriggerDispatchResult.empty();
 
         String dispatchStage = triggerContext.stage().isBlank()
                 ? progress.currentStage()
@@ -97,6 +97,7 @@ public final class QuestTriggerDispatcher {
                 .toList();
         List<CompiledQuestTrigger> eligible = new ArrayList<>();
         for (CompiledQuestTrigger compiledTrigger : candidates) {
+            if (progress.campaignAlternateEntry() && compiledTrigger.definition().stages().isEmpty()) continue;
             if (matches(triggerContext, progress, compiledTrigger.definition(), event, dispatchStage)) {
                 eligible.add(compiledTrigger);
             }

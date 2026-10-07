@@ -17,8 +17,17 @@ public final class SceneStepEngine {
 
     public static SceneScheduler.ProcessResult process(MinecraftServer server, SceneSavedData data, SceneInstance instance,
             CompiledScene definition,long time){
-        String campaignIssue = CampaignQuestAccess.contentIssue(
-                server, instance.owningQuestId(), instance.owningCampaignId());
+        if (instance.state().terminal()) return SceneScheduler.ProcessResult.idle();
+        String campaignIssue = CampaignQuestAccess.executionIssue(
+                server, instance.owningQuestId(), instance.owningCampaignId(), instance.owner().playerId());
+        if (campaignIssue.isBlank() && instance.owner().playerId() == null && instance.owningQuestInstance() != null) {
+            for (var player : instance.participants()) {
+                var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(server.overworld()).get(player, instance.owningQuestId());
+                if (progress == null || !instance.owningQuestInstance().equals(progress.questRunId())) continue;
+                campaignIssue = CampaignQuestAccess.executionIssue(server, instance.owningQuestId(), instance.owningCampaignId(), player);
+                if (!campaignIssue.isBlank()) break;
+            }
+        }
         if (!campaignIssue.isBlank()) {
             if (instance.pauseCampaign(campaignIssue, time)) data.changed();
             return SceneScheduler.ProcessResult.wakeAt(deadline(time, 100L));
@@ -53,6 +62,7 @@ public final class SceneStepEngine {
                     record.failureCode(),"step execution previously failed",time);}
             default -> result=SceneStepResult.block("invalid_step_state","unsupported step state");
         }
+        if (instance.state().terminal()) return SceneScheduler.ProcessResult.idle();
         return handle(result,instance,definition,step,record,time,data,key);
     }
 

@@ -86,6 +86,17 @@ public final class SceneTransitionService {
                 : SceneScheduler.ProcessResult.now();
     }
 
+    public static void supersede(SceneSavedData data, SceneInstance instance, long gameTime) {
+        if (instance.state().terminal()) return;
+        SceneState prior = instance.state();
+        terminalize(data, instance, SceneInstance.CompletionResult.CANCELLED,
+                "campaign_catch_up", "the shared milestone resolved and superseded this quest path", gameTime);
+        instance.markPolicyApplied();
+        data.audit(new SceneAuditEntry(instance.id(), "", prior.name(), instance.state().name(),
+                "campaign_catch_up", gameTime, "campaign"));
+        data.changed();
+    }
+
     public static void complete(SceneSavedData data, SceneInstance instance, long gameTime) {
         if (instance.state().terminal()) return;
         terminalize(data, instance, SceneInstance.CompletionResult.SUCCESS,

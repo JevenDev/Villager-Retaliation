@@ -76,7 +76,7 @@ public final class CampaignQuestEntries {
         }
         if (!quest.stages().containsKey(stage)) return Entry.blocked(quest.id(), initial, "The authored campaign entry stage is unavailable: " + stage);
         boolean catchingUp = entry.route() == CampaignInstance.Route.CATCH_UP;
-        return new Entry(quest.id(), stage, catchingUp, catchingUp && selected.quest().equals(quest.id()), "");
+        return new Entry(quest.id(), stage, catchingUp, catchingUp && selected.quest().equals(quest.id()), entry.worldOperation(), "");
     }
 
     public static String completionIssue(ServerLevel level, UUID playerId, QuestDefinition quest,
@@ -140,15 +140,15 @@ public final class CampaignQuestEntries {
         return milestone.stage().isBlank() ? initial : milestone.stage();
     }
 
-    public record Entry(ResourceLocation quest, String stage, boolean catchUp, boolean alternateStage, String diagnostic) {
+    public record Entry(ResourceLocation quest, String stage, boolean catchUp, boolean alternateStage, UUID worldOperation, String diagnostic) {
         public boolean available() { return diagnostic.isBlank(); }
 
         private static Entry original(ResourceLocation quest, String stage) {
-            return new Entry(quest, stage, false, false, "");
+            return new Entry(quest, stage, false, false, null, "");
         }
 
         private static Entry blocked(ResourceLocation quest, String stage, String diagnostic) {
-            return new Entry(quest, stage, false, false, diagnostic);
+            return new Entry(quest, stage, false, false, null, diagnostic);
         }
     }
 }

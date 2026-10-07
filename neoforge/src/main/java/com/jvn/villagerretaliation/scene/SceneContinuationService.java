@@ -175,8 +175,8 @@ public final class SceneContinuationService {
         for (SceneContinuation continuation : data.continuations()) {
             if (work >= MAX_CONTINUATIONS_PER_TICK) break;
             if (continuation.completionReceipt()) continue;
-            if (!CampaignQuestAccess.contentIssue(
-                    server, continuation.questId(), continuation.campaignId()).isBlank()) continue;
+            if (!CampaignQuestAccess.executionIssue(
+                    server, continuation.questId(), continuation.campaignId(), continuation.playerId()).isBlank()) continue;
             ActionResult dependencyResult;
             if (continuation.dependencyContinuationId() != null) {
                 if (cyclicDependency(data, continuation.id(), continuation.dependencyContinuationId())) {
@@ -219,7 +219,7 @@ public final class SceneContinuationService {
     }
 
     private static void resume(MinecraftServer server, SceneSavedData data, SceneContinuation continuation) {
-        if (!CampaignQuestAccess.contentIssue(server, continuation.questId(), continuation.campaignId()).isBlank()) return;
+        if (!CampaignQuestAccess.executionIssue(server, continuation.questId(), continuation.campaignId(), continuation.playerId()).isBlank()) return;
         ServerPlayer player = server.getPlayerList().getPlayer(continuation.playerId());
         Villager provider = findVillager(server, continuation.providerId());
         if (player == null || provider == null || provider.level() != player.serverLevel()) return;
