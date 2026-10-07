@@ -151,13 +151,19 @@ public final class VillageLifeGameTests {
         first.getBrain().setMemory(MemoryModuleType.HOME, GlobalPos.of(level.dimension(), home));
         second.getBrain().eraseMemory(MemoryModuleType.MEETING_POINT);
         VillageAllegianceApi.assignUnaffiliated(level, second, AllegianceAssignmentSource.EXPLICIT_API);
-        level.setWeatherParameters(0, 10_000, true, false);
-        helper.runAtTickTime(180, () -> {
-            helper.assertFalse(second.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET), "missing village locations leave the villager idle");
+        helper.startSequence().thenWaitUntil(() ->
+                helper.assertTrue(VillageLifeService.diagnostics(level.getServer()).active() > 0,
+                        "a dry-weather gathering starts before the weather changes")).thenExecute(() -> {
             var walk = first.getBrain().getMemory(MemoryModuleType.WALK_TARGET).orElseThrow();
-            helper.assertFalse(level.canSeeSky(walk.getTarget().currentBlockPosition()), "rain chooses a reachable sheltered home");
-            helper.succeed();
-        });
+            helper.assertTrue(level.canSeeSky(walk.getTarget().currentBlockPosition()), "the initial gathering is outdoors");
+            level.setWeatherParameters(0, 10_000, true, false);
+            level.setRainLevel(1.0F);
+        }).thenWaitUntil(() -> {
+            helper.assertFalse(second.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET), "missing village locations leave the villager idle");
+            var walk = first.getBrain().getMemory(MemoryModuleType.WALK_TARGET).orElse(null);
+            helper.assertTrue(walk != null && !level.canSeeSky(walk.getTarget().currentBlockPosition()),
+                    "new rain replaces the outdoor gathering with a sheltered home");
+        }).thenSucceed();
     }
 
     @GameTest(template = "empty", timeoutTicks = 1_200, batch = "isolated_village_life_courtship")
@@ -181,16 +187,42 @@ public final class VillageLifeGameTests {
                 "three completed close visits on different days establish an exclusive couple"));
     }
 
+    @GameTest(template = "empty", batch = "isolated_village_life_raid")
+    public static void victoryQueuesWhileVanillaRaidCelebrationStillOwnsTheBrain(GameTestHelper helper) {
+        var fixture = fixture(helper, 1);
+        var level = helper.getLevel();
+        var villager = fixture.villagers.getFirst();
+        villager.getBrain().setActiveActivityIfPossible(Activity.RAID);
+        helper.assertValueEqual(VillageLifeAvailability.blocker(level, villager),
+                com.jvn.villagerretaliation.social.BreedingBlockReason.IN_COMBAT,
+                "vanilla raid activity still prevents ambient participation");
+        var saved = new net.minecraft.world.entity.raid.Raid(123, level, villager.blockPosition()).save(new CompoundTag());
+        saved.putString("Status", "victory");
+        VillageLifeService.rememberRaidVictory(level, villager, new net.minecraft.world.entity.raid.Raid(level, saved));
+        var village = VillageAllegianceApi.canonicalPrimary(level, villager).orElseThrow();
+        helper.assertTrue(VillageOccasionSavedData.get(level).due(level, village).contains(VillageOccasionSavedData.Kind.RAID_VICTORY),
+                "victory is remembered before vanilla releases the villagers");
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper, int count) {
         var level = helper.getLevel();
         long time = level.getDayTime();
         boolean enabled = VillagerRetaliationConfig.ENABLE_VILLAGE_LIFE.get();
+        boolean families = VillagerRetaliationConfig.ENABLE_NATURAL_FAMILIES.get();
+        boolean graph = VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get();
         int chance = VillagerRetaliationConfig.VILLAGE_LIFE_ACTIVITY_CHANCE.get();
+        int interval = VillagerRetaliationConfig.VILLAGE_LIFE_DECISION_INTERVAL.get();
+        int paths = VillagerRetaliationConfig.VILLAGE_LIFE_MAX_PATHS.get();
         boolean raining = level.isRaining();
         boolean thunder = level.isThundering();
         VillageLifeService.clear(level.getServer());
         VillagerRetaliationConfig.ENABLE_VILLAGE_LIFE.set(true);
+        VillagerRetaliationConfig.ENABLE_NATURAL_FAMILIES.set(true);
+        VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.set(true);
         VillagerRetaliationConfig.VILLAGE_LIFE_ACTIVITY_CHANCE.set(100);
+        VillagerRetaliationConfig.VILLAGE_LIFE_DECISION_INTERVAL.set(100);
+        VillagerRetaliationConfig.VILLAGE_LIFE_MAX_PATHS.set(2);
         level.setDayTime(10_000L);
         level.setWeatherParameters(10_000, 0, false, false);
         var origin = helper.absolutePos(new BlockPos(30, 2, 30));
@@ -223,7 +255,11 @@ public final class VillageLifeGameTests {
                 player.discard();
                 VillageLifeService.clear(level.getServer());
                 VillagerRetaliationConfig.ENABLE_VILLAGE_LIFE.set(enabled);
+                VillagerRetaliationConfig.ENABLE_NATURAL_FAMILIES.set(families);
+                VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.set(graph);
                 VillagerRetaliationConfig.VILLAGE_LIFE_ACTIVITY_CHANCE.set(chance);
+                VillagerRetaliationConfig.VILLAGE_LIFE_DECISION_INTERVAL.set(interval);
+                VillagerRetaliationConfig.VILLAGE_LIFE_MAX_PATHS.set(paths);
                 level.setDayTime(time);
                 level.setWeatherParameters(10_000, 10_000, raining, thunder);
             }

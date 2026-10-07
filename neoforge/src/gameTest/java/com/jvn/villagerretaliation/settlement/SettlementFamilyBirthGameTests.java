@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.LinkedHashMap;
@@ -523,25 +524,34 @@ public final class SettlementFamilyBirthGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_family_birth")
     public static void backgroundFamiliesRequireAnEstablishedCoupleAndHonorLivingChildLimits(GameTestHelper helper) {
-        var fixture = remote(helper, 6);
-        var level = helper.getLevel();
-        var graph = com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get(level);
-        graph.setRomanticRelationshipStage(level, fixture.first, fixture.second,
-                com.jvn.villagerretaliation.social.VillagerRelationshipStage.SEPARATED);
-        daytime(helper, () -> finish(helper, fixture));
-        helper.assertTrue(fixture.town.arrivals().isEmpty(), "background simulation never invents social visits or couples");
-        helper.assertValueEqual(graph.relationshipStage(fixture.first.getUUID(), fixture.second.getUUID()).orElseThrow(),
-                com.jvn.villagerretaliation.social.VillagerRelationshipStage.SEPARATED, "background time cannot advance a bond");
-        graph.setRomanticRelationshipStage(level, fixture.first, fixture.second,
-                com.jvn.villagerretaliation.social.VillagerRelationshipStage.DATING);
-        int cap = graph.childLimit(fixture.first.getUUID(), fixture.second.getUUID());
-        for (int index = 0; index < cap; index++) {
-            var adultChild = EntityType.VILLAGER.create(level);
-            graph.linkParentsAndChild(level, fixture.first, fixture.second, adultChild);
+        boolean families = VillagerRetaliationConfig.ENABLE_NATURAL_FAMILIES.get();
+        boolean socialGraph = VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get();
+        try {
+            VillagerRetaliationConfig.ENABLE_NATURAL_FAMILIES.set(true);
+            VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.set(true);
+            var fixture = remote(helper, 6);
+            var level = helper.getLevel();
+            var graph = com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get(level);
+            graph.setRomanticRelationshipStage(level, fixture.first, fixture.second,
+                    com.jvn.villagerretaliation.social.VillagerRelationshipStage.SEPARATED);
+            daytime(helper, () -> finish(helper, fixture));
+            helper.assertTrue(fixture.town.arrivals().isEmpty(), "background simulation never invents social visits or couples");
+            helper.assertValueEqual(graph.relationshipStage(fixture.first.getUUID(), fixture.second.getUUID()).orElseThrow(),
+                    com.jvn.villagerretaliation.social.VillagerRelationshipStage.SEPARATED, "background time cannot advance a bond");
+            graph.setRomanticRelationshipStage(level, fixture.first, fixture.second,
+                    com.jvn.villagerretaliation.social.VillagerRelationshipStage.DATING);
+            int cap = graph.childLimit(fixture.first.getUUID(), fixture.second.getUUID());
+            for (int index = 0; index < cap; index++) {
+                var adultChild = EntityType.VILLAGER.create(level);
+                graph.linkParentsAndChild(level, fixture.first, fixture.second, adultChild);
+            }
+            daytime(helper, () -> finish(helper, fixture));
+            helper.assertTrue(fixture.town.arrivals().isEmpty(), "background births count all living biological children");
+            helper.assertTrue(fixture.town.courtships().isEmpty(), "a capped couple cannot reserve a background bed");
+        } finally {
+            VillagerRetaliationConfig.ENABLE_NATURAL_FAMILIES.set(families);
+            VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.set(socialGraph);
         }
-        daytime(helper, () -> finish(helper, fixture));
-        helper.assertTrue(fixture.town.arrivals().isEmpty(), "background births count all living biological children");
-        helper.assertTrue(fixture.town.courtships().isEmpty(), "a capped couple cannot reserve a background bed");
         helper.succeed();
     }
 

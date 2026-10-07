@@ -57,6 +57,7 @@ public final class VillageLifeService {
         var activity = resident.activity;
         if (!eligible(level, villager) || VillageLifeAvailability.blocker(level, villager) != BreedingBlockReason.NONE
                 || villager.getBrain().hasMemoryValue(MemoryModuleType.BREED_TARGET)
+                || level.isRaining() && level.canSeeSky(activity.group.destination)
                 || !ownsTargets(resident) || level.getGameTime() >= activity.group.expiresAt) {
             release(resident);
         } else if (villager.distanceToSqr(activity.group.destination.getBottomCenter()) <= 6.25D) {
@@ -131,6 +132,7 @@ public final class VillageLifeService {
 
     private static void decide(State state, ServerLevel level, Resident resident, boolean pathAvailable) {
         Villager villager = resident.villager;
+        rememberRaidVictory(level, villager, level.getRaidAt(villager.blockPosition()));
         if (VillageLifeAvailability.blocker(level, villager) != BreedingBlockReason.NONE
                 || villager.getBrain().hasMemoryValue(MemoryModuleType.BREED_TARGET)) {
             release(resident);
@@ -147,13 +149,12 @@ public final class VillageLifeService {
         if (village.id != null) {
             var occasions = VillageOccasionSavedData.get(level);
             occasions.scheduleMarket(level, village.id);
-            var raid = level.getRaidAt(villager.blockPosition());
-            if (raid != null && raid.isVictory()) {
-                occasions.schedule(level, village.id, VillageOccasionSavedData.Kind.RAID_VICTORY, "raid:" + raid.getId());
-            }
             var town = SettlementSavedData.get(level).get(village.id).orElse(null);
             if (town != null && level.getGameTime() - town.foundedAt() < 24_000L) {
                 occasions.schedule(level, village.id, VillageOccasionSavedData.Kind.FOUNDING, "founding:" + town.foundedAt());
+            }
+            if (village.gathering != null && level.isRaining() && level.canSeeSky(village.gathering.destination)) {
+                village.gathering = null;
             }
             if (village.gathering != null && village.gathering.expiresAt > level.getGameTime()
                     && village.gathering.members.size() < 6) {
@@ -194,8 +195,16 @@ public final class VillageLifeService {
         }
     }
 
+    static void rememberRaidVictory(ServerLevel level, Villager villager, net.minecraft.world.entity.raid.Raid raid) {
+        if (raid == null || !raid.isVictory()) return;
+        VillageAllegianceApi.canonicalPrimary(level, villager).ifPresent(village ->
+                VillageOccasionSavedData.get(level).schedule(level, village, VillageOccasionSavedData.Kind.RAID_VICTORY,
+                        "raid:" + raid.getId()));
+    }
+
     private static boolean start(State state, ServerLevel level, Resident resident, Group group, boolean pathAvailable) {
         if (group.members.size() >= 6 || !level.hasChunkAt(group.destination)
+                || level.isRaining() && level.canSeeSky(group.destination)
                 || resident.villager.distanceToSqr(group.destination.getBottomCenter()) > 24.0D * 24.0D) return false;
         if (resident.villager.distanceToSqr(group.destination.getBottomCenter()) <= 4.0D) {
             hold(resident, group);
