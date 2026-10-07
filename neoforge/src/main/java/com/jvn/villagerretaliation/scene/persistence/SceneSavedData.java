@@ -37,7 +37,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public final class SceneSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 13;
+    public static final int CURRENT_DATA_VERSION = 14;
     public static final int DEFAULT_COMPACTION_WORK = 16;
     public static final long TERMINAL_RETENTION_TICKS = 7L * 24000L;
     private static final int MAX_TOMBSTONES = 4096;
@@ -158,7 +158,7 @@ public final class SceneSavedData extends SavedData {
                         continuationKey(
                                 continuation.sceneInstanceId(),
                                 continuation.playerId(),
-                                continuation.sourcePointer()),
+                                continuation.sourcePointer()) + (continuation.sceneInstanceId() == null ? "|questRun:" + continuation.questRunId() : ""),
                         continuation.id());
             } catch (RuntimeException exception) {
                 LOGGER.error("Could not read scene continuation", exception);
@@ -419,7 +419,7 @@ public final class SceneSavedData extends SavedData {
             continuations.values().stream()
                     .filter(
                             continuation ->
-                                    continuation.sceneInstanceId().equals(scene.id())
+                                    scene.id().equals(continuation.sceneInstanceId())
                                             && continuation.completionReceipt())
                     .map(continuation -> "continuation:" + continuation.id())
                     .forEach(completedReceipts::add);
@@ -458,7 +458,7 @@ public final class SceneSavedData extends SavedData {
                 || continuations.values().stream()
                         .anyMatch(
                                 continuation ->
-                                        continuation.sceneInstanceId().equals(scene.id())
+                                        scene.id().equals(continuation.sceneInstanceId())
                                                 && (!continuation.completionReceipt()
                                                         || continuations.values().stream().anyMatch(parent ->
                                                                 !parent.completionReceipt()
@@ -499,7 +499,7 @@ public final class SceneSavedData extends SavedData {
                 .removeIf(
                         entry -> {
                             SceneContinuation continuation = entry.getValue();
-                            if (!continuation.sceneInstanceId().equals(sceneId)
+                            if (!sceneId.equals(continuation.sceneInstanceId())
                                     || !continuation.completionReceipt()) return false;
                             removed.add(entry.getKey());
                             return true;
@@ -523,7 +523,21 @@ public final class SceneSavedData extends SavedData {
             SceneInstance scene, UUID playerId, UUID providerId, String sourcePointer,
             List<VillagerActionDefinition> actions, int nextActionIndex, Map<String, String> replacements,
             ResourceLocation questId, UUID questRunId) {
-        String key = continuationKey(scene.id(), playerId, sourcePointer);
+        return suspendContinuation(scene.id(), playerId, providerId, sourcePointer, actions, nextActionIndex,
+                replacements, questId, questRunId);
+    }
+
+    public SceneContinuation suspendRewardContinuation(UUID playerId, UUID providerId, String sourcePointer,
+            List<VillagerActionDefinition> actions, int nextActionIndex, Map<String, String> replacements,
+            ResourceLocation questId, UUID questRunId) {
+        return suspendContinuation((UUID) null, playerId, providerId, sourcePointer, actions, nextActionIndex,
+                replacements, questId, questRunId);
+    }
+
+    private SceneContinuation suspendContinuation(UUID sceneId, UUID playerId, UUID providerId, String sourcePointer,
+            List<VillagerActionDefinition> actions, int nextActionIndex, Map<String, String> replacements,
+            ResourceLocation questId, UUID questRunId) {
+        String key = continuationKey(sceneId, playerId, sourcePointer) + (sceneId == null ? "|questRun:" + questRunId : "");
         UUID existingId = continuationKeys.get(key);
         SceneContinuation existing = continuations.get(existingId);
         if (existing != null) return existing;
@@ -531,7 +545,7 @@ public final class SceneSavedData extends SavedData {
         SceneContinuation continuation =
                 new SceneContinuation(
                         id,
-                        scene.id(),
+                        sceneId,
                         playerId,
                         providerId,
                         questId,

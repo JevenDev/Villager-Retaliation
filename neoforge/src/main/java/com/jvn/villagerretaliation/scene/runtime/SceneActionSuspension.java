@@ -15,6 +15,7 @@ public final class SceneActionSuspension {
     public static ActionResult poll(SceneSavedData data, ActionResult waiting) {
         if (!waiting.suspended()) return waiting;
         if (waiting.suspensionId() == null) return unavailable("saved suspension target is missing");
+        if (waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_REWARD) return waiting;
         if (waiting.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION) {
             SceneContinuation continuation = data.continuation(waiting.suspensionId()).orElse(null);
             if (continuation == null) return unavailable("saved continuation is unavailable");
@@ -33,6 +34,7 @@ public final class SceneActionSuspension {
     public static boolean referencesScene(SceneSavedData data, ActionResult waiting, UUID sceneId) {
         if (!waiting.suspended() || waiting.suspensionId() == null) return false;
         if (waiting.suspensionKind() == ActionResult.SuspensionKind.SCENE) return sceneId.equals(waiting.suspensionId());
+        if (waiting.suspensionKind() != ActionResult.SuspensionKind.CONTINUATION) return false;
         SceneContinuation continuation = data.continuation(waiting.suspensionId()).orElse(null);
         return continuation != null && sceneId.equals(continuation.sceneInstanceId());
     }
@@ -50,12 +52,14 @@ public final class SceneActionSuspension {
                 if (scene != null && !scene.state().terminal()) {
                     scene.receipts().values().forEach(receipt -> enqueue(pending, receipt.actionResult()));
                 }
-            } else {
+            } else if (target.kind() == ActionResult.SuspensionKind.CONTINUATION) {
                 SceneContinuation continuation = data.continuation(target.id()).orElse(null);
-                if (continuation == null || continuation.completionReceipt()) continue;
-                pending.addLast(continuation.dependencyContinuationId() == null
-                        ? new Target(ActionResult.SuspensionKind.SCENE, continuation.sceneInstanceId())
-                        : new Target(ActionResult.SuspensionKind.CONTINUATION, continuation.dependencyContinuationId()));
+                if (continuation == null || continuation.completionReceipt() || continuation.rewardOperation() != null) continue;
+                if (continuation.dependencyContinuationId() != null) {
+                    pending.addLast(new Target(ActionResult.SuspensionKind.CONTINUATION, continuation.dependencyContinuationId()));
+                } else if (continuation.sceneInstanceId() != null) {
+                    pending.addLast(new Target(ActionResult.SuspensionKind.SCENE, continuation.sceneInstanceId()));
+                }
             }
         }
         return false;

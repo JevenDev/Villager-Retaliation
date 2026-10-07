@@ -57,8 +57,8 @@ public final class CampaignRewardService {
         issue = eligibility(instance, context.player().getUUID(), reward);
         if (!issue.isBlank()) return ActionResult.unavailable(issue, capabilities, VillagerActionResult.EMPTY);
         var data = CampaignRewardSavedData.get(context.level());
-        if (!data.diagnostic().isBlank()) return ActionResult.unavailable(data.diagnostic(), capabilities, VillagerActionResult.EMPTY);
         UUID operation = operationId(instance.instanceId(), context.player().getUUID(), reward, request.operationId());
+        if (!data.diagnostic().isBlank()) return ActionResult.suspendedReward(operation, data.diagnostic(), capabilities, VillagerActionResult.EMPTY);
         try {
             var proposal = new CampaignRewardReceipt(operation, UUID.randomUUID(), definition.id(), instance.instanceId(),
                     definition.revision(), definition.fingerprint(), context.player().getUUID(), quest.id(), progress.questRunId(),
@@ -83,16 +83,22 @@ public final class CampaignRewardService {
                     "campaign_reward_operation", operation.toString(), "campaign_reward_recipient", receipt.player().toString()), false);
             if (!receipt.player().equals(context.player().getUUID())) {
                 return receipt.delivered() ? ActionResult.alreadySatisfied("The shared reward has already been delivered.", capabilities, output)
-                        : ActionResult.unavailable("The shared reward is reserved for its first recipient and is awaiting delivery.", capabilities, output);
+                        : ActionResult.suspendedReward(operation, "The shared reward is reserved for its first recipient and is awaiting delivery.", capabilities, output);
             }
             boolean delivered = deliver(context.player(), data, receipt, CampaignPlayerRewards.directory(context.player()));
+            REPORTED.remove(operation);
             return delivered ? ActionResult.success(new VillagerActionResult(true, "", "", output.replacements(), false), capabilities)
                     : ActionResult.alreadySatisfied("Campaign reward already received.", capabilities, output);
         } catch (IllegalArgumentException exception) {
-            return ActionResult.unavailable(exception.getMessage(), capabilities, VillagerActionResult.EMPTY);
+            return ActionResult.suspendedReward(operation, exception.getMessage(), capabilities, VillagerActionResult.EMPTY);
         } catch (IOException exception) {
-            LogUtils.getLogger().error("Could not save reward {} for campaign {}", reward.id(), definition.id(), exception);
-            return ActionResult.failed("The campaign reward could not be saved. Check world storage before retrying.", capabilities);
+            String diagnostic = exception.getMessage() == null ? exception.toString() : exception.getMessage();
+            if (!diagnostic.equals(REPORTED.put(operation, diagnostic))) {
+                LogUtils.getLogger().error("Could not save reward {} for campaign {}", reward.id(), definition.id(), exception);
+            }
+            return ActionResult.suspendedReward(operation, "The campaign reward is waiting for world storage to recover.", capabilities,
+                    new VillagerActionResult(false, "", "", Map.of("campaign_reward", reward.id(),
+                            "campaign_reward_operation", operation.toString()), false));
         }
     }
 

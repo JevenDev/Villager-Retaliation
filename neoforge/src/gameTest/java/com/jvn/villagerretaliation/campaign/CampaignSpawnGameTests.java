@@ -78,9 +78,9 @@ public final class CampaignSpawnGameTests {
     @GameTest(template = "empty", batch = "campaign_spawns")
     public static void spawnAcknowledgementFollowsNativeEntityAndReceiptPersistence(GameTestHelper helper) throws IOException {
         try (var fixture = fixture(helper)) {
-            var neighbor = helper.spawn(EntityType.PIG, 2, 1, 2);
+            var neighbor = helper.spawn(EntityType.PIG, 1, 1, 1);
             neighbor.setNoAi(true);
-            var passenger = helper.spawn(EntityType.CHICKEN, 2, 1, 2);
+            var passenger = helper.spawn(EntityType.CHICKEN, 1, 1, 1);
             helper.assertTrue(passenger.startRiding(neighbor, true), "neighbor has a passenger to preserve");
             var playerBlock = fixture.origin.below();
             helper.getLevel().setBlockAndUpdate(playerBlock, Blocks.GOLD_BLOCK.defaultBlockState());
@@ -91,6 +91,7 @@ public final class CampaignSpawnGameTests {
             helper.assertTrue(receipt.committed() && CampaignOwnedSpawns.owns(receipt, spawned), "acknowledged entity has committed ownership");
             helper.assertValueEqual(spawned.getVillagerData().getProfession(), VillagerProfession.LIBRARIAN, "authored profession applied on birth");
             helper.assertValueEqual(spawned.getCustomName().getString(), "Campaign mentor", "campaign owns the character name");
+            helper.assertValueEqual(neighbor.chunkPosition(), spawned.chunkPosition(), "unrelated passenger tree shares the checkpointed chunk");
             var snapshot = entityChunk(helper, spawned);
             helper.assertTrue(contains(snapshot, spawned.getUUID()), "native entity chunk contains the mentor before acknowledgement");
             var savedNeighbor = snapshot.getList("Entities", Tag.TAG_COMPOUND).stream().map(tag -> (CompoundTag) tag)

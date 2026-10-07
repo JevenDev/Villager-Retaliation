@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.scene;
 
 import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
+import com.jvn.villagerretaliation.campaign.CampaignRewardRecovery;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.ActionSequenceRunner;
 import com.jvn.villagerretaliation.action.ActionStatus;
@@ -9,7 +10,9 @@ import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.conditions.QuestAvailabilityService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageActionService;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
@@ -18,6 +21,7 @@ import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
@@ -29,6 +33,7 @@ import net.minecraft.world.entity.npc.Villager;
 
 public final class SceneContinuationService {
     private static final int MAX_CONTINUATIONS_PER_TICK = 16;
+    private static final Map<SceneSavedData, Integer> MAINTENANCE_CURSORS = new java.util.WeakHashMap<>();
     private static final ThreadLocal<Set<UUID>> RESUMING = ThreadLocal.withInitial(HashSet::new);
 
     private SceneContinuationService() {
@@ -50,6 +55,11 @@ public final class SceneContinuationService {
             SceneContinuation.DialogueResume dialogueResume, ResourceLocation questId, UUID questRunId) {
         RunResult existing = existingContinuation(context, actions, sourcePointer);
         if (existing != null) return existing;
+        for (int index = 0; actions != null && index < actions.size(); index++) {
+            if (actions.get(index).kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
+                return runCampaignActions(context, actions, baseReplacements, trackerFlashHandler, sourcePointer, dialogueResume, questId, questRunId, index);
+            }
+        }
         ActionSequenceRunner.Result sequence = ActionSequenceRunner.run(
                 context, actions, 0, baseReplacements, trackerFlashHandler, null);
         ActionResult result = sequence.outcome();
@@ -57,22 +67,32 @@ public final class SceneContinuationService {
         SceneSavedData data = SceneSavedData.get(context.level());
         WaitTarget target = waitTarget(data, result);
         SceneInstance scene = target == null ? null : target.scene();
-        if (scene == null) return RunResult.of(ActionResult.unavailable(
-                "scene instance unavailable", result.capabilities(), result.legacyResult()), null);
-        if (scene.state().terminal() && scene.completionResult() != SceneInstance.CompletionResult.SUCCESS) {
+        if (target == null) return RunResult.of(ActionResult.unavailable(
+                "action suspension target unavailable", result.capabilities(), result.legacyResult()), null);
+        if (scene != null && scene.state().terminal() && scene.completionResult() != SceneInstance.CompletionResult.SUCCESS) {
             return RunResult.of(new ActionResult(ActionStatus.FAILED, "scene did not complete successfully",
                     result.capabilities(), result.legacyResult()), null);
         }
         int index = sequence.nextActionIndex() - (result.retryOnResume() ? 0 : 1);
         VillagerActionDefinition suspendedAction = actions.get(index);
         ResourceLocation ownerQuest = questId == null ? suspendedAction.questId() : questId;
+        var dependency = target.dependencyId() == null ? null : data.continuation(target.dependencyId()).orElse(null);
+        if (ownerQuest == null && dependency != null && dependency.campaignRecovery()) ownerQuest = dependency.questId();
         var ownerProgress = ownerQuest == null ? null
                 : VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), ownerQuest);
         UUID ownerRun = questId == null && ownerProgress != null ? ownerProgress.questRunId() : questRunId;
-        SceneContinuation continuation = data.suspendContinuation(scene, context.player().getUUID(),
-                context.villager().getUUID(), pointer(sourcePointer, suspendedAction, index),
-                actions, sequence.nextActionIndex(), result.legacyResult().replacements(),
-                ownerQuest, ownerRun);
+        String fingerprint = CampaignRewardRecovery.fingerprint(context.level().getServer(), ownerQuest);
+        if (target.rewardOperation() != null && (ownerRun == null || fingerprint.isBlank())) {
+            return RunResult.of(ActionResult.unavailable("Campaign reward recovery requires its active quest bundle and run.",
+                    result.capabilities(), result.legacyResult()), null);
+        }
+        SceneContinuation continuation = scene == null
+                ? data.suspendRewardContinuation(context.player().getUUID(), context.villager().getUUID(),
+                        pointer(sourcePointer, suspendedAction, index), actions, sequence.nextActionIndex(),
+                        result.legacyResult().replacements(), ownerQuest, ownerRun)
+                : data.suspendContinuation(scene, context.player().getUUID(),
+                        context.villager().getUUID(), pointer(sourcePointer, suspendedAction, index),
+                        actions, sequence.nextActionIndex(), result.legacyResult().replacements(), ownerQuest, ownerRun);
         continuation.bindCampaign(CampaignQuestAccess.campaignFor(context.level().getServer(), ownerQuest));
         if (continuation.completionReceipt()) {
             return RunResult.of(new ActionResult(continuation.actionStatus(), continuation.actionDiagnostic(),
@@ -84,10 +104,56 @@ public final class SceneContinuationService {
             data.changed();
             return RunResult.of(failure, continuation.id());
         }
-        continuation.waitOn(scene.id(), target.dependencyId(), result.retryOnResume());
+        applyWait(context.level().getServer(), data, continuation, target, result);
         continuation.dialogueResume(dialogueResume);
         continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
         data.changed();
+        CampaignRewardRecovery.persist(context.level().getServer(), data, continuation);
+        return RunResult.of(continuation.campaignRecovery()
+                ? ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(), result.capabilities(), result.legacyResult())
+                : result, continuation.id());
+    }
+
+    private static RunResult runCampaignActions(DialogueContext context, List<VillagerActionDefinition> actions,
+            Map<String, String> replacements, Runnable trackerFlashHandler, String source, SceneContinuation.DialogueResume dialogueResume,
+            ResourceLocation questId, UUID questRunId, int rewardIndex) {
+        var data = SceneSavedData.get(context.level());
+        var ownerQuest = questId == null ? actions.get(rewardIndex).questId() : questId;
+        var progress = ownerQuest == null ? null : VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), ownerQuest);
+        var run = questRunId == null && progress != null ? progress.questRunId() : questRunId;
+        String fingerprint = CampaignRewardRecovery.fingerprint(context.level().getServer(), ownerQuest);
+        var definition = ownerQuest == null ? null : VillagerQuestResources.quest(context.level().getServer(), ownerQuest).orElse(null);
+        var campaign = definition == null ? null : definition.campaign();
+        String authority = com.jvn.villagerretaliation.campaign.CampaignAuthority.controlIssue(context.player());
+        if (!authority.isBlank()) return RunResult.of(ActionResult.unavailable(authority, Set.of(), VillagerActionResult.EMPTY), null);
+        if (fingerprint.isBlank() || campaign == null || data.futureVersion()) {
+            return RunResult.of(ActionResult.unavailable("Campaign action recovery requires readable scene data and its original quest bundle.", Set.of(), VillagerActionResult.EMPTY), null);
+        }
+        String access = CampaignQuestAccess.executionIssue(context.level().getServer(), ownerQuest, campaign, context.player().getUUID());
+        if (!access.isBlank()) return RunResult.of(ActionResult.unavailable(access, Set.of(), VillagerActionResult.EMPTY), null);
+        if (progress != null && !QuestAvailabilityService.matchesProviderLock(context, definition, progress)) {
+            return RunResult.of(ActionResult.unavailable("Return to this quest's assigned character to continue its actions.", Set.of(), VillagerActionResult.EMPTY), null);
+        }
+        var continuation = data.suspendRewardContinuation(context.player().getUUID(), context.villager().getUUID(),
+                pointer(source, actions.get(rewardIndex), rewardIndex), actions, 0, replacements, ownerQuest, run);
+        if (!matchesProvider(context, continuation) || !continuation.actions().equals(actions)
+                || !Objects.equals(continuation.questRunId(), run)) {
+            return RunResult.of(ActionResult.unavailable("This recovery record belongs to a different saved request.", Set.of(), VillagerActionResult.EMPTY), continuation.id());
+        }
+        continuation.bindCampaign(campaign);
+        continuation.enableCampaignRecovery(fingerprint);
+        continuation.resuming(SceneInstance.CompletionResult.SUCCESS);
+        continuation.dialogueResume(dialogueResume);
+        continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
+        data.changed();
+        ActionResult result;
+        if (CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) {
+            RESUMING.get().add(continuation.id());
+            try { result = resumeActions(context, data, continuation, false, trackerFlashHandler); }
+            finally { RESUMING.get().remove(continuation.id()); }
+        } else {
+            result = ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(), Set.of(), VillagerActionResult.EMPTY);
+        }
         return RunResult.of(result, continuation.id());
     }
 
@@ -98,6 +164,7 @@ public final class SceneContinuationService {
             VillagerActionDefinition action = actions.get(index);
             if (!(action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene())
                     && action.kind() != VillagerActionDefinition.Kind.FORCED_DIALOGUE
+                    && action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_REWARD
                     && !questOperation(action)) continue;
             String source = pointer(sourcePointer, action, index);
             for (SceneContinuation continuation : SceneSavedData.get(context.level()).continuations()) {
@@ -109,13 +176,18 @@ public final class SceneContinuationService {
                             context.player().getUUID(), continuation.questId());
                     if (progress == null || !continuation.questRunId().equals(progress.questRunId())) continue;
                 }
+                String recoveryIssue = CampaignRewardRecovery.issue(context.level().getServer(), continuation);
+                if (!recoveryIssue.isBlank()) return RunResult.of(ActionResult.unavailable(recoveryIssue,
+                        Set.of(), VillagerActionResult.EMPTY), continuation.id());
                 if (!continuation.actions().equals(actions)) {
                     return RunResult.of(ActionResult.unavailable("suspended action definition changed",
                             Set.of(), VillagerActionResult.EMPTY), continuation.id());
                 }
                 VillagerActionResult output = new VillagerActionResult(false, "", "", continuation.replacements(), false);
-                return RunResult.of(new ActionResult(continuation.actionStatus(), continuation.actionDiagnostic(),
-                        Set.of(), output, continuation.sceneInstanceId()), continuation.id());
+                return RunResult.of(continuation.campaignRecovery() && !continuation.completionReceipt()
+                        ? ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(), Set.of(), output)
+                        : new ActionResult(continuation.actionStatus(), continuation.actionDiagnostic(),
+                                Set.of(), output, continuation.sceneInstanceId()), continuation.id());
             }
         }
         return null;
@@ -179,13 +251,36 @@ public final class SceneContinuationService {
 
     public static void maintain(MinecraftServer server, SceneSavedData data) {
         int work = 0;
-        for (SceneContinuation continuation : data.continuations()) {
-            if (work >= MAX_CONTINUATIONS_PER_TICK) break;
+        var continuations = List.copyOf(data.continuations());
+        int cursor = MAINTENANCE_CURSORS.getOrDefault(data, 0);
+        for (int inspected = 0; inspected < continuations.size() && work < MAX_CONTINUATIONS_PER_TICK; inspected++) {
+            int index = Math.floorMod(cursor + inspected, continuations.size());
+            SceneContinuation continuation = continuations.get(index);
+            MAINTENANCE_CURSORS.put(data, (index + 1) % continuations.size());
+            boolean retriedSave = continuation.recoveryPersistencePending();
+            if (retriedSave) {
+                if (server.overworld().getGameTime() % 100L != 0L) continue;
+                work++;
+                if (!CampaignRewardRecovery.persist(server, data, continuation)) continue;
+                if (continuation.completionReceipt()) {
+                    QuestStageActionService.settleContinuation(server.overworld(), continuation);
+                    resume(server, data, continuation);
+                }
+            }
             if (continuation.completionReceipt()) continue;
+            String recoveryIssue = CampaignRewardRecovery.issue(server, continuation);
+            if (!recoveryIssue.isBlank()) {
+                if (continuation.pauseForConsent(recoveryIssue)) data.changed();
+                continue;
+            }
             if (!CampaignQuestAccess.executionIssue(
                     server, continuation.questId(), continuation.campaignId(), continuation.playerId()).isBlank()) continue;
             ActionResult dependencyResult;
-            if (continuation.dependencyContinuationId() != null) {
+            if (continuation.rewardOperation() != null) {
+                dependencyResult = CampaignRewardRecovery.poll(server, ActionResult.suspendedReward(
+                        continuation.rewardOperation(), continuation.actionDiagnostic(), Set.of(), VillagerActionResult.EMPTY));
+                if (dependencyResult.suspended()) continue;
+            } else if (continuation.dependencyContinuationId() != null) {
                 if (cyclicDependency(data, continuation.id(), continuation.dependencyContinuationId())) {
                     dependencyResult = ActionResult.failed("cyclic action continuation dependency", Set.of());
                 } else {
@@ -194,6 +289,8 @@ public final class SceneContinuationService {
                     dependencyResult = new ActionResult(dependency.actionStatus(), dependency.actionDiagnostic(),
                             Set.of(), VillagerActionResult.EMPTY);
                 }
+            } else if (continuation.campaignRecovery() && continuation.sceneInstanceId() == null) {
+                dependencyResult = ActionResult.success(VillagerActionResult.EMPTY, Set.of());
             } else {
                 SceneInstance scene = data.get(continuation.sceneInstanceId()).orElse(null);
                 if (scene == null || !scene.state().terminal()) continue;
@@ -205,11 +302,11 @@ public final class SceneContinuationService {
                         ? ActionResult.success(VillagerActionResult.EMPTY, Set.of())
                         : ActionResult.failed("scene " + scene.completionResult(), Set.of());
             }
-            work++;
+            if (!retriedSave) work++;
             if (!dependencyResult.success()) {
                 continuation.finish(dependencyResult);
-                QuestStageActionService.settleContinuation(server.overworld(), continuation);
                 data.changed();
+                if (CampaignRewardRecovery.persist(server, data, continuation)) QuestStageActionService.settleContinuation(server.overworld(), continuation);
                 continue;
             }
             if (continuation.state() == SceneContinuation.State.WAITING) {
@@ -226,6 +323,11 @@ public final class SceneContinuationService {
     }
 
     private static void resume(MinecraftServer server, SceneSavedData data, SceneContinuation continuation) {
+        String recoveryIssue = CampaignRewardRecovery.issue(server, continuation);
+        if (!recoveryIssue.isBlank()) {
+            if (continuation.pauseForConsent(recoveryIssue)) data.changed();
+            return;
+        }
         if (continuation.hasUnreadableActions()) {
             if (continuation.pauseForConsent("A saved campaign action is unreadable. Repair the action before resuming.")) data.changed();
             return;
@@ -240,18 +342,26 @@ public final class SceneContinuationService {
             if (progress == null || !continuation.questRunId().equals(progress.questRunId())) {
                 continuation.finish(ActionResult.unavailable("quest run changed", Set.of(), VillagerActionResult.EMPTY));
                 data.changed();
+                CampaignRewardRecovery.persist(server, data, continuation);
                 return;
             }
         }
         DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+        if (continuation.campaignRecovery()) {
+            String authority = com.jvn.villagerretaliation.campaign.CampaignAuthority.controlIssue(player);
+            if (!authority.isBlank()) {
+                if (continuation.pauseForConsent(authority)) data.changed();
+                return;
+            }
+        }
         var access = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.resumeAccess(context, continuation.campaignConsent());
         if (!access.allowed()) {
             if (access.paused()) {
                 if (continuation.pauseForConsent(access.diagnostic())) data.changed();
             } else {
                 continuation.finish(ActionResult.unavailable(access.diagnostic(), Set.of(), VillagerActionResult.EMPTY));
-                QuestStageActionService.settleContinuation(player.serverLevel(), continuation);
                 data.changed();
+                if (CampaignRewardRecovery.persist(server, data, continuation)) QuestStageActionService.settleContinuation(player.serverLevel(), continuation);
             }
             return;
         }
@@ -261,49 +371,84 @@ public final class SceneContinuationService {
             continuation.campaignConsent(remaining);
             data.changed();
         }
+        if (continuation.completionReceipt()) {
+            if (continuation.actionStatus() == ActionStatus.SUCCESS || continuation.actionStatus() == ActionStatus.ALREADY_SATISFIED) {
+                if (continuation.dialogueResume() != null) DialogueTreeService.resumeAfterActions(context, continuation.dialogueResume(), continuation.replacements());
+            }
+            return;
+        }
+        if (!CampaignRewardRecovery.persist(server, data, continuation)) return;
         com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.withConsent(remaining,
-                () -> resumeActions(context, data, continuation));
+                () -> { resumeActions(context, data, continuation, true, () -> VillagerQuestService.flashTracker(player, true)); });
     }
 
-    private static void resumeActions(DialogueContext context, SceneSavedData data, SceneContinuation continuation) {
+    private static ActionResult resumeActions(DialogueContext context, SceneSavedData data, SceneContinuation continuation, boolean resumeDialogue, Runnable trackerFlashHandler) {
         ServerPlayer player = context.player();
         ActionSequenceRunner.Result sequence = ActionSequenceRunner.run(context, continuation.actions(),
                 continuation.nextActionIndex(), continuation.replacements(),
-                () -> VillagerQuestService.flashTracker(player, true), (next, outcome) -> {
+                trackerFlashHandler, (next, outcome) -> {
                     continuation.nextActionIndex(next);
+                    continuation.clearPreparedRecoveryAction();
+                    if (continuation.questId() != null) {
+                        var progress = VillagerQuestSavedData.get(context.level()).get(player.getUUID(), continuation.questId());
+                        if (progress != null) continuation.bindQuestRun(progress.questRunId());
+                    }
                     continuation.replacements().putAll(outcome.legacyResult().replacements());
                     continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
                     data.changed();
+                    if (!outcome.suspended() && (outcome.success() || !continuation.actions().get(next - 1).required())
+                            && !CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) throw pauseForSave(continuation);
+                }, index -> {
+                    if (continuation.campaignRecovery()) {
+                        continuation.prepareRecoveryAction(index);
+                        if (!CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) {
+                            continuation.clearPreparedRecoveryAction();
+                            throw pauseForSave(continuation);
+                        }
+                    }
                 });
         ActionResult result = sequence.outcome();
+        if (continuation.recoveryPersistencePending()) return result;
         if (result.suspended()) {
             WaitTarget target = waitTarget(data, result);
             if (target == null || cyclicDependency(data, continuation.id(), target.dependencyId())) {
                 result = ActionResult.failed(target == null ? "action suspension target unavailable"
                         : "cyclic action continuation dependency", result.capabilities());
                 continuation.finish(result);
-                QuestStageActionService.settleContinuation(player.serverLevel(), continuation);
             } else {
-                continuation.waitOn(target.scene().id(), target.dependencyId(), result.retryOnResume());
+                applyWait(context.level().getServer(), data, continuation, target, result);
             }
         } else {
             continuation.finish(result);
-            QuestStageActionService.settleContinuation(player.serverLevel(), continuation);
         }
         data.changed();
-        if (result.success() && continuation.dialogueResume() != null) {
+        if (!CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) {
+            return ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(), result.capabilities(), result.legacyResult());
+        }
+        QuestStageActionService.settleContinuation(context.level(), continuation);
+        if (resumeDialogue && result.success() && continuation.dialogueResume() != null) {
             DialogueTreeService.resumeAfterActions(context, continuation.dialogueResume(), continuation.replacements());
         }
+        return result.suspended() && continuation.campaignRecovery()
+                ? ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(), result.capabilities(), result.legacyResult()) : result;
+    }
+
+    private static ActionSequenceRunner.Pause pauseForSave(SceneContinuation continuation) {
+        return new ActionSequenceRunner.Pause(ActionResult.suspendedContinuation(continuation.id(),
+                continuation.actionDiagnostic(), Set.of(), VillagerActionResult.EMPTY));
     }
 
     private static WaitTarget waitTarget(SceneSavedData data, ActionResult result) {
+        if (result.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_REWARD) {
+            return result.suspensionId() == null ? null : new WaitTarget(null, null, result.suspensionId());
+        }
         UUID dependencyId = result.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION
                 ? result.suspensionId() : null;
         SceneContinuation dependency = dependencyId == null ? null : data.continuation(dependencyId).orElse(null);
         if (dependencyId != null && dependency == null) return null;
         UUID sceneId = dependency == null ? result.suspensionId() : dependency.sceneInstanceId();
         SceneInstance scene = data.get(sceneId).orElse(null);
-        return scene == null ? null : new WaitTarget(scene, dependencyId);
+        return scene == null && (dependency == null || !dependency.campaignRecovery()) ? null : new WaitTarget(scene, dependencyId, null);
     }
 
     private static boolean cyclicDependency(SceneSavedData data, UUID parentId, UUID dependencyId) {
@@ -317,8 +462,19 @@ public final class SceneContinuationService {
         return false;
     }
 
-    private record WaitTarget(SceneInstance scene, UUID dependencyId) {
+    private static void applyWait(MinecraftServer server, SceneSavedData data, SceneContinuation continuation, WaitTarget target, ActionResult result) {
+        if (target.rewardOperation() != null) {
+            continuation.waitForReward(target.rewardOperation(), CampaignRewardRecovery.fingerprint(server, continuation.questId()));
+        } else {
+            continuation.waitOn(target.scene() == null ? null : target.scene().id(), target.dependencyId(), result.retryOnResume());
+            var dependency = target.dependencyId() == null ? null : data.continuation(target.dependencyId()).orElse(null);
+            if (dependency != null && dependency.campaignRecovery()) {
+                continuation.enableCampaignRecovery(CampaignRewardRecovery.fingerprint(server, continuation.questId()));
+            }
+        }
     }
+
+    private record WaitTarget(SceneInstance scene, UUID dependencyId, UUID rewardOperation) { }
 
     private static Villager findVillager(MinecraftServer server, UUID id) {
         if (id == null) return null;

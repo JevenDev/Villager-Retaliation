@@ -143,7 +143,7 @@ public final class CampaignPlayableFixtureGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_playable_fixture", timeoutTicks = 200)
-    public static void failedRewardStorageBlocksCompletionUntilTheResponseIsRetried(GameTestHelper helper) throws IOException {
+    public static void failedRewardStorageResumesCompletionAfterStorageRecovers(GameTestHelper helper) throws IOException {
         try (Fixture fixture = new Fixture(helper)) {
             var player = fixture.player();
             fixture.select(player, "decision", "choose", "offer", 0);
@@ -156,13 +156,19 @@ public final class CampaignPlayableFixtureGameTests {
             try {
                 fixture.select(player, "decision", "report", "turn_in", 0);
                 helper.assertValueEqual(player.totalExperience, 0, "failed receipt save awards no experience");
-                helper.assertValueEqual(fixture.progress(player, "decision").completionCount(), 0, "required reward failure blocks quest completion");
+                helper.assertValueEqual(fixture.progress(player, "decision").completionCount(), 0, "required reward wait blocks quest completion");
             } finally {
                 storage.set(CampaignRewardSavedData.DATA_NAME, rewards);
                 Files.delete(blocked);
             }
-            fixture.select(player, "decision", "report", "turn_in", 0);
-            helper.assertValueEqual(player.totalExperience, 40, "retry delivers the authored participant reward");
+            var level = fixture.server.overworld();
+            long before = level.getGameTime();
+            try {
+                ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData()).setGameTime(before + 100L - Math.floorMod(before, 100L));
+                com.jvn.villagerretaliation.scene.SceneContinuationService.maintain(fixture.server,
+                        com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(level));
+            } finally { ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData()).setGameTime(before); }
+            helper.assertValueEqual(player.totalExperience, 40, "recovery delivers the authored participant reward");
             helper.assertValueEqual(fixture.progress(player, "decision").completionCount(), 1, "successful delivery lets the response finish");
             fixture.reload();
             helper.assertTrue(CampaignRewardSavedData.get(helper.getLevel()).receipts().values().stream().allMatch(CampaignRewardReceipt::delivered), "completed grant survives reload");

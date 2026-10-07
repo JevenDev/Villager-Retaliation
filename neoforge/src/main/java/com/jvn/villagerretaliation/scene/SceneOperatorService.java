@@ -52,7 +52,7 @@ public final class SceneOperatorService {
         if (!s.cleanupDiagnostic().isBlank())
             lines.add("cleanupDiagnostic=" + s.cleanupDiagnostic());
         for (var continuation : data.continuations())
-            if (continuation.sceneInstanceId().equals(id))
+            if (id.equals(continuation.sceneInstanceId()))
                 lines.add(
                         "continuation="
                                 + continuation.id()

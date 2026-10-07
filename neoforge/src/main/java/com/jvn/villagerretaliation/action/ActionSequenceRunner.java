@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.IntConsumer;
 
 public final class ActionSequenceRunner {
     private ActionSequenceRunner() {
@@ -16,6 +17,12 @@ public final class ActionSequenceRunner {
     public static Result run(DialogueContext context, List<VillagerActionDefinition> actions,
             int firstAction, Map<String, String> inheritedReplacements,
             Runnable trackerFlashHandler, BiConsumer<Integer, ActionResult> observer) {
+        return run(context, actions, firstAction, inheritedReplacements, trackerFlashHandler, observer, null);
+    }
+
+    public static Result run(DialogueContext context, List<VillagerActionDefinition> actions,
+            int firstAction, Map<String, String> inheritedReplacements, Runnable trackerFlashHandler,
+            BiConsumer<Integer, ActionResult> observer, IntConsumer beforeAction) {
         List<VillagerActionDefinition> sequence = actions == null ? List.of() : actions;
         if (firstAction < 0 || firstAction > sequence.size()) {
             return new Result(ActionResult.failed("saved action cursor is outside the sequence", Set.of()), firstAction);
@@ -29,6 +36,10 @@ public final class ActionSequenceRunner {
         boolean flash = false;
         for (int index = firstAction; index < sequence.size(); index++) {
             VillagerActionDefinition action = sequence.get(index);
+            try { if (beforeAction != null) beforeAction.accept(index); }
+            catch (Pause pause) {
+                return paused(pause, index, ran, lineId, text, replacements, flash, capabilities);
+            }
             ActionResult outcome = VillagerActionRegistry.execute(context, action, replacements);
             VillagerActionResult result = outcome.legacyResult();
             replacements.putAll(result.replacements());
@@ -39,7 +50,10 @@ public final class ActionSequenceRunner {
             ran |= result.ran();
             flash |= result.flashTracker();
             int next = outcome.suspended() && outcome.retryOnResume() ? index : index + 1;
-            if (observer != null) observer.accept(next, outcome);
+            try { if (observer != null) observer.accept(next, outcome); }
+            catch (Pause pause) {
+                return paused(pause, next, ran, lineId, text, replacements, flash, capabilities);
+            }
             if (outcome.suspended() || (action.required() && !outcome.success())) {
                 return new Result(new ActionResult(outcome.status(), outcome.message(), capabilities,
                         new VillagerActionResult(ran, lineId, String.join(" ", text), replacements, flash),
@@ -52,6 +66,21 @@ public final class ActionSequenceRunner {
                 : ActionResult.alreadySatisfied("sequence complete", capabilities, result), sequence.size());
     }
 
-    public record Result(ActionResult outcome, int nextActionIndex) {
+    private static Result paused(Pause pause, int next, boolean ran, String lineId, List<String> text,
+            Map<String, String> replacements, boolean flash, Set<ActionCapability> capabilities) {
+        var result = pause.outcome;
+        return new Result(new ActionResult(result.status(), result.message(), capabilities,
+                new VillagerActionResult(ran, lineId, String.join(" ", text), replacements, flash),
+                result.suspensionId(), result.suspensionKind(), result.retryOnResume()), next);
     }
+
+    public static final class Pause extends RuntimeException {
+        private final ActionResult outcome;
+        public Pause(ActionResult outcome) {
+            if (outcome == null || !outcome.suspended()) throw new IllegalArgumentException("an action pause requires a suspension result");
+            this.outcome = outcome;
+        }
+    }
+
+    public record Result(ActionResult outcome, int nextActionIndex) { }
 }

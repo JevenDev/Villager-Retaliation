@@ -59,9 +59,16 @@ public record ActionResult(
                 continuationId, SuspensionKind.CONTINUATION, true);
     }
 
+    public static ActionResult suspendedReward(UUID operation, String message, Set<ActionCapability> capabilities,
+            VillagerActionResult legacyResult) {
+        return new ActionResult(ActionStatus.SUSPENDED, message, capabilities, legacyResult,
+                operation, SuspensionKind.CAMPAIGN_REWARD, true);
+    }
+
     public enum SuspensionKind {
         SCENE,
-        CONTINUATION
+        CONTINUATION,
+        CAMPAIGN_REWARD
     }
 
     public boolean skipped() {

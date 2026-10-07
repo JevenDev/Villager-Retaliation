@@ -23,10 +23,18 @@ public final class SceneContinuation {
     private ResourceLocation campaignId;
     private UUID dependencyContinuationId;
     private boolean retrySuspendedAction;
+    private boolean campaignRecovery;
+    private String recoveryFingerprint = "";
+    private UUID rewardOperation;
+    private Tag unreadableRecovery;
+    private Tag unreadableRecoveryCursor;
+    private String recoveryPersistenceIssue = "";
+    private int preparedRecoveryAction = -1;
+
     private final UUID playerId;
     private final UUID providerId;
     private final ResourceLocation questId;
-    private final UUID questRunId;
+    private UUID questRunId;
     private final String sourcePointer;
     private final List<VillagerActionDefinition> actions;
     private final Map<String, String> replacements;
@@ -44,7 +52,7 @@ public final class SceneContinuation {
     public void campaignConsent(CompoundTag consent) { campaignConsent = consent.copy(); }
 
     public boolean pauseForConsent(String diagnostic) {
-        if (actionDiagnostic.equals(diagnostic)) return false;
+        if (completionReceipt || actionDiagnostic.equals(diagnostic)) return false;
         actionDiagnostic = diagnostic;
         actionStatus = ActionStatus.SUSPENDED;
         return true;
@@ -73,6 +81,36 @@ public final class SceneContinuation {
     public void bindCampaign(ResourceLocation id) { if (campaignId == null) campaignId = id; }
     public UUID dependencyContinuationId() { return dependencyContinuationId; }
     public boolean retrySuspendedAction() { return retrySuspendedAction; }
+    public boolean campaignRecovery() { return campaignRecovery; }
+    public int preparedRecoveryAction() { return preparedRecoveryAction; }
+    public void prepareRecoveryAction(int index) { preparedRecoveryAction = index; }
+    public void clearPreparedRecoveryAction() { preparedRecoveryAction = -1; }
+    public void bindQuestRun(UUID run) { if (questRunId == null) questRunId = run; }
+
+    public String recoveryFingerprint() { return recoveryFingerprint; }
+    public UUID rewardOperation() { return rewardOperation; }
+    public String recoveryIssue() { return unreadableRecovery == null ? "" : "Saved campaign action recovery is unreadable. Restore compatible scene data."; }
+
+    public boolean recoveryPersistencePending() { return !recoveryPersistenceIssue.isBlank(); }
+    public void recoveryPersistenceIssue(String issue) { recoveryPersistenceIssue = issue == null ? "" : issue; }
+
+    public void enableCampaignRecovery(String fingerprint) {
+        if (fingerprint == null || fingerprint.isBlank()) throw new IllegalArgumentException("campaign recovery requires its quest fingerprint");
+        if (!campaignRecovery) recoveryFingerprint = fingerprint;
+        campaignRecovery = true;
+    }
+
+    public void waitForReward(UUID operation, String fingerprint) {
+        if (operation == null) throw new IllegalArgumentException("reward recovery requires its operation");
+        enableCampaignRecovery(fingerprint);
+        rewardOperation = operation;
+        dependencyContinuationId = null;
+        retrySuspendedAction = true;
+        state = State.WAITING;
+        actionStatus = ActionStatus.SUSPENDED;
+        actionDiagnostic = "Campaign reward is waiting for durable delivery.";
+    }
+
     public UUID playerId() { return playerId; }
     public UUID providerId() { return providerId; }
     public ResourceLocation questId() { return questId; }
@@ -82,13 +120,13 @@ public final class SceneContinuation {
     public int nextActionIndex() { return nextActionIndex; }
     public State state() { return state; }
     public SceneInstance.CompletionResult sceneResult() { return sceneResult; }
-    public boolean completionReceipt() { return completionReceipt; }
+    public boolean completionReceipt() { return completionReceipt && !recoveryPersistencePending() && unreadableRecovery == null; }
     public Map<String, String> replacements() { return replacements; }
 
     public void advance() { nextActionIndex++; }
     public void nextActionIndex(int value) { nextActionIndex = value; }
-    public ActionStatus actionStatus() { return actionStatus; }
-    public String actionDiagnostic() { return actionDiagnostic; }
+    public ActionStatus actionStatus() { return recoveryPersistencePending() ? ActionStatus.SUSPENDED : actionStatus; }
+    public String actionDiagnostic() { return recoveryPersistencePending() ? recoveryPersistenceIssue : actionDiagnostic; }
     public DialogueResume dialogueResume() { return dialogueResume; }
     public void dialogueResume(DialogueResume value) { dialogueResume = value; }
 
@@ -104,6 +142,7 @@ public final class SceneContinuation {
 
     public void waitOn(UUID sceneId, UUID dependencyId, boolean retryAction) {
         sceneInstanceId = sceneId;
+        rewardOperation = null;
         dependencyContinuationId = dependencyId;
         retrySuspendedAction = retryAction;
         state = State.WAITING;
@@ -126,7 +165,16 @@ public final class SceneContinuation {
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", id);
-        tag.putUUID("Scene", sceneInstanceId);
+        if (sceneInstanceId != null) tag.putUUID("Scene", sceneInstanceId);
+        if (campaignRecovery) {
+            var recovery = new CompoundTag();
+            recovery.putInt("DataVersion", 1);
+            recovery.putString("QuestFingerprint", recoveryFingerprint);
+            recovery.putInt("PreparedAction", preparedRecoveryAction);
+            if (rewardOperation != null) recovery.putUUID("RewardOperation", rewardOperation);
+            tag.put("CampaignRecovery", unreadableRecovery == null ? recovery : unreadableRecovery.copy());
+        }
+
         if (dependencyContinuationId != null) tag.putUUID("DependencyContinuation", dependencyContinuationId);
         tag.putBoolean("RetrySuspendedAction", retrySuspendedAction);
         tag.putUUID("Player", playerId);
@@ -136,6 +184,10 @@ public final class SceneContinuation {
         if (questRunId != null) tag.putUUID("QuestRun", questRunId);
         tag.putString("Source", sourcePointer);
         tag.putInt("Next", nextActionIndex);
+        if (unreadableRecovery != null) {
+            if (unreadableRecoveryCursor == null) tag.remove("Next");
+            else tag.put("Next", unreadableRecoveryCursor.copy());
+        }
         tag.putString("State", state.name());
         tag.putString("SceneResult", sceneResult.name());
         tag.putBoolean("CompletionReceipt", completionReceipt);
@@ -190,7 +242,8 @@ public final class SceneContinuation {
         CompoundTag values = tag.getCompound("Replacements");
         for (String key : values.getAllKeys()) replacements.put(key, values.getString(key));
         SceneContinuation value = new SceneContinuation(
-                tag.getUUID("Id"), tag.getUUID("Scene"), tag.getUUID("Player"),
+                tag.getUUID("Id"), tag.hasUUID("Scene") ? tag.getUUID("Scene")
+                        : tag.contains("CampaignRecovery") ? null : tag.getUUID("Scene"), tag.getUUID("Player"),
                 tag.hasUUID("Provider") ? tag.getUUID("Provider") : null,
                 NbtDataUtil.readResourceLocation(tag, "Quest").orElse(null),
                 tag.hasUUID("QuestRun") ? tag.getUUID("QuestRun") : null,
@@ -199,6 +252,26 @@ public final class SceneContinuation {
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
         value.unreadableCampaignActions.putAll(unreadable);
+        value.campaignRecovery = tag.contains("CampaignRecovery");
+        if (value.campaignRecovery) {
+            var recovery = tag.getCompound("CampaignRecovery");
+            if (!tag.contains("CampaignRecovery", Tag.TAG_COMPOUND) || !recovery.contains("DataVersion", Tag.TAG_INT)
+                    || recovery.getInt("DataVersion") != 1 || !recovery.contains("QuestFingerprint", Tag.TAG_STRING)
+                    || recovery.getString("QuestFingerprint").isBlank()
+                    || !tag.contains("Next", Tag.TAG_INT) || tag.getInt("Next") < 0 || tag.getInt("Next") > actions.size()
+                    || !recovery.contains("PreparedAction", Tag.TAG_INT) || recovery.getInt("PreparedAction") < -1
+                    || recovery.getInt("PreparedAction") >= actions.size()
+                    || recovery.getInt("PreparedAction") >= 0 && recovery.getInt("PreparedAction") != tag.getInt("Next")
+                    || recovery.contains("RewardOperation") && !recovery.hasUUID("RewardOperation")) {
+                value.unreadableRecovery = tag.get("CampaignRecovery").copy();
+                value.unreadableRecoveryCursor = tag.contains("Next") ? tag.get("Next").copy() : null;
+            } else {
+                value.recoveryFingerprint = recovery.getString("QuestFingerprint");
+                value.preparedRecoveryAction = recovery.getInt("PreparedAction");
+                value.rewardOperation = recovery.hasUUID("RewardOperation") ? recovery.getUUID("RewardOperation") : null;
+            }
+        }
+
         value.campaignId = NbtDataUtil.readResourceLocation(tag, "Campaign").orElse(null);
         value.campaignConsent = tag.getCompound("CampaignConsent").copy();
         if (tag.contains("CampaignConsent") && (!tag.contains("CampaignConsent", Tag.TAG_COMPOUND) || value.campaignConsent.isEmpty())) {
