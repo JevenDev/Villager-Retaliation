@@ -1199,6 +1199,14 @@ public final class QuestV2Parser {
             com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.issues(object).forEach((field, message) ->
                     validator.error(pointer + "/" + field, message, "Use the campaign outcome condition schema.", Set.of()));
         }
+        if (canonical.equals("campaign_character")) {
+            com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.issues(object).forEach((field, message) ->
+                    validator.error(pointer + "/" + field, message, "Use the campaign character condition schema.", Set.of()));
+        }
+        if (canonical.equals("campaign_location")) {
+            com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.issues(object).forEach((field, message) ->
+                    validator.error(pointer + "/" + field, message, "Use the campaign location condition schema.", Set.of()));
+        }
         if (canonical.equals("all") || canonical.equals("any")) {
             String childrenPointer = pointer + "/conditions";
             JsonArray children = validator.array(object.get("conditions"), childrenPointer, "compound conditions", true);

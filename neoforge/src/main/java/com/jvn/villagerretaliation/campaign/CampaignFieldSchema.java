@@ -23,6 +23,7 @@ final class CampaignFieldSchema {
             var rule = entry.getValue().getAsJsonObject();
             boolean valid;
             if (rule.has("const")) valid = rule.get("const").equals(value);
+            else if (rule.has("type") && rule.get("type").getAsString().equals("integer")) valid = integer(value, rule);
             else valid = value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
                     && (!rule.has("pattern") || value.getAsString().matches(rule.get("pattern").getAsString()))
                     && (!rule.has("maxLength") || value.getAsString().length() <= rule.get("maxLength").getAsInt())
@@ -30,6 +31,16 @@ final class CampaignFieldSchema {
             if (!valid) issues.put(entry.getKey(), label + " field does not match its registered schema");
         });
         return issues;
+    }
+
+    private static boolean integer(com.google.gson.JsonElement value, JsonObject rule) {
+        if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) return false;
+        try {
+            var number = value.getAsBigDecimal();
+            return number.stripTrailingZeros().scale() <= 0
+                    && (!rule.has("minimum") || number.compareTo(rule.get("minimum").getAsBigDecimal()) >= 0)
+                    && (!rule.has("maximum") || number.compareTo(rule.get("maximum").getAsBigDecimal()) <= 0);
+        } catch (NumberFormatException exception) { return false; }
     }
 
     static JsonObject string(String pattern, int maximum) {

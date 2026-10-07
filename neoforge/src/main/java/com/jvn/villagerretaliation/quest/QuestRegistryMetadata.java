@@ -88,6 +88,8 @@ public final class QuestRegistryMetadata {
             entry.addProperty("implementation", descriptor.implementationType().getSimpleName());
             if (descriptor.id().equals("campaign_fact")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema());
             if (descriptor.id().equals("campaign_outcome")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema());
+            if (descriptor.id().equals("campaign_character")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema());
+            if (descriptor.id().equals("campaign_location")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.schema());
             conditions.add(entry);
         }
         return conditions;

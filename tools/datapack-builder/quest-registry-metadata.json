@@ -222,6 +222,88 @@
         }
       },
       {
+        "id": "campaign_character",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "CampaignCharacter",
+        "schema": {
+          "type": "object",
+          "description": "Checks an existing campaign character binding without casting or spawning.",
+          "additionalProperties": false,
+          "required": [
+            "campaign",
+            "role",
+            "state"
+          ],
+          "properties": {
+            "type": {
+              "const": "campaign_character"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "role": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "bound",
+                "available",
+                "downed",
+                "lost",
+                "speaker"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "campaign_location",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "CampaignLocation",
+        "schema": {
+          "type": "object",
+          "description": "Checks a player's distance from an already-bound campaign destination.",
+          "additionalProperties": false,
+          "required": [
+            "campaign",
+            "location"
+          ],
+          "properties": {
+            "type": {
+              "const": "campaign_location"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "location": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "radius": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256,
+              "default": 12
+            }
+          }
+        }
+      },
+      {
         "id": "quest_fact",
         "aliases": [
           "fact",
@@ -2361,7 +2443,9 @@
         "armed",
         "attribute",
         "biome",
+        "campaign_character",
         "campaign_fact",
+        "campaign_location",
         "campaign_outcome",
         "choice_selected",
         "dimension",

@@ -316,6 +316,29 @@ try {
       assert(result.stderr.includes("pointer=/availability/conditions/0/condition/"), "Outcome condition diagnostic lost its source pointer.");
     }
   }
+  for (const [type, base, cases] of [
+    ["campaign_character", { role: "mentor", state: "speaker" }, [
+      [{}, false], [{ state: "bound" }, false], [{ state: "available" }, false], [{ state: "downed" }, false], [{ state: "lost" }, false],
+      [{ role: null }, true], [{ state: "dead" }, true], [{ state: undefined }, true], [{ radius: 4 }, true], [{ role: "bad name" }, true]
+    ]],
+    ["campaign_location", { location: "home" }, [
+      [{}, false], [{ radius: 1 }, false], [{ radius: 256 }, false], [{ radius: 0 }, true], [{ radius: 257 }, true],
+      [{ radius: 1.5 }, true], [{ radius: "12" }, true], [{ radius: null }, true], [{ location: false }, true], [{ state: "near" }, true]
+    ]]
+  ]) {
+    for (const [override, expectFailure] of cases) {
+      const candidate = structuredClone(conditionFixture);
+      candidate.availability.conditions = [{ type: "not", condition: {
+        type, campaign: "test:campaign", ...base, ...override
+      } }];
+      await writeJson(validQuest, candidate);
+      const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+      if (expectFailure) {
+        assert(result.stderr.includes("registered condition schema"), "Campaign binding conditions must use the exported runtime schema.");
+        assert(result.stderr.includes("pointer=/availability/conditions/0/condition/"), "Binding condition diagnostic lost its source pointer.");
+      }
+    }
+  }
   await writeJson(validQuest, conditionFixture);
 
   const invalid = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", invalidQuest], { expectFailure: true });

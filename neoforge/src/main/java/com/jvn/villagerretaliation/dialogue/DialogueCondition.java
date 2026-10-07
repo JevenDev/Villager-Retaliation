@@ -37,7 +37,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
         DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact, DialogueCondition.CampaignFact,
-        DialogueCondition.CampaignOutcome, DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
+        DialogueCondition.CampaignOutcome, DialogueCondition.CampaignCharacter, DialogueCondition.CampaignLocation, DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
         DialogueCondition.PlayerItem, DialogueCondition.VillagerEquipment,
         DialogueCondition.Biome, DialogueCondition.Dimension, DialogueCondition.Advancement,
         DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
@@ -53,6 +53,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     default String unavailableReason(DialogueContext context) {
         if (this instanceof CampaignFact fact) return fact.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignOutcome outcome) return outcome.reference().evaluate(context).diagnostic();
+        if (this instanceof CampaignCharacter character) return character.reference().evaluate(context).diagnostic();
+        if (this instanceof CampaignLocation location) return location.reference().evaluate(context).diagnostic();
         List<DialogueCondition> children = this instanceof AllOf all ? all.conditions()
                 : this instanceof AnyOf any ? any.conditions()
                 : this instanceof Not not && not.condition() != null ? List.of(not.condition()) : List.of();
@@ -1065,6 +1067,32 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                             return Optional.of(new CampaignOutcome(value));
                         }),
                 register(
+                        "campaign_character",
+                        CampaignCharacter.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> {
+                            var value = com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.read(condition);
+                            if (value == null) {
+                                warnInvalid(location, context, "campaign character condition does not match its registered schema");
+                                return Optional.empty();
+                            }
+                            return Optional.of(new CampaignCharacter(value));
+                        }),
+                register(
+                        "campaign_location",
+                        CampaignLocation.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> {
+                            var value = com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.read(condition);
+                            if (value == null) {
+                                warnInvalid(location, context, "campaign location condition does not match its registered schema");
+                                return Optional.empty();
+                            }
+                            return Optional.of(new CampaignLocation(value));
+                        }),
+                register(
                         "quest_fact",
                         QuestFact.class,
                         aliases("quest_tag", "quest_variable", "quest_counter", "quest_stage", "fact", "stage"),
@@ -1782,6 +1810,22 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     }
 
     record CampaignOutcome(com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate reference) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) { return reference.evaluate(context).matches(); }
+
+        @Override
+        public int specificityScore() { return 8; }
+    }
+
+    record CampaignCharacter(com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate reference) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) { return reference.evaluate(context).matches(); }
+
+        @Override
+        public int specificityScore() { return 8; }
+    }
+
+    record CampaignLocation(com.jvn.villagerretaliation.campaign.CampaignLocationPredicate reference) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) { return reference.evaluate(context).matches(); }
 

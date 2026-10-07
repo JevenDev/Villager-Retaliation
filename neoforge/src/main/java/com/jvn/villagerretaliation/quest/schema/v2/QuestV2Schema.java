@@ -603,6 +603,8 @@ public final class QuestV2Schema {
         var rules = new JsonArray();
         rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema()));
         rules.add(typeRule("campaign_outcome", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema()));
+        rules.add(typeRule("campaign_character", com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema()));
+        rules.add(typeRule("campaign_location", com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.schema()));
         schema.add("allOf", rules);
         return schema;
     }
