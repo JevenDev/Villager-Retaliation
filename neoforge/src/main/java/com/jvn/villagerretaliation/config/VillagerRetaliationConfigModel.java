@@ -331,13 +331,13 @@ public final class VillagerRetaliationConfigModel {
         public boolean enableVillageLife = true;
 
         @RangeConstraint(min = 100, max = 1_200)
-        public int villageLifeDecisionInterval = 100;
+        public int villageLifeDecisionInterval = 200;
 
         @RangeConstraint(min = 1, max = 8)
         public int villageLifeMaxDecisions = 8;
 
         @RangeConstraint(min = 0, max = 2)
-        public int villageLifeMaxPaths = 2;
+        public int villageLifeMaxPaths = 1;
 
         @RangeConstraint(min = 100, max = 5_000)
         public int villageLifeBudgetMicros = 500;
