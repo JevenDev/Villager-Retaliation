@@ -118,7 +118,8 @@ public final class CampaignDefinitionParser {
                     origin.get("x").getAsInt(), origin.get("y").getAsInt(), origin.get("z").getAsInt());
             put(locations, id, new CampaignLocationDefinition(id, text(entry, "title_key"), kind, resource(entry, "dimension"),
                     position, entry.has("search_radius") ? entry.get("search_radius").getAsInt() : CampaignLocationDefinition.MAX_SEARCH_RADIUS,
-                    entry.has("structure") ? resource(entry, "structure") : null, pointer), source, pointer, diagnostics);
+                    entry.has("structure") ? resource(entry, "structure") : null,
+                    entry.has("structure_marker") ? resource(entry, "structure_marker") : null, pointer), source, pointer, diagnostics);
         }
         Map<String, CampaignCharacterDefinition> characters = new LinkedHashMap<>();
         JsonArray characterEntries = array(root, "characters");

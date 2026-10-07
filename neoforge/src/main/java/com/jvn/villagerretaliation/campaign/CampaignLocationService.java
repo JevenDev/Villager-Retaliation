@@ -14,6 +14,9 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Marker;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.phys.AABB;
 
 public final class CampaignLocationService {
     private static final Map<MinecraftServer, Map<CampaignLocationBinding.Key, SearchMiss>> MISSES = new WeakHashMap<>();
@@ -67,6 +70,8 @@ public final class CampaignLocationService {
         if (candidate == null) {
             String diagnostic = "Campaign location " + alias + " has no eligible known destination within its authored search area. Explore that area and retry.";
             if (location.source() == CampaignLocationDefinition.Source.STRUCTURE) {
+                if (location.structureMarker() != null) diagnostic = "Campaign location " + alias + " needs a loaded marker tagged "
+                        + location.structureMarker() + " inside " + location.structure() + ". Explore its authored search area and retry.";
                 if (misses.size() >= MAX_CACHED_MISSES) misses.remove(misses.keySet().iterator().next());
                 misses.put(key, new SearchMiss(definition.fingerprint(), time, diagnostic));
             }
@@ -106,13 +111,35 @@ public final class CampaignLocationService {
                 if (chunk == null) continue;
                 var start = chunk.getStartForStructure(structure);
                 if (start == null || !start.isValid()) continue;
-                var position = start.getBoundingBox().getCenter();
-                if (!inRange(origin, position, radius) || !validPosition(level, position)) continue;
-                var candidate = new Candidate("structure:" + location.structure() + "@" + start.getChunkPos().toLong(), position);
-                if (nearest == null || order(origin).compare(candidate, nearest) < 0) nearest = candidate;
+                String identity = "structure:" + location.structure() + "@" + start.getChunkPos().toLong();
+                Candidate candidate;
+                if (location.structureMarker() == null) {
+                    var position = start.getBoundingBox().getCenter();
+                    if (!inRange(origin, position, radius) || !validPosition(level, position)) continue;
+                    candidate = new Candidate(identity, position);
+                } else candidate = marker(level, location, start, origin, identity);
+                if (candidate != null && (nearest == null || order(origin).compare(candidate, nearest) < 0)) nearest = candidate;
             }
         }
         return nearest;
+    }
+
+    private static Candidate marker(ServerLevel level, CampaignLocationDefinition location, StructureStart start, BlockPos origin, String identity) {
+        var bounds = start.getBoundingBox();
+        int radius = location.searchRadius();
+        int minX = Math.max(bounds.minX(), origin.getX() - radius);
+        int maxX = Math.min(bounds.maxX(), origin.getX() + radius);
+        int minY = Math.max(bounds.minY(), level.getMinBuildHeight());
+        int maxY = Math.min(bounds.maxY(), level.getMaxBuildHeight() - 1);
+        int minZ = Math.max(bounds.minZ(), origin.getZ() - radius);
+        int maxZ = Math.min(bounds.maxZ(), origin.getZ() + radius);
+        if (minX > maxX || minY > maxY || minZ > maxZ) return null;
+        var area = new AABB(minX, minY, minZ, maxX + 1.0, maxY + 1.0, maxZ + 1.0);
+        return level.getEntitiesOfClass(Marker.class, area, entity -> entity.getTags().contains(location.structureMarker().toString())
+                        && !entity.isRemoved() && bounds.isInside(entity.blockPosition()) && inRange(origin, entity.blockPosition(), radius)
+                        && validPosition(level, entity.blockPosition()))
+                .stream().map(entity -> new Candidate(identity + "/marker:" + entity.getUUID(), entity.blockPosition()))
+                .min(order(origin)).orElse(null);
     }
 
     private static Comparator<Candidate> order(BlockPos origin) {

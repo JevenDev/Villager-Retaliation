@@ -51,7 +51,15 @@ public final class CampaignSchema {
                 "id", text(LOCAL_ID), "title_key", text(""), "source", enumeration("marker", "village", "structure"),
                 "dimension", text(RESOURCE_ID), "origin", object(List.of("x", "y", "z"),
                         "x", coordinate, "y", coordinate, "z", coordinate),
-                "search_radius", radius, "structure", text(RESOURCE_ID));
+                "search_radius", radius, "structure", text(RESOURCE_ID), "structure_marker", text(RESOURCE_ID));
+        location.getAsJsonObject("properties").getAsJsonObject("structure_marker").addProperty("description",
+                "Tag on a persistent minecraft:marker entity inside the registered structure.");
+        JsonObject taggedStructure = object(List.of("structure_marker"), "structure_marker", text(RESOURCE_ID));
+        taggedStructure.addProperty("additionalProperties", true);
+        JsonObject structureSource = object(List.of("source"), "source", enumeration("structure"));
+        structureSource.addProperty("additionalProperties", true);
+        location.add("if", taggedStructure);
+        location.add("then", structureSource);
         JsonObject characterRadius = type("integer");
         characterRadius.addProperty("minimum", 1);
         characterRadius.addProperty("maximum", CampaignCharacterDefinition.MAX_SEARCH_RADIUS);

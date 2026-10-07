@@ -1,0 +1,9 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.structures.title": "Campaign fixture: generated waystation",
+    "campaign_fixture.campaign.structures.chapter": "Find the new waystation",
+    "campaign_fixture.campaign.structures.home": "Generated waystation",
+    "campaign_fixture.campaign.structures.mentor": "Waystation keeper"
+  }
+}

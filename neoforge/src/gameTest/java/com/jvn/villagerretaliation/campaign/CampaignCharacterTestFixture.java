@@ -100,6 +100,8 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         root.getAsJsonArray("locations").get(0).getAsJsonObject().add("origin", position);
         root.getAsJsonArray("locations").get(0).getAsJsonObject().addProperty("source", "marker");
         root.getAsJsonArray("locations").get(0).getAsJsonObject().remove("search_radius");
+        root.getAsJsonArray("locations").get(0).getAsJsonObject().remove("structure");
+        root.getAsJsonArray("locations").get(0).getAsJsonObject().remove("structure_marker");
         root.getAsJsonArray("characters").get(0).getAsJsonObject().addProperty("search_radius", 2);
         var locales = QuestLocaleCatalog.read(resource("campaigns/" + fixtureName + "/locales/en_us.json"));
         campaigns = CampaignContentCatalog.compile(catalog, List.of(new CampaignContentCatalog.Source(id("campaigns/" + fixtureName + "/campaign.json"),
@@ -146,6 +148,7 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         var root = resource("campaigns/" + fixtureName + "/campaign.json");
         var location = root.getAsJsonArray("locations").get(0).getAsJsonObject();
         location.addProperty("source", "marker"); location.remove("search_radius");
+        location.remove("structure"); location.remove("structure_marker");
         var position = new JsonObject();
         position.addProperty("x", origin.getX()); position.addProperty("y", origin.getY()); position.addProperty("z", origin.getZ());
         location.add("origin", position);
