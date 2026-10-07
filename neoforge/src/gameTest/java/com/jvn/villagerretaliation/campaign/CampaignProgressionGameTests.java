@@ -209,6 +209,7 @@ public final class CampaignProgressionGameTests {
             commit(data, content, "defeated", Set.of(player));
             var old = data.save(new CompoundTag(), helper.getLevel().registryAccess());
             old.putInt("DataVersion", 1);
+            old.getList("Campaigns", Tag.TAG_COMPOUND).getCompound(0).remove("Facts");
             var priorPlayer = old.getList("Campaigns", Tag.TAG_COMPOUND).getCompound(0).getList("Players", Tag.TAG_COMPOUND).getCompound(0);
             priorPlayer.remove("Milestones");
             priorPlayer.remove("CompletedQuests");
@@ -219,7 +220,7 @@ public final class CampaignProgressionGameTests {
             helper.assertValueEqual(progress.discoveredOutcomes(), Map.of("dragon", "defeated"), "migration retains discoveries");
             helper.assertTrue(progress.milestones().isEmpty() && progress.completedQuests().isEmpty(), "participation is not personal quest completion");
             helper.assertFalse(priorPlayer.contains("Milestones"), "migration does not mutate the input save");
-            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 2, "migrated state uses version two");
+            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), CampaignSavedData.CURRENT_DATA_VERSION, "migrated state uses the current version");
         }
         helper.succeed();
     }

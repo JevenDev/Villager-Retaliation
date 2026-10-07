@@ -28,6 +28,14 @@ final class CampaignSaveMigrations {
             }
             tag.putInt("DataVersion", 2);
         }
+        if (tag.getInt("DataVersion") == 2) {
+            for (Tag raw : CampaignStateCodec.list(tag, "Campaigns", Tag.TAG_COMPOUND)) {
+                var campaign = (CompoundTag) raw;
+                CampaignStateCodec.require(!campaign.contains("Facts"), "unexpected story facts in a version 2 save");
+                campaign.put("Facts", CampaignFactCodec.save(CampaignFacts.empty()));
+            }
+            tag.putInt("DataVersion", 3);
+        }
         return tag;
     }
 }

@@ -27,7 +27,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class CampaignSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 2;
+    public static final int CURRENT_DATA_VERSION = 3;
     static final String DATA_NAME = "villagerretaliation_campaigns";
     private final Path directory;
     private Map<ResourceLocation, CampaignInstance> instances = Map.of();
@@ -90,6 +90,14 @@ public final class CampaignSavedData extends SavedData {
             return "Campaign " + definition.id() + " requires its saved definition revision " + current.definitionRevision()
                     + " and fingerprint " + current.fingerprint() + ". Restore that content before continuing.";
         }
+        if (current != null) {
+            for (var receipt : current.facts().receipts().values()) {
+                var fact = definition.facts().get(receipt.fact());
+                if (fact == null || fact.scope() != receipt.scope() || fact.kind() != receipt.result().kind()) {
+                    return "Saved story fact " + receipt.fact() + " does not match the campaign definition. Repair its content or restore a known-good save.";
+                }
+            }
+        }
         return "";
     }
 
@@ -114,7 +122,7 @@ public final class CampaignSavedData extends SavedData {
                 issue.isBlank() ? "Campaign instance has not started" : issue);
         var prior = current.outcomes().get(milestoneId);
         if (prior != null) return result(Status.ALREADY_COMMITTED, current, prior, "");
-        if (operationId == null || current.outcomes().values().stream().anyMatch(value -> value.operationId().equals(operationId))) {
+        if (operationId == null || current.facts().receipts().containsKey(operationId) || current.outcomes().values().stream().anyMatch(value -> value.operationId().equals(operationId))) {
             return result(Status.INVALID_REQUEST, current, null, "Outcome operation id is missing or already belongs to another milestone");
         }
         var milestone = definition.milestones().get(milestoneId);
@@ -211,7 +219,8 @@ public final class CampaignSavedData extends SavedData {
                 || !worldOutcome.operationId().equals(progress.worldOperation()))) {
             return progressResult(Status.UNAVAILABLE, entry, "Personal completion must follow the authoritative world outcome");
         }
-        if (player.milestones().values().stream().anyMatch(value -> completionOperation.equals(value.completionOperation()))) {
+        if (current.facts().receipts().containsKey(completionOperation)
+                || player.milestones().values().stream().anyMatch(value -> completionOperation.equals(value.completionOperation()))) {
             return progressResult(Status.INVALID_REQUEST, entry, "Completion operation already belongs to another milestone");
         }
         Map<String, CampaignInstance.MilestoneProgress> milestones = new LinkedHashMap<>(player.milestones());
@@ -239,6 +248,77 @@ public final class CampaignSavedData extends SavedData {
         return true;
     }
 
+    public synchronized FactResult commitFact(CampaignDefinition definition, UUID playerId, String factId,
+            CampaignFacts.Mutation mutation, String text, UUID operation, long expectedRevision, long gameTime) throws IOException {
+        var current = this.instances.get(definition.id());
+        String issue = compatibility(definition);
+        if (!issue.isBlank() || current == null) return new FactResult(Status.UNAVAILABLE, null, null,
+                issue.isBlank() ? "Campaign instance has not started" : issue);
+        var fact = definition.facts().get(factId);
+        if (fact == null || playerId == null || mutation == null || operation == null) {
+            return new FactResult(Status.INVALID_REQUEST, null, null, "A story fact needs an authored identity, player, mutation, and operation.");
+        }
+        var value = current.facts().value(fact, playerId).orElse(null);
+        CampaignFacts.Value operand;
+        try {
+            operand = new CampaignFacts.Value(fact.kind(), text);
+        } catch (IllegalArgumentException exception) {
+            return new FactResult(Status.INVALID_REQUEST, value, null, exception.getMessage());
+        }
+        var prior = current.facts().receipts().get(operation);
+        if (prior != null) {
+            boolean same = prior.player().equals(playerId) && prior.fact().equals(factId) && prior.scope() == fact.scope()
+                    && prior.mutation() == mutation && prior.operand().equals(operand);
+            return new FactResult(same ? Status.ALREADY_SATISFIED : Status.INVALID_REQUEST, value, prior,
+                    same ? "" : "This story fact operation already belongs to a different change.");
+        }
+        if (current.outcomes().values().stream().anyMatch(outcome -> outcome.operationId().equals(operation))
+                || current.players().values().stream().flatMap(player -> player.milestones().values().stream())
+                        .anyMatch(progress -> operation.equals(progress.completionOperation()))) {
+            return new FactResult(Status.INVALID_REQUEST, value, null, "This operation already belongs to a campaign outcome or milestone.");
+        }
+        var player = current.players().getOrDefault(playerId, CampaignInstance.PlayerRecord.empty());
+        boolean shared = fact.scope() == CampaignDefinition.FactScope.WORLD;
+        long revision = shared ? current.worldRevision() : player.revision();
+        if (expectedRevision != revision) return new FactResult(Status.STALE, value, null, "The story fact's scope revision changed.");
+        if (revision == Long.MAX_VALUE) return new FactResult(Status.INVALID_REQUEST, value, null, "The story fact's scope revision is exhausted.");
+        var result = operand;
+        if (mutation == CampaignFacts.Mutation.ADD) {
+            if (fact.kind() != CampaignDefinition.FactKind.COUNTER) {
+                return new FactResult(Status.INVALID_REQUEST, value, null, "Only campaign counters can be incremented.");
+            }
+            try {
+                result = new CampaignFacts.Value(fact.kind(), Long.toString(Math.addExact(value == null ? 0L
+                        : Long.parseLong(value.text()), Long.parseLong(operand.text()))));
+            } catch (ArithmeticException exception) {
+                return new FactResult(Status.INVALID_REQUEST, value, null, "The campaign counter would overflow.");
+            }
+        }
+        var receipt = new CampaignFacts.Receipt(operation, playerId, factId, fact.scope(), mutation, operand, result, revision + 1L, gameTime);
+        var players = new LinkedHashMap<>(current.players());
+        if (!shared) players.put(playerId, new CampaignInstance.PlayerRecord(receipt.revision(), player.participation(),
+                player.discoveredOutcomes(), player.milestones(), player.completedQuests()));
+        var next = new CampaignInstance(current.campaignId(), current.instanceId(), current.definitionRevision(), current.fingerprint(),
+                current.title(), current.createdAt(), shared ? receipt.revision() : current.worldRevision(), current.outcomes(), players,
+                current.facts().apply(receipt));
+        persist(next);
+        return new FactResult(Status.APPLIED, result, receipt, "");
+    }
+
+    public synchronized FactResult readFact(CampaignDefinition definition, UUID playerId, String factId) {
+        String issue = compatibility(definition);
+        if (!issue.isBlank()) return new FactResult(Status.UNAVAILABLE, null, null, issue);
+        var fact = definition.facts().get(factId);
+        if (fact == null || fact.scope() == CampaignDefinition.FactScope.PLAYER && playerId == null) {
+            return new FactResult(Status.INVALID_REQUEST, null, null, "Unknown story fact or missing player identity.");
+        }
+        var current = this.instances.get(definition.id());
+        return new FactResult(Status.ALREADY_SATISFIED, current == null ? null : current.facts().value(fact, playerId).orElse(null), null, "");
+    }
+
+    public record FactResult(Status status, CampaignFacts.Value value, CampaignFacts.Receipt receipt, String diagnostic) {
+    }
+
     private static CampaignInstance replacePlayer(CampaignInstance current, UUID playerId, CampaignInstance.PlayerRecord player) {
         Map<UUID, CampaignInstance.PlayerRecord> players = new LinkedHashMap<>(current.players());
         players.put(playerId, player);
@@ -252,7 +332,7 @@ public final class CampaignSavedData extends SavedData {
     private static CampaignInstance replace(CampaignInstance current, long revision,
             Map<String, CampaignInstance.OutcomeCommit> outcomes, Map<UUID, CampaignInstance.PlayerRecord> players) {
         return new CampaignInstance(current.campaignId(), current.instanceId(), current.definitionRevision(), current.fingerprint(),
-                current.title(), current.createdAt(), revision, outcomes, players);
+                current.title(), current.createdAt(), revision, outcomes, players, current.facts());
     }
 
     private void persist(CampaignInstance replacement) throws IOException {

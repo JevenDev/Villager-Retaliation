@@ -67,6 +67,7 @@ final class CampaignStateCodec {
             players.add(player);
         });
         tag.put("Players", players);
+        tag.put("Facts", CampaignFactCodec.save(instance.facts()));
         return tag;
     }
 
@@ -93,7 +94,6 @@ final class CampaignStateCodec {
                     revision, number(entry, "CommittedAt"), CampaignInstance.Origin.valueOf(text(entry, "Origin")));
             require(outcomes.putIfAbsent(milestone, outcome) == null, "duplicate milestone outcome");
         }
-        require(worldRevision == outcomes.size(), "world revision does not match committed outcomes");
         Map<UUID, CampaignInstance.PlayerRecord> players = new LinkedHashMap<>();
         for (Tag raw : list(tag, "Players", Tag.TAG_COMPOUND)) {
             var entry = (CompoundTag) raw;
@@ -148,8 +148,14 @@ final class CampaignStateCodec {
             require(players.putIfAbsent(entry.getUUID("Player"), new CampaignInstance.PlayerRecord(personalRevision,
                     participation, discoveries, milestones, completedQuests)) == null, "duplicate player record");
         }
+        players.values().forEach(player -> player.milestones().values().forEach(progress -> {
+            if (progress.completionOperation() != null) operations.add(progress.completionOperation());
+        }));
+        require(tag.contains("Facts", Tag.TAG_COMPOUND), "missing story facts");
+        var facts = CampaignFactCodec.load(tag.getCompound("Facts"), worldRevision, revisions, operations, players);
+        require(worldRevision == revisions.size(), "world revision does not match committed outcomes and facts");
         return new CampaignInstance(campaign, tag.getUUID("Instance"), tag.getInt("DefinitionRevision"),
-                text(tag, "Fingerprint"), text(tag, "Title"), number(tag, "CreatedAt"), worldRevision, outcomes, players);
+                text(tag, "Fingerprint"), text(tag, "Title"), number(tag, "CreatedAt"), worldRevision, outcomes, players, facts);
     }
 
     static ListTag list(CompoundTag tag, String key, int elementType) {

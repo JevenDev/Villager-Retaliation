@@ -9,10 +9,16 @@ import net.minecraft.resources.ResourceLocation;
 
 public record CampaignInstance(ResourceLocation campaignId, UUID instanceId, int definitionRevision, String fingerprint,
         String title, long createdAt, long worldRevision, Map<String, OutcomeCommit> outcomes,
-        Map<UUID, PlayerRecord> players) {
+        Map<UUID, PlayerRecord> players, CampaignFacts facts) {
     public CampaignInstance {
         outcomes = Collections.unmodifiableMap(new LinkedHashMap<>(outcomes));
         players = Collections.unmodifiableMap(new LinkedHashMap<>(players));
+    }
+
+    public CampaignInstance(ResourceLocation campaignId, UUID instanceId, int definitionRevision, String fingerprint,
+            String title, long createdAt, long worldRevision, Map<String, OutcomeCommit> outcomes,
+            Map<UUID, PlayerRecord> players) {
+        this(campaignId, instanceId, definitionRevision, fingerprint, title, createdAt, worldRevision, outcomes, players, CampaignFacts.empty());
     }
 
     public record OutcomeCommit(UUID operationId, String milestone, String outcome, String title,
