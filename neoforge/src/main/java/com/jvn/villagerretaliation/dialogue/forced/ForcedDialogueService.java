@@ -12,6 +12,8 @@ import static com.jvn.villagerretaliation.dialogue.forced.trade.TradeRefreshForc
 import static com.jvn.villagerretaliation.dialogue.forced.trade.TradeRefreshForcedDialogue.TRADE_REFRESH_SPECIAL_ORDER_STATUS_OPTIONS_ID;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.action.ActionResult;
+import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.forced.container.ContainerSnapshot;
 import com.jvn.villagerretaliation.dialogue.forced.container.ForcedDialogueContainers;
@@ -2794,6 +2796,11 @@ public final class ForcedDialogueService {
             ServerPlayer player,
             String forcedDialogueId,
             Map<String, String> replacements) {
+        return triggerQuestDialogueResult(level, villager, player, forcedDialogueId, replacements).legacyResult().ran();
+    }
+
+    public static ActionResult triggerQuestDialogueResult(ServerLevel level, Villager villager, ServerPlayer player,
+            String forcedDialogueId, Map<String, String> replacements) {
         if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
                 || villager == null
                 || player == null
@@ -2803,7 +2810,7 @@ public final class ForcedDialogueService {
                 || player.isSpectator()
                 || FORCED_SESSIONS.containsKey(player.getUUID())
                 || !VillagerInteractionService.canUseForcedInteractionSystem(player, villager)) {
-            return false;
+            return ActionResult.unavailable("forced dialogue unavailable", Set.of(), VillagerActionResult.EMPTY);
         }
 
         for (ForcedDialogueDefinition definition : ForcedDialogueResources
@@ -2815,10 +2822,10 @@ public final class ForcedDialogueService {
                 continue;
             }
             if (triggerQuestDialogue(level, villager, player, definition, replacements)) {
-                return true;
+                return ActionResult.success(VillagerActionResult.success(), Set.of());
             }
         }
-        return tryTriggerQuestDialogueTree(level, villager, player, forcedDialogueId, replacements);
+        return triggerQuestDialogueTree(level, villager, player, forcedDialogueId, replacements);
     }
 
     private static boolean matchesQuestForcedDialogueId(ForcedDialogueDefinition definition, String forcedDialogueId) {
@@ -2902,39 +2909,39 @@ public final class ForcedDialogueService {
         return true;
     }
 
-    private static boolean tryTriggerQuestDialogueTree(
+    private static ActionResult triggerQuestDialogueTree(
             ServerLevel level,
             Villager villager,
             ServerPlayer player,
             String forcedDialogueId,
             Map<String, String> replacements) {
         if (forcedDialogueId == null || forcedDialogueId.isBlank()) {
-            return false;
+            return ActionResult.unavailable("forced dialogue tree unavailable", Set.of(), VillagerActionResult.EMPTY);
         }
         QuestDialogueCatalog.Binding binding = VillagerQuestResources
                 .questDialogueCatalog(level.getServer())
                 .forcedBinding(forcedDialogueId)
                 .orElse(null);
         if (binding == null) {
-            return false;
+            return ActionResult.unavailable("forced dialogue tree unavailable", Set.of(), VillagerActionResult.EMPTY);
         }
 
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
-        Optional<VillagerDialogueService.DialogueResult> result = DialogueTreeService.startEntry(
+        DialogueTreeService.EntryResult entry = DialogueTreeService.startEntryResult(
                 context,
                 binding.treeId(),
                 binding.entryId(),
-                replacements == null ? Map.of() : replacements);
-        if (result.isEmpty()) {
-            return false;
-        }
+                replacements == null ? Map.of() : replacements, true);
+        if (!entry.outcome().success()) return entry.outcome();
+        Optional<VillagerDialogueService.DialogueResult> result = entry.dialogue();
+        if (result.isEmpty()) return entry.outcome();
         List<DialogueOptionDefinition> options = DialogueTreeService.activeOptions(context).orElse(List.of());
         if (options.isEmpty()) {
             String text = result.get().text();
             if (!text.isBlank()) {
                 VillagerInteractionService.sendVillagerNotice(player, villager, text);
             }
-            return true;
+            return ActionResult.success(VillagerActionResult.success(), Set.of());
         }
         if (VillagerInteractionService.openForcedDialogue(
                 player,
@@ -2942,10 +2949,10 @@ public final class ForcedDialogueService {
                 result.get().text(),
                 options,
                 options.stream().anyMatch(DialogueOptionDefinition::forceCameraTowardsVillager))) {
-            return true;
+            return ActionResult.success(VillagerActionResult.success(), Set.of());
         }
         DialogueTreeService.leaveActiveSession(context);
-        return false;
+        return ActionResult.unavailable("forced dialogue tree unavailable", Set.of(), VillagerActionResult.EMPTY);
     }
 
     private static ForcedDialogueContext questDialogueContext(

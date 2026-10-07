@@ -128,6 +128,7 @@ public final class SceneContinuation {
             dialogue.putString("Node", dialogueResume.nodeId());
             dialogue.putBoolean("RunActions", dialogueResume.runActions());
             dialogue.putString("LeadingText", dialogueResume.leadingText());
+            dialogue.putBoolean("Forced", dialogueResume.forced());
             tag.put("DialogueResume", dialogue);
         }
         ListTag actionTags = new ListTag();
@@ -165,7 +166,7 @@ public final class SceneContinuation {
         CompoundTag dialogue = tag.getCompound("DialogueResume");
         ResourceLocation treeId = NbtDataUtil.readResourceLocation(dialogue, "Tree").orElse(null);
         if (treeId != null) value.dialogueResume = new DialogueResume(treeId,
-                dialogue.getString("Node"), dialogue.getBoolean("RunActions"), dialogue.getString("LeadingText"));
+                dialogue.getString("Node"), dialogue.getBoolean("RunActions"), dialogue.getString("LeadingText"), dialogue.getBoolean("Forced"));
         return value;
     }
 
@@ -261,7 +262,10 @@ public final class SceneContinuation {
         }
     }
 
-    public record DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText) {
+    public record DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText, boolean forced) {
+        public DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText) {
+            this(treeId, nodeId, runActions, leadingText, false);
+        }
     }
 
     public enum State {

@@ -18,7 +18,6 @@ import com.jvn.villagerretaliation.quest.debug.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.conditions.QuestAvailabilityService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
-import com.jvn.villagerretaliation.quest.runtime.QuestActionSequenceRunner;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageActionService;
 import com.jvn.villagerretaliation.quest.runtime.QuestRewardService;
 import com.jvn.villagerretaliation.quest.persistence.QuestDefinitionMigration;
@@ -726,6 +725,7 @@ public final class VillagerQuestService {
             return Optional.of(stageBranchUnavailableResult(context, definition, progress).dialogueResult());
         }
 
+        resumePendingStageEntry(context, definition, progress);
         QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
         QuestDefinition.StageBranch branch = stage == null
                 ? null
@@ -980,6 +980,8 @@ public final class VillagerQuestService {
                     Map.of()));
         }
 
+        resumePendingStageEntry(context, definition,
+                VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), definition.id()));
         return Optional.of(switch (action) {
             case START -> startQuest(context, definition);
             case REMIND -> remindQuest(context, definition);
@@ -1021,7 +1023,7 @@ public final class VillagerQuestService {
             startQuest(context, definition);
             progress = data.get(context.player().getUUID(), definition.id());
         }
-        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE || !matchesVillagerLock(context, definition, progress)) {
+        if (progress == null || !matchesVillagerLock(context, definition, progress)) {
             return transitionActionResult(
                     "unavailable",
                     "That choice is not available right now.",
@@ -1032,6 +1034,7 @@ public final class VillagerQuestService {
                     transition,
                     false);
         }
+        resumePendingStageEntry(context, definition, progress);
         if (progress.hasChoice(transition.scenePath(), transition.responseId(), transition.stageId())) {
             return transitionActionResult(
                     "duplicate",
@@ -1043,7 +1046,8 @@ public final class VillagerQuestService {
                     transition,
                     false);
         }
-        if (!progress.currentStage().equals(transition.stageId())) {
+        if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                || !progress.currentStage().equals(transition.stageId())) {
             return transitionActionResult(
                     "stale",
                     "That choice is no longer available.",
@@ -2121,10 +2125,9 @@ public final class VillagerQuestService {
             String stage,
             boolean runExitActions,
             boolean runEntryActions) {
-        if (context == null
-                || definition == null
-                || progress == null
-                || !QuestLifecycleService.canTransitionStage(progress, stage)
+        if (context == null || definition == null || progress == null) return false;
+        resumePendingStageEntry(context, definition, progress);
+        if (!QuestLifecycleService.canTransitionStage(progress, stage)
                 || !definition.stages().containsKey(stage.trim())) {
             return false;
         }
@@ -2146,11 +2149,29 @@ public final class VillagerQuestService {
         ensureStageTarget(context, definition, progress);
         dispatchStageChangedTriggers(context, definition, progress);
 
-        QuestDefinition.Stage current = definition.stages().get(transition.currentStage());
-        if (runEntryActions && current != null) {
-            runStageActions(context, definition, progress, "entry", current.entryActions());
+        if (runEntryActions && progress.currentStage().equals(transition.currentStage())) {
+            progress.requestStageEntry(transition.currentStage());
+            VillagerQuestSavedData.get(context.level()).setDirty();
+            resumePendingStageEntry(context, definition, progress);
         }
         sendTrackerSync(context.player(), true);
+        return true;
+    }
+
+    private static boolean resumePendingStageEntry(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                || !matchesVillagerLock(context, definition, progress)
+                || progress.pendingStageEntry().isBlank()
+                || !progress.pendingStageEntry().equals(progress.currentStage())
+                || !QuestStageActionService.readyForStageEntry(context, progress)) return false;
+        QuestDefinition.Stage stage = definition.stages().get(progress.pendingStageEntry());
+        if (stage == null) return false;
+        progress.requestStageEntry("");
+        VillagerQuestSavedData.get(context.level()).setDirty();
+        runStageActions(context, definition, progress, "entry", stage.entryActions());
         return true;
     }
 
@@ -2173,6 +2194,7 @@ public final class VillagerQuestService {
         }
         boolean changed = false;
         for (int i = 0; i < MAX_STAGE_ADVANCES_PER_CHECK; i++) {
+            changed |= resumePendingStageEntry(context, definition, progress);
             if (com.jvn.villagerretaliation.scene.SceneContinuationService.hasPendingQuestOperation(context, definition.id())) break;
             if (!QuestStageActionService.ready(context, progress)) break;
             if (!progress.pendingStageTransition().isBlank()) {
@@ -2314,6 +2336,10 @@ public final class VillagerQuestService {
                     lineId(definition, "unavailable"),
                     startBlockedLine(context, definition, progress),
                     replacements(context, definition, progress));
+        }
+        if (!forceRestart && progress != null && !QuestStageActionService.ready(context, progress)) {
+            return result("unavailable", lineId(definition, "unavailable"),
+                    startBlockedLine(context, definition, progress), replacements(context, definition, progress));
         }
         if (!forceRestart && !canStart(context, definition, progress, bypassOfferRequirements)) {
             return result(
@@ -5409,7 +5435,7 @@ public final class VillagerQuestService {
                     resolved |= progress.resolveLifecycleEvent(event);
                     continue;
                 }
-                if (!QuestStageActionService.ready(context, progress)) continue;
+                if (!progress.pendingStageEntry().isBlank() || !QuestStageActionService.ready(context, progress)) continue;
             }
             boolean stillAuthored = compiled.triggerIndex().hasEvent(event);
             if (stillAuthored) {
@@ -5571,16 +5597,10 @@ public final class VillagerQuestService {
         }
         Map<String, String> actionReplacements = new LinkedHashMap<>(replacements(context, definition, progress));
         actionReplacements.putAll(triggerContext.replacements());
-        if (triggerContext.event() == QuestDefinition.TriggerEvent.STARTED) {
-            return QuestStageActionService.run(context, definition, progress, "trigger/started/" + trigger.id(),
-                    trigger.actions(), Map.copyOf(actionReplacements), () -> sendTrackerSync(context.player(), true))
-                    .legacyResult().ran();
-        }
-        return QuestActionSequenceRunner.run(
-                context,
-                trigger.actions(),
-                Map.copyOf(actionReplacements),
-                () -> sendTrackerSync(context.player(), true));
+        return QuestStageActionService.runTrigger(context, definition, progress,
+                "trigger/" + QuestTriggerRegistry.canonicalEventId(triggerContext.event()) + "/" + trigger.id(),
+                trigger.actions(), Map.copyOf(actionReplacements), () -> sendTrackerSync(context.player(), true))
+                .legacyResult().ran();
     }
 
     private static void sendQuestNotification(

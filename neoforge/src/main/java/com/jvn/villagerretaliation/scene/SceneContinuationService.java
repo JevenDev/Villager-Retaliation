@@ -94,6 +94,7 @@ public final class SceneContinuationService {
         for (int index = 0; index < actions.size(); index++) {
             VillagerActionDefinition action = actions.get(index);
             if (!(action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene())
+                    && action.kind() != VillagerActionDefinition.Kind.FORCED_DIALOGUE
                     && !questOperation(action)) continue;
             String source = pointer(sourcePointer, action, index);
             for (SceneContinuation continuation : SceneSavedData.get(context.level()).continuations()) {
@@ -124,6 +125,22 @@ public final class SceneContinuationService {
                 || action.kind() == VillagerActionDefinition.Kind.SET_VARIABLE
                         && action.factScope() == com.jvn.villagerretaliation.quest.QuestFactScope.QUEST
                         && "stage".equals(action.factKey()));
+    }
+
+    public static boolean isResuming(UUID continuationId) {
+        return continuationId != null && RESUMING.get().contains(continuationId);
+    }
+
+    public static boolean dependsOnResumingContinuation(ServerLevel level, UUID continuationId) {
+        if (RESUMING.get().isEmpty()) return false;
+        SceneSavedData data = SceneSavedData.get(level);
+        Set<UUID> visited = new HashSet<>();
+        while (continuationId != null && visited.add(continuationId)) {
+            if (isResuming(continuationId)) return true;
+            SceneContinuation continuation = data.continuation(continuationId).orElse(null);
+            continuationId = continuation == null ? null : continuation.dependencyContinuationId();
+        }
+        return false;
     }
 
     public static boolean hasPendingQuestOperation(DialogueContext context, ResourceLocation questId) {

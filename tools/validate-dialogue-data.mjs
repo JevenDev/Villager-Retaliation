@@ -2606,11 +2606,11 @@ function validateQuestV2Graph(file, data, model) {
       }
     }
   }
-  warnQuestV2UnreachableStages(file, entryStage, model);
+  validateQuestV2Reachability(file, entryStage, model);
   warnQuestV2UnreachableScenes(file, model);
 }
 
-function warnQuestV2UnreachableStages(file, entryStage, model) {
+function validateQuestV2Reachability(file, entryStage, model) {
   if (!entryStage || !model.stageIds.has(entryStage)) {
     return;
   }
@@ -2630,7 +2630,7 @@ function warnQuestV2UnreachableStages(file, entryStage, model) {
   }
   for (const stage of model.stages) {
     if (!reachable.has(stage.id)) {
-      questV2Warning(file, `${stage.pointer}/id`, `${stage.location}.id`, `stage "${stage.id}" is unreachable from entry_stage.`, "Link to it from an earlier transition or remove it.");
+      questV2Error(file, `${stage.pointer}/id`, `${stage.location}.id`, `stage "${stage.id}" is unreachable from entry_stage.`, "Link to it from an earlier transition or remove it.");
     }
   }
 }

@@ -234,6 +234,15 @@ try {
     await writeJson(validQuest, candidate);
     run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
   }
+  const unreachable = structuredClone(conditionFixture);
+  unreachable.stages.push({ id: "unreachable", objectives: [] });
+  await writeJson(validQuest, unreachable);
+  const reachabilityFailure = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
+  assert(reachabilityFailure.stderr.includes("pointer=/stages/1/id"), "Unreachable stage diagnostic lost its authored pointer.");
+  assert(reachabilityFailure.stderr.includes('stage "unreachable" is unreachable'), "Unreachable stages must reject content just as the runtime does.");
+  unreachable.stages[0].next = "unreachable";
+  await writeJson(validQuest, unreachable);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
   await writeJson(validQuest, conditionFixture);
 
   const invalid = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", invalidQuest], { expectFailure: true });

@@ -176,6 +176,11 @@ public final class VillagerActionRegistry {
         if (context == null && requiresLiveContext(capabilities)) {
             return ActionResult.failed("live dialogue context unavailable", capabilities);
         }
+        if (action.kind() == VillagerActionDefinition.Kind.FORCED_DIALOGUE) {
+            ActionResult result = VillagerActionExecutor.executeForcedDialogue(context, action, inheritedReplacements);
+            return new ActionResult(result.status(), result.message(), capabilities, result.legacyResult(),
+                    result.suspensionId(), result.suspensionKind(), result.retryOnResume());
+        }
         if (action.kind() == VillagerActionDefinition.Kind.START_SCENE) {
             SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);
             if (!launch.accepted()) {
@@ -185,12 +190,23 @@ public final class VillagerActionRegistry {
             return launch.created() ? ActionResult.success(VillagerActionResult.success(), capabilities)
                     : ActionResult.alreadySatisfied(launch.diagnostic(), capabilities, VillagerActionResult.EMPTY);
         }
+        if (context != null && action.questId() != null && SceneContinuationService.questOperation(action)) {
+            var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), action.questId());
+            if (progress != null && progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                    && progress.state() != VillagerQuestSavedData.QuestState.NOT_STARTED) {
+                ActionResult pending = QuestStageActionService.pending(context, progress);
+                if (pending != null) return new ActionResult(pending.status(), pending.message(), capabilities,
+                        pending.legacyResult(), pending.suspensionId(), pending.suspensionKind(), pending.retryOnResume());
+                if (terminalQuestActionSatisfied(action, progress)) {
+                    return ActionResult.alreadySatisfied("quest outcome already applied", capabilities, VillagerActionResult.EMPTY);
+                }
+            }
+        }
         VillagerActionResult legacyResult =
                 VillagerActionExecutor.executeDirect(context, action, inheritedReplacements);
         if (context != null && action.questId() != null && SceneContinuationService.questOperation(action)) {
             var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), action.questId());
-            ActionResult pending = progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
-                    ? null : QuestStageActionService.pending(context, progress);
+            ActionResult pending = progress == null ? null : QuestStageActionService.pending(context, progress);
             if (pending != null) {
                 return new ActionResult(pending.status(), pending.message(), capabilities, legacyResult,
                         pending.suspensionId(), pending.suspensionKind(), pending.retryOnResume());
@@ -228,6 +244,20 @@ public final class VillagerActionRegistry {
                     new VillagerActionResult(false, satisfied.lineId(), satisfied.text(), satisfied.replacements(), false));
         }
         return ActionResult.unavailable("action did not apply", capabilities, legacyResult);
+    }
+
+    private static boolean terminalQuestActionSatisfied(VillagerActionDefinition action,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (action.kind() != VillagerActionDefinition.Kind.QUEST) return false;
+        return switch (action.questAction()) {
+            case TURN_IN -> progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
+                    || progress.state() == VillagerQuestSavedData.QuestState.CONSUMED && progress.consumedReason().equals("completion");
+            case ABANDON -> progress.state() == VillagerQuestSavedData.QuestState.ABANDONED
+                    || progress.state() == VillagerQuestSavedData.QuestState.CONSUMED && progress.consumedReason().equals("abandonment");
+            case FAIL -> progress.state() == VillagerQuestSavedData.QuestState.FAILED;
+            case BLOCK -> progress.state() == VillagerQuestSavedData.QuestState.CONSUMED;
+            default -> false;
+        };
     }
 
     private static boolean factSatisfied(DialogueContext context, VillagerActionDefinition action,

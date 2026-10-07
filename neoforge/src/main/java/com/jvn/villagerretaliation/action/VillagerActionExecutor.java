@@ -55,7 +55,7 @@ public final class VillagerActionExecutor {
         return switch (action.kind()) {
             case NOTIFICATION -> executeNotification(context, action, replacements);
             case TRACKER -> VillagerActionResult.tracker(action.flashTracker());
-            case FORCED_DIALOGUE -> executeForcedDialogue(context, action, replacements);
+            case FORCED_DIALOGUE -> executeForcedDialogue(context, action, replacements).legacyResult();
             case QUEST -> executeQuestAction(context, action, replacements);
             case QUEST_TRANSITION -> VillagerQuestService.applyCompiledTransition(context, action.questTransition(), replacements);
             case EXPERIENCE -> awardExperience(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
@@ -194,17 +194,14 @@ public final class VillagerActionExecutor {
         return VillagerActionResult.success();
     }
 
-    private static VillagerActionResult executeForcedDialogue(
+    static ActionResult executeForcedDialogue(
             DialogueContext context,
             VillagerActionDefinition action,
-            Map<String, String> replacements) {
-        boolean ran = ForcedDialogueService.tryTriggerQuestDialogue(
-                context.level(),
-                context.villager(),
-                context.player(),
-                action.forcedDialogue(),
-                replacements);
-        return ran ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
+            Map<String, String> inheritedReplacements) {
+        Map<String, String> replacements = new LinkedHashMap<>(DialoguePlaceholders.base(context));
+        if (inheritedReplacements != null) replacements.putAll(inheritedReplacements);
+        return ForcedDialogueService.triggerQuestDialogueResult(
+                context.level(), context.villager(), context.player(), action.forcedDialogue(), replacements);
     }
 
     private static VillagerActionResult executeQuestAction(

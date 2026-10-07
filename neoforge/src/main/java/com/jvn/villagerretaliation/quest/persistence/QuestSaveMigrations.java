@@ -39,6 +39,7 @@ public final class QuestSaveMigrations {
             // Existing entries require no rewrite; legacy active runs derive it from their run id once.
             case 3 -> 4;
             case 4 -> 5;
+            case 5 -> 6;
             default -> throw new IllegalStateException("No quest save migration from version " + version);
         };
     }

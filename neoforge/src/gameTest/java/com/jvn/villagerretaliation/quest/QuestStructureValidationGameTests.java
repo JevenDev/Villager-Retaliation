@@ -50,6 +50,22 @@ public final class QuestStructureValidationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_structure_contract")
+    public static void unreachableStagesRejectContentUntilLinked(GameTestHelper helper) {
+        var root = fixture();
+        var stages = root.getAsJsonArray("stages");
+        stages.add(JsonParser.parseString("{\"id\":\"unreachable\",\"objectives\":[]}"));
+        var location = VillagerRetaliation.id("quests/schema_unreachable.json");
+        helper.assertTrue(QuestV2Parser.parse(location, root).isEmpty(), "unreachable stage rejects content");
+        helper.assertTrue(DatapackDiagnostics.recent().stream().anyMatch(entry ->
+                        entry.diagnostic().jsonPointer().equals("/stages/1/id")
+                                && entry.diagnostic().message().contains("unreachable")),
+                "reachability diagnostic retains its authored pointer");
+        stages.get(0).getAsJsonObject().addProperty("next", "unreachable");
+        helper.assertTrue(QuestV2Parser.parse(location, root).isPresent(), "a linked stage is accepted");
+        helper.succeed();
+    }
+
     private static JsonObject fixture() {
         return JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"villagerretaliation:schema_fields",

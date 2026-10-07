@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.util.NbtDataUtil;
 import com.jvn.villagerretaliation.util.WorldLocation;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
@@ -33,7 +34,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 5;
+    public static final int CURRENT_DATA_VERSION = 6;
     public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
     public static final int MAX_CHOICE_HISTORY = 256;
     public static final int MAX_COMPLETION_HISTORY = 128;
@@ -603,6 +604,7 @@ public class VillagerQuestSavedData extends SavedData {
         private String currentStage = "";
         private final Map<String, QuestActionCheckpoint> stageActions = new LinkedHashMap<>();
         private String pendingStageTransition = "";
+        private String pendingStageEntry = "";
         private final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
         private final Map<String, Integer> objectiveCounters = new HashMap<>();
         private final Map<String, ResourceLocation> resolvedObjectiveItems = new HashMap<>();
@@ -659,6 +661,7 @@ public class VillagerQuestSavedData extends SavedData {
             progress.targetObjectiveId = tag.getString(TAG_TARGET_OBJECTIVE);
             progress.currentStage = tag.getString(TAG_CURRENT_STAGE);
             progress.pendingStageTransition = tag.getString("PendingStageTransition");
+            progress.pendingStageEntry = tag.getString("PendingStageEntry");
             CompoundTag stageActions = tag.getCompound("StageActions");
             for (String key : stageActions.getAllKeys()) {
                 progress.stageActions.put(key, QuestActionCheckpoint.load(stageActions.getCompound(key)));
@@ -816,6 +819,7 @@ public class VillagerQuestSavedData extends SavedData {
                 tag.put("StageActions", actions);
             }
             if (!this.pendingStageTransition.isBlank()) tag.putString("PendingStageTransition", this.pendingStageTransition);
+            if (!this.pendingStageEntry.isBlank()) tag.putString("PendingStageEntry", this.pendingStageEntry);
             if (!this.completedObjectives.isEmpty()) {
                 tag.put(TAG_COMPLETED_OBJECTIVES, NbtDataUtil.stringList(this.completedObjectives));
             }
@@ -1334,11 +1338,23 @@ public class VillagerQuestSavedData extends SavedData {
         }
 
         public Map<String, QuestActionCheckpoint> stageActions() {
-            return Map.copyOf(this.stageActions);
+            return Collections.unmodifiableMap(new LinkedHashMap<>(this.stageActions));
         }
 
         public void recordStageAction(String key, QuestActionCheckpoint checkpoint) {
             this.stageActions.put(key, checkpoint);
+        }
+
+        public void removeStageAction(String key) {
+            this.stageActions.remove(key);
+        }
+
+        public String pendingStageEntry() {
+            return this.pendingStageEntry;
+        }
+
+        public void requestStageEntry(String stage) {
+            this.pendingStageEntry = stage == null ? "" : stage.trim();
         }
 
         public String pendingStageTransition() {
@@ -1352,6 +1368,7 @@ public class VillagerQuestSavedData extends SavedData {
         private void clearStageActions() {
             this.stageActions.clear();
             this.pendingStageTransition = "";
+            this.pendingStageEntry = "";
         }
 
         public boolean setCurrentStage(String stage) {
@@ -1359,8 +1376,15 @@ public class VillagerQuestSavedData extends SavedData {
             if (this.currentStage.equals(normalized)) {
                 return false;
             }
+            Map<String, QuestActionCheckpoint> unfinished = new LinkedHashMap<>();
+            this.stageActions.forEach((key, checkpoint) -> {
+                if (!checkpoint.outcome().success()) {
+                    unfinished.put(key.startsWith("stage/") ? key : "stage/" + this.currentStage + "/" + key, checkpoint);
+                }
+            });
             this.currentStage = normalized;
             clearStageActions();
+            this.stageActions.putAll(unfinished);
             return true;
         }
 
