@@ -17,6 +17,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
@@ -86,6 +90,30 @@ public final class QuestV2Schema {
         defs.add("action", action());
         root.add("$defs", defs);
         return root;
+    }
+
+    public static Set<String> acceptedKeys(String definition, String... compatibilityFields) {
+        Set<String> fields = AcceptedFields.BY_DEFINITION.get(definition);
+        if (fields == null) throw new IllegalArgumentException("unknown quest structure " + definition);
+        if (compatibilityFields.length == 0) return fields;
+        Set<String> result = new LinkedHashSet<>(fields);
+        result.addAll(List.of(compatibilityFields));
+        return Set.copyOf(result);
+    }
+
+    private static final class AcceptedFields {
+        private static final Map<String, Set<String>> BY_DEFINITION = load();
+
+        private static Map<String, Set<String>> load() {
+            JsonObject schema = export();
+            Map<String, Set<String>> result = new LinkedHashMap<>();
+            result.put("root", Set.copyOf(schema.getAsJsonObject("properties").keySet()));
+            schema.getAsJsonObject("$defs").entrySet().forEach(entry -> {
+                JsonObject properties = entry.getValue().getAsJsonObject().getAsJsonObject("properties");
+                if (properties != null) result.put(entry.getKey(), Set.copyOf(properties.keySet()));
+            });
+            return Map.copyOf(result);
+        }
     }
 
     public static String exportJson() {

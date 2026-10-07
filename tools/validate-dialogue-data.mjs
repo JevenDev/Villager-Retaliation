@@ -921,36 +921,36 @@ const dialogueIdScopes = {
 const questV2SchemaId = "villagerretaliation:quest/v2";
 const resourceLocationPattern = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
 const questV2IdPattern = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
-const questV2RootKeys = new Set(["schema", "id", "localization_prefix", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui"]);
-const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "show_locked_adventure_hint", "author", "version", "revision", "migration"]);
-const questV2MigrationKeys = new Set(["active_policy", "on_active_change", "stage_aliases", "objective_aliases"]);
-const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item", "proof_item_components", "proof_item_durability", "proof_item_custom_data", "proof_item_nbt"]);
-const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "death_protection", "filters", "data"]);
-const questV2ActiveStateKeys = new Set(["conditions", "hide_when_unmet", "pause_progress_when_unmet"]);
-const questV2ExpirationKeys = new Set(["after_ticks", "conditions", "consume", "allow_repickup", "notify"]);
-const questV2BranchKeys = new Set(["exclusive_group", "exclusive_on", "blocks_on_start", "blocks_on_completion", "blocks"]);
-const questV2AvailabilityKeys = new Set(["conditions", "active", "expiration", "branch", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "exclusive_on", "blocks_on_start", "blocks_on_completion", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
-const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
-const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stage", "scene", "complete", "abandon", "fail"]);
-const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "completion", "completion_mode", "completion_count", "bonuses", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
-const questV2CompletionKeys = new Set(["mode", "count"]);
-const questV2BonusKeys = new Set(["id", "when", "mode", "count", "actions"]);
-const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "criterion", "match", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "selection", "components", "durability", "min_durability", "max_durability", "min_durability_percent", "max_durability_percent", "enchantment", "enchantments", "min_enchantment_level", "max_enchantment_level", "custom_data", "nbt", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
-const questV2TrackerKeys = new Set(["text", "text_key", "complete_text", "complete_text_key", "show_progress", "progress", "metadata"]);
-const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
-const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "scene_ref", "metadata"]);
-const questV2ResponseKeys = new Set(["id", "label", "label_key", "text", "text_key", "lines", "conditions", "actions", "transition", "next", "stage", "scene", "response", "complete", "abandon", "fail", "request", "order", "metadata"]);
-const questV2TransitionKeys = new Set(["stage", "scene", "response", "complete", "abandon", "fail"]);
-const questV2EventKeys = new Set(["id", "event", "type", "trigger", "stage", "stages", "conditions", "actions", "transition", "next", "cooldown", "cooldown_ticks", "cooldown_seconds", "cooldown_days", "radius", "repeatable", "metadata"]);
-const questV2RewardsKeys = new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event", "memory_scope"]);
-const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "tracker_complete_text", "tracker_complete_text_key", "show_progress", "progress", "placeholders", "metadata", "icon", "color", "outline_color", "priority", "hidden"]);
+const questV2Schema = await loadQuestV2Schema();
+validateQuestV2Schema(questV2Schema);
+const questV2RootKeys = questStructureKeys("root");
+const questV2MetadataKeys = questStructureKeys("metadata");
+const questV2MigrationKeys = questStructureKeys("migration");
+const questV2TargetKeys = questStructureKeys("target");
+const questV2ProviderKeys = questStructureKeys("provider");
+const questV2ActiveStateKeys = questStructureKeys("active_state");
+const questV2ExpirationKeys = questStructureKeys("expiration");
+const questV2BranchKeys = questStructureKeys("branch");
+const questV2AvailabilityKeys = questStructureKeys("availability");
+const questV2LifecycleKeys = questStructureKeys("lifecycle");
+const questV2LifecycleHookKeys = questStructureKeys("lifecycle_hook");
+const questV2StageKeys = questStructureKeys("stage");
+const questV2CompletionKeys = questStructureKeys("completion");
+const questV2BonusKeys = questStructureKeys("bonus");
+const questV2ObjectiveKeys = questStructureKeys("objective");
+const questV2TrackerKeys = questStructureKeys("tracker");
+const questV2DialogueSlotKeys = questStructureKeys("dialogue_slot");
+const questV2SceneKeys = questStructureKeys("scene");
+const questV2ResponseKeys = questStructureKeys("response");
+const questV2TransitionKeys = questStructureKeys("transition");
+const questV2EventKeys = questStructureKeys("event");
+const questV2RewardsKeys = questStructureKeys("rewards");
+const questV2UiKeys = questStructureKeys("ui");
 const questV2LifecycleCoverageSlots = new Set(["offer", "reminder", "turn_in"]);
 
 const cli = parseValidatorArgs(process.argv.slice(2));
 const questRegistryMetadata = await loadQuestRegistryMetadata();
 validateQuestRegistryMetadata(questRegistryMetadata);
-const questV2Schema = await loadQuestV2Schema();
-validateQuestV2Schema(questV2Schema);
 const skillTradeSchema = await loadSkillTradeSchema();
 validateSkillTradeSchema(skillTradeSchema);
 const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
@@ -2849,6 +2849,12 @@ function readQuestV2ObjectiveReferences(value) {
     }
   }
   return refs;
+}
+
+function questStructureKeys(definition) {
+  const schema = definition === "root" ? questV2Schema : questV2Schema?.$defs?.[definition];
+  if (!schema?.properties) throw new Error(`Quest schema is missing structure "${definition}".`);
+  return new Set(Object.keys(schema.properties));
 }
 
 function checkQuestV2UnknownKeys(file, object, pointer, location, allowedKeys) {

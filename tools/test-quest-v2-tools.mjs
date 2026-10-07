@@ -32,8 +32,17 @@ try {
       }
     },
     provider: {
-      type: "villagerretaliation:villager"
+      type: "villagerretaliation:villager",
+      blocks_hiring: true
     },
+    availability: {
+      weight: 7,
+      selection_weight: 2,
+      max_active_quests: 4,
+      max_active_by_tag: { story: 2 }
+    },
+    events: [{ id: "reminder", event: "player_tick", priority: 3, chance: 0.5,
+      exclusive: true, weight: 2, actions: [{ type: "tracker" }] }],
     entry_stage: "started",
     stages: [
       {
@@ -59,7 +68,9 @@ try {
         ],
         dialogue: {
           offer: {
-            lines: { key: "#offer.lines" }
+            lines: { key: "#offer.lines" },
+            priority: 3,
+            end: true
           },
           turn_in: {
             lines: { key: "#turn_in.lines" }
