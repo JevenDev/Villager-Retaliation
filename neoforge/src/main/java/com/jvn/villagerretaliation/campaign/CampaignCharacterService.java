@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
-import com.mojang.logging.LogUtils;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.UUID;
@@ -48,6 +47,8 @@ public final class CampaignCharacterService {
                 || binding.source() != character.source() || binding.lossPolicy() != character.lossPolicy())) {
             return unavailable("Saved campaign character ownership is incompatible. Restore the matching campaign and character saves.");
         }
+        String pendingLoss = CampaignCharacterLossService.diagnostic(server, binding);
+        if (!pendingLoss.isBlank()) return unavailable(pendingLoss);
         if (character.source() == CampaignCharacterDefinition.Source.OWNED_SPAWN) {
             return CampaignOwnedSpawns.resolve(server, content, character, data);
         }
@@ -78,6 +79,8 @@ public final class CampaignCharacterService {
     }
 
     static Result observe(MinecraftServer server, CampaignCharacterSavedData data, CampaignCharacterBinding binding) {
+        String pendingLoss = CampaignCharacterLossService.diagnostic(server, binding);
+        if (!pendingLoss.isBlank()) return unavailable(pendingLoss);
         if (data.replacements().containsKey(binding.key())) return new Result(binding, null, "This character has a saved replacement. Continue with its successor.");
         Entity entity = null;
         for (var level : server.getAllLevels()) {
@@ -119,14 +122,7 @@ public final class CampaignCharacterService {
     }
 
     public static void onRemoved(Entity entity) {
-        if (!(entity instanceof Villager) || !(entity.level() instanceof ServerLevel level)) return;
-        if (CampaignOwnedSpawns.rollingBack(entity.getUUID())) return;
-        var reason = entity.getRemovalReason();
-        if (reason != Entity.RemovalReason.KILLED && reason != Entity.RemovalReason.DISCARDED) return;
-        var data = CampaignCharacterSavedData.get(level);
-        if (data.forEntity(entity.getUUID()) == null) return;
-        try { data.recordLoss(entity.getUUID(), true); }
-        catch (IOException exception) { LogUtils.getLogger().error("Could not save permanent loss of campaign character {}", entity.getUUID(), exception); }
+        CampaignCharacterLossService.record(entity);
     }
 
     private static Result unavailable(String diagnostic) { return new Result(null, null, diagnostic); }

@@ -52,6 +52,8 @@ final class CampaignBindingQueries {
                 && (receipt == null || !receipt.binding().equals(binding.withLoss(false)))) {
             return new CharacterState(null, null, "Campaign character does not match its spawn receipt. Restore matching saves.");
         }
+        String pendingLoss = CampaignCharacterLossService.diagnostic(server, binding);
+        if (!pendingLoss.isBlank()) return new CharacterState(null, null, pendingLoss);
         var replacement = data.replacements().get(key);
         if (replacement != null) {
             if (declared.lossPolicy() != CampaignCharacterDefinition.LossPolicy.REPLACEMENT
