@@ -255,11 +255,40 @@ try {
   run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
   await writeJson(validQuest, conditionFixture);
 
+  for (const [override, expectFailure] of [
+    [{}, false], [{ operation_id: false }, true], [{ milestone: "bad id" }, true],
+    [{ outcome: null }, true], [{ required: false }, true], [{ required: true }, false]
+  ]) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.stages[0].on_enter = [{ type: "campaign_outcome", milestone: "dragon", outcome: "spared", operation_id: "decide", ...override }];
+    await writeJson(validQuest, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+    if (expectFailure) {
+      assert(result.stderr.includes("registered action schema"), "Campaign action fields did not use the exported runtime schema.");
+      assert(result.stderr.includes("pointer=/stages/0/on_enter/0/"), "Campaign action diagnostics lost their authored source pointer.");
+    }
+  }
+  await writeJson(validQuest, conditionFixture);
+
   const invalid = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", invalidQuest], { expectFailure: true });
   assert(invalid.stderr.includes("pointer=/entry_stage"), "Invalid v2 fixture did not report the entry_stage JSON pointer.");
   assert(invalid.stderr.includes("suggestion="), "Invalid v2 fixture did not include an actionable suggestion.");
   assert(invalid.stderr.includes("not_a_real_objective"), "Invalid v2 fixture did not report the bad objective type.");
   assert(invalid.stderr.includes("external dialogue roots are unsupported in beta.13 quest bundles"), "Invalid v2 fixture did not reject an external structural dialogue tree.");
+
+  const legacyCampaignAction = path.join(workspace, "legacy-campaign-action.json");
+  for (const [outcome, expectFailure] of [["spared", false], [null, true]]) {
+    const candidate = JSON.parse(await readFile(v1Quest, "utf8"));
+    delete candidate.campaign;
+    delete candidate.objectives[0].complete_text;
+    delete candidate.rules.active;
+    candidate.triggers = [{ id: "world_choice", event: "started", actions: [
+      { type: "campaign_outcome", milestone: "dragon", outcome, operation_id: "decide" }
+    ] }];
+    await writeJson(legacyCampaignAction, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", legacyCampaignAction], { expectFailure });
+    if (expectFailure) assert(result.stderr.includes("registered action schema"), "Legacy campaign action fields did not use the exported runtime schema.");
+  }
 
   const first = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);
   const second = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);

@@ -1515,6 +1515,8 @@ public class VillagerQuestSavedData extends SavedData {
         public void campaignEntryStage(String stage) { this.campaignEntryStage = stage == null ? "" : stage; }
 
         public CompoundTag campaignRequestSnapshot() { return save(); }
+        public long campaignStageRevision() { return this.campaignStageRevision; }
+
         public com.jvn.villagerretaliation.campaign.CampaignQuestAcceptance campaignAcceptance() { return this.campaignAcceptance; }
         public void campaignAcceptance(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptance acceptance) { this.campaignAcceptance = acceptance; }
 

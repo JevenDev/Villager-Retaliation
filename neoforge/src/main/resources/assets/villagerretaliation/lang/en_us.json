@@ -4,7 +4,7 @@
   "villagerretaliation.gui.campaign_journal.empty": "No campaigns are available in this world.",
   "villagerretaliation.gui.campaign_journal.loading": "Loading campaigns...",
   "villagerretaliation.gui.campaign_journal.back": "Back",
-  "villagerretaliation.gui.campaign.accept": "Accept the quest",
+  "villagerretaliation.gui.campaign.accept": "Confirm",
   "villagerretaliation.gui.campaign.decline": "Not now",
   "villagerretaliation.gui.campaign.waiting": "Waiting for the server...",
   "villagerretaliation.gui.settlement.crop.any": "available crops",

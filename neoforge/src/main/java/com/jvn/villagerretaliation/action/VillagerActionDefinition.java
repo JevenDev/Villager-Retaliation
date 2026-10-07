@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.action;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.campaign.CampaignOutcomeAction;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
@@ -38,9 +39,11 @@ public record VillagerActionDefinition(
         ResourceLocation sceneId,
         String sceneOperationId,
         boolean waitForScene,
-        boolean required) {
+        boolean required,
+        CampaignOutcomeAction campaignOutcome) {
     public VillagerActionDefinition {
         kind = kind == null ? Kind.NONE : kind;
+        required = required || kind == Kind.CAMPAIGN_OUTCOME;
         questAction = questAction == null ? QuestAction.NONE : questAction;
         memoryScope = memoryScope == null ? VillageEventMemory.MemoryScope.BOTH : memoryScope;
         notificationTrigger = notificationTrigger == null ? "" : notificationTrigger;
@@ -53,6 +56,34 @@ public record VillagerActionDefinition(
         lineKeysByStatus = lineKeysByStatus == null ? Map.of() : copyLines(lineKeysByStatus);
         questTransition = questTransition == null ? CompiledQuestTransition.EMPTY : questTransition;
         sceneOperationId = sceneOperationId == null ? "" : sceneOperationId.trim();
+    }
+
+    public VillagerActionDefinition(
+            Kind kind,
+            ResourceLocation questId,
+            QuestAction questAction,
+            int amount,
+            ResourceLocation memoryTag,
+            VillageEventMemory.MemoryScope memoryScope,
+            ResourceLocation lootTable,
+            String notificationTrigger,
+            String text,
+            String forcedDialogue,
+            boolean flashTracker,
+            QuestFactScope factScope,
+            ResourceLocation factTag,
+            String factKey,
+            String factValue,
+            Map<String, List<String>> linesByStatus,
+            Map<String, List<String>> lineKeysByStatus,
+            CompiledQuestTransition questTransition,
+            ResourceLocation sceneId,
+            String sceneOperationId,
+            boolean waitForScene,
+            boolean required) {
+        this(kind, questId, questAction, amount, memoryTag, memoryScope, lootTable, notificationTrigger, text,
+                forcedDialogue, flashTracker, factScope, factTag, factKey, factValue, linesByStatus, lineKeysByStatus,
+                questTransition, sceneId, sceneOperationId, waitForScene, required, null);
     }
 
     public static List<VillagerActionDefinition> readList(ResourceLocation location, String context, JsonObject entry) {
@@ -163,7 +194,7 @@ public record VillagerActionDefinition(
 
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
-        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind.isQuestFact()) && !hasExplicitQuestId) {
+        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind.isQuestFact()) && !hasExplicitQuestId) {
             questId = defaultQuestId;
         }
         QuestAction questAction = QuestAction.bySerializedName(
@@ -192,6 +223,11 @@ public record VillagerActionDefinition(
         String sceneOperationId = DatapackJsonReader.readString(entry, "operation_id", "scene_operation_id");
         boolean waitForScene = DatapackJsonReader.readBoolean(entry, "wait_for_result", false);
         boolean required = DatapackJsonReader.readBoolean(entry, "required", false);
+        CampaignOutcomeAction outcome = kind == Kind.CAMPAIGN_OUTCOME ? CampaignOutcomeAction.read(entry) : null;
+        if (kind == Kind.CAMPAIGN_OUTCOME && outcome == null) {
+            CampaignOutcomeAction.issues(entry).forEach((field, message) ->
+                    DatapackDiagnostics.warnInvalidDialogueCondition(location, context + "." + field, message));
+        }
 
         if (!hasRequiredFields(
                 location,
@@ -234,7 +270,7 @@ public record VillagerActionDefinition(
                 sceneId,
                 sceneOperationId,
                 waitForScene,
-                required));
+                required, outcome));
     }
 
     private static Kind inferKind(JsonObject entry, ResourceLocation defaultQuestId) {
@@ -362,6 +398,7 @@ public record VillagerActionDefinition(
         boolean valid = switch (kind) {
             case QUEST -> questId != null && questAction != QuestAction.NONE;
             case QUEST_TRANSITION -> questTransition != null && !questTransition.isEmpty();
+            case CAMPAIGN_OUTCOME -> true;
             case MEMORY -> memoryTag != null;
             case LOOT -> lootTable != null;
             case FORCED_DIALOGUE -> !forcedDialogue.isBlank();
@@ -588,6 +625,7 @@ public record VillagerActionDefinition(
         FORCED_DIALOGUE("forced_dialogue"),
         QUEST("quest"),
         QUEST_TRANSITION("quest_transition"),
+        CAMPAIGN_OUTCOME("campaign_outcome"),
         EXPERIENCE("experience"),
         REPUTATION("reputation"),
         GOSSIP("gossip"),

@@ -96,6 +96,9 @@ public final class QuestRegistryMetadata {
         for (VillagerActionRegistry.ActionTypeDescriptor descriptor : VillagerActionRegistry.descriptors()) {
             JsonObject entry = descriptorBase(descriptor.id(), descriptor.aliases());
             entry.addProperty("kind", descriptor.kind().name().toLowerCase(java.util.Locale.ROOT));
+            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
+                entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.schema());
+            }
             entry.add("capabilities", enumNames(descriptor.capabilities()));
             actions.add(entry);
         }

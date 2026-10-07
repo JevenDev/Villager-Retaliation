@@ -2508,6 +2508,27 @@ function checkQuestV2Conditions(file, conditions, pointer, location, questId, us
   }
 }
 
+function checkRegisteredActionFields(file, action, location, type, pointer = "") {
+  const schema = questV2RegistryIndex.actions.schemas.get(type);
+  if (!schema) return;
+  const report = (field, message) => {
+    if (pointer) questV2Error(file, `${pointer}/${field}`, `${location}.${field}`, message, "Use the registered action schema.");
+    else errors.push(`${relative(file)}: ${location}.${field} ${message}`);
+  };
+  for (const field of schema.required ?? []) {
+    if (!Object.hasOwn(action, field)) report(field, "is required by the registered action schema.");
+  }
+  for (const [field, rule] of Object.entries(schema.properties ?? {})) {
+    if (!Object.hasOwn(action, field)) continue;
+    const value = action[field];
+    if ((rule.type && typeof value !== rule.type)
+        || (rule.pattern && (typeof value !== "string" || !new RegExp(rule.pattern).test(value)))
+        || (Object.hasOwn(rule, "const") && value !== rule.const)) {
+      report(field, "does not match the registered action schema.");
+    }
+  }
+}
+
 function checkQuestV2Actions(file, actions, pointer, location, questId, options = {}) {
   if (actions === undefined) {
     return;
@@ -2532,6 +2553,7 @@ function checkQuestV2Actions(file, actions, pointer, location, questId, options 
     if (!questV2RegistryIndex.actions.values.has(rawType)) {
       questV2Error(file, `${actionPointer}/type`, `${actionLocation}.type`, `unknown action type "${rawType}".`, "Use one of the action types in quest-registry-metadata.json.");
     }
+    checkRegisteredActionFields(file, action, actionLocation, type, actionPointer);
     warnLiveContextQuestAction(file, actionLocation, type, options.liveContextWarningUsage);
     if (type === "quest") {
       checkStringList(file, action, actionLocation, ["quest", "quest_id", "id"], "quest id");
@@ -2983,7 +3005,7 @@ function questV2StageIds(stages) {
 }
 
 function questRegistryIndex(metadata) {
-  const empty = () => ({ values: new Set(), canonical: new Map(), capabilities: new Map() });
+  const empty = () => ({ values: new Set(), canonical: new Map(), capabilities: new Map(), schemas: new Map() });
   const index = {
     conditions: empty(),
     actions: empty(),
@@ -3020,6 +3042,7 @@ function addRegistryAliases(target, entries, canonicalKey = "id") {
     }
     target.values.add(canonical);
     target.canonical.set(canonical, canonical);
+    if (entry.schema) target.schemas.set(canonical, entry.schema);
     for (const alias of readValues(entry, ["aliases"])) {
       if (typeof alias === "string" && alias.trim()) {
         target.values.add(alias.trim());
@@ -4624,15 +4647,17 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", 
       errors.push(`${relative(file)}: ${actionLocation} must be an object.`);
       continue;
     }
+    const schema = questV2RegistryIndex.actions.schemas.get(actionType(action, defaultQuestId));
     for (const key of Object.keys(action)) {
-      if (!dialogueTreeActionKeys.has(key)) {
+      if (!dialogueTreeActionKeys.has(key) && !Object.hasOwn(schema?.properties ?? {}, key)) {
         errors.push(`${relative(file)}: ${actionLocation}.${key} is not a supported dialogue action field.`);
       }
     }
     const type = actionType(action, defaultQuestId);
-    if (!dialogueTreeActionTypes.has(type)) {
-      errors.push(`${relative(file)}: ${actionLocation}.type must be one of ${[...dialogueTreeActionTypes].join(", ")}.`);
+    if (!dialogueTreeActionTypes.has(type) && !questV2RegistryIndex.actions.schemas.has(type)) {
+      errors.push(`${relative(file)}: ${actionLocation}.type must be one of ${[...dialogueTreeActionTypes, ...questV2RegistryIndex.actions.schemas.keys()].join(", ")}.`);
     }
+    checkRegisteredActionFields(file, action, actionLocation, type);
     warnLiveContextQuestAction(file, actionLocation, type, options.liveContextWarningUsage);
     if (type === "quest") {
       checkStringList(file, action, actionLocation, ["quest", "quest_id", "id"], "quest id");
@@ -5764,6 +5789,8 @@ function canonicalActionType(value) {
   if (!normalized) {
     return "";
   }
+  const registered = questV2RegistryIndex.actions.canonical.get(normalized);
+  if (registered && questV2RegistryIndex.actions.schemas.has(registered)) return registered;
   if (["notification", "notify", "hud", "message"].includes(normalized)) return "notification";
   if (["tracker", "quest_tracker", "flash_tracker"].includes(normalized)) return "tracker";
   if (["forced_dialogue", "force_dialogue", "dialogue"].includes(normalized)) return "forced_dialogue";

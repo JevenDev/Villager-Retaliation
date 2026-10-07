@@ -38,6 +38,7 @@ public final class SceneContinuation {
     private String actionDiagnostic = "";
     private DialogueResume dialogueResume;
     private CompoundTag campaignConsent = new CompoundTag();
+    private final Map<Integer, CompoundTag> unreadableOutcomeActions = new LinkedHashMap<>();
 
     public CompoundTag campaignConsent() { return campaignConsent.copy(); }
     public void campaignConsent(CompoundTag consent) { campaignConsent = consent.copy(); }
@@ -63,6 +64,8 @@ public final class SceneContinuation {
         this.nextActionIndex = Math.max(0, nextActionIndex);
         this.replacements = replacements == null ? new LinkedHashMap<>() : new LinkedHashMap<>(replacements);
     }
+
+    public boolean hasUnreadableActions() { return !unreadableOutcomeActions.isEmpty(); }
 
     public UUID id() { return id; }
     public UUID sceneInstanceId() { return sceneInstanceId; }
@@ -149,7 +152,10 @@ public final class SceneContinuation {
             tag.put("DialogueResume", dialogue);
         }
         ListTag actionTags = new ListTag();
-        actions.forEach(action -> actionTags.add(saveAction(action)));
+        for (int index = 0; index < actions.size(); index++) {
+            var preserved = unreadableOutcomeActions.get(index);
+            actionTags.add(preserved == null ? saveAction(actions.get(index)) : preserved.copy());
+        }
         tag.put("Actions", actionTags);
         CompoundTag replacementTag = new CompoundTag();
         replacements.forEach(replacementTag::putString);
@@ -159,8 +165,19 @@ public final class SceneContinuation {
 
     public static SceneContinuation load(CompoundTag tag) {
         List<VillagerActionDefinition> actions = new ArrayList<>();
+        var unreadable = new LinkedHashMap<Integer, CompoundTag>();
         for (Tag raw : tag.getList("Actions", Tag.TAG_COMPOUND)) {
-            if (raw instanceof CompoundTag action) actions.add(loadAction(action));
+            if (!(raw instanceof CompoundTag action)) continue;
+            if (action.getString("Kind").equals("CAMPAIGN_OUTCOME")) {
+                try {
+                    com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.load(action.getCompound("CampaignOutcome"));
+                } catch (IllegalArgumentException exception) {
+                    unreadable.put(actions.size(), action.copy());
+                    action = action.copy();
+                    action.remove("CampaignOutcome");
+                }
+            }
+            actions.add(loadAction(action));
         }
         Map<String, String> replacements = new LinkedHashMap<>();
         CompoundTag values = tag.getCompound("Replacements");
@@ -174,6 +191,7 @@ public final class SceneContinuation {
         try { value.state = State.valueOf(tag.getString("State")); } catch (IllegalArgumentException ignored) { }
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
+        value.unreadableOutcomeActions.putAll(unreadable);
         value.campaignId = NbtDataUtil.readResourceLocation(tag, "Campaign").orElse(null);
         value.campaignConsent = tag.getCompound("CampaignConsent").copy();
         if (tag.contains("CampaignConsent") && (!tag.contains("CampaignConsent", Tag.TAG_COMPOUND) || value.campaignConsent.isEmpty())) {
@@ -239,6 +257,7 @@ public final class SceneContinuation {
         tag.putString("Operation", action.sceneOperationId());
         tag.putBoolean("Wait", action.waitForScene());
         tag.putBoolean("Required", action.required());
+        if (action.campaignOutcome() != null) tag.put("CampaignOutcome", action.campaignOutcome().save());
         return tag;
     }
 
@@ -256,7 +275,9 @@ public final class SceneContinuation {
                 enumValue(VillagerActionDefinition.QuestAction.class,tag.getString("QuestAction"),VillagerActionDefinition.QuestAction.NONE),tag.getInt("Amount"),NbtDataUtil.readResourceLocation(tag, "Memory").orElse(null),
                 enumValue(com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.class,tag.getString("MemoryScope"),com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.BOTH),NbtDataUtil.readResourceLocation(tag, "Loot").orElse(null),
                 tag.getString("Notification"),tag.getString("Text"),tag.getString("Forced"),tag.getBoolean("Flash"),enumValue(QuestFactScope.class,tag.getString("FactScope"),QuestFactScope.PLAYER),
-                NbtDataUtil.readResourceLocation(tag, "FactTag").orElse(null),tag.getString("FactKey"),tag.getString("FactValue"),lines,lineKeys,transition,NbtDataUtil.readResourceLocation(tag, "Scene").orElse(null),tag.getString("Operation"),tag.getBoolean("Wait"),tag.getBoolean("Required"));
+                NbtDataUtil.readResourceLocation(tag, "FactTag").orElse(null),tag.getString("FactKey"),tag.getString("FactValue"),lines,lineKeys,transition,NbtDataUtil.readResourceLocation(tag, "Scene").orElse(null),tag.getString("Operation"),tag.getBoolean("Wait"),tag.getBoolean("Required"),
+                tag.contains("CampaignOutcome", Tag.TAG_COMPOUND)
+                        ? com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.load(tag.getCompound("CampaignOutcome")) : null);
     }
 
     private static Map<String, List<String>> readLineMap(CompoundTag tag, String field) {

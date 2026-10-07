@@ -839,6 +839,237 @@ public final class CampaignQuestEntryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void fixedOutcomeUsesAcceptanceAndCommitsOnlyOnce(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.acceptQuest();
+            var action = outcomeAction("defeated");
+            var applied = CampaignOutcomeService.execute(fixture.context(), action);
+            helper.assertTrue(applied.success(), "a consequence fixed at acceptance needs no second prompt: " + applied.message());
+            var instance = fixture.data.instances().get(CAMPAIGN);
+            var outcome = instance.outcomes().get("dragon");
+            helper.assertTrue(outcome != null && instance.players().get(fixture.player.getUUID()).participation().contains("dragon"),
+                    "decision grants the controller explicit participation");
+            helper.assertValueEqual(CampaignOutcomeService.execute(fixture.context(), action).status(),
+                    com.jvn.villagerretaliation.action.ActionStatus.ALREADY_SATISFIED, "duplicate operation returns its receipt");
+            helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).worldRevision(), 1L, "duplicate operation cannot commit again");
+            var restored = CampaignSavedData.load(fixture.data.save(new CompoundTag(), helper.getLevel().registryAccess()), fixture.directory);
+            helper.assertValueEqual(restored.instances().get(CAMPAIGN), instance, "committed identity and participation survive reload");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void unconfirmedOutcomeStopsFollowingActions(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            int experience = fixture.player.totalExperience;
+            var actions = List.of(outcomeAction("spared"), experienceAction(13));
+            var result = com.jvn.villagerretaliation.action.ActionSequenceRunner.run(fixture.context(), actions, 0, Map.of(), null, null);
+            helper.assertFalse(result.outcome().success(), "accepting an open choice does not approve a particular outcome");
+            helper.assertValueEqual(fixture.player.totalExperience, experience, "required decision failure prevents following rewards");
+            helper.assertTrue(fixture.data.instances().get(CAMPAIGN).outcomes().isEmpty(), "unconfirmed decision has no world effect");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void dialogueDecisionWaitsForConfirmationBeforeEffects(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            var tree = fixture.installConfirmationTree(false, true);
+            fixture.startDecisionTree(tree);
+            var option = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(fixture.context()).orElseThrow().getFirst();
+            int experience = fixture.player.totalExperience;
+            com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(fixture.player, fixture.villager.getId(), option.id());
+            var request = CampaignQuestAcceptanceService.pending(fixture.player);
+            helper.assertTrue(request != null && request.decisions().size() == 1 && request.impacts().isEmpty(), "existing dialogue opens a decision confirmation");
+            helper.assertValueEqual(fixture.player.totalExperience, experience, "even effects before the decision wait for confirmation");
+            fixture.confirm(request);
+            helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).outcomes().get("dragon").outcome(), "spared", "authored outcome commits");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "confirmed response runs once");
+            fixture.confirm(request);
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "duplicate confirmation cannot replay response effects");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void competingPlayersKeepTheFirstDecisionAndReconcileTheOther(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            var other = helper.makeMockServerPlayerInLevel();
+            var provider = helper.spawn(EntityType.VILLAGER, 3, 1, 3);
+            other.setPos(provider.getX() + 1, provider.getY(), provider.getZ());
+            var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), other, provider);
+            try {
+                helper.assertTrue(VillagerQuestService.debugStartQuest(other, provider, QUEST, true).started(), "second player undertakes the same milestone");
+                helper.assertTrue(com.jvn.villagerretaliation.interaction.VillagerConversationService.startForcedIgnoringDisposition(other, provider), "second conversation starts");
+                var first = fixture.decision(outcomeAction("spared"), () -> CampaignOutcomeService.execute(fixture.context(), outcomeAction("spared")));
+                int experience = other.totalExperience;
+                var actions = List.of(outcomeAction("defeated"), experienceAction(13));
+                CampaignQuestAcceptanceService.beforeSelection(context, "other_decision", Set.of(), Set.of(QUEST), actions, () -> true,
+                        () -> com.jvn.villagerretaliation.action.ActionSequenceRunner.run(context, actions, 0, Map.of(), null, null));
+                var second = CampaignQuestAcceptanceService.pending(other);
+                helper.assertTrue(second != null, "both requests observe the unresolved milestone");
+                fixture.confirm(first);
+                CampaignQuestAcceptanceService.handle(other, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(second.id(), second.revision(), true));
+                var instance = fixture.data.instances().get(CAMPAIGN);
+                helper.assertValueEqual(instance.outcomes().get("dragon").outcome(), "spared", "first committed outcome remains authoritative");
+                helper.assertValueEqual(instance.worldRevision(), 1L, "competing choice does not commit twice");
+                var late = instance.players().get(other.getUUID());
+                helper.assertTrue(late.participation().isEmpty() && late.milestones().get("dragon").route() == CampaignInstance.Route.CATCH_UP,
+                        "losing player receives catch-up without participant credit");
+                helper.assertValueEqual(other.totalExperience, experience, "losing choice cannot grant its reward");
+                helper.assertTrue(CampaignOutcomeService.execute(context, outcomeAction("defeated")).message().contains("spared"),
+                        "losing action reports the actual committed outcome");
+            } finally {
+                com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(other, false);
+                CampaignQuestAcceptanceService.onLogout(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent(other));
+                other.discard();
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void declinedDecisionHasNoEffects(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            var request = fixture.decision(outcomeAction("spared"), () -> CampaignOutcomeService.execute(fixture.context(), outcomeAction("spared")));
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(request.id(), request.revision(), false));
+            fixture.confirm(request);
+            helper.assertTrue(fixture.data.instances().get(CAMPAIGN).outcomes().isEmpty(), "declined approval cannot be reused");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void interruptedDecisionSurvivesReloadAndCommitsOnce(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedDecision();
+            helper.assertTrue(!continuation.campaignConsent().isEmpty(), "pending outcome approval is captured");
+            var restored = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.load(
+                    com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(helper.getLevel()).save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+            fixture.server.overworld().getDataStorage().set("villagerretaliation_scenes", restored);
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertTrue(restored.continuation(continuation.id()).orElseThrow().completionReceipt(), "saved decision resumes");
+            helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).outcomes().get("dragon").outcome(), "spared", "saved outcome remains selected");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 16, "scene resumes at the saved action cursor");
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 16, "resuming again cannot duplicate following effects");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void interruptedDecisionRejectsAChangedWorld(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedDecision();
+            fixture.resolve();
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertValueEqual(continuation.actionStatus(), com.jvn.villagerretaliation.action.ActionStatus.UNAVAILABLE, "stale decision is rejected");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "actions after the interrupted decision do not run");
+            helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).outcomes().get("dragon").outcome(), "defeated", "external outcome remains authoritative");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void malformedSavedDecisionIsPreservedAndCannotResume(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedDecision();
+            var saved = continuation.save();
+            var actions = saved.getList("Actions", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (var raw : actions) {
+                var action = (CompoundTag) raw;
+                if (action.getString("Kind").equals("CAMPAIGN_OUTCOME")) action.getCompound("CampaignOutcome").putString("Outcome", "invalid outcome");
+            }
+            var restored = com.jvn.villagerretaliation.scene.runtime.SceneContinuation.load(saved);
+            helper.assertTrue(restored.hasUnreadableActions(), "malformed outcome is retained for repair");
+            helper.assertValueEqual(restored.save().get("Actions"), saved.get("Actions"), "malformed action bytes survive another save");
+            var data = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(helper.getLevel());
+            var whole = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+            var continuations = new net.minecraft.nbt.ListTag();
+            continuations.add(saved);
+            whole.put("Continuations", continuations);
+            fixture.server.overworld().getDataStorage().set("villagerretaliation_scenes",
+                    com.jvn.villagerretaliation.scene.persistence.SceneSavedData.load(whole, helper.getLevel().registryAccess()));
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertTrue(fixture.data.instances().get(CAMPAIGN).outcomes().isEmpty(), "unreadable action cannot commit an outcome");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "unreadable action pauses the whole remaining sequence");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void interruptedDecisionRejectsLeavingAndReturningToTheSameStage(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedDecision();
+            fixture.progress(QUEST).setCurrentStage("catch_up");
+            fixture.progress(QUEST).setCurrentStage("started");
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertValueEqual(continuation.actionStatus(), com.jvn.villagerretaliation.action.ActionStatus.UNAVAILABLE,
+                    "returning to the same stage cannot reuse approval from its previous revision");
+            helper.assertTrue(fixture.data.instances().get(CAMPAIGN).outcomes().isEmpty(), "old stage approval has no world effect");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "stale stage does not resume following effects");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void interruptedDecisionWaitsForContentAndAuthorityToReturn(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedDecision();
+            var catalog = QuestContentCatalogs.current(fixture.server);
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(catalog, Map.of(), List.of()));
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertFalse(continuation.completionReceipt(), "missing story content pauses decision approval");
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(catalog, Map.of(CAMPAIGN, fixture.content), List.of()));
+            var leader = helper.makeMockServerPlayerInLevel();
+            helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.createParty(leader).success(), "party created");
+            try {
+                var invitation = com.jvn.villagerretaliation.party.PartyService.sendInvitation(leader, fixture.player);
+                helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.acceptInvitation(fixture.player, invitation.invitationId()).success(), "controller joins party");
+                com.jvn.villagerretaliation.party.PartyService.setAdminPrivileges(leader, fixture.player.getUUID(), false);
+                fixture.finishInterruptedOffer(continuation.id());
+                helper.assertFalse(continuation.completionReceipt(), "missing Admin Privileges pauses the approved decision");
+                helper.assertTrue(fixture.data.instances().get(CAMPAIGN).outcomes().isEmpty(), "paused decision has no world effect");
+                helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "no effects run while approval is paused");
+                com.jvn.villagerretaliation.party.PartyService.setAdminPrivileges(leader, fixture.player.getUUID(), true);
+                fixture.finishInterruptedOffer(continuation.id());
+                helper.assertTrue(continuation.completionReceipt(), "restored content and authority resume the approved decision");
+                helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).outcomes().get("dragon").outcome(), "spared", "restored approval preserves the selected outcome");
+            } finally {
+                com.jvn.villagerretaliation.party.PartyService.leaveParty(fixture.player);
+                com.jvn.villagerretaliation.party.PartyService.leaveParty(leader);
+                leader.discard();
+            }
+        }
+        helper.succeed();
+    }
+
+    private static VillagerActionDefinition outcomeAction(String outcome) {
+        var raw = JsonParser.parseString("{\"actions\":[{\"type\":\"campaign_outcome\",\"milestone\":\"dragon\",\"outcome\":\""
+                + outcome + "\",\"operation_id\":\"resolve_dragon\"}]}").getAsJsonObject();
+        return VillagerActionDefinition.readList(CAMPAIGN, "test", raw, QUEST).getFirst();
+    }
+
+    private static VillagerActionDefinition experienceAction(int amount) {
+        return VillagerActionDefinition.readList(CAMPAIGN, "test", JsonParser.parseString(
+                "{\"actions\":[{\"type\":\"experience\",\"amount\":" + amount + "}]}").getAsJsonObject(), QUEST).getFirst();
+    }
+
     private static CompiledQuest quest(ResourceLocation id, String milestoneStage) {
         var raw = JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"test:entry_quest","localization_prefix":"quest.entry_fixture.",
@@ -890,6 +1121,10 @@ public final class CampaignQuestEntryGameTests {
         }
 
         private Fixture(GameTestHelper helper, ResourceLocation catchUpQuest, String milestoneStage) throws IOException {
+            this(helper, catchUpQuest, milestoneStage, false);
+        }
+
+        private Fixture(GameTestHelper helper, ResourceLocation catchUpQuest, String milestoneStage, boolean choices) throws IOException {
             this.server = helper.getLevel().getServer();
             this.previous = QuestContentCatalogs.current(server);
             this.report = QuestContentCatalogs.loadReport(server);
@@ -920,7 +1155,9 @@ public final class CampaignQuestEntryGameTests {
                             "later", new CampaignDefinition.Chapter("later", "campaign.entry.later",
                                     List.of(new CampaignDefinition.Prerequisite("opening", "", "", "")), List.of(FOLLOW_UP, COOLDOWN), "")),
                     Map.of("dragon", new CampaignDefinition.Milestone("dragon", "opening", QUEST, milestoneStage, true,
-                            Map.of("defeated", new CampaignDefinition.Outcome("defeated", "campaign.entry.defeated", "")),
+                            choices ? Map.of("defeated", new CampaignDefinition.Outcome("defeated", "campaign.entry.defeated", ""),
+                                    "spared", new CampaignDefinition.Outcome("spared", "campaign.entry.spared", ""))
+                                    : Map.of("defeated", new CampaignDefinition.Outcome("defeated", "campaign.entry.defeated", "")),
                             new CampaignDefinition.CatchUp(catchUpQuest, "catch_up", ""), null, "")), Map.of(), CAMPAIGN);
             this.content = new CampaignContentCatalog.Entry(definition, QuestLocaleCatalog.empty());
             QuestContentCatalogs.installForTests(server, replacement, report);
@@ -935,12 +1172,23 @@ public final class CampaignQuestEntryGameTests {
         }
 
         private ResourceLocation installConfirmationTree(boolean interrupted) {
+            return installConfirmationTree(interrupted, false);
+        }
+
+        private ResourceLocation installConfirmationTree(boolean interrupted, boolean decision) {
             var treeId = ResourceLocation.parse("test:campaign_confirmation");
             var raw = JsonParser.parseString("""
                     {"id":"test:campaign_confirmation","entries":[{"id":"start","label":"Start","start":"opening"}],
                      "nodes":{"opening":{"lines":["Ready"],"responses":[{"id":"accept","label":"Accept","end":true,
                       "actions":[{"type":"experience","amount":11},{"type":"quest","quest":"test:entry_quest","action":"start","required":true}]}]}}}
                     """).getAsJsonObject();
+            if (decision) {
+                var actions = raw.getAsJsonObject("nodes").getAsJsonObject("opening").getAsJsonArray("responses")
+                        .get(0).getAsJsonObject().getAsJsonArray("actions");
+                actions.set(1, JsonParser.parseString("""
+                        {"type":"campaign_outcome","quest":"test:entry_quest","milestone":"dragon","outcome":"spared","operation_id":"resolve_dragon"}
+                        """));
+            }
             var current = QuestContentCatalogs.current(server);
             var scenes = new LinkedHashMap<>(current.scenes());
             if (interrupted) {
@@ -981,6 +1229,36 @@ public final class CampaignQuestEntryGameTests {
             return treeId;
         }
 
+
+        private void confirm(CampaignQuestAcceptanceService.Request request) {
+            CampaignQuestAcceptanceService.handle(player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+        }
+
+        private void acceptQuest() { confirm(confirmation()); }
+
+        private CampaignQuestAcceptanceService.Request decision(VillagerActionDefinition action, Runnable work) {
+            CampaignQuestAcceptanceService.beforeSelection(context(), "decision", Set.of(), Set.of(QUEST), List.of(action), () -> true, work);
+            return java.util.Objects.requireNonNull(CampaignQuestAcceptanceService.pending(player), "decision confirmation");
+        }
+
+        private void startDecisionTree(ResourceLocation tree) {
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(player, false);
+            if (!com.jvn.villagerretaliation.interaction.VillagerConversationService.start(player, villager)) {
+                throw new IllegalStateException("Could not start decision conversation");
+            }
+            com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.startEntry(context(), tree, "start");
+        }
+
+        private com.jvn.villagerretaliation.scene.runtime.SceneContinuation interruptedDecision() {
+            var tree = installConfirmationTree(true, true);
+            startDecisionTree(tree);
+            var option = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(context()).orElseThrow().getFirst();
+            com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, villager.getId(), option.id());
+            confirm(java.util.Objects.requireNonNull(CampaignQuestAcceptanceService.pending(player)));
+            return com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(player.serverLevel()).continuations().stream()
+                    .filter(value -> player.getUUID().equals(value.playerId()) && !value.completionReceipt()).findFirst().orElseThrow();
+        }
 
         private com.jvn.villagerretaliation.scene.runtime.SceneContinuation interruptedOffer() {
             var tree = installConfirmationTree(true);

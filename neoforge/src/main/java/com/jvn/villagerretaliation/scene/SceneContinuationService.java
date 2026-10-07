@@ -220,7 +220,10 @@ public final class SceneContinuationService {
     }
 
     private static void resume(MinecraftServer server, SceneSavedData data, SceneContinuation continuation) {
-        if (!CampaignQuestAccess.executionIssue(server, continuation.questId(), continuation.campaignId(), continuation.playerId()).isBlank()) return;
+        if (continuation.hasUnreadableActions()) {
+            if (continuation.pauseForConsent("A saved campaign outcome action is unreadable. Repair the action before resuming.")) data.changed();
+            return;
+        }
         ServerPlayer player = server.getPlayerList().getPlayer(continuation.playerId());
         Villager provider = findVillager(server, continuation.providerId());
         if (player == null || provider == null || provider.level() != player.serverLevel()) return;
@@ -245,6 +248,7 @@ public final class SceneContinuationService {
             }
             return;
         }
+        if (!CampaignQuestAccess.executionIssue(server, continuation.questId(), continuation.campaignId(), continuation.playerId()).isBlank()) return;
         var remaining = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.remainingConsent(context, continuation.campaignConsent());
         if (!remaining.equals(continuation.campaignConsent())) {
             continuation.campaignConsent(remaining);

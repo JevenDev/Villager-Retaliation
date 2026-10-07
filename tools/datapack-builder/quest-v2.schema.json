@@ -2143,6 +2143,45 @@
       "required": [
         "type"
       ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_outcome"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "milestone",
+              "outcome",
+              "operation_id"
+            ],
+            "properties": {
+              "milestone": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "outcome": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "operation_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -2152,6 +2191,7 @@
             "arm",
             "attribute_reward",
             "branch_transition",
+            "campaign_outcome",
             "clear_tag",
             "counter",
             "dialogue",
@@ -2209,6 +2249,7 @@
             "arm",
             "attribute_reward",
             "branch_transition",
+            "campaign_outcome",
             "clear_tag",
             "counter",
             "dialogue",

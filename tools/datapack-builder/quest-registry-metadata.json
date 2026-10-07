@@ -358,6 +358,41 @@
         ]
       },
       {
+        "id": "campaign_outcome",
+        "aliases": [],
+        "kind": "campaign_outcome",
+        "schema": {
+          "type": "object",
+          "required": [
+            "milestone",
+            "outcome",
+            "operation_id"
+          ],
+          "properties": {
+            "milestone": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "outcome": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "operation_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "required": {
+              "const": true
+            }
+          }
+        },
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "world_known"
+        ]
+      },
+      {
         "id": "experience",
         "aliases": [
           "xp"
@@ -1460,6 +1495,20 @@
     ],
     "public_quest_actions": [
       {
+        "id": "villagerretaliation:campaign_outcome",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Campaign outcome",
+        "description": "Built-in Campaign outcome type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:clear_tag",
         "aliases": [],
         "live_capabilities": [],
@@ -2140,6 +2189,7 @@
         "arm",
         "attribute_reward",
         "branch_transition",
+        "campaign_outcome",
         "clear_tag",
         "counter",
         "dialogue",

@@ -57,6 +57,7 @@ public final class VillagerActionExecutor {
             case TRACKER -> VillagerActionResult.tracker(action.flashTracker());
             case FORCED_DIALOGUE -> executeForcedDialogue(context, action, replacements).legacyResult();
             case QUEST -> executeQuestAction(context, action, replacements);
+            case CAMPAIGN_OUTCOME -> com.jvn.villagerretaliation.campaign.CampaignOutcomeService.execute(context, action).legacyResult();
             case QUEST_TRANSITION -> VillagerQuestService.applyCompiledTransition(context, action.questTransition(), replacements);
             case EXPERIENCE -> awardExperience(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case REPUTATION -> changeReputation(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;

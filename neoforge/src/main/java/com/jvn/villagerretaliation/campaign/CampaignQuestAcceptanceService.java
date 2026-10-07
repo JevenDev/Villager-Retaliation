@@ -67,7 +67,7 @@ public final class CampaignQuestAcceptanceService {
                     .findFirst().ifPresent(value -> actions.addAll(value.actions()));
         }
         collectActions(context, actions, starts, referenced);
-        return beforeSelection(context, option.id(), starts, referenced,
+        return beforeSelection(context, option.id(), starts, referenced, actions,
                 () -> {
                     var fresh = VillagerInteractionService.createDialogueContext(context.player().serverLevel(), context.player(), context.villager());
                     return VillagerDialogueResources.dialogueOption(fresh, option.id()).filter(option::equals).isPresent()
@@ -94,6 +94,11 @@ public final class CampaignQuestAcceptanceService {
 
     static boolean beforeSelection(DialogueContext context, String optionId, Set<ResourceLocation> starts,
             Set<ResourceLocation> referenced, BooleanSupplier stillSelected, Runnable execute) {
+        return beforeSelection(context, optionId, starts, referenced, List.of(), stillSelected, execute);
+    }
+
+    static boolean beforeSelection(DialogueContext context, String optionId, Set<ResourceLocation> starts,
+            Set<ResourceLocation> referenced, List<VillagerActionDefinition> actions, BooleanSupplier stillSelected, Runnable execute) {
         ServerPlayer player = context.player();
         var approval = APPROVAL.get();
         if (approval != null && approval.consent.playerId().equals(player.getUUID())
@@ -102,6 +107,28 @@ public final class CampaignQuestAcceptanceService {
         pending.remove(player.getUUID());
         var impacts = new LinkedHashMap<ResourceLocation, CampaignQuestAcceptance>();
         var descriptions = new ArrayList<String>();
+        var decisions = new LinkedHashMap<UUID, CampaignOutcomeConsent>();
+        for (var action : actions) {
+            if (action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) continue;
+            var prepared = CampaignOutcomeService.prepare(context, action);
+            if (!prepared.diagnostic().isBlank() || prepared.applied()) {
+                notice(context, prepared.applied() ? "This shared outcome is already committed: " + prepared.title() : prepared.diagnostic());
+                return true;
+            }
+            if (prepared.requiresConfirmation()) {
+                var consent = prepared.consent();
+                var previous = decisions.putIfAbsent(consent.operationId(), consent);
+                if (previous != null && !previous.equals(consent)) {
+                    notice(context, "This choice contains conflicting outcomes for one operation. Ask the author to separate them.");
+                    return true;
+                }
+                descriptions.add(prepared.title());
+            }
+        }
+        if (actions.stream().filter(value -> value.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME).count() > 1) {
+            notice(context, "A choice can resolve only one shared milestone. Ask the author to separate these decisions.");
+            return true;
+        }
         UUID requestId = UUID.randomUUID();
         long now = context.level().getGameTime();
         try {
@@ -137,22 +164,26 @@ public final class CampaignQuestAcceptanceService {
             notice(context, "Campaign state could not be saved. Check world storage before retrying.");
             return true;
         }
-        if (impacts.isEmpty()) return false;
+        if (impacts.isEmpty() && decisions.isEmpty()) return false;
         UUID sessionId = VillagerConversationService.sessionId(player, context.villager());
         if (sessionId == null) return true;
         var snapshots = new LinkedHashMap<ResourceLocation, CompoundTag>();
         var allReferences = new LinkedHashSet<>(referenced);
         allReferences.addAll(starts);
+        decisions.values().forEach(value -> allReferences.add(value.questId()));
         allReferences.forEach(id -> snapshots.put(id, snapshot(player, id)));
-        String text = "This quest can permanently change the shared world for everyone, including players who are offline."
-                + "\n\n" + String.join("\n", descriptions)
-                + "\n\nPlayers who arrive later will follow a catch-up path. Accept this quest?";
+        String text = decisions.isEmpty()
+                ? "This quest can permanently change the shared world for everyone, including players who are offline."
+                        + "\n\n" + String.join("\n", descriptions)
+                        + "\n\nPlayers who arrive later will follow a catch-up path. Accept this quest?"
+                : "This decision permanently changes the shared story for everyone, including players who are offline."
+                        + "\n\n" + String.join("\n", descriptions) + "\n\nCommit this outcome?";
         if (text.length() > CampaignQuestConfirmationPayload.MAX_TEXT_LENGTH) {
             notice(context, "This quest has too many shared consequences to display. Ask the author to split the quest.");
             return true;
         }
         var request = new Request(requestId, 1L, player.getUUID(), context.villager().getUUID(), context.villager().getId(),
-                sessionId, optionId, now, QuestContentCatalogs.current(player.server), snapshots, impacts, stillSelected, execute, text);
+                sessionId, optionId, now, QuestContentCatalogs.current(player.server), snapshots, impacts, decisions, stillSelected, execute, text);
         pending.put(player.getUUID(), request);
         send(player, request, true, text);
         return true;
@@ -208,6 +239,13 @@ public final class CampaignQuestAcceptanceService {
         if (issue.isBlank() && (target == null || !target.villager().getUUID().equals(request.providerId())
                 || !Objects.equals(request.sessionId(), VillagerConversationService.sessionId(player, target.villager())))) {
             issue = "This conversation has changed. Choose the quest again.";
+        }
+        if (issue.isBlank()) {
+            var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, target.villager());
+            for (var decision : request.decisions().values()) {
+                issue = CampaignOutcomeService.resumeAccess(context, decision).diagnostic();
+                if (!issue.isBlank()) break;
+            }
         }
         if (issue.isBlank() && (player.serverLevel().getGameTime() - request.createdAt() > TIMEOUT_TICKS
                 || request.catalog() != QuestContentCatalogs.current(player.server) || !request.stillSelected().getAsBoolean())) {
@@ -279,10 +317,10 @@ public final class CampaignQuestAcceptanceService {
 
     public static CompoundTag captureConsent() {
         var approval = APPROVAL.get();
-        if (approval == null || approval.remaining.isEmpty()) return new CompoundTag();
+        if (approval == null || approval.remaining.isEmpty() && approval.decisions.isEmpty()) return new CompoundTag();
         var entries = new LinkedHashMap<ResourceLocation, CampaignQuestConsent.Entry>();
         approval.remaining.forEach((id, accepted) -> entries.put(id, approval.consent.quests().get(id)));
-        return new CampaignQuestConsent(approval.consent.playerId(), approval.consent.providerId(), entries).save();
+        return new CampaignQuestConsent(approval.consent.playerId(), approval.consent.providerId(), entries, approval.decisions).save();
     }
 
     public static void withConsent(CompoundTag tag, Runnable work) {
@@ -313,6 +351,10 @@ public final class CampaignQuestAcceptanceService {
         }
         String authority = CampaignAuthority.controlIssue(context.player());
         if (!authority.isBlank()) return new ResumeAccess(true, authority);
+        for (var decision : consent.decisions().values()) {
+            var access = CampaignOutcomeService.resumeAccess(context, decision);
+            if (!access.allowed()) return access;
+        }
         for (var entry : consent.quests().entrySet()) {
             if (alreadyAccepted(context, entry.getKey(), entry.getValue().acceptance())) continue;
             var quest = VillagerQuestResources.quest(context.level().getServer(), entry.getKey()).orElse(null);
@@ -339,8 +381,22 @@ public final class CampaignQuestAcceptanceService {
         var consent = CampaignQuestConsent.load(tag);
         var remaining = new LinkedHashMap<>(consent.quests());
         remaining.entrySet().removeIf(entry -> alreadyAccepted(context, entry.getKey(), entry.getValue().acceptance()));
-        return remaining.isEmpty() ? new CompoundTag()
-                : new CampaignQuestConsent(consent.playerId(), consent.providerId(), remaining).save();
+        var decisions = new LinkedHashMap<>(consent.decisions());
+        decisions.values().removeIf(value -> CampaignOutcomeService.committed(context, value));
+        return remaining.isEmpty() && decisions.isEmpty() ? new CompoundTag()
+                : new CampaignQuestConsent(consent.playerId(), consent.providerId(), remaining, decisions).save();
+    }
+
+    static boolean approvedOutcome(DialogueContext context, CampaignOutcomeConsent consent) {
+        var approval = APPROVAL.get();
+        return approval != null && approval.consent.playerId().equals(context.player().getUUID())
+                && approval.consent.providerId().equals(context.villager().getUUID())
+                && consent.equals(approval.decisions.get(consent.operationId()));
+    }
+
+    static void outcomeApplied(UUID operationId) {
+        var approval = APPROVAL.get();
+        if (approval != null) approval.decisions.remove(operationId);
     }
 
     private static boolean alreadyAccepted(DialogueContext context, ResourceLocation questId, CampaignQuestAcceptance acceptance) {
@@ -360,13 +416,14 @@ public final class CampaignQuestAcceptanceService {
 
     record Request(UUID id, long revision, UUID playerId, UUID providerId, int entityId, UUID sessionId,
             String optionId, long createdAt, QuestContentCatalog catalog, Map<ResourceLocation, CompoundTag> snapshots,
-            Map<ResourceLocation, CampaignQuestAcceptance> impacts, BooleanSupplier stillSelected, Runnable execute, String text) {
+            Map<ResourceLocation, CampaignQuestAcceptance> impacts, Map<UUID, CampaignOutcomeConsent> decisions, BooleanSupplier stillSelected, Runnable execute, String text) {
     }
 
     private static final class Approval {
         private final CampaignQuestConsent consent;
         private final String optionId;
         private final Map<ResourceLocation, CampaignQuestAcceptance> remaining = new HashMap<>();
+        private final Map<UUID, CampaignOutcomeConsent> decisions = new LinkedHashMap<>();
 
         private Approval(Request request, long acceptedAt) {
             this(consent(request, acceptedAt), request.optionId());
@@ -376,6 +433,7 @@ public final class CampaignQuestAcceptanceService {
             this.consent = consent;
             this.optionId = optionId;
             consent.quests().forEach((id, entry) -> remaining.put(id, entry.acceptance()));
+            decisions.putAll(consent.decisions());
         }
 
         private static CampaignQuestConsent consent(Request request, long acceptedAt) {
@@ -383,7 +441,7 @@ public final class CampaignQuestAcceptanceService {
             request.impacts().forEach((id, accepted) -> entries.put(id,
                     new CampaignQuestConsent.Entry(new CampaignQuestAcceptance(accepted.requestId(), accepted.instanceId(),
                             accepted.fingerprint(), accepted.worldRevision(), acceptedAt, accepted.fixedOutcomes()), request.snapshots().get(id))));
-            return new CampaignQuestConsent(request.playerId(), request.providerId(), entries);
+            return new CampaignQuestConsent(request.playerId(), request.providerId(), entries, request.decisions());
         }
     }
 }

@@ -1212,6 +1212,11 @@ public final class QuestV2Parser {
                         "Use one of the action types exported in quest-registry-metadata.json.",
                         Set.of(type));
             }
+            if (VillagerActionRegistry.kindBySerializedName(type) == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
+                String actionPointer = pointer + "/" + index;
+                com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.issues(object).forEach((field, message) ->
+                        validator.error(actionPointer + "/" + field, message, "Use the campaign outcome action schema.", Set.of()));
+            }
             actions.add(object);
         }
         return List.copyOf(actions);
