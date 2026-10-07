@@ -138,6 +138,11 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> DAILY_GIFT_REPUTATION_CAP = bind("gifts.dailyGiftReputationCap", Integer.class);
     public static final ConfigValue<Integer> GIFT_REQUEST_COOLDOWN_TICKS = bind("gifts.giftRequestCooldownTicks", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGE_LIFE = bind("social.enableVillageLife", Boolean.class);
+    public static final ConfigValue<Integer> VILLAGE_LIFE_DECISION_INTERVAL = bind("social.villageLifeDecisionInterval", Integer.class);
+    public static final ConfigValue<Integer> VILLAGE_LIFE_MAX_DECISIONS = bind("social.villageLifeMaxDecisions", Integer.class);
+    public static final ConfigValue<Integer> VILLAGE_LIFE_MAX_PATHS = bind("social.villageLifeMaxPaths", Integer.class);
+    public static final ConfigValue<Integer> VILLAGE_LIFE_BUDGET_MICROS = bind("social.villageLifeBudgetMicros", Integer.class);
+    public static final ConfigValue<Integer> VILLAGE_LIFE_ACTIVITY_CHANCE = bind("social.villageLifeActivityChance", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_SOCIAL_GRAPH = bind("social.enableVillagerSocialGraph", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_MOODS = bind("social.enableVillagerMoods", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_SOCIAL_ATTRIBUTE_BEHAVIOR = bind("social.enableSocialAttributeBehavior", Boolean.class);

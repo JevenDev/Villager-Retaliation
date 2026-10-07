@@ -330,6 +330,21 @@ public final class VillagerRetaliationConfigModel {
     public static final class Social {
         public boolean enableVillageLife = true;
 
+        @RangeConstraint(min = 100, max = 1_200)
+        public int villageLifeDecisionInterval = 100;
+
+        @RangeConstraint(min = 1, max = 8)
+        public int villageLifeMaxDecisions = 8;
+
+        @RangeConstraint(min = 0, max = 2)
+        public int villageLifeMaxPaths = 2;
+
+        @RangeConstraint(min = 100, max = 5_000)
+        public int villageLifeBudgetMicros = 500;
+
+        @RangeConstraint(min = 0, max = 100)
+        public int villageLifeActivityChance = 15;
+
         public boolean enableVillagerSocialGraph = true;
 
         public boolean enableVillagerMoods = true;

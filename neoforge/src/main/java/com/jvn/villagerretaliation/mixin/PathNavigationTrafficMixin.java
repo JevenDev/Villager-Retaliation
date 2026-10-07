@@ -17,6 +17,22 @@ public abstract class PathNavigationTrafficMixin {
     @Final
     protected Mob mob;
 
+    @Shadow
+    private net.minecraft.core.BlockPos targetPos;
+
+    @Shadow
+    protected boolean hasDelayedRecomputation;
+
+    @Inject(method = "recomputePath", at = @At("HEAD"), cancellable = true)
+    private void villagerretaliation$deferAmbientReplanning(CallbackInfo callback) {
+        if (this.mob instanceof Villager villager
+                && com.jvn.villagerretaliation.villagelife.VillageLifeService.cancelRecompute(villager)) {
+            this.targetPos = null;
+            this.hasDelayedRecomputation = false;
+            callback.cancel();
+        }
+    }
+
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private void villagerretaliation$coordinateVillagerTraffic(CallbackInfo callback) {
         if (this.mob instanceof Villager villager && VillagerTrafficService.controlNavigation(villager)) {

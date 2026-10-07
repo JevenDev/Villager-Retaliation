@@ -51,6 +51,9 @@ public final class VillagerBirthService {
         VillageAllegianceService.assignBirthAllegiance(level, child, parentA, parentB);
         child.getPersistentData().putBoolean(INITIALIZED, true);
         PENDING.remove(child);
+        com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.canonicalPrimary(level, child).ifPresent(village ->
+                com.jvn.villagerretaliation.villagelife.VillageOccasionSavedData.get(level).schedule(level, village,
+                        com.jvn.villagerretaliation.villagelife.VillageOccasionSavedData.Kind.BIRTH, "birth:" + child.getUUID()));
         VillageEventMemory.remember(
                 level,
                 VillageEventMemory.EventTag.BABY_BORN,

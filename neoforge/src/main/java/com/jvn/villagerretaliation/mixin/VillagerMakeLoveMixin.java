@@ -29,6 +29,13 @@ public abstract class VillagerMakeLoveMixin {
         }
     }
 
+    @Inject(method = "start(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/npc/Villager;J)V", at = @At("HEAD"))
+    private void villagerretaliation$yieldAmbientActivity(ServerLevel level, Villager villager, long gameTime, CallbackInfo callback) {
+        com.jvn.villagerretaliation.villagelife.VillageLifeService.yield(villager);
+        villager.getBrain().getMemory(MemoryModuleType.BREED_TARGET).filter(Villager.class::isInstance)
+                .map(Villager.class::cast).ifPresent(com.jvn.villagerretaliation.villagelife.VillageLifeService::yield);
+    }
+
     @Inject(
             method = "canStillUse(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/npc/Villager;J)Z",
             at = @At("HEAD"),

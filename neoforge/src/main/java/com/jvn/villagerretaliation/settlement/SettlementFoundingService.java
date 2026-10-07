@@ -36,6 +36,9 @@ public final class SettlementFoundingService {
         }
         var id = village == null ? registry.create(level.getGameTime(), level.dimension().location(), center, "") : village.id();
         var created = data.establish(registry, id, player.getUUID(), center, level.getGameTime());
+        created.ifPresent(town -> com.jvn.villagerretaliation.villagelife.VillageOccasionSavedData.get(level).schedule(
+                level, town.id(), com.jvn.villagerretaliation.villagelife.VillageOccasionSavedData.Kind.FOUNDING,
+                "founding:" + town.foundedAt()));
         return new Result(created.isPresent() ? Status.FOUNDED : Status.UNAVAILABLE, created);
     }
 
