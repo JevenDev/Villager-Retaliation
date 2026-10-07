@@ -5,12 +5,13 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
-import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
-import com.jvn.villagerretaliation.scene.SceneLaunchService;
-import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
+import com.jvn.villagerretaliation.scene.SceneContinuationService;
+import com.jvn.villagerretaliation.scene.runtime.SceneContinuation;
+import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionScreenOpener;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ public final class DialogueTreeService {
     }
 
     public static Optional<List<DialogueOptionDefinition>> activeOptions(DialogueContext context) {
+        if (SceneContinuationService.hasPendingDialogue(context)) return Optional.of(List.of());
         SessionKey key = key(context);
         Session session = SESSIONS.get(key);
         if (session == null) {
@@ -115,6 +117,7 @@ public final class DialogueTreeService {
             ResourceLocation treeId,
             String entryId,
             Map<String, String> inheritedReplacements) {
+        if (SceneContinuationService.hasPendingDialogue(context)) return Optional.empty();
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) {
             return Optional.empty();
@@ -140,6 +143,7 @@ public final class DialogueTreeService {
             return Optional.empty();
         }
 
+        if (SceneContinuationService.hasPendingDialogue(context)) return Optional.empty();
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) {
             SESSIONS.remove(key);
@@ -158,9 +162,18 @@ public final class DialogueTreeService {
             return Optional.empty();
         }
 
-        ActionText responseActionText = executeActions(context, response.actions(), session.replacements());
-        String responseLine = resolve(response.selectLine(context), context, responseActionText.replacements());
+        String responseTemplate = response.selectLine(context);
+        ActionText responseActionText = executeActions(context, response.actions(), session.replacements(),
+                tree.id() + "/" + node.id() + "/response/" + response.id(),
+                new SceneContinuation.DialogueResume(tree.id(), response.end() ? "" : response.next(),
+                        true, responseTemplate));
+        String responseLine = resolve(responseTemplate, context, responseActionText.replacements());
         String leadingText = firstNonBlank(responseLine, responseActionText.text());
+        if (!responseActionText.outcome().success()) {
+            SESSIONS.remove(key);
+            return Optional.of(result(lineId(tree.id(), node.id(), response.id()),
+                    responseActionText.outcome().suspended() ? leadingText : responseActionText.text()));
+        }
         if (!response.end() && !response.next().isBlank()) {
             return Optional.of(enterNode(context, tree, response.next(), leadingText, responseActionText.replacements()));
         }
@@ -184,86 +197,59 @@ public final class DialogueTreeService {
             return result(lineId(tree.id(), nodeId, "missing"), leadingText);
         }
 
-        ActionText actionText = executeActions(context, node.actions(), inheritedReplacements);
-        String nodeLine = resolve(node.selectLine(context), context, actionText.replacements());
-        String text = firstNonBlank(leadingText, actionText.text(), nodeLine);
+        ActionText actionText = executeActions(context, node.actions(), inheritedReplacements,
+                tree.id() + "/node/" + node.id(),
+                new SceneContinuation.DialogueResume(tree.id(), node.id(), false, leadingText));
+        if (!actionText.outcome().success()) {
+            SESSIONS.remove(key(context));
+            return result(actionText.lineId(), firstNonBlank(actionText.text(), leadingText));
+        }
+        return presentNode(context, tree, node, firstNonBlank(leadingText, actionText.text()),
+                actionText.replacements(), actionText.lineId());
+    }
+
+    private static VillagerDialogueService.DialogueResult presentNode(DialogueContext context,
+            DialogueTreeDefinition tree, DialogueTreeDefinition.Node node, String leadingText,
+            Map<String, String> replacements, String actionLineId) {
+        String nodeLine = resolve(node.selectLine(context), context, replacements);
+        String text = firstNonBlank(leadingText, nodeLine);
         if (!node.end() && node.responses().stream().anyMatch(response -> response.matches(context))) {
-            SESSIONS.put(key(context), new Session(
-                    tree.id(),
-                    node.id(),
-                    context.level().getGameTime(),
-                    actionText.replacements()));
+            SESSIONS.put(key(context), new Session(tree.id(), node.id(), context.level().getGameTime(), replacements));
         } else {
             SESSIONS.remove(key(context));
         }
-        String resultLineId = actionText.lineId().isBlank() ? lineId(tree.id(), node.id(), "") : actionText.lineId();
+        String resultLineId = actionLineId.isBlank() ? lineId(tree.id(), node.id(), "") : actionLineId;
         return result(resultLineId, text);
     }
 
-    private static ActionText executeActions(
-            DialogueContext context,
-            List<VillagerActionDefinition> actions,
-            Map<String, String> inheritedReplacements) {
+    public static void resumeAfterActions(DialogueContext context, SceneContinuation.DialogueResume resume,
+            Map<String, String> replacements) {
+        DialogueTreeDefinition tree = DialogueTreeResources.tree(
+                context.level().getServer(), context.locale(), resume.treeId()).orElse(null);
+        if (tree == null || !tree.matches(context) || resume.nodeId().isBlank()) return;
+        DialogueTreeDefinition.Node node = tree.node(resume.nodeId()).orElse(null);
+        if (node == null || !node.matches(context)) return;
+        String leading = resolve(resume.leadingText(), context, replacements);
+        VillagerDialogueService.DialogueResult result = resume.runActions()
+                ? enterNode(context, tree, node.id(), leading, replacements)
+                : presentNode(context, tree, node, leading, replacements, "");
+        if (VillagerConversationService.validate(context.player(), context.villager())
+                && !VillagerConversationService.isForced(context.player(), context.villager())) {
+            VillagerInteractionScreenOpener.refreshNormal(context.player(), context.villager());
+            VillagerInteractionService.sendPersonalVillagerChat(
+                    context.player(), context.villager(), result.text(), result.textSegments());
+        }
+    }
+
+    private static ActionText executeActions(DialogueContext context, List<VillagerActionDefinition> actions,
+            Map<String, String> inheritedReplacements, String sourcePointer,
+            SceneContinuation.DialogueResume resume) {
         Map<String, String> replacements = new LinkedHashMap<>(DialoguePlaceholders.base(context));
-        if (inheritedReplacements != null) {
-            replacements.putAll(inheritedReplacements);
-        }
-        List<String> texts = new ArrayList<>();
-        String lineId = "";
-        for (int index = 0; index < actions.size(); index++) {
-            VillagerActionDefinition action = actions.get(index);
-            if (action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene()) {
-                SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);
-                boolean suspended = false;
-                if (launch.accepted()) {
-                    SceneSavedData data = SceneSavedData.get(context.level());
-                    var scene = data.get(launch.instanceId()).orElse(null);
-                    if (scene != null) {
-                        int nextActionIndex = index + 1;
-                        if (nextActionIndex < actions.size()
-                                && actions.get(nextActionIndex).kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION) {
-                            VillagerActionDefinition transition = actions.get(nextActionIndex);
-                            ActionResult transitionResult = VillagerActionRegistry.execute(
-                                    context, transition, replacements);
-                            VillagerActionResult result = transitionResult.legacyResult();
-                            replacements.putAll(result.replacements());
-                            if (result.flashTracker()) {
-                                VillagerQuestService.flashTracker(context.player(), true);
-                            }
-                            if (!result.text().isBlank()) {
-                                texts.add(result.text());
-                            }
-                            if (!result.lineId().isBlank()) {
-                                lineId = result.lineId();
-                            }
-                            nextActionIndex++;
-                        }
-                        data.suspendContinuation(scene, context.player().getUUID(), context.villager().getUUID(),
-                                "dialogue_response/" + index + "/" + action.sceneOperationId(),
-                                actions, nextActionIndex, replacements);
-                        suspended = true;
-                    }
-                }
-                if (suspended || action.required()) break;
-                continue;
-            }
-            ActionResult actionResult = VillagerActionRegistry.execute(context, action, replacements);
-            VillagerActionResult result = actionResult.legacyResult();
-            replacements.putAll(result.replacements());
-            if (result.flashTracker()) {
-                VillagerQuestService.flashTracker(context.player(), true);
-            }
-            if (!result.text().isBlank()) {
-                texts.add(result.text());
-            }
-            if (!result.lineId().isBlank()) {
-                lineId = result.lineId();
-            }
-            if (action.required() && !actionResult.success()) {
-                break;
-            }
-        }
-        return new ActionText(lineId, String.join(" ", texts), Map.copyOf(replacements));
+        if (inheritedReplacements != null) replacements.putAll(inheritedReplacements);
+        ActionResult outcome = SceneContinuationService.run(context, actions, replacements,
+                () -> VillagerQuestService.flashTracker(context.player(), true), sourcePointer, resume).outcome();
+        VillagerActionResult result = outcome.legacyResult();
+        return new ActionText(result.lineId(), result.text(), result.replacements(), outcome);
     }
 
     private static String resolve(String template, DialogueContext context, Map<String, String> replacements) {
@@ -325,7 +311,7 @@ public final class DialogueTreeService {
         }
     }
 
-    private record ActionText(String lineId, String text, Map<String, String> replacements) {
+    private record ActionText(String lineId, String text, Map<String, String> replacements, ActionResult outcome) {
         private ActionText {
             lineId = lineId == null ? "" : lineId;
             text = text == null ? "" : text;

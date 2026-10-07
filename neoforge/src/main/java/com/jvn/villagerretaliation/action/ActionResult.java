@@ -1,12 +1,14 @@
 package com.jvn.villagerretaliation.action;
 
 import java.util.Set;
+import java.util.UUID;
 
 public record ActionResult(
         ActionStatus status,
         String message,
         Set<ActionCapability> capabilities,
-        VillagerActionResult legacyResult
+        VillagerActionResult legacyResult,
+        UUID suspensionId
 ) {
     public ActionResult {
         status = status == null ? ActionStatus.SKIPPED : status;
@@ -15,8 +17,32 @@ public record ActionResult(
         legacyResult = legacyResult == null ? VillagerActionResult.EMPTY : legacyResult;
     }
 
+    public ActionResult(ActionStatus status, String message, Set<ActionCapability> capabilities,
+            VillagerActionResult legacyResult) {
+        this(status, message, capabilities, legacyResult, null);
+    }
+
     public boolean success() {
-        return this.status == ActionStatus.SUCCESS;
+        return this.status == ActionStatus.SUCCESS || this.status == ActionStatus.ALREADY_SATISFIED;
+    }
+
+    public boolean suspended() {
+        return this.status == ActionStatus.SUSPENDED;
+    }
+
+    public static ActionResult alreadySatisfied(String message, Set<ActionCapability> capabilities,
+            VillagerActionResult legacyResult) {
+        return new ActionResult(ActionStatus.ALREADY_SATISFIED, message, capabilities, legacyResult);
+    }
+
+    public static ActionResult unavailable(String message, Set<ActionCapability> capabilities,
+            VillagerActionResult legacyResult) {
+        return new ActionResult(ActionStatus.UNAVAILABLE, message, capabilities, legacyResult);
+    }
+
+    public static ActionResult suspended(UUID suspensionId, Set<ActionCapability> capabilities) {
+        return new ActionResult(ActionStatus.SUSPENDED, "waiting for scene", capabilities,
+                VillagerActionResult.success(), suspensionId);
     }
 
     public boolean skipped() {

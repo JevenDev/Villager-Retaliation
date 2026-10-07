@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
+import com.jvn.villagerretaliation.util.NbtDataUtil;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
@@ -476,7 +477,7 @@ public final class SceneInstance {
         value.retryCount = tag.getInt("RetryCount");
         value.failureCode = tag.getString("FailureCode");
         value.diagnostic = tag.getString("Diagnostic");
-        value.owningQuestId = ResourceLocation.tryParse(tag.getString("OwningQuestId"));
+        value.owningQuestId = NbtDataUtil.readResourceLocation(tag, "OwningQuestId").orElse(null);
         try {
             value.cleanupStatus = CleanupStatus.valueOf(tag.getString("CleanupStatus"));
         } catch (IllegalArgumentException ignored) {

@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation.scene.runtime;
 
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.util.NbtDataUtil;
+import com.jvn.villagerretaliation.action.ActionResult;
+import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import java.util.ArrayList;
@@ -28,6 +31,9 @@ public final class SceneContinuation {
     private State state = State.WAITING;
     private SceneInstance.CompletionResult sceneResult = SceneInstance.CompletionResult.NONE;
     private boolean completionReceipt;
+    private ActionStatus actionStatus = ActionStatus.SUSPENDED;
+    private String actionDiagnostic = "";
+    private DialogueResume dialogueResume;
 
     public SceneContinuation(UUID id, UUID sceneInstanceId, UUID playerId, UUID providerId,
             ResourceLocation questId, UUID questRunId, String sourcePointer,
@@ -59,10 +65,22 @@ public final class SceneContinuation {
     public Map<String, String> replacements() { return replacements; }
 
     public void advance() { nextActionIndex++; }
+    public void nextActionIndex(int value) { nextActionIndex = value; }
+    public ActionStatus actionStatus() { return actionStatus; }
+    public String actionDiagnostic() { return actionDiagnostic; }
+    public DialogueResume dialogueResume() { return dialogueResume; }
+    public void dialogueResume(DialogueResume value) { dialogueResume = value; }
+
+    public void finish(ActionResult result) {
+        complete();
+        actionStatus = result.status();
+        actionDiagnostic = result.message();
+    }
 
     public void waitOn(UUID sceneId) {
         sceneInstanceId = sceneId;
         state = State.WAITING;
+        actionStatus = ActionStatus.SUSPENDED;
         sceneResult = SceneInstance.CompletionResult.NONE;
     }
 
@@ -74,6 +92,7 @@ public final class SceneContinuation {
     public void complete() {
         state = State.COMPLETED;
         completionReceipt = true;
+        actionStatus = ActionStatus.SUCCESS;
     }
 
     public CompoundTag save() {
@@ -89,6 +108,16 @@ public final class SceneContinuation {
         tag.putString("State", state.name());
         tag.putString("SceneResult", sceneResult.name());
         tag.putBoolean("CompletionReceipt", completionReceipt);
+        tag.putString("ActionStatus", actionStatus.name());
+        tag.putString("ActionDiagnostic", actionDiagnostic);
+        if (dialogueResume != null) {
+            CompoundTag dialogue = new CompoundTag();
+            dialogue.putString("Tree", dialogueResume.treeId().toString());
+            dialogue.putString("Node", dialogueResume.nodeId());
+            dialogue.putBoolean("RunActions", dialogueResume.runActions());
+            dialogue.putString("LeadingText", dialogueResume.leadingText());
+            tag.put("DialogueResume", dialogue);
+        }
         ListTag actionTags = new ListTag();
         actions.forEach(action -> actionTags.add(saveAction(action)));
         tag.put("Actions", actionTags);
@@ -109,13 +138,20 @@ public final class SceneContinuation {
         SceneContinuation value = new SceneContinuation(
                 tag.getUUID("Id"), tag.getUUID("Scene"), tag.getUUID("Player"),
                 tag.hasUUID("Provider") ? tag.getUUID("Provider") : null,
-                ResourceLocation.tryParse(tag.getString("Quest")),
+                NbtDataUtil.readResourceLocation(tag, "Quest").orElse(null),
                 tag.hasUUID("QuestRun") ? tag.getUUID("QuestRun") : null,
                 tag.getString("Source"), actions, tag.getInt("Next"), replacements);
         try { value.state = State.valueOf(tag.getString("State")); } catch (IllegalArgumentException ignored) { }
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
         value.completionReceipt = tag.getBoolean("CompletionReceipt");
+        value.actionStatus = enumValue(ActionStatus.class, tag.getString("ActionStatus"),
+                value.completionReceipt ? ActionStatus.SUCCESS : ActionStatus.SUSPENDED);
+        value.actionDiagnostic = tag.getString("ActionDiagnostic");
+        CompoundTag dialogue = tag.getCompound("DialogueResume");
+        ResourceLocation treeId = NbtDataUtil.readResourceLocation(dialogue, "Tree").orElse(null);
+        if (treeId != null) value.dialogueResume = new DialogueResume(treeId,
+                dialogue.getString("Node"), dialogue.getBoolean("RunActions"), dialogue.getString("LeadingText"));
         return value;
     }
 
@@ -172,18 +208,18 @@ public final class SceneContinuation {
     private static VillagerActionDefinition loadAction(CompoundTag tag) {
         CompoundTag rawTransition = tag.getCompound("Transition");
         CompiledQuestTransition transition = rawTransition.isEmpty() ? CompiledQuestTransition.EMPTY
-                : new CompiledQuestTransition(ResourceLocation.tryParse(rawTransition.getString("Quest")),
+                : new CompiledQuestTransition(NbtDataUtil.readResourceLocation(rawTransition, "Quest").orElse(null),
                         rawTransition.getString("Stage"), rawTransition.getString("Scene"),
                         rawTransition.getString("Response"), enumValue(CompiledQuestTransition.Target.class,
                         rawTransition.getString("Target"), CompiledQuestTransition.Target.NONE),
                         rawTransition.getString("TargetStage"), rawTransition.getString("Source"));
         Map<String, List<String>> lines = readLineMap(tag, "Lines");
         Map<String, List<String>> lineKeys = readLineMap(tag, "LineKeys");
-        return new VillagerActionDefinition(enumValue(VillagerActionDefinition.Kind.class,tag.getString("Kind"),VillagerActionDefinition.Kind.NONE),ResourceLocation.tryParse(tag.getString("Quest")),
-                enumValue(VillagerActionDefinition.QuestAction.class,tag.getString("QuestAction"),VillagerActionDefinition.QuestAction.NONE),tag.getInt("Amount"),ResourceLocation.tryParse(tag.getString("Memory")),
-                enumValue(com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.class,tag.getString("MemoryScope"),com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.BOTH),ResourceLocation.tryParse(tag.getString("Loot")),
+        return new VillagerActionDefinition(enumValue(VillagerActionDefinition.Kind.class,tag.getString("Kind"),VillagerActionDefinition.Kind.NONE),NbtDataUtil.readResourceLocation(tag, "Quest").orElse(null),
+                enumValue(VillagerActionDefinition.QuestAction.class,tag.getString("QuestAction"),VillagerActionDefinition.QuestAction.NONE),tag.getInt("Amount"),NbtDataUtil.readResourceLocation(tag, "Memory").orElse(null),
+                enumValue(com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.class,tag.getString("MemoryScope"),com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.BOTH),NbtDataUtil.readResourceLocation(tag, "Loot").orElse(null),
                 tag.getString("Notification"),tag.getString("Text"),tag.getString("Forced"),tag.getBoolean("Flash"),enumValue(QuestFactScope.class,tag.getString("FactScope"),QuestFactScope.PLAYER),
-                ResourceLocation.tryParse(tag.getString("FactTag")),tag.getString("FactKey"),tag.getString("FactValue"),lines,lineKeys,transition,ResourceLocation.tryParse(tag.getString("Scene")),tag.getString("Operation"),tag.getBoolean("Wait"),tag.getBoolean("Required"));
+                NbtDataUtil.readResourceLocation(tag, "FactTag").orElse(null),tag.getString("FactKey"),tag.getString("FactValue"),lines,lineKeys,transition,NbtDataUtil.readResourceLocation(tag, "Scene").orElse(null),tag.getString("Operation"),tag.getBoolean("Wait"),tag.getBoolean("Required"));
     }
 
     private static Map<String, List<String>> readLineMap(CompoundTag tag, String field) {
@@ -209,6 +245,9 @@ public final class SceneContinuation {
         } catch (IllegalArgumentException ignored) {
             return fallback;
         }
+    }
+
+    public record DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText) {
     }
 
     public enum State {

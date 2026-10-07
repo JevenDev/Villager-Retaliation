@@ -91,14 +91,12 @@ public final class QuestV2Compiler {
         JsonArray triggers = new JsonArray();
 
         Map<String, Integer> stageIndexes = stageIndexes(resource);
-        List<VillagerActionDefinition> globalStageEnter = lifecycleActions(
+        List<JsonObject> globalStageEnter = lifecycleActions(
                 resource,
-                "on_stage_enter",
-                source.child("lifecycle", "on_stage_enter"));
-        List<VillagerActionDefinition> globalStageExit = lifecycleActions(
+                "on_stage_enter");
+        List<JsonObject> globalStageExit = lifecycleActions(
                 resource,
-                "on_stage_exit",
-                source.child("lifecycle", "on_stage_exit"));
+                "on_stage_exit");
 
         for (QuestV2Resource.Stage stage : orderedStages(resource)) {
             int stageIndex = stageIndexes.getOrDefault(stage.id(), 0);
@@ -303,8 +301,8 @@ public final class QuestV2Compiler {
             QuestSourcePointer stageSource,
             JsonArray objectives,
             Map<String, QuestSourcePointer> objectiveSources,
-            List<VillagerActionDefinition> globalStageEnter,
-            List<VillagerActionDefinition> globalStageExit) {
+            List<JsonObject> globalStageEnter,
+            List<JsonObject> globalStageExit) {
         JsonObject canonical = new JsonObject();
         JsonArray objectiveIds = new JsonArray();
         Map<String, String> canonicalIds = new LinkedHashMap<>();
@@ -330,7 +328,7 @@ public final class QuestV2Compiler {
         }
 
         JsonArray entryActions = new JsonArray();
-        addActionDefinitions(entryActions, globalStageEnter);
+        addActionObjects(entryActions, globalStageEnter);
         addActionObjects(entryActions, stage.entryActions());
         addActionObjects(entryActions, rewardActions(stage.rewards()));
         if (entryActions.size() > 0) {
@@ -339,7 +337,7 @@ public final class QuestV2Compiler {
 
         JsonArray exitActions = new JsonArray();
         addActionObjects(exitActions, stage.exitActions());
-        addActionDefinitions(exitActions, globalStageExit);
+        addActionObjects(exitActions, globalStageExit);
         if (exitActions.size() > 0) {
             canonical.add("exit_actions", exitActions);
         }
@@ -591,25 +589,12 @@ public final class QuestV2Compiler {
         triggerSources.put(triggerId, source.child("lifecycle", hookId));
     }
 
-    private static List<VillagerActionDefinition> lifecycleActions(
-            QuestV2Resource resource,
-            String hookId,
-            QuestSourcePointer source) {
+    private static List<JsonObject> lifecycleActions(QuestV2Resource resource, String hookId) {
         QuestV2Resource.Hook hook = resource.lifecycle().hooks().get(hookId);
-        if (hook == null) {
-            return List.of();
-        }
-        JsonArray actions = actionArray(resource.id(), hook.actions(), hook.transition());
-        if (actions.size() == 0) {
-            return List.of();
-        }
-        JsonObject wrapper = new JsonObject();
-        wrapper.add("actions", actions);
-        return VillagerActionDefinition.readList(
-                source.resource(),
-                "quest module v2 lifecycle " + hookId,
-                wrapper,
-                resource.id());
+        if (hook == null) return List.of();
+        List<JsonObject> actions = new ArrayList<>(hook.actions());
+        actions.addAll(transitionActions(resource.id(), hook.transition()));
+        return List.copyOf(actions);
     }
 
     private static void appendRootEvents(
@@ -969,56 +954,6 @@ public final class QuestV2Compiler {
         copyIfPresent(ui.data(), step, "show_progress");
         copyIfPresent(ui.data(), step, "progress");
         return step;
-    }
-
-    private static void addActionDefinitions(JsonArray target, List<VillagerActionDefinition> actions) {
-        for (VillagerActionDefinition action : actions) {
-            JsonObject object = new JsonObject();
-            object.addProperty("type", action.kind().serializedName());
-            if (action.questId() != null) {
-                object.addProperty("quest", action.questId().toString());
-            }
-            if (action.questAction() != VillagerActionDefinition.QuestAction.NONE) {
-                object.addProperty("action", action.questAction().name().toLowerCase(java.util.Locale.ROOT));
-            }
-            if (action.amount() != 0) {
-                object.addProperty("amount", action.amount());
-            }
-            if (action.memoryTag() != null) {
-                object.addProperty("memory_event", action.memoryTag().toString());
-                object.addProperty("memory_scope", action.memoryScope().serializedName());
-            }
-            if (action.lootTable() != null) {
-                object.addProperty("loot_table", action.lootTable().toString());
-            }
-            if (!action.notificationTrigger().isBlank()) {
-                object.addProperty("notification", action.notificationTrigger());
-            }
-            if (!action.text().isBlank()) {
-                object.addProperty("text", action.text());
-            }
-            if (!action.forcedDialogue().isBlank()) {
-                object.addProperty("forced_dialogue", action.forcedDialogue());
-            }
-            object.addProperty("flash_tracker", action.flashTracker());
-            if (action.factScope() != null) {
-                object.addProperty("scope", action.factScope().name().toLowerCase(java.util.Locale.ROOT));
-            }
-            if (action.factTag() != null) {
-                object.addProperty("fact_tag", action.factTag().toString());
-            }
-            if (!action.factKey().isBlank()) {
-                if (action.kind() == VillagerActionDefinition.Kind.PROFILE_ATTRIBUTE) {
-                    object.addProperty("attribute", action.factKey());
-                } else {
-                    object.addProperty("key", action.factKey());
-                }
-            }
-            if (!action.factValue().isBlank()) {
-                object.addProperty("value", action.factValue());
-            }
-            target.add(object);
-        }
     }
 
     private static void addActionObjects(JsonArray target, List<JsonObject> actions) {

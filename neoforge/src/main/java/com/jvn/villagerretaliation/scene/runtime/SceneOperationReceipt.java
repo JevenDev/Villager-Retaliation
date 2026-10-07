@@ -1,6 +1,10 @@
 package com.jvn.villagerretaliation.scene.runtime;
 
 import net.minecraft.nbt.CompoundTag;
+import com.jvn.villagerretaliation.action.ActionResult;
+import com.jvn.villagerretaliation.action.ActionStatus;
+import com.jvn.villagerretaliation.action.VillagerActionResult;
+import java.util.Set;
 
 public final class SceneOperationReceipt {
     private final String operationId;
@@ -10,6 +14,8 @@ public final class SceneOperationReceipt {
     private long appliedTime;
     private long completedTime;
     private String evidence = "";
+    private ActionStatus actionStatus;
+    private String actionDiagnostic = "";
 
     public SceneOperationReceipt(String operationId, Kind kind, long preparedTime) {
         if (operationId == null || operationId.isBlank() || kind == null) throw new IllegalArgumentException("receipt requires stable operation id and kind");
@@ -20,8 +26,28 @@ public final class SceneOperationReceipt {
     public String evidence(){return evidence;}
     public void applied(long time,String evidence){if(state==ReceiptState.COMPLETED)return;state=ReceiptState.APPLIED;appliedTime=time;this.evidence=evidence==null?"":evidence;}
     public void completed(long time,String evidence){state=ReceiptState.COMPLETED;completedTime=time;if(evidence!=null&&!evidence.isBlank())this.evidence=evidence;}
-    public CompoundTag save(){CompoundTag t=new CompoundTag();t.putString("OperationId",operationId);t.putString("Kind",kind.name());t.putString("State",state.name());t.putLong("PreparedTime",preparedTime);t.putLong("AppliedTime",appliedTime);t.putLong("CompletedTime",completedTime);t.putString("Evidence",evidence);return t;}
-    public static SceneOperationReceipt load(CompoundTag t){SceneOperationReceipt value=new SceneOperationReceipt(t.getString("OperationId"),Kind.valueOf(t.getString("Kind")),t.getLong("PreparedTime"));value.state=ReceiptState.valueOf(t.getString("State"));value.appliedTime=t.getLong("AppliedTime");value.completedTime=t.getLong("CompletedTime");value.evidence=t.getString("Evidence");return value;}
-    public enum ReceiptState{PREPARED,APPLIED,COMPLETED}
+    public boolean settled() {
+        return state == ReceiptState.COMPLETED || state == ReceiptState.REJECTED;
+    }
+    public ActionResult actionResult() {
+        if (actionStatus != null) return new ActionResult(actionStatus, actionDiagnostic, Set.of(), VillagerActionResult.EMPTY);
+        if (state == ReceiptState.APPLIED || state == ReceiptState.COMPLETED)
+            return ActionResult.alreadySatisfied("effect already applied", Set.of(), VillagerActionResult.EMPTY);
+        return ActionResult.failed("receipt has no recorded action result", Set.of());
+    }
+    public void recordAction(ActionResult result, long time) {
+        actionStatus = result.status();
+        actionDiagnostic = result.message();
+        if (result.success()) {
+            applied(time, result.message());
+            completed(time, result.message());
+        } else {
+            state = ReceiptState.REJECTED;
+            evidence = result.message();
+        }
+    }
+    public CompoundTag save(){CompoundTag t=new CompoundTag();t.putString("OperationId",operationId);t.putString("Kind",kind.name());t.putString("State",state.name());t.putLong("PreparedTime",preparedTime);t.putLong("AppliedTime",appliedTime);t.putLong("CompletedTime",completedTime);t.putString("Evidence",evidence);if(actionStatus!=null)t.putString("ActionStatus",actionStatus.name());t.putString("ActionDiagnostic",actionDiagnostic);return t;}
+    public static SceneOperationReceipt load(CompoundTag t){SceneOperationReceipt value=new SceneOperationReceipt(t.getString("OperationId"),Kind.valueOf(t.getString("Kind")),t.getLong("PreparedTime"));value.state=ReceiptState.valueOf(t.getString("State"));value.appliedTime=t.getLong("AppliedTime");value.completedTime=t.getLong("CompletedTime");value.evidence=t.getString("Evidence");if(t.contains("ActionStatus"))value.actionStatus=ActionStatus.valueOf(t.getString("ActionStatus"));value.actionDiagnostic=t.getString("ActionDiagnostic");return value;}
+    public enum ReceiptState{PREPARED,APPLIED,COMPLETED,REJECTED}
     public enum Kind{ITEM_GRANT,LOOT_GRANT,EXPERIENCE_GRANT,REPUTATION_CHANGE,GOSSIP_CHANGE,PROFILE_ATTRIBUTE_CHANGE,COUNTER_INCREMENT,QUEST_TRANSITION,ENCOUNTER_CREATION,DIALOGUE_DELIVERY,ENCOUNTER_PHASE,FACT_CHANGE,SCENE_TRANSITION}
 }

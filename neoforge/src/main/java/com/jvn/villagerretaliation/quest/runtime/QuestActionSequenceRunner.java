@@ -19,7 +19,12 @@ public final class QuestActionSequenceRunner {
             return false;
         }
 
-        return SceneContinuationService.run(context, actions, baseReplacements, trackerFlashHandler,
-                "quest_action_sequence").ran();
+        return runResult(context, actions, baseReplacements, trackerFlashHandler, "quest_action_sequence").ran();
+    }
+
+    public static SceneContinuationService.RunResult runResult(DialogueContext context,
+            List<VillagerActionDefinition> actions, Map<String, String> baseReplacements,
+            Runnable trackerFlashHandler, String sourcePointer) {
+        return SceneContinuationService.run(context, actions, baseReplacements, trackerFlashHandler, sourcePointer);
     }
 }

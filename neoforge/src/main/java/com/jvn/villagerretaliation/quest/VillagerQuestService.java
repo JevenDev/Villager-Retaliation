@@ -18,6 +18,8 @@ import com.jvn.villagerretaliation.quest.conditions.QuestAvailabilityService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.runtime.QuestActionSequenceRunner;
+import com.jvn.villagerretaliation.quest.runtime.QuestStageActionService;
+import com.jvn.villagerretaliation.quest.runtime.QuestRewardService;
 import com.jvn.villagerretaliation.quest.persistence.QuestDefinitionMigration;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
@@ -25,7 +27,6 @@ import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
-import com.jvn.villagerretaliation.action.VillagerActionExecutor;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -108,7 +109,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -758,8 +758,18 @@ public final class VillagerQuestService {
                     replacements).dialogueResult());
         }
 
+        if (!QuestStageActionService.ready(context, progress) || !progress.pendingStageTransition().isBlank()) {
+            return Optional.of(stageBranchUnavailableResult(context, definition, progress).dialogueResult());
+        }
         recordStageBranchFact(context, definition, progress, branch, QUEST_BRANCH_SELECTED_FACT, "selected");
-        boolean changed = runStageActions(context, definition, progress, branch.actions());
+        ActionResult branchResult = runStageActions(context, definition, progress, "branch/" + branch.id(), branch.actions());
+        boolean changed = branchResult.legacyResult().ran();
+        if (!branchResult.success()) {
+            if (branchResult.suspended()) progress.requestStageTransition(branch.next());
+            data.setDirty();
+            sendTrackerSync(context.player(), true);
+            return Optional.of(stageBranchUnavailableResult(context, definition, progress).dialogueResult());
+        }
         if (!branch.next().isBlank() && definition.stages().containsKey(branch.next())) {
             changed |= changeQuestStage(context, definition, progress, branch.next(), true, true);
         }
@@ -1678,6 +1688,13 @@ public final class VillagerQuestService {
         for (QuestDefinition.Objective objective : definition.objectives()) {
             lines.add(debugObjectiveLine(player, level, definition, progress, context, objective));
         }
+        if (progress != null) {
+            progress.stageActions().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry ->
+                    lines.add("stage_action=" + entry.getKey() + " status=" + entry.getValue().status()
+                            + " continuation=" + entry.getValue().continuationId()
+                            + " diagnostic=" + entry.getValue().diagnostic()));
+            if (!progress.pendingStageTransition().isBlank()) lines.add("pending_stage=" + progress.pendingStageTransition());
+        }
         String inventoryCacheLine = debugInventoryCacheLine(player, definition);
         if (!inventoryCacheLine.isBlank()) {
             lines.add(inventoryCacheLine);
@@ -1850,6 +1867,13 @@ public final class VillagerQuestService {
                 + " active_context=" + (context != null));
         for (QuestDefinition.Objective objective : definition.objectives()) {
             lines.add(debugObjectiveLine(player, level, definition, progress, context, objective));
+        }
+        if (progress != null) {
+            progress.stageActions().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry ->
+                    lines.add("stage_action=" + entry.getKey() + " status=" + entry.getValue().status()
+                            + " continuation=" + entry.getValue().continuationId()
+                            + " diagnostic=" + entry.getValue().diagnostic()));
+            if (!progress.pendingStageTransition().isBlank()) lines.add("pending_stage=" + progress.pendingStageTransition());
         }
         return new DebugInspectResult(true, lines, "");
     }
@@ -2057,7 +2081,7 @@ public final class VillagerQuestService {
         syncQuestStageFact(context, definition, progress.currentStage());
         QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
         if (stage != null) {
-            runStageActions(context, definition, progress, stage.entryActions());
+            runStageActions(context, definition, progress, "entry", stage.entryActions());
         }
         advanceStageIfComplete(context, definition, progress);
     }
@@ -2104,9 +2128,13 @@ public final class VillagerQuestService {
             return false;
         }
 
+        if (!QuestStageActionService.ready(context, progress)) return false;
+        if (!progress.pendingStageTransition().isBlank() && !progress.pendingStageTransition().equals(stage.trim())) return false;
         QuestDefinition.Stage previous = definition.stages().get(progress.currentStage());
         if (runExitActions && previous != null) {
-            runStageActions(context, definition, progress, previous.exitActions());
+            progress.requestStageTransition(stage);
+            VillagerQuestSavedData.get(context.level()).setDirty();
+            if (!runStageActions(context, definition, progress, "exit", previous.exitActions()).success()) return false;
         }
         QuestLifecycleService.StageTransition transition =
                 QuestLifecycleService.transitionStage(definition, progress, stage, context.level().getGameTime());
@@ -2119,7 +2147,7 @@ public final class VillagerQuestService {
 
         QuestDefinition.Stage current = definition.stages().get(transition.currentStage());
         if (runEntryActions && current != null) {
-            runStageActions(context, definition, progress, current.entryActions());
+            runStageActions(context, definition, progress, "entry", current.entryActions());
         }
         sendTrackerSync(context.player(), true);
         return true;
@@ -2144,7 +2172,14 @@ public final class VillagerQuestService {
         }
         boolean changed = false;
         for (int i = 0; i < MAX_STAGE_ADVANCES_PER_CHECK; i++) {
+            if (!QuestStageActionService.ready(context, progress)) break;
+            if (!progress.pendingStageTransition().isBlank()) {
+                if (!changeQuestStage(context, definition, progress, progress.pendingStageTransition(), true, true)) break;
+                changed = true;
+                continue;
+            }
             changed |= runEligibleStageBonuses(context, definition, progress);
+            if (!QuestStageActionService.ready(context, progress)) break;
             QuestStageReadiness readiness = QuestStageReadiness.forCurrentStage(
                     context,
                     definition,
@@ -2185,7 +2220,7 @@ public final class VillagerQuestService {
             }
             if (progress.claimBonus(stage.id(), bonus.id())) {
                 changed = true;
-                runStageActions(context, definition, progress, bonus.actions());
+                if (!runStageActions(context, definition, progress, "bonus/" + bonus.id(), bonus.actions()).success()) break;
             }
         }
         return changed;
@@ -2231,16 +2266,14 @@ public final class VillagerQuestService {
                 .orElse(false);
     }
 
-    private static boolean runStageActions(
+    private static ActionResult runStageActions(
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
+            String key,
             List<VillagerActionDefinition> actions) {
-        return QuestActionSequenceRunner.run(
-                context,
-                actions,
-                replacements(context, definition, progress),
-                () -> sendTrackerSync(context.player(), true));
+        return QuestStageActionService.run(context, definition, progress, key, actions,
+                replacements(context, definition, progress), () -> sendTrackerSync(context.player(), true));
     }
 
     private static QuestActionOutcome startQuest(DialogueContext context, QuestDefinition definition) {
@@ -2657,6 +2690,11 @@ public final class VillagerQuestService {
                             definition.dialogue().selectUnavailableText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
+        }
+        if (!QuestStageActionService.ready(context, progress) || !progress.pendingStageTransition().isBlank()) {
+            return result("unavailable", lineId(definition, "unavailable"),
+                    resolveQuestText(context, definition.dialogue().selectUnavailableText(context),
+                            replacements(context, definition, progress)), replacements(context, definition, progress));
         }
         if (!activeConditionsMet(context, definition)) {
             return result(
@@ -5277,97 +5315,11 @@ public final class VillagerQuestService {
 
     static String unresolvedQuestRewardDiagnostic(
             MinecraftServer server, QuestDefinition definition) {
-        ResourceLocation rewardId =
-                definition == null ? null : definition.rewards().lootTable();
-        if (rewardId == null) return "";
-        QuestRewardResolver.Resolution resolution =
-                QuestRewardResolver.resolve(server, rewardId);
-        return resolution.resolved() ? "" : resolution.diagnostic();
+        return QuestRewardService.unresolvedDiagnostic(server, definition);
     }
 
     private static void awardRewards(DialogueContext context, QuestDefinition definition) {
-        QuestDefinition.Rewards rewards = definition.rewards();
-        Map<String, String> replacements = new LinkedHashMap<>(replacements(context, definition, null));
-        runRewardAction(context, rewardAction(
-                VillagerActionDefinition.Kind.EXPERIENCE,
-                rewards.experience(),
-                null,
-                null), replacements, definition.id());
-        runRewardAction(context, rewardAction(
-                VillagerActionDefinition.Kind.REPUTATION,
-                rewards.reputation(),
-                null,
-                null), replacements, definition.id());
-        runRewardAction(context, rewardAction(
-                VillagerActionDefinition.Kind.GOSSIP,
-                rewards.gossipReputation(),
-                null,
-                null), replacements, definition.id());
-        runRewardAction(context, rewardAction(
-                VillagerActionDefinition.Kind.MEMORY,
-                0,
-                rewards.memoryEvent(),
-                null,
-                rewards.memoryScope()), replacements, definition.id());
-        runRewardAction(context, rewardAction(
-                VillagerActionDefinition.Kind.LOOT,
-                0,
-                null,
-                rewards.lootTable()), replacements, definition.id());
-        context.villager().playSound(SoundEvents.PLAYER_LEVELUP, 0.55F, 1.1F);
-    }
-
-    private static void runRewardAction(
-            DialogueContext context,
-            VillagerActionDefinition action,
-            Map<String, String> replacements,
-            ResourceLocation questId) {
-        VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
-        replacements.putAll(result.replacements());
-        if (context != null) {
-            QuestDebugTraceService.recordIfEnabled(context.player(), QuestDebugTraceService.EventType.REWARD, questId,
-                    "reward type=" + VillagerActionRegistry.canonicalTypeId(action)
-                            + " result=" + (result.ran() ? "success" : "skipped"));
-        }
-    }
-
-    private static VillagerActionDefinition rewardAction(
-            VillagerActionDefinition.Kind kind,
-            int amount,
-            ResourceLocation memoryTag,
-            ResourceLocation lootTable) {
-        return rewardAction(kind, amount, memoryTag, lootTable, VillageEventMemory.MemoryScope.BOTH);
-    }
-
-    private static VillagerActionDefinition rewardAction(
-            VillagerActionDefinition.Kind kind,
-            int amount,
-            ResourceLocation memoryTag,
-            ResourceLocation lootTable,
-            VillageEventMemory.MemoryScope memoryScope) {
-        return new VillagerActionDefinition(
-                kind,
-                null,
-                VillagerActionDefinition.QuestAction.NONE,
-                amount,
-                memoryTag,
-                memoryScope,
-                lootTable,
-                "",
-                "",
-                "",
-                false,
-                QuestFactScope.PLAYER,
-                null,
-                "",
-                "",
-                Map.of(),
-                Map.of(),
-                CompiledQuestTransition.EMPTY,
-                null,
-                "",
-                false,
-                false);
+        QuestRewardService.award(context, definition, replacements(context, definition, null));
     }
 
     private static void rememberQuestStoryHint(

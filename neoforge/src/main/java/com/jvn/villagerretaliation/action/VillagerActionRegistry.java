@@ -1,6 +1,12 @@
 package com.jvn.villagerretaliation.action;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.scene.SceneLaunchService;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -168,11 +174,74 @@ public final class VillagerActionRegistry {
         if (context == null && requiresLiveContext(capabilities)) {
             return ActionResult.failed("live dialogue context unavailable", capabilities);
         }
+        if (action.kind() == VillagerActionDefinition.Kind.START_SCENE) {
+            SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);
+            if (!launch.accepted()) {
+                return ActionResult.unavailable(launch.diagnostic(), capabilities, VillagerActionResult.EMPTY);
+            }
+            if (action.waitForScene()) return ActionResult.suspended(launch.instanceId(), capabilities);
+            return launch.created() ? ActionResult.success(VillagerActionResult.success(), capabilities)
+                    : ActionResult.alreadySatisfied(launch.diagnostic(), capabilities, VillagerActionResult.EMPTY);
+        }
         VillagerActionResult legacyResult =
                 VillagerActionExecutor.executeDirect(context, action, inheritedReplacements);
-        return legacyResult.ran()
-                ? ActionResult.success(legacyResult, capabilities)
-                : ActionResult.skipped("action made no changes", capabilities, legacyResult);
+        if (action.kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION) {
+            return switch (legacyResult.replacements().getOrDefault("quest_transition_status", "missing")) {
+                case "selected" -> ActionResult.success(legacyResult, capabilities);
+                case "duplicate" -> ActionResult.alreadySatisfied("choice already recorded", capabilities, legacyResult);
+                default -> ActionResult.unavailable("quest transition unavailable", capabilities, legacyResult);
+            };
+        }
+        if (action.kind() == VillagerActionDefinition.Kind.QUEST) {
+            String status = legacyResult.replacements().getOrDefault("quest_action_status", "unavailable");
+            boolean applied = switch (action.questAction()) {
+                case START -> status.equals("started") || status.equals("reminder");
+                case REMIND -> status.equals("reminder");
+                case TURN_IN -> status.equals("completed");
+                case ABANDON -> status.startsWith("abandoned");
+                case FAIL -> status.equals("failed");
+                case BLOCK -> status.equals("branch_locked") || status.equals("consumed");
+                case NONE -> false;
+            };
+            return applied ? ActionResult.success(legacyResult, capabilities)
+                    : ActionResult.unavailable(status, capabilities, legacyResult);
+        }
+        if (legacyResult.ran()) return ActionResult.success(legacyResult, capabilities);
+        if (factSatisfied(context, action, inheritedReplacements)) {
+            var scope = action.factScope().scope(context, action.questId());
+            Map<String, String> replacements = new LinkedHashMap<>(DialoguePlaceholders.base(context));
+            if (inheritedReplacements != null) replacements.putAll(inheritedReplacements);
+            String value = VillagerDialogueResources.resolveTemplate(action.factValue(), replacements);
+            VillagerActionResult satisfied = VillagerActionExecutor.factResult(action, replacements, scope.asString(), value, 0);
+            return ActionResult.alreadySatisfied("fact already satisfied", capabilities,
+                    new VillagerActionResult(false, satisfied.lineId(), satisfied.text(), satisfied.replacements(), false));
+        }
+        return ActionResult.unavailable("action did not apply", capabilities, legacyResult);
+    }
+
+    private static boolean factSatisfied(DialogueContext context, VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements) {
+        if (context == null) return false;
+        var scope = action.factScope().scope(context, action.questId());
+        if (scope.isBlank()) return false;
+        VillagerQuestFacts facts = VillagerQuestFacts.get(context.level());
+        return switch (action.kind()) {
+            case SET_TAG -> action.factTag() != null && facts.hasTag(scope, action.factTag());
+            case CLEAR_TAG -> action.factTag() != null && !facts.hasTag(scope, action.factTag());
+            case SET_VARIABLE -> {
+                Map<String, String> replacements = new LinkedHashMap<>(DialoguePlaceholders.base(context));
+                if (inheritedReplacements != null) replacements.putAll(inheritedReplacements);
+                String expected = VillagerDialogueResources.resolveTemplate(action.factValue(), replacements);
+                boolean stageMatches = true;
+                if (action.factScope() == QuestFactScope.QUEST && action.factKey().equals("stage")) {
+                    var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), action.questId());
+                    stageMatches = progress != null && expected.equals(progress.currentStage());
+                }
+                yield stageMatches && !action.factKey().isBlank()
+                        && facts.variable(scope, action.factKey()).filter(expected::equals).isPresent();
+            }
+            default -> false;
+        };
     }
 
     private static boolean requiresLiveContext(Set<ActionCapability> capabilities) {

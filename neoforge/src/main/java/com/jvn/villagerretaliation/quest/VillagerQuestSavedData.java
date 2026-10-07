@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.quest;
 
 import com.mojang.logging.LogUtils;
 import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
+import com.jvn.villagerretaliation.quest.runtime.QuestActionCheckpoint;
 import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +33,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 4;
+    public static final int CURRENT_DATA_VERSION = 5;
     public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
     public static final int MAX_CHOICE_HISTORY = 256;
     public static final int MAX_COMPLETION_HISTORY = 128;
@@ -599,6 +601,8 @@ public class VillagerQuestSavedData extends SavedData {
         private BlockPos targetPos;
         private String targetObjectiveId = "";
         private String currentStage = "";
+        private final Map<String, QuestActionCheckpoint> stageActions = new LinkedHashMap<>();
+        private String pendingStageTransition = "";
         private final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
         private final Map<String, Integer> objectiveCounters = new HashMap<>();
         private final Map<String, ResourceLocation> resolvedObjectiveItems = new HashMap<>();
@@ -654,6 +658,11 @@ public class VillagerQuestSavedData extends SavedData {
             progress.consumedReason = tag.getString(TAG_CONSUMED_REASON);
             progress.targetObjectiveId = tag.getString(TAG_TARGET_OBJECTIVE);
             progress.currentStage = tag.getString(TAG_CURRENT_STAGE);
+            progress.pendingStageTransition = tag.getString("PendingStageTransition");
+            CompoundTag stageActions = tag.getCompound("StageActions");
+            for (String key : stageActions.getAllKeys()) {
+                progress.stageActions.put(key, QuestActionCheckpoint.load(stageActions.getCompound(key)));
+            }
             progress.completedObjectives.addAll(NbtDataUtil.readStringSet(tag, TAG_COMPLETED_OBJECTIVES));
             progress.claimedBonuses.addAll(NbtDataUtil.readStringSet(tag, TAG_CLAIMED_BONUSES));
             progress.definitionRevision = Math.max(0, tag.getInt(TAG_DEFINITION_REVISION));
@@ -801,6 +810,12 @@ public class VillagerQuestSavedData extends SavedData {
             if (!this.currentStage.isBlank()) {
                 tag.putString(TAG_CURRENT_STAGE, this.currentStage);
             }
+            if (!this.stageActions.isEmpty()) {
+                CompoundTag actions = new CompoundTag();
+                this.stageActions.forEach((key, value) -> actions.put(key, value.save()));
+                tag.put("StageActions", actions);
+            }
+            if (!this.pendingStageTransition.isBlank()) tag.putString("PendingStageTransition", this.pendingStageTransition);
             if (!this.completedObjectives.isEmpty()) {
                 tag.put(TAG_COMPLETED_OBJECTIVES, NbtDataUtil.stringList(this.completedObjectives));
             }
@@ -1143,6 +1158,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.questRunId = null;
             this.consumedReason = "";
             this.currentStage = "started";
+            clearStageActions();
             this.issuerVillageKey = "";
             this.triggerTimes.clear();
             this.completedObjectives.clear();
@@ -1316,12 +1332,34 @@ public class VillagerQuestSavedData extends SavedData {
             this.currentStage = "branch_lock".equals(this.consumedReason) ? "branch_locked" : "consumed";
         }
 
+        public Map<String, QuestActionCheckpoint> stageActions() {
+            return Map.copyOf(this.stageActions);
+        }
+
+        public void recordStageAction(String key, QuestActionCheckpoint checkpoint) {
+            this.stageActions.put(key, checkpoint);
+        }
+
+        public String pendingStageTransition() {
+            return this.pendingStageTransition;
+        }
+
+        public void requestStageTransition(String stage) {
+            this.pendingStageTransition = stage == null ? "" : stage.trim();
+        }
+
+        private void clearStageActions() {
+            this.stageActions.clear();
+            this.pendingStageTransition = "";
+        }
+
         public boolean setCurrentStage(String stage) {
             String normalized = stage == null ? "" : stage.trim();
             if (this.currentStage.equals(normalized)) {
                 return false;
             }
             this.currentStage = normalized;
+            clearStageActions();
             return true;
         }
 
@@ -1451,6 +1489,7 @@ public class VillagerQuestSavedData extends SavedData {
 
         public void restartForDefinitionRevision(String entryStage) {
             this.currentStage = entryStage == null ? "" : entryStage.trim();
+            clearStageActions();
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
             this.claimedBonuses.clear();

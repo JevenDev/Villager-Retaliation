@@ -38,6 +38,7 @@ public final class QuestSaveMigrations {
             // Version 4 persists the concrete item selected for randomized objectives.
             // Existing entries require no rewrite; legacy active runs derive it from their run id once.
             case 3 -> 4;
+            case 4 -> 5;
             default -> throw new IllegalStateException("No quest save migration from version " + version);
         };
     }

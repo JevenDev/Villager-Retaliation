@@ -65,7 +65,7 @@ public final class VillagerActionExecutor {
                     ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case MEMORY -> rememberMemory(context, action.memoryTag(), action.memoryScope())
                     ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
-            case LOOT -> giveLoot(context, action.lootTable()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
+            case LOOT -> grantLoot(context, action.lootTable()).resolved() ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case SET_TAG -> executeSetFactTag(context, action, replacements);
             case CLEAR_TAG -> executeClearFactTag(context, action, replacements);
             case SET_VARIABLE -> executeSetFactVariable(context, action, replacements);
@@ -135,14 +135,18 @@ public final class VillagerActionExecutor {
     }
 
     public static boolean giveLoot(DialogueContext context, ResourceLocation lootTableId) {
+        return grantLoot(context, lootTableId).gaveAny();
+    }
+
+    private static LootGrant grantLoot(DialogueContext context, ResourceLocation lootTableId) {
         if (context == null || lootTableId == null) {
-            return false;
+            return new LootGrant(false, false);
         }
         QuestRewardResolver.RollResult roll = QuestRewardResolver.roll(
                 context.level(), context.player().getLuck(), lootTableId, context.random());
         if (!roll.resolution().resolved()) {
             LOGGER.warn("{}", roll.resolution().diagnostic());
-            return false;
+            return new LootGrant(false, false);
         }
 
         boolean gaveAny = false;
@@ -158,7 +162,10 @@ public final class VillagerActionExecutor {
             VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), noticeStack);
             gaveAny = true;
         }
-        return gaveAny;
+        return new LootGrant(true, gaveAny);
+    }
+
+    private record LootGrant(boolean resolved, boolean gaveAny) {
     }
 
     private static VillagerActionResult executeNotification(
@@ -208,6 +215,7 @@ public final class VillagerActionExecutor {
                 .map(outcome -> {
                     Map<String, String> replacements = new LinkedHashMap<>(inheritedReplacements);
                     replacements.putAll(outcome.replacements());
+                    replacements.put("quest_action_status", outcome.status());
                     List<String> overrideLines = action.linesForStatus(outcome.status());
                     List<String> overrideKeys = action.lineKeysForStatus(outcome.status());
                     String fallback = overrideLines.isEmpty()
@@ -281,7 +289,7 @@ public final class VillagerActionExecutor {
         return factResult(action, inheritedReplacements, scopeKey.asString(), Integer.toString(value), value);
     }
 
-    private static VillagerActionResult factResult(
+    static VillagerActionResult factResult(
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements,
             String scopeKey,

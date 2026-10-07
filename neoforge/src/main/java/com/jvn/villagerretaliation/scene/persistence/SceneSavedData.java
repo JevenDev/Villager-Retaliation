@@ -32,7 +32,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public final class SceneSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 4;
+    public static final int CURRENT_DATA_VERSION = 5;
     public static final int DEFAULT_COMPACTION_WORK = 16;
     public static final long TERMINAL_RETENTION_TICKS = 7L * 24000L;
     private static final int MAX_TOMBSTONES = 4096;
@@ -433,12 +433,7 @@ public final class SceneSavedData extends SavedData {
         if (scene.cleanupStatus() != SceneInstance.CleanupStatus.COMPLETE
                 || !scene.pendingOperations().isEmpty()
                 || scene.receipts().values().stream()
-                        .anyMatch(
-                                receipt ->
-                                        receipt.state()
-                                                != com.jvn.villagerretaliation.scene.runtime
-                                                        .SceneOperationReceipt.ReceiptState
-                                                        .COMPLETED)
+                        .anyMatch(receipt -> !receipt.settled())
                 || continuations.values().stream()
                         .anyMatch(
                                 continuation ->
@@ -495,7 +490,7 @@ public final class SceneSavedData extends SavedData {
         String key = continuationKey(scene.id(), playerId, sourcePointer);
         UUID existingId = continuationKeys.get(key);
         SceneContinuation existing = continuations.get(existingId);
-        if (existing != null && !existing.completionReceipt()) return existing;
+        if (existing != null) return existing;
         UUID id = UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
         SceneContinuation continuation =
                 new SceneContinuation(

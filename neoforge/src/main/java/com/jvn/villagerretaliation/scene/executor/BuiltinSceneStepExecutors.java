@@ -345,19 +345,23 @@ public final class BuiltinSceneStepExecutors {
                 var action = parsed.getFirst();
                 SceneOperationReceipt.Kind kind = receiptKind(action);
                 var guarded =
-                        SceneReceiptGuard.applyOnce(
+                        SceneReceiptGuard.applyActionOnce(
                                 c,
                                 "action/" + id,
                                 kind,
                                 () ->
                                         VillagerActionRegistry.execute(
-                                                dialogue, action, java.util.Map.of()),
-                                "action=" + id);
-                if (guarded.status() == SceneReceiptGuard.Status.AMBIGUOUS_PREPARED)
+                                                dialogue, action, java.util.Map.of()));
+                if (guarded.ambiguous())
                     return SceneStepResult.block(
                             "action_ambiguous",
                             "cannot prove whether action " + id + " applied before reload");
-                guarded.receipt().completed(c.gameTime(), "action=" + id);
+                if (guarded.outcome().suspended()) {
+                    return SceneStepResult.block("action_suspended", "action_batch cannot wait for a child scene");
+                }
+                if (action.required() && !guarded.outcome().success()) {
+                    return SceneStepResult.fail("required_action_failed", "action " + id + ": " + guarded.outcome().message());
+                }
             }
             return SceneStepResult.applied();
         }

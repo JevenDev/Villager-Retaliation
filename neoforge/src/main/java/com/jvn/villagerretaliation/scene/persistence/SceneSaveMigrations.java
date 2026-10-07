@@ -33,10 +33,28 @@ public final class SceneSaveMigrations {
             } else if (version == 3) {
                 // Version 4 adds bounded terminal operation tombstones; old saves start with none.
                 version = 4;
+            } else if (version == 4) {
+                migrateContinuationResults(data);
+                version = 5;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);
         return new Result(data, source, current, false);
+    }
+
+    private static void migrateContinuationResults(CompoundTag data) {
+        for (Tag raw : data.getList("Continuations", Tag.TAG_COMPOUND)) {
+            if (!(raw instanceof CompoundTag continuation) || continuation.contains("ActionStatus", Tag.TAG_STRING)) continue;
+            String status = "SUSPENDED";
+            if (continuation.getBoolean("CompletionReceipt")) {
+                status = switch (continuation.getString("SceneResult")) {
+                    case "SUCCESS" -> "SUCCESS";
+                    case "FAILURE", "CANCELLED" -> "FAILED";
+                    default -> "UNAVAILABLE";
+                };
+            }
+            continuation.putString("ActionStatus", status);
+        }
     }
 
     private static void markRunIdentityKinds(CompoundTag data) {
