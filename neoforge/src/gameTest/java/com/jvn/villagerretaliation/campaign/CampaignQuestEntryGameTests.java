@@ -760,6 +760,85 @@ public final class CampaignQuestEntryGameTests {
         helper.succeed();
     }
 
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void campaignJournalShowsChapterAccessWithoutStartingProgress(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var view = CampaignJournalPresenter.entries(CampaignWorldMode.CAMPAIGN, CampaignResources.current(fixture.server),
+                    fixture.data, fixture.player.getUUID(), "en_us").getFirst();
+            helper.assertTrue(view.chapters().stream().anyMatch(chapter -> chapter.id().equals("opening") && chapter.available()), "opening chapter is available");
+            helper.assertTrue(view.chapters().stream().anyMatch(chapter -> chapter.id().equals("later") && !chapter.available()
+                    && !chapter.blockers().isEmpty()), "later chapter explains its personal prerequisite");
+            helper.assertTrue(fixture.data.instances().isEmpty() && fixture.progress(QUEST) == null, "journal reads do not enroll players or start campaigns");
+            helper.assertTrue(CampaignJournalPresenter.entries(CampaignWorldMode.SANDBOX, CampaignResources.current(fixture.server),
+                    fixture.data, fixture.player.getUUID(), "en_us").isEmpty(), "sandbox journal does not offer new campaigns");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void campaignJournalSeparatesSharedOutcomesFromDiscoveryAndParticipation(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, ALTERNATE)) {
+            fixture.resolve();
+            var catalog = CampaignResources.current(fixture.server);
+            var unknown = CampaignJournalPresenter.entries(CampaignWorldMode.CAMPAIGN, catalog, fixture.data, fixture.player.getUUID(), "en_us")
+                    .getFirst().milestones().getFirst();
+            helper.assertTrue(unknown.resolved() && !unknown.discovered() && !unknown.participated(), "shared event does not invent personal knowledge or participation");
+            helper.assertTrue(unknown.outcome().isBlank() && unknown.outcomeTitle().isBlank(), "undiscovered outcome text stays hidden");
+            helper.assertTrue(unknown.catchUp() && unknown.catchUpQuest().equals(ALTERNATE.toString()), "late player can find the authored alternate quest");
+            fixture.data.enterMilestone(fixture.content.definition(), fixture.player.getUUID(), "dragon", 3L);
+            var known = CampaignJournalPresenter.entries(CampaignWorldMode.CAMPAIGN, catalog, fixture.data, fixture.player.getUUID(), "en_us")
+                    .getFirst().milestones().getFirst();
+            helper.assertTrue(known.discovered() && known.entered() && known.catchUp() && !known.participated(),
+                    "catch-up discovery is shown independently from participant credit");
+            helper.assertValueEqual(known.outcome(), "defeated", "journal reports the actual shared outcome");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void campaignJournalPreservesParticipantStatus(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original path begins");
+            fixture.resolve(Set.of(fixture.player.getUUID()));
+            var view = CampaignJournalPresenter.entries(CampaignWorldMode.CAMPAIGN, CampaignResources.current(fixture.server),
+                    fixture.data, fixture.player.getUUID(), "en_us").getFirst().milestones().getFirst();
+            helper.assertTrue(view.resolved() && view.discovered() && view.participated() && !view.catchUp(),
+                    "participant keeps the original route and explicit credit");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void campaignJournalRetainsReadableHistoryWhenContentIsMissing(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.resolve();
+            fixture.data.discover(fixture.content.definition(), fixture.player.getUUID(), "dragon");
+            var missing = new CampaignContentCatalog(QuestContentCatalogs.current(fixture.server), Map.of(), List.of());
+            var view = CampaignJournalPresenter.entries(CampaignWorldMode.CAMPAIGN, missing, fixture.data, fixture.player.getUUID(), "en_us").getFirst();
+            helper.assertTrue(!view.diagnostic().isBlank() && view.chapters().isEmpty(), "missing content is dormant with a diagnostic");
+            helper.assertValueEqual(view.title(), fixture.data.instances().get(CAMPAIGN).title(), "saved campaign title remains readable");
+            helper.assertTrue(view.milestones().getFirst().discovered() && !view.milestones().getFirst().participated(), "saved personal distinction survives missing definitions");
+            var sandbox = CampaignJournalPresenter.entries(CampaignWorldMode.SANDBOX, missing, fixture.data, fixture.player.getUUID(), "en_us").getFirst();
+            helper.assertTrue(!sandbox.diagnostic().isBlank() && sandbox.milestones().getFirst().resolved(), "disabled progression does not erase recorded outcomes");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void campaignJournalKeepsUnresolvedPersonalProgressWhenContentIsMissing(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original path begins");
+            var missing = new CampaignContentCatalog(QuestContentCatalogs.current(fixture.server), Map.of(), List.of());
+            var view = CampaignJournalPresenter.entries(CampaignWorldMode.CAMPAIGN, missing, fixture.data, fixture.player.getUUID(), "en_us").getFirst();
+            helper.assertValueEqual(view.milestones().size(), 1, "unresolved personal milestones remain visible without definitions");
+            var milestone = view.milestones().getFirst();
+            helper.assertTrue(milestone.entered() && !milestone.resolved() && !milestone.completed() && !milestone.participated(),
+                    "missing content preserves in-progress state without inventing outcomes or participation");
+        }
+        helper.succeed();
+    }
+
     private static CompiledQuest quest(ResourceLocation id, String milestoneStage) {
         var raw = JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"test:entry_quest","localization_prefix":"quest.entry_fixture.",

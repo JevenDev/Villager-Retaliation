@@ -84,7 +84,10 @@ public final class VillagerQuestTrackerOverlay {
             flashTicks = 0;
             notificationAge = 0;
             trackedQuestIds = List.of();
-            if (Minecraft.getInstance().screen instanceof VillagerQuestJournalScreen) {
+            if (pendingJournalOpenTicks > 0 && Minecraft.getInstance().screen == null) {
+                pendingJournalOpenTicks = 0;
+                Minecraft.getInstance().setScreen(new com.jvn.villagerretaliation.client.interaction.CampaignJournalScreen(null));
+            } else if (Minecraft.getInstance().screen instanceof VillagerQuestJournalScreen) {
                 Minecraft.getInstance().setScreen(null);
             }
         } else if (pendingJournalOpenTicks > 0 && Minecraft.getInstance().screen == null) {

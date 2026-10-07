@@ -554,6 +554,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private List<Component> questCountTooltip() {
         QuestCountSummary summary = questCountSummary();
         return switch (this.selectedTab) {
+            case CAMPAIGN -> List.of(Component.translatable("villagerretaliation.gui.campaign_journal.tooltip"));
             case AVAILABLE -> List.of(
                     Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
                     Component.translatable(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
@@ -1586,6 +1587,10 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private void selectTab(QuestJournalTab tab) {
         playBookSound(1.0F);
+        if (tab == QuestJournalTab.CAMPAIGN) {
+            Minecraft.getInstance().setScreen(new CampaignJournalScreen(this));
+            return;
+        }
         if (this.selectedTab == tab) {
             return;
         }
@@ -2607,7 +2612,14 @@ public final class VillagerQuestJournalScreen extends Screen {
                 GUI_KEY_PREFIX + "tab.completed.tooltip",
                 GUI_KEY_PREFIX + "empty.completed",
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE,
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_COMPLETED_TEXTURE);
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_COMPLETED_TEXTURE),
+        CAMPAIGN(
+                3,
+                "villagerretaliation.gui.campaign_journal.title",
+                "villagerretaliation.gui.campaign_journal.tooltip",
+                "villagerretaliation.gui.campaign_journal.empty",
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE,
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_AVAILABLE_TEXTURE);
 
         private final int index;
         private final String titleKey;
@@ -2648,6 +2660,7 @@ public final class VillagerQuestJournalScreen extends Screen {
                 case AVAILABLE -> QUEST_COUNT_NEARBY_STYLE;
                 case ACTIVE -> QUEST_COUNT_ACTIVE_STYLE;
                 case COMPLETED -> QUEST_COUNT_COMPLETED_STYLE;
+                case CAMPAIGN -> QUEST_COUNT_ACTIVE_STYLE;
             };
         }
 
@@ -2668,6 +2681,7 @@ public final class VillagerQuestJournalScreen extends Screen {
                 case AVAILABLE -> state == QuestJournalEntryState.AVAILABLE || state == QuestJournalEntryState.ACTIVE;
                 case ACTIVE -> state == QuestJournalEntryState.ACTIVE;
                 case COMPLETED -> state == QuestJournalEntryState.COMPLETED;
+                case CAMPAIGN -> false;
             };
         }
     }
