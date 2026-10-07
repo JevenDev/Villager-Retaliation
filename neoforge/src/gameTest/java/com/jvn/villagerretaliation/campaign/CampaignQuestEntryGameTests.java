@@ -622,6 +622,144 @@ public final class CampaignQuestEntryGameTests {
         helper.succeed();
     }
 
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void acceptedQuestResumesAfterSceneAndSaveReload(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedOffer();
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "only actions before the scene have run");
+            helper.assertTrue(!continuation.campaignConsent().isEmpty(), "pending acceptance is attached to its action sequence");
+            var scenes = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(helper.getLevel());
+            fixture.server.overworld().getDataStorage().set("villagerretaliation_scenes",
+                    com.jvn.villagerretaliation.scene.persistence.SceneSavedData.load(scenes.save(new CompoundTag(),
+                            helper.getLevel().registryAccess()), helper.getLevel().registryAccess()));
+            fixture.finishInterruptedOffer(continuation.id());
+            var completed = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(helper.getLevel())
+                    .continuation(continuation.id()).orElseThrow();
+            helper.assertTrue(completed.completionReceipt(), "saved action sequence completes");
+            helper.assertTrue(fixture.progress(QUEST) != null && fixture.progress(QUEST).campaignAcceptance() != null, "saved approval starts quest");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 316, "resumed actions and quest start run once");
+            helper.assertTrue(completed.campaignConsent().isEmpty(), "consumed approval is removed from the continuation");
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 316, "completed continuation cannot reuse approval");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void sharedOutcomeChangesInvalidateInterruptedApproval(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedOffer();
+            fixture.resolve();
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertTrue(continuation.completionReceipt(), "outdated approval finishes without replay");
+            helper.assertValueEqual(continuation.actionStatus(), com.jvn.villagerretaliation.action.ActionStatus.UNAVAILABLE,
+                    "changed shared state requires a fresh quest offer");
+            helper.assertTrue(fixture.progress(QUEST) == null, "original path is not started");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "no actions after the interruption run");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void missingCampaignPausesInterruptedApprovalUntilRestored(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedOffer();
+            var catalog = QuestContentCatalogs.current(fixture.server);
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(catalog, Map.of(), List.of()));
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertFalse(continuation.completionReceipt(), "missing content leaves continuation dormant");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "dormant sequence has no further effects");
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(catalog, Map.of(CAMPAIGN, fixture.content), List.of()));
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertTrue(continuation.completionReceipt() && fixture.progress(QUEST) != null, "restored compatible content resumes accepted quest");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 316, "restoration preserves the prior action cursor");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void revokedAuthorityPausesInterruptedApproval(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedOffer();
+            var leader = helper.makeMockServerPlayerInLevel();
+            helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.createParty(leader).success(), "party created");
+            try {
+                var invitation = com.jvn.villagerretaliation.party.PartyService.sendInvitation(leader, fixture.player);
+                helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.acceptInvitation(fixture.player, invitation.invitationId()).success(),
+                        "controller joins party");
+                com.jvn.villagerretaliation.party.PartyService.setAdminPrivileges(leader, fixture.player.getUUID(), false);
+                fixture.finishInterruptedOffer(continuation.id());
+                helper.assertFalse(continuation.completionReceipt(), "revoked authority pauses the sequence");
+                helper.assertTrue(continuation.actionDiagnostic().contains("Admin Privileges"), "pause explains required authority");
+                helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "paused sequence performs no further actions");
+                com.jvn.villagerretaliation.party.PartyService.setAdminPrivileges(leader, fixture.player.getUUID(), true);
+                fixture.finishInterruptedOffer(continuation.id());
+                helper.assertTrue(fixture.progress(QUEST) != null, "restored authority resumes the approved start");
+                helper.assertValueEqual(fixture.player.totalExperience - experience, 316, "resumption does not replay earlier actions");
+            } finally {
+                com.jvn.villagerretaliation.party.PartyService.leaveParty(fixture.player);
+                com.jvn.villagerretaliation.party.PartyService.leaveParty(leader);
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void unreadableInterruptedConsentIsPreservedAndBlocked(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int experience = fixture.player.totalExperience;
+            var continuation = fixture.interruptedOffer();
+            var malformed = continuation.campaignConsent();
+            malformed.putInt("Version", 99);
+            continuation.campaignConsent(malformed);
+            fixture.finishInterruptedOffer(continuation.id());
+            helper.assertFalse(continuation.completionReceipt(), "future consent stays repairable");
+            helper.assertValueEqual(continuation.campaignConsent().getInt("Version"), 99, "future data is preserved");
+            helper.assertTrue(continuation.actionDiagnostic().contains("unsupported"), "unsupported version is explained");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 11, "future consent cannot authorize actions");
+            var serialized = continuation.save();
+            serialized.putString("CampaignConsent", "unreadable");
+            var restored = com.jvn.villagerretaliation.scene.runtime.SceneContinuation.load(serialized);
+            helper.assertFalse(restored.campaignConsent().isEmpty(), "invalid NBT cannot silently remove the consent gate");
+            helper.assertTrue(CampaignQuestAcceptanceService.resumeAccess(fixture.context(), restored.campaignConsent()).paused(),
+                    "invalid NBT pauses before any resumed action");
+        }
+        helper.succeed();
+    }
+
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void parentContinuationRecognizesApprovalConsumedByItsDependency(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int experience = fixture.player.totalExperience;
+            var child = fixture.interruptedOffer();
+            var scenes = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(helper.getLevel());
+            var scene = scenes.get(child.sceneInstanceId()).orElseThrow();
+            var actions = VillagerActionDefinition.readList(QUEST, "parent", JsonParser.parseString("""
+                    {"actions":[{"type":"experience","amount":17}]}
+                    """).getAsJsonObject());
+            var parent = scenes.suspendContinuation(scene, fixture.player.getUUID(), fixture.villager.getUUID(),
+                    "parent/approval", actions, 0, Map.of(), null, null);
+            parent.campaignConsent(child.campaignConsent());
+            parent.waitOn(scene.id(), child.id(), false);
+            fixture.finishInterruptedOffer(child.id());
+            com.jvn.villagerretaliation.scene.SceneContinuationService.maintain(fixture.server, scenes);
+            helper.assertTrue(child.completionReceipt() && parent.completionReceipt(), "dependency and parent both finish");
+            helper.assertValueEqual(parent.actionStatus(), com.jvn.villagerretaliation.action.ActionStatus.SUCCESS,
+                    "child's accepted quest is not mistaken for conflicting progress");
+            helper.assertTrue(parent.campaignConsent().isEmpty(), "parent retires consumed approval");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 333, "both sequences execute once");
+            fixture.finishInterruptedOffer(child.id());
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 333, "nested approval cannot replay either sequence");
+        }
+        helper.succeed();
+    }
+
     private static CompiledQuest quest(ResourceLocation id, String milestoneStage) {
         var raw = JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"test:entry_quest","localization_prefix":"quest.entry_fixture.",
@@ -714,14 +852,40 @@ public final class CampaignQuestEntryGameTests {
 
 
         private ResourceLocation installConfirmationTree() {
+            return installConfirmationTree(false);
+        }
+
+        private ResourceLocation installConfirmationTree(boolean interrupted) {
             var treeId = ResourceLocation.parse("test:campaign_confirmation");
             var raw = JsonParser.parseString("""
                     {"id":"test:campaign_confirmation","entries":[{"id":"start","label":"Start","start":"opening"}],
                      "nodes":{"opening":{"lines":["Ready"],"responses":[{"id":"accept","label":"Accept","end":true,
                       "actions":[{"type":"experience","amount":11},{"type":"quest","quest":"test:entry_quest","action":"start","required":true}]}]}}}
                     """).getAsJsonObject();
-            var tree = com.jvn.villagerretaliation.dialogue.DialogueTreeResources.readGeneratedTree(treeId, raw, QUEST);
             var current = QuestContentCatalogs.current(server);
+            var scenes = new LinkedHashMap<>(current.scenes());
+            if (interrupted) {
+                var actions = raw.getAsJsonObject("nodes").getAsJsonObject("opening")
+                        .getAsJsonArray("responses").get(0).getAsJsonObject().getAsJsonArray("actions");
+                var start = actions.remove(1);
+                actions.add(JsonParser.parseString("""
+                        {"type":"start_scene","scene":"test:approval_wait","operation_id":"acceptance_wait","wait_for_result":true,"required":true}
+                        """));
+                actions.add(JsonParser.parseString("""
+                        {"type":"experience","amount":5}
+                        """));
+                actions.add(start);
+                var scene = com.jvn.villagerretaliation.scene.compiler.SceneCompiler.compile(
+                        com.jvn.villagerretaliation.scene.compiler.SceneParser.parse(CAMPAIGN, JsonParser.parseString("""
+                                {"schema":"villagerretaliation:scene/v1","id":"test:approval_wait","ownership":"player",
+                                 "entry_step":"wait","actors":[],"steps":[
+                                  {"id":"wait","type":"villagerretaliation:wait_ticks","data":{"ticks":20},"next":"done"},
+                                  {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                                """).getAsJsonObject()).resource()).scene();
+                if (scene == null) throw new IllegalStateException("Approval scene did not compile");
+                scenes.put(scene.id(), scene);
+            }
+            var tree = com.jvn.villagerretaliation.dialogue.DialogueTreeResources.readGeneratedTree(treeId, raw, QUEST);
             var trees = new LinkedHashMap<>(current.dialogueCatalog().trees());
             trees.put(treeId, tree);
             var dialogue = new com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog(
@@ -729,12 +893,39 @@ public final class CampaignQuestEntryGameTests {
             var replacement = new QuestContentCatalog(current.generation(), new CompiledQuestCatalog(
                     current.compiledQuests().stream().collect(java.util.stream.Collectors.toMap(CompiledQuest::id, value -> value))),
                     dialogue, current.quests(), current.objectiveEventQuestIds(), current.factQuestIds(), current.memoryEventQuestIds(),
-                    current.exclusiveGroupQuestIds(), current.triggerEventQuestIds(), current.scenes(), current.encounters(), current.pools(),
+                    current.exclusiveGroupQuestIds(), current.triggerEventQuestIds(), scenes, current.encounters(), current.pools(),
                     current.bundles(), current.localization(), current.rewards());
             QuestContentCatalogs.installForTests(server, replacement, report);
             CampaignResources.installForTests(server, new CampaignContentCatalog(replacement, Map.of(CAMPAIGN, content), List.of()));
             com.jvn.villagerretaliation.dialogue.DialogueTreeResources.clearCache();
+            if (interrupted) com.jvn.villagerretaliation.scene.SceneRuntime.initialize(server);
             return treeId;
+        }
+
+
+        private com.jvn.villagerretaliation.scene.runtime.SceneContinuation interruptedOffer() {
+            var tree = installConfirmationTree(true);
+            player.setPos(villager.getX() + 1, villager.getY(), villager.getZ());
+            if (!com.jvn.villagerretaliation.interaction.VillagerConversationService.start(player, villager)) {
+                throw new IllegalStateException("Could not start interrupted fixture conversation");
+            }
+            com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.startEntry(context(), tree, "start");
+            var option = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(context()).orElseThrow().getFirst();
+            com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, villager.getId(), option.id());
+            var request = java.util.Objects.requireNonNull(CampaignQuestAcceptanceService.pending(player));
+            CampaignQuestAcceptanceService.handle(player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            return com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(player.serverLevel()).continuations().stream()
+                    .filter(value -> player.getUUID().equals(value.playerId()) && !value.completionReceipt()).findFirst().orElseThrow();
+        }
+
+        private void finishInterruptedOffer(UUID continuationId) {
+            var data = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(player.serverLevel());
+            var continuation = data.continuation(continuationId).orElseThrow();
+            var scene = data.get(continuation.sceneInstanceId()).orElseThrow();
+            if (!scene.state().terminal()) com.jvn.villagerretaliation.scene.runtime.SceneTransitionService.complete(
+                    data, scene, player.serverLevel().getGameTime());
+            com.jvn.villagerretaliation.scene.SceneContinuationService.maintain(server, data);
         }
 
         private com.jvn.villagerretaliation.dialogue.DialogueContext context() {

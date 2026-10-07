@@ -37,6 +37,17 @@ public final class SceneContinuation {
     private ActionStatus actionStatus = ActionStatus.SUSPENDED;
     private String actionDiagnostic = "";
     private DialogueResume dialogueResume;
+    private CompoundTag campaignConsent = new CompoundTag();
+
+    public CompoundTag campaignConsent() { return campaignConsent.copy(); }
+    public void campaignConsent(CompoundTag consent) { campaignConsent = consent.copy(); }
+
+    public boolean pauseForConsent(String diagnostic) {
+        if (actionDiagnostic.equals(diagnostic)) return false;
+        actionDiagnostic = diagnostic;
+        actionStatus = ActionStatus.SUSPENDED;
+        return true;
+    }
 
     public SceneContinuation(UUID id, UUID sceneInstanceId, UUID playerId, UUID providerId,
             ResourceLocation questId, UUID questRunId, String sourcePointer,
@@ -94,6 +105,7 @@ public final class SceneContinuation {
         retrySuspendedAction = retryAction;
         state = State.WAITING;
         actionStatus = ActionStatus.SUSPENDED;
+        actionDiagnostic = "";
         sceneResult = SceneInstance.CompletionResult.NONE;
     }
 
@@ -126,6 +138,7 @@ public final class SceneContinuation {
         tag.putBoolean("CompletionReceipt", completionReceipt);
         tag.putString("ActionStatus", actionStatus.name());
         tag.putString("ActionDiagnostic", actionDiagnostic);
+        if (!campaignConsent.isEmpty()) tag.put("CampaignConsent", campaignConsent.copy());
         if (dialogueResume != null) {
             CompoundTag dialogue = new CompoundTag();
             dialogue.putString("Tree", dialogueResume.treeId().toString());
@@ -162,6 +175,10 @@ public final class SceneContinuation {
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
         value.campaignId = NbtDataUtil.readResourceLocation(tag, "Campaign").orElse(null);
+        value.campaignConsent = tag.getCompound("CampaignConsent").copy();
+        if (tag.contains("CampaignConsent") && (!tag.contains("CampaignConsent", Tag.TAG_COMPOUND) || value.campaignConsent.isEmpty())) {
+            value.campaignConsent.put("Unreadable", tag.get("CampaignConsent").copy());
+        }
         value.dependencyContinuationId = tag.hasUUID("DependencyContinuation") ? tag.getUUID("DependencyContinuation") : null;
         value.retrySuspendedAction = tag.getBoolean("RetrySuspendedAction");
         value.completionReceipt = tag.getBoolean("CompletionReceipt");
