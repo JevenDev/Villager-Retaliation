@@ -51,7 +51,7 @@ public final class QuestV1Compiler {
                         definition.questline(),
                         definition.tags(),
                         definition.parent(),
-                        definition.metadata()),
+                        definition.metadata(), definition.campaign()),
                 new CompiledQuestProvider(definition.offer()),
                 definition.target(),
                 definition.entryStage(),

@@ -31,10 +31,15 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
     public record Prerequisite(String chapter, String milestone, String outcome, String pointer) {
     }
 
-    public record Milestone(String id, String chapter, ResourceLocation quest, boolean irreversible,
+    public record Milestone(String id, String chapter, ResourceLocation quest, String stage, boolean irreversible,
             Map<String, Outcome> outcomes, CatchUp catchUp, Observation observation, String pointer) {
         public Milestone {
             outcomes = ordered(outcomes);
+        }
+
+        public Milestone(String id, String chapter, ResourceLocation quest, boolean irreversible,
+                Map<String, Outcome> outcomes, CatchUp catchUp, Observation observation, String pointer) {
+            this(id, chapter, quest, "", irreversible, outcomes, catchUp, observation, pointer);
         }
     }
 

@@ -73,7 +73,7 @@ public record CompiledQuest(
                 metadata.parent(), prerequisites, showLockedAdventureHint, provider.offer(), target,
                 objectives.stream().map(CompiledQuestObjective::definition).toList(), rules, ui.tracker(),
                 entryStage, stageDefinitions, triggers.stream().map(CompiledQuestTrigger::definition).toList(),
-                rewards.definition(), ui.dialogue(), metadata.dialogue(), ui.links(), revision);
+                rewards.definition(), ui.dialogue(), metadata.dialogue(), ui.links(), revision, metadata.campaign());
     }
 
     public CompiledQuest(

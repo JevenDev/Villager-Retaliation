@@ -176,6 +176,7 @@ function buildMetadata(quest) {
   copyString(quest.display, metadata, "description_key");
   copyString(quest, metadata, "questline");
   copyString(quest, metadata, "parent");
+  copyValue(quest, metadata, "campaign");
   copyValue(quest, metadata, "revision");
   copyValue(quest, metadata, "migration");
   const tags = stringArray(firstDefined(quest.tags, quest.tag));

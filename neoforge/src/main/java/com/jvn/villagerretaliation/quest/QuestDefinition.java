@@ -47,7 +47,8 @@ public record QuestDefinition(
         Dialogue dialogue,
         DialogueEntryMetadata metadata,
         Links links,
-        Revision revision
+        Revision revision,
+        ResourceLocation campaign
 ) {
     public QuestDefinition {
         title = title == null || title.isBlank() ? id.toString() : title;
@@ -100,6 +101,17 @@ public record QuestDefinition(
         this(id, title, description, titleKey, descriptionKey, questline, tags, parent, prerequisites,
                 showLockedAdventureHint, offer, target, objectives, rules, tracker, entryStage, stages, triggers,
                 rewards, dialogue, metadata, links, Revision.DEFAULT);
+    }
+
+    public QuestDefinition(
+            ResourceLocation id, String title, String description, String titleKey, String descriptionKey,
+            String questline, Set<String> tags, ResourceLocation parent, List<ResourceLocation> prerequisites,
+            boolean showLockedAdventureHint, Offer offer, Target target, List<Objective> objectives, Rules rules,
+            Tracker tracker, String entryStage, Map<String, Stage> stages, List<Trigger> triggers, Rewards rewards,
+            Dialogue dialogue, DialogueEntryMetadata metadata, Links links, Revision revision) {
+        this(id, title, description, titleKey, descriptionKey, questline, tags, parent, prerequisites,
+                showLockedAdventureHint, offer, target, objectives, rules, tracker, entryStage, stages, triggers,
+                rewards, dialogue, metadata, links, revision, null);
     }
 
     public record Revision(

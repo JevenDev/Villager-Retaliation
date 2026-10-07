@@ -1701,6 +1701,13 @@ function checkQuestV2Metadata(file, metadata, pointer, location, questId) {
   checkQuestV2OptionalString(file, metadata, pointer, location, "title_key");
   checkQuestV2OptionalString(file, metadata, pointer, location, "description_key");
   checkQuestV2OptionalString(file, metadata, pointer, location, "questline");
+  if (metadata.campaign !== undefined) {
+    const descriptor = questV2Schema.$defs.metadata.properties.campaign;
+    if (typeof metadata.campaign !== "string" || metadata.campaign.length > descriptor.maxLength
+        || !new RegExp(descriptor.pattern).test(metadata.campaign)) {
+      questV2Error(file, `${pointer}/campaign`, `${location}.campaign`, "campaign must be a namespaced resource id.", "Use the owning campaign's namespaced id.");
+    }
+  }
   checkQuestV2OptionalString(file, metadata, pointer, location, "parent");
   checkQuestV2OptionalString(file, metadata, pointer, location, "author");
   checkQuestV2OptionalString(file, metadata, pointer, location, "version");

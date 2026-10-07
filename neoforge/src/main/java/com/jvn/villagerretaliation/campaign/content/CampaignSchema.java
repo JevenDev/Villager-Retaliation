@@ -29,7 +29,7 @@ public final class CampaignSchema {
         JsonObject observation = object(List.of("event", "outcome"),
                 "event", enumeration("minecraft:ender_dragon_defeated"), "outcome", text(LOCAL_ID));
         JsonObject milestone = object(List.of("id", "chapter", "quest", "outcomes"),
-                "id", text(LOCAL_ID), "chapter", text(LOCAL_ID), "quest", text(RESOURCE_ID),
+                "id", text(LOCAL_ID), "chapter", text(LOCAL_ID), "quest", text(RESOURCE_ID), "stage", text(LOCAL_ID),
                 "irreversible", type("boolean"), "outcomes", array(outcome, 1),
                 "catch_up", catchUp, "observe", observation);
         JsonObject fact = object(List.of("id", "scope", "kind"),

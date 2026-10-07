@@ -494,7 +494,9 @@ public final class VillagerQuestResources {
         List<ResourceLocation> prerequisites = readQuestPrerequisites(root, parent);
         QuestDefinition.Target target;
         List<QuestDefinition.Objective> objectives;
+        ResourceLocation campaign;
         try {
+            campaign = com.jvn.villagerretaliation.campaign.content.CampaignQuestReference.read(root.get("campaign"));
             target = readTarget(root, registries);
             objectives = readObjectives(location, root, id, registries);
         } catch (IllegalArgumentException exception) {
@@ -525,7 +527,8 @@ public final class VillagerQuestResources {
                 readDialogue(location, id, root),
                 DialogueEntryMetadata.read(location, "quest", "quest", root),
                 readLinks(root),
-                readRevision(root)
+                readRevision(root),
+                campaign
         );
     }
 

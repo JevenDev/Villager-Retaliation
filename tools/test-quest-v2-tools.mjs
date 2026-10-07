@@ -25,6 +25,7 @@ try {
     id: "villagerretaliation:tool_valid",
     localization_prefix: "villagerretaliation.quest.tool_valid",
     metadata: {
+      campaign: "villagerretaliation:tool_campaign",
       revision: 2,
       migration: {
         active_policy: "keep",
@@ -148,6 +149,7 @@ try {
 
   await writeJson(v1Quest, {
     id: "villagerretaliation:tool_migrate",
+    campaign: "villagerretaliation:tool_campaign",
     display: {
       title: "Tool Migration",
       description: "Small deterministic migration fixture."
@@ -220,6 +222,14 @@ try {
   run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
 
   const conditionFixture = JSON.parse(await readFile(validQuest, "utf8"));
+  for (const campaign of [null, 7, true, "", "journey", "test:Bad", `test:${"x".repeat(257)}`, {}]) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.metadata.campaign = campaign;
+    await writeJson(validQuest, candidate);
+    const failure = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
+    assert(failure.stderr.includes("pointer=/metadata/campaign"), "Invalid campaign ownership lost its source pointer.");
+  }
+  await writeJson(validQuest, conditionFixture);
   const nestedConditions = [
     [{ type: "all_of", conditions: [{ type: "not", condition: { type: "reputation", min: 0 } }] }, false],
     [{ type: "and", conditions: [{ type: "unsupported_nested_condition" }] }, true],
@@ -255,6 +265,7 @@ try {
   const second = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);
   assert(first.stdout === second.stdout, "Migration output is not deterministic.");
   const migrated = JSON.parse(first.stdout);
+  assert(migrated.metadata.campaign === "villagerretaliation:tool_campaign", "Migration dropped campaign ownership.");
   assert(migrated.availability.completion_cooldown_ticks === 40, "Migration dropped completion cooldown rules.");
   assert(migrated.availability.active.hide_when_unmet === true, "Migration dropped active-state rules.");
   assert(migrated.availability.expiration.after_ticks === 2400, "Migration dropped expiration rules.");

@@ -83,7 +83,7 @@ public final class CampaignProgression {
         boolean catchingUp = progress.route() == CampaignInstance.Route.CATCH_UP;
         if (catchingUp && catchUp == null) return null;
         return new Entry(milestoneId, progress.route(), catchingUp ? catchUp.quest() : milestone.quest(),
-                catchingUp ? catchUp.stage() : "", progress.outcome(), progress.worldOperation(), progress.completed());
+                catchingUp ? catchUp.stage() : milestone.stage(), progress.outcome(), progress.worldOperation(), progress.completed());
     }
 
     public record ChapterAccess(boolean available, boolean completed, List<String> blockers) {

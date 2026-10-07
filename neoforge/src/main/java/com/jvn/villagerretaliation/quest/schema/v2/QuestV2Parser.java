@@ -132,6 +132,11 @@ public final class QuestV2Parser {
             return Map.of();
         }
         validator.expectKeys(object, "/metadata", METADATA_KEYS);
+        try {
+            com.jvn.villagerretaliation.campaign.content.CampaignQuestReference.read(object.get("campaign"));
+        } catch (IllegalArgumentException exception) {
+            validator.error("/metadata/campaign", exception.getMessage(), "Use the owning campaign's namespaced id.", Set.of());
+        }
         return new LinkedHashMap<>(object.asMap());
     }
 

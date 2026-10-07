@@ -14,7 +14,8 @@ public record CompiledQuestMetadata(
         String questline,
         Set<String> tags,
         ResourceLocation parent,
-        DialogueEntryMetadata dialogue
+        DialogueEntryMetadata dialogue,
+        ResourceLocation campaign
 ) {
     public CompiledQuestMetadata {
         title = title == null ? "" : title;
@@ -27,4 +28,10 @@ public record CompiledQuestMetadata(
                 : Collections.unmodifiableSet(new LinkedHashSet<>(tags));
         dialogue = dialogue == null ? DialogueEntryMetadata.EMPTY : dialogue;
     }
+
+    public CompiledQuestMetadata(String title, String description, String titleKey, String descriptionKey,
+            String questline, Set<String> tags, ResourceLocation parent, DialogueEntryMetadata dialogue) {
+        this(title, description, titleKey, descriptionKey, questline, tags, parent, dialogue, null);
+    }
+
 }

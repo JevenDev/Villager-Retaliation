@@ -137,6 +137,7 @@ public final class QuestV2Schema {
         properties.add("title_key", string());
         properties.add("description_key", string());
         properties.add("questline", string());
+        properties.add("campaign", com.jvn.villagerretaliation.campaign.content.CampaignQuestReference.schema());
         properties.add("tags", arrayOf(string()));
         properties.add("parent", resourceLocation());
         properties.add("show_locked_adventure_hint", booleanSchema());

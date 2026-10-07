@@ -71,7 +71,7 @@ public final class CampaignDefinitionParser {
             }
             boolean irreversible = !entry.has("irreversible") || entry.get("irreversible").getAsBoolean();
             put(milestones, id, new CampaignDefinition.Milestone(id, text(entry, "chapter"), resource(entry, "quest"),
-                    irreversible, outcomes, catchUp, observation, pointer), source, pointer, diagnostics);
+                    text(entry, "stage"), irreversible, outcomes, catchUp, observation, pointer), source, pointer, diagnostics);
         }
         Map<String, CampaignDefinition.Fact> facts = new LinkedHashMap<>();
         JsonArray factEntries = array(root, "facts");
@@ -103,9 +103,27 @@ public final class CampaignDefinitionParser {
                         "quest bundle is unavailable: " + quest));
             }
         }
+        for (var chapter : definition.chapters().values()) {
+            for (int index = 0; index < chapter.quests().size(); index++) {
+                requireCampaignOwner(definition, quests, chapter.quests().get(index), chapter.pointer() + "/quests/" + index, diagnostics);
+            }
+        }
+        Set<String> stageOwners = new HashSet<>();
         for (var milestone : definition.milestones().values()) {
+            var original = quests.compiledQuest(milestone.quest()).orElse(null);
+            String entryStage = milestone.stage().isBlank() && original != null ? original.entryStage() : milestone.stage();
+            if (original != null && !original.stagesById().containsKey(entryStage)) {
+                diagnostics.add(CampaignSchema.error(definition.source(), milestone.pointer() + "/stage", "milestone stage does not exist: " + entryStage));
+            }
+            if (!stageOwners.add(milestone.quest() + "/" + entryStage)) {
+                diagnostics.add(CampaignSchema.error(definition.source(), milestone.pointer() + "/stage", "another milestone already owns this quest stage"));
+            }
             var catchUp = milestone.catchUp();
             if (catchUp == null) continue;
+            requireCampaignOwner(definition, quests, catchUp.quest(), catchUp.pointer() + "/quest", diagnostics);
+            if (catchUp.quest().equals(milestone.quest()) && catchUp.stage().equals(entryStage)) {
+                diagnostics.add(CampaignSchema.error(definition.source(), catchUp.pointer() + "/stage", "catch-up must use an alternate entry stage"));
+            }
             var quest = quests.compiledQuest(catchUp.quest()).orElse(null);
             if (quest != null && !quest.stagesById().containsKey(catchUp.stage())) {
                 diagnostics.add(CampaignSchema.error(definition.source(), catchUp.pointer() + "/stage",
@@ -113,6 +131,15 @@ public final class CampaignDefinitionParser {
             }
         }
         return List.copyOf(diagnostics);
+    }
+
+    private static void requireCampaignOwner(CampaignDefinition definition, QuestContentCatalog quests,
+            ResourceLocation questId, String pointer, List<QuestDiagnostic> diagnostics) {
+        var quest = quests.compiledQuest(questId).orElse(null);
+        if (quest != null && !definition.id().equals(quest.metadata().campaign())) {
+            diagnostics.add(CampaignSchema.error(definition.source(), pointer,
+                    "quest metadata.campaign must identify the owning campaign " + definition.id() + ": " + questId));
+        }
     }
 
     private static void validateReferences(CampaignDefinition definition, List<QuestDiagnostic> diagnostics) {

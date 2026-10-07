@@ -184,8 +184,8 @@ public final class CampaignDefinitionGameTests {
 
     @GameTest(template = "empty", batch = "campaign_definitions")
     public static void catchUpStagesResolveAgainstCompiledQuestBundles(GameTestHelper helper) {
-        var catalog = QuestContentCatalogs.current(helper.getLevel().getServer());
-        var quest = catalog.compiledQuests().stream().filter(value -> !value.entryStage().isBlank())
+        var catalog = campaignCatalog(helper);
+        var quest = catalog.compiledQuests().stream().filter(value -> !value.entryStage().isBlank() && value.stages().size() > 1)
                 .findFirst().orElseThrow();
         var raw = fixture();
         var references = new JsonArray();
@@ -195,7 +195,7 @@ public final class CampaignDefinitionGameTests {
         milestone(raw).addProperty("quest", quest.id().toString());
         var catchUp = milestone(raw).getAsJsonObject("catch_up");
         catchUp.addProperty("quest", quest.id().toString());
-        catchUp.addProperty("stage", quest.entryStage());
+        catchUp.addProperty("stage", quest.stages().stream().filter(stage -> !stage.id().equals(quest.entryStage())).findFirst().orElseThrow().id());
         var parsed = CampaignDefinitionParser.parse(SOURCE, raw);
         helper.assertTrue(parsed.valid(), "compiled-reference fixture parses");
         helper.assertTrue(CampaignDefinitionParser.validateQuestReferences(parsed.definition(), catalog).isEmpty(),
@@ -210,7 +210,7 @@ public final class CampaignDefinitionGameTests {
 
     @GameTest(template = "empty", batch = "campaign_definitions")
     public static void catalogRequiresOwnedEnglishTextAndKeepsLocaleFallback(GameTestHelper helper) {
-        var quests = QuestContentCatalogs.current(helper.getLevel().getServer());
+        var quests = campaignCatalog(helper);
         var raw = resolvedFixture(quests);
         var empty = new CampaignContentCatalog.Source(SOURCE, "test_pack", raw, QuestLocaleCatalog.empty(), List.of());
         var rejected = CampaignContentCatalog.compile(quests, List.of(empty));
@@ -231,7 +231,7 @@ public final class CampaignDefinitionGameTests {
 
     @GameTest(template = "empty", batch = "campaign_definitions")
     public static void duplicateCampaignIdsRejectBothSources(GameTestHelper helper) {
-        var quests = QuestContentCatalogs.current(helper.getLevel().getServer());
+        var quests = campaignCatalog(helper);
         var raw = resolvedFixture(quests);
         var result = CampaignContentCatalog.compile(quests, List.of(source(raw, SOURCE),
                 source(raw, ResourceLocation.parse("test:campaigns/duplicate/campaign.json"))));
@@ -243,7 +243,7 @@ public final class CampaignDefinitionGameTests {
 
     @GameTest(template = "empty", batch = "campaign_definitions")
     public static void overlappingLocalizationOwnershipRejectsBothCampaigns(GameTestHelper helper) {
-        var quests = QuestContentCatalogs.current(helper.getLevel().getServer());
+        var quests = campaignCatalog(helper);
         var raw = resolvedFixture(quests);
         var other = raw.deepCopy();
         other.addProperty("id", "test:other");
@@ -269,8 +269,58 @@ public final class CampaignDefinitionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_definitions")
+    public static void playableCampaignQuestsRequireExplicitOwnership(GameTestHelper helper) {
+        var catalog = campaignCatalog(helper);
+        var raw = resolvedFixture(catalog);
+        var definition = CampaignDefinitionParser.parse(SOURCE, raw).definition();
+        helper.assertTrue(CampaignDefinitionParser.validateQuestReferences(definition, catalog).isEmpty(), "explicit campaign ownership is valid");
+        var ordinary = QuestContentCatalogs.current(helper.getLevel().getServer());
+        helper.assertTrue(CampaignDefinitionParser.validateQuestReferences(definition, ordinary).stream()
+                        .anyMatch(value -> value.message().contains("metadata.campaign")),
+                "referencing an ordinary quest cannot silently convert it into campaign content");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_definitions")
+    public static void milestoneAndCatchUpEntriesMustResolveToDistinctAuthoredStages(GameTestHelper helper) {
+        var catalog = campaignCatalog(helper);
+        var raw = resolvedFixture(catalog);
+        milestone(raw).addProperty("stage", "missing_stage");
+        var definition = CampaignDefinitionParser.parse(SOURCE, raw).definition();
+        helper.assertTrue(CampaignDefinitionParser.validateQuestReferences(definition, catalog).stream()
+                        .anyMatch(value -> value.jsonPointer().equals("/milestones/0/stage")), "unknown original stage is rejected");
+        milestone(raw).addProperty("stage", milestone(raw).getAsJsonObject("catch_up").get("stage").getAsString());
+        definition = CampaignDefinitionParser.parse(SOURCE, raw).definition();
+        helper.assertTrue(CampaignDefinitionParser.validateQuestReferences(definition, catalog).stream()
+                        .anyMatch(value -> value.message().contains("alternate entry stage")), "catch-up cannot replay its original entry stage");
+        helper.succeed();
+    }
+
+    private static QuestContentCatalog campaignCatalog(GameTestHelper helper) {
+        var original = QuestContentCatalogs.current(helper.getLevel().getServer());
+        var compiled = new java.util.LinkedHashMap<ResourceLocation, com.jvn.villagerretaliation.quest.compiled.CompiledQuest>();
+        var definitions = new java.util.LinkedHashMap<ResourceLocation, com.jvn.villagerretaliation.quest.QuestDefinition>();
+        for (var quest : original.compiledQuests()) {
+            var metadata = quest.metadata();
+            var owned = new com.jvn.villagerretaliation.quest.compiled.CompiledQuest(quest.id(), quest.source(), null,
+                    new com.jvn.villagerretaliation.quest.compiled.CompiledQuestMetadata(metadata.title(), metadata.description(),
+                            metadata.titleKey(), metadata.descriptionKey(), metadata.questline(), metadata.tags(), metadata.parent(),
+                            metadata.dialogue(), ResourceLocation.parse("test:journey")),
+                    quest.provider(), quest.target(), quest.entryStage(), quest.prerequisites(), quest.rules(), quest.ui(),
+                    quest.objectives(), quest.objectivesById(), quest.stages(), quest.stagesById(), quest.triggers(), quest.triggersByEvent(),
+                    quest.triggerIndex(), quest.rewards(), quest.showLockedAdventureHint(), quest.revision());
+            compiled.put(owned.id(), owned);
+            definitions.put(owned.id(), owned.asQuestDefinition());
+        }
+        return new QuestContentCatalog(original.generation(), new com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog(compiled),
+                original.dialogueCatalog(), definitions, original.objectiveEventQuestIds(), original.factQuestIds(),
+                original.memoryEventQuestIds(), original.exclusiveGroupQuestIds(), original.triggerEventQuestIds(), original.scenes(),
+                original.encounters(), original.pools(), original.bundles(), original.localization(), original.rewards());
+    }
+
     private static JsonObject resolvedFixture(QuestContentCatalog catalog) {
-        var quest = catalog.compiledQuests().stream().filter(value -> !value.entryStage().isBlank()).findFirst().orElseThrow();
+        var quest = catalog.compiledQuests().stream().filter(value -> !value.entryStage().isBlank() && value.stages().size() > 1).findFirst().orElseThrow();
         var raw = fixture();
         var references = new JsonArray();
         references.add(quest.id().toString());
@@ -278,7 +328,8 @@ public final class CampaignDefinitionGameTests {
         for (var chapter : raw.getAsJsonArray("chapters")) chapter.getAsJsonObject().add("quests", references.deepCopy());
         milestone(raw).addProperty("quest", quest.id().toString());
         milestone(raw).getAsJsonObject("catch_up").addProperty("quest", quest.id().toString());
-        milestone(raw).getAsJsonObject("catch_up").addProperty("stage", quest.entryStage());
+        milestone(raw).getAsJsonObject("catch_up").addProperty("stage",
+                quest.stages().stream().filter(stage -> !stage.id().equals(quest.entryStage())).findFirst().orElseThrow().id());
         return raw;
     }
 
