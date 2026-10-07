@@ -1,0 +1,10 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.replacements.title": "Campaign fixture: replacement characters",
+    "campaign_fixture.campaign.replacements.chapter": "Meet the mentor or their successor",
+    "campaign_fixture.campaign.replacements.home": "The mentor's village",
+    "campaign_fixture.campaign.replacements.mentor": "Mentor",
+    "campaign_fixture.campaign.replacements.successor": "Successor"
+  }
+}

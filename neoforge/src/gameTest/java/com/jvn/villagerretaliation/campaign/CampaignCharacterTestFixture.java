@@ -96,8 +96,9 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         var bundles = QuestBundleTransactions.compile(resources, QuestBundleTransactions.CompatibilityRules.empty());
         helper.assertTrue(bundles.diagnostics().isEmpty(), "character bundle compiles: " + bundles.diagnostics());
         var quests = VillagerQuestResources.snapshotForCatalog(server, bundles);
-        scene = SceneCompiler.compile(SceneParser.parse(sceneId, resource("quests/campaign_fixture/" + fixtureName + "/scenes/" + sceneName + ".json")).resource()).scene();
-        helper.assertTrue(scene != null, "fixture scene compiles");
+        var compiledScene = SceneCompiler.compile(SceneParser.parse(sceneId, resource("quests/campaign_fixture/" + fixtureName + "/scenes/" + sceneName + ".json")).resource());
+        scene = compiledScene.scene();
+        helper.assertTrue(scene != null, "fixture scene compiles: " + compiledScene.diagnostics());
         catalog = new QuestContentCatalog(prior.generation() + 1L, quests.compiledCatalog(), quests.dialogueCatalog(), quests.quests(),
                 quests.objectiveEventQuestIds(), quests.factQuestIds(), quests.memoryEventQuestIds(), quests.exclusiveGroupQuestIds(),
                 quests.triggerEventQuestIds(), Map.of(sceneId, scene), Map.of(), List.of(), bundles.bundles(), bundles.localization(), QuestRewardCatalog.fromBundles(bundles.bundles()));

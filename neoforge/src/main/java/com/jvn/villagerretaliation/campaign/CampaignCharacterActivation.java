@@ -28,7 +28,8 @@ public final class CampaignCharacterActivation {
         var catalog = CampaignResources.current(server);
         var campaigns = CampaignSavedData.get(server.overworld());
         var spawns = CampaignSpawnSavedData.get(server.overworld());
-        if (!spawns.diagnostic().isBlank()) return;
+        var characters = CampaignCharacterSavedData.get(server.overworld());
+        if (!spawns.diagnostic().isBlank() || !characters.diagnostic().isBlank()) return;
         var needed = new LinkedHashSet<CampaignCharacterBinding.Key>();
         for (var content : catalog.campaigns().values()) {
             var definition = content.definition();
@@ -38,10 +39,8 @@ public final class CampaignCharacterActivation {
                 if (quest == null || players.stream().noneMatch(player -> CampaignQuestAccess.availabilityIssue(quest, player, campaigns, catalog).isBlank())) continue;
                 var compiled = catalog.quests().compiledQuest(questId).orElse(null);
                 var character = compiled == null ? null : definition.characters().get(compiled.provider().campaignRole());
-                if (character == null || character.source() != CampaignCharacterDefinition.Source.OWNED_SPAWN) continue;
-                var key = new CampaignCharacterBinding.Key(definition.id(), character.id());
-                var receipt = spawns.receipts().get(key);
-                if (receipt == null || !receipt.committed()) needed.add(key);
+                if (character == null) continue;
+                if (needsResolution(definition, character, characters, spawns)) needed.add(new CampaignCharacterBinding.Key(definition.id(), character.id()));
             }
         }
         if (needed.isEmpty()) return;
@@ -53,5 +52,24 @@ public final class CampaignCharacterActivation {
             CampaignCharacterService.resolve(server, key.campaign(), key.role());
         }
         CURSORS.put(server, (cursor + attempts) % roles.size());
+    }
+
+    private static boolean needsResolution(com.jvn.villagerretaliation.campaign.content.CampaignDefinition definition,
+            CampaignCharacterDefinition character, CampaignCharacterSavedData characters, CampaignSpawnSavedData spawns) {
+        var visited = new java.util.HashSet<String>();
+        while (character != null && visited.add(character.id())) {
+            var key = new CampaignCharacterBinding.Key(definition.id(), character.id());
+            var replacement = characters.replacements().get(key);
+            if (replacement != null) {
+                if (!replacement.committed()) return true;
+                character = definition.characters().get(replacement.replacementRole());
+                continue;
+            }
+            var binding = characters.bindings().get(key);
+            if (binding != null && binding.lost() && character.lossPolicy() == CampaignCharacterDefinition.LossPolicy.REPLACEMENT) return true;
+            var spawn = spawns.receipts().get(key);
+            return character.source() == CampaignCharacterDefinition.Source.OWNED_SPAWN && (spawn == null || !spawn.committed());
+        }
+        return false;
     }
 }

@@ -3,15 +3,23 @@ package com.jvn.villagerretaliation.campaign.content;
 import net.minecraft.resources.ResourceLocation;
 
 public record CampaignCharacterDefinition(String id, String titleKey, Source source, String location,
-        int searchRadius, ResourceLocation profession, LossPolicy lossPolicy, String pointer) {
+        int searchRadius, ResourceLocation profession, LossPolicy lossPolicy, String replacementRole, String pointer) {
     public static final int MAX_SEARCH_RADIUS = 64;
     public static final int MAX_SPAWN_RADIUS = 8;
 
     public CampaignCharacterDefinition {
+        replacementRole = replacementRole == null ? "" : replacementRole;
         if (!localId(id) || titleKey == null || titleKey.isBlank() || source == null || !localId(location)
-                || searchRadius < 1 || searchRadius > MAX_SEARCH_RADIUS || source == Source.OWNED_SPAWN && searchRadius > MAX_SPAWN_RADIUS || lossPolicy == null) {
+                || searchRadius < 1 || searchRadius > MAX_SEARCH_RADIUS || source == Source.OWNED_SPAWN && searchRadius > MAX_SPAWN_RADIUS || lossPolicy == null
+                || lossPolicy == LossPolicy.REPLACEMENT && !localId(replacementRole)
+                || lossPolicy != LossPolicy.REPLACEMENT && !replacementRole.isEmpty()) {
             throw new IllegalArgumentException("Invalid campaign character definition.");
         }
+    }
+
+    public CampaignCharacterDefinition(String id, String titleKey, Source source, String location,
+            int searchRadius, ResourceLocation profession, LossPolicy lossPolicy, String pointer) {
+        this(id, titleKey, source, location, searchRadius, profession, lossPolicy, "", pointer);
     }
 
     private static boolean localId(String value) {
@@ -19,5 +27,5 @@ public record CampaignCharacterDefinition(String id, String titleKey, Source sou
     }
 
     public enum Source { EXISTING_VILLAGER, OWNED_SPAWN }
-    public enum LossPolicy { DOWNED, ALTERNATE_PATH }
+    public enum LossPolicy { DOWNED, ALTERNATE_PATH, REPLACEMENT }
 }

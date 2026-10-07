@@ -24,6 +24,10 @@ public final class CampaignCharacterService {
     private CampaignCharacterService() { }
 
     public static Result resolve(MinecraftServer server, ResourceLocation campaign, String role) {
+        return CampaignCharacterReplacements.resolve(server, campaign, role);
+    }
+
+    static Result resolveDeclared(MinecraftServer server, ResourceLocation campaign, String role) {
         if (server == null || !server.isSameThread()) return unavailable("Campaign characters require the server thread.");
         if (campaign == null || role == null || role.isBlank()) return unavailable("A campaign character reference is required.");
         if (CampaignWorldModeSavedData.get(server.overworld()).mode() != CampaignWorldMode.CAMPAIGN) return unavailable("This character requires a Campaign Mode world.");
@@ -74,6 +78,7 @@ public final class CampaignCharacterService {
     }
 
     static Result observe(MinecraftServer server, CampaignCharacterSavedData data, CampaignCharacterBinding binding) {
+        if (data.replacements().containsKey(binding.key())) return new Result(binding, null, "This character has a saved replacement. Continue with its successor.");
         Entity entity = null;
         for (var level : server.getAllLevels()) {
             entity = level.getEntity(binding.entityId());

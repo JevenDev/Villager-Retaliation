@@ -74,7 +74,15 @@ public final class CampaignSchema {
         JsonObject character = object(List.of("id", "title_key", "source", "location", "loss_policy"),
                 "id", text(LOCAL_ID), "title_key", text(""), "source", enumeration("existing_villager", "owned_spawn"),
                 "location", text(LOCAL_ID), "search_radius", characterRadius, "profession", text(RESOURCE_ID),
-                "loss_policy", enumeration("downed", "alternate_path"));
+                "loss_policy", enumeration("downed", "alternate_path", "replacement"), "replacement_role", text(LOCAL_ID));
+        JsonObject replacementPolicy = object(List.of("loss_policy"), "loss_policy", enumeration("replacement"));
+        replacementPolicy.addProperty("additionalProperties", true);
+        JsonObject replacementRole = object(List.of("replacement_role"), "replacement_role", text(LOCAL_ID));
+        replacementRole.addProperty("additionalProperties", true);
+        JsonArray replacementRules = new JsonArray();
+        replacementRules.add(conditional(replacementPolicy, replacementRole));
+        replacementRules.add(conditional(replacementRole, replacementPolicy));
+        character.add("allOf", replacementRules);
         JsonObject ownedSource = object(List.of("source"), "source", enumeration("owned_spawn"));
         ownedSource.addProperty("additionalProperties", true);
         JsonObject spawnRadius = characterRadius.deepCopy();
@@ -119,6 +127,9 @@ public final class CampaignSchema {
         if (!matches) {
             diagnostics.add(error(source, pointer, "expected " + type));
             return;
+        }
+        if (schema.has("allOf")) {
+            for (var rule : schema.getAsJsonArray("allOf")) validate(source, value, rule.getAsJsonObject(), pointer, diagnostics);
         }
         if (schema.has("if")) {
             List<QuestDiagnostic> condition = new ArrayList<>();
@@ -213,6 +224,14 @@ public final class CampaignSchema {
             properties.add((String) fields[index], (JsonElement) fields[index + 1]);
         }
         result.add("properties", properties);
+        return result;
+    }
+
+    private static JsonObject conditional(JsonObject condition, JsonObject consequence) {
+        JsonObject result = object(List.of());
+        result.addProperty("additionalProperties", true);
+        result.add("if", condition);
+        result.add("then", consequence);
         return result;
     }
 

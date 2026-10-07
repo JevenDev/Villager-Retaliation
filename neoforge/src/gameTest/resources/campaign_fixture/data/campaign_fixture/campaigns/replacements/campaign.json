@@ -1,0 +1,48 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:replacements",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.replacements.title",
+  "localization_prefix": "campaign_fixture.campaign.replacements.",
+  "quest_bundles": [
+    "campaign_fixture:replacements"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.replacements.chapter",
+      "quests": [
+        "campaign_fixture:replacements"
+      ]
+    }
+  ],
+  "milestones": [],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.replacements.home",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    }
+  ],
+  "characters": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.replacements.mentor",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "replacement",
+      "replacement_role": "successor"
+    },
+    {
+      "id": "successor",
+      "title_key": "campaign_fixture.campaign.replacements.successor",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "downed"
+    }
+  ]
+}

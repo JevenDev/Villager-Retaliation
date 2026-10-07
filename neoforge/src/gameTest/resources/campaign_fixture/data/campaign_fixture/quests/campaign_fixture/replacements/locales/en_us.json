@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.replacements.title": "Campaign fixture: replacement characters",
+    "campaign_fixture.quest.replacements.description": "Meet the mentor. If the mentor is permanently removed, an authored successor carries the quest forward.",
+    "campaign_fixture.quest.replacements.travel": "Visit our village at {objective_target_x}, {objective_target_y}, {objective_target_z}.",
+    "campaign_fixture.quest.replacements.offer.label": "Test an authored successor",
+    "campaign_fixture.quest.replacements.offer.lines": [
+      "This fixture chooses one mentor and saves their identity. If they are permanently removed, another adult villager near the village takes over their quest and compatible scenes."
+    ],
+    "campaign_fixture.quest.replacements.accept": "Begin the replacement test.",
+    "campaign_fixture.quest.replacements.reminder.label": "Where should I go?",
+    "campaign_fixture.quest.replacements.reminder.lines": [
+      "Visit the marked village. An unloaded mentor keeps their role. Only a recorded permanent loss starts the replacement."
+    ],
+    "campaign_fixture.quest.replacements.report.label": "Finish the replacement test",
+    "campaign_fixture.quest.replacements.report.lines": [
+      "Your progress continues with the current holder of this campaign role. The original binding and any replacement decisions remain saved."
+    ],
+    "campaign_fixture.quest.replacements.finish": "Record my visit."
+  }
+}

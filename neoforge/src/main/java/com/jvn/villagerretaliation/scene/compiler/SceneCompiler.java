@@ -56,10 +56,12 @@ public final class SceneCompiler {
             if (actor.bindingSource() == SceneActorDeclaration.BindingSource.CAMPAIGN_ROLE
                     && (!actor.actorType().equals(VillagerRetaliation.id("villager"))
                     || !actor.bindingReference().matches("[a-z0-9][a-z0-9_./-]*") || actor.bindingReference().length() > 256
-                    || actor.replacementPolicy() != SceneActorDeclaration.ReplacementPolicy.FIXED || !actor.filters().isEmpty()
+                    || actor.replacementPolicy() != SceneActorDeclaration.ReplacementPolicy.FIXED
+                            && actor.replacementPolicy() != SceneActorDeclaration.ReplacementPolicy.COMPATIBLE_REPLACEMENT
+                    || !actor.filters().isEmpty()
                     || actor.deathPolicy() == SceneActorDeclaration.DeathPolicy.RESPAWN_IF_OWNED)) {
                 diagnostics.add(error("scene.actor.campaign_role", "actors." + actor.alias(),
-                        "campaign roles require a villager actor, a character reference, fixed binding and no local filters or respawning"));
+                        "campaign roles require a villager actor, a character reference, fixed or compatible replacement binding and no local filters or respawning"));
             }
             if (actor.bindingSource() == SceneActorDeclaration.BindingSource.CAMPAIGN_LOCATION
                     && (!actor.actorType().equals(VillagerRetaliation.id("position"))

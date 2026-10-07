@@ -21,11 +21,12 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class CampaignCharacterSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 1;
+    public static final int CURRENT_DATA_VERSION = 2;
     static final String DATA_NAME = "villagerretaliation_campaign_characters";
     private final Path directory;
     private Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> bindings = Map.of();
     private Map<UUID, CampaignCharacterBinding> byEntity = Map.of();
+    private Map<CampaignCharacterBinding.Key, CampaignCharacterReplacement> replacements = Map.of();
     private String diagnostic = "";
     private CompoundTag preservedData;
 
@@ -47,12 +48,22 @@ public final class CampaignCharacterSavedData extends SavedData {
         var data = new CampaignCharacterSavedData(directory);
         if (tag.isEmpty() && Files.notExists(directory.resolve(DATA_NAME + ".dat"))) return data;
         try {
-            CampaignStateCodec.require(tag.contains("DataVersion", Tag.TAG_INT) && tag.getInt("DataVersion") == CURRENT_DATA_VERSION, "unsupported campaign character save version");
+            CampaignStateCodec.require(tag.contains("DataVersion", Tag.TAG_INT) && tag.getInt("DataVersion") >= 1
+                    && tag.getInt("DataVersion") <= CURRENT_DATA_VERSION, "unsupported campaign character save version");
+            var migrated = tag.copy();
+            if (migrated.getInt("DataVersion") == 1) {
+                CampaignStateCodec.require(!migrated.contains("Replacements"), "legacy character save contains unsupported replacements");
+                migrated.put("Replacements", new ListTag());
+                migrated.putInt("DataVersion", CURRENT_DATA_VERSION);
+            }
             var bindings = new LinkedHashMap<CampaignCharacterBinding.Key, CampaignCharacterBinding>();
             var owners = new LinkedHashMap<ResourceLocation, CampaignCharacterBinding>();
             var entities = new LinkedHashMap<UUID, CampaignCharacterBinding>();
             for (var raw : CampaignStateCodec.list(tag, "Bindings", Tag.TAG_COMPOUND)) {
                 var binding = CampaignCharacterBinding.load((CompoundTag) raw);
+                CampaignStateCodec.require(tag.getInt("DataVersion") != 1 || binding.lossPolicy()
+                        != com.jvn.villagerretaliation.campaign.content.CampaignCharacterDefinition.LossPolicy.REPLACEMENT,
+                        "legacy character save contains an unsupported replacement policy");
                 var owner = owners.putIfAbsent(binding.campaign(), binding);
                 CampaignStateCodec.require(owner == null || owner.instance().equals(binding.instance())
                         && owner.definitionRevision() == binding.definitionRevision() && owner.fingerprint().equals(binding.fingerprint()),
@@ -60,8 +71,15 @@ public final class CampaignCharacterSavedData extends SavedData {
                 CampaignStateCodec.require(entities.putIfAbsent(binding.entityId(), binding) == null, "entity belongs to multiple campaign roles");
                 CampaignStateCodec.require(bindings.putIfAbsent(binding.key(), binding) == null, "duplicate campaign character binding");
             }
+            var replacements = new LinkedHashMap<CampaignCharacterBinding.Key, CampaignCharacterReplacement>();
+            for (var raw : CampaignStateCodec.list(migrated, "Replacements", Tag.TAG_COMPOUND)) {
+                var replacement = CampaignCharacterReplacement.load((CompoundTag) raw);
+                CampaignStateCodec.require(replacements.putIfAbsent(replacement.key(), replacement) == null, "duplicate character replacement");
+            }
+            validateReplacements(bindings, replacements);
             data.bindings = immutable(bindings);
             data.byEntity = Map.copyOf(entities);
+            data.replacements = immutable(replacements);
         } catch (IllegalArgumentException exception) {
             data.preservedData = tag.copy();
             data.diagnostic = exception.getMessage() + ". Restore compatible character data or a known-good backup.";
@@ -73,6 +91,7 @@ public final class CampaignCharacterSavedData extends SavedData {
     public synchronized Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> bindings() { return bindings; }
 
     public synchronized CampaignCharacterBinding forEntity(UUID entity) { return byEntity.get(entity); }
+    public synchronized Map<CampaignCharacterBinding.Key, CampaignCharacterReplacement> replacements() { return replacements; }
 
     synchronized CampaignCharacterBinding bind(CampaignCharacterBinding candidate) throws IOException {
         if (!diagnostic.isBlank()) throw new IOException(diagnostic);
@@ -98,14 +117,65 @@ public final class CampaignCharacterSavedData extends SavedData {
         if (!diagnostic.isBlank()) throw new IOException(diagnostic);
         var prior = byEntity.get(entity);
         if (prior == null || prior.lost() == lost) return;
+        if (!lost && replacements.containsKey(prior.key())) throw new IOException("This character already has a saved replacement decision.");
         var next = new LinkedHashMap<>(bindings);
         next.put(prior.key(), prior.withLoss(lost));
         persist(next);
     }
 
+    synchronized CampaignCharacterReplacement prepareReplacement(CampaignCharacterBinding original, String role, long time) throws IOException {
+        if (!diagnostic.isBlank()) throw new IOException(diagnostic);
+        var candidate = CampaignCharacterReplacement.prepare(original, role, time);
+        candidate.validate(bindings);
+        var prior = replacements.get(original.key());
+        if (prior != null) {
+            if (!prior.operation().equals(candidate.operation()) || !prior.originalEntity().equals(candidate.originalEntity())
+                    || !prior.replacementRole().equals(role)) throw new IllegalArgumentException("Conflicting character replacement decision.");
+            return prior;
+        }
+        var next = new LinkedHashMap<>(replacements);
+        next.put(candidate.key(), candidate);
+        persist(bindings, next);
+        return candidate;
+    }
+
+    synchronized CampaignCharacterReplacement commitReplacement(CampaignCharacterBinding.Key key, CampaignCharacterBinding target, long time) throws IOException {
+        if (!diagnostic.isBlank()) throw new IOException(diagnostic);
+        var prior = replacements.get(key);
+        if (prior == null || !prior.target().equals(target.key())) throw new IllegalArgumentException("Replacement must use its prepared successor role.");
+        if (prior.committed()) {
+            if (!prior.replacementEntity().equals(target.entityId())) throw new IllegalArgumentException("Replacement already belongs to another entity.");
+            return prior;
+        }
+        var committed = prior.commit(target.entityId(), time);
+        var next = new LinkedHashMap<>(replacements);
+        next.put(key, committed);
+        persist(bindings, next);
+        return committed;
+    }
+
+    private static void validateReplacements(Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> bindings,
+            Map<CampaignCharacterBinding.Key, CampaignCharacterReplacement> replacements) {
+        for (var receipt : replacements.values()) {
+            receipt.validate(bindings);
+            var visited = new java.util.HashSet<CampaignCharacterBinding.Key>();
+            var cursor = receipt;
+            while (cursor != null) {
+                CampaignStateCodec.require(visited.add(cursor.key()), "saved character replacements contain a cycle");
+                cursor = replacements.get(cursor.target());
+            }
+        }
+    }
+
     private void persist(Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> next) throws IOException {
+        persist(next, replacements);
+    }
+
+    private void persist(Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> next,
+            Map<CampaignCharacterBinding.Key, CampaignCharacterReplacement> nextReplacements) throws IOException {
+        validateReplacements(next, nextReplacements);
         var wrapper = new CompoundTag();
-        wrapper.put("data", encode(next));
+        wrapper.put("data", encode(next, nextReplacements));
         NbtUtils.addCurrentDataVersion(wrapper);
         IOUtilities.waitUntilIOWorkerComplete();
         Files.createDirectories(directory);
@@ -114,24 +184,29 @@ public final class CampaignCharacterSavedData extends SavedData {
         var entities = new LinkedHashMap<UUID, CampaignCharacterBinding>();
         next.values().forEach(binding -> entities.put(binding.entityId(), binding));
         byEntity = Map.copyOf(entities);
+        replacements = immutable(nextReplacements);
         setDirty(false);
     }
 
-    private static Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> immutable(Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> values) {
+    private static <T> Map<CampaignCharacterBinding.Key, T> immutable(Map<CampaignCharacterBinding.Key, T> values) {
         return Collections.unmodifiableMap(new LinkedHashMap<>(values));
     }
 
-    private static CompoundTag encode(Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> bindings) {
+    private static CompoundTag encode(Map<CampaignCharacterBinding.Key, CampaignCharacterBinding> bindings,
+            Map<CampaignCharacterBinding.Key, CampaignCharacterReplacement> replacements) {
         var tag = new CompoundTag();
         tag.putInt("DataVersion", CURRENT_DATA_VERSION);
         var list = new ListTag();
         bindings.values().forEach(binding -> list.add(binding.save()));
         tag.put("Bindings", list);
+        var receipts = new ListTag();
+        replacements.values().forEach(receipt -> receipts.add(receipt.save()));
+        tag.put("Replacements", receipts);
         return tag;
     }
 
     @Override
-    public synchronized CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) { return preservedData == null ? encode(bindings) : preservedData.copy(); }
+    public synchronized CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) { return preservedData == null ? encode(bindings, replacements) : preservedData.copy(); }
 
     @Override
     public synchronized void save(File file, HolderLookup.Provider provider) {

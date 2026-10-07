@@ -2264,7 +2264,7 @@
           },
           "then": {
             "type": "object",
-            "description": "Checks an existing campaign character binding without casting or spawning.",
+            "description": "Checks a campaign role and its saved replacements without casting or spawning.",
             "additionalProperties": false,
             "required": [
               "campaign",
@@ -2292,7 +2292,8 @@
                   "available",
                   "downed",
                   "lost",
-                  "speaker"
+                  "speaker",
+                  "replaced"
                 ]
               }
             }

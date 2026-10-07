@@ -18,14 +18,14 @@ public record CampaignCharacterPredicate(ResourceLocation campaign, String role,
     public static JsonObject schema() {
         var schema = new JsonObject();
         schema.addProperty("type", "object");
-        schema.addProperty("description", "Checks an existing campaign character binding without casting or spawning.");
+        schema.addProperty("description", "Checks a campaign role and its saved replacements without casting or spawning.");
         schema.addProperty("additionalProperties", false);
         var fields = new JsonObject();
         var type = new JsonObject(); type.addProperty("const", "campaign_character");
         fields.add("type", type);
         fields.add("campaign", CampaignFieldSchema.string("[a-z0-9_.-]+:[a-z0-9_./-]+", 256));
         fields.add("role", CampaignFieldSchema.string(CampaignOutcomeAction.ID_PATTERN, 256));
-        fields.add("state", CampaignFieldSchema.enumeration("bound", "available", "downed", "lost", "speaker"));
+        fields.add("state", CampaignFieldSchema.enumeration("bound", "available", "downed", "lost", "speaker", "replaced"));
         var required = new JsonArray();
         for (String field : new String[]{"campaign", "role", "state"}) required.add(field);
         schema.add("required", required); schema.add("properties", fields);
@@ -42,7 +42,8 @@ public record CampaignCharacterPredicate(ResourceLocation campaign, String role,
 
     public Evaluation evaluate(DialogueContext context) {
         if (context == null || context.level() == null) return new Evaluation(false, "Campaign character context is unavailable.");
-        var result = CampaignBindingQueries.character(context.level().getServer(), campaign, role);
+        var result = state == State.REPLACED ? CampaignBindingQueries.originalCharacter(context.level().getServer(), campaign, role)
+                : CampaignBindingQueries.character(context.level().getServer(), campaign, role);
         if (!result.diagnostic().isBlank()) return new Evaluation(false, result.diagnostic());
         boolean matches = switch (state) {
             case BOUND -> result.binding() != null;
@@ -50,10 +51,12 @@ public record CampaignCharacterPredicate(ResourceLocation campaign, String role,
             case DOWNED -> result.entity() != null && VillagerDownedService.isDowned(result.entity());
             case LOST -> result.binding() != null && result.binding().lost();
             case SPEAKER -> result.available() && result.entity() == context.villager();
+            case REPLACED -> result.binding() != null && java.util.Optional.ofNullable(CampaignCharacterSavedData.get(context.level())
+                    .replacements().get(result.binding().key())).map(CampaignCharacterReplacement::committed).orElse(false);
         };
         return new Evaluation(matches, "");
     }
 
-    public enum State { BOUND, AVAILABLE, DOWNED, LOST, SPEAKER }
+    public enum State { BOUND, AVAILABLE, DOWNED, LOST, SPEAKER, REPLACED }
     public record Evaluation(boolean matches, String diagnostic) { }
 }

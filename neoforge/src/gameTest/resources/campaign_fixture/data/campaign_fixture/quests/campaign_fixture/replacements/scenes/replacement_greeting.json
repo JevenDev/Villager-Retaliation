@@ -1,0 +1,58 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "campaign_fixture:replacement_greeting",
+  "definition_version": 1,
+  "ownership": "player",
+  "entry_step": "face_home",
+  "actors": [
+    {
+      "alias": "guide",
+      "type": "villagerretaliation:villager",
+      "binding_source": "campaign_role",
+      "binding": "mentor",
+      "replacement_policy": "compatible_replacement"
+    },
+    {
+      "alias": "home",
+      "type": "villagerretaliation:position",
+      "binding_source": "campaign_location",
+      "binding": "home"
+    },
+    {
+      "alias": "issuer",
+      "type": "villagerretaliation:villager",
+      "binding_source": "quest_provider",
+      "replacement_policy": "compatible_replacement"
+    }
+  ],
+  "steps": [
+    {
+      "id": "face_home",
+      "type": "villagerretaliation:face_position",
+      "actors": [
+        "guide"
+      ],
+      "data": {
+        "actor": "guide",
+        "target_actor": "home"
+      },
+      "next": "face_issuer"
+    },
+    {
+      "id": "face_issuer",
+      "type": "villagerretaliation:face_position",
+      "actors": [
+        "issuer"
+      ],
+      "data": {
+        "actor": "issuer",
+        "target_actor": "home"
+      },
+      "next": "finish"
+    },
+    {
+      "id": "finish",
+      "type": "villagerretaliation:scene_complete"
+    }
+  ]
+}

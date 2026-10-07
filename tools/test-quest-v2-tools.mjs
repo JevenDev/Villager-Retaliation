@@ -318,7 +318,7 @@ try {
   }
   for (const [type, base, cases] of [
     ["campaign_character", { role: "mentor", state: "speaker" }, [
-      [{}, false], [{ state: "bound" }, false], [{ state: "available" }, false], [{ state: "downed" }, false], [{ state: "lost" }, false],
+      [{}, false], [{ state: "bound" }, false], [{ state: "available" }, false], [{ state: "downed" }, false], [{ state: "lost" }, false], [{ state: "replaced" }, false],
       [{ role: null }, true], [{ state: "dead" }, true], [{ state: undefined }, true], [{ radius: 4 }, true], [{ role: "bad name" }, true]
     ]],
     ["campaign_location", { location: "home" }, [

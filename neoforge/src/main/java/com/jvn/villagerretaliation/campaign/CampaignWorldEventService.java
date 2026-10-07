@@ -80,7 +80,7 @@ public final class CampaignWorldEventService {
             var observation = milestone.observation();
             var instance = data.instances().get(content.definition().id());
             if (observation == null || !observation.characterLost() || instance == null || instance.outcomes().containsKey(milestone.id())) continue;
-            var character = CampaignBindingQueries.character(server, content.definition().id(), observation.character());
+            var character = CampaignBindingQueries.originalCharacter(server, content.definition().id(), observation.character());
             if (!character.diagnostic().isBlank()) {
                 if (issue.isBlank()) issue = character.diagnostic();
                 continue;

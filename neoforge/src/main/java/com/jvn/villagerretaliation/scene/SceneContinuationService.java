@@ -103,7 +103,7 @@ public final class SceneContinuationService {
             for (SceneContinuation continuation : SceneSavedData.get(context.level()).continuations()) {
                 if (!source.equals(continuation.sourcePointer())
                         || !context.player().getUUID().equals(continuation.playerId())
-                        || !context.villager().getUUID().equals(continuation.providerId())) continue;
+                        || !matchesProvider(context, continuation)) continue;
                 if (continuation.questId() != null && continuation.questRunId() != null) {
                     var progress = VillagerQuestSavedData.get(context.level()).get(
                             context.player().getUUID(), continuation.questId());
@@ -164,11 +164,17 @@ public final class SceneContinuationService {
                         && questId.equals(continuation.questId()));
     }
 
+    private static boolean matchesProvider(DialogueContext context, SceneContinuation continuation) {
+        return context.villager().getUUID().equals(continuation.providerId())
+                || com.jvn.villagerretaliation.campaign.CampaignQuestCharacters.canReplaceProvider(
+                        context.level().getServer(), continuation.questId(), continuation.providerId(), context.villager().getUUID());
+    }
+
     public static boolean hasPendingDialogue(DialogueContext context) {
         return SceneSavedData.get(context.level()).continuations().stream().anyMatch(continuation ->
                 !continuation.completionReceipt() && continuation.dialogueResume() != null
                         && context.player().getUUID().equals(continuation.playerId())
-                        && context.villager().getUUID().equals(continuation.providerId()));
+                        && matchesProvider(context, continuation));
     }
 
     public static void maintain(MinecraftServer server, SceneSavedData data) {
@@ -225,7 +231,8 @@ public final class SceneContinuationService {
             return;
         }
         ServerPlayer player = server.getPlayerList().getPlayer(continuation.playerId());
-        Villager provider = findVillager(server, continuation.providerId());
+        Villager provider = findVillager(server, com.jvn.villagerretaliation.campaign.CampaignQuestCharacters.continuationProvider(
+                server, continuation.questId(), continuation.providerId()));
         if (player == null || provider == null || provider.level() != player.serverLevel()) return;
         if (continuation.questId() != null && continuation.questRunId() != null) {
             var progress = VillagerQuestSavedData.get(player.serverLevel())

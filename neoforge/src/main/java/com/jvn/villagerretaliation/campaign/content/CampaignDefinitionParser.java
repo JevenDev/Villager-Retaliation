@@ -133,7 +133,8 @@ public final class CampaignDefinitionParser {
             put(characters, id, new CampaignCharacterDefinition(id, text(entry, "title_key"),
                     kind, text(entry, "location"), searchRadius,
                     entry.has("profession") ? resource(entry, "profession") : null,
-                    CampaignCharacterDefinition.LossPolicy.valueOf(text(entry, "loss_policy").toUpperCase(Locale.ROOT)), pointer), source, pointer, diagnostics);
+                    CampaignCharacterDefinition.LossPolicy.valueOf(text(entry, "loss_policy").toUpperCase(Locale.ROOT)),
+                    text(entry, "replacement_role"), pointer), source, pointer, diagnostics);
         }
         CampaignDefinition definition = new CampaignDefinition(resource(root, "id"), root.get("revision").getAsInt(),
                 QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, locations, characters, source);
@@ -256,6 +257,20 @@ public final class CampaignDefinitionParser {
                             && milestone.observation().characterLost() && character.id().equals(milestone.observation().character()))) {
                 diagnostics.add(CampaignSchema.error(source, character.pointer() + "/loss_policy",
                         "alternate_path requires a milestone observing this character's permanent loss"));
+            }
+        }
+        for (var character : definition.characters().values()) {
+            var visited = new HashSet<String>();
+            var current = character;
+            while (current != null && current.lossPolicy() == CampaignCharacterDefinition.LossPolicy.REPLACEMENT) {
+                if (!visited.add(current.id())) {
+                    diagnostics.add(CampaignSchema.error(source, character.pointer() + "/replacement_role", "character replacements contain a cycle"));
+                    break;
+                }
+                var replacement = definition.characters().get(current.replacementRole());
+                if (replacement == null) diagnostics.add(CampaignSchema.error(source, current.pointer() + "/replacement_role",
+                        "unknown replacement character " + current.replacementRole()));
+                current = replacement;
             }
         }
         Map<String, Set<String>> dependencies = new LinkedHashMap<>();

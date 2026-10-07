@@ -346,7 +346,7 @@ public final class CampaignQuestAcceptanceService {
         } catch (IllegalArgumentException exception) {
             return new ResumeAccess(true, exception.getMessage());
         }
-        if (!consent.playerId().equals(context.player().getUUID()) || !consent.providerId().equals(context.villager().getUUID())) {
+        if (!consent.playerId().equals(context.player().getUUID()) || !matchesConsentProvider(context, consent)) {
             return new ResumeAccess(false, "The player or character for this accepted quest changed.");
         }
         String authority = CampaignAuthority.controlIssue(context.player());
@@ -379,12 +379,21 @@ public final class CampaignQuestAcceptanceService {
     public static CompoundTag remainingConsent(DialogueContext context, CompoundTag tag) {
         if (tag.isEmpty()) return tag;
         var consent = CampaignQuestConsent.load(tag);
+        if (!consent.playerId().equals(context.player().getUUID()) || !matchesConsentProvider(context, consent)) return tag;
         var remaining = new LinkedHashMap<>(consent.quests());
         remaining.entrySet().removeIf(entry -> alreadyAccepted(context, entry.getKey(), entry.getValue().acceptance()));
         var decisions = new LinkedHashMap<>(consent.decisions());
         decisions.values().removeIf(value -> CampaignOutcomeService.committed(context, value));
         return remaining.isEmpty() && decisions.isEmpty() ? new CompoundTag()
-                : new CampaignQuestConsent(consent.playerId(), consent.providerId(), remaining, decisions).save();
+                : new CampaignQuestConsent(consent.playerId(), context.villager().getUUID(), remaining, decisions).save();
+    }
+
+    private static boolean matchesConsentProvider(DialogueContext context, CampaignQuestConsent consent) {
+        if (consent.providerId().equals(context.villager().getUUID())) return true;
+        var server = context.level().getServer();
+        var replacement = context.villager().getUUID();
+        return consent.quests().keySet().stream().allMatch(quest -> CampaignQuestCharacters.canReplaceProvider(server, quest, consent.providerId(), replacement))
+                && consent.decisions().values().stream().allMatch(decision -> CampaignQuestCharacters.canReplaceProvider(server, decision.questId(), consent.providerId(), replacement));
     }
 
     static boolean approvedOutcome(DialogueContext context, CampaignOutcomeConsent consent) {

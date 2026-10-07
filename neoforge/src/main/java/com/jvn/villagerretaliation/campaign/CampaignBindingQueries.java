@@ -13,10 +13,23 @@ final class CampaignBindingQueries {
     private CampaignBindingQueries() { }
 
     static CharacterState character(MinecraftServer server, ResourceLocation campaign, String role) {
+        var visited = new java.util.HashSet<String>();
+        while (visited.add(role)) {
+            var state = originalCharacter(server, campaign, role);
+            if (!state.diagnostic().isBlank() || state.binding() == null) return state;
+            var receipt = CampaignCharacterSavedData.get(server.overworld()).replacements().get(state.binding().key());
+            if (receipt == null) return state;
+            if (!receipt.committed()) return new CharacterState(null, null, "Campaign character replacement is waiting for its successor binding.");
+            role = receipt.replacementRole();
+        }
+        return new CharacterState(null, null, "Campaign character replacements contain a cycle. Repair the campaign definition and saved decisions.");
+    }
+
+    static CharacterState originalCharacter(MinecraftServer server, ResourceLocation campaign, String role) {
         var context = context(server, campaign);
         if (!context.diagnostic().isBlank()) return new CharacterState(null, null, context.diagnostic());
         var definition = context.content().definition();
-        var declared = definition.characters().get(role);
+        var declared = role == null ? null : definition.characters().get(role);
         if (declared == null) return new CharacterState(null, null, "Unknown campaign character: " + role);
         var data = CampaignCharacterSavedData.get(server.overworld());
         if (!data.diagnostic().isBlank()) return new CharacterState(null, null, data.diagnostic());
@@ -38,6 +51,14 @@ final class CampaignBindingQueries {
         if (binding.source() == CampaignCharacterDefinition.Source.OWNED_SPAWN
                 && (receipt == null || !receipt.binding().equals(binding.withLoss(false)))) {
             return new CharacterState(null, null, "Campaign character does not match its spawn receipt. Restore matching saves.");
+        }
+        var replacement = data.replacements().get(key);
+        if (replacement != null) {
+            if (declared.lossPolicy() != CampaignCharacterDefinition.LossPolicy.REPLACEMENT
+                    || !declared.replacementRole().equals(replacement.replacementRole())) {
+                return new CharacterState(null, null, "Saved character replacement does not match its authored policy. Restore matching content and saves.");
+            }
+            return new CharacterState(binding, null, "");
         }
         Entity entity = null;
         for (var level : server.getAllLevels()) {
@@ -79,7 +100,7 @@ final class CampaignBindingQueries {
         if (CampaignWorldModeSavedData.get(server.overworld()).mode() != CampaignWorldMode.CAMPAIGN) {
             return new Context(null, null, "Campaign Mode is required for this story condition.");
         }
-        var content = CampaignResources.current(server).campaigns().get(campaign);
+        var content = campaign == null ? null : CampaignResources.current(server).campaigns().get(campaign);
         if (content == null) return new Context(null, null, "Campaign content is missing or invalid: " + campaign);
         var data = CampaignSavedData.get(server.overworld());
         return new Context(content, data.instances().get(campaign), data.compatibility(content.definition()));

@@ -45,6 +45,8 @@ public final class CampaignQuestReconciliation {
         if (!issue.isBlank() || quest.campaign() == null) return issue;
         if (VillagerQuestSavedData.get(level).campaignPersistencePending()) return "Campaign quest progress is waiting to be saved.";
         if (progress == null) return "";
+        issue = CampaignQuestCharacters.executionIssue(level.getServer(), quest, progress);
+        if (!issue.isBlank()) return issue;
         if (playerId == null) return "Campaign player is unavailable.";
         if (!progress.campaignWaitingQuest().isBlank()) return "Continue the authored catch-up quest " + progress.campaignWaitingQuest() + ".";
         var entry = pending(level, playerId, quest, progress);
@@ -60,6 +62,7 @@ public final class CampaignQuestReconciliation {
         try {
             boolean changed = quests.campaignPersistencePending();
             if (changed) quests.persistCampaignProgress(level);
+            changed |= CampaignQuestCharacters.reconcile(player, quest, progress);
             if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) return changed;
             var instance = CampaignSavedData.get(level).instances().get(quest.campaign());
             var personal = instance == null ? null : instance.players().get(player.getUUID());
@@ -94,7 +97,7 @@ public final class CampaignQuestReconciliation {
             return true;
         } catch (IOException exception) {
             if (!exception.toString().equals(reports.put(key, exception.toString()))) {
-                LOGGER.error("Could not save campaign catch-up for player {} and quest {}", player.getUUID(), quest.id(), exception);
+                LOGGER.error("Could not save campaign reconciliation for player {} and quest {}", player.getUUID(), quest.id(), exception);
             }
             return false;
         }
