@@ -20,6 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class SceneContinuation {
     private final UUID id;
     private UUID sceneInstanceId;
+    private ResourceLocation campaignId;
     private UUID dependencyContinuationId;
     private boolean retrySuspendedAction;
     private final UUID playerId;
@@ -54,6 +55,8 @@ public final class SceneContinuation {
 
     public UUID id() { return id; }
     public UUID sceneInstanceId() { return sceneInstanceId; }
+    public ResourceLocation campaignId() { return campaignId; }
+    public void bindCampaign(ResourceLocation id) { if (campaignId == null) campaignId = id; }
     public UUID dependencyContinuationId() { return dependencyContinuationId; }
     public boolean retrySuspendedAction() { return retrySuspendedAction; }
     public UUID playerId() { return playerId; }
@@ -114,6 +117,7 @@ public final class SceneContinuation {
         tag.putUUID("Player", playerId);
         if (providerId != null) tag.putUUID("Provider", providerId);
         if (questId != null) tag.putString("Quest", questId.toString());
+        if (campaignId != null) tag.putString("Campaign", campaignId.toString());
         if (questRunId != null) tag.putUUID("QuestRun", questRunId);
         tag.putString("Source", sourcePointer);
         tag.putInt("Next", nextActionIndex);
@@ -157,6 +161,7 @@ public final class SceneContinuation {
         try { value.state = State.valueOf(tag.getString("State")); } catch (IllegalArgumentException ignored) { }
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
+        value.campaignId = NbtDataUtil.readResourceLocation(tag, "Campaign").orElse(null);
         value.dependencyContinuationId = tag.hasUUID("DependencyContinuation") ? tag.getUUID("DependencyContinuation") : null;
         value.retrySuspendedAction = tag.getBoolean("RetrySuspendedAction");
         value.completionReceipt = tag.getBoolean("CompletionReceipt");

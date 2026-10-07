@@ -41,7 +41,9 @@ public final class SceneScheduler {
             SceneStepRecord record = instance.stepRecords().get(instance.currentStep());
             var definition = server == null ? null : SceneResources.scene(server, instance.sceneId()).orElse(null);
             long deadline = overallDeadline(instance, definition);
-            if (deadline > 0L && deadline <= gameTime) {
+            if (instance.campaignPaused()) {
+                enqueue(instance);
+            } else if (deadline > 0L && deadline <= gameTime) {
                 enqueue(instance);
             } else if (instance.state() == SceneState.WAITING && record != null && record.wakeTime() > gameTime) {
                 schedule(instance, earlierPositive(record.wakeTime(), deadline), gameTime);
@@ -99,8 +101,8 @@ public final class SceneScheduler {
     private static long overallDeadline(SceneInstance instance,
             com.jvn.villagerretaliation.scene.model.CompiledScene definition) {
         if (instance == null || definition == null || definition.timeoutTicks() <= 0L
-                || instance.deadlineHandled()) return 0L;
-        long start = instance.startGameTime();
+                || instance.deadlineHandled() || instance.campaignPaused()) return 0L;
+        long start = instance.timeoutStartGameTime();
         long duration = definition.timeoutTicks();
         return duration > Long.MAX_VALUE - start ? Long.MAX_VALUE : start + duration;
     }

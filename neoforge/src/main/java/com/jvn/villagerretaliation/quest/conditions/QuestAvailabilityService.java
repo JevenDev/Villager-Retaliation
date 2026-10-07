@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest.conditions;
 
+import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
@@ -39,6 +40,7 @@ public final class QuestAvailabilityService {
         // A live dialogue offer is fully described by DialogueContext. Building a
         // QuestExecutionContext here also rebuilds the provider binding and village
         // scope once per quest candidate, which made tracker scans multiplicative.
+        if (!CampaignQuestAccess.availabilityIssue(context, definition).isBlank()) return false;
         if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }

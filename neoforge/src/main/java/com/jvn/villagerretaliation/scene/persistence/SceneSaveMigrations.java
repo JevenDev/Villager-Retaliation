@@ -45,6 +45,14 @@ public final class SceneSaveMigrations {
                 version = 7;
             } else if (version == 7) {
                 version = 8;
+            } else if (version == 8) {
+                for (Tag raw : data.getList("Instances", Tag.TAG_COMPOUND)) {
+                    if (raw instanceof CompoundTag instance) {
+                        instance.putLong("CampaignPausedAt", -1L);
+                        instance.putLong("CampaignPausedTicks", 0L);
+                    }
+                }
+                version = 9;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);

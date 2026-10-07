@@ -29,6 +29,7 @@ import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
+import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
@@ -980,6 +981,8 @@ public final class VillagerQuestService {
                     Map.of()));
         }
 
+        String campaignIssue = CampaignQuestAccess.contentIssue(context, definition);
+        if (!campaignIssue.isBlank()) return Optional.of(result("unavailable", lineId(definition, "unavailable"), campaignIssue, Map.of()));
         resumePendingStageEntry(context, definition,
                 VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), definition.id()));
         return Optional.of(switch (action) {
@@ -1017,6 +1020,9 @@ public final class VillagerQuestService {
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+        String campaignIssue = CampaignQuestAccess.contentIssue(context, definition);
+        if (!campaignIssue.isBlank()) return transitionActionResult("unavailable", campaignIssue,
+                inheritedReplacements, context, definition, progress, transition, false);
         if ((progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED)
                 && transition.stageId().equals(initialStage(definition))
                 && canStart(context, definition, progress)) {
@@ -1212,6 +1218,7 @@ public final class VillagerQuestService {
                 continue;
             }
             VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            if (!CampaignQuestAccess.contentIssue(level, definition, progress).isBlank()) continue;
             DialogueContext questContext = contextForStartedVillager(level, player, progress).orElse(null);
             if (reconcileDefinitionRevision(level, player, definition, progress, questContext)) {
                 changed = true;
@@ -1385,7 +1392,9 @@ public final class VillagerQuestService {
         boolean changed = false;
         for (VillagerQuestSavedData.QuestEntry entry : affected) {
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.questId()).orElse(null);
-            if (definition != null && !definition.rules().lockedToVillager()) {
+            if ((!entry.progress().campaignId().isBlank() && !CampaignQuestAccess.contentIssue(level, definition, entry.progress()).isBlank())
+                    || definition != null && (!CampaignQuestAccess.contentIssue(level, definition).isBlank()
+                    || !definition.rules().lockedToVillager())) {
                 continue;
             }
 
@@ -1727,6 +1736,10 @@ public final class VillagerQuestService {
 
         List<String> lines = new ArrayList<>();
         lines.add("why_available quest=" + definition.id() + " available=" + available + " status=" + status);
+        String campaignIssue = CampaignQuestAccess.availabilityIssue(context, definition);
+        if (definition.campaign() != null || !campaignIssue.isBlank()) {
+            lines.add("campaign=" + definition.campaign() + " available=" + campaignIssue.isBlank() + " reason=" + campaignIssue);
+        }
         lines.add("provider match=" + offerMatches
                 + " issuer_lock=" + (progress == null ? "n/a" : matchesVillagerLock(context, definition, progress))
                 + " cross_villager_locked=" + crossVillagerLocked(context, definition, progress)
@@ -2125,7 +2138,8 @@ public final class VillagerQuestService {
             String stage,
             boolean runExitActions,
             boolean runEntryActions) {
-        if (context == null || definition == null || progress == null) return false;
+        if (context == null || definition == null || progress == null
+                || !CampaignQuestAccess.contentIssue(context, definition).isBlank()) return false;
         resumePendingStageEntry(context, definition, progress);
         if (!QuestLifecycleService.canTransitionStage(progress, stage)
                 || !definition.stages().containsKey(stage.trim())) {
@@ -2164,6 +2178,7 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
                 || !matchesVillagerLock(context, definition, progress)
+                || !CampaignQuestAccess.contentIssue(context, definition).isBlank()
                 || progress.pendingStageEntry().isBlank()
                 || !progress.pendingStageEntry().equals(progress.currentStage())
                 || !QuestStageActionService.readyForStageEntry(context, progress)) return false;
@@ -2189,7 +2204,8 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        if (context == null || definition == null || progress == null || definition.stages().isEmpty()) {
+        if (context == null || definition == null || progress == null || definition.stages().isEmpty()
+                || !CampaignQuestAccess.contentIssue(context, definition).isBlank()) {
             return false;
         }
         boolean changed = false;
@@ -2309,6 +2325,8 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             boolean bypassOfferRequirements,
             boolean forceRestart) {
+        String campaignIssue = CampaignQuestAccess.contentIssue(context, definition);
+        if (!campaignIssue.isBlank()) return result("unavailable", lineId(definition, "unavailable"), campaignIssue, Map.of());
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
         if (progress != null && progress.pendingPartyReward()) {
@@ -2349,6 +2367,8 @@ public final class VillagerQuestService {
                     replacements(context, definition, progress));
         }
 
+        campaignIssue = CampaignQuestAccess.availabilityIssue(context, definition);
+        if (!campaignIssue.isBlank()) return result("unavailable", lineId(definition, "unavailable"), campaignIssue, Map.of());
         VillagerQuestTargets.LocatedTarget target =
                 VillagerQuestTargets.locateInitialTarget(context, definition).orElse(null);
         if (target == null && VillagerQuestTargets.requiresLocatedTarget(definition, initialStage(definition))) {
@@ -2369,6 +2389,7 @@ public final class VillagerQuestService {
         QuestLifecycleService.start(definition.id(), started, providerBinding, target,
                 context.level().getGameTime(), context.player().getUUID(), definitiveRunId, forceRestart);
         started.adoptDefinitionRevision(definition.revision().number());
+        started.bindCampaign(definition.campaign());
         ensureRandomItemSelections(definition, started);
         if (partyStart != null) {
             partyStart.shared().enroll(context.player().getUUID(), false);
@@ -3418,6 +3439,7 @@ public final class VillagerQuestService {
     }
 
     private static boolean activeConditionsMet(DialogueContext context, QuestDefinition definition) {
+        if (!CampaignQuestAccess.contentIssue(context, definition).isBlank()) return false;
         QuestDefinition.ActiveState activeState = definition.rules().activeState();
         if (!activeState.hasConditions()) {
             return true;
@@ -4180,7 +4202,8 @@ public final class VillagerQuestService {
             ServerPlayer player,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        return activeConditionsStateForPlayer(player, definition, progress) == ConditionMatch.MET;
+        return CampaignQuestAccess.contentIssue(player.serverLevel(), definition, progress).isBlank()
+                && activeConditionsStateForPlayer(player, definition, progress) == ConditionMatch.MET;
     }
 
     private static boolean expireQuestIfNeeded(
@@ -5425,7 +5448,8 @@ public final class VillagerQuestService {
             DialogueContext context,
             CompiledQuest compiled,
             VillagerQuestSavedData.QuestProgress progress) {
-        if (context == null || compiled == null || progress == null || !progress.hasPendingLifecycleEvents()) {
+        if (context == null || compiled == null || progress == null || !progress.hasPendingLifecycleEvents()
+                || !CampaignQuestAccess.contentIssue(context.level(), compiled.asQuestDefinition(), progress).isBlank()) {
             return false;
         }
         boolean resolved = false;
@@ -5513,6 +5537,7 @@ public final class VillagerQuestService {
             DialogueContext context,
             CompiledQuest compiled,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (!CampaignQuestAccess.contentIssue(context.level(), compiled.asQuestDefinition(), progress).isBlank()) return false;
         boolean changed = resumePendingLifecycleEvents(context, compiled, progress);
         for (QuestTriggerContext pending : List.copyOf(progress.pendingTriggerEvents())) {
             boolean stillAuthored = compiled.triggerIndex().hasEvent(pending.event());

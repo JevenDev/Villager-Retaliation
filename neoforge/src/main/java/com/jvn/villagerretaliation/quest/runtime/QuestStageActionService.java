@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest.runtime;
 
+import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
@@ -41,6 +42,8 @@ public final class QuestStageActionService {
     private static ActionResult run(DialogueContext context, QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress, String key, List<VillagerActionDefinition> actions,
             Map<String, String> replacements, Runnable trackerFlash, String source) {
+        String issue = CampaignQuestAccess.contentIssue(context.level(), definition, progress);
+        if (!issue.isBlank()) return ActionResult.unavailable(issue, java.util.Set.of(), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
         QuestActionCheckpoint prior = refresh(context, progress, key);
         if (prior != null) return prior.outcome();
         String stage = progress.currentStage();

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.scene;
 
+import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.ActionSequenceRunner;
 import com.jvn.villagerretaliation.action.ActionStatus;
@@ -72,6 +73,7 @@ public final class SceneContinuationService {
                 context.villager().getUUID(), pointer(sourcePointer, suspendedAction, index),
                 actions, sequence.nextActionIndex(), result.legacyResult().replacements(),
                 ownerQuest, ownerRun);
+        continuation.bindCampaign(CampaignQuestAccess.campaignFor(context.level().getServer(), ownerQuest));
         if (continuation.completionReceipt()) {
             return RunResult.of(new ActionResult(continuation.actionStatus(), continuation.actionDiagnostic(),
                     result.capabilities(), result.legacyResult()), continuation.id());
@@ -173,6 +175,8 @@ public final class SceneContinuationService {
         for (SceneContinuation continuation : data.continuations()) {
             if (work >= MAX_CONTINUATIONS_PER_TICK) break;
             if (continuation.completionReceipt()) continue;
+            if (!CampaignQuestAccess.contentIssue(
+                    server, continuation.questId(), continuation.campaignId()).isBlank()) continue;
             ActionResult dependencyResult;
             if (continuation.dependencyContinuationId() != null) {
                 if (cyclicDependency(data, continuation.id(), continuation.dependencyContinuationId())) {
@@ -215,6 +219,7 @@ public final class SceneContinuationService {
     }
 
     private static void resume(MinecraftServer server, SceneSavedData data, SceneContinuation continuation) {
+        if (!CampaignQuestAccess.contentIssue(server, continuation.questId(), continuation.campaignId()).isBlank()) return;
         ServerPlayer player = server.getPlayerList().getPlayer(continuation.playerId());
         Villager provider = findVillager(server, continuation.providerId());
         if (player == null || provider == null || provider.level() != player.serverLevel()) return;

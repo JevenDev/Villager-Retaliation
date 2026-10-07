@@ -27,7 +27,7 @@ public final class PartyQuestService {
     }
 
     public static boolean isShareable(QuestDefinition definition) {
-        if (definition == null) {
+        if (definition == null || definition.campaign() != null) {
             return false;
         }
         boolean supported = false;

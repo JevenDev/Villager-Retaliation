@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.scene;
 
+import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
@@ -58,6 +59,7 @@ public final class SceneRuntime {
         if (result.instance() == null) {
             return SceneLaunchService.LaunchResult.accepted(result.instanceId(), false);
         }
+        result.instance().bindCampaign(CampaignQuestAccess.campaignFor(request.server(), request.questId()));
         data.changed();
         scheduler(request.server()).enqueue(result.instance());
         return SceneLaunchService.LaunchResult.accepted(result.instance().id(), result.created());

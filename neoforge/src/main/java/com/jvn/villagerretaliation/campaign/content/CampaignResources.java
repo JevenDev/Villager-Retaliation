@@ -70,6 +70,14 @@ public final class CampaignResources {
         return CampaignContentCatalog.inPack(CampaignSchema.error(resource.location(), "", message), resource.resource().sourcePackId());
     }
 
+    public static synchronized void installForTests(MinecraftServer server, CampaignContentCatalog catalog) {
+        if (catalog.quests() != QuestContentCatalogs.current(server)) {
+            throw new IllegalArgumentException("campaign test catalog must use the current quest catalog");
+        }
+        loadedServer = server;
+        loaded = catalog;
+    }
+
     public static synchronized void clearCache() {
         loadedServer = null;
         loaded = null;

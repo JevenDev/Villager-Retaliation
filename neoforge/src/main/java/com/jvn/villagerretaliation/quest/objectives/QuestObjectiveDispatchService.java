@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest.objectives;
 
+import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
@@ -15,6 +16,7 @@ public final class QuestObjectiveDispatchService {
     }
 
     public static boolean poll(QuestObjectiveEvaluationContext context, Consumer<QuestDefinition.Objective> completed) {
+        if (!CampaignQuestAccess.contentIssue(context.level(), context.definition(), context.progress()).isBlank()) return false;
         VillagerQuestSavedData.QuestProgress progress = context.progress();
         boolean changed = false;
         for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(context.definition(), progress)) {
@@ -29,6 +31,7 @@ public final class QuestObjectiveDispatchService {
 
     public static boolean dispatch(QuestObjectiveEvaluationContext context, QuestObjectiveEvent event,
             Consumer<QuestDefinition.Objective> completed) {
+        if (!CampaignQuestAccess.contentIssue(context.level(), context.definition(), context.progress()).isBlank()) return false;
         VillagerQuestSavedData.QuestProgress progress = context.progress();
         boolean changed = false;
         for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(context.definition(), progress)) {

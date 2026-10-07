@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.CandidateArbitrator;
@@ -82,6 +83,10 @@ public final class QuestTriggerDispatcher {
         if (definition == null || index == null || progress == null || event == null || actionRunner == null) {
             return QuestTriggerDispatchResult.empty();
         }
+
+        if ((definition.campaign() != null || !progress.campaignId().isBlank()) && (triggerContext.dialogueContext() == null
+                || !CampaignQuestAccess.contentIssue(
+                        triggerContext.dialogueContext().level(), definition, progress).isBlank())) return QuestTriggerDispatchResult.empty();
 
         String dispatchStage = triggerContext.stage().isBlank()
                 ? progress.currentStage()

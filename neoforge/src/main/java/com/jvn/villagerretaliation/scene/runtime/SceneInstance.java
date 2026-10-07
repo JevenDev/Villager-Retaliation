@@ -26,6 +26,10 @@ public final class SceneInstance {
     private final UUID owningQuestInstance;
     private final RunIdentityKind runIdentityKind;
     private ResourceLocation owningQuestId;
+    private ResourceLocation owningCampaignId;
+    private long campaignPausedAt = -1L;
+    private long campaignPausedTicks;
+    private String campaignDiagnostic = "";
     private final Set<UUID> participants;
     private SceneState state;
     private String currentStep;
@@ -183,6 +187,35 @@ public final class SceneInstance {
         return startGameTime;
     }
 
+    public ResourceLocation owningCampaignId() { return owningCampaignId; }
+
+    public void bindCampaign(ResourceLocation id) {
+        if (owningCampaignId == null) owningCampaignId = id;
+    }
+
+    public boolean campaignPaused() { return campaignPausedAt >= 0L; }
+
+    public boolean pauseCampaign(String issue, long time) {
+        boolean changed = campaignPausedAt < 0L || !campaignDiagnostic.equals(issue);
+        if (campaignPausedAt < 0L) campaignPausedAt = time;
+        campaignDiagnostic = issue;
+        return changed;
+    }
+
+    public boolean resumeCampaign(long time) {
+        if (campaignPausedAt < 0L) return false;
+        campaignPausedTicks = addTime(campaignPausedTicks, Math.max(0L, time - campaignPausedAt));
+        campaignPausedAt = -1L;
+        campaignDiagnostic = "";
+        return true;
+    }
+
+    public long timeoutStartGameTime() { return addTime(startGameTime, campaignPausedTicks); }
+
+    private static long addTime(long value, long ticks) {
+        return ticks > Long.MAX_VALUE - value ? Long.MAX_VALUE : value + ticks;
+    }
+
     public long updateGameTime() {
         return updateGameTime;
     }
@@ -196,7 +229,7 @@ public final class SceneInstance {
     }
 
     public String diagnostic() {
-        return diagnostic;
+        return campaignPaused() ? campaignDiagnostic : diagnostic;
     }
 
     public CleanupStatus cleanupStatus() {
@@ -406,6 +439,10 @@ public final class SceneInstance {
         tag.put("Participants", people);
         tag.putString("State", state.name());
         tag.putString("CurrentStep", currentStep);
+        if (owningCampaignId != null) tag.putString("OwningCampaignId", owningCampaignId.toString());
+        tag.putLong("CampaignPausedAt", campaignPausedAt);
+        tag.putLong("CampaignPausedTicks", campaignPausedTicks);
+        tag.putString("CampaignDiagnostic", campaignDiagnostic);
         tag.putLong("StartGameTime", startGameTime);
         tag.putLong("UpdateGameTime", updateGameTime);
         tag.putInt("RetryCount", retryCount);
@@ -478,6 +515,10 @@ public final class SceneInstance {
         value.failureCode = tag.getString("FailureCode");
         value.diagnostic = tag.getString("Diagnostic");
         value.owningQuestId = NbtDataUtil.readResourceLocation(tag, "OwningQuestId").orElse(null);
+        value.owningCampaignId = NbtDataUtil.readResourceLocation(tag, "OwningCampaignId").orElse(null);
+        value.campaignPausedAt = tag.contains("CampaignPausedAt", Tag.TAG_LONG) ? tag.getLong("CampaignPausedAt") : -1L;
+        value.campaignPausedTicks = Math.max(0L, tag.getLong("CampaignPausedTicks"));
+        value.campaignDiagnostic = tag.getString("CampaignDiagnostic");
         try {
             value.cleanupStatus = CleanupStatus.valueOf(tag.getString("CleanupStatus"));
         } catch (IllegalArgumentException ignored) {

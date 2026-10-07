@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.scene.runtime;
 
+import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutor;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutors;
 import com.jvn.villagerretaliation.scene.model.CompiledScene;
@@ -16,6 +17,13 @@ public final class SceneStepEngine {
 
     public static SceneScheduler.ProcessResult process(MinecraftServer server, SceneSavedData data, SceneInstance instance,
             CompiledScene definition,long time){
+        String campaignIssue = CampaignQuestAccess.contentIssue(
+                server, instance.owningQuestId(), instance.owningCampaignId());
+        if (!campaignIssue.isBlank()) {
+            if (instance.pauseCampaign(campaignIssue, time)) data.changed();
+            return SceneScheduler.ProcessResult.wakeAt(deadline(time, 100L));
+        }
+        if (instance.resumeCampaign(time)) data.changed();
         if (instance.transitionIntent() != SceneInstance.TransitionIntent.NONE && !instance.policyApplied()) {
             return SceneTransitionService.applyPrepared(data, instance, definition, time);
         }
@@ -23,7 +31,7 @@ public final class SceneStepEngine {
         var reconciliation=SceneDefinitionReconciler.reconcile(instance,definition);
         if(!reconciliation.safe()){instance.block("definition_incompatible",reconciliation.diagnostic(),time);data.changed();return SceneScheduler.ProcessResult.idle();}
         if (definition.timeoutTicks() > 0L && !instance.deadlineHandled()
-                && time >= deadline(instance.startGameTime(), definition.timeoutTicks())) {
+                && time >= deadline(instance.timeoutStartGameTime(), definition.timeoutTicks())) {
             return timeout(data, instance, definition, time);
         }
         if(instance.state()==SceneState.PENDING)instance.transition(SceneState.RUNNING,time);

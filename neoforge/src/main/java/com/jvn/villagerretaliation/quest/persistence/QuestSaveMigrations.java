@@ -40,6 +40,7 @@ public final class QuestSaveMigrations {
             case 3 -> 4;
             case 4 -> 5;
             case 5 -> 6;
+            case 6 -> 7;
             default -> throw new IllegalStateException("No quest save migration from version " + version);
         };
     }

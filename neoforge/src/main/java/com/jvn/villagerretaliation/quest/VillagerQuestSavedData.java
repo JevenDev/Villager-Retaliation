@@ -34,7 +34,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 6;
+    public static final int CURRENT_DATA_VERSION = 7;
     public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
     public static final int MAX_CHOICE_HISTORY = 256;
     public static final int MAX_COMPLETION_HISTORY = 128;
@@ -610,6 +610,7 @@ public class VillagerQuestSavedData extends SavedData {
         private final Map<String, ResourceLocation> resolvedObjectiveItems = new HashMap<>();
         private final Set<String> claimedBonuses = new LinkedHashSet<>();
         private int definitionRevision;
+        private String campaignId = "";
         private String lastRevisionPolicy = "";
         private long lastRevisionGameTime = -1L;
         private int startCount;
@@ -669,6 +670,7 @@ public class VillagerQuestSavedData extends SavedData {
             progress.completedObjectives.addAll(NbtDataUtil.readStringSet(tag, TAG_COMPLETED_OBJECTIVES));
             progress.claimedBonuses.addAll(NbtDataUtil.readStringSet(tag, TAG_CLAIMED_BONUSES));
             progress.definitionRevision = Math.max(0, tag.getInt(TAG_DEFINITION_REVISION));
+            progress.campaignId = tag.getString("Campaign");
             progress.lastRevisionPolicy = tag.getString(TAG_LAST_REVISION_POLICY);
             progress.lastRevisionGameTime = tag.contains(TAG_LAST_REVISION_TIME, Tag.TAG_LONG)
                     ? tag.getLong(TAG_LAST_REVISION_TIME) : -1L;
@@ -851,6 +853,7 @@ public class VillagerQuestSavedData extends SavedData {
             if (!this.claimedBonuses.isEmpty()) {
                 tag.put(TAG_CLAIMED_BONUSES, NbtDataUtil.stringList(this.claimedBonuses));
             }
+            if (!this.campaignId.isBlank()) tag.putString("Campaign", this.campaignId);
             if (this.definitionRevision > 0) {
                 tag.putInt(TAG_DEFINITION_REVISION, this.definitionRevision);
             }
@@ -1437,6 +1440,16 @@ public class VillagerQuestSavedData extends SavedData {
 
         public Set<String> claimedBonuses() {
             return Set.copyOf(this.claimedBonuses);
+        }
+
+        public String campaignId() { return this.campaignId; }
+
+        public void bindCampaign(ResourceLocation id) {
+            if (id == null) return;
+            if (!this.campaignId.isBlank() && !this.campaignId.equals(id.toString())) {
+                throw new IllegalStateException("quest progress already belongs to campaign " + this.campaignId);
+            }
+            this.campaignId = id.toString();
         }
 
         public int definitionRevision() {

@@ -16,7 +16,8 @@ public final class CampaignProgression {
     public static ChapterAccess chapter(CampaignDefinition definition, CampaignInstance instance, UUID playerId, String chapterId) {
         var chapter = definition.chapters().get(chapterId);
         if (chapter == null) return new ChapterAccess(false, false, List.of("Unknown chapter " + chapterId));
-        var player = instance.players().getOrDefault(playerId, CampaignInstance.PlayerRecord.empty());
+        var player = instance == null ? CampaignInstance.PlayerRecord.empty()
+                : instance.players().getOrDefault(playerId, CampaignInstance.PlayerRecord.empty());
         List<String> blockers = new ArrayList<>();
         for (var prerequisite : chapter.prerequisites()) {
             if (!prerequisite.chapter().isBlank()) {
