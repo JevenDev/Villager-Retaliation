@@ -3,12 +3,21 @@ package com.jvn.villagerretaliation.campaign;
 import com.jvn.villagerretaliation.config.NewWorldMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfigModel;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ServerLevelData;
+import net.minecraft.world.level.storage.DimensionDataStorage;
+import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.neoforge.common.IOUtilities;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -98,7 +107,7 @@ public final class CampaignWorldModeGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_world_mode")
-    public static void worldInitializationCommitsEachSelectableModeOnce(GameTestHelper helper) {
+    public static void worldInitializationCommitsEachSelectableModeOnce(GameTestHelper helper) throws IOException {
         try (WorldFixture fixture = new WorldFixture(helper)) {
             for (NewWorldMode choice : NewWorldMode.values()) {
                 var data = fixture.replace();
@@ -109,6 +118,10 @@ public final class CampaignWorldModeGameTests {
                 helper.assertValueEqual(data.selectionSource(), fixture.level.getServer().isDedicatedServer()
                         ? "server_operator" : "singleplayer_owner", "selection records the server authority");
                 helper.assertFalse(data.isDirty(), "selection is flushed before initialization returns");
+                var stored = NbtIo.readCompressed(fixture.level.getServer().getWorldPath(LevelResource.ROOT)
+                        .resolve("data").resolve(CampaignWorldModeSavedData.DATA_NAME + ".dat"), NbtAccounter.unlimitedHeap());
+                helper.assertValueEqual(stored.getCompound("data").getString("Mode"), choice.worldMode().id(),
+                        "acknowledged selection is already on disk");
                 helper.assertFalse(CampaignWorldModeService.initializeNewWorld(fixture.level, fixture.settings, other(choice)),
                         "duplicate world initialization cannot change the choice");
                 fixture.level.getDataStorage().set(CampaignWorldModeSavedData.DATA_NAME, reload(helper, data));
@@ -183,6 +196,66 @@ public final class CampaignWorldModeGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_world_mode")
+    public static void firstSelectionCreatesItsDirectoryAndSurvivesDiskReload(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk(helper)) {
+            var data = disk.load();
+            helper.assertTrue(data.selectForNewWorld(CampaignWorldMode.CAMPAIGN, "singleplayer_owner", 23L), "new file accepts a selection");
+            data.persist(disk.directory, helper.getLevel().registryAccess());
+            var restored = disk.load();
+            helper.assertValueEqual(restored.mode(), CampaignWorldMode.CAMPAIGN, "selection survives an actual disk reload");
+            helper.assertValueEqual(restored.selectedAt(), 23L, "selection metadata survives an actual disk reload");
+            helper.assertFalse(restored.selectForNewWorld(CampaignWorldMode.SANDBOX, "server_operator", 24L),
+                    "disk reload cannot change the selection");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_world_mode")
+    public static void unreadableModeFilesAreNotReplacedByDefaults(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk(helper)) {
+            Files.createDirectories(disk.directory);
+            byte[] original = {12, 34, 56, 78};
+            Files.write(disk.file(), original);
+            var data = disk.load();
+            helper.assertValueEqual(data.mode(), CampaignWorldMode.UNKNOWN, "unreadable existing mode is unavailable");
+            helper.assertTrue(data.diagnostic().contains("could not be read"), "unreadable file has a recovery diagnostic");
+            helper.assertFalse(data.selectForNewWorld(CampaignWorldMode.CAMPAIGN, "server_operator", 1L),
+                    "an unreadable file is not a new world");
+            data.setDirty();
+            disk.storage.save();
+            IOUtilities.waitUntilIOWorkerComplete();
+            helper.assertTrue(Arrays.equals(Files.readAllBytes(disk.file()), original), "autosave preserves the original unreadable bytes");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_world_mode")
+    public static void failedWritesRemainUnacknowledgedAndDirty(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk(helper)) {
+            Files.writeString(disk.directory, "blocking file");
+            var data = new CampaignWorldModeSavedData();
+            data.selectForNewWorld(CampaignWorldMode.SANDBOX, "server_operator", 7L);
+            boolean failed = false;
+            try {
+                data.persist(disk.directory, helper.getLevel().registryAccess());
+            } catch (IOException exception) {
+                failed = true;
+            }
+            helper.assertTrue(failed, "a failed durable write reaches the caller");
+            helper.assertTrue(data.isDirty(), "failed write retains dirty state");
+            helper.assertTrue(data.selectionPending(), "failed selection remains pending persistence");
+            helper.assertValueEqual(Files.readString(disk.directory), "blocking file", "failed write preserves existing files");
+            helper.assertFalse(data.selectForNewWorld(CampaignWorldMode.CAMPAIGN, "singleplayer_owner", 8L),
+                    "retry cannot change the pending selection");
+            Files.delete(disk.directory);
+            data.persist(disk.directory, helper.getLevel().registryAccess());
+            helper.assertFalse(data.selectionPending(), "successful retry acknowledges the original selection");
+            helper.assertValueEqual(disk.load().mode(), CampaignWorldMode.SANDBOX, "retry persists the original choice");
+        }
+        helper.succeed();
+    }
+
     private static CampaignWorldModeSavedData reload(GameTestHelper helper, CampaignWorldModeSavedData data) {
         return CampaignWorldModeSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()),
                 helper.getLevel().registryAccess());
@@ -206,6 +279,38 @@ public final class CampaignWorldModeGameTests {
         saved.putString("SaveMutation", "ignored");
         helper.assertValueEqual(data.save(new CompoundTag(), helper.getLevel().registryAccess()), original,
                 "callers cannot mutate preserved data");
+    }
+
+    private static final class Disk implements AutoCloseable {
+        private final GameTestHelper helper;
+        private final Path root;
+        private final Path directory;
+        private DimensionDataStorage storage;
+
+        private Disk(GameTestHelper helper) throws IOException {
+            this.helper = helper;
+            this.root = Files.createTempDirectory("campaign-mode-");
+            this.directory = this.root.resolve("data");
+        }
+
+        private Path file() {
+            return this.directory.resolve(CampaignWorldModeSavedData.DATA_NAME + ".dat");
+        }
+
+        private CampaignWorldModeSavedData load() {
+            IOUtilities.waitUntilIOWorkerComplete();
+            this.storage = new DimensionDataStorage(this.directory.toFile(), this.helper.getLevel().getServer().getFixerUpper(),
+                    this.helper.getLevel().registryAccess());
+            return CampaignWorldModeSavedData.get(this.storage, this.directory);
+        }
+
+        @Override
+        public void close() throws IOException {
+            IOUtilities.waitUntilIOWorkerComplete();
+            if (Files.isDirectory(this.directory)) Files.deleteIfExists(file());
+            Files.deleteIfExists(this.directory);
+            Files.deleteIfExists(this.root);
+        }
     }
 
     private static final class WorldFixture implements AutoCloseable {
@@ -233,6 +338,7 @@ public final class CampaignWorldModeGameTests {
             this.level.getDataStorage().set(CampaignWorldModeSavedData.DATA_NAME, this.original);
             this.original.setDirty();
             this.level.getDataStorage().save();
+            IOUtilities.waitUntilIOWorkerComplete();
         }
     }
 }

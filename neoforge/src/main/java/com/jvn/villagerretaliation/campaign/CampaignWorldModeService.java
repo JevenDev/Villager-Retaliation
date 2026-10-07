@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.campaign;
 import com.jvn.villagerretaliation.config.NewWorldMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.mojang.logging.LogUtils;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ServerLevelData;
@@ -26,8 +28,12 @@ public final class CampaignWorldModeService {
         if (!level.dimension().equals(Level.OVERWORLD) || settings.isInitialized()) return false;
         CampaignWorldModeSavedData data = CampaignWorldModeSavedData.get(level);
         String authority = level.getServer().isDedicatedServer() ? "server_operator" : "singleplayer_owner";
-        if (!data.selectForNewWorld(choice.worldMode(), authority, level.getGameTime())) return false;
-        level.getDataStorage().save();
+        if (!data.selectForNewWorld(choice.worldMode(), authority, level.getGameTime()) && !data.selectionPending()) return false;
+        try {
+            data.persist(level);
+        } catch (IOException exception) {
+            throw new UncheckedIOException("Could not persist the permanent campaign world mode", exception);
+        }
         return true;
     }
 

@@ -1,12 +1,20 @@
 package com.jvn.villagerretaliation.campaign;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.storage.DimensionDataStorage;
+import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.neoforge.common.IOUtilities;
 
 public final class CampaignWorldModeSavedData extends SavedData {
     public static final int CURRENT_DATA_VERSION = 1;
@@ -15,19 +23,35 @@ public final class CampaignWorldModeSavedData extends SavedData {
     private String selectionSource = "existing_world";
     private long selectedAt = -1L;
     private boolean selectionCommitted;
+    private boolean selectionPersisted;
     private String diagnostic = "";
     private CompoundTag preservedData;
 
     public static CampaignWorldModeSavedData get(ServerLevel level) {
         ServerLevel overworld = level.dimension().equals(Level.OVERWORLD) ? level : level.getServer().overworld();
-        return overworld.getDataStorage().computeIfAbsent(new SavedData.Factory<>(
-                CampaignWorldModeSavedData::new, CampaignWorldModeSavedData::load, DataFixTypes.LEVEL), DATA_NAME);
+        return get(overworld.getDataStorage(), level.getServer().getWorldPath(LevelResource.ROOT).resolve("data"));
+    }
+
+    static CampaignWorldModeSavedData get(DimensionDataStorage storage, Path directory) {
+        return storage.computeIfAbsent(new SavedData.Factory<>(
+                () -> missing(directory), CampaignWorldModeSavedData::load, DataFixTypes.LEVEL), DATA_NAME);
+    }
+
+    private static CampaignWorldModeSavedData missing(Path directory) {
+        CampaignWorldModeSavedData data = new CampaignWorldModeSavedData();
+        if (!Files.notExists(directory.resolve(DATA_NAME + ".dat"))) {
+            data.mode = CampaignWorldMode.UNKNOWN;
+            data.selectionCommitted = true;
+            data.diagnostic = "existing campaign world-mode file could not be read";
+        }
+        return data;
     }
 
     public static CampaignWorldModeSavedData load(CompoundTag input, HolderLookup.Provider provider) {
         CampaignWorldModeSavedData data = new CampaignWorldModeSavedData();
         int version = input.contains("DataVersion", Tag.TAG_INT) ? input.getInt("DataVersion") : 0;
         data.selectionCommitted = true;
+        data.selectionPersisted = true;
         if (input.contains("DataVersion") && !input.contains("DataVersion", Tag.TAG_INT)
                 || input.contains("Mode") && !input.contains("Mode", Tag.TAG_STRING)) {
             data.preserve(input, "invalid campaign world mode data");
@@ -91,6 +115,32 @@ public final class CampaignWorldModeSavedData extends SavedData {
         if (this.selectionCommitted) return;
         this.selectionCommitted = true;
         setDirty();
+    }
+
+    boolean selectionPending() {
+        return this.selectionCommitted && !this.selectionPersisted
+                && (this.mode == CampaignWorldMode.CAMPAIGN || this.mode == CampaignWorldMode.SANDBOX);
+    }
+
+    void persist(ServerLevel level) throws IOException {
+        persist(level.getServer().getWorldPath(LevelResource.ROOT).resolve("data"), level.registryAccess());
+    }
+
+    void persist(Path directory, HolderLookup.Provider provider) throws IOException {
+        if (this.mode == CampaignWorldMode.UNKNOWN) throw new IOException(this.diagnostic);
+        CompoundTag wrapper = new CompoundTag();
+        wrapper.put("data", save(new CompoundTag(), provider));
+        NbtUtils.addCurrentDataVersion(wrapper);
+        IOUtilities.waitUntilIOWorkerComplete();
+        Files.createDirectories(directory);
+        IOUtilities.writeNbtCompressed(wrapper, directory.resolve(DATA_NAME + ".dat"));
+        this.selectionPersisted = true;
+        setDirty(false);
+    }
+
+    @Override
+    public void save(File file, HolderLookup.Provider provider) {
+        if (this.mode != CampaignWorldMode.UNKNOWN) super.save(file, provider);
     }
 
     @Override
