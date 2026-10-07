@@ -645,6 +645,7 @@ const knownPlaceholders = new Set([
   "cooldown_day_word",
   "cooldown_days",
   "count",
+  "crop",
   "current_stage",
   "current_village",
   "currency",
@@ -4355,7 +4356,7 @@ function warnTerminalDialogueTreeNode(file, node, location) {
 
 function warnDialogueTreeResponseFlow(file, response, location) {
   if (response.end === true && stringValue(response.next)) {
-    warnings.push(`${relative(file)}: ${location}.end is ignored because next continues to "${stringValue(response.next)}".`);
+    warnings.push(`${relative(file)}: ${location}.next is ignored because end=true closes the conversation.`);
   }
 }
 
