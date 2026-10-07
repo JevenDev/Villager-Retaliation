@@ -56,9 +56,17 @@ public final class CampaignSchema {
         characterRadius.addProperty("minimum", 1);
         characterRadius.addProperty("maximum", CampaignCharacterDefinition.MAX_SEARCH_RADIUS);
         JsonObject character = object(List.of("id", "title_key", "source", "location", "loss_policy"),
-                "id", text(LOCAL_ID), "title_key", text(""), "source", enumeration("existing_villager"),
+                "id", text(LOCAL_ID), "title_key", text(""), "source", enumeration("existing_villager", "owned_spawn"),
                 "location", text(LOCAL_ID), "search_radius", characterRadius, "profession", text(RESOURCE_ID),
                 "loss_policy", enumeration("downed"));
+        JsonObject ownedSource = object(List.of("source"), "source", enumeration("owned_spawn"));
+        ownedSource.addProperty("additionalProperties", true);
+        JsonObject spawnRadius = characterRadius.deepCopy();
+        spawnRadius.addProperty("maximum", CampaignCharacterDefinition.MAX_SPAWN_RADIUS);
+        JsonObject ownedBounds = object(List.of(), "search_radius", spawnRadius);
+        ownedBounds.addProperty("additionalProperties", true);
+        character.add("if", ownedSource);
+        character.add("then", ownedBounds);
         JsonObject revision = type("integer");
         revision.addProperty("minimum", 1);
         revision.addProperty("maximum", Integer.MAX_VALUE);
@@ -96,6 +104,11 @@ public final class CampaignSchema {
             diagnostics.add(error(source, pointer, "expected " + type));
             return;
         }
+        if (schema.has("if")) {
+            List<QuestDiagnostic> condition = new ArrayList<>();
+            validate(source, value, schema.getAsJsonObject("if"), pointer, condition);
+            if (condition.isEmpty()) validate(source, value, schema.getAsJsonObject("then"), pointer, diagnostics);
+        }
         if (schema.has("enum")) {
             boolean accepted = false;
             for (JsonElement candidate : schema.getAsJsonArray("enum")) accepted |= candidate.equals(value);
@@ -111,7 +124,9 @@ public final class CampaignSchema {
                 }
                 for (var entry : object.entrySet()) {
                     if (!properties.has(entry.getKey())) {
-                        diagnostics.add(error(source, child(pointer, entry.getKey()), "unsupported field"));
+                        if (!schema.get("additionalProperties").getAsBoolean()) {
+                            diagnostics.add(error(source, child(pointer, entry.getKey()), "unsupported field"));
+                        }
                     } else {
                         validate(source, entry.getValue(), properties.getAsJsonObject(entry.getKey()),
                                 child(pointer, entry.getKey()), diagnostics);

@@ -44,6 +44,9 @@ public final class CampaignCharacterService {
                 || binding.source() != character.source() || binding.lossPolicy() != character.lossPolicy())) {
             return unavailable("Saved campaign character ownership is incompatible. Restore the matching campaign and character saves.");
         }
+        if (character.source() == CampaignCharacterDefinition.Source.OWNED_SPAWN) {
+            return CampaignOwnedSpawns.resolve(server, content, character, data);
+        }
         if (binding != null) return observe(server, data, binding);
         if (character.profession() != null && !BuiltInRegistries.VILLAGER_PROFESSION.containsKey(character.profession())) {
             return unavailable("Campaign character profession is unavailable: " + character.profession());
@@ -70,7 +73,7 @@ public final class CampaignCharacterService {
         }
     }
 
-    private static Result observe(MinecraftServer server, CampaignCharacterSavedData data, CampaignCharacterBinding binding) {
+    static Result observe(MinecraftServer server, CampaignCharacterSavedData data, CampaignCharacterBinding binding) {
         Entity entity = null;
         for (var level : server.getAllLevels()) {
             entity = level.getEntity(binding.entityId());
@@ -110,6 +113,7 @@ public final class CampaignCharacterService {
 
     public static void onRemoved(Entity entity) {
         if (!(entity instanceof Villager) || !(entity.level() instanceof ServerLevel level)) return;
+        if (CampaignOwnedSpawns.rollingBack(entity.getUUID())) return;
         var reason = entity.getRemovalReason();
         if (reason != Entity.RemovalReason.KILLED && reason != Entity.RemovalReason.DISCARDED) return;
         var data = CampaignCharacterSavedData.get(level);

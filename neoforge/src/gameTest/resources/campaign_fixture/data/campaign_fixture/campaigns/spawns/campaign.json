@@ -1,0 +1,40 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:spawns",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.spawns.title",
+  "localization_prefix": "campaign_fixture.campaign.spawns.",
+  "quest_bundles": [
+    "campaign_fixture:spawns"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.spawns.chapter",
+      "quests": [
+        "campaign_fixture:spawns"
+      ]
+    }
+  ],
+  "milestones": [],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.spawns.home",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    }
+  ],
+  "characters": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.spawns.mentor",
+      "source": "owned_spawn",
+      "location": "home",
+      "search_radius": 4,
+      "loss_policy": "downed",
+      "profession": "minecraft:librarian"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.spawns.title": "Campaign fixture: dedicated mentor",
+    "campaign_fixture.quest.spawns.description": "Meet a mentor created for this campaign. Every player shares this persistent character.",
+    "campaign_fixture.quest.spawns.travel": "Visit our village at {objective_target_x}, {objective_target_y}, {objective_target_z}.",
+    "campaign_fixture.quest.spawns.offer.label": "Test a dedicated campaign character",
+    "campaign_fixture.quest.spawns.offer.lines": [
+      "This campaign creates one mentor near its saved village. Returning or reloading keeps the same character and their belongings."
+    ],
+    "campaign_fixture.quest.spawns.accept": "Begin the character test.",
+    "campaign_fixture.quest.spawns.reminder.label": "Where is our village?",
+    "campaign_fixture.quest.spawns.reminder.lines": [
+      "Reach the village marked by this quest. The mentor needs safe ground nearby and will never remove blocks to make room."
+    ],
+    "campaign_fixture.quest.spawns.report.label": "Finish the character test",
+    "campaign_fixture.quest.spawns.report.lines": [
+      "You returned to the same mentor. Another villager cannot finish this test, even when ordinary quests allow compatible providers."
+    ],
+    "campaign_fixture.quest.spawns.finish": "Record my visit."
+  }
+}

@@ -12,6 +12,7 @@
     "SettlementProjectileSpawnMixin",
     "ServerLevelEntityManagerAccessor",
     "PersistentEntitySectionManagerAccessor",
+    "EntityStorageAccessor",
     "AcquireSettlementHomeMixin",
     "AbstractContainerMenuDuelMixin",
     "AbstractContainerMenuAccessor",

@@ -126,9 +126,11 @@ public final class CampaignDefinitionParser {
             JsonObject entry = characterEntries.get(index).getAsJsonObject();
             String pointer = "/characters/" + index;
             String id = text(entry, "id");
+            var kind = CampaignCharacterDefinition.Source.valueOf(text(entry, "source").toUpperCase(Locale.ROOT));
+            int searchRadius = entry.has("search_radius") ? entry.get("search_radius").getAsInt()
+                    : kind == CampaignCharacterDefinition.Source.OWNED_SPAWN ? 4 : 32;
             put(characters, id, new CampaignCharacterDefinition(id, text(entry, "title_key"),
-                    CampaignCharacterDefinition.Source.valueOf(text(entry, "source").toUpperCase(Locale.ROOT)), text(entry, "location"),
-                    entry.has("search_radius") ? entry.get("search_radius").getAsInt() : 32,
+                    kind, text(entry, "location"), searchRadius,
                     entry.has("profession") ? resource(entry, "profession") : null,
                     CampaignCharacterDefinition.LossPolicy.valueOf(text(entry, "loss_policy").toUpperCase(Locale.ROOT)), pointer), source, pointer, diagnostics);
         }

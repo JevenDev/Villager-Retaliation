@@ -1,0 +1,9 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.spawns.title": "Campaign fixture: dedicated mentor",
+    "campaign_fixture.campaign.spawns.chapter": "Meet the same mentor",
+    "campaign_fixture.campaign.spawns.home": "The mentor's village",
+    "campaign_fixture.campaign.spawns.mentor": "Campaign mentor"
+  }
+}
