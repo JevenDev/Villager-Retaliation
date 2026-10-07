@@ -1161,6 +1161,25 @@ public final class QuestV2Parser {
                     "unknown condition type \"" + type + "\".",
                     "Use one of the condition types exported in quest-registry-metadata.json.",
                     Set.of(type));
+            return;
+        }
+        if (canonical.equals("all") || canonical.equals("any")) {
+            String childrenPointer = pointer + "/conditions";
+            JsonArray children = validator.array(object.get("conditions"), childrenPointer, "compound conditions", true);
+            if (children == null) return;
+            if (children.isEmpty()) {
+                validator.error(childrenPointer, "compound conditions must not be empty.",
+                        "Provide at least one condition object.", Set.of());
+            }
+            for (int index = 0; index < children.size(); index++) {
+                String childPointer = childrenPointer + "/" + index;
+                JsonObject child = validator.object(children.get(index), childPointer, "condition", true);
+                if (child != null) validateConditionObject(validator, child, childPointer);
+            }
+        } else if (canonical.equals("not")) {
+            String childPointer = pointer + "/condition";
+            JsonObject child = validator.object(object.get("condition"), childPointer, "condition", true);
+            if (child != null) validateConditionObject(validator, child, childPointer);
         }
     }
 

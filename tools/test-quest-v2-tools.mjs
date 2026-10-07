@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -218,6 +218,23 @@ try {
   });
 
   run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
+
+  const conditionFixture = JSON.parse(await readFile(validQuest, "utf8"));
+  const nestedConditions = [
+    [{ type: "all_of", conditions: [{ type: "not", condition: { type: "reputation", min: 0 } }] }, false],
+    [{ type: "and", conditions: [{ type: "unsupported_nested_condition" }] }, true],
+    [{ type: "not", condition: { type: "all", conditions: [{ type: "unsupported_nested_condition" }] } }, true],
+    [{ type: "not" }, true],
+    [{ type: "or", conditions: [] }, true],
+    [{ type: "any_of", conditions: [false] }, true]
+  ];
+  for (const [condition, expectFailure] of nestedConditions) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.availability.conditions = [condition];
+    await writeJson(validQuest, candidate);
+    run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+  }
+  await writeJson(validQuest, conditionFixture);
 
   const invalid = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", invalidQuest], { expectFailure: true });
   assert(invalid.stderr.includes("pointer=/entry_stage"), "Invalid v2 fixture did not report the entry_stage JSON pointer.");
