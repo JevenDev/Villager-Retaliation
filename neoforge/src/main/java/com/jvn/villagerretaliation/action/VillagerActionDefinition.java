@@ -84,6 +84,21 @@ public record VillagerActionDefinition(
         return List.copyOf(actions);
     }
 
+    public static List<VillagerActionDefinition> readObjects(ResourceLocation location, String context,
+            List<JsonObject> objects, ResourceLocation defaultQuestId) {
+        List<VillagerActionDefinition> actions = new ArrayList<>();
+        for (int index = 0; index < objects.size(); index++) {
+            read(location, context + ".actions[" + index + "]", objects.get(index), defaultQuestId).ifPresent(actions::add);
+        }
+        return List.copyOf(actions);
+    }
+
+    public static VillagerActionDefinition transition(CompiledQuestTransition transition) {
+        return new VillagerActionDefinition(Kind.QUEST_TRANSITION, transition.questId(), QuestAction.NONE,
+                0, null, null, null, "", "", "", true, QuestFactScope.PLAYER, null, "", "",
+                Map.of(), Map.of(), transition, null, "", false, false);
+    }
+
     public static List<VillagerActionDefinition> readListOrInline(ResourceLocation location, String context, JsonObject entry) {
         return readListOrInline(location, context, entry, null);
     }

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
+import com.jvn.villagerretaliation.dialogue.resources.DialogueTreeValidation;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
@@ -238,49 +239,16 @@ public final class DialogueTreeResources {
         JsonObject display = DatapackJsonReader.readObject(root, "display");
         ResourceLocation defaultQuestId = defaultQuestId(location, root, defaultQuestIdFromQuestPath(location, id));
         Map<String, DialogueTreeDefinition.Node> nodes = readNodes(location, root, defaultQuestId, id);
-        if (nodes.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one node.");
-            return null;
-        }
-
         List<DialogueTreeDefinition.Entry> entries = readEntries(location, root, defaultQuestId, id);
-        if (entries.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one entry.");
-            return null;
-        }
-        List<DialogueTreeDefinition.Entry> validEntries = entries.stream()
-                .filter(entry -> {
-                    if (entry.start().isBlank()) {
-                        DatapackDiagnostics.warnInvalidDialogueCondition(
-                                location,
-                                "dialogue tree entry \"" + entry.id() + "\"",
-                                "entry must define start.");
-                        return false;
-                    }
-                    if (!nodes.containsKey(entry.start())) {
-                        DatapackDiagnostics.warnInvalidDialogueCondition(
-                                location,
-                                "dialogue tree entry \"" + entry.id() + "\"",
-                                "start references unknown node \"" + entry.start() + "\".");
-                        return false;
-                    }
-                    return true;
-                })
-                .toList();
-        if (validEntries.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree has no valid entries.");
-            return null;
-        }
-
-        return new DialogueTreeDefinition(
+        return DialogueTreeValidation.validate(location, new DialogueTreeDefinition(
                 id,
                 display == null ? "" : DatapackJsonReader.readString(display, "title"),
                 display == null ? "" : DatapackJsonReader.readString(display, "description"),
                 DialogueEntryMetadata.read(location, "dialogue tree", "file root", root),
                 DialogueCondition.readList(location, "dialogue tree", root, defaultQuestId),
-                validEntries,
+                entries,
                 nodes
-        );
+        ));
     }
 
     public static DialogueTreeDefinition readGeneratedTree(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
@@ -309,10 +277,6 @@ public final class DialogueTreeResources {
                 String context = "dialogue tree entries[" + index + "]";
                 String entryId = firstNonBlank(DatapackJsonReader.readString(entry, "id"), "entry_" + index);
                 String label = DatapackJsonReader.readString(entry, "label");
-                if (!networkSafeOption(location, context, DialogueTreeService.entryOptionId(treeId, entryId), label)) {
-                    index++;
-                    continue;
-                }
                 ResourceLocation entryQuestId = defaultQuestId(location, entry, defaultQuestId);
                 entries.add(new DialogueTreeDefinition.Entry(
                         entryId,
@@ -417,10 +381,6 @@ public final class DialogueTreeResources {
                 String id = firstNonBlank(DatapackJsonReader.readString(response, "id"), "response_" + index);
                 String responseContext = context + ".responses[" + index + "]";
                 String label = DatapackJsonReader.readString(response, "label");
-                if (!networkSafeOption(location, responseContext, DialogueTreeService.responseOptionId(treeId, id), label)) {
-                    index++;
-                    continue;
-                }
                 ResourceLocation responseQuestId = defaultQuestId(location, response, defaultQuestId);
                 DialogueEntryMetadata metadata =
                         DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response);
@@ -456,30 +416,6 @@ public final class DialogueTreeResources {
             index++;
         }
         return List.copyOf(responses);
-    }
-
-    private static boolean networkSafeOption(
-            ResourceLocation location,
-            String context,
-            String optionId,
-            String label) {
-        if (!DialogueOptionDefinition.isNetworkSafeId(optionId)) {
-            DatapackDiagnostics.warnSkippedEntry(
-                    location,
-                    "dialogue tree option",
-                    context,
-                    "generated id must be at most " + DialogueOptionDefinition.MAX_NETWORK_ID_LENGTH + " characters.");
-            return false;
-        }
-        if (!DialogueOptionDefinition.isNetworkSafeLabel(label)) {
-            DatapackDiagnostics.warnSkippedEntry(
-                    location,
-                    "dialogue tree option",
-                    context,
-                    "label must be at most " + DialogueOptionDefinition.MAX_NETWORK_LABEL_LENGTH + " characters.");
-            return false;
-        }
-        return true;
     }
 
     private static Set<VillagerProfession> readProfessions(ResourceLocation location, String context, JsonObject entry) {

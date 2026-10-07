@@ -1,8 +1,13 @@
 package com.jvn.villagerretaliation.dialogue.resources;
 
-import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
+import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextVariant;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueUsagePolicy;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeDefinition;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
@@ -32,13 +37,8 @@ public final class QuestDialogueCompiler {
         }
         QuestSourcePointer source = QuestSourcePointer.from(envelope);
         ResourceLocation treeId = treeId(resource.id());
-        JsonObject root = new JsonObject();
-        root.addProperty("id", treeId.toString());
-        addDisplay(root, resource);
-        root.add("metadata", metadata(resource, "", "quest_module_v2", source));
-
-        JsonArray entries = new JsonArray();
-        JsonObject nodes = new JsonObject();
+        List<DialogueTreeDefinition.Entry> entries = new ArrayList<>();
+        Map<String, DialogueTreeDefinition.Node> nodes = new LinkedHashMap<>();
         Map<QuestDialogueCatalog.BindingKey, QuestDialogueCatalog.Binding> bindings = new LinkedHashMap<>();
         Map<String, Integer> stageIndexes = stageIndexes(resource);
 
@@ -53,9 +53,9 @@ public final class QuestDialogueCompiler {
         Map<ResourceLocation, DialogueTreeDefinition> trees = Map.of();
         Map<ResourceLocation, QuestSourcePointer> treeSources = Map.of();
         if (entries.size() > 0 && nodes.size() > 0) {
-            root.add("entries", entries);
-            root.add("nodes", nodes);
-            DialogueTreeDefinition tree = DialogueTreeResources.readGeneratedTree(source.resource(), root, treeId);
+            DialogueTreeDefinition tree = DialogueTreeValidation.validate(source.resource(), new DialogueTreeDefinition(
+                    treeId, metadataString(resource, "title"), metadataString(resource, "description"),
+                    metadata(resource, "", "quest_module_v2", source), List.of(), entries, nodes));
             if (tree == null) {
                 DatapackDiagnostics.warnQuestV2Validation(
                         source.resource(),
@@ -88,8 +88,8 @@ public final class QuestDialogueCompiler {
             QuestV2Resource resource,
             QuestSourcePointer source,
             ResourceLocation treeId,
-            JsonArray entries,
-            JsonObject nodes,
+            List<DialogueTreeDefinition.Entry> entries,
+            Map<String, DialogueTreeDefinition.Node> nodes,
             Map<QuestDialogueCatalog.BindingKey, QuestDialogueCatalog.Binding> bindings) {
         for (int index = 0; index < resource.lifecycle().dialogue().size(); index++) {
             QuestV2Resource.Scene scene = resource.lifecycle().dialogue().get(index);
@@ -132,8 +132,8 @@ public final class QuestDialogueCompiler {
             QuestV2Resource.Stage stage,
             QuestSourcePointer stageSource,
             ResourceLocation treeId,
-            JsonArray entries,
-            JsonObject nodes,
+            List<DialogueTreeDefinition.Entry> entries,
+            Map<String, DialogueTreeDefinition.Node> nodes,
             Map<QuestDialogueCatalog.BindingKey, QuestDialogueCatalog.Binding> bindings) {
         for (QuestV2Resource.DialogueSlot slot : sortedSlots(stage.dialogueSlots())) {
             QuestSourcePointer slotSource = stageSource.child("dialogue", slot.slot());
@@ -221,20 +221,11 @@ public final class QuestDialogueCompiler {
             QuestSourcePointer responsesSource = stageSource.child("responses");
             String nodeId = stageResponsesNodeId(stage.id());
             String entryId = stageResponsesEntryId(stage.id());
-            JsonObject node = new JsonObject();
-            node.addProperty("id", nodeId);
-            JsonArray lines = stringArray(List.of(stage.ui().trackerText()));
-            if (lines.size() > 0) {
-                node.add("lines", lines);
-            }
-            node.add("responses", responseArray(
-                    resource,
-                    stage.id(),
-                    stage.responses(),
-                    stage,
-                    responsesSource,
-                    stageResponsesEntryId(stage.id())));
-            addNode(nodes, nodeId, node);
+            List<String> lines = nonBlankLines(List.of(stage.ui().trackerText()));
+            nodes.putIfAbsent(nodeId, new DialogueTreeDefinition.Node(nodeId, lines,
+                    textVariants(treeId + "/node/" + nodeId, lines, "", DialogueEntryMetadata.EMPTY),
+                    List.of(), List.of(), compileResponses(resource, stage.id(), stage.responses(), stage,
+                            responsesSource, stageResponsesEntryId(stage.id())), false));
             addEntry(resource, stage.id(), entryId, titleCase(stage.id()), nodeId, responsesSource, null, entries);
             putBinding(
                     bindings,
@@ -256,82 +247,54 @@ public final class QuestDialogueCompiler {
             QuestSourcePointer sceneSource,
             String nodeId,
             QuestV2Resource.Stage stage,
-            JsonObject nodes) {
-        JsonObject node = new JsonObject();
-        node.addProperty("id", nodeId);
-        JsonArray lines = stringArray(scene.lines());
-        if (lines.size() > 0) {
-            node.add("lines", lines);
-        }
-        if (!scene.textKey().isBlank()) {
-            node.addProperty("text_key", scene.textKey());
-        }
-        copyArrayIfPresent(scene.data(), node, "actions");
-        copyArrayIfPresent(scene.data(), node, "conditions");
-        copyIfPresent(scene.data(), node, "end");
-        JsonArray responses = responseArray(
-                resource,
-                stageId,
-                scene.responses(),
-                stage,
-                sceneSource.child("responses"),
-                stageSceneEntryId(stageId, scene.id()));
-        if (responses.size() > 0) {
-            node.add("responses", responses);
-        }
-        addNode(nodes, nodeId, node);
+            Map<String, DialogueTreeDefinition.Node> nodes) {
+        if (nodes.containsKey(nodeId)) return;
+        List<String> lines = nonBlankLines(scene.lines());
+        nodes.put(nodeId, new DialogueTreeDefinition.Node(nodeId, lines,
+                textVariants(treeId(resource.id()) + "/node/" + nodeId, lines,
+                        scene.textKey(), DialogueEntryMetadata.EMPTY),
+                VillagerActionDefinition.readList(sceneSource.resource(), sceneSource.jsonPointer(), scene.data(), resource.id()),
+                DialogueCondition.readList(sceneSource.resource(), sceneSource.jsonPointer(), scene.data(), resource.id()),
+                compileResponses(resource, stageId, scene.responses(), stage, sceneSource.child("responses"),
+                        stageSceneEntryId(stageId, scene.id())),
+                DatapackJsonReader.readBoolean(scene.data(), "end", false)));
     }
 
-    private static JsonArray responseArray(
+    private static List<DialogueTreeDefinition.Response> compileResponses(
             QuestV2Resource resource,
             String stageId,
             List<QuestV2Resource.Response> responses,
             QuestV2Resource.Stage stage,
             QuestSourcePointer source,
             String scenePath) {
-        JsonArray array = new JsonArray();
+        List<DialogueTreeDefinition.Response> result = new ArrayList<>();
         for (int index = 0; index < responses.size(); index++) {
             QuestV2Resource.Response response = responses.get(index);
-            JsonObject object = new JsonObject();
-            object.addProperty("id", response.id());
-            object.addProperty("label", responseLabel(response));
-            String labelKey = DatapackJsonReader.readString(response.data(), "label_key");
-            if (!labelKey.isBlank()) {
-                object.addProperty("label_key", labelKey);
-            }
-            String textKey = DatapackJsonReader.readString(response.data(), "text_key");
-            if (!textKey.isBlank()) {
-                object.addProperty("text_key", textKey);
-            }
-            JsonArray lines = responseLines(response);
-            if (lines.size() > 0) {
-                object.add("lines", lines);
-            }
-            String request = DatapackJsonReader.readString(response.data(), "request");
-            if (!request.isBlank()) {
-                object.addProperty("request", request);
-            }
-            copyIfPresent(response.data(), object, "order");
-            copyIfPresent(response.data(), object, "priority");
-            copyIfPresent(response.data(), object, "end");
-            object.add("metadata", metadata(
-                    resource,
-                    stageId,
-                    "quest_module_v2_response",
-                    source.child(Integer.toString(index)),
-                    response.data()));
-            copyArrayIfPresent(response.data(), object, "conditions");
-            copyResponseActionObjects(
-                    object,
-                    response.actions(),
-                    transitionAction(resource, stageId, scenePath, response, source.child(Integer.toString(index))));
-            String next = nextSceneNodeId(stage, response.transition());
-            if (!next.isBlank()) {
-                object.addProperty("next", next);
-            }
-            array.add(object);
+            QuestSourcePointer responseSource = source.child(Integer.toString(index));
+            String label = responseLabel(response);
+            DialogueEntryMetadata metadata = metadata(resource, stageId, "quest_module_v2_response",
+                    responseSource, response.data());
+            List<String> lines = responseLines(response);
+            result.add(new DialogueTreeDefinition.Response(response.id(), label,
+                    DatapackJsonReader.readString(response.data(), "label_key"), metadata,
+                    nextSceneNodeId(stage, response.transition()),
+                    DatapackJsonReader.readEnum(response.data(), "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
+                    lines, textVariants(treeId(resource.id()) + "/response/" + response.id(), lines,
+                            DatapackJsonReader.readString(response.data(), "text_key"), metadata),
+                    responseActions(resource, stageId, scenePath, response, responseSource),
+                    DialogueCondition.readList(source.resource(), responseSource.jsonPointer(), response.data(), resource.id()),
+                    DatapackJsonReader.readBoolean(response.data(), "end", false),
+                    DatapackJsonReader.readInt(response.data(), "order", index),
+                    DatapackJsonReader.readInt(response.data(), "priority", 0)));
         }
-        return array;
+        return List.copyOf(result);
+    }
+
+    private static List<DialogueTextVariant> textVariants(String owner, List<String> lines,
+            String textKey, DialogueEntryMetadata metadata) {
+        return DialogueTextVariant.legacy(owner,
+                textKey.isBlank() || lines.isEmpty() ? lines : List.of(lines.getFirst()),
+                textKey, metadata, DialogueUsagePolicy.DEFAULT);
     }
 
     private static String responseLabel(QuestV2Resource.Response response) {
@@ -341,8 +304,8 @@ public final class QuestDialogueCompiler {
                 firstNonBlank(response.label().text(), titleCase(response.id())));
     }
 
-    private static JsonArray responseLines(QuestV2Resource.Response response) {
-        JsonArray lines = stringArray(response.label().lines());
+    private static List<String> responseLines(QuestV2Resource.Response response) {
+        List<String> lines = new ArrayList<>(nonBlankLines(response.label().lines()));
         String responseText = DatapackJsonReader.readString(response.data(), "text");
         if (!responseText.isBlank()) {
             lines.add(responseText);
@@ -357,37 +320,22 @@ public final class QuestDialogueCompiler {
         return stage.scenes().containsKey(transition.scene()) ? stageSceneNodeId(stage.id(), transition.scene()) : "";
     }
 
-    private static JsonObject transitionAction(
+    private static VillagerActionDefinition transitionAction(
             QuestV2Resource resource,
             String stageId,
             String scenePath,
             QuestV2Resource.Response response,
             QuestSourcePointer source) {
         QuestV2Resource.Transition transition = response.transition();
-        if (transition == null
-                || transition.isEmpty()
-                || !transition.scene().isBlank()
-                || !transition.response().isBlank()) {
-            return null;
-        }
-        JsonObject action = new JsonObject();
-        action.addProperty("type", "quest_transition");
-        action.addProperty("quest", resource.id().toString());
-        action.addProperty("from_stage", stageId);
-        action.addProperty("scene_path", scenePath);
-        action.addProperty("response_id", response.id());
-        action.addProperty("source_pointer", source.jsonPointer());
-        if (!transition.stage().isBlank()) {
-            action.addProperty("target", "stage");
-            action.addProperty("target_stage", transition.stage());
-        } else if (transition.complete()) {
-            action.addProperty("target", "complete");
-        } else if (transition.abandon()) {
-            action.addProperty("target", "abandon");
-        } else if (transition.fail()) {
-            action.addProperty("target", "fail");
-        }
-        return action;
+        if (transition == null || transition.isEmpty() || !transition.scene().isBlank()
+                || !transition.response().isBlank()) return null;
+        CompiledQuestTransition.Target target = !transition.stage().isBlank() ? CompiledQuestTransition.Target.STAGE
+                : transition.complete() ? CompiledQuestTransition.Target.COMPLETE
+                : transition.abandon() ? CompiledQuestTransition.Target.ABANDON
+                : transition.fail() ? CompiledQuestTransition.Target.FAIL : CompiledQuestTransition.Target.NONE;
+        CompiledQuestTransition compiled = new CompiledQuestTransition(resource.id(), stageId, scenePath,
+                response.id(), target, transition.stage(), source.jsonPointer());
+        return compiled.isEmpty() ? null : VillagerActionDefinition.transition(compiled);
     }
 
     private static void addEntry(
@@ -398,67 +346,38 @@ public final class QuestDialogueCompiler {
             String nodeId,
             QuestSourcePointer source,
             JsonObject entryData,
-            JsonArray entries) {
-        JsonObject entry = new JsonObject();
-        entry.addProperty("id", entryId);
-        String explicitLabel = entryData == null ? "" : DatapackJsonReader.readString(entryData, "label");
-        entry.addProperty("label", explicitLabel.isBlank() ? label : explicitLabel);
-        String labelKey = entryData == null ? "" : DatapackJsonReader.readString(entryData, "label_key");
-        if (!labelKey.isBlank()) {
-            entry.addProperty("label_key", labelKey);
-        }
-        entry.addProperty("start", nodeId);
-        entry.add("metadata", metadata(resource, stageId, "quest_module_v2_entry", source, entryData));
-        copyIfPresent(entryData, entry, "request");
-        copyIfPresent(entryData, entry, "show_for_babies");
-        copyIfPresent(entryData, entry, "order");
-        copyIfPresent(entryData, entry, "priority");
-        copyArrayIfPresent(entryData, entry, "conditions");
-        entries.add(entry);
+            List<DialogueTreeDefinition.Entry> entries) {
+        JsonObject data = entryData == null ? new JsonObject() : entryData;
+        String explicitLabel = DatapackJsonReader.readString(data, "label");
+        String resolvedLabel = explicitLabel.isBlank() ? label : explicitLabel;
+        entries.add(new DialogueTreeDefinition.Entry(entryId, resolvedLabel,
+                DatapackJsonReader.readString(data, "label_key"),
+                metadata(resource, stageId, "quest_module_v2_entry", source, data), nodeId,
+                DatapackJsonReader.readEnum(data, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
+                true, DatapackJsonReader.readBoolean(data, "show_for_babies", true), Set.of(), Set.of(),
+                DialogueCondition.readList(source.resource(), source.jsonPointer(), data, resource.id()), false,
+                DatapackJsonReader.readInt(data, "order", entries.size()),
+                DatapackJsonReader.readInt(data, "priority", 0)));
     }
 
-    private static JsonObject metadata(
-            QuestV2Resource resource,
-            String stageId,
-            String topic,
-            QuestSourcePointer source) {
+    private static DialogueEntryMetadata metadata(
+            QuestV2Resource resource, String stageId, String topic, QuestSourcePointer source) {
         return metadata(resource, stageId, topic, source, null);
     }
 
-    private static JsonObject metadata(
-            QuestV2Resource resource,
-            String stageId,
-            String topic,
-            QuestSourcePointer source,
-            JsonObject owner) {
-        JsonObject metadata = new JsonObject();
-        metadata.addProperty("topic", topic);
-        metadata.addProperty("notes", source.jsonPointer());
-
-        JsonObject authored = owner == null ? null : DatapackJsonReader.readObject(owner, "metadata");
-        if (authored != null) {
-            authored.entrySet().stream()
-                    .filter(entry -> !"tags".equals(entry.getKey()))
-                    .filter(entry -> !"quest".equals(entry.getKey()))
-                    .filter(entry -> !"stage".equals(entry.getKey()))
-                    .forEach(entry -> metadata.add(entry.getKey(), entry.getValue().deepCopy()));
-        }
-
-        metadata.addProperty("quest", resource.id().toString());
-        putString(metadata, "questline", metadataString(resource, "questline"));
-        putString(metadata, "stage", stageId);
-
-        Set<String> tagValues = new LinkedHashSet<>();
-        tagValues.add("generated");
-        tagValues.add("quest_v2");
-        tagValues.addAll(stringValues(resource.metadata().get("tags")));
-        if (authored != null) {
-            tagValues.addAll(stringValues(authored.get("tags")));
-        }
-        JsonArray tags = new JsonArray();
-        tagValues.stream().filter(value -> value != null && !value.isBlank()).forEach(tags::add);
-        metadata.add("tags", tags);
-        return metadata;
+    private static DialogueEntryMetadata metadata(
+            QuestV2Resource resource, String stageId, String topic, QuestSourcePointer source, JsonObject owner) {
+        DialogueEntryMetadata authored = owner == null ? DialogueEntryMetadata.EMPTY
+                : DialogueEntryMetadata.read(source.resource(), "quest module v2", source.jsonPointer(), owner);
+        JsonObject data = owner == null ? null : DatapackJsonReader.readObject(owner, "metadata");
+        Set<String> tags = new LinkedHashSet<>(List.of("generated", "quest_v2"));
+        tags.addAll(stringValues(resource.metadata().get("tags")));
+        tags.addAll(authored.tags());
+        return new DialogueEntryMetadata(data != null && data.has("topic") ? authored.topic() : topic,
+                tags, authored.routingTags(), authored.antiRepeatGroups(),
+                firstNonBlank(metadataString(resource, "questline"), authored.questline()),
+                resource.id().toString(), stageId,
+                data != null && data.has("notes") ? authored.notes() : source.jsonPointer());
     }
 
     private static List<String> stringValues(JsonElement element) {
@@ -478,27 +397,12 @@ public final class QuestDialogueCompiler {
         return List.copyOf(values);
     }
 
-    private static void addDisplay(JsonObject root, QuestV2Resource resource) {
-        JsonObject display = new JsonObject();
-        putString(display, "title", metadataString(resource, "title"));
-        putString(display, "description", metadataString(resource, "description"));
-        if (display.size() > 0) {
-            root.add("display", display);
-        }
-    }
-
     private static boolean shouldCompile(QuestV2Resource.Scene scene) {
         return scene != null
                 && scene.externalScene().isEmpty()
                 && (scene.hasInlineContent()
                         || hasArray(scene.data(), "actions")
                         || hasArray(scene.data(), "conditions"));
-    }
-
-    private static void addNode(JsonObject nodes, String nodeId, JsonObject node) {
-        if (!nodes.has(nodeId)) {
-            nodes.add(nodeId, node);
-        }
     }
 
     private static void putBinding(
@@ -542,51 +446,24 @@ public final class QuestDialogueCompiler {
         return fallback;
     }
 
-    private static void copyResponseActionObjects(
-            JsonObject target,
-            List<JsonObject> actions,
-            JsonObject transitionAction) {
-        if ((actions == null || actions.isEmpty()) && transitionAction == null) {
-            return;
-        }
-        JsonArray array = new JsonArray();
-        boolean transitionAdded = false;
-        if (actions != null) {
-            for (JsonObject action : actions) {
-                array.add(action.deepCopy());
-                if (!transitionAdded && transitionAction != null && suspendsForScene(action)) {
-                    // Keep the transition adjacent to a blocking cinematic. The action
-                    // runner launches the scene first, then commits this transition before
-                    // returning control to the player.
-                    array.add(transitionAction);
-                    transitionAdded = true;
-                }
+    private static List<VillagerActionDefinition> responseActions(
+            QuestV2Resource resource, String stageId, String scenePath,
+            QuestV2Resource.Response response, QuestSourcePointer source) {
+        List<VillagerActionDefinition> authored = VillagerActionDefinition.readObjects(
+                source.resource(), source.jsonPointer(), response.actions(), resource.id());
+        VillagerActionDefinition transition = transitionAction(resource, stageId, scenePath, response, source);
+        if (transition == null) return authored;
+        List<VillagerActionDefinition> actions = new ArrayList<>(authored);
+        int transitionIndex = actions.size();
+        for (int index = 0; index < actions.size(); index++) {
+            VillagerActionDefinition action = actions.get(index);
+            if (action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene()) {
+                transitionIndex = index + 1;
+                break;
             }
         }
-        if (transitionAction != null && !transitionAdded) {
-            array.add(transitionAction);
-        }
-        target.add("actions", array);
-    }
-
-    private static boolean suspendsForScene(JsonObject action) {
-        return action != null
-                && "start_scene".equals(DatapackJsonReader.readString(action, "type"))
-                && DatapackJsonReader.readBoolean(action, "wait_for_result", false);
-    }
-
-    private static void copyArrayIfPresent(JsonObject source, JsonObject target, String key) {
-        JsonElement element = source == null ? null : source.get(key);
-        if (element != null && element.isJsonArray()) {
-            target.add(key, element.deepCopy());
-        }
-    }
-
-    private static void copyIfPresent(JsonObject source, JsonObject target, String key) {
-        JsonElement element = source == null ? null : source.get(key);
-        if (element != null) {
-            target.add(key, element.deepCopy());
-        }
+        actions.add(transitionIndex, transition);
+        return List.copyOf(actions);
     }
 
     private static boolean hasArray(JsonObject source, String key) {
@@ -594,17 +471,8 @@ public final class QuestDialogueCompiler {
         return element != null && element.isJsonArray() && element.getAsJsonArray().size() > 0;
     }
 
-    private static JsonArray stringArray(Iterable<String> values) {
-        JsonArray array = new JsonArray();
-        if (values == null) {
-            return array;
-        }
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                array.add(value);
-            }
-        }
-        return array;
+    private static List<String> nonBlankLines(List<String> values) {
+        return values.stream().filter(value -> value != null && !value.isBlank()).map(String::trim).toList();
     }
 
     private static String lifecycleNodeId(String sceneId) {
@@ -662,12 +530,6 @@ public final class QuestDialogueCompiler {
                 .replaceAll("[^a-z0-9_.-]+", "_");
         normalized = normalized.replaceAll("^[._-]+|[._-]+$", "");
         return normalized.isBlank() ? "default" : normalized;
-    }
-
-    private static void putString(JsonObject object, String key, String value) {
-        if (value != null && !value.isBlank()) {
-            object.addProperty(key, value);
-        }
     }
 
     private static String metadataString(QuestV2Resource resource, String key) {
