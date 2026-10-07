@@ -2677,7 +2677,7 @@ public final class VillagerInteractionService {
         return new ReputationSnapshot(reputation.value(), reputation.level());
     }
 
-    static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
+    public static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
         sendDialogueReputation(player, villager, level, null, null, false);
     }
 

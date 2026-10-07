@@ -85,6 +85,8 @@ public final class VillagerDialogueRequestHandler {
             return;
         }
 
+        if (com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.beforeOption(context, dialogueOption)) return;
+
         DialogueRequestType requestType = dialogueOption.requestType();
         DialogueItemPayment itemPayment = dialogueOption.itemPayment();
         DialogueItemPaymentResult itemPaymentResult = DialogueItemPaymentResult.empty();

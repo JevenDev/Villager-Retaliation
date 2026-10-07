@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "93";
+    private static final String PROTOCOL_VERSION = "94";
 
     private VillagerReputationNetworking() {
     }
@@ -37,6 +37,11 @@ public final class VillagerReputationNetworking {
                                 com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService
                                         .setWeaponAimingDialogueDelayEnabled(player, payload.enabled())))
         );
+        network.safePlayToClientThreaded(CampaignQuestConfirmationPayload.TYPE, CampaignQuestConfirmationPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler", "acceptCampaignConfirmation");
+        network.playToServer(CampaignQuestConfirmationRequestPayload.TYPE, CampaignQuestConfirmationRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context, player ->
+                        com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.handle(player, payload))));
         network.safePlayToClientThreaded(
                 ServerConfigSyncPayload.TYPE,
                 ServerConfigSyncPayload.STREAM_CODEC,
@@ -991,6 +996,10 @@ public final class VillagerReputationNetworking {
 
     public static void sendNotice(ServerPlayer player, String text, VillagerReputationNoticeKind kind) {
         trySendToPlayer(player, new VillagerReputationTierNoticePayload(text, kind));
+    }
+
+    public static void sendCampaignConfirmation(ServerPlayer player, CampaignQuestConfirmationPayload payload) {
+        trySendToPlayer(player, payload);
     }
 
     public static void sendNotice(ServerPlayer player, ResolvedVillagerNotification notification) {

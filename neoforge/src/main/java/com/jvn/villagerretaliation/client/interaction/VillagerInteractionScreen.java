@@ -377,6 +377,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final EnumMap<DialoguePage, VillagerInteractionScreenState.OptionListPosition> rememberedPageOptionPositions =
             new EnumMap<>(DialoguePage.class);
     private DialoguePage page = DialoguePage.ROOT;
+    private com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload campaignConfirmation;
+    private DialoguePage campaignReturnPage = DialoguePage.ROOT;
+    private boolean awaitingCampaignConfirmation;
+    private String campaignPreviousDialogue = "";
+    private List<DialogueTextSegment> campaignPreviousSegments = List.of();
     private boolean closingWithAnimation;
     private boolean closingFromServer;
     private boolean replacingFromServer;
@@ -1157,10 +1162,52 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 targetTop - vanillaTop);
     }
 
+    @Override
+    public void acceptCampaignConfirmation(com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload payload) {
+        if (payload.entityId() != this.villagerEntityId) return;
+        if (payload.pending()) {
+            if (this.campaignConfirmation == null) {
+                this.campaignReturnPage = this.page;
+                this.campaignPreviousDialogue = this.villagerDialogueText;
+                this.campaignPreviousSegments = this.villagerDialogueTextSegments;
+            }
+            this.campaignConfirmation = payload;
+            this.awaitingCampaignConfirmation = false;
+            this.awaitingForcedDialogueResponse = false;
+            acceptVillagerDialogue(payload.text(), List.of());
+            openPage(DialoguePage.CAMPAIGN_CONFIRMATION);
+        } else if (this.campaignConfirmation != null
+                && this.campaignConfirmation.requestId().equals(payload.requestId())
+                && this.campaignConfirmation.revision() == payload.revision()) {
+            this.campaignConfirmation = null;
+            this.awaitingCampaignConfirmation = false;
+            if (payload.text().isBlank()) acceptVillagerDialogue(this.campaignPreviousDialogue, this.campaignPreviousSegments);
+            else acceptVillagerDialogue(payload.text(), List.of());
+            this.campaignPreviousDialogue = "";
+            this.campaignPreviousSegments = List.of();
+            openPage(this.campaignReturnPage);
+        }
+    }
+
+    private void answerCampaignConfirmation(boolean accept) {
+        if (this.campaignConfirmation == null || this.awaitingCampaignConfirmation) return;
+        this.awaitingCampaignConfirmation = true;
+        sendToServer(new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                this.campaignConfirmation.requestId(), this.campaignConfirmation.revision(), accept));
+        rebuildOptions();
+    }
+
     private void rebuildOptions() {
         this.options.clear();
         this.optionLayoutVersion++;
-        if (this.page == DialoguePage.TALK) {
+        if (this.page == DialoguePage.CAMPAIGN_CONFIRMATION) {
+            if (this.awaitingCampaignConfirmation) {
+                addPassiveOption("campaign.waiting");
+            } else {
+                addOption("campaign.accept", () -> answerCampaignConfirmation(true));
+                addOption("campaign.decline", () -> answerCampaignConfirmation(false));
+            }
+        } else if (this.page == DialoguePage.TALK) {
             if (this.forcedDialogue) {
                 addDialogueOptions();
             } else {
@@ -2793,6 +2840,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void goBackOrLeaveConversation() {
+        if (this.campaignConfirmation != null) {
+            answerCampaignConfirmation(false);
+            return;
+        }
         if (this.forcedDialogue) {
             requestDialogue(FORCED_LEAVE_OPTION_ID);
             return;
@@ -3148,6 +3199,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
 
     private void openPage(DialoguePage page) {
+        if (this.campaignConfirmation != null && page != DialoguePage.CAMPAIGN_CONFIRMATION) return;
         DialoguePage previousPage = this.page;
         int previousInteractionTop = interactionContainerTopForPage(previousPage) + interactionStateTransitionOffsetY();
         rememberCurrentPageOptionListPosition();
@@ -6125,7 +6177,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static int interactionPageDepth(DialoguePage page) {
         return switch (page) {
             case ROOT -> 0;
-            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, STUDY, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
+            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, STUDY, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT, CAMPAIGN_CONFIRMATION -> 1;
             case DUEL_LOADOUT, DUEL_WAGER, DUEL_CONFIRM, ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
             case HIRE_DURATION,
                     END_CONTRACT_CONFIRMATION,
@@ -6156,6 +6208,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private enum DialoguePage {
         ROOT,
+        CAMPAIGN_CONFIRMATION,
         TALK,
         ADVENTURES,
         DUEL,

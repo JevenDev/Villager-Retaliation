@@ -50,6 +50,7 @@ public final class QuestSaveMigrations {
                 }
                 yield 9;
             }
+            case 9 -> 10;
             default -> throw new IllegalStateException("No quest save migration from version " + version);
         };
     }

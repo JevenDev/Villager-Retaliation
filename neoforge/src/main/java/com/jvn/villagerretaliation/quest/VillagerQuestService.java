@@ -2393,6 +2393,12 @@ public final class VillagerQuestService {
 
         campaignIssue = CampaignQuestAccess.availabilityIssue(context, definition);
         if (!campaignIssue.isBlank()) return result("unavailable", lineId(definition, "unavailable"), campaignIssue, Map.of());
+        var acceptance = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.approved(context, definition);
+        if (!forceRestart && acceptance == null
+                && com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.requiresConfirmation(context, definition)) {
+            return result("unavailable", lineId(definition, "unavailable"),
+                    "Review and confirm this quest's shared consequences before accepting it.", Map.of());
+        }
         CampaignQuestEntries.Entry campaignEntry = CampaignQuestEntries.start(context, definition);
         if (!campaignEntry.available()) return result("unavailable", lineId(definition, "unavailable"), campaignEntry.diagnostic(), Map.of());
         VillagerQuestTargets.LocatedTarget target = (campaignEntry.alternateStage()
@@ -2420,9 +2426,19 @@ public final class VillagerQuestService {
                 context.level().getGameTime(), context.player().getUUID(), definitiveRunId, forceRestart);
         started.adoptDefinitionRevision(definition.revision().number());
         started.bindCampaign(definition.campaign());
+        started.campaignAcceptance(acceptance);
         started.campaignEntryStage(campaignEntry.alternateStage() ? campaignEntry.stage() : "");
         if (campaignEntry.catchUp()) started.recordCampaignCatchUp(campaignEntry.worldOperation());
         ensureRandomItemSelections(definition, started);
+        if (acceptance != null) {
+            QuestLifecycleService.initializeStage(definition, started, context.level().getGameTime(), campaignEntry.stage());
+            started.requestStageEntry(campaignEntry.stage());
+            deferLifecycleEvent(context.level(), definition, started, QuestDefinition.TriggerEvent.STARTED);
+            if (!com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.persistAcceptedStart(context)) {
+                return result("unavailable", lineId(definition, "unavailable"),
+                        "Your accepted quest is waiting for world storage. Its effects will resume when it can be saved.", Map.of());
+            }
+        }
         if (partyStart != null) {
             partyStart.shared().enroll(context.player().getUUID(), false);
             started.linkPartyQuest(definitiveRunId);
@@ -2448,7 +2464,12 @@ public final class VillagerQuestService {
                 definition.id());
         shareStartedQuest(context, definition, started, partyStart);
         markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_STARTED_FACT, "started");
-        initializeQuestStage(context, definition, started, campaignEntry.stage());
+        if (acceptance == null) {
+            initializeQuestStage(context, definition, started, campaignEntry.stage());
+        } else {
+            resumePendingStageEntry(context, definition, started);
+            advanceStageIfComplete(context, definition, started);
+        }
         if (!campaignEntry.alternateStage()) lockBranchQuests(context, definition, QuestDefinition.BranchLockEvent.STARTED);
         data.setDirty();
         if (target != null) {
@@ -2456,7 +2477,9 @@ public final class VillagerQuestService {
             maybeGiveQuestTargetMap(context, definition, target);
         }
         sendQuestNotification(context, "quest.started", definition, started, "Quest started: {quest}");
-        if (!campaignEntry.alternateStage()) {
+        if (acceptance != null) {
+            resumePendingLifecycleEvents(context.player(), definition, started);
+        } else if (!campaignEntry.alternateStage()) {
             if (!QuestStageActionService.ready(context, started)) {
                 deferLifecycleEvent(context.level(), definition, started, QuestDefinition.TriggerEvent.STARTED);
                 data.setDirty();

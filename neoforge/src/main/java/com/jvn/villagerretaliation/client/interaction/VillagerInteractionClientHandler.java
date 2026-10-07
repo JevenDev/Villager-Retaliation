@@ -215,6 +215,14 @@ public final class VillagerInteractionClientHandler {
         }
     }
 
+    public static void acceptCampaignConfirmation(com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.level.getEntity(payload.entityId()) == null
+                || !minecraft.level.getEntity(payload.entityId()).getUUID().equals(payload.providerId())) return;
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) screen.acceptCampaignConfirmation(payload);
+    }
+
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());

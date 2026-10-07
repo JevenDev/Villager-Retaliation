@@ -26,6 +26,8 @@ interface VillagerInteractionSessionScreen {
 
     void acceptRecruitmentResult(RecruitmentResultPayload payload);
 
+    void acceptCampaignConfirmation(com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload payload);
+
     void replaceFromServer();
 
     void closeFromServer();

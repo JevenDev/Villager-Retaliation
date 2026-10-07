@@ -410,6 +410,218 @@ public final class CampaignQuestEntryGameTests {
         helper.succeed();
     }
 
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void acceptingSharedConsequencesStartsOnceAndSurvivesReload(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var context = fixture.context();
+            var blocked = VillagerQuestService.performAction(context, QUEST, VillagerActionDefinition.QuestAction.START).orElseThrow();
+            helper.assertValueEqual(blocked.status(), "unavailable", "unconfirmed direct starts are blocked");
+            helper.assertTrue(fixture.progress(QUEST) == null, "blocked acceptance has no quest effects");
+            int experience = fixture.player.totalExperience;
+            var request = fixture.confirmation();
+            helper.assertTrue(request.text().contains("offline") && request.text().contains("defeated"), "impact includes shared scope and named outcome");
+            helper.assertTrue(fixture.progress(QUEST) == null, "prompt does not start the quest");
+            var answer = new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(request.id(), request.revision(), true);
+            CampaignQuestAcceptanceService.handle(fixture.player, answer);
+            var progress = fixture.progress(QUEST);
+            helper.assertTrue(progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE, "confirmed quest starts");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 300, "entry and start effects apply once");
+            helper.assertTrue(progress.campaignAcceptance() != null && progress.campaignAcceptance().requestId().equals(request.id()),
+                    "accepted request is saved with the quest run");
+            helper.assertValueEqual(progress.campaignAcceptance().fixedOutcomes(), Map.of("dragon", "defeated"), "fixed consequences are retained");
+            CampaignQuestAcceptanceService.handle(fixture.player, answer);
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 300, "duplicate confirmation cannot repeat effects");
+            var restored = VillagerQuestSavedData.load(VillagerQuestSavedData.get(helper.getLevel()).save(new CompoundTag(),
+                    helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+            helper.assertValueEqual(restored.get(fixture.player.getUUID(), QUEST).campaignAcceptance(), progress.campaignAcceptance(),
+                    "reload retains acceptance without needing the transient prompt");
+            var disk = net.minecraft.nbt.NbtIo.readCompressed(fixture.server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                    .resolve("data/villagerretaliation_quests.dat"), net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            var durable = VillagerQuestSavedData.load(disk.getCompound("data"), helper.getLevel().registryAccess()).get(fixture.player.getUUID(), QUEST);
+            helper.assertTrue(durable != null && durable.campaignAcceptance() != null && !durable.pendingStageEntry().isBlank(),
+                    "acceptance and pending entry are durable before effects run");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void decliningSharedConsequencesLeavesQuestUntouched(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            int experience = fixture.player.totalExperience;
+            var request = fixture.confirmation();
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), false));
+            helper.assertTrue(fixture.progress(QUEST) == null, "decline does not start a quest");
+            helper.assertValueEqual(fixture.player.totalExperience, experience, "decline has no effects");
+            helper.assertTrue(CampaignQuestAcceptanceService.pending(fixture.player) == null, "decline consumes the prompt");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void outcomeCommittedDuringConfirmationInvalidatesTheOffer(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var request = fixture.confirmation();
+            fixture.resolve();
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            helper.assertTrue(fixture.progress(QUEST) == null, "stale confirmation cannot replay the original path");
+            helper.assertFalse(CampaignQuestAcceptanceService.requiresConfirmation(fixture.context(), fixture.definition(QUEST)),
+                    "already resolved catch-up has no shared consequence to confirm");
+            var result = VillagerQuestService.performAction(fixture.context(), QUEST, VillagerActionDefinition.QuestAction.START).orElseThrow();
+            helper.assertValueEqual(result.status(), "started", "fresh catch-up offer can proceed");
+            helper.assertValueEqual(fixture.progress(QUEST).currentStage(), "catch_up", "fresh offer follows committed outcome");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void oldConfirmationCannotConsumeNewerRequest(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var old = fixture.confirmation();
+            var current = fixture.confirmation();
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    old.id(), old.revision(), true));
+            helper.assertValueEqual(CampaignQuestAcceptanceService.pending(fixture.player).id(), current.id(), "old request cannot replace current prompt");
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    current.id(), current.revision() + 1, true));
+            helper.assertTrue(fixture.progress(QUEST) == null, "forged revision cannot start quest");
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    current.id(), current.revision(), true));
+            helper.assertTrue(fixture.progress(QUEST) != null, "current request remains usable");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void replacementConversationCannotUseOldConfirmation(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var request = fixture.confirmation();
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(fixture.player, false);
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.startForcedIgnoringDisposition(fixture.player, fixture.villager);
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            helper.assertTrue(fixture.progress(QUEST) == null, "same character in a new conversation cannot reuse an old confirmation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void changedQuestProgressInvalidatesConfirmation(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var request = fixture.confirmation();
+            var progress = VillagerQuestSavedData.get(helper.getLevel()).getOrCreate(fixture.player.getUUID(), QUEST);
+            progress.bindCampaign(CAMPAIGN);
+            progress.setCurrentStage("started");
+            progress.setCurrentStage("catch_up");
+            progress.setCurrentStage("started");
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            helper.assertTrue(progress.state() != VillagerQuestSavedData.QuestState.ACTIVE, "changed progress cannot use earlier approval");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void unavailableSelectionCannotUseConfirmation(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var selected = new java.util.concurrent.atomic.AtomicBoolean(true);
+            fixture.prepareConversation();
+            CampaignQuestAcceptanceService.beforeSelection(fixture.context(), "test_accept", Set.of(QUEST), Set.of(QUEST),
+                    selected::get, () -> VillagerQuestService.performAction(fixture.context(), QUEST, VillagerActionDefinition.QuestAction.START));
+            var request = CampaignQuestAcceptanceService.pending(fixture.player);
+            selected.set(false);
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            helper.assertTrue(fixture.progress(QUEST) == null, "unavailable option cannot execute its old actions");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void permissionRevocationPreventsAcceptance(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var request = fixture.confirmation();
+            var leader = helper.makeMockServerPlayerInLevel();
+            helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.createParty(leader).success(), "leader creates party");
+            try {
+                var invitation = com.jvn.villagerretaliation.party.PartyService.sendInvitation(leader, fixture.player);
+                helper.assertTrue(invitation.success(), "player receives invitation");
+                helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.acceptInvitation(fixture.player, invitation.invitationId()).success(), "player joins");
+                com.jvn.villagerretaliation.party.PartyService.setAdminPrivileges(leader, fixture.player.getUUID(), true);
+                helper.assertTrue(CampaignAuthority.canControl(fixture.player), "checked member can control");
+                com.jvn.villagerretaliation.party.PartyService.setAdminPrivileges(leader, fixture.player.getUUID(), false);
+                CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                        request.id(), request.revision(), true));
+                helper.assertTrue(fixture.progress(QUEST) == null, "revoked member cannot accept shared impact");
+                helper.assertTrue(CampaignAuthority.canControl(leader), "leader retains control");
+            } finally {
+                com.jvn.villagerretaliation.party.PartyService.leaveParty(fixture.player);
+                com.jvn.villagerretaliation.party.PartyService.leaveParty(leader);
+            }
+        }
+        helper.succeed();
+    }
+
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void dialogueResponseWaitsForConfirmationBeforeItsFirstEffect(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var treeId = fixture.installConfirmationTree();
+            fixture.player.setPos(fixture.villager.getX() + 1, fixture.villager.getY(), fixture.villager.getZ());
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.VillagerConversationService.start(fixture.player, fixture.villager),
+                    "normal conversation starts");
+            com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.startEntry(fixture.context(), treeId, "start");
+            var option = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(fixture.context()).orElseThrow().getFirst();
+            int experience = fixture.player.totalExperience;
+            com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(fixture.player, fixture.villager.getId(), option.id());
+            var request = CampaignQuestAcceptanceService.pending(fixture.player);
+            helper.assertTrue(request != null, "real dialogue handler issues impact confirmation");
+            helper.assertValueEqual(fixture.player.totalExperience, experience, "even actions before quest start wait for confirmation");
+            helper.assertTrue(fixture.progress(QUEST) == null, "quest has not started behind prompt");
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            helper.assertTrue(fixture.progress(QUEST) != null, "confirmed dialogue starts the quest");
+            helper.assertValueEqual(fixture.player.totalExperience - experience, 311, "response and quest effects execute once");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void replacementDialogueNodeRejectsEarlierConfirmation(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var treeId = fixture.installConfirmationTree();
+            fixture.player.setPos(fixture.villager.getX() + 1, fixture.villager.getY(), fixture.villager.getZ());
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.start(fixture.player, fixture.villager);
+            com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.startEntry(fixture.context(), treeId, "start");
+            var option = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(fixture.context()).orElseThrow().getFirst();
+            com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(fixture.player, fixture.villager.getId(), option.id());
+            var request = java.util.Objects.requireNonNull(CampaignQuestAcceptanceService.pending(fixture.player));
+            com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.startEntry(fixture.context(), treeId, "start");
+            int experience = fixture.player.totalExperience;
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            helper.assertTrue(fixture.progress(QUEST) == null, "re-entering the same node still invalidates an earlier selection");
+            helper.assertValueEqual(fixture.player.totalExperience, experience, "old node effects remain unapplied");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void missingCampaignContentInvalidatesConfirmation(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var request = fixture.confirmation();
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(
+                    QuestContentCatalogs.current(fixture.server), Map.of(), List.of()));
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            helper.assertTrue(fixture.progress(QUEST) == null, "missing campaign content cannot use a prior approval");
+            helper.assertTrue(fixture.data.instances().containsKey(CAMPAIGN), "missing content preserves the campaign instance");
+        }
+        helper.succeed();
+    }
+
     private static CompiledQuest quest(ResourceLocation id, String milestoneStage) {
         var raw = JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"test:entry_quest","localization_prefix":"quest.entry_fixture.",
@@ -499,6 +711,50 @@ public final class CampaignQuestEntryGameTests {
             server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, data);
         }
 
+
+
+        private ResourceLocation installConfirmationTree() {
+            var treeId = ResourceLocation.parse("test:campaign_confirmation");
+            var raw = JsonParser.parseString("""
+                    {"id":"test:campaign_confirmation","entries":[{"id":"start","label":"Start","start":"opening"}],
+                     "nodes":{"opening":{"lines":["Ready"],"responses":[{"id":"accept","label":"Accept","end":true,
+                      "actions":[{"type":"experience","amount":11},{"type":"quest","quest":"test:entry_quest","action":"start","required":true}]}]}}}
+                    """).getAsJsonObject();
+            var tree = com.jvn.villagerretaliation.dialogue.DialogueTreeResources.readGeneratedTree(treeId, raw, QUEST);
+            var current = QuestContentCatalogs.current(server);
+            var trees = new LinkedHashMap<>(current.dialogueCatalog().trees());
+            trees.put(treeId, tree);
+            var dialogue = new com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog(
+                    trees, current.dialogueCatalog().bindings(), current.dialogueCatalog().treeSources());
+            var replacement = new QuestContentCatalog(current.generation(), new CompiledQuestCatalog(
+                    current.compiledQuests().stream().collect(java.util.stream.Collectors.toMap(CompiledQuest::id, value -> value))),
+                    dialogue, current.quests(), current.objectiveEventQuestIds(), current.factQuestIds(), current.memoryEventQuestIds(),
+                    current.exclusiveGroupQuestIds(), current.triggerEventQuestIds(), current.scenes(), current.encounters(), current.pools(),
+                    current.bundles(), current.localization(), current.rewards());
+            QuestContentCatalogs.installForTests(server, replacement, report);
+            CampaignResources.installForTests(server, new CampaignContentCatalog(replacement, Map.of(CAMPAIGN, content), List.of()));
+            com.jvn.villagerretaliation.dialogue.DialogueTreeResources.clearCache();
+            return treeId;
+        }
+
+        private com.jvn.villagerretaliation.dialogue.DialogueContext context() {
+            return VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager);
+        }
+
+        private void prepareConversation() {
+            player.setPos(villager.getX() + 1, villager.getY(), villager.getZ());
+            if (!com.jvn.villagerretaliation.interaction.VillagerConversationService.startForcedIgnoringDisposition(player, villager)) {
+                throw new IllegalStateException("Could not start fixture conversation");
+            }
+        }
+
+        private CampaignQuestAcceptanceService.Request confirmation() {
+            if (com.jvn.villagerretaliation.interaction.VillagerConversationService.sessionId(player, villager) == null) prepareConversation();
+            CampaignQuestAcceptanceService.beforeSelection(context(), "test_accept", Set.of(QUEST), Set.of(QUEST), () -> true,
+                    () -> VillagerQuestService.performAction(context(), QUEST, VillagerActionDefinition.QuestAction.START));
+            return java.util.Objects.requireNonNull(CampaignQuestAcceptanceService.pending(player), "confirmation created");
+        }
+
         private VillagerQuestSavedData.QuestProgress progress(ResourceLocation quest) {
             return VillagerQuestSavedData.get(server.overworld()).get(player.getUUID(), quest);
         }
@@ -519,6 +775,8 @@ public final class CampaignQuestEntryGameTests {
 
         @Override
         public void close() throws IOException {
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(player, false);
+            CampaignQuestAcceptanceService.onLogout(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent(player));
             server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, previousData);
             server.overworld().getDataStorage().set("villagerretaliation_quests", previousQuests);
             previousQuests.setDirty();
@@ -526,6 +784,8 @@ public final class CampaignQuestEntryGameTests {
             server.overworld().getDataStorage().set("villagerretaliation_scenes", previousScenes);
             QuestContentCatalogs.installForTests(server, previous, report);
             CampaignResources.clearCache();
+            com.jvn.villagerretaliation.dialogue.DialogueTreeResources.clearCache();
+            com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.clearRuntimeState();
             VillagerQuestSavedData.get(server.overworld()).remove(player.getUUID(), QUEST);
             VillagerQuestSavedData.get(server.overworld()).remove(player.getUUID(), ALTERNATE);
             VillagerQuestSavedData.get(server.overworld()).remove(player.getUUID(), FOLLOW_UP);

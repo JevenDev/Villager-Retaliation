@@ -1,4 +1,7 @@
 {
+  "villagerretaliation.gui.campaign.accept": "Accept the quest",
+  "villagerretaliation.gui.campaign.decline": "Not now",
+  "villagerretaliation.gui.campaign.waiting": "Waiting for the server...",
   "villagerretaliation.gui.settlement.crop.any": "available crops",
   "villagerretaliation.gui.settlement.crop.wheat": "wheat",
   "villagerretaliation.gui.settlement.crop.carrot": "carrots",

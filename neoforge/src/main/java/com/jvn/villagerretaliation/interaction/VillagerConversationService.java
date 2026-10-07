@@ -84,6 +84,11 @@ public final class VillagerConversationService {
         return true;
     }
 
+    public static UUID sessionId(ServerPlayer player, Villager villager) {
+        var session = SESSIONS_BY_PLAYER.get(player.getUUID());
+        return session != null && session.active() && session.villagerId().equals(villager.getUUID()) ? session.id() : null;
+    }
+
     public static boolean validate(ServerPlayer player, Villager villager) {
         VillagerConversationSession session = SESSIONS_BY_PLAYER.get(player.getUUID());
         if (session == null || !session.active() || !session.villagerId().equals(villager.getUUID())) {

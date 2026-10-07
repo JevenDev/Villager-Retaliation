@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
 public final class VillagerConversationSession {
+    private final UUID id = UUID.randomUUID();
     private final UUID playerId;
     private final UUID villagerId;
     private final int villagerEntityId;
@@ -26,6 +27,8 @@ public final class VillagerConversationSession {
         this.forced = forced;
         this.lastInteractionGameTime = gameTime;
     }
+
+    public UUID id() { return this.id; }
 
     public UUID playerId() {
         return this.playerId;

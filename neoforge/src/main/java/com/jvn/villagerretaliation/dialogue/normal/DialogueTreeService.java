@@ -102,6 +102,38 @@ public final class DialogueTreeService {
         return Optional.empty();
     }
 
+    public static SelectionPreview previewSelection(DialogueContext context, DialogueOptionDefinition option) {
+        DialogueTreeReference reference = option.treeReference();
+        if (reference.isEmpty()) return new SelectionPreview(null, List.of());
+        var tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), reference.treeId()).orElse(null);
+        if (tree == null || !tree.matches(context)) return new SelectionPreview(null, List.of());
+        if (reference.isEntry()) {
+            var entry = tree.entry(reference.entryId()).orElse(null);
+            var node = entry == null ? null : tree.node(entry.start()).orElse(null);
+            return entry != null && entry.matches(context, VillagerDialogueService.moodFor(context)) && node != null && node.matches(context)
+                    ? new SelectionPreview(null, node.actions()) : new SelectionPreview(null, List.of());
+        }
+        Session session = SESSIONS.get(key(context));
+        if (session == null || session.expired(context.level().getGameTime()) || !tree.id().equals(session.treeId())) {
+            return new SelectionPreview(null, List.of());
+        }
+        var node = tree.node(session.nodeId()).orElse(null);
+        if (node == null || !node.matches(context)) return new SelectionPreview(session.id(), List.of());
+        var response = node.responses().stream().filter(value -> value.id().equals(reference.responseId()) && value.matches(context))
+                .findFirst().orElse(null);
+        if (response == null) return new SelectionPreview(session.id(), List.of());
+        var actions = new java.util.ArrayList<>(response.actions());
+        var next = response.end() ? null : tree.node(response.next()).orElse(null);
+        if (next != null) actions.addAll(next.actions());
+        return new SelectionPreview(session.id(), actions);
+    }
+
+    public record SelectionPreview(UUID sessionId, List<VillagerActionDefinition> actions) {
+        public SelectionPreview {
+            actions = List.copyOf(actions);
+        }
+    }
+
     public static boolean leaveActiveSession(DialogueContext context) {
         return SESSIONS.remove(key(context)) != null;
     }
@@ -226,7 +258,7 @@ public final class DialogueTreeService {
         String nodeLine = resolve(node.selectLine(context), context, replacements);
         String text = firstNonBlank(leadingText, nodeLine);
         if (!node.end() && node.responses().stream().anyMatch(response -> response.matches(context))) {
-            SESSIONS.put(key(context), new Session(tree.id(), node.id(), context.level().getGameTime(), replacements));
+            SESSIONS.put(key(context), new Session(UUID.randomUUID(), tree.id(), node.id(), context.level().getGameTime(), replacements));
         } else {
             SESSIONS.remove(key(context));
         }
@@ -331,6 +363,7 @@ public final class DialogueTreeService {
     }
 
     private record Session(
+            UUID id,
             ResourceLocation treeId,
             String nodeId,
             long lastTouchedGameTime,
@@ -344,7 +377,7 @@ public final class DialogueTreeService {
         }
 
         private Session touch(long gameTime) {
-            return new Session(this.treeId, this.nodeId, gameTime, this.replacements);
+            return new Session(this.id, this.treeId, this.nodeId, gameTime, this.replacements);
         }
     }
 

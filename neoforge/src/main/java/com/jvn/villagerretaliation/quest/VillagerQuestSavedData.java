@@ -40,7 +40,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 9;
+    public static final int CURRENT_DATA_VERSION = 10;
     public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
     public static final int MAX_CHOICE_HISTORY = 256;
     public static final int MAX_COMPLETION_HISTORY = 128;
@@ -643,6 +643,8 @@ public class VillagerQuestSavedData extends SavedData {
         private String campaignId = "";
         private String campaignEntryStage = "";
         private String campaignWaitingQuest = "";
+        private long campaignStageRevision;
+        private com.jvn.villagerretaliation.campaign.CampaignQuestAcceptance campaignAcceptance;
         private boolean campaignLegacyEntry;
         private final Set<UUID> campaignCatchUpOperations = new LinkedHashSet<>();
         private String lastRevisionPolicy = "";
@@ -707,6 +709,8 @@ public class VillagerQuestSavedData extends SavedData {
             progress.campaignId = tag.getString("Campaign");
             progress.campaignEntryStage = tag.getString("CampaignEntryStage");
             progress.campaignWaitingQuest = tag.getString("CampaignWaitingQuest");
+            progress.campaignStageRevision = tag.getLong("CampaignStageRevision");
+            progress.campaignAcceptance = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptance.load(tag.getCompound("CampaignAcceptance"));
             progress.campaignLegacyEntry = tag.getBoolean("CampaignLegacyEntry");
             for (Tag raw : tag.getList("CampaignCatchUpOperations", Tag.TAG_COMPOUND)) {
                 if (raw instanceof CompoundTag receipt && receipt.hasUUID("Operation")) {
@@ -898,6 +902,8 @@ public class VillagerQuestSavedData extends SavedData {
             if (!this.campaignId.isBlank()) tag.putString("Campaign", this.campaignId);
             if (!this.campaignEntryStage.isBlank()) tag.putString("CampaignEntryStage", this.campaignEntryStage);
             if (!this.campaignWaitingQuest.isBlank()) tag.putString("CampaignWaitingQuest", this.campaignWaitingQuest);
+            if (!this.campaignId.isBlank()) tag.putLong("CampaignStageRevision", this.campaignStageRevision);
+            if (this.campaignAcceptance != null) tag.put("CampaignAcceptance", this.campaignAcceptance.save());
             if (this.campaignLegacyEntry) tag.putBoolean("CampaignLegacyEntry", true);
             if (!this.campaignCatchUpOperations.isEmpty()) {
                 var receipts = new ListTag();
@@ -1221,6 +1227,8 @@ public class VillagerQuestSavedData extends SavedData {
             this.currentStage = "started";
             this.campaignEntryStage = "";
             this.campaignWaitingQuest = "";
+            this.campaignStageRevision = 0L;
+            this.campaignAcceptance = null;
             this.campaignLegacyEntry = false;
             this.campaignCatchUpOperations.clear();
             clearStageActions();
@@ -1444,6 +1452,7 @@ public class VillagerQuestSavedData extends SavedData {
                 }
             });
             this.currentStage = normalized;
+            if (!this.campaignId.isBlank()) this.campaignStageRevision++;
             clearStageActions();
             this.stageActions.putAll(unfinished);
             return true;
@@ -1505,6 +1514,10 @@ public class VillagerQuestSavedData extends SavedData {
         public boolean campaignAlternateEntry() { return !this.campaignEntryStage.isBlank(); }
         public void campaignEntryStage(String stage) { this.campaignEntryStage = stage == null ? "" : stage; }
 
+        public CompoundTag campaignRequestSnapshot() { return save(); }
+        public com.jvn.villagerretaliation.campaign.CampaignQuestAcceptance campaignAcceptance() { return this.campaignAcceptance; }
+        public void campaignAcceptance(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptance acceptance) { this.campaignAcceptance = acceptance; }
+
         public String campaignWaitingQuest() { return this.campaignWaitingQuest; }
         public boolean campaignLegacyEntry() { return this.campaignLegacyEntry; }
         public void finishCampaignEntryMigration() { this.campaignLegacyEntry = false; }
@@ -1526,6 +1539,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.visitedTarget = false;
             this.hasProof = false;
             this.campaignEntryStage = stage;
+            this.campaignStageRevision++;
             this.campaignWaitingQuest = waitingQuest == null ? "" : waitingQuest.toString();
             if (waitingQuest == null) {
                 this.currentStage = stage;
