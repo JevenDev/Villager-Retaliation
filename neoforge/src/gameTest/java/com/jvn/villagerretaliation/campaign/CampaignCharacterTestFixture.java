@@ -62,6 +62,10 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
     final BlockPos origin;
 
     CampaignCharacterTestFixture(GameTestHelper helper, String fixtureName, String sceneName) throws IOException {
+        this(helper, fixtureName, sceneName, List.of());
+    }
+
+    CampaignCharacterTestFixture(GameTestHelper helper, String fixtureName, String sceneName, List<String> additionalQuests) throws IOException {
         this.helper = helper;
         this.fixtureName = fixtureName;
         this.sceneName = sceneName;
@@ -82,6 +86,12 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         for (String file : List.of("quest.json", "locales/en_us.json", "scenes/" + sceneName + ".json")) {
             String path = "quests/campaign_fixture/" + fixtureName + "/" + file;
             resources.add(QuestBundleTransactions.RawResource.valid(0, "campaign_fixture", id(path), resource(path)));
+        }
+        for (String quest : additionalQuests) {
+            for (String file : List.of("quest.json", "locales/en_us.json")) {
+                String path = "quests/campaign_fixture/" + quest + "/" + file;
+                resources.add(QuestBundleTransactions.RawResource.valid(0, "campaign_fixture", id(path), resource(path)));
+            }
         }
         var bundles = QuestBundleTransactions.compile(resources, QuestBundleTransactions.CompatibilityRules.empty());
         helper.assertTrue(bundles.diagnostics().isEmpty(), "character bundle compiles: " + bundles.diagnostics());
@@ -121,13 +131,18 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
     }
 
     void select(DialogueContext context, String stage, String slot) {
+        select(context, campaignId, stage, slot);
+    }
+
+    String select(DialogueContext context, ResourceLocation quest, String stage, String slot) {
         VillagerConversationService.endForPlayer(context.player(), false);
         helper.assertTrue(VillagerConversationService.start(context.player(), context.villager()), "fixture conversation starts");
-        var entry = catalog.dialogueCatalog().bindings(campaignId).stream()
+        var entry = catalog.dialogueCatalog().bindings(quest).stream()
                 .filter(value -> value.stageId().equals(stage) && value.slot().equals(slot)).findFirst().orElseThrow();
         helper.assertTrue(DialogueTreeService.startEntry(context, entry.treeId(), entry.entryId()).isPresent(), "authored dialogue opens");
         var options = DialogueTreeService.activeOptions(context).orElseThrow();
         VillagerDialogueRequestHandler.handle(context.player(), context.villager().getId(), options.getFirst().id());
+        return options.getFirst().id();
     }
 
     void install(JsonObject raw) {

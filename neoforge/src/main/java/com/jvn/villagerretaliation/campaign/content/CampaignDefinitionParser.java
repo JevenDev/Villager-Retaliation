@@ -70,7 +70,7 @@ public final class CampaignDefinitionParser {
             CampaignDefinition.Observation observation = null;
             if (entry.has("observe")) {
                 JsonObject value = entry.getAsJsonObject("observe");
-                observation = new CampaignDefinition.Observation(resource(value, "event"), text(value, "outcome"), pointer + "/observe");
+                observation = new CampaignDefinition.Observation(resource(value, "event"), text(value, "outcome"), text(value, "character"), pointer + "/observe");
             }
             boolean irreversible = !entry.has("irreversible") || entry.get("irreversible").getAsBoolean();
             put(milestones, id, new CampaignDefinition.Milestone(id, text(entry, "chapter"), resource(entry, "quest"),
@@ -212,6 +212,11 @@ public final class CampaignDefinitionParser {
                 diagnostics.add(CampaignSchema.error(definition.source(), catchUp.pointer() + "/stage",
                         "catch-up stage does not exist in " + catchUp.quest() + ": " + catchUp.stage()));
             }
+            if (quest != null && milestone.observation() != null && milestone.observation().characterLost()
+                    && quest.provider().campaignRole().equals(milestone.observation().character())) {
+                diagnostics.add(CampaignSchema.error(definition.source(), catchUp.pointer() + "/quest",
+                        "character-loss catch-up cannot require the lost character as its quest provider"));
+            }
         }
         return List.copyOf(diagnostics);
     }
@@ -246,6 +251,12 @@ public final class CampaignDefinitionParser {
             localized(definition, character.titleKey(), character.pointer() + "/title_key", diagnostics);
             if (!definition.locations().containsKey(character.location())) diagnostics.add(CampaignSchema.error(source,
                     character.pointer() + "/location", "unknown campaign location " + character.location()));
+            if (character.lossPolicy() == CampaignCharacterDefinition.LossPolicy.ALTERNATE_PATH
+                    && definition.milestones().values().stream().noneMatch(milestone -> milestone.observation() != null
+                            && milestone.observation().characterLost() && character.id().equals(milestone.observation().character()))) {
+                diagnostics.add(CampaignSchema.error(source, character.pointer() + "/loss_policy",
+                        "alternate_path requires a milestone observing this character's permanent loss"));
+            }
         }
         Map<String, Set<String>> dependencies = new LinkedHashMap<>();
         localized(definition, definition.titleKey(), "/title_key", diagnostics);
@@ -304,6 +315,10 @@ public final class CampaignDefinitionParser {
                         milestone.observation().pointer(), "external world observations require an irreversible milestone"));
                 if (!milestone.outcomes().containsKey(milestone.observation().outcome())) diagnostics.add(CampaignSchema.error(source,
                         milestone.observation().pointer() + "/outcome", "observed outcome does not exist"));
+                if (milestone.observation().characterLost() && !definition.characters().containsKey(milestone.observation().character())) {
+                    diagnostics.add(CampaignSchema.error(source, milestone.observation().pointer() + "/character",
+                            "unknown campaign character " + milestone.observation().character()));
+                }
             }
         }
         Set<String> resolved = new HashSet<>();

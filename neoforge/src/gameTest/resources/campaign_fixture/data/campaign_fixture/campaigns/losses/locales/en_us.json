@@ -1,0 +1,11 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.losses.title": "Campaign fixture: a missing mentor",
+    "campaign_fixture.campaign.losses.chapter": "Continue after losing the mentor",
+    "campaign_fixture.campaign.losses.home": "The mentor's village",
+    "campaign_fixture.campaign.losses.mentor": "Mentor",
+    "campaign_fixture.campaign.losses.witness": "Witness",
+    "campaign_fixture.campaign.losses.lost": "The mentor was permanently lost"
+  }
+}

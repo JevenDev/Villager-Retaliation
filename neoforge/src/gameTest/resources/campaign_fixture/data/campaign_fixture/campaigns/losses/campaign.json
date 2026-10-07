@@ -1,0 +1,100 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:losses",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.losses.title",
+  "localization_prefix": "campaign_fixture.campaign.losses.",
+  "quest_bundles": [
+    "campaign_fixture:losses",
+    "campaign_fixture:losses_catch_up"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.losses.chapter",
+      "quests": [
+        "campaign_fixture:losses"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "mentor_loss",
+      "chapter": "arrival",
+      "quest": "campaign_fixture:losses",
+      "stage": "visit",
+      "irreversible": true,
+      "outcomes": [
+        {
+          "id": "lost",
+          "title_key": "campaign_fixture.campaign.losses.lost"
+        }
+      ],
+      "catch_up": {
+        "quest": "campaign_fixture:losses_catch_up",
+        "stage": "catch_up"
+      },
+      "observe": {
+        "event": "villagerretaliation:campaign_character_lost",
+        "character": "mentor",
+        "outcome": "lost"
+      }
+    }
+  ],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.losses.home",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    }
+  ],
+  "characters": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.losses.mentor",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "alternate_path"
+    },
+    {
+      "id": "witness",
+      "title_key": "campaign_fixture.campaign.losses.witness",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "downed"
+    }
+  ],
+  "facts": [
+    {
+      "id": "learned_loss",
+      "scope": "player",
+      "kind": "tag"
+    }
+  ],
+  "rewards": [
+    {
+      "id": "loss_catch_up_personal",
+      "quest": "campaign_fixture:losses_catch_up",
+      "scope": "personal",
+      "experience": 5
+    },
+    {
+      "id": "loss_participants",
+      "quest": "campaign_fixture:losses",
+      "scope": "participants",
+      "milestone": "mentor_loss",
+      "experience": 40
+    },
+    {
+      "id": "loss_shared",
+      "quest": "campaign_fixture:losses",
+      "scope": "shared",
+      "milestone": "mentor_loss",
+      "experience": 7
+    }
+  ]
+}

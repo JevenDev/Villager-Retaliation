@@ -72,7 +72,14 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
     public record CatchUp(ResourceLocation quest, String stage, String pointer) {
     }
 
-    public record Observation(ResourceLocation event, String outcome, String pointer) {
+    public record Observation(ResourceLocation event, String outcome, String character, String pointer) {
+        public static final ResourceLocation CHARACTER_LOST = ResourceLocation.parse("villagerretaliation:campaign_character_lost");
+
+        public Observation(ResourceLocation event, String outcome, String pointer) {
+            this(event, outcome, "", pointer);
+        }
+
+        public boolean characterLost() { return CHARACTER_LOST.equals(event); }
     }
 
     public record Fact(String id, FactScope scope, FactKind kind, String pointer) {

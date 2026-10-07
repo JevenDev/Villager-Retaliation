@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.losses.title": "Campaign fixture: a missing mentor",
+    "campaign_fixture.quest.losses.description": "Begin a visit with the mentor, then test the alternate story path after permanent loss.",
+    "campaign_fixture.quest.losses.travel": "Visit our village at {objective_target_x}, {objective_target_y}, {objective_target_z}.",
+    "campaign_fixture.quest.losses.offer.label": "Test a character-loss story path",
+    "campaign_fixture.quest.losses.offer.lines": [
+      "I can show you this village. If I am permanently lost, a witness will help you continue your story."
+    ],
+    "campaign_fixture.quest.losses.accept": "Begin the visit.",
+    "campaign_fixture.quest.losses.reminder.label": "Continue the visit",
+    "campaign_fixture.quest.losses.reminder.lines": [
+      "Come back when you have seen our destination."
+    ],
+    "campaign_fixture.quest.losses.report.label": "Record the visit",
+    "campaign_fixture.quest.losses.report.lines": [
+      "You visited our destination. The character-loss fixture remains open until the shared event resolves."
+    ],
+    "campaign_fixture.quest.losses.finish": "Record my visit."
+  }
+}

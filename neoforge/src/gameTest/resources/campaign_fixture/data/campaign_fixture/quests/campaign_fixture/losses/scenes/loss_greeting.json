@@ -1,0 +1,39 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "campaign_fixture:loss_greeting",
+  "definition_version": 1,
+  "ownership": "player",
+  "entry_step": "face_home",
+  "actors": [
+    {
+      "alias": "guide",
+      "type": "villagerretaliation:villager",
+      "binding_source": "campaign_role",
+      "binding": "mentor"
+    },
+    {
+      "alias": "home",
+      "type": "villagerretaliation:position",
+      "binding_source": "campaign_location",
+      "binding": "home"
+    }
+  ],
+  "steps": [
+    {
+      "id": "face_home",
+      "type": "villagerretaliation:face_position",
+      "actors": [
+        "guide"
+      ],
+      "data": {
+        "actor": "guide",
+        "target_actor": "home"
+      },
+      "next": "finish"
+    },
+    {
+      "id": "finish",
+      "type": "villagerretaliation:scene_complete"
+    }
+  ]
+}

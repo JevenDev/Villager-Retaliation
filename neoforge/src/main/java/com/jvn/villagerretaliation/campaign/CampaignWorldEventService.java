@@ -51,7 +51,9 @@ public final class CampaignWorldEventService {
             }
             try {
                 reconcile(data, content, end, server.overworld().getGameTime());
-                REPORTED.remove(id);
+                String characterIssue = reconcileCharacterLosses(server, data, content, server.overworld().getGameTime());
+                if (characterIssue.isBlank()) REPORTED.remove(id);
+                else report(id, characterIssue);
             } catch (IOException exception) {
                 report(id, "Could not save campaign state: " + exception.getMessage() + ". The failed change remains unapplied. Check world storage before retrying.");
             }
@@ -70,6 +72,28 @@ public final class CampaignWorldEventService {
                     CampaignInstance.Origin.WORLD_OBSERVATION, Set.of(), gameTime);
             instance = data.instances().get(content.definition().id());
         }
+    }
+
+    private static String reconcileCharacterLosses(MinecraftServer server, CampaignSavedData data, CampaignContentCatalog.Entry content, long gameTime) throws IOException {
+        String issue = "";
+        for (var milestone : content.definition().milestones().values()) {
+            var observation = milestone.observation();
+            var instance = data.instances().get(content.definition().id());
+            if (observation == null || !observation.characterLost() || instance == null || instance.outcomes().containsKey(milestone.id())) continue;
+            var character = CampaignBindingQueries.character(server, content.definition().id(), observation.character());
+            if (!character.diagnostic().isBlank()) {
+                if (issue.isBlank()) issue = character.diagnostic();
+                continue;
+            }
+            if (character.binding() == null || !character.binding().lost()) continue;
+            UUID operation = UUID.nameUUIDFromBytes((instance.instanceId() + "/" + milestone.id() + "/" + observation.event()
+                    + "/" + character.binding().entityId()).getBytes(StandardCharsets.UTF_8));
+            var result = data.commitWorldOutcome(content, milestone.id(), observation.outcome(), operation, instance.worldRevision(),
+                    CampaignInstance.Origin.WORLD_OBSERVATION, Set.of(), gameTime);
+            if (result.status() != CampaignSavedData.Status.APPLIED && result.status() != CampaignSavedData.Status.ALREADY_COMMITTED
+                    && issue.isBlank()) issue = result.diagnostic();
+        }
+        return issue;
     }
 
     private static void report(ResourceLocation campaign, String message) {

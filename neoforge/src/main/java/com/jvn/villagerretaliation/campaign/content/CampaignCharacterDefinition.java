@@ -19,5 +19,5 @@ public record CampaignCharacterDefinition(String id, String titleKey, Source sou
     }
 
     public enum Source { EXISTING_VILLAGER, OWNED_SPAWN }
-    public enum LossPolicy { DOWNED }
+    public enum LossPolicy { DOWNED, ALTERNATE_PATH }
 }

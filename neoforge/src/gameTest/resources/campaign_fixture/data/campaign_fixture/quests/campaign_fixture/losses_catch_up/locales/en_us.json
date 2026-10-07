@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.losses_catch_up.title": "Catch up: the missing mentor",
+    "campaign_fixture.quest.losses_catch_up.description": "Learn the recorded loss from the witness and continue your personal story.",
+    "campaign_fixture.quest.losses_catch_up.response.accept": "Hear the witness.",
+    "campaign_fixture.quest.losses_catch_up.offer.label": "Ask about the missing mentor",
+    "campaign_fixture.quest.losses_catch_up.offer.lines": [
+      "Our mentor has been permanently lost. I can tell you what happened and help you continue."
+    ],
+    "campaign_fixture.quest.losses_catch_up.response.learn_loss": "I understand what happened.",
+    "campaign_fixture.quest.losses_catch_up.catch_up.label": "Learn what happened",
+    "campaign_fixture.quest.losses_catch_up.catch_up.lines": [
+      "The mentor will not return to this role. This account records what you learned without claiming that you participated in the loss."
+    ],
+    "campaign_fixture.quest.losses_catch_up.response.finish_catch_up_report": "Record my progress.",
+    "campaign_fixture.quest.losses_catch_up.catch_up_report.label": "Finish the alternate path",
+    "campaign_fixture.quest.losses_catch_up.catch_up_report.lines": [
+      "Your account completes this part of the story and earns 5 personal experience."
+    ]
+  }
+}

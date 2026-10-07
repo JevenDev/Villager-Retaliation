@@ -27,7 +27,15 @@ public final class CampaignSchema {
         JsonObject outcome = object(List.of("id", "title_key"), "id", text(LOCAL_ID), "title_key", text(""));
         JsonObject catchUp = object(List.of("quest", "stage"), "quest", text(RESOURCE_ID), "stage", text(LOCAL_ID));
         JsonObject observation = object(List.of("event", "outcome"),
-                "event", enumeration("minecraft:ender_dragon_defeated"), "outcome", text(LOCAL_ID));
+                "event", enumeration("minecraft:ender_dragon_defeated", CampaignDefinition.Observation.CHARACTER_LOST.toString()),
+                "outcome", text(LOCAL_ID), "character", text(LOCAL_ID));
+        JsonObject lossEvent = object(List.of("event"), "event", enumeration(CampaignDefinition.Observation.CHARACTER_LOST.toString()));
+        lossEvent.addProperty("additionalProperties", true);
+        JsonObject lossCharacter = object(List.of("character"), "character", text(LOCAL_ID));
+        lossCharacter.addProperty("additionalProperties", true);
+        observation.add("if", lossEvent);
+        observation.add("then", lossCharacter);
+        observation.add("else", object(List.of("event", "outcome"), "event", enumeration("minecraft:ender_dragon_defeated"), "outcome", text(LOCAL_ID)));
         JsonObject milestone = object(List.of("id", "chapter", "quest", "outcomes"),
                 "id", text(LOCAL_ID), "chapter", text(LOCAL_ID), "quest", text(RESOURCE_ID), "stage", text(LOCAL_ID),
                 "irreversible", type("boolean"), "outcomes", array(outcome, 1),
@@ -66,7 +74,7 @@ public final class CampaignSchema {
         JsonObject character = object(List.of("id", "title_key", "source", "location", "loss_policy"),
                 "id", text(LOCAL_ID), "title_key", text(""), "source", enumeration("existing_villager", "owned_spawn"),
                 "location", text(LOCAL_ID), "search_radius", characterRadius, "profession", text(RESOURCE_ID),
-                "loss_policy", enumeration("downed"));
+                "loss_policy", enumeration("downed", "alternate_path"));
         JsonObject ownedSource = object(List.of("source"), "source", enumeration("owned_spawn"));
         ownedSource.addProperty("additionalProperties", true);
         JsonObject spawnRadius = characterRadius.deepCopy();
@@ -115,7 +123,8 @@ public final class CampaignSchema {
         if (schema.has("if")) {
             List<QuestDiagnostic> condition = new ArrayList<>();
             validate(source, value, schema.getAsJsonObject("if"), pointer, condition);
-            if (condition.isEmpty()) validate(source, value, schema.getAsJsonObject("then"), pointer, diagnostics);
+            String branch = condition.isEmpty() ? "then" : "else";
+            if (schema.has(branch)) validate(source, value, schema.getAsJsonObject(branch), pointer, diagnostics);
         }
         if (schema.has("enum")) {
             boolean accepted = false;

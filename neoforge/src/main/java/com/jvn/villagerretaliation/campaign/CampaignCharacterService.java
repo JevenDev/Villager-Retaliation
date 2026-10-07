@@ -80,7 +80,9 @@ public final class CampaignCharacterService {
             if (entity != null) break;
         }
         if (entity == null) return new Result(binding, null, binding.lost()
-                ? "Campaign character was permanently removed. Restore the original character or repair its binding."
+                ? binding.lossPolicy() == CampaignCharacterDefinition.LossPolicy.ALTERNATE_PATH
+                        ? "Campaign character was permanently removed. Continue its authored alternate story path."
+                        : "Campaign character was permanently removed. Restore the original character or repair its binding."
                 : "Campaign character is unloaded or unavailable. Its saved identity is retained.");
         if (!(entity instanceof Villager villager) || !villager.isAlive()) return new Result(binding, null, "Campaign character is not a living villager. Restore its original identity.");
         if (binding.lost()) {
