@@ -2161,6 +2161,13 @@ public final class VillagerQuestService {
 
         if (!QuestStageActionService.ready(context, progress)) return false;
         if (!progress.pendingStageTransition().isBlank() && !progress.pendingStageTransition().equals(stage.trim())) return false;
+        CampaignQuestEntries.Entry campaignEntry = CampaignQuestEntries.stage(context, definition, stage.trim());
+        if (CampaignQuestReconciliation.reconcile(context.player(), definition, progress)) {
+            resumePendingStageEntry(context, definition, progress);
+            sendTrackerSync(context.player(), true);
+            return true;
+        }
+        if (!campaignEntry.available() || campaignEntry.catchUp() || !CampaignQuestAccess.executionIssue(context, definition).isBlank()) return false;
         QuestDefinition.Stage previous = definition.stages().get(progress.currentStage());
         if (runExitActions && previous != null) {
             progress.requestStageTransition(stage);
@@ -3257,13 +3264,12 @@ public final class VillagerQuestService {
             if (!matchesState(context, prerequisite, prerequisiteProgress, "completed")) {
                 return false;
             }
-            if (prerequisiteProgress == null
-                    || !cooldownElapsed(
-                            context.level().getGameTime(),
-                            prerequisiteProgress.completedGameTime(),
-                            definition.rules().prerequisiteCooldownTicks())) {
-                return false;
-            }
+            long completedAt = prerequisiteProgress == null ? -1L : prerequisiteProgress.completedGameTime();
+            var campaignCompletion = CampaignQuestAccess.personalCompletion(context.level(), context.player().getUUID(), prerequisite);
+            if (campaignCompletion.completed()) completedAt = Math.max(completedAt, campaignCompletion.gameTime());
+            if (prerequisiteProgress == null && !campaignCompletion.completed()) return false;
+            if (campaignCompletion.completed() && completedAt < 0L && definition.rules().prerequisiteCooldownTicks() > 0L) return false;
+            if (!cooldownElapsed(context.level().getGameTime(), completedAt, definition.rules().prerequisiteCooldownTicks())) return false;
         }
         return true;
     }
@@ -4437,7 +4443,9 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             String state) {
         String normalized = state == null ? "" : state.trim().toLowerCase(Locale.ROOT);
-        boolean completed = progress != null && progress.completionCount() > 0;
+        boolean campaignCompleted = definition.campaign() != null && context != null && context.player() != null && CampaignQuestAccess.personalCompletion(
+                context.level(), context.player().getUUID(), definition).completed();
+        boolean completed = campaignCompleted || progress != null && progress.completionCount() > 0;
         if (!completed && !isPlayerCompletionScope(definition.rules().completionScope())) {
             completed = scopedCompletionCount(context, definition) > 0;
         }
@@ -4447,7 +4455,7 @@ public final class VillagerQuestService {
         boolean activeConditionsMet = rawActive && activeConditionsMet(context, definition);
         boolean active = rawActive && (activeConditionsMet || !definition.rules().activeState().hideWhenUnmet());
         boolean ready = activeConditionsMet && isReadyToTurnIn(context, definition, progress);
-        boolean notStarted = progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED;
+        boolean notStarted = !campaignCompleted && (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED);
         boolean abandoned = progress != null && progress.state() == VillagerQuestSavedData.QuestState.ABANDONED;
         boolean failed = progress != null && progress.state() == VillagerQuestSavedData.QuestState.FAILED;
         boolean expired = progress != null && progress.state() == VillagerQuestSavedData.QuestState.EXPIRED;

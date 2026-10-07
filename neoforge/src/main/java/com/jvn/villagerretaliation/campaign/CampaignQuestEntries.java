@@ -35,29 +35,43 @@ public final class CampaignQuestEntries {
         var content = CampaignResources.current(context.level().getServer()).campaigns().get(quest.campaign());
         var data = CampaignSavedData.get(context.level());
         try {
-            return enter(data, content, context.player().getUUID(), quest, context.level().getGameTime());
+            return enter(data, content, context.player().getUUID(), quest, stage, true, context.level().getGameTime());
         } catch (IOException exception) {
             LOGGER.error("Could not save campaign quest entry {} for {}", quest.id(), context.player().getUUID(), exception);
             return Entry.blocked(quest.id(), stage, "Campaign progress could not be saved. Check world storage before retrying.");
         }
     }
 
-    static Entry enter(CampaignSavedData data, CampaignContentCatalog.Entry content, UUID playerId,
-            QuestDefinition quest, long time) throws IOException {
+    public static Entry stage(DialogueContext context, QuestDefinition quest, String stage) {
+        if (quest.campaign() == null) return Entry.original(quest.id(), stage);
+        String issue = CampaignQuestAccess.contentIssue(context, quest);
+        if (!issue.isBlank()) return Entry.blocked(quest.id(), stage, issue);
+        var content = CampaignResources.current(context.level().getServer()).campaigns().get(quest.campaign());
+        try {
+            return enter(CampaignSavedData.get(context.level()), content, context.player().getUUID(), quest,
+                    stage, false, context.level().getGameTime());
+        } catch (IOException exception) {
+            LOGGER.error("Could not save campaign milestone entry {}:{} for {}", quest.id(), stage, context.player().getUUID(), exception);
+            return Entry.blocked(quest.id(), stage, "Campaign progress could not be saved. Check world storage before retrying.");
+        }
+    }
+
+    private static Entry enter(CampaignSavedData data, CampaignContentCatalog.Entry content, UUID playerId,
+            QuestDefinition quest, String requested, boolean starting, long time) throws IOException {
         var instance = data.open(content, time);
         var definition = content.definition();
         String initial = QuestLifecycleService.initialStage(quest);
         CampaignDefinition.Milestone selected = null;
         for (var milestone : definition.milestones().values()) {
-            if (milestone.quest().equals(quest.id()) && entryStage(milestone, initial).equals(initial)) {
+            if (milestone.quest().equals(quest.id()) && entryStage(milestone, initial).equals(requested)) {
                 selected = milestone;
                 break;
             }
         }
-        if (selected == null) {
+        if (selected == null && starting) {
             var player = instance.players().get(playerId);
             for (var milestone : definition.milestones().values()) {
-                if (milestone.catchUp() == null || !milestone.catchUp().quest().equals(quest.id())
+                if (milestone.quest().equals(quest.id()) || milestone.catchUp() == null || !milestone.catchUp().quest().equals(quest.id())
                         || !instance.outcomes().containsKey(milestone.id())) continue;
                 var progress = player == null ? null : player.milestones().get(milestone.id());
                 if (progress != null && progress.route() != CampaignInstance.Route.CATCH_UP) continue;
@@ -66,15 +80,15 @@ public final class CampaignQuestEntries {
                 break;
             }
         }
-        if (selected == null) return Entry.original(quest.id(), initial);
+        if (selected == null) return Entry.original(quest.id(), requested);
         var entered = data.enterMilestone(definition, playerId, selected.id(), time);
-        if (entered.entry() == null) return Entry.blocked(quest.id(), initial, String.join(" ", entered.blockers()));
+        if (entered.entry() == null) return Entry.blocked(quest.id(), requested, String.join(" ", entered.blockers()));
         var entry = entered.entry();
         String stage = entry.stage().isBlank() ? initial : entry.stage();
         if (!entry.quest().equals(quest.id())) {
-            return Entry.blocked(quest.id(), initial, "This shared event has already resolved. Continue with quest " + entry.quest() + ".");
+            return Entry.blocked(quest.id(), requested, "This shared event has already resolved. Continue with quest " + entry.quest() + ".");
         }
-        if (!quest.stages().containsKey(stage)) return Entry.blocked(quest.id(), initial, "The authored campaign entry stage is unavailable: " + stage);
+        if (!quest.stages().containsKey(stage)) return Entry.blocked(quest.id(), requested, "The authored campaign entry stage is unavailable: " + stage);
         boolean catchingUp = entry.route() == CampaignInstance.Route.CATCH_UP;
         return new Entry(quest.id(), stage, catchingUp, catchingUp && selected.quest().equals(quest.id()), entry.worldOperation(), "");
     }

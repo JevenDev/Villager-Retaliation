@@ -42,6 +42,8 @@ public final class CampaignQuestEntryGameTests {
     private static final ResourceLocation CAMPAIGN = ResourceLocation.parse("test:entry_route");
     private static final ResourceLocation QUEST = ResourceLocation.parse("test:entry_quest");
     private static final ResourceLocation ALTERNATE = ResourceLocation.parse("test:entry_alternate");
+    private static final ResourceLocation FOLLOW_UP = ResourceLocation.parse("test:entry_follow_up");
+    private static final ResourceLocation COOLDOWN = ResourceLocation.parse("test:entry_cooldown");
 
     private CampaignQuestEntryGameTests() {
     }
@@ -339,7 +341,76 @@ public final class CampaignQuestEntryGameTests {
         helper.succeed();
     }
 
-    private static CompiledQuest quest(ResourceLocation id) {
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void laterMilestonesEnterWhenTheirStageIsReached(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "decision")) {
+            int before = fixture.player.totalExperience;
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original quest starts");
+            helper.assertFalse(fixture.data.instances().get(CAMPAIGN).players().containsKey(fixture.player.getUUID()), "quest acceptance does not enter a later milestone");
+            var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), fixture.player, fixture.villager);
+            helper.assertTrue(VillagerQuestService.syncQuestStage(context, QUEST, "decision"), "later stage can be reached");
+            var personal = fixture.data.instances().get(CAMPAIGN).players().get(fixture.player.getUUID());
+            helper.assertValueEqual(personal.milestones().get("dragon").route(), CampaignInstance.Route.ORIGINAL, "reaching the stage saves personal milestone entry");
+            helper.assertValueEqual(fixture.progress(QUEST).currentStage(), "decision", "unresolved milestone uses its original stage");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 410, "normal exit and milestone entry effects keep their order");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void aResolvedLaterMilestoneRedirectsBeforeOriginalTransitionEffects(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "decision")) {
+            int before = fixture.player.totalExperience;
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "original quest starts");
+            fixture.resolve();
+            var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), fixture.player, fixture.villager);
+            helper.assertTrue(VillagerQuestService.syncQuestStage(context, QUEST, "decision"), "resolved milestone adopts catch-up");
+            helper.assertValueEqual(fixture.progress(QUEST).currentStage(), "catch_up", "authored alternate replaces the requested original milestone");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 305, "original exit and decision effects cannot run after resolution");
+            helper.assertFalse(VillagerQuestService.syncQuestStage(context, QUEST, "decision"), "a stale request cannot return to the superseded milestone");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 305, "duplicate transition cannot replay original effects");
+            helper.assertTrue(fixture.data.instances().get(CAMPAIGN).players().get(fixture.player.getUUID()).participation().isEmpty(), "stage catch-up cannot invent participation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void anEarlyWorldOutcomeDoesNotSkipTheIntroductionToALaterMilestone(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "decision")) {
+            fixture.resolve();
+            int before = fixture.player.totalExperience;
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "introduction remains playable after the world outcome");
+            helper.assertValueEqual(fixture.progress(QUEST).currentStage(), "started", "catch-up waits for the authored milestone boundary");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 300, "introduction effects remain available");
+            var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), fixture.player, fixture.villager);
+            helper.assertTrue(VillagerQuestService.syncQuestStage(context, QUEST, "decision"), "later boundary selects catch-up");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 305, "only catch-up effects run at the resolved milestone");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void separateCatchUpSatisfiesQuestConditionsAndLaterQuestPrerequisites(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, ALTERNATE)) {
+            fixture.resolve();
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, ALTERNATE, true).started(), "catch-up starts");
+            var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), fixture.player, fixture.villager);
+            helper.assertFalse(VillagerQuestService.matchesState(context, FOLLOW_UP, Set.of("available")), "later chapter is blocked before personal catch-up");
+            fixture.progress(ALTERNATE).markObjectiveComplete("catch_up.learn");
+            helper.assertValueEqual(VillagerQuestService.performAction(context, ALTERNATE, VillagerActionDefinition.QuestAction.TURN_IN).orElseThrow().status(),
+                    "completed", "personal catch-up completes");
+            helper.assertTrue(fixture.progress(QUEST) == null, "equivalence does not create an original quest run");
+            helper.assertTrue(VillagerQuestService.matchesState(context, QUEST, Set.of("completed")), "authored quest conditions recognize personal equivalence");
+            helper.assertFalse(VillagerQuestService.matchesState(context, QUEST, Set.of("not_started")), "completed equivalent quest cannot appear unstarted");
+            helper.assertTrue(VillagerQuestService.matchesState(context, FOLLOW_UP, Set.of("available")), "later quest prerequisite and chapter unlock together");
+            helper.assertFalse(VillagerQuestService.matchesState(context, COOLDOWN, Set.of("available")), "personal catch-up does not skip an authored prerequisite cooldown");
+            helper.assertValueEqual(CampaignQuestAccess.personalCompletion(helper.getLevel(), fixture.player.getUUID(), fixture.definition(QUEST)).gameTime(),
+                    fixture.progress(ALTERNATE).completedGameTime(), "prerequisite cooldown uses personal catch-up time");
+        }
+        helper.succeed();
+    }
+
+    private static CompiledQuest quest(ResourceLocation id, String milestoneStage) {
         var raw = JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"test:entry_quest","localization_prefix":"quest.entry_fixture.",
                  "metadata":{"campaign":"test:entry_route"},"provider":{"type":"villagerretaliation:villager"},
@@ -350,6 +421,24 @@ public final class CampaignQuestEntryGameTests {
                   {"id":"catch_up","on_enter":[{"type":"experience","amount":5}],"objectives":[{"id":"learn","type":"choice"}]}]}
                 """).getAsJsonObject();
         raw.addProperty("id", id.toString());
+        if (id.equals(FOLLOW_UP) || id.equals(COOLDOWN)) {
+            raw.add("availability", JsonParser.parseString("""
+                    {"prerequisites":["test:entry_quest"]}
+                    """));
+            if (id.equals(COOLDOWN)) raw.getAsJsonObject("availability").addProperty("prerequisite_cooldown_ticks", 20);
+        }
+        if (!milestoneStage.isBlank()) {
+            var stages = raw.getAsJsonArray("stages");
+            var opening = stages.get(0).getAsJsonObject();
+            opening.addProperty("next", milestoneStage);
+            opening.add("on_exit", JsonParser.parseString("""
+                    [{"type":"experience","amount":40}]
+                    """));
+            stages.add(JsonParser.parseString("""
+                    {"id":"decision","next":"catch_up","on_enter":[{"type":"experience","amount":70}],
+                     "objectives":[{"id":"resolve","type":"choice"}]}
+                    """));
+        }
         var envelope = QuestResourceEnvelope.read(id, raw).orElseThrow();
         return QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
     }
@@ -368,6 +457,10 @@ public final class CampaignQuestEntryGameTests {
         private final Villager villager;
 
         private Fixture(GameTestHelper helper, ResourceLocation catchUpQuest) throws IOException {
+            this(helper, catchUpQuest, "");
+        }
+
+        private Fixture(GameTestHelper helper, ResourceLocation catchUpQuest, String milestoneStage) throws IOException {
             this.server = helper.getLevel().getServer();
             this.previous = QuestContentCatalogs.current(server);
             this.report = QuestContentCatalogs.loadReport(server);
@@ -383,8 +476,8 @@ public final class CampaignQuestEntryGameTests {
             var compiled = new LinkedHashMap<ResourceLocation, CompiledQuest>();
             previous.compiledQuests().forEach(value -> compiled.put(value.id(), value));
             var definitions = new LinkedHashMap<>(previous.quests());
-            for (var id : List.of(QUEST, ALTERNATE)) {
-                var quest = quest(id);
+            for (var id : List.of(QUEST, ALTERNATE, FOLLOW_UP, COOLDOWN)) {
+                var quest = quest(id, milestoneStage);
                 compiled.put(id, quest);
                 definitions.put(id, quest.asQuestDefinition());
             }
@@ -393,8 +486,11 @@ public final class CampaignQuestEntryGameTests {
                     previous.exclusiveGroupQuestIds(), previous.triggerEventQuestIds(), previous.scenes(), previous.encounters(), previous.pools(),
                     previous.bundles(), previous.localization(), previous.rewards());
             var definition = new CampaignDefinition(CAMPAIGN, 1, "fixture", "campaign.entry.title", "campaign.entry.",
-                    List.of(QUEST, ALTERNATE), Map.of("opening", new CampaignDefinition.Chapter("opening", "campaign.entry.chapter", List.of(), List.of(QUEST), "")),
-                    Map.of("dragon", new CampaignDefinition.Milestone("dragon", "opening", QUEST, true,
+                    List.of(QUEST, ALTERNATE, FOLLOW_UP, COOLDOWN), Map.of(
+                            "opening", new CampaignDefinition.Chapter("opening", "campaign.entry.chapter", List.of(), List.of(QUEST), ""),
+                            "later", new CampaignDefinition.Chapter("later", "campaign.entry.later",
+                                    List.of(new CampaignDefinition.Prerequisite("opening", "", "", "")), List.of(FOLLOW_UP, COOLDOWN), "")),
+                    Map.of("dragon", new CampaignDefinition.Milestone("dragon", "opening", QUEST, milestoneStage, true,
                             Map.of("defeated", new CampaignDefinition.Outcome("defeated", "campaign.entry.defeated", "")),
                             new CampaignDefinition.CatchUp(catchUpQuest, "catch_up", ""), null, "")), Map.of(), CAMPAIGN);
             this.content = new CampaignContentCatalog.Entry(definition, QuestLocaleCatalog.empty());
@@ -432,6 +528,7 @@ public final class CampaignQuestEntryGameTests {
             CampaignResources.clearCache();
             VillagerQuestSavedData.get(server.overworld()).remove(player.getUUID(), QUEST);
             VillagerQuestSavedData.get(server.overworld()).remove(player.getUUID(), ALTERNATE);
+            VillagerQuestSavedData.get(server.overworld()).remove(player.getUUID(), FOLLOW_UP);
             Files.deleteIfExists(directory.resolve(CampaignSavedData.DATA_NAME + ".dat"));
             Files.deleteIfExists(directory);
         }

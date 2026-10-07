@@ -58,6 +58,32 @@ public final class CampaignQuestAccess {
                 VillagerQuestSavedData.get(server.overworld()).get(playerId, questId));
     }
 
+    public static PersonalCompletion personalCompletion(ServerLevel level, UUID playerId, QuestDefinition quest) {
+        if (quest.campaign() == null || !contentIssue(level, quest).isBlank()) return PersonalCompletion.NONE;
+        var instance = CampaignSavedData.get(level).instances().get(quest.campaign());
+        var personal = instance == null ? null : instance.players().get(playerId);
+        if (personal == null || !personal.completedQuests().contains(quest.id())) return PersonalCompletion.NONE;
+        var quests = VillagerQuestSavedData.get(level);
+        var direct = quests.get(playerId, quest.id());
+        long completedAt = direct == null ? -1L : direct.completedGameTime();
+        var definition = CampaignResources.current(level.getServer()).campaigns().get(quest.campaign()).definition();
+        for (var milestone : definition.milestones().values()) {
+            if (!milestone.quest().equals(quest.id())) continue;
+            var progress = personal.milestones().get(milestone.id());
+            if (progress == null || !progress.completed()) continue;
+            completedAt = Math.max(completedAt, progress.completedAt());
+            if (progress.route() == CampaignInstance.Route.CATCH_UP && milestone.catchUp() != null) {
+                var alternate = quests.get(playerId, milestone.catchUp().quest());
+                if (alternate != null) completedAt = Math.max(completedAt, alternate.completedGameTime());
+            }
+        }
+        return new PersonalCompletion(true, completedAt);
+    }
+
+    public record PersonalCompletion(boolean completed, long gameTime) {
+        private static final PersonalCompletion NONE = new PersonalCompletion(false, -1L);
+    }
+
     public static ResourceLocation campaignFor(MinecraftServer server, ResourceLocation questId) {
         return questId == null ? null : VillagerQuestResources.quest(server, questId).map(QuestDefinition::campaign).orElse(null);
     }
