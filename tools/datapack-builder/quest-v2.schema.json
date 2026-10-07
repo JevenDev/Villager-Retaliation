@@ -2335,6 +2335,40 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_reward"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "reward": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "operation_id": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            },
+            "required": [
+              "reward",
+              "operation_id"
+            ]
+          }
         }
       ],
       "properties": {
@@ -2348,6 +2382,7 @@
             "branch_transition",
             "campaign_fact",
             "campaign_outcome",
+            "campaign_reward",
             "clear_tag",
             "counter",
             "dialogue",
@@ -2407,6 +2442,7 @@
             "branch_transition",
             "campaign_fact",
             "campaign_outcome",
+            "campaign_reward",
             "clear_tag",
             "counter",
             "dialogue",

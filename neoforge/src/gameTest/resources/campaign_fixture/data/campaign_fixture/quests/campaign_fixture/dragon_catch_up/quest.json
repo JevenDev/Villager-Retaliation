@@ -122,6 +122,11 @@
               },
               "actions": [
                 {
+                  "type": "campaign_reward",
+                  "reward": "dragon_catch_up_personal",
+                  "operation_id": "completion_reward"
+                },
+                {
                   "type": "quest",
                   "action": "turn_in"
                 }
@@ -129,13 +134,7 @@
             }
           ]
         }
-      },
-      "on_enter": [
-        {
-          "type": "experience",
-          "amount": 5
-        }
-      ]
+      }
     }
   ]
 }

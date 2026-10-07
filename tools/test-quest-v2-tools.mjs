@@ -324,6 +324,21 @@ try {
   assert(invalid.stderr.includes("not_a_real_objective"), "Invalid v2 fixture did not report the bad objective type.");
   assert(invalid.stderr.includes("external dialogue roots are unsupported in beta.13 quest bundles"), "Invalid v2 fixture did not reject an external structural dialogue tree.");
 
+  for (const [override, expectFailure] of [
+    [{}, false], [{ required: true }, false], [{ required: false }, true],
+    [{ reward: null }, true], [{ reward: 2 }, true], [{ operation_id: "has spaces" }, true]
+  ]) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.stages[0].on_enter = [{ type: "campaign_reward", reward: "catch_up", operation_id: "claim", ...override }];
+    await writeJson(validQuest, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+    if (expectFailure) {
+      assert(result.stderr.includes("registered action schema"), "Campaign reward fields did not use the exported runtime schema.");
+      assert(result.stderr.includes("pointer=/stages/0/on_enter/0/"), "Campaign reward diagnostic lost its source pointer.");
+    }
+  }
+  await writeJson(validQuest, conditionFixture);
+
   const legacyCampaignAction = path.join(workspace, "legacy-campaign-action.json");
   for (const [outcome, expectFailure] of [["spared", false], [null, true]]) {
     const candidate = JSON.parse(await readFile(v1Quest, "utf8"));

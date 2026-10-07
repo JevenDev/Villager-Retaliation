@@ -4,6 +4,7 @@
   "plugin": "com.jvn.villagerretaliation.compat.VillagerRetaliationMixinPlugin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "CampaignPlayerLoadMixin",
     "AbstractArrowAccessor",
     "ProjectileCombatAccessor",
     "ProjectileObservedTerrainMixin",

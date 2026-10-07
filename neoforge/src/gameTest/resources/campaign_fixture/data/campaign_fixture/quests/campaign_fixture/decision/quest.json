@@ -20,9 +20,7 @@
     "max_completions": 1,
     "locked_to_villager": true
   },
-  "rewards": {
-    "experience": 40
-  },
+  "rewards": {},
   "entry_stage": "choose",
   "stages": [
     {
@@ -144,6 +142,11 @@
                 "key": "#response.finish_report"
               },
               "actions": [
+                {
+                  "type": "campaign_reward",
+                  "reward": "decision_participant",
+                  "operation_id": "completion_reward"
+                },
                 {
                   "type": "quest",
                   "action": "turn_in"

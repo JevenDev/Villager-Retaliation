@@ -168,9 +168,12 @@ public final class SceneContinuation {
         var unreadable = new LinkedHashMap<Integer, CompoundTag>();
         for (Tag raw : tag.getList("Actions", Tag.TAG_COMPOUND)) {
             if (!(raw instanceof CompoundTag action)) continue;
-            if (action.getString("Kind").equals("CAMPAIGN_OUTCOME") || action.getString("Kind").equals("CAMPAIGN_FACT")) {
+            if (action.getString("Kind").equals("CAMPAIGN_OUTCOME") || action.getString("Kind").equals("CAMPAIGN_FACT")
+                    || action.getString("Kind").equals("CAMPAIGN_REWARD")) {
                 try {
-                    if (action.getString("Kind").equals("CAMPAIGN_FACT")) {
+                    if (action.getString("Kind").equals("CAMPAIGN_REWARD")) {
+                        com.jvn.villagerretaliation.campaign.CampaignRewardAction.load(action.getCompound("CampaignReward"));
+                    } else if (action.getString("Kind").equals("CAMPAIGN_FACT")) {
                         com.jvn.villagerretaliation.campaign.CampaignFactAction.load(action.getCompound("CampaignFact"));
                     } else com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.load(action.getCompound("CampaignOutcome"));
                 } catch (IllegalArgumentException exception) {
@@ -178,6 +181,7 @@ public final class SceneContinuation {
                     action = action.copy();
                     action.remove("CampaignOutcome");
                     action.remove("CampaignFact");
+                    action.remove("CampaignReward");
                 }
             }
             actions.add(loadAction(action));
@@ -260,6 +264,7 @@ public final class SceneContinuation {
         tag.putString("Operation", action.sceneOperationId());
         tag.putBoolean("Wait", action.waitForScene());
         tag.putBoolean("Required", action.required());
+        if (action.campaignReward() != null) tag.put("CampaignReward", action.campaignReward().save());
         if (action.campaignFact() != null) tag.put("CampaignFact", action.campaignFact().save());
         if (action.campaignOutcome() != null) tag.put("CampaignOutcome", action.campaignOutcome().save());
         return tag;
@@ -283,7 +288,9 @@ public final class SceneContinuation {
                 tag.contains("CampaignOutcome", Tag.TAG_COMPOUND)
                         ? com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.load(tag.getCompound("CampaignOutcome")) : null,
                 tag.contains("CampaignFact", Tag.TAG_COMPOUND)
-                        ? com.jvn.villagerretaliation.campaign.CampaignFactAction.load(tag.getCompound("CampaignFact")) : null);
+                        ? com.jvn.villagerretaliation.campaign.CampaignFactAction.load(tag.getCompound("CampaignFact")) : null,
+                tag.contains("CampaignReward", Tag.TAG_COMPOUND)
+                        ? com.jvn.villagerretaliation.campaign.CampaignRewardAction.load(tag.getCompound("CampaignReward")) : null);
     }
 
     private static Map<String, List<String>> readLineMap(CompoundTag tag, String field) {

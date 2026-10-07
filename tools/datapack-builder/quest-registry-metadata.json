@@ -452,6 +452,38 @@
         ]
       },
       {
+        "id": "campaign_reward",
+        "aliases": [],
+        "kind": "campaign_reward",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "reward": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "operation_id": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "required": {
+              "const": true
+            }
+          },
+          "required": [
+            "reward",
+            "operation_id"
+          ]
+        },
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "world_known"
+        ]
+      },
+      {
         "id": "campaign_fact",
         "aliases": [],
         "kind": "campaign_fact",
@@ -1666,6 +1698,20 @@
         }
       },
       {
+        "id": "villagerretaliation:campaign_reward",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Campaign reward",
+        "description": "Built-in Campaign reward type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:clear_tag",
         "aliases": [],
         "live_capabilities": [],
@@ -2378,6 +2424,7 @@
         "branch_transition",
         "campaign_fact",
         "campaign_outcome",
+        "campaign_reward",
         "clear_tag",
         "counter",
         "dialogue",

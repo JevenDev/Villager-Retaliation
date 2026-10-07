@@ -142,6 +142,91 @@ public final class CampaignPlayableFixtureGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_playable_fixture", timeoutTicks = 200)
+    public static void failedRewardStorageBlocksCompletionUntilTheResponseIsRetried(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper)) {
+            var player = fixture.player();
+            fixture.select(player, "decision", "choose", "offer", 0);
+            fixture.select(player, "decision", "choose", "reminder", 0);
+            var storage = fixture.server.overworld().getDataStorage();
+            var rewards = CampaignRewardSavedData.get(helper.getLevel());
+            Path blocked = fixture.directory.resolve("blocked");
+            Files.writeString(blocked, "occupied");
+            storage.set(CampaignRewardSavedData.DATA_NAME, CampaignRewardSavedData.load(new CompoundTag(), blocked));
+            try {
+                fixture.select(player, "decision", "report", "turn_in", 0);
+                helper.assertValueEqual(player.totalExperience, 0, "failed receipt save awards no experience");
+                helper.assertValueEqual(fixture.progress(player, "decision").completionCount(), 0, "required reward failure blocks quest completion");
+            } finally {
+                storage.set(CampaignRewardSavedData.DATA_NAME, rewards);
+                Files.delete(blocked);
+            }
+            fixture.select(player, "decision", "report", "turn_in", 0);
+            helper.assertValueEqual(player.totalExperience, 40, "retry delivers the authored participant reward");
+            helper.assertValueEqual(fixture.progress(player, "decision").completionCount(), 1, "successful delivery lets the response finish");
+            fixture.reload();
+            helper.assertTrue(CampaignRewardSavedData.get(helper.getLevel()).receipts().values().stream().allMatch(CampaignRewardReceipt::delivered), "completed grant survives reload");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_playable_fixture", timeoutTicks = 200)
+    public static void sharedRewardHasOneRecipientAndCatchUpCannotClaimIt(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper)) {
+            var first = fixture.player();
+            var second = fixture.player();
+            var late = fixture.player();
+            fixture.select(first, "decision", "choose", "offer", 0);
+            fixture.select(second, "decision", "choose", "offer", 0);
+            var instance = fixture.data.instances().get(CAMPAIGN);
+            fixture.data.commitWorldOutcome(fixture.content, "decision", "admitted", java.util.UUID.randomUUID(), instance.worldRevision(),
+                    CampaignInstance.Origin.PLAYER_DECISION, java.util.Set.of(first.getUUID(), second.getUUID()), 1L);
+            var action = com.jvn.villagerretaliation.action.VillagerActionDefinition.readList(id("decision"), "test", JsonParser.parseString("""
+                    {"actions":[{"type":"campaign_reward","reward":"decision_shared","operation_id":"shared_reward"}]}
+                    """).getAsJsonObject(), id("decision")).getFirst();
+            for (var player : List.of(first, second)) {
+                var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, fixture.villager);
+                helper.assertTrue(com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(context, action, Map.of()).success(), "participant can continue after the shared grant is satisfied");
+            }
+            helper.assertValueEqual(first.totalExperience, 7, "first participant receives the shared grant");
+            helper.assertValueEqual(second.totalExperience, 0, "second participant does not duplicate it");
+            fixture.finishCatchUp(late, "decision");
+            var context = VillagerInteractionService.createDialogueContext(late.serverLevel(), late, fixture.villager);
+            helper.assertFalse(com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(context, action, Map.of()).success(), "catch-up cannot claim the shared reward");
+            helper.assertValueEqual(late.totalExperience, 5, "catch-up keeps only its personal reward");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_playable_fixture", timeoutTicks = 200)
+    public static void pendingRewardsWaitForMissingContentThenResumeWithoutReplayingChoices(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper)) {
+            var player = fixture.player();
+            fixture.select(player, "decision", "choose", "offer", 0);
+            fixture.select(player, "decision", "choose", "reminder", 0);
+            var instance = fixture.data.instances().get(CAMPAIGN);
+            var definition = fixture.content.definition();
+            var reward = definition.rewards().get("decision_participant");
+            var receipt = new CampaignRewardReceipt(CampaignRewardService.operationId(instance.instanceId(), player.getUUID(), reward, "completion_reward"),
+                    java.util.UUID.randomUUID(), CAMPAIGN, instance.instanceId(), definition.revision(), definition.fingerprint(), player.getUUID(), id("decision"),
+                    fixture.progress(player, "decision").questRunId(), reward.id(), "completion_reward", reward.scope(), reward.milestone(), reward.experience(), List.of(), 1L, false);
+            CampaignRewardSavedData.get(helper.getLevel()).prepare(receipt);
+            fixture.reload();
+            var campaigns = CampaignResources.current(fixture.server);
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(fixture.catalog, Map.of(), List.of()));
+            CampaignRewardService.recover(fixture.server);
+            helper.assertValueEqual(player.totalExperience, 0, "missing campaign content leaves the reward dormant");
+            helper.assertFalse(CampaignRewardSavedData.get(helper.getLevel()).receipts().get(receipt.operation()).delivered(), "missing content preserves the prepared grant");
+            CampaignResources.installForTests(fixture.server, campaigns);
+            CampaignRewardService.recover(fixture.server);
+            helper.assertValueEqual(player.totalExperience, 40, "restored content resumes the saved grant");
+            fixture.select(player, "decision", "report", "turn_in", 0);
+            helper.assertValueEqual(player.totalExperience, 40, "replaying the response does not repeat the recovered grant");
+            helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).outcomes(), instance.outcomes(), "recovery never changes the committed choice");
+        }
+        helper.succeed();
+    }
+
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("campaign_fixture", path); }
 
     private static JsonObject resource(String path) throws IOException {
@@ -159,6 +244,7 @@ public final class CampaignPlayableFixtureGameTests {
         private final QuestContentCatalog previous;
         private final QuestContentLoadReport report;
         private final CampaignSavedData previousData;
+        private final CampaignRewardSavedData previousRewards;
         private final VillagerQuestSavedData previousQuests;
         private final QuestContentCatalog catalog;
         private final CampaignContentCatalog.Entry content;
@@ -173,6 +259,7 @@ public final class CampaignPlayableFixtureGameTests {
             this.previous = QuestContentCatalogs.current(server);
             this.report = QuestContentCatalogs.loadReport(server);
             this.previousData = CampaignSavedData.get(helper.getLevel());
+            this.previousRewards = CampaignRewardSavedData.get(helper.getLevel());
             this.previousQuests = VillagerQuestSavedData.get(helper.getLevel());
             List<QuestBundleTransactions.RawResource> resources = new ArrayList<>();
             for (String quest : List.of("decision", "dragon", "decision_catch_up", "dragon_catch_up")) {
@@ -200,6 +287,7 @@ public final class CampaignPlayableFixtureGameTests {
             CampaignResources.installForTests(server, campaigns);
             server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, data);
             server.overworld().getDataStorage().set("villagerretaliation_quests", new VillagerQuestSavedData());
+            server.overworld().getDataStorage().set(CampaignRewardSavedData.DATA_NAME, CampaignRewardSavedData.load(new CompoundTag(), directory));
         }
 
         private ServerPlayer player() {
@@ -250,6 +338,9 @@ public final class CampaignPlayableFixtureGameTests {
         private void reload() {
             data = CampaignSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()), directory);
             server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, data);
+            var rewards = CampaignRewardSavedData.get(helper.getLevel());
+            server.overworld().getDataStorage().set(CampaignRewardSavedData.DATA_NAME, CampaignRewardSavedData.load(
+                    rewards.save(new CompoundTag(), helper.getLevel().registryAccess()), directory));
             var quests = VillagerQuestSavedData.get(helper.getLevel());
             server.overworld().getDataStorage().set("villagerretaliation_quests", VillagerQuestSavedData.load(
                     quests.save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess()));
@@ -260,8 +351,11 @@ public final class CampaignPlayableFixtureGameTests {
             for (var player : players) {
                 VillagerConversationService.endForPlayer(player, false);
                 CampaignQuestAcceptanceService.onLogout(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent(player));
+                Files.deleteIfExists(CampaignPlayerRewards.directory(player).resolve(player.getStringUUID() + ".dat"));
+                Files.deleteIfExists(CampaignPlayerRewards.directory(player).resolve(player.getStringUUID() + ".dat_old"));
             }
             server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, previousData);
+            server.overworld().getDataStorage().set(CampaignRewardSavedData.DATA_NAME, previousRewards);
             server.overworld().getDataStorage().set("villagerretaliation_quests", previousQuests);
             previousQuests.setDirty();
             QuestContentCatalogs.installForTests(server, previous, report);
@@ -269,6 +363,7 @@ public final class CampaignPlayableFixtureGameTests {
             com.jvn.villagerretaliation.dialogue.DialogueTreeResources.clearCache();
             DialogueTreeService.clearRuntimeState();
             Files.deleteIfExists(directory.resolve(CampaignSavedData.DATA_NAME + ".dat"));
+            Files.deleteIfExists(directory.resolve(CampaignRewardSavedData.DATA_NAME + ".dat"));
             Files.deleteIfExists(directory);
         }
     }

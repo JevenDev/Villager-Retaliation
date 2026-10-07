@@ -1230,6 +1230,11 @@ public final class QuestV2Parser {
                 com.jvn.villagerretaliation.campaign.CampaignFactAction.issues(object).forEach((field, message) ->
                         validator.error(actionPointer + "/" + field, message, "Use the campaign fact action schema.", Set.of()));
             }
+            if (VillagerActionRegistry.kindBySerializedName(type) == VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
+                String actionPointer = pointer + "/" + index;
+                com.jvn.villagerretaliation.campaign.CampaignRewardAction.issues(object).forEach((field, message) ->
+                        validator.error(actionPointer + "/" + field, message, "Use the campaign reward action schema.", Set.of()));
+            }
             actions.add(object);
         }
         return List.copyOf(actions);

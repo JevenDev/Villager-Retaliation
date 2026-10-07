@@ -79,6 +79,8 @@ public class VillagerRetaliation {
                 .listener(CampaignWorldModeService::onServerStarted)
                 .listener(CampaignWorldEventService::onServerTickPost)
                 .listener(CampaignWorldEventService::onServerStopped)
+                .listener(com.jvn.villagerretaliation.campaign.CampaignRewardService::onServerTickPost)
+                .listener(com.jvn.villagerretaliation.campaign.CampaignRewardService::onServerStopped)
                 .listener(VillagerRetaliationEvents::onServerStarted)
                 .listener(VillagerRetaliationEvents::onServerStopping)
                 .listener(VillagerRetaliationEvents::onAddReloadListeners)

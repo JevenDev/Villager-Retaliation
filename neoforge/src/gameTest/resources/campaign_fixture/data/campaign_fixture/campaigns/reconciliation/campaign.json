@@ -86,5 +86,33 @@
       "scope": "player",
       "kind": "tag"
     }
+  ],
+  "rewards": [
+    {
+      "id": "decision_participant",
+      "quest": "campaign_fixture:decision",
+      "scope": "participants",
+      "milestone": "decision",
+      "experience": 40
+    },
+    {
+      "id": "decision_shared",
+      "quest": "campaign_fixture:decision",
+      "scope": "shared",
+      "milestone": "decision",
+      "experience": 7
+    },
+    {
+      "id": "decision_catch_up_personal",
+      "quest": "campaign_fixture:decision_catch_up",
+      "scope": "personal",
+      "experience": 5
+    },
+    {
+      "id": "dragon_catch_up_personal",
+      "quest": "campaign_fixture:dragon_catch_up",
+      "scope": "personal",
+      "experience": 5
+    }
   ]
 }

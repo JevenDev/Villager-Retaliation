@@ -84,8 +84,19 @@ public final class CampaignDefinitionParser {
                     CampaignDefinition.FactKind.valueOf(text(entry, "kind").toUpperCase(Locale.ROOT)), pointer),
                     source, pointer, diagnostics);
         }
+        Map<String, CampaignRewardDefinition> rewards = new LinkedHashMap<>();
+        JsonArray rewardEntries = array(root, "rewards");
+        for (int index = 0; index < rewardEntries.size(); index++) {
+            JsonObject entry = rewardEntries.get(index).getAsJsonObject();
+            String pointer = "/rewards/" + index;
+            String id = text(entry, "id");
+            put(rewards, id, new CampaignRewardDefinition(id, resource(entry, "quest"),
+                    CampaignRewardDefinition.Scope.valueOf(text(entry, "scope").toUpperCase(Locale.ROOT)),
+                    text(entry, "milestone"), text(entry, "outcome"), entry.has("experience") ? entry.get("experience").getAsInt() : 0,
+                    entry.has("loot_table") ? resource(entry, "loot_table") : null, pointer), source, pointer, diagnostics);
+        }
         CampaignDefinition definition = new CampaignDefinition(resource(root, "id"), root.get("revision").getAsInt(),
-                QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, source);
+                QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, source);
         validateReferences(definition, diagnostics);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
     }
@@ -107,6 +118,9 @@ public final class CampaignDefinitionParser {
             for (int index = 0; index < chapter.quests().size(); index++) {
                 requireCampaignOwner(definition, quests, chapter.quests().get(index), chapter.pointer() + "/quests/" + index, diagnostics);
             }
+        }
+        for (var reward : definition.rewards().values()) {
+            requireCampaignOwner(definition, quests, reward.quest(), reward.pointer() + "/quest", diagnostics);
         }
         Set<String> stageOwners = new HashSet<>();
         for (var milestone : definition.milestones().values()) {
@@ -145,6 +159,20 @@ public final class CampaignDefinitionParser {
     private static void validateReferences(CampaignDefinition definition, List<QuestDiagnostic> diagnostics) {
         ResourceLocation source = definition.source();
         Set<ResourceLocation> bundles = new HashSet<>(definition.questBundles());
+        for (var reward : definition.rewards().values()) {
+            requireBundle(source, bundles, reward.quest(), reward.pointer() + "/quest", diagnostics);
+            if (reward.experience() == 0 && reward.lootTable() == null) diagnostics.add(CampaignSchema.error(source, reward.pointer(), "reward needs experience or a loot table"));
+            if (reward.scope() == CampaignRewardDefinition.Scope.PERSONAL) {
+                if (!reward.milestone().isBlank() || !reward.outcome().isBlank()) diagnostics.add(CampaignSchema.error(source, reward.pointer(), "personal rewards use their quest's authored conditions, not shared milestone credit"));
+            } else {
+                var milestone = definition.milestones().get(reward.milestone());
+                if (milestone == null || !milestone.irreversible() || !milestone.quest().equals(reward.quest())) {
+                    diagnostics.add(CampaignSchema.error(source, reward.pointer() + "/milestone", "shared and participant rewards require an irreversible milestone owned by their quest"));
+                } else if (!reward.outcome().isBlank() && !milestone.outcomes().containsKey(reward.outcome())) {
+                    diagnostics.add(CampaignSchema.error(source, reward.pointer() + "/outcome", "unknown reward outcome " + reward.outcome()));
+                }
+            }
+        }
         Map<String, Set<String>> dependencies = new LinkedHashMap<>();
         localized(definition, definition.titleKey(), "/title_key", diagnostics);
         for (var chapter : definition.chapters().values()) {

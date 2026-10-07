@@ -623,6 +623,7 @@ public final class QuestV2Schema {
         var rules = new JsonArray();
         rules.add(decision);
         rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactAction.schema()));
+        rules.add(typeRule("campaign_reward", com.jvn.villagerretaliation.campaign.CampaignRewardAction.schema()));
         schema.add("allOf", rules);
         schema.add("properties", properties);
         schema.add("additionalProperties", booleanLiteral(true));
