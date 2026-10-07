@@ -64,11 +64,18 @@ public final class QuestLifecycleService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime) {
-        String stage = initialStage(definition);
-        if (stage.isBlank()) {
+        return initializeStage(definition, progress, gameTime, initialStage(definition));
+    }
+
+    public static StageTransition initializeStage(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            long gameTime,
+            String entryStage) {
+        if (entryStage == null || entryStage.isBlank()) {
             return StageTransition.skipped(progress == null ? "" : progress.currentStage());
         }
-        return setStage(definition, progress, stage, gameTime, true);
+        return setStage(definition, progress, entryStage, gameTime, true);
     }
 
     public static StageTransition initializeStage(
