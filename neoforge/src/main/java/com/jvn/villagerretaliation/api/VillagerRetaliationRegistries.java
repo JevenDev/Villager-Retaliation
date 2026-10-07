@@ -52,7 +52,7 @@ public final class VillagerRetaliationRegistries {
                 "location_visit", "item_check", "memory_event", "trade", "gift", "reputation", "choice", "fact", "condition")) {
             registerSimple(QUEST_OBJECTIVES, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.OWNER);
         }
-        for (String id : List.of("notification", "tracker", "forced_dialogue", "quest", "quest_transition", "campaign_outcome", "experience",
+        for (String id : List.of("notification", "tracker", "forced_dialogue", "quest", "quest_transition", "campaign_outcome", "campaign_fact", "experience",
                 "reputation", "gossip", "memory", "loot", "set_tag", "clear_tag", "set_variable", "counter", "start_scene")) {
             registerSimple(QUEST_ACTIONS, id, switch (id) {
                 case "set_tag", "clear_tag", "set_variable", "tracker" -> RecoveryMode.NATURALLY_IDEMPOTENT;
@@ -61,7 +61,7 @@ public final class VillagerRetaliationRegistries {
         }
         for (String id : List.of("all", "any", "not", "reputation", "memory", "family", "relationship",
                 "recruitment_memory", "villager_age", "social_attribute", "skill", "villager_level", "quest",
-                "quest_fact", "selected_choice", "stage_history", "mood", "weather", "time")) {
+                "quest_fact", "campaign_fact", "selected_choice", "stage_history", "mood", "weather", "time")) {
             registerSimple(QUEST_CONDITIONS, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
         }
         for (String id : List.of("player_tick", "proximity", "started", "progress", "stage_changed", "completed",

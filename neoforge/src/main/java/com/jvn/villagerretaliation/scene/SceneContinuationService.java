@@ -221,7 +221,7 @@ public final class SceneContinuationService {
 
     private static void resume(MinecraftServer server, SceneSavedData data, SceneContinuation continuation) {
         if (continuation.hasUnreadableActions()) {
-            if (continuation.pauseForConsent("A saved campaign outcome action is unreadable. Repair the action before resuming.")) data.changed();
+            if (continuation.pauseForConsent("A saved campaign action is unreadable. Repair the action before resuming.")) data.changed();
             return;
         }
         ServerPlayer player = server.getPlayerList().getPlayer(continuation.playerId());

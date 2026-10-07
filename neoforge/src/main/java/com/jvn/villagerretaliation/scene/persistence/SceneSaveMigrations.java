@@ -57,6 +57,8 @@ public final class SceneSaveMigrations {
                 version = 10;
             } else if (version == 10) {
                 version = 11;
+            } else if (version == 11) {
+                version = 12;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);

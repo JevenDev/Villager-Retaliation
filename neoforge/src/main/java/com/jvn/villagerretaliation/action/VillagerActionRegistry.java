@@ -45,6 +45,11 @@ public final class VillagerActionRegistry {
                     aliases("response_transition", "quest_response_transition", "branch_transition"),
                     capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.WORLD_KNOWN)),
             register(
+                    "campaign_fact",
+                    VillagerActionDefinition.Kind.CAMPAIGN_FACT,
+                    aliases(),
+                    capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.WORLD_KNOWN)),
+            register(
                     "campaign_outcome",
                     VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME,
                     aliases(),
@@ -180,6 +185,9 @@ public final class VillagerActionRegistry {
         }
         if (context == null && requiresLiveContext(capabilities)) {
             return ActionResult.failed("live dialogue context unavailable", capabilities);
+        }
+        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_FACT) {
+            return com.jvn.villagerretaliation.campaign.CampaignFactService.execute(context, action);
         }
         if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
             return com.jvn.villagerretaliation.campaign.CampaignOutcomeService.execute(context, action);

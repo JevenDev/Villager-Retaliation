@@ -93,7 +93,7 @@ public final class CampaignFactGameTests {
             change(data, player, "supplies", CampaignFacts.Mutation.ADD, "4", operation, 0L);
             var before = data.instances().get(CAMPAIGN);
             helper.assertValueEqual(change(data, player, "supplies", CampaignFacts.Mutation.ADD, "5", operation, 1L).status(), CampaignSavedData.Status.INVALID_REQUEST, "changed operand is rejected");
-            helper.assertValueEqual(change(data, UUID.randomUUID(), "supplies", CampaignFacts.Mutation.ADD, "4", operation, 1L).status(), CampaignSavedData.Status.INVALID_REQUEST, "changed actor is rejected");
+            helper.assertValueEqual(change(data, UUID.randomUUID(), "supplies", CampaignFacts.Mutation.ADD, "4", operation, 1L).status(), CampaignSavedData.Status.ALREADY_SATISFIED, "another actor receives the shared receipt without repeating its effect");
             helper.assertValueEqual(change(data, player, "visits", CampaignFacts.Mutation.ADD, "4", operation, 0L).status(), CampaignSavedData.Status.INVALID_REQUEST, "changed scope and fact are rejected");
             helper.assertValueEqual(change(data, player, "supplies", CampaignFacts.Mutation.SET, "4", operation, 1L).status(), CampaignSavedData.Status.INVALID_REQUEST, "changed mutation is rejected");
             helper.assertValueEqual(data.instances().get(CAMPAIGN), before, "invalid retries preserve state");

@@ -591,6 +591,9 @@ public final class QuestV2Schema {
         properties.add("type", stringEnum(conditionTypes()));
         schema.add("properties", properties);
         schema.add("additionalProperties", booleanLiteral(true));
+        var rules = new JsonArray();
+        rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema()));
+        schema.add("allOf", rules);
         return schema;
     }
 
@@ -618,10 +621,25 @@ public final class QuestV2Schema {
         decision.add("then", com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.schema());
         var rules = new JsonArray();
         rules.add(decision);
+        rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactAction.schema()));
         schema.add("allOf", rules);
         schema.add("properties", properties);
         schema.add("additionalProperties", booleanLiteral(true));
         return schema;
+    }
+
+    private static JsonObject typeRule(String name, JsonObject fields) {
+        var rule = new JsonObject();
+        var when = new JsonObject();
+        var properties = new JsonObject();
+        var type = new JsonObject();
+        type.addProperty("const", name);
+        properties.add("type", type);
+        when.add("properties", properties);
+        when.add("required", strings("type"));
+        rule.add("if", when);
+        rule.add("then", fields);
+        return rule;
     }
 
     private static Collection<String> conditionTypes() {

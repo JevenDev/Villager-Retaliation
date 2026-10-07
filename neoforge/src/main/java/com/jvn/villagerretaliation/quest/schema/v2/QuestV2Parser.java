@@ -1168,6 +1168,10 @@ public final class QuestV2Parser {
                     Set.of(type));
             return;
         }
+        if (canonical.equals("campaign_fact")) {
+            com.jvn.villagerretaliation.campaign.CampaignFactPredicate.issues(object).forEach((field, message) ->
+                    validator.error(pointer + "/" + field, message, "Use the campaign fact condition schema.", Set.of()));
+        }
         if (canonical.equals("all") || canonical.equals("any")) {
             String childrenPointer = pointer + "/conditions";
             JsonArray children = validator.array(object.get("conditions"), childrenPointer, "compound conditions", true);
@@ -1216,6 +1220,11 @@ public final class QuestV2Parser {
                 String actionPointer = pointer + "/" + index;
                 com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.issues(object).forEach((field, message) ->
                         validator.error(actionPointer + "/" + field, message, "Use the campaign outcome action schema.", Set.of()));
+            }
+            if (VillagerActionRegistry.kindBySerializedName(type) == VillagerActionDefinition.Kind.CAMPAIGN_FACT) {
+                String actionPointer = pointer + "/" + index;
+                com.jvn.villagerretaliation.campaign.CampaignFactAction.issues(object).forEach((field, message) ->
+                        validator.error(actionPointer + "/" + field, message, "Use the campaign fact action schema.", Set.of()));
             }
             actions.add(object);
         }

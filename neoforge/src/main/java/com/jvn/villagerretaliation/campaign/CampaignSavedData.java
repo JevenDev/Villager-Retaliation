@@ -33,6 +33,7 @@ public final class CampaignSavedData extends SavedData {
     private Map<ResourceLocation, CampaignInstance> instances = Map.of();
     private String diagnostic = "";
     private CompoundTag preservedData;
+    private final Map<ResourceLocation, FactCompatibility> checkedFacts = new java.util.HashMap<>();
 
     private CampaignSavedData(Path directory) {
         this.directory = directory;
@@ -90,15 +91,19 @@ public final class CampaignSavedData extends SavedData {
             return "Campaign " + definition.id() + " requires its saved definition revision " + current.definitionRevision()
                     + " and fingerprint " + current.fingerprint() + ". Restore that content before continuing.";
         }
-        if (current != null) {
-            for (var receipt : current.facts().receipts().values()) {
-                var fact = definition.facts().get(receipt.fact());
-                if (fact == null || fact.scope() != receipt.scope() || fact.kind() != receipt.result().kind()) {
-                    return "Saved story fact " + receipt.fact() + " does not match the campaign definition. Repair its content or restore a known-good save.";
-                }
+        if (current == null) return "";
+        var cached = checkedFacts.get(definition.id());
+        if (cached != null && cached.definition() == definition && cached.facts() == current.facts()) return cached.diagnostic();
+        String issue = "";
+        for (var receipt : current.facts().receipts().values()) {
+            var fact = definition.facts().get(receipt.fact());
+            if (fact == null || fact.scope() != receipt.scope() || fact.kind() != receipt.result().kind()) {
+                issue = "Saved story fact " + receipt.fact() + " does not match the campaign definition. Repair its content or restore a known-good save.";
+                break;
             }
         }
-        return "";
+        checkedFacts.put(definition.id(), new FactCompatibility(definition, current.facts(), issue));
+        return issue;
     }
 
     synchronized CampaignInstance open(CampaignContentCatalog.Entry content, long gameTime) throws IOException {
@@ -267,7 +272,8 @@ public final class CampaignSavedData extends SavedData {
         }
         var prior = current.facts().receipts().get(operation);
         if (prior != null) {
-            boolean same = prior.player().equals(playerId) && prior.fact().equals(factId) && prior.scope() == fact.scope()
+            boolean same = (fact.scope() == CampaignDefinition.FactScope.WORLD || prior.player().equals(playerId))
+                    && prior.fact().equals(factId) && prior.scope() == fact.scope()
                     && prior.mutation() == mutation && prior.operand().equals(operand);
             return new FactResult(same ? Status.ALREADY_SATISFIED : Status.INVALID_REQUEST, value, prior,
                     same ? "" : "This story fact operation already belongs to a different change.");
@@ -302,6 +308,7 @@ public final class CampaignSavedData extends SavedData {
                 current.title(), current.createdAt(), shared ? receipt.revision() : current.worldRevision(), current.outcomes(), players,
                 current.facts().apply(receipt));
         persist(next);
+        checkedFacts.put(definition.id(), new FactCompatibility(definition, next.facts(), ""));
         return new FactResult(Status.APPLIED, result, receipt, "");
     }
 
@@ -377,6 +384,9 @@ public final class CampaignSavedData extends SavedData {
 
     private static CommitResult result(Status status, CampaignInstance instance, CampaignInstance.OutcomeCommit outcome, String diagnostic) {
         return new CommitResult(status, instance == null ? -1L : instance.worldRevision(), outcome, diagnostic);
+    }
+
+    private record FactCompatibility(CampaignDefinition definition, CampaignFacts facts, String diagnostic) {
     }
 
     public enum Status { APPLIED, ALREADY_SATISFIED, ALREADY_COMMITTED, STALE, UNAVAILABLE, INVALID_REQUEST }

@@ -270,6 +270,38 @@ try {
   }
   await writeJson(validQuest, conditionFixture);
 
+  for (const [override, expectFailure] of [
+    [{}, false], [{ mutation: "add" }, false], [{ mutation: "multiply" }, true],
+    [{ fact: false }, true], [{ value: true }, true], [{ value: "x".repeat(4097) }, true],
+    [{ operation_id: "has spaces" }, true], [{ required: false }, true]
+  ]) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.stages[0].on_enter = [{ type: "campaign_fact", fact: "clue", value: "true", operation_id: "discover", ...override }];
+    await writeJson(validQuest, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+    if (expectFailure) {
+      assert(result.stderr.includes("registered action schema"), "Campaign fact action fields did not use the exported runtime schema.");
+      assert(result.stderr.includes("pointer=/stages/0/on_enter/0/"), "Campaign fact action diagnostic lost its source pointer.");
+    }
+  }
+  for (const [override, expectFailure] of [
+    [{}, false], [{ comparison: "at_least", value: "2" }, false], [{ comparison: "guess" }, true],
+    [{ campaign: "missing namespace" }, true], [{ fact: null }, true], [{ value: false }, true], [{ scope: "world" }, true],
+    [{ value: "x".repeat(4097) }, true]
+  ]) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.availability.conditions = [{ type: "not", condition: {
+      type: "campaign_fact", campaign: "test:campaign", fact: "clue", value: "true", ...override
+    } }];
+    await writeJson(validQuest, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+    if (expectFailure) {
+      assert(result.stderr.includes("registered condition schema"), "Campaign fact conditions did not use the exported runtime schema.");
+      assert(result.stderr.includes("pointer=/availability/conditions/0/condition/"), "Nested campaign condition diagnostic lost its source pointer.");
+    }
+  }
+  await writeJson(validQuest, conditionFixture);
+
   const invalid = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", invalidQuest], { expectFailure: true });
   assert(invalid.stderr.includes("pointer=/entry_stage"), "Invalid v2 fixture did not report the entry_stage JSON pointer.");
   assert(invalid.stderr.includes("suggestion="), "Invalid v2 fixture did not include an actionable suggestion.");

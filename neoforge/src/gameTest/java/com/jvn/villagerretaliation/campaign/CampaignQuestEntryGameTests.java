@@ -1059,6 +1059,185 @@ public final class CampaignQuestEntryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void authoredFactActionsKeepScopesAndCannotRepeatAfterReload(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.acceptQuest();
+            var shared = factAction("public_count", "add", "3", "shared");
+            var personal = factAction("private_count", "add", "2", "personal");
+            helper.assertTrue(CampaignFactService.execute(fixture.context(), shared).success(), "shared fact applies");
+            helper.assertTrue(CampaignFactService.execute(fixture.context(), personal).success(), "personal fact applies");
+            var restored = CampaignSavedData.load(fixture.data.save(new CompoundTag(), helper.getLevel().registryAccess()), fixture.directory);
+            fixture.server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, restored);
+            helper.assertValueEqual(CampaignFactService.execute(fixture.context(), shared).status(),
+                    com.jvn.villagerretaliation.action.ActionStatus.ALREADY_SATISFIED, "duplicate shared action returns its durable receipt");
+            helper.assertValueEqual(CampaignFactService.execute(fixture.context(), personal).status(),
+                    com.jvn.villagerretaliation.action.ActionStatus.ALREADY_SATISFIED, "duplicate personal action returns its durable receipt");
+            helper.assertValueEqual(restored.readFact(fixture.content.definition(), UUID.randomUUID(), "public_count").value().text(), "3", "world value is shared and not incremented again");
+            helper.assertTrue(restored.readFact(fixture.content.definition(), UUID.randomUUID(), "private_count").value() == null, "another player's discovery remains absent");
+            helper.assertTrue(factCondition("private_count", "at_least", "2").matches(fixture.context()), "counter threshold reads saved personal scope");
+            helper.assertFalse(factCondition("private_count", "at_most", "1").matches(fixture.context()), "counter comparison rejects unmet threshold");
+            helper.assertTrue(restored.instances().get(CAMPAIGN).players().get(fixture.player.getUUID()).participation().isEmpty(), "fact action grants no participation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void catchUpFactActionsAllowDiscoveryButRejectWorldChanges(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.resolve();
+            helper.assertTrue(VillagerQuestService.debugStartQuest(fixture.player, fixture.villager, QUEST, true).started(), "late player starts catch-up");
+            var before = fixture.data.instances().get(CAMPAIGN);
+            helper.assertFalse(CampaignFactService.execute(fixture.context(), factAction("public_count", "add", "3", "shared")).success(), "catch-up cannot mutate shared facts");
+            helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN), before, "rejected world action has no receipt or revision");
+            helper.assertTrue(CampaignFactService.execute(fixture.context(), factAction("knows_gate", "set", "true", "discovery")).success(), "catch-up can record authored personal discovery");
+            helper.assertTrue(factCondition("knows_gate", "equals", "true").matches(fixture.context()), "personal discovery unlocks its condition");
+            helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).worldRevision(), before.worldRevision(), "catch-up discovery leaves the world unchanged");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void unavailableCampaignFactsRemainUnavailableThroughNestedNegation(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.acceptQuest();
+            var condition = factCondition("knows_gate", "equals", "true");
+            var negated = new com.jvn.villagerretaliation.dialogue.DialogueCondition.Not(condition);
+            helper.assertTrue(negated.matches(fixture.context()), "an unset fact in available content may be tested through negation");
+            var nested = new com.jvn.villagerretaliation.dialogue.DialogueCondition.Not(
+                    new com.jvn.villagerretaliation.dialogue.DialogueCondition.AnyOf(List.of(negated, condition)));
+            var catalog = QuestContentCatalogs.current(fixture.server);
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(catalog, Map.of(), List.of()));
+            for (var candidate : List.of(condition, negated, nested)) {
+                helper.assertFalse(candidate.matches(fixture.context()), "missing content cannot unlock a negated condition");
+                helper.assertFalse(candidate.matches(fixture.context(), null), "trigger evaluation uses the same missing-content boundary");
+                helper.assertValueEqual(com.jvn.villagerretaliation.dialogue.DialogueCondition.trace(fixture.context(), candidate).outcome(),
+                        com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNKNOWN, "diagnostics distinguish missing content from an unmet condition");
+            }
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(catalog, Map.of(CAMPAIGN, fixture.content), List.of()));
+            helper.assertTrue(negated.matches(fixture.context()), "restoring content resumes the authored condition");
+            var invalidComparison = factCondition("knows_gate", "at_least", "true");
+            helper.assertFalse(new com.jvn.villagerretaliation.dialogue.DialogueCondition.Not(invalidComparison).matches(fixture.context()), "invalid numeric comparison cannot unlock its negation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void invalidFactActionsStopFollowingEffects(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.acceptQuest();
+            int before = fixture.player.totalExperience;
+            for (var action : List.of(factAction("missing", "set", "true", "missing"),
+                    factAction("knows_gate", "set", "yes", "invalid_tag"), factAction("ruler", "add", "1", "invalid_counter"))) {
+                var sequence = com.jvn.villagerretaliation.action.ActionSequenceRunner.run(fixture.context(),
+                        List.of(action, experienceAction(13)), 0, Map.of(), null, null);
+                helper.assertFalse(sequence.outcome().success(), "invalid authored fact is a required failure");
+            }
+            helper.assertValueEqual(fixture.player.totalExperience, before, "required fact failures prevent following rewards");
+            helper.assertTrue(fixture.data.instances().get(CAMPAIGN).facts().receipts().isEmpty(), "invalid actions save no receipts");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void storyFactActionsRequireCurrentAdminPrivileges(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.acceptQuest();
+            var leader = helper.makeMockServerPlayerInLevel();
+            helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.createParty(leader).success(), "party created");
+            try {
+                var invitation = com.jvn.villagerretaliation.party.PartyService.sendInvitation(leader, fixture.player);
+                helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.acceptInvitation(fixture.player, invitation.invitationId()).success(), "player joins party");
+                com.jvn.villagerretaliation.party.PartyService.setAdminPrivileges(leader, fixture.player.getUUID(), false);
+                var action = factAction("knows_gate", "set", "true", "discover");
+                helper.assertFalse(CampaignFactService.execute(fixture.context(), action).success(), "listener cannot control campaign effects");
+                helper.assertTrue(fixture.data.instances().get(CAMPAIGN).facts().receipts().isEmpty(), "permission failure has no effects");
+                com.jvn.villagerretaliation.party.PartyService.setAdminPrivileges(leader, fixture.player.getUUID(), true);
+                helper.assertTrue(CampaignFactService.execute(fixture.context(), action).success(), "restored authority allows the authored effect");
+            } finally {
+                com.jvn.villagerretaliation.party.PartyService.leaveParty(fixture.player);
+                com.jvn.villagerretaliation.party.PartyService.leaveParty(leader);
+                leader.discard();
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void storyFactReceiptsSurviveSceneSuspensionAndReload(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.acceptQuest();
+            fixture.installConfirmationTree(true);
+            var action = factAction("private_count", "add", "3", "count_once");
+            var wait = VillagerActionDefinition.readList(CAMPAIGN, "test", JsonParser.parseString("""
+                    {"actions":[{"type":"start_scene","scene":"test:approval_wait","operation_id":"fact_wait","wait_for_result":true,"required":true}]}
+                    """).getAsJsonObject(), QUEST).getFirst();
+            int before = fixture.player.totalExperience;
+            var result = com.jvn.villagerretaliation.scene.SceneContinuationService.run(fixture.context(),
+                    List.of(action, wait, action, experienceAction(13)), Map.of(), null, "fact_fixture", null, QUEST, fixture.progress(QUEST).questRunId());
+            helper.assertTrue(result.suspended(), "authored scene pauses after the first fact operation");
+            var restored = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.load(
+                    com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(helper.getLevel()).save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+            fixture.server.overworld().getDataStorage().set("villagerretaliation_scenes", restored);
+            fixture.finishInterruptedOffer(result.continuationId());
+            helper.assertTrue(restored.continuation(result.continuationId()).orElseThrow().completionReceipt(), "saved fact actions resume after the scene");
+            helper.assertTrue(factCondition("private_count", "equals", "3").matches(fixture.context()), "replayed operation retains the first counter value");
+            helper.assertValueEqual(fixture.player.totalExperience - before, 13, "later actions resume once");
+            fixture.finishInterruptedOffer(result.continuationId());
+            helper.assertValueEqual(fixture.player.totalExperience - before, 13, "completed continuation cannot repeat later actions");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void sharedFactOperationAppliesOnceAcrossOriginalPlayers(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.acceptQuest();
+            var other = helper.makeMockServerPlayerInLevel();
+            try {
+                helper.assertTrue(VillagerQuestService.debugStartQuest(other, fixture.villager, QUEST, true).started(), "second player enters the original path");
+                var action = factAction("public_count", "add", "3", "shared");
+                helper.assertTrue(CampaignFactService.execute(fixture.context(), action).success(), "first player applies the authored world effect");
+                var second = CampaignFactService.execute(VillagerInteractionService.createDialogueContext(helper.getLevel(), other, fixture.villager), action);
+                helper.assertValueEqual(second.status(), com.jvn.villagerretaliation.action.ActionStatus.ALREADY_SATISFIED, "second original player receives the same world receipt");
+                helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).facts().world().get("public_count").text(), "3", "one world operation cannot increment once per player");
+                helper.assertValueEqual(fixture.data.instances().get(CAMPAIGN).facts().receipts().size(), 1, "shared operation retains its first actor and receipt");
+            } finally {
+                other.discard();
+            }
+        }
+        helper.succeed();
+    }
+
+    private static VillagerActionDefinition factAction(String fact, String mutation, String value, String operation) {
+        var raw = new com.google.gson.JsonObject();
+        raw.addProperty("type", "campaign_fact");
+        raw.addProperty("fact", fact);
+        raw.addProperty("mutation", mutation);
+        raw.addProperty("value", value);
+        raw.addProperty("operation_id", operation);
+        if (fact.equals("public_count") || fact.equals("ruler")) raw.addProperty("milestone", "dragon");
+        var array = new com.google.gson.JsonArray();
+        array.add(raw);
+        var entry = new com.google.gson.JsonObject();
+        entry.add("actions", array);
+        return VillagerActionDefinition.readList(CAMPAIGN, "test", entry, QUEST).getFirst();
+    }
+
+    private static com.jvn.villagerretaliation.dialogue.DialogueCondition factCondition(String fact, String comparison, String value) {
+        var raw = new com.google.gson.JsonObject();
+        raw.addProperty("type", "campaign_fact");
+        raw.addProperty("campaign", CAMPAIGN.toString());
+        raw.addProperty("fact", fact);
+        raw.addProperty("comparison", comparison);
+        raw.addProperty("value", value);
+        var array = new com.google.gson.JsonArray();
+        array.add(raw);
+        var entry = new com.google.gson.JsonObject();
+        entry.add("conditions", array);
+        return com.jvn.villagerretaliation.dialogue.DialogueCondition.readList(CAMPAIGN, "test", entry, QUEST).getFirst();
+    }
+
     private static VillagerActionDefinition outcomeAction(String outcome) {
         var raw = JsonParser.parseString("{\"actions\":[{\"type\":\"campaign_outcome\",\"milestone\":\"dragon\",\"outcome\":\""
                 + outcome + "\",\"operation_id\":\"resolve_dragon\"}]}").getAsJsonObject();
@@ -1158,7 +1337,11 @@ public final class CampaignQuestEntryGameTests {
                             choices ? Map.of("defeated", new CampaignDefinition.Outcome("defeated", "campaign.entry.defeated", ""),
                                     "spared", new CampaignDefinition.Outcome("spared", "campaign.entry.spared", ""))
                                     : Map.of("defeated", new CampaignDefinition.Outcome("defeated", "campaign.entry.defeated", "")),
-                            new CampaignDefinition.CatchUp(catchUpQuest, "catch_up", ""), null, "")), Map.of(), CAMPAIGN);
+                            new CampaignDefinition.CatchUp(catchUpQuest, "catch_up", ""), null, "")), Map.of(
+                            "public_count", new CampaignDefinition.Fact("public_count", CampaignDefinition.FactScope.WORLD, CampaignDefinition.FactKind.COUNTER, ""),
+                            "private_count", new CampaignDefinition.Fact("private_count", CampaignDefinition.FactScope.PLAYER, CampaignDefinition.FactKind.COUNTER, ""),
+                            "knows_gate", new CampaignDefinition.Fact("knows_gate", CampaignDefinition.FactScope.PLAYER, CampaignDefinition.FactKind.TAG, ""),
+                            "ruler", new CampaignDefinition.Fact("ruler", CampaignDefinition.FactScope.WORLD, CampaignDefinition.FactKind.VARIABLE, "")), CAMPAIGN);
             this.content = new CampaignContentCatalog.Entry(definition, QuestLocaleCatalog.empty());
             QuestContentCatalogs.installForTests(server, replacement, report);
             CampaignResources.installForTests(server, new CampaignContentCatalog(replacement, Map.of(CAMPAIGN, content), List.of()));

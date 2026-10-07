@@ -36,7 +36,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
-        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact,
+        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact, DialogueCondition.CampaignFact,
         DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
         DialogueCondition.PlayerItem, DialogueCondition.VillagerEquipment,
         DialogueCondition.Biome, DialogueCondition.Dimension, DialogueCondition.Advancement,
@@ -48,6 +48,19 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
 
     default boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
         return matches(context);
+    }
+
+    default String unavailableReason(DialogueContext context) {
+        if (this instanceof CampaignFact fact) return fact.reference().evaluate(context).diagnostic();
+        List<DialogueCondition> children = this instanceof AllOf all ? all.conditions()
+                : this instanceof AnyOf any ? any.conditions()
+                : this instanceof Not not && not.condition() != null ? List.of(not.condition()) : List.of();
+        for (var child : children) {
+            if (child == null) continue;
+            String issue = child.unavailableReason(context);
+            if (!issue.isBlank()) return issue;
+        }
+        return "";
     }
 
     int specificityScore();
@@ -1025,6 +1038,19 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                         capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
                         DialogueCondition::readQuest),
                 register(
+                        "campaign_fact",
+                        CampaignFact.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> {
+                            var value = com.jvn.villagerretaliation.campaign.CampaignFactPredicate.read(condition);
+                            if (value == null) {
+                                warnInvalid(location, context, "campaign fact condition does not match its registered schema");
+                                return Optional.empty();
+                            }
+                            return Optional.of(new CampaignFact(value));
+                        }),
+                register(
                         "quest_fact",
                         QuestFact.class,
                         aliases("quest_tag", "quest_variable", "quest_counter", "quest_stage", "fact", "stage"),
@@ -1150,7 +1176,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                 return true;
             }
             for (DialogueCondition condition : conditions) {
-                if (condition == null || !condition.matches(context, triggerContext)) {
+                if (condition == null || !condition.unavailableReason(context).isBlank() || !condition.matches(context, triggerContext)) {
                     return false;
                 }
             }
@@ -1164,6 +1190,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             if (condition instanceof Invalid invalid) {
                 return new ConditionEvaluationTrace("invalid", ConditionOutcome.UNMET, invalid.reason(), List.of());
             }
+            String unavailable = condition.unavailableReason(context);
+            if (!unavailable.isBlank()) return new ConditionEvaluationTrace(canonicalTypeId(condition), ConditionOutcome.UNKNOWN, unavailable, List.of());
             if (condition instanceof AllOf allOf) {
                 List<ConditionEvaluationTrace> children = traceAll(context, allOf.conditions());
                 return new ConditionEvaluationTrace("all", allOutcome(children), allMessage(children), children);
@@ -1389,7 +1417,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     record AnyOf(List<DialogueCondition> conditions) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            if (context == null) {
+            if (context == null || !unavailableReason(context).isBlank()) {
                 return false;
             }
             for (DialogueCondition condition : this.conditions) {
@@ -1402,6 +1430,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
 
         @Override
         public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            if (!unavailableReason(context).isBlank()) return false;
             for (DialogueCondition condition : this.conditions) {
                 if (condition != null && condition.matches(context, triggerContext)) {
                     return true;
@@ -1424,6 +1453,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         public boolean matches(DialogueContext context) {
             return context != null
                     && this.condition != null
+                    && unavailableReason(context).isBlank()
                     && !(this.condition instanceof Invalid)
                     && !this.condition.matches(context);
         }
@@ -1431,6 +1461,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         @Override
         public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
             return this.condition != null
+                    && unavailableReason(context).isBlank()
                     && !(this.condition instanceof Invalid)
                     && !this.condition.matches(context, triggerContext);
         }
@@ -1726,6 +1757,14 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         public int specificityScore() {
             return 8;
         }
+    }
+
+    record CampaignFact(com.jvn.villagerretaliation.campaign.CampaignFactPredicate reference) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) { return reference.evaluate(context).matches(); }
+
+        @Override
+        public int specificityScore() { return 8; }
     }
 
     record QuestFact(

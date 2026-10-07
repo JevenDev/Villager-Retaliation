@@ -2496,9 +2496,10 @@ function checkQuestV2Conditions(file, conditions, pointer, location, questId, us
     if (!questV2RegistryIndex.conditions.values.has(type)) {
       questV2Error(file, `${entry.pointer}/type`, `${entry.location}.type`, `unknown condition type "${condition.type}".`, "Use one of the condition types in quest-registry-metadata.json.");
     }
-    if (conditionTypes.has(type)) {
+    if (conditionTypes.has(type) || questV2RegistryIndex.conditions.schemas.has(type)) {
       checkCondition(file, condition, entry.location, questId);
     }
+    checkRegisteredFields(file, condition, entry.location, type, entry.pointer, "conditions");
     warnLiveOnlyQuestCondition(file, condition, entry.location, usage);
     if (["all", "all_of", "and", "any", "any_of", "or"].includes(type)) {
       checkQuestV2Conditions(file, condition.conditions, `${entry.pointer}/conditions`, `${entry.location}.conditions`, questId, usage);
@@ -2508,23 +2509,31 @@ function checkQuestV2Conditions(file, conditions, pointer, location, questId, us
   }
 }
 
-function checkRegisteredActionFields(file, action, location, type, pointer = "") {
-  const schema = questV2RegistryIndex.actions.schemas.get(type);
+function checkRegisteredFields(file, action, location, type, pointer = "", registry = "actions") {
+  const schema = questV2RegistryIndex[registry].schemas.get(type);
   if (!schema) return;
+  const kind = registry === "actions" ? "action" : "condition";
   const report = (field, message) => {
-    if (pointer) questV2Error(file, `${pointer}/${field}`, `${location}.${field}`, message, "Use the registered action schema.");
+    if (pointer) questV2Error(file, `${pointer}/${field}`, `${location}.${field}`, message, `Use the registered ${kind} schema.`);
     else errors.push(`${relative(file)}: ${location}.${field} ${message}`);
   };
+  if (schema.additionalProperties === false) {
+    for (const field of Object.keys(action)) {
+      if (!Object.hasOwn(schema.properties ?? {}, field)) report(field, `is not allowed by the registered ${kind} schema.`);
+    }
+  }
   for (const field of schema.required ?? []) {
-    if (!Object.hasOwn(action, field)) report(field, "is required by the registered action schema.");
+    if (!Object.hasOwn(action, field)) report(field, `is required by the registered ${kind} schema.`);
   }
   for (const [field, rule] of Object.entries(schema.properties ?? {})) {
     if (!Object.hasOwn(action, field)) continue;
     const value = action[field];
     if ((rule.type && typeof value !== rule.type)
         || (rule.pattern && (typeof value !== "string" || !new RegExp(rule.pattern).test(value)))
+        || (rule.maxLength !== undefined && (typeof value !== "string" || value.length > rule.maxLength))
+        || (rule.enum && !rule.enum.includes(value))
         || (Object.hasOwn(rule, "const") && value !== rule.const)) {
-      report(field, "does not match the registered action schema.");
+      report(field, `does not match the registered ${kind} schema.`);
     }
   }
 }
@@ -2553,7 +2562,7 @@ function checkQuestV2Actions(file, actions, pointer, location, questId, options 
     if (!questV2RegistryIndex.actions.values.has(rawType)) {
       questV2Error(file, `${actionPointer}/type`, `${actionLocation}.type`, `unknown action type "${rawType}".`, "Use one of the action types in quest-registry-metadata.json.");
     }
-    checkRegisteredActionFields(file, action, actionLocation, type, actionPointer);
+    checkRegisteredFields(file, action, actionLocation, type, actionPointer);
     warnLiveContextQuestAction(file, actionLocation, type, options.liveContextWarningUsage);
     if (type === "quest") {
       checkStringList(file, action, actionLocation, ["quest", "quest_id", "id"], "quest id");
@@ -4657,7 +4666,7 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", 
     if (!dialogueTreeActionTypes.has(type) && !questV2RegistryIndex.actions.schemas.has(type)) {
       errors.push(`${relative(file)}: ${actionLocation}.type must be one of ${[...dialogueTreeActionTypes, ...questV2RegistryIndex.actions.schemas.keys()].join(", ")}.`);
     }
-    checkRegisteredActionFields(file, action, actionLocation, type);
+    checkRegisteredFields(file, action, actionLocation, type);
     warnLiveContextQuestAction(file, actionLocation, type, options.liveContextWarningUsage);
     if (type === "quest") {
       checkStringList(file, action, actionLocation, ["quest", "quest_id", "id"], "quest id");
@@ -5346,12 +5355,14 @@ function checkCondition(file, condition, location, defaultQuestId = "") {
     errors.push(`${relative(file)}: ${location}.type is required.`);
     return;
   }
-  if (!conditionTypes.has(type)) {
+  if (!conditionTypes.has(type) && !questV2RegistryIndex.conditions.schemas.has(type)) {
     errors.push(`${relative(file)}: ${location}.type "${condition.type}" is not a supported condition type.`);
     return;
   }
 
-  const allowedKeys = conditionKeys[type];
+  const schema = questV2RegistryIndex.conditions.schemas.get(type);
+  const allowedKeys = conditionKeys[type] ?? new Set(["type", ...Object.keys(schema?.properties ?? {})]);
+  checkRegisteredFields(file, condition, location, type, "", "conditions");
   for (const key of Object.keys(condition)) {
     if (!allowedKeys.has(key)) {
       errors.push(`${relative(file)}: ${location}.${key} is not valid for ${type} conditions.`);

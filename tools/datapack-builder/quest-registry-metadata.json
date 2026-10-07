@@ -128,6 +128,52 @@
         "implementation": "Quest"
       },
       {
+        "id": "campaign_fact",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "CampaignFact",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fact",
+            "value",
+            "campaign"
+          ],
+          "properties": {
+            "fact": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "value": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "type": {
+              "const": "campaign_fact"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "comparison": {
+              "type": "string",
+              "enum": [
+                "equals",
+                "not_equals",
+                "at_least",
+                "at_most"
+              ]
+            }
+          }
+        }
+      },
+      {
         "id": "quest_fact",
         "aliases": [
           "fact",
@@ -351,6 +397,55 @@
           "response_transition"
         ],
         "kind": "quest_transition",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "world_known"
+        ]
+      },
+      {
+        "id": "campaign_fact",
+        "aliases": [],
+        "kind": "campaign_fact",
+        "schema": {
+          "type": "object",
+          "required": [
+            "fact",
+            "value",
+            "operation_id"
+          ],
+          "properties": {
+            "fact": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "value": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "milestone": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "operation_id": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "mutation": {
+              "type": "string",
+              "enum": [
+                "set",
+                "add"
+              ]
+            },
+            "required": {
+              "const": true
+            }
+          }
+        },
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1495,6 +1590,20 @@
     ],
     "public_quest_actions": [
       {
+        "id": "villagerretaliation:campaign_fact",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Campaign fact",
+        "description": "Built-in Campaign fact type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:campaign_outcome",
         "aliases": [],
         "live_capabilities": [],
@@ -1743,6 +1852,20 @@
         "client_sync": "none",
         "title": "Any",
         "description": "Built-in Any type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_fact",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Campaign fact",
+        "description": "Built-in Campaign fact type.",
         "browser_available": true,
         "schema": {
           "type": "object"
@@ -2130,6 +2253,7 @@
         "armed",
         "attribute",
         "biome",
+        "campaign_fact",
         "choice_selected",
         "dimension",
         "entity_nearby",
@@ -2189,6 +2313,7 @@
         "arm",
         "attribute_reward",
         "branch_transition",
+        "campaign_fact",
         "campaign_outcome",
         "clear_tag",
         "counter",

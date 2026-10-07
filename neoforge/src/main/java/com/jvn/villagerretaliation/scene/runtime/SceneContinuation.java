@@ -38,7 +38,7 @@ public final class SceneContinuation {
     private String actionDiagnostic = "";
     private DialogueResume dialogueResume;
     private CompoundTag campaignConsent = new CompoundTag();
-    private final Map<Integer, CompoundTag> unreadableOutcomeActions = new LinkedHashMap<>();
+    private final Map<Integer, CompoundTag> unreadableCampaignActions = new LinkedHashMap<>();
 
     public CompoundTag campaignConsent() { return campaignConsent.copy(); }
     public void campaignConsent(CompoundTag consent) { campaignConsent = consent.copy(); }
@@ -65,7 +65,7 @@ public final class SceneContinuation {
         this.replacements = replacements == null ? new LinkedHashMap<>() : new LinkedHashMap<>(replacements);
     }
 
-    public boolean hasUnreadableActions() { return !unreadableOutcomeActions.isEmpty(); }
+    public boolean hasUnreadableActions() { return !unreadableCampaignActions.isEmpty(); }
 
     public UUID id() { return id; }
     public UUID sceneInstanceId() { return sceneInstanceId; }
@@ -153,7 +153,7 @@ public final class SceneContinuation {
         }
         ListTag actionTags = new ListTag();
         for (int index = 0; index < actions.size(); index++) {
-            var preserved = unreadableOutcomeActions.get(index);
+            var preserved = unreadableCampaignActions.get(index);
             actionTags.add(preserved == null ? saveAction(actions.get(index)) : preserved.copy());
         }
         tag.put("Actions", actionTags);
@@ -168,13 +168,16 @@ public final class SceneContinuation {
         var unreadable = new LinkedHashMap<Integer, CompoundTag>();
         for (Tag raw : tag.getList("Actions", Tag.TAG_COMPOUND)) {
             if (!(raw instanceof CompoundTag action)) continue;
-            if (action.getString("Kind").equals("CAMPAIGN_OUTCOME")) {
+            if (action.getString("Kind").equals("CAMPAIGN_OUTCOME") || action.getString("Kind").equals("CAMPAIGN_FACT")) {
                 try {
-                    com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.load(action.getCompound("CampaignOutcome"));
+                    if (action.getString("Kind").equals("CAMPAIGN_FACT")) {
+                        com.jvn.villagerretaliation.campaign.CampaignFactAction.load(action.getCompound("CampaignFact"));
+                    } else com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.load(action.getCompound("CampaignOutcome"));
                 } catch (IllegalArgumentException exception) {
                     unreadable.put(actions.size(), action.copy());
                     action = action.copy();
                     action.remove("CampaignOutcome");
+                    action.remove("CampaignFact");
                 }
             }
             actions.add(loadAction(action));
@@ -191,7 +194,7 @@ public final class SceneContinuation {
         try { value.state = State.valueOf(tag.getString("State")); } catch (IllegalArgumentException ignored) { }
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
-        value.unreadableOutcomeActions.putAll(unreadable);
+        value.unreadableCampaignActions.putAll(unreadable);
         value.campaignId = NbtDataUtil.readResourceLocation(tag, "Campaign").orElse(null);
         value.campaignConsent = tag.getCompound("CampaignConsent").copy();
         if (tag.contains("CampaignConsent") && (!tag.contains("CampaignConsent", Tag.TAG_COMPOUND) || value.campaignConsent.isEmpty())) {
@@ -257,6 +260,7 @@ public final class SceneContinuation {
         tag.putString("Operation", action.sceneOperationId());
         tag.putBoolean("Wait", action.waitForScene());
         tag.putBoolean("Required", action.required());
+        if (action.campaignFact() != null) tag.put("CampaignFact", action.campaignFact().save());
         if (action.campaignOutcome() != null) tag.put("CampaignOutcome", action.campaignOutcome().save());
         return tag;
     }
@@ -277,7 +281,9 @@ public final class SceneContinuation {
                 tag.getString("Notification"),tag.getString("Text"),tag.getString("Forced"),tag.getBoolean("Flash"),enumValue(QuestFactScope.class,tag.getString("FactScope"),QuestFactScope.PLAYER),
                 NbtDataUtil.readResourceLocation(tag, "FactTag").orElse(null),tag.getString("FactKey"),tag.getString("FactValue"),lines,lineKeys,transition,NbtDataUtil.readResourceLocation(tag, "Scene").orElse(null),tag.getString("Operation"),tag.getBoolean("Wait"),tag.getBoolean("Required"),
                 tag.contains("CampaignOutcome", Tag.TAG_COMPOUND)
-                        ? com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.load(tag.getCompound("CampaignOutcome")) : null);
+                        ? com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.load(tag.getCompound("CampaignOutcome")) : null,
+                tag.contains("CampaignFact", Tag.TAG_COMPOUND)
+                        ? com.jvn.villagerretaliation.campaign.CampaignFactAction.load(tag.getCompound("CampaignFact")) : null);
     }
 
     private static Map<String, List<String>> readLineMap(CompoundTag tag, String field) {
