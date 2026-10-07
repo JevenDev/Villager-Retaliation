@@ -100,7 +100,8 @@ public final class SettlementResidentState {
     }
 
     boolean safeForFamily() {
-        return canDepart() && !this.familyUnsafe;
+        return this.present && !this.downed && !this.familyUnsafe
+                && (!this.personalCommitment || com.jvn.villagerretaliation.social.VillagerBreedingPolicy.naturalFamiliesEnabled());
     }
 
     public double workMultiplier() {

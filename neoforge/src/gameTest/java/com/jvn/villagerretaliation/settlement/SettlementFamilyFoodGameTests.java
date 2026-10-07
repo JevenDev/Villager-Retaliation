@@ -26,7 +26,7 @@ import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("villager_life")
 @PrefixGameTestTemplate(false)
 public final class SettlementFamilyFoodGameTests {
     private SettlementFamilyFoodGameTests() {

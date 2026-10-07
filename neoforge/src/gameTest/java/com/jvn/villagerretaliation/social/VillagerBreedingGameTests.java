@@ -244,6 +244,8 @@ public final class VillagerBreedingGameTests {
         BlockPos pos = helper.absolutePos(relativePos);
         villager.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
         if (!level.addFreshEntity(villager)) throw new GameTestAssertException("Could not add villager");
+        villager.getBrain().setSchedule(new net.minecraft.world.entity.schedule.ScheduleBuilder(new net.minecraft.world.entity.schedule.Schedule())
+                .changeActivityAt(0, net.minecraft.world.entity.schedule.Activity.IDLE).build());
         level.setBlock(pos.below(), Blocks.STONE.defaultBlockState(), 3);
         return villager;
     }

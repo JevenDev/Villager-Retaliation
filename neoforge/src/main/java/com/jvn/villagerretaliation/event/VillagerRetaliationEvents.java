@@ -237,6 +237,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerStopping(ServerStoppingEvent event) {
+        com.jvn.villagerretaliation.social.VillagerBirthService.clearRuntimeState();
         gameTestOriginSeeded = false;
         com.jvn.villagerretaliation.settlement.SettlementViewService.clear(event.getServer());
         com.jvn.villagerretaliation.raid.PlayerRaidService.clearRuntimeState();
@@ -266,6 +267,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
+        com.jvn.villagerretaliation.social.VillagerBirthService.finishAcceptedSpawns();
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onServerTick(event.getServer());
         com.jvn.villagerretaliation.duel.DuelService.tick(event.getServer());
         ForcedDialogueService.maybeTriggerPlayerAiming(event.getServer());

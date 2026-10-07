@@ -148,6 +148,8 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS = bind("social.enableSocialAttributeGossipEffects", Boolean.class);
     public static final ConfigValue<Double> SOCIAL_ATTRIBUTE_EFFECT_SCALE = bind("social.socialAttributeEffectScale", Double.class);
     public static final ConfigValue<Boolean> ENABLE_VANILLA_VILLAGER_BREEDING = bind("social.enableVanillaVillagerBreeding", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_NATURAL_FAMILIES = bind("social.enableNaturalFamilies", Boolean.class);
+    public static final ConfigValue<Integer> NATURAL_FAMILY_COOLDOWN_DAYS = bind("social.naturalFamilyCooldownDays", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_FAMILY_BREEDING_RULES = bind("social.enableFamilyBreedingRules", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_OPPOSITE_GENDER_BREEDING_RULES = bind("social.enableOppositeGenderBreedingRules", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_PARENT_REPUTATION_INHERITANCE = bind("social.enableParentReputationInheritance", Boolean.class);

@@ -107,6 +107,7 @@ public class VillagerSocialGraphSavedData extends SavedData {
             RomanticBond bond = RomanticBond.load(bondTag);
             if (bond != null) {
                 data.romanticBonds.put(RomanticPairKey.of(bond.firstId(), bond.secondId()), bond);
+                if (!bondTag.contains("ChildLimit", Tag.TAG_INT)) data.setDirty();
             }
         }
         return data;
@@ -484,6 +485,70 @@ public class VillagerSocialGraphSavedData extends SavedData {
         }
         Set<UUID> targets = byType.get(type);
         return targets == null || targets.isEmpty() ? Set.of() : Set.copyOf(targets);
+    }
+
+    public Optional<VillagerRelationshipStage> relationshipStage(UUID first, UUID second) {
+        RomanticBond bond = this.romanticBonds.get(RomanticPairKey.of(first, second));
+        return bond == null ? Optional.empty() : Optional.of(bond.stage);
+    }
+
+    public int childLimit(UUID first, UUID second) {
+        RomanticBond bond = this.romanticBonds.get(RomanticPairKey.of(first, second));
+        return bond == null ? 0 : bond.childLimit;
+    }
+
+    public int livingBiologicalChildren(UUID first, UUID second) {
+        int count = 0;
+        for (UUID child : relationships(first, RelationshipType.CHILD)) {
+            var parents = relationships(child, RelationshipType.BIRTH_PARENT);
+            if (parents.isEmpty()) {
+                // old saves recorded parentage before biological and adoptive edges were separated
+                if (!relationships(child, RelationshipType.ADOPTIVE_PARENT).isEmpty()) continue;
+                parents = relationships(child, RelationshipType.PARENT);
+            }
+            if (parents.contains(first) && parents.contains(second) && isKnownAlive(child)) count++;
+        }
+        return count;
+    }
+
+    public boolean birthCooldownReady(UUID parent, long now, long cooldownTicks) {
+        VillagerProfile profile = this.profiles.get(parent);
+        return profile == null || profile.lastBirthGameTime == Long.MIN_VALUE
+                || now >= profile.lastBirthGameTime && now - profile.lastBirthGameTime >= cooldownTicks;
+    }
+
+    public boolean recordAcceptedBirth(ServerLevel level, Villager first, Villager second, Villager child) {
+        VillagerProfile childProfile = ensureProfile(level, child);
+        if (childProfile.birthRecorded) return false;
+        childProfile.birthRecorded = true;
+        ensureProfile(level, first).lastBirthGameTime = level.getGameTime();
+        ensureProfile(level, second).lastBirthGameTime = level.getGameTime();
+        setDirty();
+        return true;
+    }
+
+    public boolean recordCourtshipVisit(ServerLevel level, Villager first, Villager second) {
+        if (!VillagerBreedingPolicy.naturalFamiliesEnabled()
+                || !VillagerBreedingPolicy.availableForSocialVisit(level, first)
+                || !VillagerBreedingPolicy.availableForSocialVisit(level, second)
+                || !validateBreedingPair(level, first, second).allowed()
+                || !validateRomanticPair(level, first, second, VillagerRelationshipStage.DATING).allowed()) return false;
+        RomanticPairKey key = RomanticPairKey.of(first.getUUID(), second.getUUID());
+        RomanticBond bond = this.romanticBonds.get(key);
+        if (bond != null && bond.stage.active() && bond.stage.exclusive()) return false;
+        long day = Math.floorDiv(level.getDayTime(), 24_000L);
+        if (bond != null && bond.courtshipDays.contains(day)) return false;
+        if (bond == null || !bond.stage.active()) {
+            if (!setRomanticRelationshipStage(level, first, second, VillagerRelationshipStage.CRUSH).allowed()) return false;
+            bond = this.romanticBonds.get(key);
+            bond.courtshipDays.clear();
+        }
+        bond.courtshipDays.add(day);
+        if (bond.courtshipDays.size() >= 3) {
+            setRomanticRelationshipStage(level, first, second, VillagerRelationshipStage.DATING);
+        }
+        setDirty();
+        return true;
     }
 
     public BreedingValidation validateBreedingPair(ServerLevel level, Villager first, Villager second) {
@@ -986,6 +1051,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
     }
 
     private static class RomanticBond {
+        private int childLimit = java.util.concurrent.ThreadLocalRandom.current().nextInt(1, 5);
+        private final Set<Long> courtshipDays = new HashSet<>();
         private UUID firstId;
         private UUID secondId;
         private VillagerRelationshipStage stage;
@@ -1034,6 +1101,10 @@ public class VillagerSocialGraphSavedData extends SavedData {
                     ? tag.getLong(TAG_ENDED_GAME_TIME)
                     : Long.MIN_VALUE;
             bond.endReason = tag.getString(TAG_END_REASON);
+            if (tag.contains("ChildLimit", Tag.TAG_INT)) bond.childLimit = Math.clamp(tag.getInt("ChildLimit"), 1, 4);
+            for (long day : tag.getLongArray("CourtshipDays")) {
+                if (bond.courtshipDays.size() < 3) bond.courtshipDays.add(day);
+            }
             return bond;
         }
 
@@ -1050,6 +1121,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
                 tag.putLong(TAG_ENDED_GAME_TIME, this.endedGameTime);
             }
             tag.putString(TAG_END_REASON, this.endReason);
+            tag.putInt("ChildLimit", this.childLimit);
+            tag.putLongArray("CourtshipDays", this.courtshipDays.stream().mapToLong(Long::longValue).toArray());
             return tag;
         }
 
@@ -1083,6 +1156,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
             copy.stageSinceGameTime = this.stageSinceGameTime;
             copy.endedGameTime = this.endedGameTime;
             copy.endReason = this.endReason;
+            copy.childLimit = this.childLimit;
+            copy.courtshipDays.addAll(this.courtshipDays);
             return copy;
         }
 
@@ -1155,6 +1230,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
     }
 
     public static class VillagerProfile {
+        private long lastBirthGameTime = Long.MIN_VALUE;
+        private boolean birthRecorded;
         private final UUID id;
         private String name = "";
         private VillagerGender gender = VillagerGender.MALE;
@@ -1202,6 +1279,9 @@ public class VillagerSocialGraphSavedData extends SavedData {
                     ? tag.getLong(TAG_DEATH_DAY)
                     : Long.MIN_VALUE;
             profile.deathCause = tag.getString(TAG_DEATH_CAUSE);
+            profile.lastBirthGameTime = tag.contains("LastBirthGameTime", Tag.TAG_LONG)
+                    ? tag.getLong("LastBirthGameTime") : Long.MIN_VALUE;
+            profile.birthRecorded = tag.getBoolean("BirthRecorded");
             return profile;
         }
 
@@ -1225,6 +1305,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
                 tag.putLong(TAG_DEATH_DAY, this.deathDay);
             }
             tag.putString(TAG_DEATH_CAUSE, this.deathCause);
+            if (this.lastBirthGameTime != Long.MIN_VALUE) tag.putLong("LastBirthGameTime", this.lastBirthGameTime);
+            tag.putBoolean("BirthRecorded", this.birthRecorded);
             return tag;
         }
 
@@ -1278,6 +1360,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
             if (this.profession.isBlank()) {
                 this.profession = source.profession;
             }
+            this.lastBirthGameTime = Math.max(this.lastBirthGameTime, source.lastBirthGameTime);
+            this.birthRecorded |= source.birthRecorded;
             this.gender = source.gender;
             this.baby = source.baby;
             this.alive = source.alive;

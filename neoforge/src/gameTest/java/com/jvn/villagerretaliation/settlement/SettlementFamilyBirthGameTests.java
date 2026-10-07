@@ -27,7 +27,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("villager_life")
 @PrefixGameTestTemplate(false)
 public final class SettlementFamilyBirthGameTests {
     private SettlementFamilyBirthGameTests() {
@@ -521,6 +521,30 @@ public final class SettlementFamilyBirthGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_family_birth")
+    public static void backgroundFamiliesRequireAnEstablishedCoupleAndHonorLivingChildLimits(GameTestHelper helper) {
+        var fixture = remote(helper, 6);
+        var level = helper.getLevel();
+        var graph = com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get(level);
+        graph.setRomanticRelationshipStage(level, fixture.first, fixture.second,
+                com.jvn.villagerretaliation.social.VillagerRelationshipStage.SEPARATED);
+        daytime(helper, () -> finish(helper, fixture));
+        helper.assertTrue(fixture.town.arrivals().isEmpty(), "background simulation never invents social visits or couples");
+        helper.assertValueEqual(graph.relationshipStage(fixture.first.getUUID(), fixture.second.getUUID()).orElseThrow(),
+                com.jvn.villagerretaliation.social.VillagerRelationshipStage.SEPARATED, "background time cannot advance a bond");
+        graph.setRomanticRelationshipStage(level, fixture.first, fixture.second,
+                com.jvn.villagerretaliation.social.VillagerRelationshipStage.DATING);
+        int cap = graph.childLimit(fixture.first.getUUID(), fixture.second.getUUID());
+        for (int index = 0; index < cap; index++) {
+            var adultChild = EntityType.VILLAGER.create(level);
+            graph.linkParentsAndChild(level, fixture.first, fixture.second, adultChild);
+        }
+        daytime(helper, () -> finish(helper, fixture));
+        helper.assertTrue(fixture.town.arrivals().isEmpty(), "background births count all living biological children");
+        helper.assertTrue(fixture.town.courtships().isEmpty(), "a capped couple cannot reserve a background bed");
+        helper.succeed();
+    }
+
     private static boolean rejected(GameTestHelper helper, CompoundTag tag) {
         try {
             SettlementRecord.load(tag, helper.getLevel().registryAccess(), () -> {});
@@ -615,5 +639,9 @@ public final class SettlementFamilyBirthGameTests {
     }
 
     private record Fixture(SettlementRecord town, SettlementDepot depot, Villager first, Villager second, java.util.Map<Long, LevelChunk> chunks) {
+        private Fixture {
+            com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get((net.minecraft.server.level.ServerLevel) first.level())
+                    .linkSpouses((net.minecraft.server.level.ServerLevel) first.level(), first, second);
+        }
     }
 }

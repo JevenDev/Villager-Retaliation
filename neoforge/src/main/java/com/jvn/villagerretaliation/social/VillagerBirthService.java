@@ -20,6 +20,9 @@ import net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent;
 
 /** Validates villager births and performs all newborn initialization in one deliberate order. */
 public final class VillagerBirthService {
+    private static final String INITIALIZED = "VillagerRetaliationBirthInitialized";
+    private static final java.util.Map<Villager, PendingBirth> PENDING = new java.util.IdentityHashMap<>();
+
     private VillagerBirthService() {
     }
 
@@ -33,14 +36,21 @@ public final class VillagerBirthService {
             Villager parentB,
             Villager child,
             @Nullable Player causedByPlayer) {
+        if (child.isSpawnCancelled() || child.getPersistentData().getBoolean(INITIALIZED)) return;
         sanitizeNewborn(child);
 
         if (VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
             VillagerSocialGraphSavedData socialGraph = VillagerSocialGraphSavedData.get(level);
+            if (!socialGraph.recordAcceptedBirth(level, parentA, parentB, child)) {
+                child.getPersistentData().putBoolean(INITIALIZED, true);
+                return;
+            }
             socialGraph.linkParentsAndChild(level, parentA, parentB, child);
             VillagerReputationManager.inheritReputationFromParents(level, child, parentA, parentB);
         }
         VillageAllegianceService.assignBirthAllegiance(level, child, parentA, parentB);
+        child.getPersistentData().putBoolean(INITIALIZED, true);
+        PENDING.remove(child);
         VillageEventMemory.remember(
                 level,
                 VillageEventMemory.EventTag.BABY_BORN,
@@ -66,7 +76,27 @@ public final class VillagerBirthService {
             }
             return;
         }
-        initializeNewborn(level, parentA, parentB, child, event.getCausedByPlayer());
+        sanitizeNewborn(child);
+        PENDING.put(child, new PendingBirth(level, parentA, parentB, event));
+    }
+
+    public static void finishAcceptedSpawns() {
+        var births = java.util.List.copyOf(PENDING.entrySet());
+        PENDING.clear();
+        for (var entry : births) {
+            Villager child = entry.getKey();
+            PendingBirth birth = entry.getValue();
+            if (!birth.event.isCanceled() && child.isAddedToLevel() && child.isAlive() && !child.isRemoved()) {
+                initializeNewborn(birth.level, birth.first, birth.second, child, birth.event.getCausedByPlayer());
+            }
+        }
+    }
+
+    public static void clearRuntimeState() {
+        PENDING.clear();
+    }
+
+    private record PendingBirth(ServerLevel level, Villager first, Villager second, BabyEntitySpawnEvent event) {
     }
 
     private static void sanitizeNewborn(Villager child) {

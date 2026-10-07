@@ -211,7 +211,8 @@ public final class SettlementPopulationService {
         var care = town.residents().get(resident.getUUID());
         if (care != null) care.restore(resident);
         if (resident.getAge() != 0 || familyFood(resident) >= 12 || !canGrow(level, town)
-                || !com.jvn.villagerretaliation.social.VillagerBreedingPolicy.evaluateParent(level, resident).allowed()) {
+                || SettlementWorkforceService.hasPersonalCommitment(resident)
+                || !com.jvn.villagerretaliation.social.VillagerBreedingPolicy.evaluateProvision(level, resident).allowed()) {
             return;
         }
         var inventory = resident.getInventory();

@@ -351,6 +351,11 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean enableVanillaVillagerBreeding = true;
 
+        public boolean enableNaturalFamilies = true;
+
+        @RangeConstraint(min = 0, max = 100)
+        public int naturalFamilyCooldownDays = 3;
+
         public boolean enableFamilyBreedingRules = false;
 
         public boolean enableOppositeGenderBreedingRules = false;

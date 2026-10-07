@@ -348,6 +348,7 @@ public final class SettlementGuardScheduleGameTests {
         partner.getInventory().setItem(0, new ItemStack(Items.BREAD, 3));
         VillageAllegianceApi.assignKnown(level, partner, setup.town().id(), AllegianceAssignmentSource.EXPLICIT_API);
         helper.assertTrue(level.addFreshEntity(partner), "the other parent is present");
+        com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get(level).linkSpouses(level, guard, partner);
         SettlementCareService.onUnloaded(partner);
         return new Fixture(setup, post, guard, partner);
     }

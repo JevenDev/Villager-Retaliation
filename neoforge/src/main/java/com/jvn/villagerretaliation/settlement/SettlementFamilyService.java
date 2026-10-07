@@ -112,7 +112,9 @@ final class SettlementFamilyService {
         for (var dimension : level.getServer().getAllLevels()) {
             var entity = dimension.getEntity(id);
             if (entity != null && (!(entity instanceof Villager villager) || !entity.isAlive() || entity.level() != level
-                    || !entity.blockPosition().equals(care.position()) || SettlementWorkforceService.hasPersonalCommitment(villager)
+                    || !entity.blockPosition().equals(care.position())
+                    || SettlementWorkforceService.hasPersonalCommitment(villager)
+                        && (!VillagerBreedingPolicy.naturalFamiliesEnabled() || !VillagerBreedingPolicy.evaluateParent(level, villager).allowed())
                     || com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(villager)
                     || villager.getTarget() != null || villager.getLastHurtByMob() != null || villager.isOnFire() || villager.isInLava()
                     || level.isPositionEntityTicking(entity.blockPosition())

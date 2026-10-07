@@ -53,6 +53,10 @@ public final class VillagerBehaviorSuppressionPolicy {
     }
 
     public static boolean suppresses(Villager villager, Behavior behavior) {
+        if (villager != null && behavior == Behavior.BREEDING && VillagerBreedingPolicy.naturalFamiliesEnabled()
+                && state(villager) == ControlState.HIRED && villager.level() instanceof ServerLevel level) {
+            return !VillagerBreedingPolicy.evaluateParent(level, villager).allowed();
+        }
         if (villager != null
                 && behavior == Behavior.SLEEPING && villager.level() instanceof ServerLevel level
                 && HiredVillagerFocusService.isOnDutyGuard(level, villager)) {

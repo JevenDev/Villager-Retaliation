@@ -33,7 +33,7 @@ public final class VillagerBreedingPolicy {
     private VillagerBreedingPolicy() {
     }
 
-    public static BreedingDecision evaluateParent(ServerLevel level, Villager villager) {
+    public static BreedingDecision evaluateProvision(ServerLevel level, Villager villager) {
         if (level == null || villager == null || villager.level() != level) {
             return BreedingDecision.block(BreedingBlockReason.DEAD);
         }
@@ -46,6 +46,20 @@ public final class VillagerBreedingPolicy {
         return BreedingDecision.allow();
     }
 
+    public static BreedingDecision evaluateParent(ServerLevel level, Villager villager) {
+        BreedingDecision eligibility = evaluateProvision(level, villager);
+        if (!eligibility.allowed()) return eligibility;
+        if (naturalFamiliesEnabled()) {
+            var blocker = com.jvn.villagerretaliation.villagelife.VillageLifeAvailability.blocker(level, villager);
+            if (blocker != BreedingBlockReason.NONE) return BreedingDecision.block(blocker);
+            if (!VillagerSocialGraphSavedData.get(level).birthCooldownReady(villager.getUUID(), level.getGameTime(),
+                    VillagerRetaliationConfig.NATURAL_FAMILY_COOLDOWN_DAYS.get() * 24_000L)) {
+                return BreedingDecision.block(BreedingBlockReason.BIRTH_COOLDOWN);
+            }
+        }
+        return BreedingDecision.allow();
+    }
+
     public static BreedingDecision evaluatePair(ServerLevel level, Villager first, Villager second) {
         BreedingDecision firstDecision = evaluateParent(level, first);
         if (!firstDecision.allowed()) return firstDecision;
@@ -53,14 +67,36 @@ public final class VillagerBreedingPolicy {
         if (!secondDecision.allowed()) return secondDecision;
 
         if (VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()
-                && VillagerRetaliationConfig.ENABLE_FAMILY_BREEDING_RULES.get()) {
+                && (VillagerRetaliationConfig.ENABLE_FAMILY_BREEDING_RULES.get() || naturalFamiliesEnabled())) {
             VillagerSocialGraphSavedData.BreedingValidation family =
                     VillagerSocialGraphSavedData.get(level).validateBreedingPair(level, first, second);
             if (!family.allowed()) {
                 return BreedingDecision.block(BreedingBlockReason.INVALID_FAMILY_PAIR);
             }
         }
+        if (naturalFamiliesEnabled()) {
+            var graph = VillagerSocialGraphSavedData.get(level);
+            var stage = graph.relationshipStage(first.getUUID(), second.getUUID()).orElse(null);
+            if (stage == null || !stage.active() || !stage.exclusive()
+                    || !graph.validateRomanticPair(level, first, second, stage).allowed()) {
+                return BreedingDecision.block(BreedingBlockReason.RELATIONSHIP_REQUIRED);
+            }
+            if (graph.livingBiologicalChildren(first.getUUID(), second.getUUID()) >= graph.childLimit(first.getUUID(), second.getUUID())) {
+                return BreedingDecision.block(BreedingBlockReason.FAMILY_LIMIT);
+            }
+        }
         return BreedingDecision.allow();
+    }
+
+    public static boolean naturalFamiliesEnabled() {
+        return VillagerRetaliationConfig.ENABLE_NATURAL_FAMILIES.get()
+                && VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get();
+    }
+
+    public static boolean availableForSocialVisit(ServerLevel level, Villager villager) {
+        return level != null && villager != null && villager.level() == level && !villager.isBaby()
+                && !villager.getBrain().hasMemoryValue(MemoryModuleType.BREED_TARGET)
+                && com.jvn.villagerretaliation.villagelife.VillageLifeAvailability.blocker(level, villager) == BreedingBlockReason.NONE;
     }
 
     public static boolean canBreed(ServerLevel level, Villager villager) {
@@ -119,6 +155,8 @@ public final class VillagerBreedingPolicy {
     private static BreedingBlockReason evaluateHireState(ServerLevel level, Villager villager) {
         return VillagerBehaviorSuppressionPolicy.state(villager)
                 == VillagerBehaviorSuppressionPolicy.ControlState.HIRED
+                && (!naturalFamiliesEnabled()
+                    || !com.jvn.villagerretaliation.villagelife.VillageLifeAvailability.settled(level, villager))
                 ? BreedingBlockReason.HIRED : BreedingBlockReason.NONE;
     }
 
