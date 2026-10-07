@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.quest.objectives;
 
+import com.jvn.villagerretaliation.campaign.CampaignLocationService;
+import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -155,6 +157,24 @@ public final class QuestObjectiveRegistry {
         }
         QuestObjectiveTypeDescriptor<?> descriptor = BY_TYPE.get(objective.type());
         return descriptor == null ? Set.of() : descriptor.requirements();
+    }
+
+    public static Optional<String> campaignLocationError(JsonObject objective) {
+        if (!objective.has("campaign_location")) return Optional.empty();
+        var alias = objective.get("campaign_location");
+        if (!alias.isJsonPrimitive() || !alias.getAsJsonPrimitive().isString()
+                || !alias.getAsString().matches("[a-z0-9][a-z0-9_./-]*") || alias.getAsString().length() > 256) {
+            return Optional.of("campaign_location must be a stable campaign location id.");
+        }
+        var type = objective.get("type");
+        if (type == null || !type.isJsonPrimitive() || !type.getAsJsonPrimitive().isString()
+                || objectiveTypeBySerializedName(type.getAsString()) != QuestDefinition.ObjectiveType.LOCATION_VISIT) {
+            return Optional.of("campaign_location requires a location_visit objective.");
+        }
+        for (String field : List.of("location", "pos", "x", "y", "z", "dimension", "structure", "pieces", "search_radius", "discovery_radius", "target", "targets")) {
+            if (objective.has(field)) return Optional.of("campaign_location cannot override its campaign binding with " + field + ".");
+        }
+        return Optional.empty();
     }
 
     public static Optional<String> validationError(QuestDefinition.Objective objective) {
@@ -847,6 +867,15 @@ public final class QuestObjectiveRegistry {
             if (context == null || context.level() == null || context.player() == null) {
                 return QuestObjectiveResult.incomplete(0.0F, "live context unavailable");
             }
+            if (!objective.campaignLocation().isBlank()) {
+                var result = CampaignLocationService.resolve(context.level().getServer(),
+                        context.definition() == null ? null : context.definition().campaign(), objective.campaignLocation());
+                if (!result.available()) return QuestObjectiveResult.incomplete(0.0F, result.diagnostic());
+                boolean complete = result.binding().dimension().equals(context.level().dimension().location())
+                        && context.player().blockPosition().distSqr(result.binding().position()) <= (double) objective.radius() * objective.radius();
+                return complete ? QuestObjectiveResult.complete("campaign location reached")
+                        : QuestObjectiveResult.incomplete(0.0F, "campaign location not reached");
+            }
             boolean complete = isAtLocationObjective(context, objective);
             return complete
                     ? QuestObjectiveResult.complete("location reached")
@@ -855,14 +884,19 @@ public final class QuestObjectiveRegistry {
 
         @Override
         public Optional<String> validationError(QuestDefinition.Objective objective) {
-            return objective.location() == null
-                    ? Optional.of("location_visit objective must define x, y, and z.")
+            return objective.location() == null && objective.campaignLocation().isBlank()
+                    ? Optional.of("location_visit objective must define coordinates or campaign_location.")
                     : Optional.empty();
         }
 
         @Override
         public String trackerStepKey(QuestDefinition.Objective objective) {
             return "travel";
+        }
+
+        @Override
+        public boolean requiresLocatedTarget(QuestDefinition.Objective objective) {
+            return !objective.campaignLocation().isBlank();
         }
 
         private static boolean isAtLocationObjective(

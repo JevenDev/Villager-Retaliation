@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest.tracking;
 
+import com.jvn.villagerretaliation.campaign.CampaignLocationService;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
@@ -60,7 +61,15 @@ public final class VillagerQuestTargets {
         return QuestObjectiveQuery.stageObjectives(definition, stageId).stream()
                 .filter(QuestObjectiveRegistry::requiresLocatedTarget)
                 .findFirst()
-                .flatMap(objective -> locateTarget(context.level(), context.villager().blockPosition(), objective));
+                .flatMap(objective -> objective.campaignLocation().isBlank()
+                        ? locateTarget(context.level(), context.villager().blockPosition(), objective)
+                        : locateCampaignLocation(context.level(), definition, objective));
+    }
+
+    public static Optional<LocatedTarget> locateCampaignLocation(ServerLevel level, QuestDefinition definition, QuestDefinition.Objective objective) {
+        var result = CampaignLocationService.resolve(level.getServer(), definition.campaign(), objective.campaignLocation());
+        return result.available() ? Optional.of(new LocatedTarget(ResourceKey.create(Registries.DIMENSION, result.binding().dimension()),
+                result.binding().position(), objective.id())) : Optional.empty();
     }
 
     public static ResourceLocation targetStructure(QuestDefinition definition, String objectiveId) {

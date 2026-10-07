@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.campaign.content;
 
+import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
+import net.minecraft.core.BlockPos;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -95,8 +98,30 @@ public final class CampaignDefinitionParser {
                     text(entry, "milestone"), text(entry, "outcome"), entry.has("experience") ? entry.get("experience").getAsInt() : 0,
                     entry.has("loot_table") ? resource(entry, "loot_table") : null, pointer), source, pointer, diagnostics);
         }
+        Map<String, CampaignLocationDefinition> locations = new LinkedHashMap<>();
+        JsonArray locationEntries = array(root, "locations");
+        for (int index = 0; index < locationEntries.size(); index++) {
+            JsonObject entry = locationEntries.get(index).getAsJsonObject();
+            String pointer = "/locations/" + index;
+            String id = text(entry, "id");
+            var kind = CampaignLocationDefinition.Source.valueOf(text(entry, "source").toUpperCase(Locale.ROOT));
+            if (kind == CampaignLocationDefinition.Source.MARKER && (!entry.has("origin") || entry.has("search_radius"))) {
+                diagnostics.add(CampaignSchema.error(source, pointer, "marker locations require an origin and cannot search"));
+                continue;
+            }
+            if ((kind == CampaignLocationDefinition.Source.STRUCTURE) != entry.has("structure")) {
+                diagnostics.add(CampaignSchema.error(source, pointer + "/structure", "only structure locations require a structure id"));
+                continue;
+            }
+            var origin = entry.has("origin") ? entry.getAsJsonObject("origin") : null;
+            var position = origin == null ? null : new BlockPos(
+                    origin.get("x").getAsInt(), origin.get("y").getAsInt(), origin.get("z").getAsInt());
+            put(locations, id, new CampaignLocationDefinition(id, text(entry, "title_key"), kind, resource(entry, "dimension"),
+                    position, entry.has("search_radius") ? entry.get("search_radius").getAsInt() : CampaignLocationDefinition.MAX_SEARCH_RADIUS,
+                    entry.has("structure") ? resource(entry, "structure") : null, pointer), source, pointer, diagnostics);
+        }
         CampaignDefinition definition = new CampaignDefinition(resource(root, "id"), root.get("revision").getAsInt(),
-                QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, source);
+                QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, locations, source);
         validateReferences(definition, diagnostics);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
     }
@@ -121,6 +146,28 @@ public final class CampaignDefinitionParser {
         }
         for (var reward : definition.rewards().values()) {
             requireCampaignOwner(definition, quests, reward.quest(), reward.pointer() + "/quest", diagnostics);
+        }
+        for (var questId : definition.questBundles()) {
+            var quest = quests.compiledQuest(questId).orElse(null);
+            if (quest == null) continue;
+            for (var objective : quest.objectives()) {
+                String alias = objective.definition().campaignLocation();
+                if (!alias.isBlank() && !definition.locations().containsKey(alias)) diagnostics.add(CampaignContentCatalog.inPack(CampaignSchema.error(
+                        objective.source().resource(), objective.source().jsonPointer() + "/campaign_location", "unknown campaign location " + alias),
+                        objective.source().sourcePackId()));
+            }
+        }
+        for (var bundle : quests.bundles().values()) {
+            if (bundle.questId() == null || !definition.questBundles().contains(bundle.questId())) continue;
+            for (var sceneId : bundle.definitions().getOrDefault(QuestBundlePath.Kind.SCENE, Map.of()).keySet()) {
+                var scene = quests.scenes().get(sceneId);
+                if (scene == null) continue;
+                for (var actor : scene.actors().values()) {
+                    if (actor.bindingSource() == SceneActorDeclaration.BindingSource.CAMPAIGN_LOCATION
+                            && !definition.locations().containsKey(actor.bindingReference())) diagnostics.add(CampaignSchema.error(definition.source(),
+                            "/quest_bundles", "scene " + sceneId + " actor " + actor.alias() + " references unknown campaign location " + actor.bindingReference()));
+                }
+            }
         }
         Set<String> stageOwners = new HashSet<>();
         for (var milestone : definition.milestones().values()) {
@@ -175,6 +222,7 @@ public final class CampaignDefinitionParser {
         }
         Map<String, Set<String>> dependencies = new LinkedHashMap<>();
         localized(definition, definition.titleKey(), "/title_key", diagnostics);
+        definition.locations().values().forEach(location -> localized(definition, location.titleKey(), location.pointer() + "/title_key", diagnostics));
         for (var chapter : definition.chapters().values()) {
             localized(definition, chapter.titleKey(), chapter.pointer() + "/title_key", diagnostics);
             Set<String> requiredChapters = new LinkedHashSet<>();

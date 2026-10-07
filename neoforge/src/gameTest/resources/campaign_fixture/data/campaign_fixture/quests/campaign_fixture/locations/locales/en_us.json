@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.locations.title": "Campaign fixture: shared destinations",
+    "campaign_fixture.quest.locations.description": "Visit the village bound to this campaign. Another player will receive the same destination.",
+    "campaign_fixture.quest.locations.travel": "Visit our village at {objective_target_x}, {objective_target_y}, {objective_target_z}.",
+    "campaign_fixture.quest.locations.offer.label": "Test a shared campaign destination",
+    "campaign_fixture.quest.locations.offer.lines": [
+      "This test selects a known village within 256 blocks of the world spawn. That village stays the destination for every player."
+    ],
+    "campaign_fixture.quest.locations.accept": "Begin the destination test.",
+    "campaign_fixture.quest.locations.reminder.label": "Where is our village?",
+    "campaign_fixture.quest.locations.reminder.lines": [
+      "Reach the village marked by this quest. Exploring a closer village will not change the destination."
+    ],
+    "campaign_fixture.quest.locations.report.label": "Finish the destination test",
+    "campaign_fixture.quest.locations.report.lines": [
+      "You reached the saved destination. Reload the world or try with another player to check that it stays the same."
+    ],
+    "campaign_fixture.quest.locations.finish": "Record my visit."
+  }
+}

@@ -85,6 +85,7 @@ public record SceneActorDeclaration(
         QUEST_PROVIDER,
         UUID,
         MARKER,
+        CAMPAIGN_LOCATION,
         ENCOUNTER,
         OWNED_SPAWN,
         UNBOUND

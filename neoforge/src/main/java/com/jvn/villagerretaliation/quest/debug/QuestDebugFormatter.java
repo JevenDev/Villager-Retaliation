@@ -339,6 +339,7 @@ public final class QuestDebugFormatter {
 
     private static void addLocation(List<String> parts, QuestDefinition.Objective objective) {
         parts.add("dimension=" + dimension(objective.dimension()));
+        if (!objective.campaignLocation().isBlank()) parts.add("campaign_location=" + objective.campaignLocation());
         if (objective.location() != null) {
             parts.add("location=" + pos(objective.location()));
             parts.add("radius=" + objective.radius());

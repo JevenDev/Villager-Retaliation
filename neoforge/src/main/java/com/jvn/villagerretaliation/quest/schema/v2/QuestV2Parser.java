@@ -359,6 +359,8 @@ public final class QuestV2Parser {
             validateItemPredicateObjects(
                     validator, object, objectivePointer, "components", "durability", "custom_data", "nbt");
             validateRandomItemSelection(validator, object, objectivePointer, type);
+            QuestObjectiveRegistry.campaignLocationError(object).ifPresent(message -> validator.error(
+                    objectivePointer + "/campaign_location", message, "Use a location alias declared by the owning campaign.", Set.of()));
             objectives.add(new QuestV2Resource.Objective(
                     id,
                     QuestObjectiveRegistry.canonicalTypeId(type),
@@ -793,6 +795,13 @@ public final class QuestV2Parser {
         Map<String, String> objectivePointers = objectivePointers(resource);
         for (QuestV2Resource.Stage stage : resource.stages()) {
             String stagePointer = stagePointer(resource, stage.id());
+            if (!resource.metadata().containsKey("campaign")) {
+                for (int index = 0; index < stage.objectives().size(); index++) {
+                    if (stage.objectives().get(index).data().has("campaign_location")) validator.error(
+                            stagePointer + "/objectives/" + index + "/campaign_location", "campaign location objectives require metadata.campaign.",
+                            "Declare the owning campaign.", Set.of());
+                }
+            }
             for (String objectiveId : stage.completeWhenObjectives()) {
                 if (!objectivePointers.containsKey(objectiveId)) {
                     validator.error(

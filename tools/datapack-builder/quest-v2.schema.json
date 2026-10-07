@@ -977,6 +977,11 @@
         "location": {
           "type": "object"
         },
+        "campaign_location": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$",
+          "maxLength": 256
+        },
         "radius": {
           "type": "number"
         },

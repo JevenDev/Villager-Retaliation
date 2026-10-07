@@ -376,6 +376,7 @@ public final class QuestV2Schema {
         properties.add("structure", resourceLocation());
         properties.add("dimension", resourceLocation());
         properties.add("location", openObject());
+        properties.add("campaign_location", campaignLocalId());
         properties.add("radius", number());
         properties.add("search_radius", number());
         properties.add("discovery_radius", number());
@@ -410,6 +411,13 @@ public final class QuestV2Schema {
         properties.add("metadata", openObject());
         properties.add("ui", ref("#/$defs/ui"));
         schema.add("properties", properties);
+        return schema;
+    }
+
+    private static JsonObject campaignLocalId() {
+        JsonObject schema = string();
+        schema.addProperty("pattern", "^[a-z0-9][a-z0-9_./-]*$");
+        schema.addProperty("maxLength", 256);
         return schema;
     }
 

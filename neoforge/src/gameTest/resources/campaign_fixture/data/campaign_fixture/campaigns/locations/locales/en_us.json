@@ -1,0 +1,10 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.locations.title": "Campaign fixture: shared destinations",
+    "campaign_fixture.campaign.locations.chapter": "Return to the same village",
+    "campaign_fixture.campaign.locations.home": "Our village",
+    "campaign_fixture.campaign.locations.waypoint": "Authored waypoint",
+    "campaign_fixture.campaign.locations.plains": "Plains village structure"
+  }
+}

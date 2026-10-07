@@ -499,6 +499,9 @@ public final class VillagerQuestResources {
             campaign = com.jvn.villagerretaliation.campaign.content.CampaignQuestReference.read(root.get("campaign"));
             target = readTarget(root, registries);
             objectives = readObjectives(location, root, id, registries);
+            if (campaign == null && objectives.stream().anyMatch(objective -> !objective.campaignLocation().isBlank())) {
+                throw new IllegalArgumentException("campaign location objectives require a campaign owner");
+            }
         } catch (IllegalArgumentException exception) {
             DatapackDiagnostics.warnSkippedEntry(location, "quest", id.toString(), exception.getMessage());
             return null;
@@ -711,6 +714,11 @@ public final class VillagerQuestResources {
             return Optional.empty();
         }
 
+        var campaignLocationError = QuestObjectiveRegistry.campaignLocationError(entry);
+        if (campaignLocationError.isPresent()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, campaignLocationError.get());
+            return Optional.empty();
+        }
         ResourceLocation structure = DatapackJsonReader.readResourceLocation(entry, "structure").orElse(null);
         ResourceKey<Level> dimension = readDimension(entry);
         BlockPos objectiveLocation = readLocation(entry);
@@ -765,7 +773,8 @@ public final class VillagerQuestResources {
                 conditions,
                 readObjectiveTracker(entry),
                 itemSelection.entries(),
-                itemSelection.mode());
+                itemSelection.mode(),
+                DatapackJsonReader.readString(entry, "campaign_location"));
         Optional<String> registryValidation = QuestObjectiveRegistry.validationError(objective);
         if (registryValidation.isPresent()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, registryValidation.get());

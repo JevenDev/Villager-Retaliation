@@ -339,6 +339,35 @@ try {
   }
   await writeJson(validQuest, conditionFixture);
 
+  for (const [fields, owner, expectFailure] of [
+    [{ campaign_location: "village" }, true, false],
+    [{ campaign_location: "village" }, false, true],
+    [{ campaign_location: true }, true, true],
+    [{ campaign_location: "bad name" }, true, true],
+    [{ campaign_location: "village", location: { x: 0, y: 70, z: 0 } }, true, true],
+    [{ campaign_location: "village", dimension: "minecraft:overworld" }, true, true],
+    [{ campaign_location: "village", type: "condition" }, true, true]
+  ]) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.stages[0].objectives = [{ id: "visit", type: "location_visit", ...fields }];
+    delete candidate.stages[0].complete_when;
+    delete candidate.stages[0].bonuses;
+    if (owner) candidate.metadata.campaign = "villagerretaliation:tool_campaign";
+    else delete candidate.metadata.campaign;
+    await writeJson(validQuest, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+    if (expectFailure) assert(result.stderr.includes("campaign_location"), "Campaign location diagnostic lost its source field.");
+  }
+  await writeJson(validQuest, conditionFixture);
+
+  const legacyLocationQuest = path.join(workspace, "legacy-campaign-location.json");
+  for (const [owner, expectFailure] of [["villagerretaliation:tool_campaign", false], [undefined, true], [true, true]]) {
+    await writeJson(legacyLocationQuest, { id: "villagerretaliation:legacy_location", campaign: owner,
+      objectives: [{ id: "visit", type: "location_visit", campaign_location: "village" }] });
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", legacyLocationQuest], { expectFailure });
+    if (expectFailure) assert(result.stderr.includes("campaign"), "Legacy location ownership was not validated.");
+  }
+
   const legacyCampaignAction = path.join(workspace, "legacy-campaign-action.json");
   for (const [outcome, expectFailure] of [["spared", false], [null, true]]) {
     const candidate = JSON.parse(await readFile(v1Quest, "utf8"));

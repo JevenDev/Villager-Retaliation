@@ -1,0 +1,48 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:locations",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.locations.title",
+  "localization_prefix": "campaign_fixture.campaign.locations.",
+  "quest_bundles": [
+    "campaign_fixture:locations"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.locations.chapter",
+      "quests": [
+        "campaign_fixture:locations"
+      ]
+    }
+  ],
+  "milestones": [],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.locations.home",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    },
+    {
+      "id": "waypoint",
+      "title_key": "campaign_fixture.campaign.locations.waypoint",
+      "source": "marker",
+      "dimension": "minecraft:overworld",
+      "origin": {
+        "x": 0,
+        "y": 80,
+        "z": 0
+      }
+    },
+    {
+      "id": "plains_village",
+      "title_key": "campaign_fixture.campaign.locations.plains",
+      "source": "structure",
+      "dimension": "minecraft:overworld",
+      "structure": "minecraft:village_plains",
+      "search_radius": 256
+    }
+  ]
+}

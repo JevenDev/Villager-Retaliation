@@ -53,6 +53,13 @@ public final class SceneCompiler {
                                 "duplicate actor alias " + actor.alias()));
                 continue;
             }
+            if (actor.bindingSource() == SceneActorDeclaration.BindingSource.CAMPAIGN_LOCATION
+                    && (!actor.actorType().equals(VillagerRetaliation.id("position"))
+                    || !actor.bindingReference().matches("[a-z0-9][a-z0-9_./-]*") || actor.bindingReference().length() > 256
+                    || actor.replacementPolicy() != SceneActorDeclaration.ReplacementPolicy.FIXED || !actor.filters().isEmpty())) {
+                diagnostics.add(error("scene.actor.campaign_location", "actors." + actor.alias(),
+                        "campaign locations require a position actor, a campaign location reference, fixed binding and no filters"));
+            }
             RuntimeTypeDescriptor descriptor =
                     VillagerRetaliationRegistries.ACTOR_TYPES.get(actor.actorType()).orElse(null);
             if (descriptor == null) {

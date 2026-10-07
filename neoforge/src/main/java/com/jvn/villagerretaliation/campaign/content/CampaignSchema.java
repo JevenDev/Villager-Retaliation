@@ -41,6 +41,17 @@ public final class CampaignSchema {
         JsonObject reward = object(List.of("id", "quest", "scope"), "id", text(LOCAL_ID), "quest", text(RESOURCE_ID),
                 "scope", enumeration("personal", "participants", "shared"), "milestone", text(LOCAL_ID), "outcome", text(LOCAL_ID),
                 "experience", experience, "loot_table", text(RESOURCE_ID));
+        JsonObject coordinate = type("integer");
+        coordinate.addProperty("minimum", -30_000_000);
+        coordinate.addProperty("maximum", 30_000_000);
+        JsonObject radius = type("integer");
+        radius.addProperty("minimum", 1);
+        radius.addProperty("maximum", CampaignLocationDefinition.MAX_SEARCH_RADIUS);
+        JsonObject location = object(List.of("id", "title_key", "source", "dimension"),
+                "id", text(LOCAL_ID), "title_key", text(""), "source", enumeration("marker", "village", "structure"),
+                "dimension", text(RESOURCE_ID), "origin", object(List.of("x", "y", "z"),
+                        "x", coordinate, "y", coordinate, "z", coordinate),
+                "search_radius", radius, "structure", text(RESOURCE_ID));
         JsonObject revision = type("integer");
         revision.addProperty("minimum", 1);
         revision.addProperty("maximum", Integer.MAX_VALUE);
@@ -49,7 +60,8 @@ public final class CampaignSchema {
                 "schema", enumeration(SCHEMA_ID), "id", text(RESOURCE_ID), "revision", revision,
                 "title_key", text(""), "localization_prefix", text(""),
                 "quest_bundles", array(text(RESOURCE_ID), 1), "chapters", array(chapter, 1),
-                "milestones", array(milestone, 0), "facts", array(fact, 0), "rewards", array(reward, 0));
+                "milestones", array(milestone, 0), "facts", array(fact, 0), "rewards", array(reward, 0),
+                "locations", array(location, 0));
         root.addProperty("$schema", "https://json-schema.org/draft/2020-12/schema");
         root.addProperty("$id", "https://villagerretaliation.dev/schema/campaign-v1.schema.json");
         root.addProperty("title", "Villager Retaliation Campaign v1");

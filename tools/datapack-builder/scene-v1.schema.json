@@ -131,6 +131,7 @@
               "quest_provider",
               "uuid",
               "marker",
+              "campaign_location",
               "encounter",
               "owned_spawn",
               "unbound"

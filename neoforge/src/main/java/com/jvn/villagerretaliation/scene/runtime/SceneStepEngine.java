@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.scene.runtime;
 
+import com.jvn.villagerretaliation.campaign.CampaignSceneLocations;
 import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutor;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutors;
@@ -27,6 +28,10 @@ public final class SceneStepEngine {
                 campaignIssue = CampaignQuestAccess.executionIssue(server, instance.owningQuestId(), instance.owningCampaignId(), player);
                 if (!campaignIssue.isBlank()) break;
             }
+        }
+        if (campaignIssue.isBlank() && definition != null && SceneDefinitionReconciler.reconcile(instance, definition).safe()
+                && instance.transitionIntent() == SceneInstance.TransitionIntent.NONE) {
+            campaignIssue = CampaignSceneLocations.resolve(server, data, instance, definition);
         }
         if (!campaignIssue.isBlank()) {
             if (instance.pauseCampaign(campaignIssue, time)) data.changed();

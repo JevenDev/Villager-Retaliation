@@ -1678,6 +1678,14 @@ function checkQuestV2(file, data) {
   checkQuestV2Target(file, data.target, "/target", "target");
   checkQuestV2RootDialogue(file, data.dialogue, "/dialogue", "dialogue", questId);
   const model = checkQuestV2Stages(file, data.stages, "/stages", "stages", questId);
+  if (!stringValue(data.metadata?.campaign)) {
+    for (const [stageIndex, stage] of (Array.isArray(data.stages) ? data.stages : []).entries()) {
+      for (const [objectiveIndex, objective] of (Array.isArray(stage?.objectives) ? stage.objectives : []).entries()) {
+        if (objective?.campaign_location !== undefined) questV2Error(file, `/stages/${stageIndex}/objectives/${objectiveIndex}/campaign_location`,
+          "campaign_location", "campaign location objectives require metadata.campaign.", "Declare the owning campaign.");
+      }
+    }
+  }
   checkQuestV2Events(file, data.events, "/events", "events", questId, model.stageIds, "");
   checkQuestV2Rewards(file, data.rewards, "/rewards", "rewards", questId);
   checkQuestV2Ui(file, data.ui, "/ui", "ui");
@@ -2162,6 +2170,16 @@ function validateRandomItemEntries(items, report) {
 
 function checkQuestV2ObjectiveRuntimeRequirements(file, objective, pointer, location, type) {
   const canonical = questV2RegistryIndex.objectives.canonical.get(type) || type;
+  if (objective.campaign_location !== undefined) {
+    const descriptor = questV2Schema.$defs.objective.properties.campaign_location;
+    if (typeof objective.campaign_location !== "string" || !new RegExp(descriptor.pattern).test(objective.campaign_location)
+        || objective.campaign_location.length > descriptor.maxLength || canonical !== "location_visit") {
+      questV2Error(file, `${pointer}/campaign_location`, location, "campaign_location requires a stable location alias on a location_visit objective.", "Use an alias from the owning campaign.");
+    }
+    for (const field of ["location", "pos", "x", "y", "z", "dimension", "structure", "pieces", "search_radius", "discovery_radius", "target", "targets"]) {
+      if (objective[field] !== undefined) questV2Error(file, `${pointer}/${field}`, location, "campaign_location cannot override its campaign binding.", "Remove the local destination fields.");
+    }
+  }
   if (canonical === "criterion") {
     const criterion = stringValue(objective.criterion);
     if (!criterion || !isResourceLocation(criterion)) {
@@ -3125,6 +3143,7 @@ function checkQuest(file, data) {
 
   checkUnknownObjectKeys(file, data, "root", new Set([
     "id",
+    "campaign",
     "replace",
     "remove",
     "display",
@@ -3178,6 +3197,17 @@ function checkQuest(file, data) {
   const objectiveIds = questObjectiveIds(data.objectives);
   const stageIds = questStageIds(data.stages);
   checkQuestObjectives(file, data.objectives, "objectives", defaultQuestId);
+  if (data.campaign !== undefined) {
+    const descriptor = questV2Schema.$defs.metadata.properties.campaign;
+    if (typeof data.campaign !== "string" || data.campaign.length > descriptor.maxLength
+        || !new RegExp(descriptor.pattern).test(data.campaign)) {
+      errors.push(`${relative(file)}: root.campaign must be a namespaced campaign id.`);
+    }
+  }
+  if (!stringValue(data.campaign) && Array.isArray(data.objectives)
+      && data.objectives.some((objective) => objective?.campaign_location !== undefined)) {
+    errors.push(`${relative(file)}: campaign_location objectives require an owning campaign.`);
+  }
   checkQuestRules(file, data.rules, "rules", defaultQuestId);
   checkQuestTracker(file, data.tracker, "tracker", objectiveIds);
   checkQuestStages(file, data.stages, "stages", defaultQuestId, objectiveIds);
@@ -3307,6 +3337,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "id",
       "type",
       "optional",
+      "campaign_location",
       "structure",
       "dimension",
       "x",
@@ -3454,8 +3485,17 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     if (type === "structure_visit" && !stringValue(objective.structure)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.structure is required for a structure_visit objective.`);
     }
-    if (questLocationObjectiveTypes.has(type) && !hasQuestObjectivePosition(objective)) {
-      errors.push(`${relative(file)}: ${objectiveLocation} must define x, y, and z, or pos for a location_visit objective.`);
+    if (objective.campaign_location !== undefined) {
+      if (typeof objective.campaign_location !== "string" || !/^[a-z0-9][a-z0-9_./-]*$/.test(objective.campaign_location)
+          || objective.campaign_location.length > 256 || !questLocationObjectiveTypes.has(type)) {
+        errors.push(`${relative(file)}: ${objectiveLocation}.campaign_location requires a stable location alias on a location_visit objective.`);
+      }
+      for (const field of ["location", "pos", "x", "y", "z", "dimension", "structure", "pieces", "search_radius", "discovery_radius", "target", "targets"]) {
+        if (objective[field] !== undefined) errors.push(`${relative(file)}: ${objectiveLocation}.campaign_location cannot override its campaign binding with ${field}.`);
+      }
+    }
+    if (questLocationObjectiveTypes.has(type) && !hasQuestObjectivePosition(objective) && !stringValue(objective.campaign_location)) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define coordinates or campaign_location for a location_visit objective.`);
     }
     if (type === "item_check" && !stringValue(objective.item)
         && !(normalizedString(objective.selection) === "random" && Array.isArray(objective.items) && objective.items.length > 0)) {
