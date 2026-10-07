@@ -35,6 +35,9 @@ public final class VillagerQuestProviderType implements QuestProviderType {
         if (context == null || definition == null) {
             return false;
         }
+        if (definition.campaign() != null && (context.level() == null
+                || !com.jvn.villagerretaliation.campaign.CampaignCharacterService.matchesProvider(context.level().getServer(), definition,
+                        context.providerBinding().map(QuestProviderBinding::providerId).orElse(null)))) return false;
         Optional<DialogueContext> dialogueContext = context.dialogueContext();
         if (dialogueContext.isPresent()) {
             return definition.offer().matches(dialogueContext.get());
@@ -50,6 +53,9 @@ public final class VillagerQuestProviderType implements QuestProviderType {
             QuestExecutionContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (definition != null && definition.campaign() != null && (context == null || context.level() == null
+                || !com.jvn.villagerretaliation.campaign.CampaignCharacterService.matchesProvider(context.level().getServer(), definition,
+                        context.providerBinding().map(QuestProviderBinding::providerId).orElse(null)))) return false;
         if (progress == null || definition == null || !definition.rules().lockedToVillager()) {
             return true;
         }

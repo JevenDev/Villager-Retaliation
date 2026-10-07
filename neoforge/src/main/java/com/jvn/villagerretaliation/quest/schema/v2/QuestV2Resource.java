@@ -49,6 +49,7 @@ public record QuestV2Resource(
             Set<ResourceLocation> requiredCapabilities,
             QuestProviderDeathProtection deathProtection,
             boolean blocksHiring,
+            String campaignRole,
             JsonObject data
     ) {
         public static final Provider EMPTY = new Provider(
@@ -66,7 +67,13 @@ public record QuestV2Resource(
             this(type, requiredCapabilities, deathProtection, false, data);
         }
 
+        public Provider(ResourceLocation type, Set<ResourceLocation> requiredCapabilities,
+                QuestProviderDeathProtection deathProtection, boolean blocksHiring, JsonObject data) {
+            this(type, requiredCapabilities, deathProtection, blocksHiring, "", data);
+        }
+
         public Provider {
+            campaignRole = campaignRole == null ? "" : campaignRole;
             requiredCapabilities = requiredCapabilities == null ? Set.of() : Set.copyOf(requiredCapabilities);
             deathProtection = deathProtection == null ? QuestProviderDeathProtection.NONE : deathProtection;
             data = copy(data);

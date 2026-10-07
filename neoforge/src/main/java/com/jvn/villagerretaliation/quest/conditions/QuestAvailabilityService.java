@@ -41,6 +41,8 @@ public final class QuestAvailabilityService {
         // QuestExecutionContext here also rebuilds the provider binding and village
         // scope once per quest candidate, which made tracker scans multiplicative.
         if (!CampaignQuestAccess.availabilityIssue(context, definition).isBlank()) return false;
+        if (!com.jvn.villagerretaliation.campaign.CampaignCharacterService.matchesProvider(
+                context.level().getServer(), definition, context.villager().getUUID())) return false;
         if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }

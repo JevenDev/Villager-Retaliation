@@ -55,6 +55,8 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
                     "/localization_prefix", "localization prefix belongs to an existing quest bundle"));
             issues.addAll(CampaignDefinitionParser.validateQuestReferences(definition, quests));
             requireText(definition, source.locales(), definition.titleKey(), "/title_key", issues);
+            definition.characters().values().forEach(character -> requireText(definition, source.locales(),
+                    character.titleKey(), character.pointer() + "/title_key", issues));
             definition.locations().values().forEach(location -> requireText(definition, source.locales(),
                     location.titleKey(), location.pointer() + "/title_key", issues));
             definition.chapters().values().forEach(chapter -> requireText(definition, source.locales(),

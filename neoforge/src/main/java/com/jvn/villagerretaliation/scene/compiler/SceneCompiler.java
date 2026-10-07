@@ -53,6 +53,14 @@ public final class SceneCompiler {
                                 "duplicate actor alias " + actor.alias()));
                 continue;
             }
+            if (actor.bindingSource() == SceneActorDeclaration.BindingSource.CAMPAIGN_ROLE
+                    && (!actor.actorType().equals(VillagerRetaliation.id("villager"))
+                    || !actor.bindingReference().matches("[a-z0-9][a-z0-9_./-]*") || actor.bindingReference().length() > 256
+                    || actor.replacementPolicy() != SceneActorDeclaration.ReplacementPolicy.FIXED || !actor.filters().isEmpty()
+                    || actor.deathPolicy() == SceneActorDeclaration.DeathPolicy.RESPAWN_IF_OWNED)) {
+                diagnostics.add(error("scene.actor.campaign_role", "actors." + actor.alias(),
+                        "campaign roles require a villager actor, a character reference, fixed binding and no local filters or respawning"));
+            }
             if (actor.bindingSource() == SceneActorDeclaration.BindingSource.CAMPAIGN_LOCATION
                     && (!actor.actorType().equals(VillagerRetaliation.id("position"))
                     || !actor.bindingReference().matches("[a-z0-9][a-z0-9_./-]*") || actor.bindingReference().length() > 256

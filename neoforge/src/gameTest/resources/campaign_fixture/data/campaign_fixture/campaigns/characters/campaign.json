@@ -1,0 +1,39 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:characters",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.characters.title",
+  "localization_prefix": "campaign_fixture.campaign.characters.",
+  "quest_bundles": [
+    "campaign_fixture:characters"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.characters.chapter",
+      "quests": [
+        "campaign_fixture:characters"
+      ]
+    }
+  ],
+  "milestones": [],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.characters.home",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    }
+  ],
+  "characters": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.characters.mentor",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "downed"
+    }
+  ]
+}

@@ -105,7 +105,7 @@ public final class QuestV2Compiler {
                         ContentTags.normalizeAll(new LinkedHashSet<>(DatapackJsonReader.readStringList(metadata, "tags"))), parent, DialogueEntryMetadata.EMPTY,
                         com.jvn.villagerretaliation.campaign.content.CampaignQuestReference.read(resource.metadata().get("campaign"))),
                 new CompiledQuestProvider(resource.provider().type(), VillagerQuestResources.readOffer(source.resource(), payloads, resource.id()),
-                        resource.provider().deathProtection(), resource.provider().blocksHiring()),
+                        resource.provider().deathProtection(), resource.provider().blocksHiring(), resource.provider().campaignRole()),
                 target, resource.entryStage(), prerequisites, VillagerQuestResources.readRules(source.resource(), payloads, resource.id()),
                 new CompiledQuestUi(compileTracker(resource), QuestDefinition.Dialogue.EMPTY, QuestDefinition.Links.EMPTY),
                 objectives, Map.of(), stages, Map.of(), triggers, Map.of(), QuestTriggerIndex.EMPTY,

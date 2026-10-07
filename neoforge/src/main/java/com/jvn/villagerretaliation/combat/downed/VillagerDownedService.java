@@ -62,9 +62,8 @@ public final class VillagerDownedService {
                 .isAuthorizedFinisher(villager, event.getSource());
         boolean partyFriendlyFireFinisher = isDowned(villager)
                 && PartyService.allowsPlayerFriendlyFire(villager, event.getSource().getEntity());
-        if (authorizedFinisher
-                || partyFriendlyFireFinisher
-                || canBypassDownedProtection(villager, event.getSource())) {
+        if (!com.jvn.villagerretaliation.campaign.CampaignCharacterService.protects(villager)
+                && (authorizedFinisher || partyFriendlyFireFinisher || canBypassDownedProtection(villager, event.getSource()))) {
             float healthDamage = Math.max(0.0F, event.getNewDamage() - villager.getAbsorptionAmount());
             if (isDowned(villager) && healthDamage >= villager.getHealth()) {
                 if (authorizedFinisher) {

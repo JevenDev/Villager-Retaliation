@@ -75,6 +75,7 @@ public class VillagerRetaliation {
                 .listener(SellBoxCapabilities::register)
                 .listener(VillagerReputationNetworking::registerPayloads);
         ToucanEventBuses.game()
+                .listener(com.jvn.villagerretaliation.campaign.CampaignCharacterService::onConversion)
                 .listener(CampaignWorldModeService::onLevelLoad)
                 .listener(CampaignWorldModeService::onServerStarted)
                 .listener(CampaignWorldEventService::onServerTickPost)

@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.characters.title": "Campaign fixture: recurring characters",
+    "campaign_fixture.quest.characters.description": "Meet the existing villager cast as this campaign's mentor. All players share the same character.",
+    "campaign_fixture.quest.characters.travel": "Visit our village at {objective_target_x}, {objective_target_y}, {objective_target_z}.",
+    "campaign_fixture.quest.characters.offer.label": "Test a recurring campaign character",
+    "campaign_fixture.quest.characters.offer.lines": [
+      "This test chooses one adult villager near the saved village. Quests and scenes keep that identity through reloads and unloaded chunks."
+    ],
+    "campaign_fixture.quest.characters.accept": "Begin the character test.",
+    "campaign_fixture.quest.characters.reminder.label": "Where is our village?",
+    "campaign_fixture.quest.characters.reminder.lines": [
+      "Reach the village marked by this quest. Exploring a closer village will not change the destination."
+    ],
+    "campaign_fixture.quest.characters.report.label": "Finish the character test",
+    "campaign_fixture.quest.characters.report.lines": [
+      "You returned to the same mentor. Another villager cannot finish this test, even when ordinary quests allow compatible providers."
+    ],
+    "campaign_fixture.quest.characters.finish": "Record my visit."
+  }
+}

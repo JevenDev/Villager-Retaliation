@@ -132,6 +132,7 @@
               "uuid",
               "marker",
               "campaign_location",
+              "campaign_role",
               "encounter",
               "owned_spawn",
               "unbound"

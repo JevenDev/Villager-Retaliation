@@ -193,6 +193,15 @@ public final class QuestV2Parser {
                 }
             }
         }
+        if (object.has("campaign_role")) {
+            var role = object.get("campaign_role");
+            if (!role.isJsonPrimitive() || !role.getAsJsonPrimitive().isString()
+                    || !role.getAsString().matches("[a-z0-9][a-z0-9_./-]*") || role.getAsString().length() > 256
+                    || !ResourceLocation.parse("villagerretaliation:villager").equals(type.orElse(null))) {
+                validator.error("/provider/campaign_role", "campaign_role requires a stable character alias on a villager provider.",
+                        "Use a character role declared by the owning campaign.", Set.of());
+            }
+        }
         String deathProtectionValue = readString(object, "death_protection");
         QuestProviderDeathProtection deathProtection = QuestProviderDeathProtection.parse(deathProtectionValue)
                 .orElseGet(() -> {
@@ -209,6 +218,7 @@ public final class QuestV2Parser {
                 requiredCapabilities,
                 deathProtection,
                 readBoolean(object, "blocks_hiring"),
+                readString(object, "campaign_role"),
                 object);
     }
 
@@ -792,6 +802,10 @@ public final class QuestV2Parser {
                     Set.of(resource.entryStage()));
         }
 
+        if (!resource.provider().campaignRole().isBlank() && !resource.metadata().containsKey("campaign")) {
+            validator.error("/provider/campaign_role", "campaign character providers require metadata.campaign.",
+                    "Declare the owning campaign.", Set.of());
+        }
         Map<String, String> objectivePointers = objectivePointers(resource);
         for (QuestV2Resource.Stage stage : resource.stages()) {
             String stagePointer = stagePointer(resource, stage.id());

@@ -21,6 +21,9 @@ public final class VillagerDeathProtectionResolver {
     }
 
     public static ProtectionResult resolve(ServerLevel level, Villager villager) {
+        if (com.jvn.villagerretaliation.campaign.CampaignCharacterService.protects(villager)) {
+            return new ProtectionResult(true, List.of("campaign_role"));
+        }
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_DOWNED_STATE.get()) {
             return ProtectionResult.unprotected();
         }
@@ -57,7 +60,7 @@ public final class VillagerDeathProtectionResolver {
 
     public static ProtectionResult resolve(ServerLevel level, Villager villager, DamageSource damageSource) {
         ProtectionResult context = resolve(level, villager);
-        if (!context.protectedFromDeath() || !isDamageSourceEnabled(damageSource)) {
+        if (!context.protectedFromDeath() || !context.sources().contains("campaign_role") && !isDamageSourceEnabled(damageSource)) {
             return ProtectionResult.unprotected();
         }
         return context.withSource("damage:" + damageKind(damageSource).diagnosticName);

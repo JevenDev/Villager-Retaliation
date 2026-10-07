@@ -239,6 +239,11 @@
         "blocks_hiring": {
           "type": "boolean"
         },
+        "campaign_role": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$",
+          "maxLength": 256
+        },
         "filters": {
           "type": "object"
         },

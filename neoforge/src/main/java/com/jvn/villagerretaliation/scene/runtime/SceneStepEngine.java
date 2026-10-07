@@ -32,6 +32,7 @@ public final class SceneStepEngine {
         if (campaignIssue.isBlank() && definition != null && SceneDefinitionReconciler.reconcile(instance, definition).safe()
                 && instance.transitionIntent() == SceneInstance.TransitionIntent.NONE) {
             campaignIssue = CampaignSceneLocations.resolve(server, data, instance, definition);
+            if (campaignIssue.isBlank()) campaignIssue = com.jvn.villagerretaliation.campaign.CampaignSceneCharacters.resolve(server, data, instance, definition);
         }
         if (!campaignIssue.isBlank()) {
             if (instance.pauseCampaign(campaignIssue, time)) data.changed();

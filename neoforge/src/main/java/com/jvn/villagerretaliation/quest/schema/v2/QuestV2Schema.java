@@ -172,6 +172,7 @@ public final class QuestV2Schema {
                 .map(com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection::serializedName)
                 .toList()));
         properties.add("blocks_hiring", booleanSchema());
+        properties.add("campaign_role", campaignLocalId());
         properties.add("filters", openObject());
         properties.add("data", openObject());
         schema.add("properties", properties);

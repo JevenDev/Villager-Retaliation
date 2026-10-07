@@ -360,6 +360,17 @@ try {
   }
   await writeJson(validQuest, conditionFixture);
 
+  for (const [role, owner, expectFailure] of [["mentor", true, false], ["mentor", false, true], [true, true, true], ["bad name", true, true], [null, true, true]]) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.provider.campaign_role = role;
+    if (owner) candidate.metadata.campaign = "villagerretaliation:tool_campaign";
+    else delete candidate.metadata.campaign;
+    await writeJson(validQuest, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+    if (expectFailure) assert(result.stderr.includes("campaign_role"), "Campaign character diagnostic lost its source field.");
+  }
+  await writeJson(validQuest, conditionFixture);
+
   const legacyLocationQuest = path.join(workspace, "legacy-campaign-location.json");
   for (const [owner, expectFailure] of [["villagerretaliation:tool_campaign", false], [undefined, true], [true, true]]) {
     await writeJson(legacyLocationQuest, { id: "villagerretaliation:legacy_location", campaign: owner,

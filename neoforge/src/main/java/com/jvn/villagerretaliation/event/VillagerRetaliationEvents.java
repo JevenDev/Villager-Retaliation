@@ -1006,6 +1006,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        com.jvn.villagerretaliation.campaign.CampaignCharacterService.onRemoved(event.getEntity());
         if (event.getEntity() instanceof net.minecraft.world.entity.projectile.Projectile projectile) {
             com.jvn.villagerretaliation.settlement.SettlementProjectileService.onUnloaded(projectile);
         }

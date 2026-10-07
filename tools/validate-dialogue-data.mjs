@@ -1673,6 +1673,9 @@ function checkQuestV2(file, data) {
 
   checkQuestV2Metadata(file, data.metadata, "/metadata", "metadata", questId);
   checkQuestV2Provider(file, data.provider, "/provider", "provider");
+  if (data.provider?.campaign_role !== undefined && !stringValue(data.metadata?.campaign)) {
+    questV2Error(file, "/provider/campaign_role", "provider.campaign_role", "campaign character providers require metadata.campaign.", "Declare the owning campaign.");
+  }
   checkQuestV2Availability(file, data.availability, "/availability", "availability", questId);
   checkQuestV2Lifecycle(file, data.lifecycle, "/lifecycle", "lifecycle", questId);
   checkQuestV2Target(file, data.target, "/target", "target");
@@ -1777,6 +1780,13 @@ function checkQuestV2Provider(file, provider, pointer, location) {
       if (supported && !supported.has(normalized)) {
         questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `provider "${type}" does not support capability "${normalized}".`, "Remove the capability or choose a provider that exports it.");
       }
+    }
+  }
+  if (provider.campaign_role !== undefined) {
+    const descriptor = questV2Schema.$defs.provider.properties.campaign_role;
+    if (typeof provider.campaign_role !== "string" || !new RegExp(descriptor.pattern).test(provider.campaign_role)
+        || provider.campaign_role.length > descriptor.maxLength || type !== "villagerretaliation:villager") {
+      questV2Error(file, `${pointer}/campaign_role`, `${location}.campaign_role`, "campaign_role requires a stable character alias on a villager provider.", "Use a role from the owning campaign.");
     }
   }
   checkQuestV2OptionalString(file, provider, pointer, location, "death_protection");
