@@ -18,10 +18,14 @@ public final class SettlementScheduleService {
 
     public static void reconcile(Villager villager, Brain<Villager> brain) {
         var schedule = brain.getSchedule();
+        Schedule base = schedule instanceof NightGuardSchedule guard ? guard.base : schedule;
+        base = com.jvn.villagerretaliation.villagelife.VillageRoutineSchedule.reconcile(villager, base);
         if (nightGuard(villager)) {
-            if (!(schedule instanceof NightGuardSchedule)) brain.setSchedule(new NightGuardSchedule(schedule));
-        } else if (schedule instanceof NightGuardSchedule previous) {
-            brain.setSchedule(previous.base);
+            if (!(schedule instanceof NightGuardSchedule guard) || guard.base != base) {
+                brain.setSchedule(new NightGuardSchedule(base));
+            }
+        } else {
+            brain.setSchedule(base);
         }
     }
 

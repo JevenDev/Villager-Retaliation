@@ -36,7 +36,7 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("villager_life")
 @PrefixGameTestTemplate(false)
 public final class SettlementGuardScheduleGameTests {
     private SettlementGuardScheduleGameTests() {
@@ -164,7 +164,8 @@ public final class SettlementGuardScheduleGameTests {
             helper.assertValueEqual(guard.getBrain().getSchedule().getActivityAt(6_000), Activity.REST, "resuming restores night duty rest");
             helper.assertTrue(SettlementWorkforceService.release(helper.getLevel(), fixture.setup.leader(), fixture.setup.town().id(), guard.getUUID()),
                     "the leader can end civic guard duty");
-            helper.assertTrue(guard.getBrain().getSchedule() == custom, "release restores the original schedule without replacing it with a default");
+            helper.assertTrue(com.jvn.villagerretaliation.villagelife.VillageRoutineSchedule.original(guard.getBrain().getSchedule()) == custom,
+                    "release restores the original schedule underneath ordinary routine variation");
         } finally {
             cleanup(helper, fixture);
         }
@@ -189,7 +190,7 @@ public final class SettlementGuardScheduleGameTests {
                         "a rebuilt native brain regains the same civic rest schedule");
                 fixture.setup.town().removeDuty(restored.getUUID());
                 SettlementWorkforceService.reconcile(helper.getLevel(), restored);
-                helper.assertTrue(restored.getBrain().getSchedule() == Schedule.VILLAGER_DEFAULT,
+                helper.assertTrue(com.jvn.villagerretaliation.villagelife.VillageRoutineSchedule.original(restored.getBrain().getSchedule()) == Schedule.VILLAGER_DEFAULT,
                         "removing the saved duty releases the replacement schedule");
             } finally {
                 restored.discard();
@@ -236,7 +237,7 @@ public final class SettlementGuardScheduleGameTests {
             helper.assertTrue(SettlementWorkforceService.release(level, fixture.setup.leader(), fixture.setup.town().id(), guard.getUUID()),
                     "the leader releases the guard");
             guard.refreshBrain(level);
-            helper.assertTrue(guard.getBrain().getSchedule() == Schedule.VILLAGER_DEFAULT,
+            helper.assertTrue(com.jvn.villagerretaliation.villagelife.VillageRoutineSchedule.original(guard.getBrain().getSchedule()) == Schedule.VILLAGER_DEFAULT,
                     "released residents retain ordinary native brain rebuilding");
             helper.assertFalse(guard.getBrain().isActive(Activity.REST), "released residents select their native daytime activity");
         } finally {

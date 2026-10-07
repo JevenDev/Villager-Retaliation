@@ -115,6 +115,7 @@ neoForge {
             sourceSet = sourceSets.gameTest
             gameDirectory.set(layout.buildDirectory.dir('gametest-run'))
             systemProperty 'villagerretaliation.gametestOriginSeed', gameTestOriginSeed.get()
+            systemProperty 'neoforge.enabledGameTestNamespaces', providers.gradleProperty('gameTestNamespaces').orElse('').get()
             systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
         }
 

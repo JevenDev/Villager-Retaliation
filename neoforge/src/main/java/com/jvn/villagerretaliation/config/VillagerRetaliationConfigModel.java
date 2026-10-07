@@ -328,6 +328,8 @@ public final class VillagerRetaliationConfigModel {
     }
 
     public static final class Social {
+        public boolean enableVillageLife = true;
+
         public boolean enableVillagerSocialGraph = true;
 
         public boolean enableVillagerMoods = true;
