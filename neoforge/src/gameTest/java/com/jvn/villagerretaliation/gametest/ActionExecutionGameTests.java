@@ -453,6 +453,266 @@ public final class ActionExecutionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_nested_start")
+    public static void nestedQuestStartWaitsForAllChildActionsAcrossReload(GameTestHelper helper) {
+        DialogueContext context = context(helper);
+        var child = quest("nested_child", """
+                [{"type":"experience","amount":5},
+                 {"type":"start_scene","scene":"villagerretaliation:contract_wait","operation_id":"first",
+                  "wait_for_result":true,"required":true},
+                 {"type":"experience","amount":7},
+                 {"type":"start_scene","scene":"villagerretaliation:contract_wait","operation_id":"second",
+                  "wait_for_result":true,"required":true},
+                 {"type":"experience","amount":11}]
+                """, "[]");
+        var parent = quest("nested_parent", """
+                [{"type":"experience","amount":2},
+                 {"type":"quest","quest":"villagerretaliation:nested_child","action":"start","required":true},
+                 {"type":"experience","amount":3}]
+                """, "[]");
+        SceneResources.installTestScenes(context.level().getServer(), List.of(scene()));
+        SceneRuntime.initialize(context.level().getServer());
+        VillagerQuestResources.installCompiledTestCatalog(context.level().getServer(), List.of(parent, child), QuestDialogueCatalog.empty());
+        VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), true);
+        var originalScenes = SceneSavedData.get(context.level());
+        var originalQuests = VillagerQuestSavedData.get(context.level());
+        try {
+            int before = context.player().totalExperience;
+            var actions = actions("""
+                    {"actions":[{"type":"experience","amount":13},
+                     {"type":"quest","quest":"villagerretaliation:nested_parent","action":"start","required":true},
+                     {"type":"experience","amount":17}]}
+                    """);
+            var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "nested_start");
+            helper.assertTrue(result.suspended(), "the outer start waits for the nested entry");
+            helper.assertValueEqual(context.player().totalExperience, before + 20, "only prefixes have executed");
+            var parentProgress = originalQuests.get(context.player().getUUID(), parent.id());
+            var childProgress = originalQuests.get(context.player().getUUID(), child.id());
+            var parentContinuation = originalScenes.continuation(parentProgress.stageActions().get("entry").continuationId()).orElseThrow();
+            var childContinuation = originalScenes.continuation(childProgress.stageActions().get("entry").continuationId()).orElseThrow();
+            helper.assertValueEqual(parentContinuation.questId(), parent.id(), "parent continuation retains its own quest identity");
+            helper.assertValueEqual(parentContinuation.dependencyContinuationId(), childContinuation.id(), "parent waits for the child continuation");
+            completeScene(context, originalScenes, childContinuation);
+            SceneContinuationService.maintain(context.level().getServer(), originalScenes);
+            helper.assertValueEqual(context.player().totalExperience, before + 27, "first scene only releases the child middle actions");
+            helper.assertFalse(parentContinuation.completionReceipt(), "a second child scene keeps the parent suspended");
+            var restoredScenes = SceneSavedData.load(originalScenes.save(new CompoundTag(), context.level().registryAccess()), context.level().registryAccess());
+            var restoredQuests = VillagerQuestSavedData.load(originalQuests.save(new CompoundTag(), context.level().registryAccess()), context.level().registryAccess());
+            context.level().getServer().overworld().getDataStorage().set("villagerretaliation_scenes", restoredScenes);
+            context.level().getServer().overworld().getDataStorage().set("villagerretaliation_quests", restoredQuests);
+            var restoredChild = restoredScenes.continuation(childContinuation.id()).orElseThrow();
+            var restoredParent = restoredScenes.continuation(parentContinuation.id()).orElseThrow();
+            helper.assertValueEqual(restoredParent.dependencyContinuationId(), restoredChild.id(), "dependency survives reload");
+            helper.assertValueEqual(restoredParent.nextActionIndex(), 1, "retry cursor points at the nested start");
+            completeScene(context, restoredScenes, restoredChild);
+            for (int i = 0; i < 5; i++) SceneContinuationService.maintain(context.level().getServer(), restoredScenes);
+            helper.assertTrue(restoredScenes.continuation(result.continuationId()).orElseThrow().completionReceipt(), "all nested work completes");
+            helper.assertValueEqual(context.player().totalExperience, before + 58, "each prefix and suffix runs exactly once");
+            helper.assertTrue(QuestStageActionService.ready(context, restoredQuests.get(context.player().getUUID(), parent.id())), "parent checkpoint settles");
+            var duplicate = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "nested_start");
+            helper.assertTrue(duplicate.outcome().success(), "duplicate start returns the committed result");
+            helper.assertValueEqual(context.player().totalExperience, before + 58, "duplicate start cannot repeat outer rewards");
+        } finally {
+            context.level().getServer().overworld().getDataStorage().set("villagerretaliation_scenes", originalScenes);
+            context.level().getServer().overworld().getDataStorage().set("villagerretaliation_quests", originalQuests);
+            originalScenes.continuations().stream().filter(value -> value.playerId().equals(context.player().getUUID())).forEach(SceneContinuation::complete);
+            VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), false);
+            VillagerQuestResources.clearCache();
+            SceneResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_nested_failure")
+    public static void nestedQuestFailureAfterSceneBlocksOuterRewards(GameTestHelper helper) {
+        DialogueContext context = context(helper);
+        var definition = quest("nested_failure", """
+                [{"type":"experience","amount":2},
+                 {"type":"start_scene","scene":"villagerretaliation:contract_wait","operation_id":"before_failure",
+                  "wait_for_result":true,"required":true},
+                 {"type":"start_scene","scene":"villagerretaliation:missing_contract_scene","operation_id":"failure","required":true},
+                 {"type":"experience","amount":3}]
+                """, "[]");
+        SceneResources.installTestScenes(context.level().getServer(), List.of(scene()));
+        SceneRuntime.initialize(context.level().getServer());
+        VillagerQuestResources.installCompiledTestCatalog(context.level().getServer(), List.of(definition), QuestDialogueCatalog.empty());
+        VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), true);
+        try {
+            int before = context.player().totalExperience;
+            var actions = actions("""
+                    {"actions":[{"type":"quest","quest":"villagerretaliation:nested_failure","action":"start","required":true},
+                     {"type":"experience","amount":17}]}
+                    """);
+            var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "nested_failure");
+            helper.assertTrue(result.suspended(), "nested start suspends");
+            var data = SceneSavedData.get(context.level());
+            var parent = data.continuation(result.continuationId()).orElseThrow();
+            completeScene(context, data, parent);
+            for (int i = 0; i < 3; i++) SceneContinuationService.maintain(context.level().getServer(), data);
+            helper.assertValueEqual(parent.actionStatus(), ActionStatus.UNAVAILABLE, "failure after the scene reaches the caller");
+            helper.assertValueEqual(context.player().totalExperience, before + 2, "neither inner nor outer rewards run after failure");
+            helper.assertValueEqual(VillagerActionRegistry.execute(context, actions.getFirst(), Map.of()).status(),
+                    ActionStatus.UNAVAILABLE, "a repeated start cannot hide the failed entry behind a reminder");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), false);
+            VillagerQuestResources.clearCache();
+            SceneResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_nested_transition")
+    public static void nestedChoiceFinishesExitBeforeRecordingChoiceAndRewards(GameTestHelper helper) {
+        DialogueContext context = context(helper);
+        var definition = quest("nested_transition", "[]", """
+                [{"type":"experience","amount":2},
+                 {"type":"start_scene","scene":"villagerretaliation:contract_wait","operation_id":"nested_exit",
+                  "wait_for_result":true,"required":true},
+                 {"type":"experience","amount":3}]
+                """);
+        SceneResources.installTestScenes(context.level().getServer(), List.of(scene()));
+        SceneRuntime.initialize(context.level().getServer());
+        VillagerQuestResources.installCompiledTestCatalog(context.level().getServer(), List.of(definition), QuestDialogueCatalog.empty());
+        VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), true);
+        try {
+            helper.assertTrue(VillagerQuestService.debugStartQuest(context.player(), context.villager(), definition.id(), true).started(), "fixture starts");
+            int before = context.player().totalExperience;
+            var actions = actions("""
+                    {"actions":[{"type":"experience","amount":5},
+                     {"type":"quest_transition","quest":"villagerretaliation:nested_transition","from_stage":"offer",
+                      "target_stage":"finish","scene_path":"offer","response_id":"accept","required":true},
+                     {"type":"experience","amount":7}]}
+                    """);
+            var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "nested_transition");
+            helper.assertTrue(result.suspended(), "transition forwards the exit suspension");
+            var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), definition.id());
+            helper.assertFalse(progress.hasChoice("offer", "accept", "offer"), "choice waits for exit actions");
+            var data = SceneSavedData.get(context.level());
+            var continuation = data.continuation(result.continuationId()).orElseThrow();
+            completeScene(context, data, continuation);
+            for (int i = 0; i < 3; i++) SceneContinuationService.maintain(context.level().getServer(), data);
+            helper.assertTrue(continuation.completionReceipt(), "outer transition sequence completes");
+            helper.assertValueEqual(continuation.actionStatus(), ActionStatus.SUCCESS, "transition resumes successfully");
+            helper.assertTrue(progress.hasChoice("offer", "accept", "offer"), "resumption records the original choice");
+            helper.assertValueEqual(progress.currentStage(), "finish", "resumption reaches the chosen stage");
+            helper.assertValueEqual(context.player().totalExperience, before + 17, "exit and caller effects apply once");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), false);
+            VillagerQuestResources.clearCache();
+            SceneResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_nested_lifecycle")
+    public static void deferredStartHooksRemainPartOfTheNestedOperation(GameTestHelper helper) {
+        DialogueContext context = context(helper);
+        var definition = quest("nested_lifecycle", """
+                [{"type":"start_scene","scene":"villagerretaliation:contract_wait","operation_id":"entry",
+                  "wait_for_result":true,"required":true},{"type":"experience","amount":2}]
+                """, "[]", """
+                [{"id":"after_entry","event":"started","actions":[
+                  {"type":"start_scene","scene":"villagerretaliation:contract_wait","operation_id":"started",
+                   "wait_for_result":true,"required":true},{"type":"experience","amount":3}]}]
+                """);
+        SceneResources.installTestScenes(context.level().getServer(), List.of(scene()));
+        SceneRuntime.initialize(context.level().getServer());
+        VillagerQuestResources.installCompiledTestCatalog(context.level().getServer(), List.of(definition), QuestDialogueCatalog.empty());
+        VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), true);
+        try {
+            int before = context.player().totalExperience;
+            var result = QuestActionSequenceRunner.runResult(context, actions("""
+                    {"actions":[{"type":"quest","quest":"villagerretaliation:nested_lifecycle","action":"start","required":true},
+                     {"type":"experience","amount":7}]}
+                    """), Map.of(), null, "nested_lifecycle");
+            var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), definition.id());
+            helper.assertTrue(progress.hasPendingLifecycleEvents(), "start hooks wait for entry completion");
+            var quests = VillagerQuestSavedData.get(context.level());
+            var restored = VillagerQuestSavedData.load(quests.save(new CompoundTag(), context.level().registryAccess()), context.level().registryAccess());
+            helper.assertTrue(restored.get(context.player().getUUID(), definition.id()).hasPendingLifecycleEvents(),
+                    "deferred start hooks survive reload");
+            var data = SceneSavedData.get(context.level());
+            var parent = data.continuation(result.continuationId()).orElseThrow();
+            completeScene(context, data, parent);
+            for (int i = 0; i < 3; i++) SceneContinuationService.maintain(context.level().getServer(), data);
+            helper.assertFalse(parent.completionReceipt(), "start hook suspension keeps the caller waiting");
+            helper.assertValueEqual(context.player().totalExperience, before + 2, "caller reward waits for start hooks");
+            completeScene(context, data, parent);
+            for (int i = 0; i < 3; i++) SceneContinuationService.maintain(context.level().getServer(), data);
+            helper.assertTrue(parent.completionReceipt(), "entry and start hooks finish the nested operation");
+            helper.assertValueEqual(parent.actionStatus(), ActionStatus.SUCCESS, "nested lifecycle result");
+            helper.assertValueEqual(context.player().totalExperience, before + 12, "hook and caller rewards apply once");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), false);
+            VillagerQuestResources.clearCache();
+            SceneResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_continuation_dependencies")
+    public static void compactionPreservesCompletedDependenciesUntilParentsFinish(GameTestHelper helper) {
+        var data = new SceneSavedData();
+        var player = java.util.UUID.randomUUID();
+        var run = java.util.UUID.randomUUID();
+        var owner = new SceneOwner(SceneResource.OwnershipMode.QUEST_INSTANCE, player, null, run, "");
+        var first = data.start(scene(), "first", owner, run, Set.of(player), Map.of(), 0L).instance();
+        var second = data.start(scene(), "second", owner, run, Set.of(player), Map.of(), 0L).instance();
+        var child = data.suspendContinuation(second, player, null, "child", List.of(), 0, Map.of());
+        var parent = data.suspendContinuation(first, player, null, "parent", List.of(), 0, Map.of());
+        parent.waitOn(first.id(), child.id(), true);
+        child.complete();
+        SceneTransitionService.complete(data, first, 1L);
+        SceneTransitionService.complete(data, second, 1L);
+        first.cleanupStatus(com.jvn.villagerretaliation.scene.runtime.SceneInstance.CleanupStatus.COMPLETE);
+        second.cleanupStatus(com.jvn.villagerretaliation.scene.runtime.SceneInstance.CleanupStatus.COMPLETE);
+        var restored = SceneSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+        helper.assertValueEqual(restored.compactTerminalHistory(SceneSavedData.TERMINAL_RETENTION_TICKS + 2, 8), 0,
+                "a completed child remains available while its parent has not consumed the result");
+        helper.assertTrue(restored.continuation(child.id()).isPresent(), "dependency result survives compaction");
+        restored.continuation(parent.id()).orElseThrow().complete();
+        helper.assertValueEqual(restored.compactTerminalHistory(SceneSavedData.TERMINAL_RETENTION_TICKS + 3, 8), 2,
+                "settled parent and child history can compact together");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_continuation_dependencies")
+    public static void cyclicSavedDependenciesFailWithoutExecutingEffects(GameTestHelper helper) {
+        var data = new SceneSavedData();
+        var player = java.util.UUID.randomUUID();
+        var run = java.util.UUID.randomUUID();
+        var owner = new SceneOwner(SceneResource.OwnershipMode.QUEST_INSTANCE, player, null, run, "");
+        var scene = data.start(scene(), "cycle", owner, run, Set.of(player), Map.of(), 0L).instance();
+        var first = data.suspendContinuation(scene, player, null, "first", List.of(), 0, Map.of());
+        var second = data.suspendContinuation(scene, player, null, "second", List.of(), 0, Map.of());
+        first.waitOn(scene.id(), second.id(), true);
+        second.waitOn(scene.id(), first.id(), true);
+        SceneContinuationService.maintain(helper.getLevel().getServer(), data);
+        helper.assertValueEqual(first.actionStatus(), ActionStatus.FAILED, "cyclic dependencies fail explicitly");
+        helper.assertValueEqual(second.actionStatus(), ActionStatus.FAILED, "cycle failure reaches all participants");
+        helper.succeed();
+    }
+
+    private static com.jvn.villagerretaliation.quest.compiled.CompiledQuest quest(String id, String entry, String exit) {
+        return quest(id, entry, exit, "[]");
+    }
+
+    private static com.jvn.villagerretaliation.quest.compiled.CompiledQuest quest(String id, String entry, String exit, String events) {
+        var raw = json("""
+                {"schema":"villagerretaliation:quest/v2","id":"villagerretaliation:%s",
+                 "provider":{"type":"villagerretaliation:villager"},"entry_stage":"offer","events":%s,"stages":[
+                  {"id":"offer","objectives":[{"id":"wait","type":"choice"}],"complete_when":["wait"],"next":"finish",
+                   "on_enter":%s,"on_exit":%s},
+                  {"id":"finish","objectives":[]}]}
+                """.formatted(id, events, entry, exit));
+        var envelope = QuestResourceEnvelope.read(VillagerRetaliation.id("quests/" + id + ".json"), raw).orElseThrow();
+        return QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
+    }
+
+    private static void completeScene(DialogueContext context, SceneSavedData data, SceneContinuation continuation) {
+        SceneTransitionService.complete(data, data.get(continuation.sceneInstanceId()).orElseThrow(), context.level().getGameTime());
+    }
+
     private static DialogueContext context(GameTestHelper helper) {
         var player = helper.makeMockServerPlayerInLevel();
         var villager = EntityType.VILLAGER.create(helper.getLevel());

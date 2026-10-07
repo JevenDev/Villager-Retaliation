@@ -8,13 +8,21 @@ public record ActionResult(
         String message,
         Set<ActionCapability> capabilities,
         VillagerActionResult legacyResult,
-        UUID suspensionId
+        UUID suspensionId,
+        SuspensionKind suspensionKind,
+        boolean retryOnResume
 ) {
     public ActionResult {
         status = status == null ? ActionStatus.SKIPPED : status;
         message = message == null ? "" : message;
         capabilities = capabilities == null ? Set.of() : Set.copyOf(capabilities);
         legacyResult = legacyResult == null ? VillagerActionResult.EMPTY : legacyResult;
+        suspensionKind = suspensionKind == null ? SuspensionKind.SCENE : suspensionKind;
+    }
+
+    public ActionResult(ActionStatus status, String message, Set<ActionCapability> capabilities,
+            VillagerActionResult legacyResult, UUID suspensionId) {
+        this(status, message, capabilities, legacyResult, suspensionId, SuspensionKind.SCENE, false);
     }
 
     public ActionResult(ActionStatus status, String message, Set<ActionCapability> capabilities,
@@ -43,6 +51,17 @@ public record ActionResult(
     public static ActionResult suspended(UUID suspensionId, Set<ActionCapability> capabilities) {
         return new ActionResult(ActionStatus.SUSPENDED, "waiting for scene", capabilities,
                 VillagerActionResult.success(), suspensionId);
+    }
+
+    public static ActionResult suspendedContinuation(UUID continuationId, String message,
+            Set<ActionCapability> capabilities, VillagerActionResult legacyResult) {
+        return new ActionResult(ActionStatus.SUSPENDED, message, capabilities, legacyResult,
+                continuationId, SuspensionKind.CONTINUATION, true);
+    }
+
+    public enum SuspensionKind {
+        SCENE,
+        CONTINUATION
     }
 
     public boolean skipped() {

@@ -36,6 +36,11 @@ public final class SceneSaveMigrations {
             } else if (version == 4) {
                 migrateContinuationResults(data);
                 version = 5;
+            } else if (version == 5) {
+                for (Tag raw : data.getList("Continuations", Tag.TAG_COMPOUND)) {
+                    if (raw instanceof CompoundTag continuation) continuation.putBoolean("RetrySuspendedAction", false);
+                }
+                version = 6;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);

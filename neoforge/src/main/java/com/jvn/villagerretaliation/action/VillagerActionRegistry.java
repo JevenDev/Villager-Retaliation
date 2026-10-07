@@ -7,6 +7,8 @@ import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.scene.SceneLaunchService;
+import com.jvn.villagerretaliation.scene.SceneContinuationService;
+import com.jvn.villagerretaliation.quest.runtime.QuestStageActionService;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -185,6 +187,15 @@ public final class VillagerActionRegistry {
         }
         VillagerActionResult legacyResult =
                 VillagerActionExecutor.executeDirect(context, action, inheritedReplacements);
+        if (context != null && action.questId() != null && SceneContinuationService.questOperation(action)) {
+            var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), action.questId());
+            ActionResult pending = progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                    ? null : QuestStageActionService.pending(context, progress);
+            if (pending != null) {
+                return new ActionResult(pending.status(), pending.message(), capabilities, legacyResult,
+                        pending.suspensionId(), pending.suspensionKind(), pending.retryOnResume());
+            }
+        }
         if (action.kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION) {
             return switch (legacyResult.replacements().getOrDefault("quest_transition_status", "missing")) {
                 case "selected" -> ActionResult.success(legacyResult, capabilities);

@@ -38,11 +38,12 @@ public final class ActionSequenceRunner {
             if (result.flashTracker() && trackerFlashHandler != null) trackerFlashHandler.run();
             ran |= result.ran();
             flash |= result.flashTracker();
-            if (observer != null) observer.accept(index + 1, outcome);
+            int next = outcome.suspended() && outcome.retryOnResume() ? index : index + 1;
+            if (observer != null) observer.accept(next, outcome);
             if (outcome.suspended() || (action.required() && !outcome.success())) {
                 return new Result(new ActionResult(outcome.status(), outcome.message(), capabilities,
                         new VillagerActionResult(ran, lineId, String.join(" ", text), replacements, flash),
-                        outcome.suspensionId()), index + 1);
+                        outcome.suspensionId(), outcome.suspensionKind(), outcome.retryOnResume()), next);
             }
         }
         VillagerActionResult result = new VillagerActionResult(

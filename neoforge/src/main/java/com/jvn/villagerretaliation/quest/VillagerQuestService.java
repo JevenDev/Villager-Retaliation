@@ -2173,6 +2173,7 @@ public final class VillagerQuestService {
         }
         boolean changed = false;
         for (int i = 0; i < MAX_STAGE_ADVANCES_PER_CHECK; i++) {
+            if (com.jvn.villagerretaliation.scene.SceneContinuationService.hasPendingQuestOperation(context, definition.id())) break;
             if (!QuestStageActionService.ready(context, progress)) break;
             if (!progress.pendingStageTransition().isBlank()) {
                 if (!changeQuestStage(context, definition, progress, progress.pendingStageTransition(), true, true)) break;
@@ -2305,6 +2306,7 @@ public final class VillagerQuestService {
         if (!forceRestart && progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
             if (matchesVillagerLock(context, definition, progress)) {
                 linkExistingActivePartyQuest(context, definition, progress);
+                if (resumePendingLifecycleEvents(context.player(), definition, progress)) data.setDirty();
                 return remindQuest(context, definition);
             }
             return result(
@@ -2375,7 +2377,10 @@ public final class VillagerQuestService {
             maybeGiveQuestTargetMap(context, definition, target);
         }
         sendQuestNotification(context, "quest.started", definition, started, "Quest started: {quest}");
-        if (dispatchQuestTriggers(context, definition, started, QuestDefinition.TriggerEvent.STARTED)) {
+        if (!QuestStageActionService.ready(context, started)) {
+            deferLifecycleEvent(context.level(), definition, started, QuestDefinition.TriggerEvent.STARTED);
+            data.setDirty();
+        } else if (dispatchQuestTriggers(context, definition, started, QuestDefinition.TriggerEvent.STARTED)) {
             data.setDirty();
         }
         sendTrackerSync(context.player(), true);
@@ -2563,7 +2568,10 @@ public final class VillagerQuestService {
             maybeGiveQuestTargetMap(memberContext, definition, target);
         }
         sendQuestNotification(memberContext, "quest.started", definition, linked, "Quest started: {quest}");
-        if (dispatchQuestTriggers(memberContext, definition, linked, QuestDefinition.TriggerEvent.STARTED)) {
+        if (!QuestStageActionService.ready(memberContext, linked)) {
+            deferLifecycleEvent(level, definition, linked, QuestDefinition.TriggerEvent.STARTED);
+            data.setDirty();
+        } else if (dispatchQuestTriggers(memberContext, definition, linked, QuestDefinition.TriggerEvent.STARTED)) {
             data.setDirty();
         }
         PartyQuestService.syncPersonalProgress(shared, definition, linked);
@@ -5396,6 +5404,13 @@ public final class VillagerQuestService {
         }
         boolean resolved = false;
         for (QuestDefinition.TriggerEvent event : List.copyOf(progress.pendingLifecycleEvents())) {
+            if (event == QuestDefinition.TriggerEvent.STARTED) {
+                if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
+                    resolved |= progress.resolveLifecycleEvent(event);
+                    continue;
+                }
+                if (!QuestStageActionService.ready(context, progress)) continue;
+            }
             boolean stillAuthored = compiled.triggerIndex().hasEvent(event);
             if (stillAuthored) {
                 dispatchQuestTriggers(context, compiled, progress, event);
@@ -5556,6 +5571,11 @@ public final class VillagerQuestService {
         }
         Map<String, String> actionReplacements = new LinkedHashMap<>(replacements(context, definition, progress));
         actionReplacements.putAll(triggerContext.replacements());
+        if (triggerContext.event() == QuestDefinition.TriggerEvent.STARTED) {
+            return QuestStageActionService.run(context, definition, progress, "trigger/started/" + trigger.id(),
+                    trigger.actions(), Map.copyOf(actionReplacements), () -> sendTrackerSync(context.player(), true))
+                    .legacyResult().ran();
+        }
         return QuestActionSequenceRunner.run(
                 context,
                 trigger.actions(),

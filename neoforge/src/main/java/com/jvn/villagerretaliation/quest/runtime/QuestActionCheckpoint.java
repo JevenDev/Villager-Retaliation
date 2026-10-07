@@ -18,8 +18,10 @@ public record QuestActionCheckpoint(ActionStatus status, String diagnostic, UUID
     }
 
     public ActionResult outcome() {
-        return new ActionResult(status, diagnostic, Set.of(),
-                new VillagerActionResult(false, "", "", replacements, false));
+        VillagerActionResult output = new VillagerActionResult(false, "", "", replacements, false);
+        return status == ActionStatus.SUSPENDED
+                ? ActionResult.suspendedContinuation(continuationId, diagnostic, Set.of(), output)
+                : new ActionResult(status, diagnostic, Set.of(), output);
     }
 
     public CompoundTag save() {

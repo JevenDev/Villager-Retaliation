@@ -1174,7 +1174,8 @@ public class VillagerQuestSavedData extends SavedData {
         }
 
         private static boolean isDeferredLifecycleEvent(QuestDefinition.TriggerEvent event) {
-            return event == QuestDefinition.TriggerEvent.COMPLETED
+            return event == QuestDefinition.TriggerEvent.STARTED
+                    || event == QuestDefinition.TriggerEvent.COMPLETED
                     || event == QuestDefinition.TriggerEvent.FAILED
                     || event == QuestDefinition.TriggerEvent.ABANDONED
                     || event == QuestDefinition.TriggerEvent.EXPIRED;

@@ -20,6 +20,8 @@ import net.minecraft.resources.ResourceLocation;
 public final class SceneContinuation {
     private final UUID id;
     private UUID sceneInstanceId;
+    private UUID dependencyContinuationId;
+    private boolean retrySuspendedAction;
     private final UUID playerId;
     private final UUID providerId;
     private final ResourceLocation questId;
@@ -52,6 +54,8 @@ public final class SceneContinuation {
 
     public UUID id() { return id; }
     public UUID sceneInstanceId() { return sceneInstanceId; }
+    public UUID dependencyContinuationId() { return dependencyContinuationId; }
+    public boolean retrySuspendedAction() { return retrySuspendedAction; }
     public UUID playerId() { return playerId; }
     public UUID providerId() { return providerId; }
     public ResourceLocation questId() { return questId; }
@@ -78,7 +82,13 @@ public final class SceneContinuation {
     }
 
     public void waitOn(UUID sceneId) {
+        waitOn(sceneId, null, false);
+    }
+
+    public void waitOn(UUID sceneId, UUID dependencyId, boolean retryAction) {
         sceneInstanceId = sceneId;
+        dependencyContinuationId = dependencyId;
+        retrySuspendedAction = retryAction;
         state = State.WAITING;
         actionStatus = ActionStatus.SUSPENDED;
         sceneResult = SceneInstance.CompletionResult.NONE;
@@ -99,6 +109,8 @@ public final class SceneContinuation {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", id);
         tag.putUUID("Scene", sceneInstanceId);
+        if (dependencyContinuationId != null) tag.putUUID("DependencyContinuation", dependencyContinuationId);
+        tag.putBoolean("RetrySuspendedAction", retrySuspendedAction);
         tag.putUUID("Player", playerId);
         if (providerId != null) tag.putUUID("Provider", providerId);
         if (questId != null) tag.putString("Quest", questId.toString());
@@ -144,6 +156,8 @@ public final class SceneContinuation {
         try { value.state = State.valueOf(tag.getString("State")); } catch (IllegalArgumentException ignored) { }
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
+        value.dependencyContinuationId = tag.hasUUID("DependencyContinuation") ? tag.getUUID("DependencyContinuation") : null;
+        value.retrySuspendedAction = tag.getBoolean("RetrySuspendedAction");
         value.completionReceipt = tag.getBoolean("CompletionReceipt");
         value.actionStatus = enumValue(ActionStatus.class, tag.getString("ActionStatus"),
                 value.completionReceipt ? ActionStatus.SUCCESS : ActionStatus.SUSPENDED);

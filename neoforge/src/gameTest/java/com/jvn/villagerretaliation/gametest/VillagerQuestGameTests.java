@@ -2025,6 +2025,7 @@ public final class VillagerQuestGameTests {
         movePlayer(helper, player, new BlockPos(1, 2, 2));
         configureChooseTheHorizonProvider(level, villager);
         markQuestCompleted(level, player.getUUID(), VillagerRetaliation.id("the_atlas_test"));
+        com.jvn.villagerretaliation.scene.SceneRuntime.initialize(level.getServer());
 
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
@@ -6052,16 +6053,18 @@ public final class VillagerQuestGameTests {
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), questId);
-        helper.assertTrue(progress != null, branchId + " response did not commit before its blocking scene");
+        helper.assertTrue(progress == null || progress.choiceHistory().isEmpty(),
+                branchId + " transition must wait for the authored scene");
         SceneSavedData scenes = SceneSavedData.get(level);
-        scenes.continuations().stream()
+        var waitingScene = scenes.continuations().stream()
                 .filter(value -> value.playerId().equals(player.getUUID()) && !value.completionReceipt())
                 .findFirst()
                 .flatMap(value -> scenes.get(value.sceneInstanceId()))
-                .ifPresent(waitingScene -> {
-                    SceneTransitionService.complete(scenes, waitingScene, level.getGameTime());
-                    SceneContinuationService.maintain(level.getServer(), scenes);
-                });
+                .orElseThrow(() -> new GameTestAssertException(branchId + " response did not suspend on its scene"));
+        SceneTransitionService.complete(scenes, waitingScene, level.getGameTime());
+        SceneContinuationService.maintain(level.getServer(), scenes);
+        progress = data.get(player.getUUID(), questId);
+        helper.assertTrue(progress != null, branchId + " response did not commit after its scene completed");
         helper.assertValueEqual(progress.currentStage(), nextStage, branchId + " transition stage");
         helper.assertValueEqual(progress.choiceHistory().size(), 1, branchId + " choice history count");
         VillagerQuestSavedData.ChoiceHistoryEntry choice = progress.choiceHistory().getFirst();

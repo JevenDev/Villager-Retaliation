@@ -14,10 +14,12 @@ import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneContinuation;
 import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,6 +28,7 @@ import net.minecraft.world.entity.npc.Villager;
 
 public final class SceneContinuationService {
     private static final int MAX_CONTINUATIONS_PER_TICK = 16;
+    private static final ThreadLocal<Set<UUID>> RESUMING = ThreadLocal.withInitial(HashSet::new);
 
     private SceneContinuationService() {
     }
@@ -38,6 +41,12 @@ public final class SceneContinuationService {
     public static RunResult run(DialogueContext context, List<VillagerActionDefinition> actions,
             Map<String, String> baseReplacements, Runnable trackerFlashHandler, String sourcePointer,
             SceneContinuation.DialogueResume dialogueResume) {
+        return run(context, actions, baseReplacements, trackerFlashHandler, sourcePointer, dialogueResume, null, null);
+    }
+
+    public static RunResult run(DialogueContext context, List<VillagerActionDefinition> actions,
+            Map<String, String> baseReplacements, Runnable trackerFlashHandler, String sourcePointer,
+            SceneContinuation.DialogueResume dialogueResume, ResourceLocation questId, UUID questRunId) {
         RunResult existing = existingContinuation(context, actions, sourcePointer);
         if (existing != null) return existing;
         ActionSequenceRunner.Result sequence = ActionSequenceRunner.run(
@@ -45,21 +54,35 @@ public final class SceneContinuationService {
         ActionResult result = sequence.outcome();
         if (!result.suspended()) return RunResult.of(result, null);
         SceneSavedData data = SceneSavedData.get(context.level());
-        SceneInstance scene = data.get(result.suspensionId()).orElse(null);
+        WaitTarget target = waitTarget(data, result);
+        SceneInstance scene = target == null ? null : target.scene();
         if (scene == null) return RunResult.of(ActionResult.unavailable(
                 "scene instance unavailable", result.capabilities(), result.legacyResult()), null);
         if (scene.state().terminal() && scene.completionResult() != SceneInstance.CompletionResult.SUCCESS) {
             return RunResult.of(new ActionResult(ActionStatus.FAILED, "scene did not complete successfully",
                     result.capabilities(), result.legacyResult()), null);
         }
-        int index = sequence.nextActionIndex() - 1;
+        int index = sequence.nextActionIndex() - (result.retryOnResume() ? 0 : 1);
+        VillagerActionDefinition suspendedAction = actions.get(index);
+        ResourceLocation ownerQuest = questId == null ? suspendedAction.questId() : questId;
+        var ownerProgress = ownerQuest == null ? null
+                : VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), ownerQuest);
+        UUID ownerRun = questId == null && ownerProgress != null ? ownerProgress.questRunId() : questRunId;
         SceneContinuation continuation = data.suspendContinuation(scene, context.player().getUUID(),
-                context.villager().getUUID(), pointer(sourcePointer, actions.get(index), index),
-                actions, sequence.nextActionIndex(), result.legacyResult().replacements());
+                context.villager().getUUID(), pointer(sourcePointer, suspendedAction, index),
+                actions, sequence.nextActionIndex(), result.legacyResult().replacements(),
+                ownerQuest, ownerRun);
         if (continuation.completionReceipt()) {
             return RunResult.of(new ActionResult(continuation.actionStatus(), continuation.actionDiagnostic(),
                     result.capabilities(), result.legacyResult()), continuation.id());
         }
+        if (cyclicDependency(data, continuation.id(), target.dependencyId())) {
+            ActionResult failure = ActionResult.failed("cyclic action continuation dependency", result.capabilities());
+            continuation.finish(failure);
+            data.changed();
+            return RunResult.of(failure, continuation.id());
+        }
+        continuation.waitOn(scene.id(), target.dependencyId(), result.retryOnResume());
         continuation.dialogueResume(dialogueResume);
         data.changed();
         return RunResult.of(result, continuation.id());
@@ -70,10 +93,10 @@ public final class SceneContinuationService {
         if (context == null || actions == null) return null;
         for (int index = 0; index < actions.size(); index++) {
             VillagerActionDefinition action = actions.get(index);
-            if (action.kind() != VillagerActionDefinition.Kind.START_SCENE || !action.waitForScene()) continue;
+            if (!(action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene())
+                    && !questOperation(action)) continue;
             String source = pointer(sourcePointer, action, index);
             for (SceneContinuation continuation : SceneSavedData.get(context.level()).continuations()) {
-                if (!java.util.Objects.equals(action.questId(), continuation.questId())) continue;
                 if (!source.equals(continuation.sourcePointer())
                         || !context.player().getUUID().equals(continuation.playerId())
                         || !context.villager().getUUID().equals(continuation.providerId())) continue;
@@ -94,6 +117,24 @@ public final class SceneContinuationService {
         return null;
     }
 
+    public static boolean questOperation(VillagerActionDefinition action) {
+        return action != null && (action.kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION
+                || action.kind() == VillagerActionDefinition.Kind.QUEST
+                        && action.questAction() != VillagerActionDefinition.QuestAction.REMIND
+                || action.kind() == VillagerActionDefinition.Kind.SET_VARIABLE
+                        && action.factScope() == com.jvn.villagerretaliation.quest.QuestFactScope.QUEST
+                        && "stage".equals(action.factKey()));
+    }
+
+    public static boolean hasPendingQuestOperation(DialogueContext context, ResourceLocation questId) {
+        return SceneSavedData.get(context.level()).continuations().stream().anyMatch(continuation ->
+                !continuation.completionReceipt() && continuation.retrySuspendedAction()
+                        && !RESUMING.get().contains(continuation.id())
+                        && context.player().getUUID().equals(continuation.playerId())
+                        && continuation.nextActionIndex() < continuation.actions().size()
+                        && questId.equals(continuation.actions().get(continuation.nextActionIndex()).questId()));
+    }
+
     public static boolean hasPendingDialogue(DialogueContext context) {
         return SceneSavedData.get(context.level()).continuations().stream().anyMatch(continuation ->
                 !continuation.completionReceipt() && continuation.dialogueResume() != null
@@ -106,20 +147,44 @@ public final class SceneContinuationService {
         for (SceneContinuation continuation : data.continuations()) {
             if (work >= MAX_CONTINUATIONS_PER_TICK) break;
             if (continuation.completionReceipt()) continue;
-            SceneInstance scene = data.get(continuation.sceneInstanceId()).orElse(null);
-            if (scene == null || !scene.state().terminal()) continue;
-            work++;
-            if (continuation.state() == SceneContinuation.State.WAITING) {
-                continuation.resuming(scene.completionResult());
-                data.changed();
+            ActionResult dependencyResult;
+            if (continuation.dependencyContinuationId() != null) {
+                if (cyclicDependency(data, continuation.id(), continuation.dependencyContinuationId())) {
+                    dependencyResult = ActionResult.failed("cyclic action continuation dependency", Set.of());
+                } else {
+                    SceneContinuation dependency = data.continuation(continuation.dependencyContinuationId()).orElse(null);
+                    if (dependency == null || !dependency.completionReceipt()) continue;
+                    dependencyResult = new ActionResult(dependency.actionStatus(), dependency.actionDiagnostic(),
+                            Set.of(), VillagerActionResult.EMPTY);
+                }
+            } else {
+                SceneInstance scene = data.get(continuation.sceneInstanceId()).orElse(null);
+                if (scene == null || !scene.state().terminal()) continue;
+                if (continuation.state() == SceneContinuation.State.WAITING) {
+                    continuation.resuming(scene.completionResult());
+                    data.changed();
+                }
+                dependencyResult = scene.completionResult() == SceneInstance.CompletionResult.SUCCESS
+                        ? ActionResult.success(VillagerActionResult.EMPTY, Set.of())
+                        : ActionResult.failed("scene " + scene.completionResult(), Set.of());
             }
-            if (scene.completionResult() != SceneInstance.CompletionResult.SUCCESS) {
-                continuation.finish(ActionResult.failed("scene " + scene.completionResult(), Set.of()));
+            work++;
+            if (!dependencyResult.success()) {
+                continuation.finish(dependencyResult);
                 QuestStageActionService.settleContinuation(server.overworld(), continuation);
                 data.changed();
                 continue;
             }
-            resume(server, data, continuation);
+            if (continuation.state() == SceneContinuation.State.WAITING) {
+                continuation.resuming(SceneInstance.CompletionResult.SUCCESS);
+                data.changed();
+            }
+            RESUMING.get().add(continuation.id());
+            try {
+                resume(server, data, continuation);
+            } finally {
+                RESUMING.get().remove(continuation.id());
+            }
         }
     }
 
@@ -146,7 +211,15 @@ public final class SceneContinuationService {
                 });
         ActionResult result = sequence.outcome();
         if (result.suspended()) {
-            continuation.waitOn(result.suspensionId());
+            WaitTarget target = waitTarget(data, result);
+            if (target == null || cyclicDependency(data, continuation.id(), target.dependencyId())) {
+                result = ActionResult.failed(target == null ? "action suspension target unavailable"
+                        : "cyclic action continuation dependency", result.capabilities());
+                continuation.finish(result);
+                QuestStageActionService.settleContinuation(player.serverLevel(), continuation);
+            } else {
+                continuation.waitOn(target.scene().id(), target.dependencyId(), result.retryOnResume());
+            }
         } else {
             continuation.finish(result);
             QuestStageActionService.settleContinuation(player.serverLevel(), continuation);
@@ -155,6 +228,30 @@ public final class SceneContinuationService {
         if (result.success() && continuation.dialogueResume() != null) {
             DialogueTreeService.resumeAfterActions(context, continuation.dialogueResume(), continuation.replacements());
         }
+    }
+
+    private static WaitTarget waitTarget(SceneSavedData data, ActionResult result) {
+        UUID dependencyId = result.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION
+                ? result.suspensionId() : null;
+        SceneContinuation dependency = dependencyId == null ? null : data.continuation(dependencyId).orElse(null);
+        if (dependencyId != null && dependency == null) return null;
+        UUID sceneId = dependency == null ? result.suspensionId() : dependency.sceneInstanceId();
+        SceneInstance scene = data.get(sceneId).orElse(null);
+        return scene == null ? null : new WaitTarget(scene, dependencyId);
+    }
+
+    private static boolean cyclicDependency(SceneSavedData data, UUID parentId, UUID dependencyId) {
+        Set<UUID> visited = new HashSet<>();
+        visited.add(parentId);
+        while (dependencyId != null) {
+            if (!visited.add(dependencyId)) return true;
+            SceneContinuation dependency = data.continuation(dependencyId).orElse(null);
+            dependencyId = dependency == null ? null : dependency.dependencyContinuationId();
+        }
+        return false;
+    }
+
+    private record WaitTarget(SceneInstance scene, UUID dependencyId) {
     }
 
     private static Villager findVillager(MinecraftServer server, UUID id) {
@@ -168,7 +265,17 @@ public final class SceneContinuationService {
 
     private static String pointer(String source, VillagerActionDefinition action, int index) {
         String base = source == null || source.isBlank() ? "quest_action_sequence" : source;
-        return base + "/" + index + "/" + action.sceneOperationId();
+        String operation = action.sceneOperationId();
+        if (questOperation(action)) {
+            operation = action.kind().serializedName() + "/" + action.questId() + "/" + switch (action.kind()) {
+                case QUEST -> action.questAction().name();
+                case QUEST_TRANSITION -> action.questTransition().stageId() + "/"
+                        + action.questTransition().scenePath() + "/" + action.questTransition().responseId();
+                case SET_VARIABLE -> action.factKey();
+                default -> "";
+            };
+        }
+        return base + "/" + index + "/" + operation;
     }
 
     public record RunResult(boolean ran, boolean suspended, ActionResult outcome, UUID continuationId) {

@@ -23,21 +23,31 @@ public final class QuestStageActionService {
         QuestActionCheckpoint prior = refresh(context, progress, key);
         if (prior != null) return prior.outcome();
         String stage = progress.currentStage();
-        SceneContinuationService.RunResult result = QuestActionSequenceRunner.runResult(context, actions,
-                replacements, trackerFlash, definition.id() + "/" + progress.questRunId() + "/" + stage + "/" + key);
+        SceneContinuationService.RunResult result = SceneContinuationService.run(context, actions,
+                replacements, trackerFlash, definition.id() + "/" + progress.questRunId() + "/" + stage + "/" + key,
+                null, definition.id(), progress.questRunId());
         if (stage.equals(progress.currentStage()) && !result.outcome().success()) {
             progress.recordStageAction(key, new QuestActionCheckpoint(result.outcome().status(),
                     result.outcome().message(), result.continuationId(), result.outcome().legacyResult().replacements()));
             VillagerQuestSavedData.get(context.level()).setDirty();
         }
-        return result.outcome();
+        return result.suspended() ? ActionResult.suspendedContinuation(result.continuationId(),
+                result.outcome().message(), result.outcome().capabilities(), result.outcome().legacyResult()) : result.outcome();
+    }
+
+    public static ActionResult pending(DialogueContext context, VillagerQuestSavedData.QuestProgress progress) {
+        ActionResult suspended = null;
+        for (String key : progress.stageActions().keySet()) {
+            ActionResult result = refresh(context, progress, key).outcome();
+            if (result.success()) continue;
+            if (!result.suspended()) return result;
+            if (suspended == null) suspended = result;
+        }
+        return suspended;
     }
 
     public static boolean ready(DialogueContext context, VillagerQuestSavedData.QuestProgress progress) {
-        for (String key : progress.stageActions().keySet()) {
-            if (!refresh(context, progress, key).outcome().success()) return false;
-        }
-        return true;
+        return pending(context, progress) == null;
     }
 
     public static void settleContinuation(ServerLevel level, SceneContinuation continuation) {
