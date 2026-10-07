@@ -87,6 +87,7 @@ public final class QuestRegistryMetadata {
             entry.add("capabilities", enumNames(descriptor.capabilities()));
             entry.addProperty("implementation", descriptor.implementationType().getSimpleName());
             if (descriptor.id().equals("campaign_fact")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema());
+            if (descriptor.id().equals("campaign_outcome")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema());
             conditions.add(entry);
         }
         return conditions;

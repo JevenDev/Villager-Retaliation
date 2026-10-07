@@ -300,6 +300,22 @@ try {
       assert(result.stderr.includes("pointer=/availability/conditions/0/condition/"), "Nested campaign condition diagnostic lost its source pointer.");
     }
   }
+  for (const [override, expectFailure] of [
+    [{}, false], [{ scope: "world" }, false], [{ scope: "participated" }, false], [{ scope: "completed" }, false],
+    [{ campaign: "missing namespace" }, true], [{ milestone: true }, true], [{ outcome: null }, true],
+    [{ scope: "player" }, true], [{ scope: undefined }, true], [{ operation_id: "unexpected" }, true]
+  ]) {
+    const candidate = structuredClone(conditionFixture);
+    candidate.availability.conditions = [{ type: "not", condition: {
+      type: "campaign_outcome", campaign: "test:campaign", milestone: "dragon", outcome: "defeated", scope: "discovered", ...override
+    } }];
+    await writeJson(validQuest, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+    if (expectFailure) {
+      assert(result.stderr.includes("registered condition schema"), "Campaign outcome conditions did not use the exported runtime schema.");
+      assert(result.stderr.includes("pointer=/availability/conditions/0/condition/"), "Outcome condition diagnostic lost its source pointer.");
+    }
+  }
   await writeJson(validQuest, conditionFixture);
 
   const invalid = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", invalidQuest], { expectFailure: true });

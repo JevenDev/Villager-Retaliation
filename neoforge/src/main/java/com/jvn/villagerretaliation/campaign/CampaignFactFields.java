@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.campaign;
 
+import static com.jvn.villagerretaliation.campaign.CampaignFieldSchema.enumeration;
+import static com.jvn.villagerretaliation.campaign.CampaignFieldSchema.string;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class CampaignFactFields {
@@ -41,46 +43,8 @@ final class CampaignFactFields {
     }
 
     static Map<String, String> issues(JsonObject object, boolean action) {
-        var schema = schema(action);
-        var issues = new LinkedHashMap<String, String>();
-        if (!action) {
-            object.keySet().stream().filter(key -> !schema.getAsJsonObject("properties").has(key))
-                    .forEach(key -> issues.put(key, "unknown campaign fact condition field"));
-        }
-        schema.getAsJsonArray("required").forEach(key -> {
-            if (!object.has(key.getAsString())) issues.put(key.getAsString(), "campaign fact field is required");
-        });
-        schema.getAsJsonObject("properties").entrySet().forEach(entry -> {
-            var value = object.get(entry.getKey());
-            if (value == null) return;
-            var rule = entry.getValue().getAsJsonObject();
-            boolean valid;
-            if (rule.has("const")) valid = rule.get("const").equals(value);
-            else valid = value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
-                    && (!rule.has("pattern") || value.getAsString().matches(rule.get("pattern").getAsString()))
-                    && (!rule.has("maxLength") || value.getAsString().length() <= rule.get("maxLength").getAsInt())
-                    && (!rule.has("enum") || rule.getAsJsonArray("enum").contains(value));
-            if (!valid) issues.put(entry.getKey(), "campaign fact field does not match its registered schema");
-        });
-        return issues;
+        return CampaignFieldSchema.issues(object, schema(action), action ? "campaign fact" : "campaign fact condition");
     }
 
     static boolean validId(String id) { return id != null && id.matches(CampaignOutcomeAction.ID_PATTERN); }
-
-    private static JsonObject string(String pattern, int maximum) {
-        var field = new JsonObject();
-        field.addProperty("type", "string");
-        field.addProperty("maxLength", maximum);
-        if (!pattern.isBlank()) field.addProperty("pattern", "^" + pattern + "$");
-        return field;
-    }
-
-    private static JsonObject enumeration(String... values) {
-        var field = new JsonObject();
-        field.addProperty("type", "string");
-        var choices = new JsonArray();
-        for (String value : values) choices.add(value);
-        field.add("enum", choices);
-        return field;
-    }
 }

@@ -2085,6 +2085,7 @@
             "attribute",
             "biome",
             "campaign_fact",
+            "campaign_outcome",
             "choice_selected",
             "dimension",
             "entity_nearby",
@@ -2182,6 +2183,57 @@
                   "not_equals",
                   "at_least",
                   "at_most"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_outcome"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "campaign",
+              "milestone",
+              "outcome",
+              "scope"
+            ],
+            "properties": {
+              "type": {
+                "const": "campaign_outcome"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "milestone": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "outcome": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "world",
+                  "discovered",
+                  "participated",
+                  "completed"
                 ]
               }
             }

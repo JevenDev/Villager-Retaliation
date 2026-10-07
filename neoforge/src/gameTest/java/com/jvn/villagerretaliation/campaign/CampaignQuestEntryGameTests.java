@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.campaign;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.campaign.content.CampaignContentCatalog;
@@ -1207,6 +1208,112 @@ public final class CampaignQuestEntryGameTests {
             }
         }
         helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void outcomeConditionsSeparateWorldDiscoveryParticipationAndCompletion(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            for (String scope : List.of("world", "discovered", "participated", "completed")) {
+                helper.assertFalse(outcomeCondition("dragon", "defeated", scope).matches(fixture.context()), "unresolved outcome does not match " + scope);
+            }
+            helper.assertTrue(fixture.data.instances().isEmpty(), "reading outcome conditions does not enroll a player");
+            fixture.resolve();
+            helper.assertTrue(outcomeCondition("dragon", "defeated", "world").matches(fixture.context()), "world outcome is available before discovery");
+            helper.assertFalse(outcomeCondition("dragon", "defeated", "discovered").matches(fixture.context()), "world observation invents no discovery");
+            fixture.data.discover(fixture.content.definition(), fixture.player.getUUID(), "dragon");
+            helper.assertTrue(outcomeCondition("dragon", "defeated", "discovered").matches(fixture.context()), "discovery unlocks personal dialogue");
+            helper.assertFalse(outcomeCondition("dragon", "defeated", "completed").matches(fixture.context()), "discovery is not completion");
+            fixture.data.enterMilestone(fixture.content.definition(), fixture.player.getUUID(), "dragon", 3L);
+            helper.assertFalse(outcomeCondition("dragon", "defeated", "completed").matches(fixture.context()), "entering catch-up is not completion");
+            var result = fixture.data.completeMilestone(fixture.content.definition(), fixture.player.getUUID(), "dragon",
+                    CampaignInstance.Route.CATCH_UP, "defeated", UUID.randomUUID(), 4L);
+            helper.assertValueEqual(result.status(), CampaignSavedData.Status.APPLIED, "authored catch-up completes personally");
+            var restored = CampaignSavedData.load(fixture.data.save(new CompoundTag(), helper.getLevel().registryAccess()), fixture.directory);
+            fixture.server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, restored);
+            helper.assertTrue(outcomeCondition("dragon", "defeated", "completed").matches(fixture.context()), "completion survives reload");
+            helper.assertFalse(outcomeCondition("dragon", "defeated", "participated").matches(fixture.context()), "completed catch-up never awards participant dialogue");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void participantDialogueRequiresTheCommittedOutcomeAndPersonalCredit(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST, "", true)) {
+            fixture.acceptQuest();
+            fixture.resolve(Set.of(fixture.player.getUUID()));
+            helper.assertTrue(outcomeCondition("dragon", "defeated", "participated").matches(fixture.context()), "participant sees the committed choice");
+            helper.assertTrue(outcomeCondition("dragon", "defeated", "discovered").matches(fixture.context()), "participant knows the outcome");
+            helper.assertFalse(outcomeCondition("dragon", "defeated", "completed").matches(fixture.context()), "participation does not finish the personal quest");
+            for (String scope : List.of("world", "discovered", "participated", "completed")) {
+                helper.assertFalse(outcomeCondition("dragon", "spared", scope).matches(fixture.context()), "another authored outcome cannot match " + scope);
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void unavailableOutcomeConditionsCannotUnlockNegatedDialogue(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var condition = outcomeCondition("dragon", "defeated", "world");
+            var negated = new com.jvn.villagerretaliation.dialogue.DialogueCondition.Not(condition);
+            helper.assertTrue(negated.matches(fixture.context()), "a valid unresolved milestone may be negated");
+            for (var invalid : List.of(outcomeCondition("missing", "defeated", "world"), outcomeCondition("dragon", "missing", "discovered"))) {
+                helper.assertFalse(new com.jvn.villagerretaliation.dialogue.DialogueCondition.Not(invalid).matches(fixture.context()), "invalid references remain unavailable through negation");
+            }
+            var catalog = QuestContentCatalogs.current(fixture.server);
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(catalog, Map.of(), List.of()));
+            var nested = new com.jvn.villagerretaliation.dialogue.DialogueCondition.AnyOf(List.of(negated, condition));
+            for (var candidate : List.of(condition, negated, nested)) {
+                helper.assertFalse(candidate.matches(fixture.context(), null), "missing content blocks nested outcome conditions");
+                helper.assertValueEqual(com.jvn.villagerretaliation.dialogue.DialogueCondition.trace(fixture.context(), candidate).outcome(),
+                        com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNKNOWN, "unavailability remains diagnostic");
+            }
+            CampaignResources.installForTests(fixture.server, new CampaignContentCatalog(catalog, Map.of(CAMPAIGN, fixture.content), List.of()));
+            helper.assertTrue(negated.matches(fixture.context()), "restoring content restores the condition");
+            fixture.resolve();
+            var saved = fixture.data.save(new CompoundTag(), helper.getLevel().registryAccess());
+            saved.putInt("DataVersion", CampaignSavedData.CURRENT_DATA_VERSION + 1);
+            fixture.server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, CampaignSavedData.load(saved, fixture.directory));
+            helper.assertFalse(condition.matches(fixture.context()), "unreadable campaign data cannot satisfy a condition");
+            helper.assertFalse(negated.matches(fixture.context()), "unreadable campaign data cannot satisfy its negation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void outcomeConditionsStayUnavailableInSandboxAndLegacyWorlds(GameTestHelper helper) throws IOException {
+        var storage = helper.getLevel().getServer().overworld().getDataStorage();
+        var previousMode = CampaignWorldModeSavedData.get(helper.getLevel());
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            fixture.resolve();
+            var condition = outcomeCondition("dragon", "defeated", "world");
+            helper.assertTrue(condition.matches(fixture.context()), "Campaign Mode sees its committed outcome");
+            for (var mode : List.of(CampaignWorldMode.SANDBOX, CampaignWorldMode.LEGACY)) {
+                var tag = new CompoundTag();
+                tag.putInt("DataVersion", CampaignWorldModeSavedData.CURRENT_DATA_VERSION);
+                tag.putString("Mode", mode.id());
+                storage.set(CampaignWorldModeSavedData.DATA_NAME, CampaignWorldModeSavedData.load(tag, helper.getLevel().registryAccess()));
+                helper.assertFalse(condition.matches(fixture.context()), "campaign conditions stay dormant in " + mode);
+                helper.assertFalse(new com.jvn.villagerretaliation.dialogue.DialogueCondition.Not(condition).matches(fixture.context()), "world mode cannot unlock negated campaign content");
+            }
+        } finally {
+            storage.set(CampaignWorldModeSavedData.DATA_NAME, previousMode);
+        }
+        helper.succeed();
+    }
+
+    private static com.jvn.villagerretaliation.dialogue.DialogueCondition outcomeCondition(String milestone, String outcome, String scope) {
+        var raw = new JsonObject();
+        raw.addProperty("type", "campaign_outcome");
+        raw.addProperty("campaign", CAMPAIGN.toString());
+        raw.addProperty("milestone", milestone);
+        raw.addProperty("outcome", outcome);
+        raw.addProperty("scope", scope);
+        var array = new com.google.gson.JsonArray();
+        array.add(raw);
+        var root = new JsonObject();
+        root.add("conditions", array);
+        return com.jvn.villagerretaliation.dialogue.DialogueCondition.readList(CAMPAIGN, "test", root, QUEST).getFirst();
     }
 
     private static VillagerActionDefinition factAction(String fact, String mutation, String value, String operation) {
