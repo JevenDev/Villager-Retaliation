@@ -529,7 +529,7 @@ public final class VillagerQuestResources {
         );
     }
 
-    private static QuestDefinition.Revision readRevision(JsonObject root) {
+    static QuestDefinition.Revision readRevision(JsonObject root) {
         JsonElement revisionElement = root.get("revision");
         JsonObject revisionObject = revisionElement != null && revisionElement.isJsonObject()
                 ? revisionElement.getAsJsonObject()
@@ -569,7 +569,7 @@ public final class VillagerQuestResources {
         return Set.copyOf(tags);
     }
 
-    private static QuestDefinition.Offer readOffer(ResourceLocation location, JsonObject root, ResourceLocation defaultQuestId) {
+    static QuestDefinition.Offer readOffer(ResourceLocation location, JsonObject root, ResourceLocation defaultQuestId) {
         JsonObject offer = DatapackJsonReader.readObject(root, "offer");
         if (offer == null) {
             return QuestDefinition.Offer.any();
@@ -617,7 +617,7 @@ public final class VillagerQuestResources {
         return Map.copyOf(skills);
     }
 
-    private static QuestDefinition.Target readTarget(JsonObject root, HolderLookup.Provider registries) {
+    static QuestDefinition.Target readTarget(JsonObject root, HolderLookup.Provider registries) {
         JsonObject target = DatapackJsonReader.readObject(root, "target");
         ResourceLocation structure = target == null
                 ? null
@@ -693,7 +693,7 @@ public final class VillagerQuestResources {
         return List.copyOf(objectives);
     }
 
-    private static Optional<QuestDefinition.Objective> readObjective(
+    static Optional<QuestDefinition.Objective> readObjective(
             ResourceLocation location,
             JsonObject entry,
             int index,
@@ -1401,7 +1401,7 @@ public final class VillagerQuestResources {
         );
     }
 
-    private static QuestDefinition.Rules readRules(ResourceLocation location, JsonObject root, ResourceLocation defaultQuestId) {
+    static QuestDefinition.Rules readRules(ResourceLocation location, JsonObject root, ResourceLocation defaultQuestId) {
         JsonObject rules = DatapackJsonReader.readObject(root, "rules");
         if (rules == null) {
             return QuestDefinition.Rules.DEFAULT;
@@ -1562,7 +1562,7 @@ public final class VillagerQuestResources {
         );
     }
 
-    private static Map<String, String> readStringMap(JsonObject object) {
+    static Map<String, String> readStringMap(JsonObject object) {
         if (object == null) {
             return Map.of();
         }
@@ -1635,7 +1635,7 @@ public final class VillagerQuestResources {
                 readStringMap(DatapackJsonReader.readObject(stage, "metadata")));
     }
 
-    private static List<QuestDefinition.BonusOutcome> readBonusOutcomes(
+    static List<QuestDefinition.BonusOutcome> readBonusOutcomes(
             ResourceLocation location,
             String context,
             JsonElement element,
@@ -1702,7 +1702,7 @@ public final class VillagerQuestResources {
         return VillagerActionDefinition.readList(location, context, wrapper, defaultQuestId);
     }
 
-    private static List<QuestDefinition.StagePredicate> readStagePredicates(
+    static List<QuestDefinition.StagePredicate> readStagePredicates(
             ResourceLocation location,
             String context,
             JsonElement element,
@@ -2090,7 +2090,7 @@ public final class VillagerQuestResources {
         return ResourceLocation.tryParse(location.getNamespace() + ":" + questPath);
     }
 
-    private static String inferQuestline(ResourceLocation location) {
+    static String inferQuestline(ResourceLocation location) {
         String path = location.getPath();
         if (!path.startsWith(RESOURCE_ROOT + "/")) {
             return "";

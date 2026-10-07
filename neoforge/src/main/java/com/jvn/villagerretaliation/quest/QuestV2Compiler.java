@@ -4,6 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestMetadata;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
@@ -17,12 +20,12 @@ import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Resource;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.ContentTags;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.HolderLookup;
@@ -33,158 +36,263 @@ public final class QuestV2Compiler {
     }
 
     public static Optional<CompiledQuest> compile(QuestV2Resource resource, QuestResourceEnvelope envelope) {
-        return compile(
-                resource,
-                envelope,
-                com.jvn.villagerretaliation.util.item.ItemStackPredicateParser.DEFAULT_REGISTRIES);
+        return compile(resource, envelope, com.jvn.villagerretaliation.util.item.ItemStackPredicateParser.DEFAULT_REGISTRIES);
     }
 
     public static Optional<CompiledQuest> compile(
-            QuestV2Resource resource,
-            QuestResourceEnvelope envelope,
-            HolderLookup.Provider registries) {
-        if (resource == null || envelope == null) {
-            return Optional.empty();
-        }
-
+            QuestV2Resource resource, QuestResourceEnvelope envelope, HolderLookup.Provider registries) {
+        if (resource == null || envelope == null) return Optional.empty();
         QuestSourcePointer source = QuestSourcePointer.from(envelope);
-        CanonicalQuestJson canonical = canonicalize(resource, source);
-        QuestDefinition definition = VillagerQuestResources.readCanonicalQuest(
-                envelope.location(),
-                canonical.root(),
-                resource.id(),
-                registries);
-        if (definition == null) {
-            DatapackDiagnostics.warnQuestV2Validation(
-                    envelope.location(),
-                    "",
-                    "quest module v2 could not compile to the canonical quest runtime model.",
-                    "Check objective runtime requirements and action payloads.",
-                    Set.of(resource.id().toString()));
+        JsonObject payloads = new JsonObject();
+        addOffer(payloads, resource);
+        addTarget(payloads, resource);
+        addRules(payloads, resource);
+        JsonObject metadata = new JsonObject();
+        resource.metadata().forEach((key, value) -> metadata.add(key, value.deepCopy()));
+        String parentId = firstNonBlank(metadataString(resource, "parent"), resource.availability().prerequisites().isEmpty()
+                ? "" : resource.availability().prerequisites().getFirst().toString());
+        ResourceLocation parent = DatapackJsonReader.parseResourceLocation(parentId).orElse(null);
+        List<ResourceLocation> prerequisites = resource.availability().prerequisites().isEmpty()
+                ? parent == null ? List.of() : List.of(parent) : resource.availability().prerequisites();
+        List<CompiledQuestObjective> objectives = new ArrayList<>();
+        Set<String> objectiveIds = new LinkedHashSet<>();
+        List<CompiledQuestStage> stages = new ArrayList<>();
+        List<CompiledQuestTrigger> triggers = new ArrayList<>();
+        Map<String, Integer> stageIndexes = stageIndexes(resource);
+        List<VillagerActionDefinition> globalEntry = lifecycleActions(resource, source, "on_stage_enter");
+        List<VillagerActionDefinition> globalExit = lifecycleActions(resource, source, "on_stage_exit");
+        QuestDefinition.Target target;
+        try {
+            target = VillagerQuestResources.readTarget(payloads, registries);
+            for (QuestV2Resource.Stage stage : orderedStages(resource)) {
+                QuestSourcePointer stageSource = source.child("stages", Integer.toString(stageIndexes.get(stage.id())));
+                for (int index = 0; index < stage.objectives().size(); index++) {
+                    QuestV2Resource.Objective objective = stage.objectives().get(index);
+                    String id = canonicalObjectiveId(stage, objective);
+                    if (!objectiveIds.add(id)) throw new IllegalArgumentException("duplicate compiled objective id " + id);
+                    var definition = VillagerQuestResources.readObjective(source.resource(),
+                            objectivePayload(resource, objective, id), objectives.size(), resource.id(), registries);
+                    if (definition.isPresent()) objectives.add(new CompiledQuestObjective(id, objectives.size(),
+                            definition.get(), stageSource.child("objectives", Integer.toString(index))));
+                }
+                stages.add(new CompiledQuestStage(stage.id(), stages.size(),
+                        compileStage(resource, stage, stageSource, globalEntry, globalExit), List.of(), stageSource));
+                for (int index = 0; index < stage.events().size(); index++) {
+                    QuestV2Resource.Event event = stage.events().get(index);
+                    appendEvent(resource.id(), event, stage.id(), stage.id() + "." + event.id(),
+                            stageSource.child("events", Integer.toString(index)), triggers);
+                }
+            }
+        } catch (IllegalArgumentException exception) {
+            DatapackDiagnostics.warnSkippedEntry(source.resource(), "quest", resource.id().toString(), exception.getMessage());
             return Optional.empty();
         }
-        return Optional.of(compileDefinition(
-                definition,
-                resource.provider().type(),
-                resource.provider().deathProtection(),
-                resource.provider().blocksHiring(),
-                source,
-                canonical));
+        appendLifecycle(resource, source, "on_start", QuestDefinition.TriggerEvent.STARTED, triggers);
+        appendLifecycle(resource, source, "on_complete", QuestDefinition.TriggerEvent.COMPLETED, triggers);
+        appendLifecycle(resource, source, "on_abandon", QuestDefinition.TriggerEvent.ABANDONED, triggers);
+        appendLifecycle(resource, source, "on_expire", QuestDefinition.TriggerEvent.EXPIRED, triggers);
+        appendLifecycle(resource, source, "on_fail", QuestDefinition.TriggerEvent.FAILED, triggers);
+        for (int index = 0; index < resource.events().size(); index++) {
+            QuestV2Resource.Event event = resource.events().get(index);
+            appendEvent(resource.id(), event, "", event.id(), source.child("events", Integer.toString(index)), triggers);
+        }
+        return Optional.of(new CompiledQuest(resource.id(), source, null,
+                new CompiledQuestMetadata(firstNonBlank(firstNonBlank(metadataString(resource, "title"), uiString(resource.ui(), "title")), resource.id().toString()),
+                        firstNonBlank(metadataString(resource, "description"), uiString(resource.ui(), "description")),
+                        firstNonBlank(metadataString(resource, "title_key"), uiString(resource.ui(), "title_key")),
+                        firstNonBlank(metadataString(resource, "description_key"), uiString(resource.ui(), "description_key")),
+                        firstNonBlank(metadataString(resource, "questline"), VillagerQuestResources.inferQuestline(source.resource())),
+                        ContentTags.normalizeAll(new LinkedHashSet<>(DatapackJsonReader.readStringList(metadata, "tags"))), parent, DialogueEntryMetadata.EMPTY),
+                new CompiledQuestProvider(resource.provider().type(), VillagerQuestResources.readOffer(source.resource(), payloads, resource.id()),
+                        resource.provider().deathProtection(), resource.provider().blocksHiring()),
+                target, resource.entryStage(), prerequisites, VillagerQuestResources.readRules(source.resource(), payloads, resource.id()),
+                new CompiledQuestUi(compileTracker(resource), QuestDefinition.Dialogue.EMPTY, QuestDefinition.Links.EMPTY),
+                objectives, Map.of(), stages, Map.of(), triggers, Map.of(), QuestTriggerIndex.EMPTY,
+                new CompiledQuestRewards(compileRewards(resource.id(), source, resource.rewards())),
+                DatapackJsonReader.readBoolean(metadata, "show_locked_adventure_hint", true), VillagerQuestResources.readRevision(metadata)));
     }
 
-    private static CanonicalQuestJson canonicalize(QuestV2Resource resource, QuestSourcePointer source) {
-        JsonObject root = new JsonObject();
-        root.addProperty("id", resource.id().toString());
-        addDisplay(root, resource);
-        addQuestIdentity(root, resource);
-        addOffer(root, resource);
-        addTarget(root, resource);
-        addRules(root, resource);
-        addTracker(root, resource);
-        putString(root, "entry_stage", resource.entryStage());
+    private static QuestDefinition.Stage compileStage(QuestV2Resource resource, QuestV2Resource.Stage stage,
+            QuestSourcePointer source, List<VillagerActionDefinition> globalEntry, List<VillagerActionDefinition> globalExit) {
+        Map<String, String> objectiveIds = new LinkedHashMap<>();
+        stage.objectives().forEach(objective -> objectiveIds.put(objective.id(), canonicalObjectiveId(stage, objective)));
+        JsonElement authored = stage.data().get("complete_when");
+        List<QuestDefinition.StagePredicate> predicates = authored == null || authored.isJsonNull()
+                ? stage.objectives().stream().filter(objective -> !objective.optional())
+                        .map(objective -> new QuestDefinition.StagePredicate(objectiveIds.get(objective.id()), List.of())).toList()
+                : qualifyPredicates(VillagerQuestResources.readStagePredicates(
+                        source.resource(), source.jsonPointer() + "/complete_when", authored, resource.id()), objectiveIds);
+        List<VillagerActionDefinition> entry = new ArrayList<>(globalEntry);
+        entry.addAll(VillagerActionDefinition.readObjects(source.resource(), source.jsonPointer() + "/entry", stage.entryActions(), resource.id()));
+        entry.addAll(rewardActions(resource.id(), source, stage.rewards()));
+        List<VillagerActionDefinition> exit = new ArrayList<>(VillagerActionDefinition.readObjects(
+                source.resource(), source.jsonPointer() + "/exit", stage.exitActions(), resource.id()));
+        exit.addAll(globalExit);
+        List<QuestDefinition.BonusOutcome> bonuses = VillagerQuestResources.readBonusOutcomes(
+                source.resource(), source.jsonPointer(), stage.data().get("bonuses"), resource.id()).stream()
+                .map(bonus -> new QuestDefinition.BonusOutcome(bonus.id(), qualifyPredicates(bonus.when(), objectiveIds),
+                        bonus.mode(), bonus.count(), bonus.actions())).toList();
+        JsonObject completion = DatapackJsonReader.readObject(stage.data(), "completion");
+        String mode = completion != null && completion.has("mode") ? DatapackJsonReader.readString(completion, "mode")
+                : DatapackJsonReader.readString(stage.data(), "completion_mode");
+        int count = completion != null && completion.has("count") ? DatapackJsonReader.readInt(completion, "count", 1)
+                : DatapackJsonReader.readInt(stage.data(), "completion_count", 1);
+        return new QuestDefinition.Stage(stage.id(), List.copyOf(objectiveIds.values()), predicates,
+                QuestDefinition.CompletionMode.bySerializedName(mode), count, stage.next().stage(), entry, exit, List.of(), bonuses,
+                VillagerQuestResources.readStringMap(DatapackJsonReader.readObject(stage.data(), "metadata")));
+    }
 
-        Map<String, QuestSourcePointer> objectiveSources = new LinkedHashMap<>();
-        Map<String, QuestSourcePointer> stageSources = new LinkedHashMap<>();
-        Map<String, QuestSourcePointer> triggerSources = new LinkedHashMap<>();
-        JsonArray objectives = new JsonArray();
-        JsonObject stages = new JsonObject();
-        JsonArray triggers = new JsonArray();
+    private static List<QuestDefinition.StagePredicate> qualifyPredicates(
+            List<QuestDefinition.StagePredicate> predicates, Map<String, String> objectiveIds) {
+        return predicates.stream().map(predicate -> new QuestDefinition.StagePredicate(
+                objectiveIds.getOrDefault(predicate.objective(), predicate.objective()), predicate.conditions())).toList();
+    }
 
-        Map<String, Integer> stageIndexes = stageIndexes(resource);
-        List<JsonObject> globalStageEnter = lifecycleActions(
-                resource,
-                "on_stage_enter");
-        List<JsonObject> globalStageExit = lifecycleActions(
-                resource,
-                "on_stage_exit");
-
+    private static QuestDefinition.Tracker compileTracker(QuestV2Resource resource) {
+        Map<String, QuestDefinition.Step> steps = new LinkedHashMap<>();
+        QuestDefinition.Step root = trackerStep(resource.ui());
+        if (root != null) {
+            steps.put("choice", root);
+            steps.put("fact", root);
+            steps.put("inactive", root);
+        }
         for (QuestV2Resource.Stage stage : orderedStages(resource)) {
-            int stageIndex = stageIndexes.getOrDefault(stage.id(), 0);
-            QuestSourcePointer stageSource = source.child("stages", Integer.toString(stageIndex));
-            stageSources.put(stage.id(), stageSource);
-            stages.add(stage.id(), canonicalStage(
-                    resource,
-                    stage,
-                    stageSource,
-                    objectives,
-                    objectiveSources,
-                    globalStageEnter,
-                    globalStageExit));
-            appendStageEvents(resource, source, stage, stageIndex, triggers, triggerSources);
+            QuestDefinition.Step step = trackerStep(stage.ui());
+            if (step != null) steps.put(stage.id(), step);
         }
-
-        root.add("objectives", objectives);
-        root.add("stages", stages);
-        appendLifecycleTriggers(resource, source, triggers, triggerSources);
-        appendRootEvents(resource, source, triggers, triggerSources);
-        if (triggers.size() > 0) {
-            root.add("triggers", triggers);
-        }
-
-        JsonObject rewards = canonicalRewards(
-                resource.id(),
-                source.resource(),
-                "quest module v2 rewards",
-                resource.rewards());
-        if (rewards.size() > 0) {
-            root.add("rewards", rewards);
-        }
-        return new CanonicalQuestJson(root, objectiveSources, stageSources, triggerSources);
+        JsonObject ui = resource.ui().data();
+        return new QuestDefinition.Tracker(firstNonBlank(uiString(ui, "title"), metadataString(resource, "title")),
+                firstNonBlank(uiString(ui, "title_key"), metadataString(resource, "title_key")), steps,
+                VillagerQuestResources.readStringMap(DatapackJsonReader.readObject(ui, "metadata")),
+                DatapackJsonReader.readResourceLocation(ui, "icon").orElse(null), uiString(ui, "color"), uiString(ui, "outline_color"),
+                DatapackJsonReader.readInt(ui, "priority", 0), DatapackJsonReader.readBoolean(ui, "hidden", false));
     }
 
-    private static void addDisplay(JsonObject root, QuestV2Resource resource) {
-        JsonObject display = new JsonObject();
-        putString(display, "title", firstNonBlank(
-                metadataString(resource, "title"),
-                uiString(resource.ui(), "title")));
-        putString(display, "description", firstNonBlank(
-                metadataString(resource, "description"),
-                uiString(resource.ui(), "description")));
-        putString(display, "title_key", firstNonBlank(
-                metadataString(resource, "title_key"),
-                uiString(resource.ui(), "title_key")));
-        putString(display, "description_key", firstNonBlank(
-                metadataString(resource, "description_key"),
-                uiString(resource.ui(), "description_key")));
-        if (display.size() > 0) {
-            root.add("display", display);
-        }
+    private static QuestDefinition.Step trackerStep(QuestV2Resource.UiHints ui) {
+        if (ui.trackerText().isBlank() && ui.trackerTextKey().isBlank()
+                && !hasAny(ui.data(), "show_progress", "progress")) return null;
+        return new QuestDefinition.Step(ui.trackerText(), ui.trackerTextKey(),
+                DatapackJsonReader.readBoolean(ui.data(), "show_progress", true),
+                (float) DatapackJsonReader.readDouble(ui.data(), "progress", -1.0D), Map.of());
     }
 
-    private static void addQuestIdentity(JsonObject root, QuestV2Resource resource) {
-        putString(root, "questline", metadataString(resource, "questline"));
-        String authoredParent = metadataString(resource, "parent");
-        List<ResourceLocation> prerequisites = resource.availability().prerequisites();
-        putString(root, "parent", firstNonBlank(
-                authoredParent,
-                prerequisites.isEmpty() ? "" : prerequisites.getFirst().toString()));
-        JsonArray prerequisiteIds = new JsonArray();
-        if (prerequisites.isEmpty()) {
-            if (!authoredParent.isBlank()) {
-                prerequisiteIds.add(authoredParent);
+    private static List<VillagerActionDefinition> lifecycleActions(
+            QuestV2Resource resource, QuestSourcePointer source, String hookId) {
+        QuestV2Resource.Hook hook = resource.lifecycle().hooks().get(hookId);
+        return hook == null ? List.of() : actions(resource.id(), source.child("lifecycle", hookId), hook.actions(), hook.transition());
+    }
+
+    private static void appendLifecycle(QuestV2Resource resource, QuestSourcePointer source, String hookId,
+            QuestDefinition.TriggerEvent event, List<CompiledQuestTrigger> triggers) {
+        List<VillagerActionDefinition> actions = lifecycleActions(resource, source, hookId);
+        if (actions.isEmpty()) return;
+        addTrigger(new QuestDefinition.Trigger("lifecycle." + hookId, event, List.of(), actions, Set.of(),
+                QuestTriggerRegistry.defaultCooldownTicks(event), 10.0D, repeatable(actions)), source.child("lifecycle", hookId), triggers);
+    }
+
+    private static void appendEvent(ResourceLocation questId, QuestV2Resource.Event event, String ownerStage,
+            String id, QuestSourcePointer source, List<CompiledQuestTrigger> triggers) {
+        List<VillagerActionDefinition> actions = actions(questId, source, event.actions(), event.transition());
+        if (actions.isEmpty()) return;
+        QuestDefinition.TriggerEvent type = QuestDefinition.TriggerEvent.bySerializedName(event.trigger());
+        if (type == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(source.resource(), source.jsonPointer(), "unknown trigger event.");
+            return;
+        }
+        JsonObject data = event.data();
+        JsonObject conditions = new JsonObject();
+        conditions.add("conditions", jsonObjectArray(event.conditions()));
+        Set<String> stages = event.stages().isEmpty() && !ownerStage.isBlank() ? Set.of(ownerStage) : event.stages();
+        addTrigger(new QuestDefinition.Trigger(id, type,
+                DialogueCondition.readList(source.resource(), source.jsonPointer(), conditions, questId), actions, stages,
+                DatapackJsonReader.readDurationTicks(data, "cooldown", QuestTriggerRegistry.defaultCooldownTicks(type)),
+                DatapackJsonReader.readDouble(data, "radius", 10.0D), DatapackJsonReader.readBoolean(data, "repeatable", repeatable(actions)),
+                DatapackJsonReader.readInt(data, "priority", 0), DatapackJsonReader.readDouble(data, "chance", 1.0D),
+                DatapackJsonReader.readBoolean(data, "exclusive", false), DatapackJsonReader.readInt(data, "weight", 1)), source, triggers);
+    }
+
+    private static void addTrigger(QuestDefinition.Trigger trigger, QuestSourcePointer source, List<CompiledQuestTrigger> triggers) {
+        if (triggers.stream().anyMatch(existing -> existing.id().equals(trigger.id()))) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(source.resource(), source.jsonPointer(), "duplicate trigger id " + trigger.id() + ".");
+            return;
+        }
+        triggers.add(new CompiledQuestTrigger(trigger.id(), triggers.size(), trigger, source));
+    }
+
+    private static boolean repeatable(List<VillagerActionDefinition> actions) {
+        return actions.stream().noneMatch(action -> action.kind() == VillagerActionDefinition.Kind.FORCED_DIALOGUE);
+    }
+
+    private static List<VillagerActionDefinition> actions(ResourceLocation questId, QuestSourcePointer source,
+            List<JsonObject> authored, QuestV2Resource.Transition transition) {
+        List<VillagerActionDefinition> actions = new ArrayList<>(VillagerActionDefinition.readObjects(
+                source.resource(), source.jsonPointer(), authored, questId));
+        if (transition != null && !transition.isEmpty()) {
+            if (!transition.stage().isBlank()) {
+                actions.add(new VillagerActionDefinition(VillagerActionDefinition.Kind.SET_VARIABLE, questId,
+                        VillagerActionDefinition.QuestAction.NONE, 0, null, null, null, "", "", "", true,
+                        QuestFactScope.QUEST, null, "stage", transition.stage(), Map.of(), Map.of(), null, null, "", false, false));
+            } else if (transition.complete() || transition.abandon() || transition.fail()) {
+                actions.add(new VillagerActionDefinition(VillagerActionDefinition.Kind.QUEST, questId,
+                        transition.complete() ? VillagerActionDefinition.QuestAction.TURN_IN
+                                : transition.abandon() ? VillagerActionDefinition.QuestAction.ABANDON : VillagerActionDefinition.QuestAction.FAIL,
+                        0, null, null, null, "", "", "", true, QuestFactScope.PLAYER, null, "", "", Map.of(), Map.of(), null, null, "", false, false));
             }
-        } else {
-            prerequisites.forEach(prerequisite -> prerequisiteIds.add(prerequisite.toString()));
         }
-        if (!prerequisiteIds.isEmpty()) {
-            root.add("prerequisites", prerequisiteIds);
+        return List.copyOf(actions);
+    }
+
+    private static QuestDefinition.Rewards compileRewards(ResourceLocation questId, QuestSourcePointer source, QuestV2Resource.Rewards rewards) {
+        JsonObject data = rewards.data();
+        int experience = DatapackJsonReader.readInt(data, "experience", 0);
+        int reputation = DatapackJsonReader.readInt(data, "reputation", 0);
+        int gossip = DatapackJsonReader.readInt(data, "gossip_reputation", 0);
+        ResourceLocation loot = DatapackJsonReader.readResourceLocation(data, "loot_table").orElse(null);
+        ResourceLocation memory = VillageEventMemory.parseTagId(DatapackJsonReader.readString(data, "memory_event")).orElse(null);
+        VillageEventMemory.MemoryScope scope = VillageEventMemory.MemoryScope.parse(DatapackJsonReader.readString(data, "memory_scope"))
+                .orElse(VillageEventMemory.MemoryScope.BOTH);
+        for (VillagerActionDefinition action : VillagerActionDefinition.readObjects(source.resource(), source.jsonPointer() + "/rewards", rewards.actions(), questId)) {
+            switch (action.kind()) {
+                case EXPERIENCE -> experience += Math.max(0, action.amount());
+                case REPUTATION -> reputation += action.amount();
+                case GOSSIP -> gossip += action.amount();
+                case LOOT -> loot = action.lootTable();
+                case MEMORY -> { memory = action.memoryTag(); scope = action.memoryScope(); }
+                default -> { }
+            }
         }
-        JsonArray tags = stringArray(resource.metadata().get("tags"));
-        if (tags.size() > 0) {
-            root.add("tags", tags);
+        return new QuestDefinition.Rewards(Math.max(0, experience), reputation, gossip, loot, memory, scope);
+    }
+
+    private static List<VillagerActionDefinition> rewardActions(ResourceLocation questId, QuestSourcePointer source, QuestV2Resource.Rewards rewards) {
+        List<VillagerActionDefinition> actions = new ArrayList<>(VillagerActionDefinition.readObjects(
+                source.resource(), source.jsonPointer() + "/rewards", rewards.actions(), questId));
+        JsonObject data = rewards.data();
+        addRewardAction(actions, VillagerActionDefinition.Kind.EXPERIENCE, DatapackJsonReader.readInt(data, "experience", 0), null);
+        addRewardAction(actions, VillagerActionDefinition.Kind.REPUTATION, DatapackJsonReader.readInt(data, "reputation", 0), null);
+        addRewardAction(actions, VillagerActionDefinition.Kind.GOSSIP, DatapackJsonReader.readInt(data, "gossip_reputation", 0), null);
+        String memory = DatapackJsonReader.readString(data, "memory_event");
+        ResourceLocation memoryId = VillageEventMemory.parseTagId(memory).orElse(null);
+        if (!memory.isBlank() && memoryId == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(source.resource(), source.jsonPointer() + "/rewards/memory_event",
+                    "memory action uses invalid tag \"" + memory + "\".");
         }
-        JsonElement showLockedAdventureHint = resource.metadata().get("show_locked_adventure_hint");
-        if (showLockedAdventureHint != null && showLockedAdventureHint.isJsonPrimitive()) {
-            root.add("show_locked_adventure_hint", showLockedAdventureHint.deepCopy());
+        ResourceLocation loot = DatapackJsonReader.readResourceLocation(data, "loot_table").orElse(null);
+        if (!DatapackJsonReader.readString(data, "loot_table").isBlank() && loot == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(source.resource(), source.jsonPointer() + "/rewards/loot_table",
+                    "loot action requires a valid loot table id.");
         }
-        JsonElement revision = resource.metadata().get("revision");
-        if (revision != null && !revision.isJsonNull()) {
-            root.add("revision", revision.deepCopy());
-        }
-        JsonElement migration = resource.metadata().get("migration");
-        if (migration != null && migration.isJsonObject()) {
-            root.add("migration", migration.deepCopy());
-        }
+        addRewardAction(actions, VillagerActionDefinition.Kind.MEMORY, 0, memoryId);
+        addRewardAction(actions, VillagerActionDefinition.Kind.LOOT, 0, loot);
+        return List.copyOf(actions);
+    }
+
+    private static void addRewardAction(List<VillagerActionDefinition> actions, VillagerActionDefinition.Kind kind, int amount, ResourceLocation resource) {
+        if (amount == 0 && resource == null) return;
+        actions.add(new VillagerActionDefinition(kind, null, VillagerActionDefinition.QuestAction.NONE, amount,
+                kind == VillagerActionDefinition.Kind.MEMORY ? resource : null, VillageEventMemory.MemoryScope.BOTH,
+                kind == VillagerActionDefinition.Kind.LOOT ? resource : null, "", "", "", true, QuestFactScope.PLAYER,
+                null, "", "", Map.of(), Map.of(), null, null, "", false, false));
     }
 
     private static void addOffer(JsonObject root, QuestV2Resource resource) {
@@ -260,93 +368,8 @@ public final class QuestV2Compiler {
         }
     }
 
-    private static void addTracker(JsonObject root, QuestV2Resource resource) {
-        JsonObject tracker = new JsonObject();
-        putString(tracker, "title", firstNonBlank(
-                uiString(resource.ui(), "title"),
-                metadataString(resource, "title")));
-        putString(tracker, "title_key", firstNonBlank(
-                uiString(resource.ui(), "title_key"),
-                metadataString(resource, "title_key")));
-        copyIfPresent(resource.ui().data(), tracker, "icon");
-        copyIfPresent(resource.ui().data(), tracker, "color");
-        copyIfPresent(resource.ui().data(), tracker, "outline_color");
-        copyIfPresent(resource.ui().data(), tracker, "priority");
-        copyIfPresent(resource.ui().data(), tracker, "hidden");
-        copyIfPresent(resource.ui().data(), tracker, "metadata");
-        JsonObject steps = new JsonObject();
-        JsonObject rootStep = trackerStep(resource.ui());
-        if (rootStep.size() > 0) {
-            steps.add("choice", rootStep.deepCopy());
-            steps.add("fact", rootStep.deepCopy());
-            steps.add("inactive", rootStep.deepCopy());
-        }
-        for (QuestV2Resource.Stage stage : orderedStages(resource)) {
-            JsonObject stageStep = trackerStep(stage.ui());
-            if (stageStep.size() > 0) {
-                steps.add(stage.id(), stageStep);
-            }
-        }
-        if (steps.size() > 0) {
-            tracker.add("steps", steps);
-        }
-        if (tracker.size() > 0) {
-            root.add("tracker", tracker);
-        }
-    }
-
-    private static JsonObject canonicalStage(
+    private static JsonObject objectivePayload(
             QuestV2Resource resource,
-            QuestV2Resource.Stage stage,
-            QuestSourcePointer stageSource,
-            JsonArray objectives,
-            Map<String, QuestSourcePointer> objectiveSources,
-            List<JsonObject> globalStageEnter,
-            List<JsonObject> globalStageExit) {
-        JsonObject canonical = new JsonObject();
-        JsonArray objectiveIds = new JsonArray();
-        Map<String, String> canonicalIds = new LinkedHashMap<>();
-        for (int index = 0; index < stage.objectives().size(); index++) {
-            QuestV2Resource.Objective objective = stage.objectives().get(index);
-            String canonicalId = canonicalObjectiveId(stage, objective);
-            canonicalIds.put(objective.id(), canonicalId);
-            objectiveIds.add(canonicalId);
-            objectives.add(canonicalObjective(resource, stage, objective, canonicalId));
-            objectiveSources.put(canonicalId, stageSource.child("objectives", Integer.toString(index)));
-        }
-        canonical.add("objectives", objectiveIds);
-
-        JsonArray completeWhen = canonicalCompleteWhen(stage, canonicalIds);
-        if (completeWhen.size() > 0) {
-            canonical.add("complete_when", completeWhen);
-        }
-        addCompletionComposition(stage, canonical);
-        addBonuses(stage, canonical, canonicalIds);
-        copyIfPresent(stage.data(), canonical, "metadata");
-        if (!stage.next().stage().isBlank()) {
-            canonical.addProperty("next", stage.next().stage());
-        }
-
-        JsonArray entryActions = new JsonArray();
-        addActionObjects(entryActions, globalStageEnter);
-        addActionObjects(entryActions, stage.entryActions());
-        addActionObjects(entryActions, rewardActions(stage.rewards()));
-        if (entryActions.size() > 0) {
-            canonical.add("entry_actions", entryActions);
-        }
-
-        JsonArray exitActions = new JsonArray();
-        addActionObjects(exitActions, stage.exitActions());
-        addActionObjects(exitActions, globalStageExit);
-        if (exitActions.size() > 0) {
-            canonical.add("exit_actions", exitActions);
-        }
-        return canonical;
-    }
-
-    private static JsonObject canonicalObjective(
-            QuestV2Resource resource,
-            QuestV2Resource.Stage stage,
             QuestV2Resource.Objective objective,
             String canonicalId) {
         JsonObject canonical = objective.data().deepCopy();
@@ -363,116 +386,6 @@ public final class QuestV2Compiler {
             canonical.addProperty("quest", resource.id().toString());
         }
         return canonical;
-    }
-
-    private static JsonArray canonicalCompleteWhen(
-            QuestV2Resource.Stage stage,
-            Map<String, String> canonicalIds) {
-        JsonElement authored = stage.data().get("complete_when");
-        JsonArray result = new JsonArray();
-        if (authored == null || authored.isJsonNull()) {
-            stage.objectives().stream()
-                    .filter(objective -> !objective.optional())
-                    .map(QuestV2Resource.Objective::id)
-                    .map(canonicalIds::get)
-                    .filter(Objects::nonNull)
-                    .filter(id -> !id.isBlank())
-                    .forEach(result::add);
-            return result;
-        }
-        if (authored.isJsonArray()) {
-            for (JsonElement predicate : authored.getAsJsonArray()) {
-                result.add(canonicalPredicate(predicate, canonicalIds));
-            }
-        } else {
-            result.add(canonicalPredicate(authored, canonicalIds));
-        }
-        return result;
-    }
-
-    private static void addCompletionComposition(QuestV2Resource.Stage stage, JsonObject canonical) {
-        JsonObject completion = optionalObject(stage.data().get("completion"));
-        if (completion != null) {
-            copyIfPresent(completion, canonical, "mode", "completion_mode");
-            copyIfPresent(completion, canonical, "count", "completion_count");
-        }
-        copyIfMissing(stage.data(), canonical, "completion_mode");
-        copyIfMissing(stage.data(), canonical, "completion_count");
-    }
-
-    private static void addBonuses(
-            QuestV2Resource.Stage stage,
-            JsonObject canonical,
-            Map<String, String> canonicalIds) {
-        JsonElement authored = stage.data().get("bonuses");
-        if (authored == null || !authored.isJsonArray()) {
-            return;
-        }
-        JsonArray bonuses = new JsonArray();
-        for (JsonElement child : authored.getAsJsonArray()) {
-            if (!child.isJsonObject()) {
-                continue;
-            }
-            JsonObject bonus = child.getAsJsonObject().deepCopy();
-            JsonElement when = bonus.get("when");
-            if (when != null) {
-                JsonArray predicates = new JsonArray();
-                if (when.isJsonArray()) {
-                    for (JsonElement predicate : when.getAsJsonArray()) {
-                        predicates.add(canonicalPredicate(predicate, canonicalIds));
-                    }
-                } else {
-                    predicates.add(canonicalPredicate(when, canonicalIds));
-                }
-                bonus.add("when", predicates);
-            }
-            bonuses.add(bonus);
-        }
-        if (!bonuses.isEmpty()) {
-            canonical.add("bonuses", bonuses);
-        }
-    }
-
-    private static JsonElement canonicalPredicate(
-            JsonElement predicate,
-            Map<String, String> canonicalIds) {
-        if (predicate == null || predicate.isJsonNull()) {
-            return com.google.gson.JsonNull.INSTANCE;
-        }
-        if (predicate.isJsonPrimitive()) {
-            String id = predicate.getAsString().trim();
-            return new com.google.gson.JsonPrimitive(canonicalIds.getOrDefault(id, id));
-        }
-        if (!predicate.isJsonObject()) {
-            return predicate.deepCopy();
-        }
-        JsonObject object = predicate.getAsJsonObject().deepCopy();
-        rewriteObjectiveReference(object, "objective", canonicalIds);
-        rewriteObjectiveReference(object, "objective_id", canonicalIds);
-        String type = DatapackJsonReader.readString(object, "type");
-        if ("objective".equals(type) || "objectives".equals(type)) {
-            rewriteObjectiveReference(object, "id", canonicalIds);
-        }
-        JsonElement objectives = object.get("objectives");
-        if (objectives != null) {
-            JsonArray rewritten = new JsonArray();
-            for (JsonElement child : stringArray(objectives)) {
-                String id = child.getAsString();
-                rewritten.add(canonicalIds.getOrDefault(id, id));
-            }
-            object.add("objectives", rewritten);
-        }
-        return object;
-    }
-
-    private static void rewriteObjectiveReference(
-            JsonObject object,
-            String key,
-            Map<String, String> canonicalIds) {
-        String id = DatapackJsonReader.readString(object, key);
-        if (!id.isBlank()) {
-            object.addProperty(key, canonicalIds.getOrDefault(id, id));
-        }
     }
 
     private static void addChoiceRuntimeDefault(JsonObject canonical, QuestV2Resource.Objective objective) {
@@ -523,403 +436,6 @@ public final class QuestV2Compiler {
         }
     }
 
-    private static void appendLifecycleTriggers(
-            QuestV2Resource resource,
-            QuestSourcePointer source,
-            JsonArray triggers,
-            Map<String, QuestSourcePointer> triggerSources) {
-        appendLifecycleTrigger(
-                resource,
-                source,
-                triggers,
-                triggerSources,
-                "on_start",
-                QuestDefinition.TriggerEvent.STARTED);
-        appendLifecycleTrigger(
-                resource,
-                source,
-                triggers,
-                triggerSources,
-                "on_complete",
-                QuestDefinition.TriggerEvent.COMPLETED);
-        appendLifecycleTrigger(
-                resource,
-                source,
-                triggers,
-                triggerSources,
-                "on_abandon",
-                QuestDefinition.TriggerEvent.ABANDONED);
-        appendLifecycleTrigger(
-                resource,
-                source,
-                triggers,
-                triggerSources,
-                "on_expire",
-                QuestDefinition.TriggerEvent.EXPIRED);
-        appendLifecycleTrigger(
-                resource,
-                source,
-                triggers,
-                triggerSources,
-                "on_fail",
-                QuestDefinition.TriggerEvent.FAILED);
-    }
-
-    private static void appendLifecycleTrigger(
-            QuestV2Resource resource,
-            QuestSourcePointer source,
-            JsonArray triggers,
-            Map<String, QuestSourcePointer> triggerSources,
-            String hookId,
-            QuestDefinition.TriggerEvent event) {
-        QuestV2Resource.Hook hook = resource.lifecycle().hooks().get(hookId);
-        if (hook == null) {
-            return;
-        }
-        JsonArray actions = actionArray(resource.id(), hook.actions(), hook.transition());
-        if (actions.size() == 0) {
-            return;
-        }
-        String triggerId = "lifecycle." + hookId;
-        JsonObject trigger = new JsonObject();
-        trigger.addProperty("id", triggerId);
-        trigger.addProperty("event", QuestTriggerRegistry.canonicalEventId(event));
-        trigger.add("actions", actions);
-        triggers.add(trigger);
-        triggerSources.put(triggerId, source.child("lifecycle", hookId));
-    }
-
-    private static List<JsonObject> lifecycleActions(QuestV2Resource resource, String hookId) {
-        QuestV2Resource.Hook hook = resource.lifecycle().hooks().get(hookId);
-        if (hook == null) return List.of();
-        List<JsonObject> actions = new ArrayList<>(hook.actions());
-        actions.addAll(transitionActions(resource.id(), hook.transition()));
-        return List.copyOf(actions);
-    }
-
-    private static void appendRootEvents(
-            QuestV2Resource resource,
-            QuestSourcePointer source,
-            JsonArray triggers,
-            Map<String, QuestSourcePointer> triggerSources) {
-        for (int index = 0; index < resource.events().size(); index++) {
-            QuestV2Resource.Event event = resource.events().get(index);
-            appendEventTrigger(
-                    resource.id(),
-                    event,
-                    "",
-                    event.id(),
-                    source.child("events", Integer.toString(index)),
-                    triggers,
-                    triggerSources);
-        }
-    }
-
-    private static void appendStageEvents(
-            QuestV2Resource resource,
-            QuestSourcePointer source,
-            QuestV2Resource.Stage stage,
-            int stageIndex,
-            JsonArray triggers,
-            Map<String, QuestSourcePointer> triggerSources) {
-        for (int index = 0; index < stage.events().size(); index++) {
-            QuestV2Resource.Event event = stage.events().get(index);
-            appendEventTrigger(
-                    resource.id(),
-                    event,
-                    stage.id(),
-                    stage.id() + "." + event.id(),
-                    source.child("stages", Integer.toString(stageIndex), "events", Integer.toString(index)),
-                    triggers,
-                    triggerSources);
-        }
-    }
-
-    private static void appendEventTrigger(
-            ResourceLocation questId,
-            QuestV2Resource.Event event,
-            String ownerStage,
-            String triggerId,
-            QuestSourcePointer source,
-            JsonArray triggers,
-            Map<String, QuestSourcePointer> triggerSources) {
-        JsonArray actions = actionArray(questId, event.actions(), event.transition());
-        if (actions.size() == 0) {
-            return;
-        }
-        JsonObject trigger = new JsonObject();
-        trigger.addProperty("id", triggerId);
-        trigger.addProperty("event", event.trigger());
-        JsonArray stages = stringArray(event.stages());
-        if (stages.size() == 0 && ownerStage != null && !ownerStage.isBlank()) {
-            stages.add(ownerStage);
-        }
-        if (stages.size() > 0) {
-            trigger.add("stages", stages);
-        }
-        JsonArray conditions = jsonObjectArray(event.conditions());
-        if (conditions.size() > 0) {
-            trigger.add("conditions", conditions);
-        }
-        trigger.add("actions", actions);
-        copyIfPresent(event.data(), trigger, "cooldown_ticks");
-        copyIfPresent(event.data(), trigger, "cooldown_seconds");
-        copyIfPresent(event.data(), trigger, "cooldown_days");
-        copyIfPresent(event.data(), trigger, "radius");
-        copyIfPresent(event.data(), trigger, "repeatable");
-        copyIfPresent(event.data(), trigger, "priority");
-        copyIfPresent(event.data(), trigger, "chance");
-        copyIfPresent(event.data(), trigger, "weight");
-        copyIfPresent(event.data(), trigger, "exclusive");
-        triggers.add(trigger);
-        triggerSources.put(triggerId, source);
-    }
-
-    private static JsonArray actionArray(
-            ResourceLocation questId,
-            List<JsonObject> rawActions,
-            QuestV2Resource.Transition transition) {
-        JsonArray actions = new JsonArray();
-        addActionObjects(actions, rawActions);
-        addActionObjects(actions, transitionActions(questId, transition));
-        return actions;
-    }
-
-    private static List<JsonObject> transitionActions(ResourceLocation questId, QuestV2Resource.Transition transition) {
-        if (transition == null || transition.isEmpty()) {
-            return List.of();
-        }
-        if (!transition.stage().isBlank()) {
-            JsonObject action = new JsonObject();
-            action.addProperty("type", "set_variable");
-            action.addProperty("quest", questId.toString());
-            action.addProperty("scope", "quest");
-            action.addProperty("stage", transition.stage());
-            action.addProperty("flash_tracker", true);
-            return List.of(action);
-        }
-        if (transition.complete()) {
-            return List.of(questAction(questId, "turn_in"));
-        }
-        if (transition.abandon()) {
-            return List.of(questAction(questId, "abandon"));
-        }
-        if (transition.fail()) {
-            return List.of(questAction(questId, "fail"));
-        }
-        return List.of();
-    }
-
-    private static JsonObject questAction(ResourceLocation questId, String actionId) {
-        JsonObject action = new JsonObject();
-        action.addProperty("type", "quest");
-        action.addProperty("quest", questId.toString());
-        action.addProperty("action", actionId);
-        return action;
-    }
-
-    private static JsonObject canonicalRewards(
-            ResourceLocation questId,
-            ResourceLocation location,
-            String context,
-            QuestV2Resource.Rewards rewards) {
-        JsonObject canonical = new JsonObject();
-        if (rewards == null) {
-            return canonical;
-        }
-        JsonObject data = rewards.data();
-        putInt(canonical, "experience", DatapackJsonReader.readInt(data, "experience", 0));
-        putInt(canonical, "reputation", DatapackJsonReader.readInt(data, "reputation", 0));
-        putInt(canonical, "gossip_reputation", DatapackJsonReader.readInt(data, "gossip_reputation", 0));
-        copyIfPresent(data, canonical, "loot_table");
-        copyIfPresent(data, canonical, "memory_event");
-        copyIfPresent(data, canonical, "memory_scope");
-
-        JsonObject wrapper = new JsonObject();
-        wrapper.add("actions", jsonObjectArray(rewards.actions()));
-        for (VillagerActionDefinition action : VillagerActionDefinition.readList(location, context, wrapper, questId)) {
-            switch (action.kind()) {
-                case EXPERIENCE -> putInt(canonical, "experience",
-                        DatapackJsonReader.readInt(canonical, "experience", 0) + Math.max(0, action.amount()));
-                case REPUTATION -> putInt(canonical, "reputation",
-                        DatapackJsonReader.readInt(canonical, "reputation", 0) + action.amount());
-                case GOSSIP -> putInt(canonical, "gossip_reputation",
-                        DatapackJsonReader.readInt(canonical, "gossip_reputation", 0) + action.amount());
-                case MEMORY -> {
-                    if (action.memoryTag() != null) {
-                        canonical.addProperty("memory_event", action.memoryTag().toString());
-                        canonical.addProperty("memory_scope", action.memoryScope().serializedName());
-                    }
-                }
-                case LOOT -> {
-                    if (action.lootTable() != null) {
-                        canonical.addProperty("loot_table", action.lootTable().toString());
-                    }
-                }
-                default -> {
-                }
-            }
-        }
-        return canonical;
-    }
-
-    private static List<JsonObject> rewardActions(QuestV2Resource.Rewards rewards) {
-        if (rewards == null) {
-            return List.of();
-        }
-        List<JsonObject> actions = new ArrayList<>();
-        for (JsonObject action : rewards.actions()) {
-            actions.add(action.deepCopy());
-        }
-        JsonObject data = rewards.data();
-        addRewardAction(actions, "experience", DatapackJsonReader.readInt(data, "experience", 0), "");
-        addRewardAction(actions, "reputation", DatapackJsonReader.readInt(data, "reputation", 0), "");
-        addRewardAction(actions, "gossip", DatapackJsonReader.readInt(data, "gossip_reputation", 0), "");
-        addRewardAction(actions, "memory", 0, DatapackJsonReader.readString(data, "memory_event"));
-        addRewardAction(actions, "loot", 0, DatapackJsonReader.readString(data, "loot_table"));
-        return List.copyOf(actions);
-    }
-
-    private static void addRewardAction(List<JsonObject> actions, String type, int amount, String resource) {
-        if (amount == 0 && (resource == null || resource.isBlank())) {
-            return;
-        }
-        JsonObject action = new JsonObject();
-        action.addProperty("type", type);
-        if (amount != 0) {
-            action.addProperty("amount", amount);
-        }
-        if ("memory".equals(type)) {
-            action.addProperty("memory_event", resource);
-        } else if ("loot".equals(type)) {
-            action.addProperty("loot_table", resource);
-        }
-        actions.add(action);
-    }
-
-    private static CompiledQuest compileDefinition(
-            QuestDefinition definition,
-            ResourceLocation providerType,
-            com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection deathProtection,
-            boolean blocksHiring,
-            QuestSourcePointer source,
-            CanonicalQuestJson canonical) {
-        List<CompiledQuestObjective> objectives = compileObjectives(definition, canonical.objectiveSources(), source);
-        Map<String, CompiledQuestObjective> objectivesById = indexObjectives(objectives);
-        List<CompiledQuestStage> stages = compileStages(definition, objectivesById, canonical.stageSources(), source);
-        Map<String, CompiledQuestStage> stagesById = indexStages(stages);
-        List<CompiledQuestTrigger> triggers = compileTriggers(definition, canonical.triggerSources(), source);
-        QuestTriggerIndex triggerIndex = QuestTriggerRegistry.index(triggers);
-
-        return new CompiledQuest(
-                definition.id(),
-                source,
-                null,
-                new CompiledQuestMetadata(
-                        definition.title(),
-                        definition.description(),
-                        definition.titleKey(),
-                        definition.descriptionKey(),
-                        definition.questline(),
-                        definition.tags(),
-                        definition.parent(),
-                        definition.metadata()),
-                new CompiledQuestProvider(providerType, definition.offer(), deathProtection, blocksHiring),
-                definition.target(),
-                definition.entryStage(),
-                definition.prerequisites(),
-                definition.rules(),
-                new CompiledQuestUi(definition.tracker(), definition.dialogue(), definition.links()),
-                objectives,
-                objectivesById,
-                stages,
-                stagesById,
-                triggers,
-                triggerIndex.triggersByEvent(),
-                triggerIndex,
-                new CompiledQuestRewards(definition.rewards()),
-                definition.showLockedAdventureHint(),
-                definition.revision());
-    }
-
-    private static List<CompiledQuestObjective> compileObjectives(
-            QuestDefinition definition,
-            Map<String, QuestSourcePointer> sources,
-            QuestSourcePointer source) {
-        List<CompiledQuestObjective> objectives = new ArrayList<>();
-        int index = 0;
-        for (QuestDefinition.Objective objective : definition.objectives()) {
-            objectives.add(new CompiledQuestObjective(
-                    objective.id(),
-                    index,
-                    objective,
-                    sources.getOrDefault(objective.id(), source.child("objectives", Integer.toString(index)))));
-            index++;
-        }
-        return List.copyOf(objectives);
-    }
-
-    private static Map<String, CompiledQuestObjective> indexObjectives(List<CompiledQuestObjective> objectives) {
-        Map<String, CompiledQuestObjective> byId = new LinkedHashMap<>();
-        for (CompiledQuestObjective objective : objectives) {
-            byId.put(objective.id(), objective);
-        }
-        return byId;
-    }
-
-    private static List<CompiledQuestStage> compileStages(
-            QuestDefinition definition,
-            Map<String, CompiledQuestObjective> objectivesById,
-            Map<String, QuestSourcePointer> sources,
-            QuestSourcePointer source) {
-        List<CompiledQuestStage> stages = new ArrayList<>();
-        int index = 0;
-        for (Map.Entry<String, QuestDefinition.Stage> entry : definition.stages().entrySet()) {
-            stages.add(new CompiledQuestStage(
-                    entry.getKey(),
-                    index,
-                    entry.getValue(),
-                    resolveStageObjectives(entry.getValue(), objectivesById),
-                    sources.getOrDefault(entry.getKey(), source.child("stages", entry.getKey()))));
-            index++;
-        }
-        return List.copyOf(stages);
-    }
-
-    private static List<CompiledQuestObjective> resolveStageObjectives(
-            QuestDefinition.Stage stage,
-            Map<String, CompiledQuestObjective> objectivesById) {
-        return stage.objectives().stream()
-                .map(objectivesById::get)
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    private static Map<String, CompiledQuestStage> indexStages(List<CompiledQuestStage> stages) {
-        Map<String, CompiledQuestStage> byId = new LinkedHashMap<>();
-        for (CompiledQuestStage stage : stages) {
-            byId.put(stage.id(), stage);
-        }
-        return byId;
-    }
-
-    private static List<CompiledQuestTrigger> compileTriggers(
-            QuestDefinition definition,
-            Map<String, QuestSourcePointer> sources,
-            QuestSourcePointer source) {
-        List<CompiledQuestTrigger> triggers = new ArrayList<>();
-        int index = 0;
-        for (QuestDefinition.Trigger trigger : definition.triggers()) {
-            triggers.add(new CompiledQuestTrigger(
-                    trigger.id(),
-                    index,
-                    trigger,
-                    sources.getOrDefault(trigger.id(), source.child("triggers", Integer.toString(index)))));
-            index++;
-        }
-        return List.copyOf(triggers);
-    }
-
     private static List<QuestV2Resource.Stage> orderedStages(QuestV2Resource resource) {
         if (resource.entryStage().isBlank() || resource.stages().isEmpty()) {
             return resource.stages();
@@ -949,15 +465,6 @@ public final class QuestV2Compiler {
         return stage.id() + "." + objective.id();
     }
 
-    private static JsonObject trackerStep(QuestV2Resource.UiHints ui) {
-        JsonObject step = new JsonObject();
-        putString(step, "text", ui.trackerText());
-        putString(step, "text_key", ui.trackerTextKey());
-        copyIfPresent(ui.data(), step, "show_progress");
-        copyIfPresent(ui.data(), step, "progress");
-        return step;
-    }
-
     private static void addActionObjects(JsonArray target, List<JsonObject> actions) {
         if (actions == null) {
             return;
@@ -970,45 +477,6 @@ public final class QuestV2Compiler {
     private static JsonArray jsonObjectArray(List<JsonObject> objects) {
         JsonArray array = new JsonArray();
         addActionObjects(array, objects);
-        return array;
-    }
-
-    private static JsonArray stringArray(Iterable<String> values) {
-        JsonArray array = new JsonArray();
-        if (values == null) {
-            return array;
-        }
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                array.add(value.trim());
-            }
-        }
-        return array;
-    }
-
-    private static JsonArray stringArray(JsonElement element) {
-        JsonArray array = new JsonArray();
-        if (element == null || element.isJsonNull()) {
-            return array;
-        }
-        if (element.isJsonPrimitive()) {
-            String value = element.getAsString().trim();
-            if (!value.isBlank()) {
-                array.add(value);
-            }
-            return array;
-        }
-        if (!element.isJsonArray()) {
-            return array;
-        }
-        for (JsonElement child : element.getAsJsonArray()) {
-            if (child.isJsonPrimitive()) {
-                String value = child.getAsString().trim();
-                if (!value.isBlank()) {
-                    array.add(value);
-                }
-            }
-        }
         return array;
     }
 
@@ -1042,24 +510,12 @@ public final class QuestV2Compiler {
         }
     }
 
-    private static void putString(JsonObject object, String key, String value) {
-        if (value != null && !value.isBlank()) {
-            object.addProperty(key, value);
-        }
-    }
-
     private static void putStringIfBlank(JsonObject object, String key, String value) {
         if (value == null || value.isBlank()) {
             return;
         }
         String existing = DatapackJsonReader.readString(object, key);
         if (existing.isBlank()) {
-            object.addProperty(key, value);
-        }
-    }
-
-    private static void putInt(JsonObject object, String key, int value) {
-        if (value != 0) {
             object.addProperty(key, value);
         }
     }
@@ -1093,11 +549,4 @@ public final class QuestV2Compiler {
         return first == null || first.isBlank() ? second : first;
     }
 
-    private record CanonicalQuestJson(
-            JsonObject root,
-            Map<String, QuestSourcePointer> objectiveSources,
-            Map<String, QuestSourcePointer> stageSources,
-            Map<String, QuestSourcePointer> triggerSources
-    ) {
-    }
 }
