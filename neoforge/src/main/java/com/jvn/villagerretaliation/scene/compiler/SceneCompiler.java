@@ -121,14 +121,6 @@ public final class SceneCompiler {
                                     exception.getMessage()));
                 }
             }
-            if (step.type().getPath().equals("action_batch")
-                    && containsWaitingSceneAction(step.data())) {
-                diagnostics.add(
-                        error(
-                                "scene.action_batch.wait_for_result",
-                                "steps." + step.id() + ".data.actions",
-                                "action_batch cannot suspend on start_scene wait_for_result; author a separate scene boundary"));
-            }
             try {
                 Object parsed = descriptor.parser().parse(step.data());
                 for (String message : descriptor.validator().validate(parsed)) {
@@ -365,20 +357,6 @@ public final class SceneCompiler {
             if (object.has(key) && object.get(key).isJsonPrimitive())
                 return object.get(key).getAsString();
         return "";
-    }
-
-    private static boolean containsWaitingSceneAction(JsonObject data) {
-        if (data == null || !data.has("actions") || !data.get("actions").isJsonArray())
-            return false;
-        for (JsonElement raw : data.getAsJsonArray("actions")) {
-            if (!raw.isJsonObject()) continue;
-            JsonObject action = raw.getAsJsonObject();
-            if ("start_scene".equals(string(action, "type"))
-                    && action.has("wait_for_result")
-                    && action.get("wait_for_result").isJsonPrimitive()
-                    && action.get("wait_for_result").getAsBoolean()) return true;
-        }
-        return false;
     }
 
     private static Set<String> reachable(

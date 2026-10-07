@@ -122,6 +122,12 @@ public final class SceneTransitionService {
             case CANCELLED -> instance.cancel(code, diagnostic, gameTime);
             case NONE -> throw new IllegalArgumentException("terminal scene result cannot be NONE");
         }
+        for (SceneOperationReceipt receipt : instance.receipts().values()) {
+            if (receipt.state() == SceneOperationReceipt.ReceiptState.WAITING) {
+                receipt.recordAction(com.jvn.villagerretaliation.action.ActionResult.failed(
+                        "owning scene ended before the action completed: " + result, java.util.Set.of()), gameTime);
+            }
+        }
         if (instance.cleanupStatus() != SceneInstance.CleanupStatus.COMPLETE) {
             instance.cleanupStatus(SceneInstance.CleanupStatus.RUNNING);
             data.requestCleanup(instance);

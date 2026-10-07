@@ -127,12 +127,21 @@ public final class SceneContinuationService {
     }
 
     public static boolean hasPendingQuestOperation(DialogueContext context, ResourceLocation questId) {
-        return SceneSavedData.get(context.level()).continuations().stream().anyMatch(continuation ->
+        SceneSavedData data = SceneSavedData.get(context.level());
+        if (data.continuations().stream().anyMatch(continuation ->
                 !continuation.completionReceipt() && continuation.retrySuspendedAction()
                         && !RESUMING.get().contains(continuation.id())
                         && context.player().getUUID().equals(continuation.playerId())
                         && continuation.nextActionIndex() < continuation.actions().size()
-                        && questId.equals(continuation.actions().get(continuation.nextActionIndex()).questId()));
+                        && questId.equals(continuation.actions().get(continuation.nextActionIndex()).questId()))) return true;
+        return data.active().stream().filter(scene -> !SceneLifecycleIntegration.isOriginatingScene(scene.id()))
+                .flatMap(scene -> scene.receipts().values().stream())
+                .map(com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt::actionResult)
+                .filter(result -> result.suspended() && result.retryOnResume()
+                        && result.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION)
+                .flatMap(result -> data.continuation(result.suspensionId()).stream())
+                .anyMatch(continuation -> context.player().getUUID().equals(continuation.playerId())
+                        && questId.equals(continuation.questId()));
     }
 
     public static boolean hasPendingDialogue(DialogueContext context) {

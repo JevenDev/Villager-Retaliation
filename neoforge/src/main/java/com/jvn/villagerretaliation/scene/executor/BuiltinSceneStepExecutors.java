@@ -344,23 +344,31 @@ public final class BuiltinSceneStepExecutors {
                             "action_invalid", "safe action " + id + " did not parse");
                 var action = parsed.getFirst();
                 SceneOperationReceipt.Kind kind = receiptKind(action);
+                SceneOperationReceipt previous = c.instance().receipts().get(c.operationId("action/" + id));
+                boolean resuming = previous != null && previous.state() == SceneOperationReceipt.ReceiptState.WAITING;
+                UUID originatingScene = c.instance().id();
                 var guarded =
                         SceneReceiptGuard.applyActionOnce(
                                 c,
                                 "action/" + id,
                                 kind,
                                 () ->
-                                        VillagerActionRegistry.execute(
-                                                dialogue, action, java.util.Map.of()));
+                                        SceneLifecycleIntegration.withOriginatingScene(originatingScene, () ->
+                                                VillagerActionRegistry.execute(dialogue, action, java.util.Map.of())));
                 if (guarded.ambiguous())
                     return SceneStepResult.block(
                             "action_ambiguous",
                             "cannot prove whether action " + id + " applied before reload");
                 if (guarded.outcome().suspended()) {
-                    return SceneStepResult.block("action_suspended", "action_batch cannot wait for a child scene");
+                    return SceneStepResult.waitUntil(c.gameTime() + 1L, "waiting for action " + id);
                 }
                 if (action.required() && !guarded.outcome().success()) {
                     return SceneStepResult.fail("required_action_failed", "action " + id + ": " + guarded.outcome().message());
+                }
+                if (resuming) {
+                    // the persisted wait proves later batch actions have not run yet
+                    c = new SceneExecutionContext(c.server(), c.repository(), c.instance(), c.definition(),
+                            c.step(), c.record(), c.gameTime(), true);
                 }
             }
             return SceneStepResult.applied();
@@ -392,13 +400,17 @@ public final class BuiltinSceneStepExecutors {
                 var progress =
                         VillagerQuestSavedData.get(dialogue.level())
                                 .get(dialogue.player().getUUID(), transition.questId());
-                if (progress == null)
-                    return SceneStepResult.fail(
-                            "quest_transition_inactive",
-                            "quest transition requires an active quest");
                 action.addProperty("type", "quest_transition");
                 action.addProperty("target_stage", transition.targetStage());
-                action.addProperty("from_stage", progress.currentStage());
+                String fromStage = c.record().durableValues().get("quest_transition_stage");
+                if (fromStage == null) {
+                    if (progress == null) return SceneStepResult.fail(
+                            "quest_transition_inactive", "quest transition requires an active quest");
+                    fromStage = progress.currentStage();
+                    c.record().putDurableValue("quest_transition_stage", fromStage);
+                    c.repository().changed();
+                }
+                action.addProperty("from_stage", fromStage);
                 action.addProperty("scene_path", c.definition().id().toString());
                 action.addProperty("response_id", c.instance().id() + "/" + c.step().id());
             } else {
@@ -423,7 +435,7 @@ public final class BuiltinSceneStepExecutors {
                 return SceneStepResult.fail(
                         "quest_transition_invalid", "quest transition action is invalid");
             var guarded =
-                    SceneReceiptGuard.applyOnce(
+                    SceneReceiptGuard.applyActionOnce(
                             c,
                             "quest_transition",
                             SceneOperationReceipt.Kind.QUEST_TRANSITION,
@@ -434,17 +446,17 @@ public final class BuiltinSceneStepExecutors {
                                                     VillagerActionRegistry.execute(
                                                             dialogue,
                                                             parsed.getFirst(),
-                                                            java.util.Map.of())),
-                            "quest transition");
-            if (guarded.status() == SceneReceiptGuard.Status.AMBIGUOUS_PREPARED)
+                                                            java.util.Map.of())));
+            if (guarded.ambiguous())
                 return SceneStepResult.block(
                         "quest_transition_ambiguous",
                         "cannot prove quest transition outcome after reload");
-            guarded.receipt()
-                    .completed(
-                            c.gameTime(),
-                            "quest transition target="
-                                    + transition.target().name().toLowerCase(Locale.ROOT));
+            if (guarded.outcome().suspended()) {
+                return SceneStepResult.waitUntil(c.gameTime() + 1L, "waiting for quest transition");
+            }
+            if (!guarded.outcome().success()) {
+                return SceneStepResult.fail("quest_transition_failed", guarded.outcome().message());
+            }
             return SceneStepResult.applied();
         }
 

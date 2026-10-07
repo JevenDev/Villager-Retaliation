@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import java.util.Set;
+import java.util.UUID;
 
 public final class SceneOperationReceipt {
     private final String operationId;
@@ -16,6 +17,9 @@ public final class SceneOperationReceipt {
     private String evidence = "";
     private ActionStatus actionStatus;
     private String actionDiagnostic = "";
+    private UUID suspensionId;
+    private ActionResult.SuspensionKind suspensionKind = ActionResult.SuspensionKind.SCENE;
+    private boolean retryOnResume;
 
     public SceneOperationReceipt(String operationId, Kind kind, long preparedTime) {
         if (operationId == null || operationId.isBlank() || kind == null) throw new IllegalArgumentException("receipt requires stable operation id and kind");
@@ -30,7 +34,8 @@ public final class SceneOperationReceipt {
         return state == ReceiptState.COMPLETED || state == ReceiptState.REJECTED;
     }
     public ActionResult actionResult() {
-        if (actionStatus != null) return new ActionResult(actionStatus, actionDiagnostic, Set.of(), VillagerActionResult.EMPTY);
+        if (actionStatus != null) return new ActionResult(actionStatus, actionDiagnostic, Set.of(),
+                VillagerActionResult.EMPTY, suspensionId, suspensionKind, retryOnResume);
         if (state == ReceiptState.APPLIED || state == ReceiptState.COMPLETED)
             return ActionResult.alreadySatisfied("effect already applied", Set.of(), VillagerActionResult.EMPTY);
         return ActionResult.failed("receipt has no recorded action result", Set.of());
@@ -38,7 +43,13 @@ public final class SceneOperationReceipt {
     public void recordAction(ActionResult result, long time) {
         actionStatus = result.status();
         actionDiagnostic = result.message();
-        if (result.success()) {
+        suspensionId = result.suspensionId();
+        suspensionKind = result.suspensionKind();
+        retryOnResume = result.retryOnResume();
+        if (result.suspended()) {
+            state = ReceiptState.WAITING;
+            evidence = result.message();
+        } else if (result.success()) {
             applied(time, result.message());
             completed(time, result.message());
         } else {
@@ -46,8 +57,8 @@ public final class SceneOperationReceipt {
             evidence = result.message();
         }
     }
-    public CompoundTag save(){CompoundTag t=new CompoundTag();t.putString("OperationId",operationId);t.putString("Kind",kind.name());t.putString("State",state.name());t.putLong("PreparedTime",preparedTime);t.putLong("AppliedTime",appliedTime);t.putLong("CompletedTime",completedTime);t.putString("Evidence",evidence);if(actionStatus!=null)t.putString("ActionStatus",actionStatus.name());t.putString("ActionDiagnostic",actionDiagnostic);return t;}
-    public static SceneOperationReceipt load(CompoundTag t){SceneOperationReceipt value=new SceneOperationReceipt(t.getString("OperationId"),Kind.valueOf(t.getString("Kind")),t.getLong("PreparedTime"));value.state=ReceiptState.valueOf(t.getString("State"));value.appliedTime=t.getLong("AppliedTime");value.completedTime=t.getLong("CompletedTime");value.evidence=t.getString("Evidence");if(t.contains("ActionStatus"))value.actionStatus=ActionStatus.valueOf(t.getString("ActionStatus"));value.actionDiagnostic=t.getString("ActionDiagnostic");return value;}
-    public enum ReceiptState{PREPARED,APPLIED,COMPLETED,REJECTED}
+    public CompoundTag save(){CompoundTag t=new CompoundTag();t.putString("OperationId",operationId);t.putString("Kind",kind.name());t.putString("State",state.name());t.putLong("PreparedTime",preparedTime);t.putLong("AppliedTime",appliedTime);t.putLong("CompletedTime",completedTime);t.putString("Evidence",evidence);if(actionStatus!=null)t.putString("ActionStatus",actionStatus.name());t.putString("ActionDiagnostic",actionDiagnostic);if(suspensionId!=null)t.putUUID("Suspension",suspensionId);t.putString("SuspensionKind",suspensionKind.name());t.putBoolean("RetryOnResume",retryOnResume);return t;}
+    public static SceneOperationReceipt load(CompoundTag t){SceneOperationReceipt value=new SceneOperationReceipt(t.getString("OperationId"),Kind.valueOf(t.getString("Kind")),t.getLong("PreparedTime"));value.state=ReceiptState.valueOf(t.getString("State"));value.appliedTime=t.getLong("AppliedTime");value.completedTime=t.getLong("CompletedTime");value.evidence=t.getString("Evidence");if(t.contains("ActionStatus"))value.actionStatus=ActionStatus.valueOf(t.getString("ActionStatus"));value.actionDiagnostic=t.getString("ActionDiagnostic");value.suspensionId=t.hasUUID("Suspension")?t.getUUID("Suspension"):null;if(t.contains("SuspensionKind"))value.suspensionKind=ActionResult.SuspensionKind.valueOf(t.getString("SuspensionKind"));value.retryOnResume=t.getBoolean("RetryOnResume");return value;}
+    public enum ReceiptState{PREPARED,WAITING,APPLIED,COMPLETED,REJECTED}
     public enum Kind{ITEM_GRANT,LOOT_GRANT,EXPERIENCE_GRANT,REPUTATION_CHANGE,GOSSIP_CHANGE,PROFILE_ATTRIBUTE_CHANGE,COUNTER_INCREMENT,QUEST_TRANSITION,ENCOUNTER_CREATION,DIALOGUE_DELIVERY,ENCOUNTER_PHASE,FACT_CHANGE,SCENE_TRANSITION}
 }

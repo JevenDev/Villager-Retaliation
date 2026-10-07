@@ -17,6 +17,13 @@ public final class SceneReceiptGuard {
     public static ActionApplyResult applyActionOnce(SceneExecutionContext context, String suffix,
             SceneOperationReceipt.Kind kind, Supplier<ActionResult> effect) {
         SceneOperationReceipt receipt = context.prepareReceipt(suffix, kind);
+        if (receipt.actionResult().suspended()) {
+            ActionResult waiting = receipt.actionResult();
+            ActionResult result = SceneActionSuspension.poll(context.repository(), waiting);
+            if (result.suspended()) return new ActionApplyResult(result, receipt, false);
+            if (result.success() && waiting.retryOnResume()) result = effect.get();
+            return recordAction(context, receipt, result);
+        }
         if (receipt.state() != SceneOperationReceipt.ReceiptState.PREPARED) {
             if (receipt.state() == SceneOperationReceipt.ReceiptState.APPLIED) {
                 receipt.completed(context.gameTime(), receipt.evidence());
@@ -29,7 +36,14 @@ public final class SceneReceiptGuard {
                     receipt, true);
         }
         context.repository().changed();
-        ActionResult result = effect.get();
+        return recordAction(context, receipt, effect.get());
+    }
+
+    private static ActionApplyResult recordAction(SceneExecutionContext context,
+            SceneOperationReceipt receipt, ActionResult result) {
+        if (result.suspended() && SceneActionSuspension.dependsOnScene(context.repository(), result, context.instance().id())) {
+            result = ActionResult.failed("cyclic scene action suspension", result.capabilities());
+        }
         receipt.recordAction(result, context.gameTime());
         context.repository().changed();
         return new ActionApplyResult(result, receipt, false);

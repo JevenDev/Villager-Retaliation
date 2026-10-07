@@ -15,6 +15,7 @@ public final class SceneRecoveryPolicy {
             case PREPARED,RUNNING->{
                 if(mode==RecoveryMode.NATURALLY_IDEMPOTENT||mode==RecoveryMode.WORLD_RECONCILED)yield Decision.RECONCILE;
                 if(receipt==SceneOperationReceipt.ReceiptState.APPLIED||receipt==SceneOperationReceipt.ReceiptState.COMPLETED)yield Decision.VERIFY;
+                if(receipt==SceneOperationReceipt.ReceiptState.WAITING)yield Decision.RECONCILE;
                 if(worldVerified)yield Decision.MARK_APPLIED;
                 yield Decision.BLOCK;
             }
