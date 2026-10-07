@@ -42,7 +42,7 @@ public final class QuestV1Compiler {
         return new CompiledQuest(
                 definition.id(),
                 source,
-                definition,
+                null,
                 new CompiledQuestMetadata(
                         definition.title(),
                         definition.description(),
@@ -54,7 +54,7 @@ public final class QuestV1Compiler {
                         definition.metadata()),
                 new CompiledQuestProvider(definition.offer()),
                 definition.target(),
-                "",
+                definition.entryStage(),
                 definition.prerequisites(),
                 definition.rules(),
                 new CompiledQuestUi(definition.tracker(), definition.dialogue(), definition.links()),
@@ -65,7 +65,9 @@ public final class QuestV1Compiler {
                 triggers,
                 triggerIndex.triggersByEvent(),
                 triggerIndex,
-                new CompiledQuestRewards(definition.rewards()));
+                new CompiledQuestRewards(definition.rewards()),
+                definition.showLockedAdventureHint(),
+                definition.revision());
     }
 
     private static List<CompiledQuestObjective> compileObjectives(

@@ -814,7 +814,7 @@ public final class QuestV2Compiler {
         return new CompiledQuest(
                 definition.id(),
                 source,
-                definition,
+                null,
                 new CompiledQuestMetadata(
                         definition.title(),
                         definition.description(),
@@ -837,7 +837,9 @@ public final class QuestV2Compiler {
                 triggers,
                 triggerIndex.triggersByEvent(),
                 triggerIndex,
-                new CompiledQuestRewards(definition.rewards()));
+                new CompiledQuestRewards(definition.rewards()),
+                definition.showLockedAdventureHint(),
+                definition.revision());
     }
 
     private static List<CompiledQuestObjective> compileObjectives(
