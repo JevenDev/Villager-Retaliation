@@ -1,0 +1,90 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:reconciliation",
+  "revision": 1,
+  "title_key": "campaign_fixture.reconciliation.title",
+  "localization_prefix": "campaign_fixture.reconciliation.",
+  "quest_bundles": [
+    "campaign_fixture:decision",
+    "campaign_fixture:dragon",
+    "campaign_fixture:decision_catch_up",
+    "campaign_fixture:dragon_catch_up"
+  ],
+  "chapters": [
+    {
+      "id": "decision",
+      "title_key": "campaign_fixture.reconciliation.decision",
+      "quests": [
+        "campaign_fixture:decision"
+      ]
+    },
+    {
+      "id": "dragon",
+      "title_key": "campaign_fixture.reconciliation.dragon",
+      "quests": [
+        "campaign_fixture:dragon"
+      ],
+      "prerequisites": [
+        {
+          "chapter": "decision"
+        }
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "decision",
+      "chapter": "decision",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "irreversible": true,
+      "outcomes": [
+        {
+          "id": "admitted",
+          "title_key": "campaign_fixture.reconciliation.admitted"
+        },
+        {
+          "id": "refused",
+          "title_key": "campaign_fixture.reconciliation.refused"
+        }
+      ],
+      "catch_up": {
+        "quest": "campaign_fixture:decision_catch_up",
+        "stage": "catch_up"
+      }
+    },
+    {
+      "id": "dragon",
+      "chapter": "dragon",
+      "quest": "campaign_fixture:dragon",
+      "stage": "watch",
+      "irreversible": true,
+      "outcomes": [
+        {
+          "id": "defeated",
+          "title_key": "campaign_fixture.reconciliation.defeated"
+        }
+      ],
+      "catch_up": {
+        "quest": "campaign_fixture:dragon_catch_up",
+        "stage": "catch_up"
+      },
+      "observe": {
+        "event": "minecraft:ender_dragon_defeated",
+        "outcome": "defeated"
+      }
+    }
+  ],
+  "facts": [
+    {
+      "id": "learned_decision",
+      "scope": "player",
+      "kind": "tag"
+    },
+    {
+      "id": "learned_dragon",
+      "scope": "player",
+      "kind": "tag"
+    }
+  ]
+}

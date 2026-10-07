@@ -1,0 +1,11 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.reconciliation.title": "Campaign reconciliation fixture",
+    "campaign_fixture.reconciliation.decision": "The visitors",
+    "campaign_fixture.reconciliation.dragon": "The dragon",
+    "campaign_fixture.reconciliation.admitted": "The visitors were admitted",
+    "campaign_fixture.reconciliation.refused": "The visitors were refused",
+    "campaign_fixture.reconciliation.defeated": "The Ender Dragon was defeated"
+  }
+}

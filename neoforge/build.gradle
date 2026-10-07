@@ -469,3 +469,9 @@ idea {
         downloadJavadoc = true
     }
 }
+
+tasks.register('campaignFixturePack', Zip) {
+    from('src/gameTest/resources/campaign_fixture')
+    archiveFileName = 'campaign-fixture.zip'
+    destinationDirectory = layout.buildDirectory.dir('distributions')
+}

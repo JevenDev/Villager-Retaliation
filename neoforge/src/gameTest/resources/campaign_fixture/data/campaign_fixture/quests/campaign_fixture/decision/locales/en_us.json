@@ -1,0 +1,23 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.decision.title": "Campaign fixture: the visitors",
+    "campaign_fixture.quest.decision.description": "Choose a shared outcome, then compare it with another player's catch-up path.",
+    "campaign_fixture.quest.decision.response.accept": "Begin the test.",
+    "campaign_fixture.quest.decision.offer.label": "Campaign fixture: the visitors",
+    "campaign_fixture.quest.decision.offer.lines": [
+      "This is a campaign test. The shared record is permanent for this world. Each player keeps their own progress."
+    ],
+    "campaign_fixture.quest.decision.response.admitted": "Record that the visitors were admitted.",
+    "campaign_fixture.quest.decision.response.refused": "Record that the visitors were refused.",
+    "campaign_fixture.quest.decision.decide.label": "Decide the visitors' fate",
+    "campaign_fixture.quest.decision.decide.lines": [
+      "Choose one shared outcome. This fixture changes the story record only."
+    ],
+    "campaign_fixture.quest.decision.response.finish_report": "Record my progress.",
+    "campaign_fixture.quest.decision.report.label": "Finish Campaign fixture: the visitors",
+    "campaign_fixture.quest.decision.report.lines": [
+      "Your decision is recorded. Finish your personal quest to receive 40 experience."
+    ]
+  }
+}

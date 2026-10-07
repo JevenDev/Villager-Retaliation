@@ -1,0 +1,23 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.decision_catch_up.title": "Catch up: the visitors",
+    "campaign_fixture.quest.decision_catch_up.description": "Learn the shared outcome and complete your personal catch-up path.",
+    "campaign_fixture.quest.decision_catch_up.response.accept": "Begin my catch-up path.",
+    "campaign_fixture.quest.decision_catch_up.offer.label": "Catch up: the visitors",
+    "campaign_fixture.quest.decision_catch_up.offer.lines": [
+      "The shared event has already happened. You can learn its outcome and continue your own story."
+    ],
+    "campaign_fixture.quest.decision_catch_up.response.learn_admitted": "I understand that the visitors were admitted.",
+    "campaign_fixture.quest.decision_catch_up.response.learn_refused": "I understand that the visitors were refused.",
+    "campaign_fixture.quest.decision_catch_up.catch_up.label": "Learn what happened",
+    "campaign_fixture.quest.decision_catch_up.catch_up.lines": [
+      "The visitors' fate was decided before you could take part. Learn the result and continue your own story."
+    ],
+    "campaign_fixture.quest.decision_catch_up.response.finish_catch_up_report": "Record my progress.",
+    "campaign_fixture.quest.decision_catch_up.catch_up_report.label": "Finish Campaign fixture: the visitors",
+    "campaign_fixture.quest.decision_catch_up.catch_up_report.lines": [
+      "You learned the recorded outcome and received 5 personal experience. The original reward is reserved for the original path."
+    ]
+  }
+}

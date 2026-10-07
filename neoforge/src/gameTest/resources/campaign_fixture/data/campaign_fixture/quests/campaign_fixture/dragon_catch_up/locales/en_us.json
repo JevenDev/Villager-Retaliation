@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.dragon_catch_up.title": "Catch up: the dragon",
+    "campaign_fixture.quest.dragon_catch_up.description": "Learn the shared outcome and complete your personal catch-up path.",
+    "campaign_fixture.quest.dragon_catch_up.response.accept": "Begin my catch-up path.",
+    "campaign_fixture.quest.dragon_catch_up.offer.label": "Catch up: the dragon",
+    "campaign_fixture.quest.dragon_catch_up.offer.lines": [
+      "The shared event has already happened. You can learn its outcome and continue your own story."
+    ],
+    "campaign_fixture.quest.dragon_catch_up.response.learn_dragon": "I understand what happened.",
+    "campaign_fixture.quest.dragon_catch_up.catch_up.label": "Learn what happened",
+    "campaign_fixture.quest.dragon_catch_up.catch_up.lines": [
+      "The Ender Dragon has already been defeated. This account gives you personal progress without claiming that you took part. Respawning and defeating it again cannot repeat the shared event."
+    ],
+    "campaign_fixture.quest.dragon_catch_up.response.finish_catch_up_report": "Record my progress.",
+    "campaign_fixture.quest.dragon_catch_up.catch_up_report.label": "Finish Campaign fixture: the dragon",
+    "campaign_fixture.quest.dragon_catch_up.catch_up_report.lines": [
+      "You learned the recorded outcome and received 5 personal experience. The original reward is reserved for the original path."
+    ]
+  }
+}

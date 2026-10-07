@@ -1,0 +1,17 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.dragon.title": "Campaign fixture: the dragon",
+    "campaign_fixture.quest.dragon.description": "Observe an ordinary Ender Dragon defeat, including one that happened before this quest began.",
+    "campaign_fixture.quest.dragon.response.accept": "Begin the test.",
+    "campaign_fixture.quest.dragon.offer.label": "Campaign fixture: the dragon",
+    "campaign_fixture.quest.dragon.offer.lines": [
+      "This is a campaign test. The shared record is permanent for this world. Each player keeps their own progress."
+    ],
+    "campaign_fixture.quest.dragon.response.wait": "I will return after the dragon falls.",
+    "campaign_fixture.quest.dragon.watch.label": "About the dragon test",
+    "campaign_fixture.quest.dragon.watch.lines": [
+      "Defeat the Ender Dragon through ordinary Minecraft gameplay. The campaign observes the world result. It cannot infer who took part."
+    ]
+  }
+}
