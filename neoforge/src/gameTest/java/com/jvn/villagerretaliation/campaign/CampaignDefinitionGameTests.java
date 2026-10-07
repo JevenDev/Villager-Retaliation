@@ -163,6 +163,12 @@ public final class CampaignDefinitionGameTests {
         raw.addProperty("revision", "1");
         rejectShape(helper, raw, "/revision");
         raw = fixture();
+        raw.addProperty("id", "test:journey\n");
+        rejectShape(helper, raw, "/id");
+        raw = fixture();
+        raw.addProperty("title_key", "test.campaign.title\n");
+        rejectShape(helper, raw, "/title_key");
+        raw = fixture();
         raw.addProperty("schema", "villagerretaliation:campaign/v2");
         rejectShape(helper, raw, "/schema");
         raw = fixture();

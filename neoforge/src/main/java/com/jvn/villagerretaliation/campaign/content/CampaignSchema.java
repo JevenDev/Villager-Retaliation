@@ -4,8 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.quest.debug.QuestDiagnostic;
-import java.math.BigDecimal;
-import java.util.ArrayList;
+import com.jvn.villagerretaliation.quest.schema.QuestJsonSchema;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
@@ -108,109 +107,14 @@ public final class CampaignSchema {
     }
 
     public static List<QuestDiagnostic> validate(ResourceLocation source, JsonElement input) {
-        List<QuestDiagnostic> diagnostics = new ArrayList<>();
-        validate(source, input, export(), "", diagnostics);
-        return List.copyOf(diagnostics);
-    }
-
-    private static void validate(ResourceLocation source, JsonElement value, JsonObject schema,
-            String pointer, List<QuestDiagnostic> diagnostics) {
-        String type = schema.get("type").getAsString();
-        boolean matches = value != null && switch (type) {
-            case "object" -> value.isJsonObject();
-            case "array" -> value.isJsonArray();
-            case "string" -> value.isJsonPrimitive() && value.getAsJsonPrimitive().isString();
-            case "boolean" -> value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean();
-            case "integer" -> value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber() && integer(value);
-            default -> throw new IllegalStateException("unsupported campaign schema type " + type);
-        };
-        if (!matches) {
-            diagnostics.add(error(source, pointer, "expected " + type));
-            return;
-        }
-        if (schema.has("allOf")) {
-            for (var rule : schema.getAsJsonArray("allOf")) validate(source, value, rule.getAsJsonObject(), pointer, diagnostics);
-        }
-        if (schema.has("if")) {
-            List<QuestDiagnostic> condition = new ArrayList<>();
-            validate(source, value, schema.getAsJsonObject("if"), pointer, condition);
-            String branch = condition.isEmpty() ? "then" : "else";
-            if (schema.has(branch)) validate(source, value, schema.getAsJsonObject(branch), pointer, diagnostics);
-        }
-        if (schema.has("enum")) {
-            boolean accepted = false;
-            for (JsonElement candidate : schema.getAsJsonArray("enum")) accepted |= candidate.equals(value);
-            if (!accepted) diagnostics.add(error(source, pointer, "unsupported value " + value));
-        }
-        switch (type) {
-            case "object" -> {
-                JsonObject object = value.getAsJsonObject();
-                JsonObject properties = schema.getAsJsonObject("properties");
-                for (JsonElement required : schema.getAsJsonArray("required")) {
-                    String key = required.getAsString();
-                    if (!object.has(key)) diagnostics.add(error(source, child(pointer, key), "required field is missing"));
-                }
-                for (var entry : object.entrySet()) {
-                    if (!properties.has(entry.getKey())) {
-                        if (!schema.get("additionalProperties").getAsBoolean()) {
-                            diagnostics.add(error(source, child(pointer, entry.getKey()), "unsupported field"));
-                        }
-                    } else {
-                        validate(source, entry.getValue(), properties.getAsJsonObject(entry.getKey()),
-                                child(pointer, entry.getKey()), diagnostics);
-                    }
-                }
-            }
-            case "array" -> {
-                JsonArray array = value.getAsJsonArray();
-                if (array.size() < schema.get("minItems").getAsInt()) {
-                    diagnostics.add(error(source, pointer, "array requires at least " + schema.get("minItems") + " entries"));
-                }
-                if (array.size() > schema.get("maxItems").getAsInt()) {
-                    diagnostics.add(error(source, pointer, "array exceeds " + schema.get("maxItems") + " entries"));
-                    return;
-                }
-                for (int index = 0; index < array.size(); index++) {
-                    validate(source, array.get(index), schema.getAsJsonObject("items"), pointer + "/" + index, diagnostics);
-                }
-            }
-            case "string" -> {
-                String text = value.getAsString();
-                if (text.isBlank() || text.length() > schema.get("maxLength").getAsInt()) {
-                    diagnostics.add(error(source, pointer, "text must be nonblank and at most " + schema.get("maxLength") + " characters"));
-                }
-                if (schema.has("pattern") && !text.matches(schema.get("pattern").getAsString())) {
-                    diagnostics.add(error(source, pointer, "text does not match " + schema.get("pattern").getAsString()));
-                }
-            }
-            case "integer" -> {
-                BigDecimal number = value.getAsBigDecimal();
-                if (number.compareTo(schema.get("minimum").getAsBigDecimal()) < 0
-                        || number.compareTo(schema.get("maximum").getAsBigDecimal()) > 0) {
-                    diagnostics.add(error(source, pointer, "integer is outside the supported range"));
-                }
-            }
-            default -> {
-            }
-        }
-    }
-
-    private static boolean integer(JsonElement value) {
-        try {
-            return value.getAsBigDecimal().stripTrailingZeros().scale() <= 0;
-        } catch (NumberFormatException exception) {
-            return false;
-        }
+        return QuestJsonSchema.validate(input, export()).stream()
+                .map(issue -> error(source, issue.pointer(), issue.message())).toList();
     }
 
     static QuestDiagnostic error(ResourceLocation source, String pointer, String message) {
         return new QuestDiagnostic(QuestDiagnostic.Severity.ERROR, "campaign.invalid", source, "",
                 source == null ? "" : source.toString(), pointer, message,
                 "Correct the campaign definition at this source location and reload datapacks.", Set.of());
-    }
-
-    private static String child(String pointer, String key) {
-        return pointer + "/" + key.replace("~", "~0").replace("/", "~1");
     }
 
     private static JsonObject object(List<String> required, Object... fields) {
@@ -245,7 +149,7 @@ public final class CampaignSchema {
         JsonObject result = type("string");
         result.addProperty("minLength", 1);
         result.addProperty("maxLength", 256);
-        result.addProperty("pattern", pattern.isBlank() ? "^[a-zA-Z0-9_.:/-]+$" : pattern);
+        result.addProperty("pattern", (pattern.isBlank() ? "^[a-zA-Z0-9_.:/-]+$" : pattern) + "(?![\\s\\S])");
         return result;
     }
 
