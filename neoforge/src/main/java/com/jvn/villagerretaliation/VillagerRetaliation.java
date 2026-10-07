@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation;
 
 import com.jvn.villagerretaliation.command.VillagerRetaliationCommands;
+import com.jvn.villagerretaliation.campaign.CampaignWorldModeService;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
@@ -73,6 +74,8 @@ public class VillagerRetaliation {
                 .listener(SellBoxCapabilities::register)
                 .listener(VillagerReputationNetworking::registerPayloads);
         ToucanEventBuses.game()
+                .listener(CampaignWorldModeService::onLevelLoad)
+                .listener(CampaignWorldModeService::onServerStarted)
                 .listener(VillagerRetaliationEvents::onServerStarted)
                 .listener(VillagerRetaliationEvents::onServerStopping)
                 .listener(VillagerRetaliationEvents::onAddReloadListeners)

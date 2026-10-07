@@ -18,6 +18,7 @@ public final class VillagerRetaliationConfig {
     private static boolean clientSyncObserversRegistered;
 
     public static final ConfigWrapper<?> CONFIG = loadConfig();
+    public static final ConfigValue<NewWorldMode> NEW_WORLD_MODE = bind("campaign.newWorldMode", NewWorldMode.class);
 
     public static final ConfigValue<Boolean> SETTLEMENT_STATE_NOTIFICATIONS = bind("settlements.stateNotifications", Boolean.class);
     public static final ConfigValue<Boolean> SETTLEMENT_PROBLEM_NOTIFICATIONS = bind("settlements.problemNotifications", Boolean.class);

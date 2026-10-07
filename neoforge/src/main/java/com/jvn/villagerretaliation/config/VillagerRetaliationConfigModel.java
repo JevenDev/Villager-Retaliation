@@ -22,6 +22,9 @@ public final class VillagerRetaliationConfigModel {
     public Notifications notifications = new Notifications();
 
     @Nest
+    public Campaign campaign = new Campaign();
+
+    @Nest
     public Quest quest = new Quest();
 
     @Nest
@@ -929,6 +932,10 @@ public final class VillagerRetaliationConfigModel {
 
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
         public double randomTradeDropChance = 0.50;
+    }
+
+    public static final class Campaign {
+        public NewWorldMode newWorldMode = NewWorldMode.CAMPAIGN;
     }
 
     public static final class Quest {
