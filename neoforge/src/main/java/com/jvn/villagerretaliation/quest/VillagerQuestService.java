@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.quest.tracking.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.tracking.QuestStageReadiness;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveResult;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRequirement;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveDispatchService;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
@@ -4577,83 +4578,14 @@ public final class VillagerQuestService {
             return false;
         }
 
-        boolean changed = false;
-        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
-            if (progress.objectiveComplete(objective.id())) {
-                continue;
-            }
-            if (objectiveComplete(player, context, level, definition, progress, objective)) {
-                boolean newlyComplete = progress.markObjectiveComplete(objective.id());
-                changed |= newlyComplete;
-                if (newlyComplete) {
-                    markQuestObjectiveFact(level, player, definition, objective);
-                }
-                if (objective.id().equals(progress.targetObjectiveId())) {
-                    progress.setTarget(progress.startedVillagerId(), progress.targetDimension(), null, "");
-                }
-            }
-        }
+        boolean changed = QuestObjectiveDispatchService.poll(
+                objectiveEvaluationContext(player, context, level, definition, progress),
+                objective -> markQuestObjectiveFact(level, player, definition, objective));
         /*
          * Do not locate generated structures from player tick. Vanilla nearest/generated-structure
          * searches can synchronously enter worldgen/StructureCheck while players are exploring.
          */
         return changed;
-    }
-
-    private static boolean updateEventObjectiveProgress(
-            ServerLevel level,
-            ServerPlayer player,
-            QuestObjectiveEvent event,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
-        boolean changed = false;
-        QuestObjectiveEvaluationContext objectiveContext =
-                objectiveEvaluationContext(player, null, level, definition, progress);
-        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
-            int previousCounter = progress.objectiveCounter(objective.id());
-            boolean previouslyComplete = progress.objectiveComplete(objective.id());
-            if (progress.objectiveComplete(objective.id())
-                    || !QuestObjectiveRegistry.eventKinds(objective).contains(event.kind())
-                    || !QuestObjectiveRegistry.matchesEvent(objectiveContext, objective, event)) {
-                continue;
-            }
-            if (QuestObjectiveRegistry.requirements(objective).contains(QuestObjectiveRequirement.COUNTER)) {
-                int count = progress.addObjectiveCounter(objective.id(), 1);
-                changed = true;
-                if (count >= objective.count() && progress.markObjectiveComplete(objective.id())) {
-                    markQuestObjectiveFact(level, player, definition, objective);
-                }
-            } else if (objectiveComplete(player, null, level, definition, progress, objective)
-                    && progress.markObjectiveComplete(objective.id())) {
-                changed = true;
-                markQuestObjectiveFact(level, player, definition, objective);
-            }
-            if (objective.id().equals(progress.targetObjectiveId()) && progress.objectiveComplete(objective.id())) {
-                progress.setTarget(progress.startedVillagerId(), progress.targetDimension(), null, "");
-            }
-            if (QuestDebugTraceService.isEnabled(player)) {
-                int nextCounter = progress.objectiveCounter(objective.id());
-                boolean complete = progress.objectiveComplete(objective.id());
-                QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.OBJECTIVE_PROGRESS, definition.id(),
-                        "objective=" + objective.id()
-                                + " event=" + event.kind().name().toLowerCase(Locale.ROOT)
-                                + " counter_delta=" + (nextCounter - previousCounter)
-                                + " complete_delta=" + (!previouslyComplete && complete));
-            }
-        }
-        return changed;
-    }
-
-    private static Set<ResourceLocation> objectiveEventQuestIds(ServerLevel level, QuestObjectiveEvent event) {
-        if (level == null || event == null || event.kind() == null) {
-            return Set.of();
-        }
-        if (event.kind() == QuestObjectiveEventKind.MEMORY_EVENT) {
-            return event.memoryEvent() == null || event.memoryEvent().tagId() == null
-                    ? Set.of()
-                    : VillagerQuestResources.memoryEventQuestIds(level.getServer(), event.memoryEvent().tagId());
-        }
-        return VillagerQuestResources.questIdsForObjectiveEvent(level.getServer(), event.kind());
     }
 
     /**
@@ -4683,20 +4615,6 @@ public final class VillagerQuestService {
 
     private static void onObjectiveEvent(ServerLevel level, ServerPlayer player, QuestObjectiveEvent event) {
         onObjectiveEvent(level, player, event, Set.of());
-    }
-
-    private static QuestDefinition.TriggerEvent triggerEventFor(QuestObjectiveEventKind kind) {
-        return switch (kind) {
-            case MOB_KILL -> QuestDefinition.TriggerEvent.MOB_KILL;
-            case BLOCK_BREAK -> QuestDefinition.TriggerEvent.BLOCK_BREAK;
-            case BLOCK_PLACE -> QuestDefinition.TriggerEvent.BLOCK_PLACE;
-            case BLOCK_INTERACT -> QuestDefinition.TriggerEvent.BLOCK_INTERACT;
-            case MEMORY_EVENT -> QuestDefinition.TriggerEvent.MEMORY_EVENT;
-            case GIFT -> QuestDefinition.TriggerEvent.GIFT;
-            case TRADE -> QuestDefinition.TriggerEvent.TRADE;
-            case REPUTATION -> QuestDefinition.TriggerEvent.REPUTATION;
-            case CRITERION -> QuestDefinition.TriggerEvent.CRITERION;
-        };
     }
 
     private static QuestActionOutcome failQuest(
@@ -4741,8 +4659,8 @@ public final class VillagerQuestService {
             return;
         }
 
-        Set<ResourceLocation> candidateQuestIds = objectiveEventQuestIds(level, event);
-        QuestDefinition.TriggerEvent objectiveTriggerEvent = triggerEventFor(event.kind());
+        Set<ResourceLocation> candidateQuestIds = QuestObjectiveDispatchService.candidateQuestIds(level, event);
+        QuestDefinition.TriggerEvent objectiveTriggerEvent = QuestObjectiveDispatchService.triggerEventFor(event.kind());
         QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.OBJECTIVE_EVENT, null,
                 "event=" + event.kind().name().toLowerCase(Locale.ROOT)
                         + " candidate_quests=" + candidateQuestIds.size());
@@ -4770,7 +4688,9 @@ public final class VillagerQuestService {
                 continue;
             }
             boolean questProgressChanged = objectiveCandidate
-                    && updateEventObjectiveProgress(level, player, event, definition, progress);
+                    && QuestObjectiveDispatchService.dispatch(
+                            objectiveEvaluationContext(player, null, level, definition, progress), event,
+                            objective -> markQuestObjectiveFact(level, player, definition, objective));
             if (triggerCandidate) {
                 changed |= dispatchQuestTriggers(player, definition, progress, objectiveTriggerEvent, event);
             }
