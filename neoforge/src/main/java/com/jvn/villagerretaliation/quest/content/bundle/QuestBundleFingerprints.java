@@ -17,6 +17,10 @@ public final class QuestBundleFingerprints {
     private QuestBundleFingerprints() {
     }
 
+    public static String definition(JsonElement definition) {
+        return sha256(canonical(definition));
+    }
+
     public static String structural(QuestBundleTransactions.EffectiveBundle bundle) {
         JsonObject root = definitions(bundle);
         return sha256(canonical(root));

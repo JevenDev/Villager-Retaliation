@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.util;
 
 import com.jvn.villagerretaliation.allegiance.VillageNameResources;
+import com.jvn.villagerretaliation.campaign.content.CampaignResources;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
@@ -66,6 +67,7 @@ public final class VillagerDataWarmup {
         BiomeStoryResources.warm(server);
         DangerousStructureStoryResources.warm(server);
         QuestContentCatalogs.warm(server);
+        CampaignResources.current(server);
         VillagerEventTriggerService.warm(server);
         VillagerPresetNameRegistry.warm(server);
         VillageNameResources.warm(server);
@@ -114,6 +116,7 @@ public final class VillagerDataWarmup {
         DangerousStructureStoryResources.clearCache();
         VillagerWorldTargetCache.clearCache();
         VillagerQuestResources.clearCache();
+        CampaignResources.clearCache();
         QuestRewardPreviewResources.clearCache();
         QuestPoolResources.clearCache();
         SceneResources.clearCache();
