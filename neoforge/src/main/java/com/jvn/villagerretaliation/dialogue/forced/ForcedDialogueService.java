@@ -161,7 +161,9 @@ public final class ForcedDialogueService {
     private static final int PLAYER_ITEM_PROXIMITY_LINE_SELECTION_ATTEMPTS = 5;
     private static final Map<UUID, RecentContainerClick> RECENT_CONTAINER_CLICKS = new HashMap<>();
     private static final Map<UUID, ContainerSnapshot> OPEN_CONTAINER_SNAPSHOTS = new HashMap<>();
-    private static final Map<UUID, ForcedDialogueSession> FORCED_SESSIONS = new HashMap<>();
+    private static final ForcedDialogueRuntime<ForcedDialogueSession> FORCED_SESSIONS = new ForcedDialogueRuntime<>(
+            FORCED_SESSION_TIMEOUT_TICKS, ForcedDialogueService::shouldOfferStolenItemReturnOption,
+            ForcedDialogueService::handleRuntimeSelection);
     private static final Map<UUID, Long> NEXT_SHARED_PARTICIPANT_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, String> LAST_PLAYER_ITEM_PROXIMITY_CHAT_LINES = new HashMap<>();
     private static final PlayerItemProximityForcedDialogueService.Delegate PLAYER_ITEM_PROXIMITY_DELEGATE =
@@ -357,42 +359,19 @@ public final class ForcedDialogueService {
     }
 
     public static boolean handleDialogueRequest(ServerPlayer player, Villager villager, String optionId) {
-        ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
-        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
-                || session == null
-                || !session.villagerId().equals(villager.getUUID())) {
-            return false;
-        }
-        if (player.serverLevel().getGameTime() - session.startedGameTime() > FORCED_SESSION_TIMEOUT_TICKS) {
-            FORCED_SESSIONS.remove(player.getUUID());
-            return false;
-        }
-        if (LEAVE_OPTION_ID.equals(optionId)) {
-            return handleLeaveRequest(player, villager, false);
-        }
-
-        Optional<ForcedDialogueOption> selected = session.definition().options().stream()
-                .filter(option -> option.id().equals(optionId))
-                .filter(option -> !session.disabledOptionIds().contains(option.id()))
-                .filter(option -> optionMatches(player.serverLevel(), villager, player, option))
-                .findFirst();
-        if (selected.isEmpty()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.unknown_dialogue_option");
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
-            return true;
-        }
-
-        if (isAllowedContainerVouchResponse(session, selected.get())) {
-            return handleAllowedContainerVouchResponse(player, villager, session);
-        }
-
-        return handleSelectedOption(player, villager, session, selected.get(), false, false);
+        return FORCED_SESSIONS.handleRequest(player, villager, optionId);
     }
 
     public static boolean hasSession(ServerPlayer player, Villager villager) {
-        ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
-        return session != null && session.villagerId().equals(villager.getUUID());
+        return FORCED_SESSIONS.hasSession(player, villager);
+    }
+
+    private static boolean handleRuntimeSelection(ServerPlayer player, Villager villager,
+            ForcedDialogueSession session, ForcedDialogueOption option, boolean forceEndConversation, boolean leaveRequest) {
+        if (!leaveRequest && isAllowedContainerVouchResponse(session, option)) {
+            return handleAllowedContainerVouchResponse(player, villager, session);
+        }
+        return handleSelectedOption(player, villager, session, option, forceEndConversation, leaveRequest);
     }
 
     public static boolean openSimpleForcedDialogue(ServerPlayer player, Villager villager, String definitionId, String line) {
@@ -542,12 +521,7 @@ public final class ForcedDialogueService {
     }
 
     public static boolean isStaleConversationEndRequest(ServerPlayer player, int entityId) {
-        ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
-        if (session == null) {
-            return false;
-        }
-        Entity entity = player.serverLevel().getEntity(entityId);
-        return entity instanceof Villager villager && !session.villagerId().equals(villager.getUUID());
+        return FORCED_SESSIONS.isStaleConversationEndRequest(player, entityId);
     }
 
     public static void openTradeRefreshDialogue(
@@ -821,45 +795,7 @@ public final class ForcedDialogueService {
     }
 
     public static boolean handleLeaveRequest(ServerPlayer player, Villager villager, boolean forceEndConversation) {
-        ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
-        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
-                || session == null
-                || !session.villagerId().equals(villager.getUUID())) {
-            return false;
-        }
-        Optional<ForcedDialogueOption> selected = selectLeaveOption(player, villager, session);
-        if (selected.isEmpty()) {
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
-            return true;
-        }
-        return handleSelectedOption(player, villager, session, selected.get(), forceEndConversation, true);
-    }
-
-    private static Optional<ForcedDialogueOption> selectLeaveOption(
-            ServerPlayer player,
-            Villager villager,
-            ForcedDialogueSession session) {
-        VillagerReputationManager.ReputationSnapshot reputation =
-                VillagerReputationManager.getReputationSnapshot(player.serverLevel(), villager, player.getUUID());
-        return session.definition().options().stream()
-                .filter(option -> shouldOfferStolenItemReturnOption(session, option))
-                .filter(option -> option.id().equals(LEAVE_OPTION_ID))
-                .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
-                .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
-                .findFirst()
-                .or(() -> session.definition().leaveOptions().stream()
-                        .filter(option -> shouldOfferStolenItemReturnOption(session, option))
-                        .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
-                        .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
-                        .findFirst())
-                .or(() -> session.definition().options().stream()
-                        .filter(option -> shouldOfferStolenItemReturnOption(session, option))
-                        .filter(option -> option.id().equals(LEAVE_OPTION_ID))
-                        .findFirst())
-                .or(() -> shouldOfferStolenItemReturnOption(session, session.definition().leaveOption())
-                        ? Optional.of(session.definition().leaveOption())
-                        : Optional.empty());
+        return FORCED_SESSIONS.handleLeaveRequest(player, villager, forceEndConversation);
     }
 
     private static boolean shouldOfferStolenItemReturnOption(ForcedDialogueSession session, ForcedDialogueOption option) {
@@ -1478,35 +1414,6 @@ public final class ForcedDialogueService {
         return TradeRefreshForcedDialogue.isDefinition(session.definition().id());
     }
 
-    private static boolean optionMatches(
-            ServerLevel level,
-            Villager villager,
-            ServerPlayer player,
-            ForcedDialogueOption option) {
-        ReputationSnapshot reputation = VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
-        if (!option.reputationCondition().matches(reputation.value(), reputation.level())) {
-            return false;
-        }
-        return optionConditionsMatch(level, villager, player, option);
-    }
-
-    private static boolean optionConditionsMatch(
-            ServerLevel level,
-            Villager villager,
-            ServerPlayer player,
-            ForcedDialogueResources.ForcedDialogueOption option) {
-        if (option.socialAttributeCondition().isEmpty() && option.conditions().isEmpty()) {
-            return true;
-        }
-        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
-        if (!option.socialAttributeCondition().isEmpty()
-                && (!VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_DIALOGUE_EFFECTS)
-                || !option.socialAttributeCondition().matches(context))) {
-            return false;
-        }
-        return DialogueCondition.matchesAll(context, option.conditions());
-    }
-
     private static ForcedDialogueDefinition tradeRefreshDefinition(String line, ForcedDialogueDefinition optionDefinition) {
         return tradeRefreshDefinition(
                 line,
@@ -2121,7 +2028,7 @@ public final class ForcedDialogueService {
                 NEXT_SHARED_PARTICIPANT_SCAN_TICKS,
                 gameTime,
                 SHARED_PARTICIPANT_SCAN_INTERVAL_TICKS);
-        for (Map.Entry<UUID, ForcedDialogueSession> entry : FORCED_SESSIONS.entrySet()) {
+        for (Map.Entry<UUID, ForcedDialogueSession> entry : FORCED_SESSIONS.snapshot().entrySet()) {
             if (!(level.getPlayerByUUID(entry.getKey()) instanceof ServerPlayer player)
                     || !player.isAlive()
                     || player.isSpectator()
@@ -4114,68 +4021,14 @@ public final class ForcedDialogueService {
     }
 
     private static List<DialogueOptionDefinition> forcedOptions(
-            ForcedDialogueDefinition definition,
-            ServerLevel level,
-            Villager villager,
-            ServerPlayer player) {
+            ForcedDialogueDefinition definition, ServerLevel level, Villager villager, ServerPlayer player) {
         return forcedOptions(definition, level, villager, player, null);
     }
 
     private static List<DialogueOptionDefinition> forcedOptions(
-            ForcedDialogueDefinition definition,
-            ServerLevel level,
-            Villager villager,
-            ServerPlayer player,
-            ForcedDialogueSession session) {
-        VillagerReputationManager.ReputationSnapshot reputation =
-                VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
-        return definition.options().stream()
-                .filter(option -> session == null || shouldOfferStolenItemReturnOption(session, option))
-                .filter(option -> session == null || !session.disabledOptionIds().contains(option.id()))
-                .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
-                .filter(option -> optionConditionsMatch(level, villager, player, option))
-                .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
-                .map(option -> DialogueOptionDefinition.simple(
-                        option.id(),
-                        forcedOptionLabel(option, level, player, session),
-                        DialogueRequestType.QUESTION,
-                        option.order()))
-                .toList();
-    }
-
-    private static String forcedOptionLabel(
-            ForcedDialogueOption option,
-            ServerLevel level,
-            ServerPlayer player,
-            ForcedDialogueSession session) {
-        if (session == null) {
-            ForcedDialogueContext context = new ForcedDialogueContext(
-                    "",
-                    player == null ? "" : player.getDisplayName().getString(),
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    0,
-                    "",
-                    "",
-                    "",
-                    "",
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    level == null ? null : level.getServer(),
-                    level == null ? null : level.getRandom(),
-                    player == null ? VillagerLocale.DEFAULT_LOCALE : VillagerLocale.locale(player));
-            return ForcedDialogueResources.resolveTemplate(option.label(), context);
-        }
-        return ForcedDialogueResources.resolveTemplate(
-                option.label(),
-                session.context(),
-                option.itemPayment().removal().replacements());
+            ForcedDialogueDefinition definition, ServerLevel level, Villager villager,
+            ServerPlayer player, ForcedDialogueSession session) {
+        return FORCED_SESSIONS.options(definition, level, villager, player, session);
     }
 
     private static double outputRadius(ForcedDialogueDefinition definition) {
@@ -4316,7 +4169,7 @@ public final class ForcedDialogueService {
             List<UUID> spokenVillagerIds,
             boolean stolenItemsResolved,
             List<String> disabledOptionIds,
-            boolean royaltyAggroBypass) {
+            boolean royaltyAggroBypass) implements ForcedDialogueRuntime.Session {
         private ForcedDialogueSession(
                 UUID villagerId,
                 ForcedDialogueDefinition definition,
