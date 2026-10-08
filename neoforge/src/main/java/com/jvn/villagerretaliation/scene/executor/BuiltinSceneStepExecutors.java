@@ -47,7 +47,9 @@ public final class BuiltinSceneStepExecutors {
         if (registered) return;
         register("wait_ticks", new WaitTicks());
         register("wait_condition", new WaitCondition());
-        register("move_actor", new MoveActor());
+        var movement = new MoveActor();
+        register("move_actor", movement);
+        register("follow_actor", new com.jvn.villagerretaliation.campaign.CampaignFollowStepExecutor(movement));
         register("face_actor", new Face(false));
         register("face_position", new Face(true));
         register("dialogue", new Dialogue());
@@ -154,7 +156,7 @@ public final class BuiltinSceneStepExecutors {
             c.record().putDurableValue("destination_x", Integer.toString(destination.pos.getX()));
             c.record().putDurableValue("destination_y", Integer.toString(destination.pos.getY()));
             c.record().putDurableValue("destination_z", Integer.toString(destination.pos.getZ()));
-            long timeout = longValue(c, "timeout_ticks", 20L * 60L);
+            long timeout = c.step().follow() == null ? longValue(c, "timeout_ticks", 20L * 60L) : c.step().follow().timeoutTicks();
             c.record().putDurableValue("deadline", Long.toString(c.gameTime() + timeout));
             return SceneStepResult.ready();
         }
@@ -163,6 +165,8 @@ public final class BuiltinSceneStepExecutors {
             Entity actor = actor(c, sourceAlias(c));
             if (actor == null)
                 return actorUnavailable(c, "moving actor is unavailable or unloaded");
+            String reservation = com.jvn.villagerretaliation.campaign.CampaignFollowService.movementIssue(c, actor);
+            if (!reservation.isBlank()) return SceneStepResult.waitUntil(c.gameTime() + 20, reservation);
             Destination target = durableDestination(c);
             if (target == null)
                 return SceneStepResult.block(
@@ -177,7 +181,7 @@ public final class BuiltinSceneStepExecutors {
                 return waitOrTimeout(c, "destination chunk is unloaded");
             if (actor.level() != level)
                 return movementFailure(c, actor, target, "actor is in another dimension");
-            double arrival = Math.max(0.25, doubleValue(c, "arrival_distance", 1.5));
+            double arrival = c.step().follow() == null ? Math.max(0.25, doubleValue(c, "arrival_distance", 1.5)) : c.step().follow().arrivalDistance();
             if (actor.distanceToSqr(Vec3.atCenterOf(target.pos)) <= arrival * arrival)
                 return SceneStepResult.applied();
             if (!(actor instanceof Mob mob))
@@ -188,7 +192,7 @@ public final class BuiltinSceneStepExecutors {
                                     target.pos.getX() + 0.5,
                                     target.pos.getY(),
                                     target.pos.getZ() + 0.5,
-                                    Math.max(0.05, doubleValue(c, "speed", 0.55)));
+                                    c.step().follow() == null ? Math.max(0.05, doubleValue(c, "speed", 0.55)) : c.step().follow().speed());
             if (!moving && mob.getNavigation().isDone())
                 return movementFailure(c, actor, target, "pathfinder could not create a path");
             SceneActorBinding binding = c.instance().actorBindings().get(sourceAlias(c));
@@ -202,15 +206,15 @@ public final class BuiltinSceneStepExecutors {
         }
 
         private SceneStepResult waitOrTimeout(SceneExecutionContext c, String message) {
-            return c.gameTime() >= durableLong(c, "deadline", Long.MAX_VALUE)
+            return c.step().follow() == null && c.gameTime() >= durableLong(c, "deadline", Long.MAX_VALUE)
                     ? SceneStepResult.fail("movement_timeout", message)
                     : SceneStepResult.waitUntil(
-                            c.gameTime() + Math.max(1, longValue(c, "poll_ticks", 5)), message);
+                            c.gameTime() + (c.step().follow() == null ? Math.max(1, longValue(c, "poll_ticks", 5)) : c.step().follow().pollTicks()), message);
         }
 
         private SceneStepResult movementFailure(
                 SceneExecutionContext c, Entity actor, Destination target, String message) {
-            String policy = string(c, "path_failure_policy", "block").toLowerCase(Locale.ROOT);
+            String policy = c.step().follow() == null ? string(c, "path_failure_policy", "block").toLowerCase(Locale.ROOT) : "block";
             if (policy.equals("skip")) return SceneStepResult.skip();
             if (policy.equals("teleport") && bool(c, "allow_teleport", false)) {
                 actor.teleportTo(
@@ -679,14 +683,14 @@ public final class BuiltinSceneStepExecutors {
     }
 
     private static String sourceAlias(SceneExecutionContext c) {
-        String authored = string(c, "actor", "");
+        String authored = c.step().follow() == null ? string(c, "actor", "") : c.step().follow().actor();
         return authored.isBlank()
                 ? (c.step().actors().isEmpty() ? "" : c.step().actors().getFirst())
                 : authored;
     }
 
     private static Destination destination(SceneExecutionContext c) {
-        String target = string(c, "target_actor", "");
+        String target = c.step().follow() == null ? string(c, "target_actor", "") : c.step().follow().targetActor();
         if (!target.isBlank()) {
             SceneActorBinding binding = c.instance().actorBindings().get(target);
             if (binding != null

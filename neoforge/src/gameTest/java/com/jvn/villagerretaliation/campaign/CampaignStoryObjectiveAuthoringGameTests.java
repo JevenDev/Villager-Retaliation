@@ -38,7 +38,8 @@ public final class CampaignStoryObjectiveAuthoringGameTests {
         registries.getAsJsonArray("public_quest_objectives").forEach(entry -> publicTypes.add(entry.getAsJsonObject().get("id").getAsString()));
         for (var entry : schemas) helper.assertTrue(publicTypes.contains("villagerretaliation:" + entry.getAsJsonObject().get("id").getAsString()),
                 "every built-in objective is present in the public registry");
-        for (String raw : List.of(SPEAK, OUTCOME, "{\"id\":\"inspect\",\"type\":\"campaign_investigate\",\"story\":{\"evidence\":\"ledger\"}}")) {
+        for (String raw : List.of(SPEAK, OUTCOME, "{\"id\":\"inspect\",\"type\":\"campaign_investigate\",\"story\":{\"evidence\":\"ledger\"}}",
+                "{\"id\":\"follow\",\"type\":\"campaign_follow\",\"story\":{\"role\":\"mentor\",\"location\":\"home\",\"scene\":\"test:walk\",\"step\":\"walk\"}}")) {
             var objective = JsonParser.parseString(raw).getAsJsonObject();
             JsonObject schema = null;
             for (var entry : schemas) if (entry.getAsJsonObject().get("id").getAsString().equals(objective.get("type").getAsString()))

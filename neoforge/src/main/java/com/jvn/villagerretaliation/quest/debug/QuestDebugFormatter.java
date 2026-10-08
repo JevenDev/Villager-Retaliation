@@ -174,7 +174,7 @@ public final class QuestDebugFormatter {
                 parts.add("discovery_radius=" + objective.discoveryRadius());
             }
             case LOCATION_VISIT -> addLocation(parts, objective);
-            case CAMPAIGN_OUTCOME, CAMPAIGN_SPEAK, CAMPAIGN_INVESTIGATE -> parts.add("story=" + objective.story());
+            case CAMPAIGN_OUTCOME, CAMPAIGN_SPEAK, CAMPAIGN_INVESTIGATE, CAMPAIGN_FOLLOW -> parts.add("story=" + objective.story());
             case ITEM_CHECK -> {
                 parts.add("item=" + resource(objective.item()));
                 parts.add("current=" + state.itemCount());

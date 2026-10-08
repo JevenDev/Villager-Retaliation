@@ -167,7 +167,7 @@ public final class QuestRegistryMetadata {
             entry.addProperty("title", descriptor.tooling().title());
             entry.addProperty("description", descriptor.tooling().description());
             entry.addProperty("browser_available", descriptor.tooling().browserAvailable());
-            entry.add("schema", GSON.toJsonTree(descriptor.tooling().schema()));
+            entry.add("schema", GSON.toJsonTree(new java.util.TreeMap<>(descriptor.tooling().schema())));
             result.add(entry);
         }
         return result;

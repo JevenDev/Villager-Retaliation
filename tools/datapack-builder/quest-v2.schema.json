@@ -1030,6 +1030,71 @@
         },
         {
           "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_follow"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {},
+              "optional": {},
+              "tracker": {},
+              "conditions": {},
+              "metadata": {},
+              "ui": {},
+              "type": {
+                "const": "campaign_follow"
+              },
+              "story": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                  },
+                  "location": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                  },
+                  "step": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                  },
+                  "scene": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  }
+                },
+                "required": [
+                  "role",
+                  "location",
+                  "scene",
+                  "step"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "story"
+            ]
+          }
+        },
+        {
+          "if": {
             "required": [
               "story"
             ]
@@ -1040,7 +1105,8 @@
                 "enum": [
                   "campaign_outcome",
                   "campaign_speak",
-                  "campaign_investigate"
+                  "campaign_investigate",
+                  "campaign_follow"
                 ]
               }
             },
@@ -1065,6 +1131,7 @@
             "block_use",
             "branch_choice",
             "break_block",
+            "campaign_follow",
             "campaign_investigate",
             "campaign_outcome",
             "campaign_speak",

@@ -1,0 +1,10 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.following.title": "Campaign fixture: following",
+    "campaign_fixture.campaign.following.chapter": "Walk with the mentor",
+    "campaign_fixture.campaign.following.home": "The mentor's village",
+    "campaign_fixture.campaign.following.mentor": "Mentor",
+    "campaign_fixture.campaign.following.destination": "The meeting place"
+  }
+}

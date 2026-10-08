@@ -37,6 +37,12 @@ public final class CampaignStoryObjectiveType implements QuestObjectiveType<Camp
             return result.matches() ? QuestObjectiveResult.complete("Story outcome resolved.")
                     : incomplete(result.diagnostic().isBlank() ? "The named story outcome has not been resolved in this scope." : result.diagnostic());
         }
+        if (objective.story() instanceof CampaignStoryObjective.Follow follow) {
+            var data = CampaignFollowSavedData.get(context.level());
+            if (!data.diagnostic().isBlank()) return incomplete(data.diagnostic());
+            return CampaignFollowService.completed(context, objective.id(), follow) ? QuestObjectiveResult.complete("Campaign character followed.")
+                    : incomplete("Accompany the bound character through the authored journey to its destination.");
+        }
         if (objective.story() instanceof CampaignStoryObjective.Investigate investigation) {
             var instance = CampaignSavedData.get(context.level()).instances().get(context.definition().campaign());
             if (instance == null || context.progress().questRunId() == null) return incomplete("The original campaign quest run is unavailable.");

@@ -7214,6 +7214,7 @@ public final class VillagerQuestService {
             case CAMPAIGN_OUTCOME -> "Resolve the story outcome.";
             case CAMPAIGN_SPEAK -> "Speak with the campaign character.";
             case CAMPAIGN_INVESTIGATE -> "Investigate the evidence.";
+            case CAMPAIGN_FOLLOW -> "Follow the campaign character to the destination.";
             case CONDITION -> "Meet the quest condition.";
         };
     }

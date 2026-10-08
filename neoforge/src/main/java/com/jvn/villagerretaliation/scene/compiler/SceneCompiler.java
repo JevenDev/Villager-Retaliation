@@ -27,7 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class SceneCompiler {
     private static final Set<String> TERMINAL_TYPES = Set.of("scene_complete", "scene_fail");
     private static final Set<String> SUSPENDING_TYPES =
-            Set.of("wait_ticks", "wait_condition", "move_actor", "dialogue", "wait_encounter");
+            Set.of("wait_ticks", "wait_condition", "move_actor", "follow_actor", "dialogue", "wait_encounter");
 
     private SceneCompiler() {}
 
@@ -138,8 +138,14 @@ public final class SceneCompiler {
                                     exception.getMessage()));
                 }
             }
+            com.jvn.villagerretaliation.scene.model.CampaignFollowDefinition follow = null;
             try {
                 Object parsed = descriptor.parser().parse(step.data());
+                if (parsed instanceof com.jvn.villagerretaliation.scene.model.CampaignFollowDefinition compiledFollow) {
+                    follow = compiledFollow;
+                    for (String message : follow.actorIssues(actors, step.actors()))
+                        diagnostics.add(error("scene.follow.actor", "steps." + step.id() + ".data", message));
+                }
                 for (String message : descriptor.validator().validate(parsed)) {
                     diagnostics.add(error("scene.step.extension", "steps." + step.id(), message));
                 }
@@ -147,6 +153,7 @@ public final class SceneCompiler {
                 diagnostics.add(
                         error("scene.step.parse", "steps." + step.id(), exception.getMessage()));
             }
+            if (step.type().equals(com.jvn.villagerretaliation.scene.model.CampaignFollowDefinition.TYPE) && follow == null) continue;
             String localType = step.type().getPath();
             steps.put(
                     step.id(),
@@ -158,7 +165,7 @@ public final class SceneCompiler {
                             step.transitions(),
                             step.failureStep(),
                             !SUSPENDING_TYPES.contains(localType),
-                            TERMINAL_TYPES.contains(localType)));
+                            TERMINAL_TYPES.contains(localType), follow));
         }
 
         if (!steps.containsKey(resource.entryStep())) {

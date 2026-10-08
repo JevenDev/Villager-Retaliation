@@ -397,7 +397,8 @@ try {
   for (const [type, story] of [
     ["campaign_speak", { role: "mentor", conversation: "villagerretaliation:mentor", node: "welcome" }],
     ["campaign_outcome", { milestone: "dragon", outcome: "defeated", scope: "participated" }],
-    ["campaign_investigate", { evidence: "ledger" }]
+    ["campaign_investigate", { evidence: "ledger" }],
+    ["campaign_follow", { role: "mentor", location: "home", scene: "villagerretaliation:walk", step: "walk" }]
   ]) {
     const variants = [
       [{ story }, true, false],

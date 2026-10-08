@@ -45,12 +45,13 @@ public final class VillagerRetaliationRegistries {
                 "start_encounter", "wait_encounter", "cancel_encounter", "cleanup_encounter")) {
             registerSimple(SCENE_STEPS, id, RecoveryMode.WORLD_RECONCILED, ClientSync.PARTICIPANTS);
         }
+        SCENE_STEPS.register(com.jvn.villagerretaliation.scene.model.CampaignFollowDefinition.descriptor());
         registerSimple(ENCOUNTER_TEMPLATES, "controlled", RecoveryMode.WORLD_RECONCILED, ClientSync.PARTICIPANTS);
 
         registerSimple(QUEST_PROVIDERS, "villager", RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
         for (String id : List.of("mob_kill", "block_break", "block_place", "block_interact", "structure_visit",
                 "location_visit", "item_check", "memory_event", "trade", "gift", "reputation", "choice", "fact", "condition", "criterion",
-                "campaign_outcome", "campaign_speak", "campaign_investigate")) {
+                "campaign_outcome", "campaign_speak", "campaign_investigate", "campaign_follow")) {
             registerSimple(QUEST_OBJECTIVES, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.OWNER);
         }
         for (String id : List.of("notification", "tracker", "forced_dialogue", "quest", "quest_transition", "campaign_outcome", "campaign_fact", "campaign_reward", "experience",

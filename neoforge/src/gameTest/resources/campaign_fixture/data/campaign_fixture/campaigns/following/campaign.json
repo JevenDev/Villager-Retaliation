@@ -1,0 +1,50 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:following",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.following.title",
+  "localization_prefix": "campaign_fixture.campaign.following.",
+  "quest_bundles": [
+    "campaign_fixture:following"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.following.chapter",
+      "quests": [
+        "campaign_fixture:following"
+      ]
+    }
+  ],
+  "milestones": [],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.following.home",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    },
+    {
+      "id": "destination",
+      "title_key": "campaign_fixture.campaign.following.destination",
+      "source": "marker",
+      "dimension": "minecraft:overworld",
+      "origin": {
+        "x": 8,
+        "y": 64,
+        "z": 0
+      }
+    }
+  ],
+  "characters": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.following.mentor",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "downed"
+    }
+  ]
+}

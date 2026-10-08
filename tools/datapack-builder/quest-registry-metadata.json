@@ -1165,6 +1165,67 @@
         "implementation": "CampaignStoryObjectiveType"
       },
       {
+        "id": "campaign_follow",
+        "aliases": [],
+        "type": "campaign_follow",
+        "requirements": [
+          "polling"
+        ],
+        "has_runtime": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {},
+            "optional": {},
+            "tracker": {},
+            "conditions": {},
+            "metadata": {},
+            "ui": {},
+            "type": {
+              "const": "campaign_follow"
+            },
+            "story": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "location": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "step": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "scene": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                }
+              },
+              "required": [
+                "role",
+                "location",
+                "scene",
+                "step"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "story"
+          ]
+        },
+        "implementation": "CampaignStoryObjectiveType"
+      },
+      {
         "id": "condition",
         "aliases": [],
         "type": "condition",
@@ -1552,6 +1613,60 @@
         }
       },
       {
+        "id": "villagerretaliation:follow_actor",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Follow a campaign character",
+        "description": "Accompany a bound character to an authored location, waiting for enrolled players.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "actor": {
+              "pattern": "^[a-z][a-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            "target_actor": {
+              "pattern": "^[a-z][a-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            "follow_distance": {
+              "maximum": 32.0,
+              "minimum": 2.0,
+              "type": "number"
+            },
+            "arrival_distance": {
+              "maximum": 4.0,
+              "minimum": 0.25,
+              "type": "number"
+            },
+            "speed": {
+              "maximum": 1.0,
+              "minimum": 0.05,
+              "type": "number"
+            },
+            "poll_ticks": {
+              "maximum": 5.0,
+              "minimum": 1.0,
+              "type": "integer"
+            },
+            "timeout_ticks": {
+              "maximum": 72000.0,
+              "minimum": 1.0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "actor",
+            "target_actor"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:move_actor",
         "aliases": [],
         "live_capabilities": [],
@@ -1748,6 +1863,20 @@
         "client_sync": "owner",
         "title": "Block place",
         "description": "Built-in Block place type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_follow",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Campaign follow",
+        "description": "Built-in Campaign follow type.",
         "browser_available": true,
         "schema": {
           "type": "object"
@@ -2781,6 +2910,7 @@
         "block_use",
         "branch_choice",
         "break_block",
+        "campaign_follow",
         "campaign_investigate",
         "campaign_outcome",
         "campaign_speak",

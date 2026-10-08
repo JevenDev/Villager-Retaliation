@@ -665,6 +665,7 @@ public record QuestDefinition(
         CAMPAIGN_OUTCOME,
         CAMPAIGN_SPEAK,
         CAMPAIGN_INVESTIGATE,
+        CAMPAIGN_FOLLOW,
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {

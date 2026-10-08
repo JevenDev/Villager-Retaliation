@@ -77,6 +77,12 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
     CampaignCharacterTestFixture(GameTestHelper helper, String fixtureName, String sceneName, List<String> additionalQuests,
             java.util.function.Consumer<JsonObject> questContent, java.util.function.Consumer<JsonObject> campaignContent,
             List<String> extraBundleFiles) throws IOException {
+        this(helper, fixtureName, sceneName, additionalQuests, questContent, campaignContent, extraBundleFiles, scene -> { });
+    }
+
+    CampaignCharacterTestFixture(GameTestHelper helper, String fixtureName, String sceneName, List<String> additionalQuests,
+            java.util.function.Consumer<JsonObject> questContent, java.util.function.Consumer<JsonObject> campaignContent,
+            List<String> extraBundleFiles, java.util.function.Consumer<JsonObject> sceneContent) throws IOException {
         this.helper = helper;
         this.fixtureName = fixtureName;
         this.sceneName = sceneName;
@@ -96,10 +102,12 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         var resources = new ArrayList<QuestBundleTransactions.RawResource>();
         var bundleFiles = new ArrayList<>(List.of("quest.json", "locales/en_us.json", "scenes/" + sceneName + ".json"));
         bundleFiles.addAll(extraBundleFiles);
+        JsonObject sceneSource = null;
         for (String file : bundleFiles) {
             String path = "quests/campaign_fixture/" + fixtureName + "/" + file;
             var content = resource(path);
             if (file.equals("quest.json")) questContent.accept(content);
+            if (file.equals("scenes/" + sceneName + ".json")) { sceneContent.accept(content); sceneSource = content; }
             resources.add(QuestBundleTransactions.RawResource.valid(0, "campaign_fixture", id(path), content));
         }
         for (String quest : additionalQuests) {
@@ -111,7 +119,7 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         var bundles = QuestBundleTransactions.compile(resources, QuestBundleTransactions.CompatibilityRules.empty());
         helper.assertTrue(bundles.diagnostics().isEmpty(), "character bundle compiles: " + bundles.diagnostics());
         var quests = VillagerQuestResources.snapshotForCatalog(server, bundles);
-        var compiledScene = SceneCompiler.compile(SceneParser.parse(sceneId, resource("quests/campaign_fixture/" + fixtureName + "/scenes/" + sceneName + ".json")).resource());
+        var compiledScene = SceneCompiler.compile(SceneParser.parse(sceneId, sceneSource).resource());
         scene = compiledScene.scene();
         helper.assertTrue(scene != null, "fixture scene compiles: " + compiledScene.diagnostics());
         var conversations = com.jvn.villagerretaliation.dialogue.conversation.ConversationResources.compile(

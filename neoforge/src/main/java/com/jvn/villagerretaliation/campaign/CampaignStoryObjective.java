@@ -32,7 +32,20 @@ public sealed interface CampaignStoryObjective {
         @Override public QuestDefinition.ObjectiveType type() { return QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE; }
     }
 
+    record Follow(String role, String location, ResourceLocation scene, String step) implements CampaignStoryObjective {
+        public Follow {
+            if (!CampaignFactFields.validId(role) || !CampaignFactFields.validId(location) || scene == null || !CampaignFactFields.validId(step))
+                throw new IllegalArgumentException("Following requires a role, destination, scene and step.");
+        }
+        @Override public QuestDefinition.ObjectiveType type() { return QuestDefinition.ObjectiveType.CAMPAIGN_FOLLOW; }
+    }
+
     static CampaignStoryObjective read(QuestDefinition.ObjectiveType type, JsonObject objective) {
+        if (type == QuestDefinition.ObjectiveType.CAMPAIGN_FOLLOW) {
+            var story = objective.getAsJsonObject("story");
+            return new Follow(story.get("role").getAsString(), story.get("location").getAsString(),
+                    ResourceLocation.parse(story.get("scene").getAsString()), story.get("step").getAsString());
+        }
         if (type == QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE) return new Investigate(objective.getAsJsonObject("story").get("evidence").getAsString());
         if (type != QuestDefinition.ObjectiveType.CAMPAIGN_OUTCOME && type != QuestDefinition.ObjectiveType.CAMPAIGN_SPEAK) return null;
         var story = objective.getAsJsonObject("story");
@@ -47,7 +60,27 @@ public sealed interface CampaignStoryObjective {
             com.jvn.villagerretaliation.campaign.content.CampaignDefinition campaign,
             com.jvn.villagerretaliation.quest.content.QuestContentCatalog catalog, ResourceLocation quest) {
         var issues = new java.util.LinkedHashMap<String, String>();
-        if (story instanceof Investigate investigation) {
+        if (story instanceof Follow follow) {
+            if (!campaign.characters().containsKey(follow.role())) issues.put("role", "Unknown campaign character: " + follow.role());
+            if (!campaign.locations().containsKey(follow.location())) issues.put("location", "Unknown campaign destination: " + follow.location());
+            var scene = catalog.scenes().get(follow.scene());
+            if (scene == null) issues.put("scene", "Scene is missing or invalid: " + follow.scene());
+            else {
+                for (var bundle : catalog.bundles().values()) {
+                    if (!bundle.owner().shared() && !quest.equals(bundle.questId()) && bundle.definitions()
+                            .getOrDefault(com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath.Kind.SCENE, java.util.Map.of())
+                            .containsKey(follow.scene())) issues.put("scene", "Private scene belongs to another quest bundle.");
+                }
+                var step = scene.steps().get(follow.step());
+                if (step == null || step.follow() == null) issues.put("step", "Objective requires an authored follow_actor step.");
+                else {
+                    var guide = scene.actors().get(step.follow().actor());
+                    var destination = scene.actors().get(step.follow().targetActor());
+                    if (guide == null || !guide.bindingReference().equals(follow.role())) issues.put("role", "Follow step uses another character role.");
+                    if (destination == null || !destination.bindingReference().equals(follow.location())) issues.put("location", "Follow step uses another destination.");
+                }
+            }
+        } else if (story instanceof Investigate investigation) {
             if (!campaign.evidence().containsKey(investigation.evidence())) issues.put("evidence", "Unknown campaign evidence source: " + investigation.evidence());
         } else if (story instanceof Outcome outcome) {
             var milestone = campaign.milestones().get(outcome.milestone());
@@ -77,7 +110,11 @@ public sealed interface CampaignStoryObjective {
     static JsonObject schema(QuestDefinition.ObjectiveType type) {
         var fields = new JsonObject();
         var required = new JsonArray();
-        if (type == QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE) {
+        if (type == QuestDefinition.ObjectiveType.CAMPAIGN_FOLLOW) {
+            for (String key : new String[]{"role", "location", "step"}) fields.add(key, CampaignFieldSchema.string(CampaignOutcomeAction.ID_PATTERN, 256));
+            fields.add("scene", CampaignFieldSchema.string("[a-z0-9_.-]+:[a-z0-9_./-]+", 256));
+            for (String key : new String[]{"role", "location", "scene", "step"}) required.add(key);
+        } else if (type == QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE) {
             fields.add("evidence", CampaignFieldSchema.string(CampaignOutcomeAction.ID_PATTERN, 256));
             required.add("evidence");
         } else if (type == QuestDefinition.ObjectiveType.CAMPAIGN_OUTCOME) {

@@ -74,6 +74,7 @@ public final class SceneRuntime {
         if (server == null) return;
         SceneSavedData data = SceneSavedData.get(server.overworld());
         scheduler(server).tick(server, data, server.overworld().getGameTime());
+        com.jvn.villagerretaliation.campaign.CampaignFollowService.maintain(server, data);
         SceneContinuationService.maintain(server, data);
         if(server.overworld().getGameTime()%20L==0L){EncounterService.maintainCleanup(server,data);maintainSceneCleanup(server,data);}
         if(server.overworld().getGameTime()%200L==0L)data.compactTerminalHistory(server.overworld().getGameTime(),SceneSavedData.DEFAULT_COMPACTION_WORK);
@@ -104,6 +105,13 @@ public final class SceneRuntime {
     private static void maintainSceneCleanup(MinecraftServer server, SceneSavedData data) {
         long gameTime = server.overworld().getGameTime();
         for (SceneInstance scene : data.takeCleanupBatch(16, gameTime)) {
+            String journeyIssue = com.jvn.villagerretaliation.campaign.CampaignFollowService.cleanup(server, scene);
+            if (!journeyIssue.isBlank()) {
+                scene.blockCleanup(journeyIssue, safeAdd(gameTime, 20L));
+                data.requestCleanup(scene);
+                data.changed();
+                continue;
+            }
             CompiledScene definition = SceneResources.scene(server, scene.sceneId()).orElse(null);
             if (definition == null) {
                 scene.blockCleanup("scene definition is unavailable; cleanup will retry with bounded backoff",

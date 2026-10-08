@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.following.title": "Campaign fixture: follow the mentor",
+    "campaign_fixture.quest.following.description": "Walk with the same mentor to the meeting place. The guide waits for the enrolled players.",
+    "campaign_fixture.quest.following.follow": "Follow the mentor to the meeting place.",
+    "campaign_fixture.quest.following.offer.label": "Walk to the meeting place",
+    "campaign_fixture.quest.following.offer.lines": [
+      "Come with me. We can speak at the meeting place."
+    ],
+    "campaign_fixture.quest.following.accept": "I'll follow you.",
+    "campaign_fixture.quest.following.reminder.label": "Where are we going?",
+    "campaign_fixture.quest.following.reminder.lines": [
+      "Stay close and follow me to the meeting place."
+    ],
+    "campaign_fixture.quest.following.report.label": "Finish the walk",
+    "campaign_fixture.quest.following.report.lines": [
+      "We have arrived together."
+    ],
+    "campaign_fixture.quest.following.finish": "Record my arrival."
+  }
+}

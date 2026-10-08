@@ -24,6 +24,8 @@ public final class SceneJournalPresenter {
             if (scene.state() == SceneState.FAILED) return "Scene failed";
             if (scene.state() == SceneState.WAITING) {
                 var record = scene.stepRecords().get(scene.currentStep());
+                if (record != null && record.stepType().getPath().equals("follow_actor"))
+                    return scene.campaignPaused() ? scene.diagnostic() : "Following the campaign character";
                 if (record != null && record.stepType().getPath().equals("move_actor"))
                     return "Waiting for actor";
                 return "Scene waiting";

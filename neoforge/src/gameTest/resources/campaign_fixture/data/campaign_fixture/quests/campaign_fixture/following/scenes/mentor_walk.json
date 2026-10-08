@@ -1,0 +1,43 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "campaign_fixture:mentor_walk",
+  "definition_version": 1,
+  "ownership": "quest_instance",
+  "entry_step": "walk",
+  "actors": [
+    {
+      "alias": "guide",
+      "type": "villagerretaliation:villager",
+      "binding_source": "campaign_role",
+      "binding": "mentor",
+      "replacement_policy": "fixed"
+    },
+    {
+      "alias": "destination",
+      "type": "villagerretaliation:position",
+      "binding_source": "campaign_location",
+      "binding": "destination",
+      "replacement_policy": "fixed"
+    }
+  ],
+  "steps": [
+    {
+      "id": "walk",
+      "type": "villagerretaliation:follow_actor",
+      "actors": [
+        "guide",
+        "destination"
+      ],
+      "data": {
+        "actor": "guide",
+        "target_actor": "destination",
+        "follow_distance": 4
+      },
+      "next": "finish"
+    },
+    {
+      "id": "finish",
+      "type": "villagerretaliation:scene_complete"
+    }
+  ]
+}

@@ -49,9 +49,18 @@ public record CompiledScene(
             Map<String, String> transitions,
             String failureStep,
             boolean immediate,
-            boolean terminal
+            boolean terminal,
+            CampaignFollowDefinition follow
     ) {
+        public CompiledStep(String id, ResourceLocation type, java.util.List<String> actors, JsonObject parameters,
+                Map<String, String> transitions, String failureStep, boolean immediate, boolean terminal) {
+            this(id, type, actors, parameters, transitions, failureStep, immediate, terminal,
+                    CampaignFollowDefinition.TYPE.equals(type) ? CampaignFollowDefinition.parse(parameters) : null);
+        }
+
         public CompiledStep {
+            if (CampaignFollowDefinition.TYPE.equals(type) != (follow != null))
+                throw new IllegalArgumentException("Follow steps require a compiled follow definition.");
             actors = actors == null ? java.util.List.of() : java.util.List.copyOf(actors);
             parameters = parameters == null ? new JsonObject() : parameters.deepCopy();
             transitions = transitions == null ? Map.of() : Map.copyOf(transitions);

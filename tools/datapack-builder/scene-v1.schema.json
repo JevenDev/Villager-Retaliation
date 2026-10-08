@@ -221,6 +221,7 @@
               "villagerretaliation:dialogue",
               "villagerretaliation:face_actor",
               "villagerretaliation:face_position",
+              "villagerretaliation:follow_actor",
               "villagerretaliation:move_actor",
               "villagerretaliation:quest_transition",
               "villagerretaliation:scene_branch",
@@ -354,6 +355,68 @@
                       ]
                     }
                   ]
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "villagerretaliation:follow_actor"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "actor": {
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$",
+                      "type": "string"
+                    },
+                    "target_actor": {
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$",
+                      "type": "string"
+                    },
+                    "follow_distance": {
+                      "maximum": 32.0,
+                      "minimum": 2.0,
+                      "type": "number"
+                    },
+                    "arrival_distance": {
+                      "maximum": 4.0,
+                      "minimum": 0.25,
+                      "type": "number"
+                    },
+                    "speed": {
+                      "maximum": 1.0,
+                      "minimum": 0.05,
+                      "type": "number"
+                    },
+                    "poll_ticks": {
+                      "maximum": 5.0,
+                      "minimum": 1.0,
+                      "type": "integer"
+                    },
+                    "timeout_ticks": {
+                      "maximum": 72000.0,
+                      "minimum": 1.0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "actor",
+                    "target_actor"
+                  ],
+                  "type": "object"
                 }
               },
               "required": [

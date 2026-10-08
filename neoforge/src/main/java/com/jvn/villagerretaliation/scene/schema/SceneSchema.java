@@ -921,6 +921,20 @@ public final class SceneSchema {
         rule.add("then", consequence);
         JsonArray rules = new JsonArray();
         rules.add(rule);
+        JsonObject followCondition = new JsonObject();
+        JsonObject followType = new JsonObject();
+        followType.add("type", constant(com.jvn.villagerretaliation.scene.model.CampaignFollowDefinition.TYPE.toString()));
+        followCondition.add("properties", followType);
+        followCondition.add("required", strings("type"));
+        JsonObject followConsequence = new JsonObject();
+        JsonObject followData = new JsonObject();
+        followData.add("data", com.jvn.villagerretaliation.scene.model.CampaignFollowDefinition.schema());
+        followConsequence.add("properties", followData);
+        followConsequence.add("required", strings("data"));
+        JsonObject followRule = new JsonObject();
+        followRule.add("if", followCondition);
+        followRule.add("then", followConsequence);
+        rules.add(followRule);
         step.add("allOf", rules);
         return step;
     }
