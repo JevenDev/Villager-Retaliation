@@ -58,6 +58,7 @@ public final class SceneSavedData extends SavedData {
     private final ArrayDeque<UUID> pendingCompaction = new ArrayDeque<>();
     private final Set<UUID> queuedCompaction = new HashSet<>();
     private boolean futureVersion;
+    private boolean campaignPersistencePending;
     private CompoundTag preservedFutureRoot;
 
     public static SceneSavedData get(ServerLevel level) {
@@ -290,16 +291,25 @@ public final class SceneSavedData extends SavedData {
     }
 
     public void persistCampaignHandoff(ServerLevel level) throws IOException {
-        if (futureVersion) throw new IOException("The scene save has an unsupported future version.");
-        CompoundTag wrapper = new CompoundTag();
-        wrapper.put("data", save(new CompoundTag(), level.registryAccess()));
-        NbtUtils.addCurrentDataVersion(wrapper);
-        IOUtilities.waitUntilIOWorkerComplete();
-        var directory = level.getServer().getWorldPath(LevelResource.ROOT).resolve("data");
-        Files.createDirectories(directory);
-        IOUtilities.writeNbtCompressed(wrapper, directory.resolve(DATA_NAME + ".dat"));
-        setDirty(false);
+        try {
+            if (futureVersion) throw new IOException("The scene save has an unsupported future version.");
+            CompoundTag wrapper = new CompoundTag();
+            wrapper.put("data", save(new CompoundTag(), level.registryAccess()));
+            NbtUtils.addCurrentDataVersion(wrapper);
+            IOUtilities.waitUntilIOWorkerComplete();
+            var directory = level.getServer().getWorldPath(LevelResource.ROOT).resolve("data");
+            Files.createDirectories(directory);
+            IOUtilities.writeNbtCompressed(wrapper, directory.resolve(DATA_NAME + ".dat"));
+            setDirty(false);
+            campaignPersistencePending = false;
+        } catch (IOException exception) {
+            campaignPersistencePending = true;
+            changed();
+            throw exception;
+        }
     }
+
+    public boolean campaignPersistencePending() { return campaignPersistencePending; }
 
     public boolean futureVersion() {
         return futureVersion;

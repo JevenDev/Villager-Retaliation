@@ -18,6 +18,17 @@ public final class SceneStepEngine {
 
     public static SceneScheduler.ProcessResult process(MinecraftServer server, SceneSavedData data, SceneInstance instance,
             CompiledScene definition,long time){
+        try {
+            SceneReceiptGuard.retryPending(server, data, instance);
+            return processStep(server, data, instance, definition, time);
+        } catch (SceneReceiptGuard.PersistenceWait wait) {
+            if (instance.pauseCampaign(wait.getMessage(), time)) data.changed();
+            return SceneScheduler.ProcessResult.wakeAt(deadline(time, 100L));
+        }
+    }
+
+    private static SceneScheduler.ProcessResult processStep(MinecraftServer server, SceneSavedData data, SceneInstance instance,
+            CompiledScene definition, long time) {
         if (instance.state().terminal()) return SceneScheduler.ProcessResult.idle();
         String campaignIssue = CampaignQuestAccess.executionIssue(
                 server, instance.owningQuestId(), instance.owningCampaignId(), instance.owner().playerId());
@@ -106,7 +117,7 @@ public final class SceneStepEngine {
         instance.advance(next,time);data.changed();return SceneScheduler.ProcessResult.now();
     }
 
-    public static void clearRuntimeState(){PREPARED_THIS_SESSION.clear();}
+    public static void clearRuntimeState(){PREPARED_THIS_SESSION.clear();SceneReceiptGuard.clearRuntimeState();}
 
     private static long deadline(long start, long duration) {
         return duration > Long.MAX_VALUE - start ? Long.MAX_VALUE : start + duration;

@@ -406,7 +406,7 @@ public final class CampaignConversationSceneHandoverGameTests {
                 """);
     }
 
-    private static CompiledScene scene(CampaignConversationGameTests.Fixture fixture, String json, String... additional) {
+    static CompiledScene scene(CampaignConversationGameTests.Fixture fixture, String json, String... additional) {
         var raw = JsonParser.parseString(json).getAsJsonObject();
         var definition = SceneCompiler.compile(SceneParser.parse(fixture.base.sceneId, raw).resource());
         fixture.helper.assertTrue(definition.valid(), "handover scene compiles: " + definition.diagnostics());

@@ -40,6 +40,16 @@ public final class SceneOperationReceipt {
             return ActionResult.alreadySatisfied("effect already applied", Set.of(), VillagerActionResult.EMPTY);
         return ActionResult.failed("receipt has no recorded action result", Set.of());
     }
+    public void prepareRetry() {
+        if (state != ReceiptState.WAITING) throw new IllegalStateException("only a suspended receipt can prepare a retry");
+        state = ReceiptState.PREPARED;
+        actionStatus = null;
+        actionDiagnostic = "";
+        suspensionId = null;
+        suspensionKind = ActionResult.SuspensionKind.SCENE;
+        retryOnResume = false;
+        evidence = "";
+    }
     public void recordAction(ActionResult result, long time) {
         actionStatus = result.status();
         actionDiagnostic = result.message();
