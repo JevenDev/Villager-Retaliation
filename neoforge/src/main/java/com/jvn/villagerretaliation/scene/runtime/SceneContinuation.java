@@ -290,7 +290,7 @@ public final class SceneContinuation {
         return value;
     }
 
-    private static CompoundTag saveAction(VillagerActionDefinition action) {
+    public static CompoundTag saveAction(VillagerActionDefinition action) {
         CompoundTag tag = new CompoundTag();
         tag.putString("Kind", action.kind().name());
         putResource(tag, "Quest", action.questId());
@@ -343,7 +343,7 @@ public final class SceneContinuation {
         return tag;
     }
 
-    private static VillagerActionDefinition loadAction(CompoundTag tag) {
+    public static VillagerActionDefinition loadAction(CompoundTag tag) {
         CompoundTag rawTransition = tag.getCompound("Transition");
         CompiledQuestTransition transition = rawTransition.isEmpty() ? CompiledQuestTransition.EMPTY
                 : new CompiledQuestTransition(NbtDataUtil.readResourceLocation(rawTransition, "Quest").orElse(null),

@@ -64,6 +64,7 @@ final class VrAdminCommands {
                 })))
                 .then(datapack())
                 .then(dialogue())
+                .then(VrConversationCommands.root())
                 .then(quest())
                 .then(scene())
                 .then(debug());
