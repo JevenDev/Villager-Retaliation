@@ -83,7 +83,8 @@ public final class CampaignEncounterEnvironmentPersistenceGameTests {
         try (var fixture = new CampaignEncounterPersistenceGameTests.Fixture(helper)) {
             var interrupted = new AtomicBoolean();
             Consumer<ChunkDataEvent.Save> listener = event -> {
-                if (!event.getChunk().getPos().equals(new ChunkPos(fixture.barrier())) || !interrupted.compareAndSet(false, true)) return;
+                if (!event.getChunk().getPos().equals(new ChunkPos(fixture.barrier()))
+                        || !helper.getLevel().getBlockState(fixture.barrier()).is(Blocks.GLASS) || !interrupted.compareAndSet(false, true)) return;
                 var prepared = fixture.disk().encounter(fixture.encounter().id()).orElseThrow().environmentBlocks().get("barrier");
                 helper.assertTrue(prepared != null && prepared.state() == EncounterInstance.EnvironmentBlockState.PREPARED,
                         "ownership is on disk before the native chunk write");
@@ -121,6 +122,25 @@ public final class CampaignEncounterEnvironmentPersistenceGameTests {
             fixture.reload();
             helper.assertValueEqual(fixture.encounter().environmentBlocks().get("barrier").state(),
                     EncounterInstance.EnvironmentBlockState.PRESERVED, "preservation is recorded across reload");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_encounter_environment_persistence")
+    public static void cleanupPreservesBlocksRemovedAndReplacedWithTheSameState(GameTestHelper helper) throws IOException {
+        try (var fixture = new CampaignEncounterPersistenceGameTests.Fixture(helper)) {
+            fixture.run();
+            helper.getLevel().setBlock(fixture.barrier(), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+            helper.getLevel().setBlock(fixture.barrier(), Blocks.GLASS.defaultBlockState(), Block.UPDATE_CLIENTS);
+            com.jvn.villagerretaliation.util.WorldChunkCheckpoint.persist(helper.getLevel(), fixture.barrier());
+            fixture.reload();
+            var result = EncounterService.cleanup(fixture.base.base.server, fixture.data(), fixture.encounter(), true);
+            helper.assertValueEqual(result.status(), EncounterService.Status.COMPLETED, "changed ownership can be preserved during cleanup");
+            helper.assertTrue(helper.getLevel().getBlockState(fixture.barrier()).is(Blocks.GLASS), "same-state player replacement retains its ownership");
+            helper.assertTrue(diskBlock(helper, fixture.barrier()).is(Blocks.GLASS), "native storage retains the replacement");
+            fixture.reload();
+            helper.assertValueEqual(fixture.encounter().environmentBlocks().get("barrier").state(),
+                    EncounterInstance.EnvironmentBlockState.PRESERVED, "same-state conflict is retained across reload");
         }
         helper.succeed();
     }

@@ -381,6 +381,7 @@ final class VrAdminCommands {
                 .then(sceneMutation("retry"))
                 .then(sceneMutation("cancel"))
                 .then(sceneMutation("resume"))
+                .then(EncounterBlockCommands.root())
                 .then(literal("rebind")
                         .then(argument("scene_id", StringArgumentType.word())
                                 .then(argument("alias", StringArgumentType.word())

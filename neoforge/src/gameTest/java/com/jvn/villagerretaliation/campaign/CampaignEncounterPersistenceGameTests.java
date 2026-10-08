@@ -140,6 +140,8 @@ public final class CampaignEncounterPersistenceGameTests {
         final EncounterTemplate template;
         final UUID sceneId;
         final BlockPos anchor;
+        private final net.minecraft.world.level.chunk.LevelChunk ownershipChunk;
+        private final CampaignBlockOwnershipLedger priorOwnership;
         private Path backup;
         private long time;
 
@@ -151,6 +153,9 @@ public final class CampaignEncounterPersistenceGameTests {
                       "scene_id":"campaign_fixture:character_greeting","operation_id":"encounter_scene","wait_for_result":true,"required":true}}]
                     """);
             anchor = helper.absolutePos(new BlockPos(5, 2, 5));
+            ownershipChunk = helper.getLevel().getChunkSource().getChunkNow(barrier().getX() >> 4, barrier().getZ() >> 4);
+            priorOwnership = ownershipChunk.getExistingDataOrNull(CampaignBlockOwnership.OWNERSHIP.get());
+            ownershipChunk.setData(CampaignBlockOwnership.OWNERSHIP, new CampaignBlockOwnershipLedger());
             definition = CampaignConversationSceneHandoverGameTests.scene(base, """
                     {"schema":"villagerretaliation:scene/v1","id":"campaign_fixture:character_greeting","definition_version":1,
                      "ownership":"player","entry_step":"start","actors":[],"steps":[
@@ -224,6 +229,8 @@ public final class CampaignEncounterPersistenceGameTests {
             restore();
             entities().forEach(Entity::discard);
             helper.getLevel().removeBlock(barrier(), false);
+            if (priorOwnership == null) ownershipChunk.removeData(CampaignBlockOwnership.OWNERSHIP);
+            else ownershipChunk.setData(CampaignBlockOwnership.OWNERSHIP, priorOwnership);
             EncounterService.clearRuntimeState(); SceneStepEngine.clearRuntimeState();
             base.close();
         }

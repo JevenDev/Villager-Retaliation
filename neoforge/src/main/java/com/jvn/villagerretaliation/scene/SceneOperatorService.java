@@ -112,7 +112,9 @@ public final class SceneOperatorService {
                                 + " completionRewardEligible="
                                 + encounter.completionRewardEligible()
                                 + " claimedTrophySpawns="
-                                + encounter.claimedTrophySpawns());
+                                + encounter.claimedTrophySpawns()
+                                + " environmentBlocks="
+                                + encounter.environmentBlocks().keySet());
         if (!s.diagnostic().isBlank())
             lines.add("diagnostic=" + s.failureCode() + ": " + s.diagnostic());
         return lines;

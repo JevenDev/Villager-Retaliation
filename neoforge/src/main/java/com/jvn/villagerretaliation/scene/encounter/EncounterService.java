@@ -744,7 +744,7 @@ public final class EncounterService {
                     return Result.waiting(
                             "environment block " + definition.id() + " chunk is unloaded");
                 var original = level.getBlockState(position);
-                if (!original.canBeReplaced())
+                if (!original.canBeReplaced() || EncounterPersistence.required(data, encounter) && original.hasBlockEntity())
                     return Result.failed(
                             "environment block "
                                     + definition.id()
@@ -757,7 +757,8 @@ public final class EncounterService {
                                 position,
                                 original,
                                 placed,
-                                EncounterInstance.EnvironmentBlockState.PREPARED);
+                                EncounterInstance.EnvironmentBlockState.PREPARED,
+                                EncounterPersistence.required(data, encounter) ? EncounterBlockOwnership.pending() : EncounterBlockOwnership.legacy());
                 encounter.putEnvironmentBlock(owned);
                 data.changed();
             }
@@ -767,6 +768,11 @@ public final class EncounterService {
                             "environment block " + definition.id() + " chunk is unloaded");
                 String storageIssue = EncounterPersistence.checkpoint(server, data, encounter);
                 if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
+                if (EncounterPersistence.required(data, encounter)) {
+                    var result = EncounterBlockChanges.apply(server, data, encounter, level, owned);
+                    if (result.status() != Status.COMPLETED) return environmentWait(data, encounter, result.diagnostic());
+                    continue;
+                }
                 var current = level.getBlockState(position);
                 boolean applied = current.equals(owned.placed()) || current.equals(owned.original());
                 if (applied && !current.equals(owned.placed())) {
@@ -841,6 +847,11 @@ public final class EncounterService {
             }
             String storageIssue = EncounterPersistence.checkpoint(server, data, encounter);
             if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
+            if (EncounterPersistence.required(data, encounter)) {
+                var result = EncounterBlockChanges.restore(server, data, encounter, level, owned);
+                if (result.status() != Status.COMPLETED) return environmentWait(data, encounter, result.diagnostic());
+                continue;
+            }
             var current = level.getBlockState(owned.position());
             boolean restored = current.equals(owned.placed()) || current.equals(owned.original());
             if (current.equals(owned.placed())) {

@@ -62,6 +62,7 @@ public class VillagerRetaliation {
         VillagerSecondWindCompat.init();
         VillagerRetaliationConfig.init();
         com.jvn.villagerretaliation.settlement.SettlementChunkReceipts.register(modEventBus);
+        com.jvn.villagerretaliation.campaign.CampaignBlockOwnership.register(modEventBus);
         VillagerRetaliationBlocks.register(modEventBus);
         VillagerRetaliationBlockEntityTypes.register(modEventBus);
         VillagerRetaliationEntityTypes.register(modEventBus);

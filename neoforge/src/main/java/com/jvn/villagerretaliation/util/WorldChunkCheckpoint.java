@@ -15,12 +15,17 @@ public final class WorldChunkCheckpoint {
     private WorldChunkCheckpoint() { }
 
     public static void persist(ServerLevel level, BlockPos position) throws IOException {
+        persist(level, position, snapshot -> true);
+    }
+
+    public static void persist(ServerLevel level, BlockPos position, java.util.function.Predicate<net.minecraft.nbt.CompoundTag> verify) throws IOException {
         if (!level.getServer().isSameThread()) throw new IOException("World chunk checkpoints require the server thread.");
         var chunk = level.getChunkSource().getChunkNow(position.getX() >> 4, position.getZ() >> 4);
         if (chunk == null) throw new IOException("The world chunk must finish loading before it can be saved.");
         var storage = level.getChunkSource().chunkMap;
         var snapshot = ChunkSerializer.write(level, chunk);
         NeoForge.EVENT_BUS.post(new ChunkDataEvent.Save(chunk, level, snapshot));
+        if (!verify.test(snapshot)) throw new IOException("Native chunk serialization omitted or changed required campaign block data.");
         try {
             storage.write(chunk.getPos(), snapshot).thenCompose(ignored -> {
                 var worker = (IOWorkerAccessor) ((ChunkStorageAccessor) storage).villagerretaliation$worker();

@@ -69,10 +69,28 @@ public final class SceneSaveMigrations {
                 version = 16;
             } else if (version == 16) {
                 version = 17;
+            } else if (version == 17) {
+                markLegacyBlockOwnership(data);
+                version = 18;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);
         return new Result(data, source, current, false);
+    }
+
+    private static void markLegacyBlockOwnership(CompoundTag data) {
+        for (var raw : data.getList("Encounters", Tag.TAG_COMPOUND)) {
+            var encounter = (CompoundTag) raw;
+            for (var entry : encounter.getList("EnvironmentBlocks", Tag.TAG_COMPOUND)) {
+                var block = (CompoundTag) entry;
+                if (block.contains("Ownership")) continue;
+                var ownership = new CompoundTag();
+                ownership.putInt("DataVersion", 1);
+                ownership.putString("State", "LEGACY");
+                ownership.putString("Diagnostic", "");
+                block.put("Ownership", ownership);
+            }
+        }
     }
 
     private static void migrateContinuationResults(CompoundTag data) {

@@ -1034,25 +1034,35 @@ public final class EncounterInstance {
             BlockPos position,
             BlockState original,
             BlockState placed,
-            EnvironmentBlockState state) {
+            EnvironmentBlockState state,
+            EncounterBlockOwnership ownership) {
+        public EnvironmentBlock(String id, ResourceLocation dimension, BlockPos position, BlockState original, BlockState placed, EnvironmentBlockState state) {
+            this(id, dimension, position, original, placed, state, EncounterBlockOwnership.legacy());
+        }
+
         public EnvironmentBlock {
             position = position.immutable();
             state = state == null ? EnvironmentBlockState.PREPARED : state;
+            ownership = ownership == null ? EncounterBlockOwnership.legacy() : ownership;
+        }
+
+        public EnvironmentBlock withOwnership(EncounterBlockOwnership proof) {
+            return new EnvironmentBlock(id, dimension, position, original, placed, state, proof);
         }
 
         public EnvironmentBlock applied() {
             return new EnvironmentBlock(
-                    id, dimension, position, original, placed, EnvironmentBlockState.APPLIED);
+                    id, dimension, position, original, placed, EnvironmentBlockState.APPLIED, ownership);
         }
 
         public EnvironmentBlock restored() {
             return new EnvironmentBlock(
-                    id, dimension, position, original, placed, EnvironmentBlockState.RESTORED);
+                    id, dimension, position, original, placed, EnvironmentBlockState.RESTORED, ownership);
         }
 
         public EnvironmentBlock preserved() {
             return new EnvironmentBlock(
-                    id, dimension, position, original, placed, EnvironmentBlockState.PRESERVED);
+                    id, dimension, position, original, placed, EnvironmentBlockState.PRESERVED, ownership);
         }
 
         private CompoundTag save() {
@@ -1063,6 +1073,7 @@ public final class EncounterInstance {
             t.put("Original", NbtUtils.writeBlockState(original));
             t.put("Placed", NbtUtils.writeBlockState(placed));
             t.putString("State", state.name());
+            if (ownership.state() != EncounterBlockOwnership.State.LEGACY || !ownership.diagnostic().isBlank()) t.put("Ownership", ownership.save());
             return t;
         }
 
@@ -1075,7 +1086,8 @@ public final class EncounterInstance {
                             BuiltInRegistries.BLOCK.asLookup(), t.getCompound("Original")),
                     NbtUtils.readBlockState(
                             BuiltInRegistries.BLOCK.asLookup(), t.getCompound("Placed")),
-                    EnvironmentBlockState.valueOf(t.getString("State")));
+                    EnvironmentBlockState.valueOf(t.getString("State")),
+                    t.contains("Ownership") ? EncounterBlockOwnership.load(t.get("Ownership")) : EncounterBlockOwnership.legacy());
         }
     }
 

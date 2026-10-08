@@ -1608,6 +1608,7 @@ public final class VillagerRetaliationCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> sceneDebugCommands() {
         return literal("scene")
+                .then(EncounterBlockCommands.root())
                 .then(literal("list").executes(VillagerRetaliationCommands::listScenesDebug))
                 .then(literal("inspect").then(argument("scene_id", StringArgumentType.word())
                         .executes(context -> showSceneLines(context, false))))
