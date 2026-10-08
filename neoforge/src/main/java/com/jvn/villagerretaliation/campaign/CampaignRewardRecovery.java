@@ -34,12 +34,12 @@ public final class CampaignRewardRecovery {
     }
 
     public static String issue(MinecraftServer server, SceneContinuation continuation) {
-        if (!continuation.campaignRecovery()) return "";
+        if (!continuation.actionRecovery()) return "";
         if (!continuation.recoveryIssue().isBlank()) return continuation.recoveryIssue();
-        if (continuation.questId() == null || continuation.campaignId() == null) {
+        if (continuation.campaignRecovery() && (continuation.questId() == null || continuation.campaignId() == null)) {
             return "Campaign reward recovery is missing its saved quest ownership. Restore matching scene and quest saves.";
         }
-        if (!continuation.recoveryFingerprint().equals(fingerprint(server, continuation.questId()))) {
+        if (continuation.questId() != null && !continuation.recoveryFingerprint().equals(fingerprint(server, continuation.questId()))) {
             return "The quest bundle changed during reward recovery. Restore its original content before continuing.";
         }
         int prepared = continuation.preparedRecoveryAction();
@@ -65,7 +65,7 @@ public final class CampaignRewardRecovery {
     }
 
     public static boolean persist(MinecraftServer server, SceneSavedData data, SceneContinuation continuation) {
-        if (!continuation.campaignRecovery()) return true;
+        if (!continuation.actionRecovery()) return true;
         continuation.recoveryPersistenceIssue("Campaign actions are waiting for their recovery state to be saved.");
         try {
             data.persistCampaignHandoff(server.overworld());

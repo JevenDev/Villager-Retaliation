@@ -28,6 +28,7 @@ public final class SceneContinuation {
     private UUID rewardOperation;
     private Tag unreadableRecovery;
     private Tag unreadableRecoveryCursor;
+    private Tag unreadableConversationRecovery;
     private String recoveryPersistenceIssue = "";
     private int preparedRecoveryAction = -1;
 
@@ -46,8 +47,13 @@ public final class SceneContinuation {
     private String actionDiagnostic = "";
     private DialogueResume dialogueResume;
     private CompoundTag campaignConsent = new CompoundTag();
+    private CompoundTag conversationEffect = new CompoundTag();
     private CompoundTag decisionParticipants = new CompoundTag();
     private final Map<Integer, CompoundTag> unreadableCampaignActions = new LinkedHashMap<>();
+
+    public CompoundTag conversationEffect() { return conversationEffect.copy(); }
+    public void conversationEffect(CompoundTag source) { conversationEffect = source.copy(); }
+    public boolean actionRecovery() { return campaignRecovery || !conversationEffect.isEmpty(); }
 
     public CompoundTag decisionParticipants() { return decisionParticipants.copy(); }
     public void decisionParticipants(CompoundTag participants) { decisionParticipants = participants.copy(); }
@@ -92,8 +98,9 @@ public final class SceneContinuation {
     public void bindQuestRun(UUID run) { if (questRunId == null) questRunId = run; }
 
     public String recoveryFingerprint() { return recoveryFingerprint; }
+    public void bindRecoveryFingerprint(String fingerprint) { if (recoveryFingerprint.isBlank()) recoveryFingerprint = fingerprint; }
     public UUID rewardOperation() { return rewardOperation; }
-    public String recoveryIssue() { return unreadableRecovery == null ? "" : "Saved campaign action recovery is unreadable. Restore compatible scene data."; }
+    public String recoveryIssue() { return unreadableRecovery == null && unreadableConversationRecovery == null ? "" : "Saved campaign action recovery is unreadable. Restore compatible scene data."; }
 
     public boolean recoveryPersistencePending() { return !recoveryPersistenceIssue.isBlank(); }
     public void recoveryPersistenceIssue(String issue) { recoveryPersistenceIssue = issue == null ? "" : issue; }
@@ -124,7 +131,7 @@ public final class SceneContinuation {
     public int nextActionIndex() { return nextActionIndex; }
     public State state() { return state; }
     public SceneInstance.CompletionResult sceneResult() { return sceneResult; }
-    public boolean completionReceipt() { return completionReceipt && !recoveryPersistencePending() && unreadableRecovery == null; }
+    public boolean completionReceipt() { return completionReceipt && !recoveryPersistencePending() && recoveryIssue().isBlank(); }
     public Map<String, String> replacements() { return replacements; }
 
     public void advance() { nextActionIndex++; }
@@ -179,6 +186,14 @@ public final class SceneContinuation {
             tag.put("CampaignRecovery", unreadableRecovery == null ? recovery : unreadableRecovery.copy());
         }
 
+        if (!conversationEffect.isEmpty()) {
+            tag.put("ConversationEffect", conversationEffect.copy());
+            var recovery = new CompoundTag();
+            recovery.putInt("DataVersion", 1);
+            recovery.putString("QuestFingerprint", recoveryFingerprint);
+            recovery.putInt("PreparedAction", preparedRecoveryAction);
+            tag.put("ConversationRecovery", unreadableConversationRecovery == null ? recovery : unreadableConversationRecovery.copy());
+        }
         if (dependencyContinuationId != null) tag.putUUID("DependencyContinuation", dependencyContinuationId);
         tag.putBoolean("RetrySuspendedAction", retrySuspendedAction);
         tag.putUUID("Player", playerId);
@@ -188,7 +203,7 @@ public final class SceneContinuation {
         if (questRunId != null) tag.putUUID("QuestRun", questRunId);
         tag.putString("Source", sourcePointer);
         tag.putInt("Next", nextActionIndex);
-        if (unreadableRecovery != null) {
+        if (unreadableRecovery != null || unreadableConversationRecovery != null) {
             if (unreadableRecoveryCursor == null) tag.remove("Next");
             else tag.put("Next", unreadableRecoveryCursor.copy());
         }
@@ -277,6 +292,30 @@ public final class SceneContinuation {
             }
         }
 
+        value.conversationEffect = tag.getCompound("ConversationEffect").copy();
+        if (tag.contains("ConversationEffect") && (!tag.contains("ConversationEffect", Tag.TAG_COMPOUND) || value.conversationEffect.isEmpty())) {
+            value.conversationEffect.put("Unreadable", tag.get("ConversationEffect").copy());
+        }
+        if (!value.conversationEffect.isEmpty() || tag.contains("ConversationRecovery")) {
+            var recovery = tag.getCompound("ConversationRecovery");
+            if (value.conversationEffect.isEmpty()) value.conversationEffect.putString("Unreadable", "Missing conversation effect");
+            if (!tag.contains("ConversationRecovery", Tag.TAG_COMPOUND) || !recovery.contains("DataVersion", Tag.TAG_INT)
+                    || recovery.getInt("DataVersion") != 1 || !recovery.contains("QuestFingerprint", Tag.TAG_STRING)
+                    || value.questId != null && recovery.getString("QuestFingerprint").isBlank()
+                    || value.campaignRecovery && !recovery.getString("QuestFingerprint").equals(value.recoveryFingerprint)
+                    || !tag.contains("Next", Tag.TAG_INT)
+                    || tag.getInt("Next") < 0 || tag.getInt("Next") > actions.size()
+                    || !recovery.contains("PreparedAction", Tag.TAG_INT) || recovery.getInt("PreparedAction") < -1
+                    || recovery.getInt("PreparedAction") >= actions.size()
+                    || recovery.getInt("PreparedAction") >= 0 && recovery.getInt("PreparedAction") != tag.getInt("Next")
+                    || value.campaignRecovery && recovery.getInt("PreparedAction") != value.preparedRecoveryAction) {
+                value.unreadableConversationRecovery = tag.contains("ConversationRecovery") ? tag.get("ConversationRecovery").copy() : new CompoundTag();
+                value.unreadableRecoveryCursor = tag.contains("Next") ? tag.get("Next").copy() : null;
+            } else {
+                value.preparedRecoveryAction = recovery.getInt("PreparedAction");
+                value.recoveryFingerprint = recovery.getString("QuestFingerprint");
+            }
+        }
         value.campaignId = NbtDataUtil.readResourceLocation(tag, "Campaign").orElse(null);
         value.decisionParticipants = tag.getCompound("DecisionParticipants").copy();
         if (tag.contains("DecisionParticipants") && (!tag.contains("DecisionParticipants", Tag.TAG_COMPOUND) || value.decisionParticipants.isEmpty())) {

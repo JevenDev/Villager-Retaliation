@@ -23,6 +23,14 @@ public final class ActionSequenceRunner {
     public static Result run(DialogueContext context, List<VillagerActionDefinition> actions,
             int firstAction, Map<String, String> inheritedReplacements, Runnable trackerFlashHandler,
             BiConsumer<Integer, ActionResult> observer, IntConsumer beforeAction) {
+        return run(context, actions, firstAction, inheritedReplacements, trackerFlashHandler, observer, beforeAction,
+                (action, replacements) -> VillagerActionRegistry.execute(context, action, replacements));
+    }
+
+    public static Result run(DialogueContext context, List<VillagerActionDefinition> actions,
+            int firstAction, Map<String, String> inheritedReplacements, Runnable trackerFlashHandler,
+            BiConsumer<Integer, ActionResult> observer, IntConsumer beforeAction,
+            java.util.function.BiFunction<VillagerActionDefinition, Map<String, String>, ActionResult> executor) {
         List<VillagerActionDefinition> sequence = actions == null ? List.of() : actions;
         if (firstAction < 0 || firstAction > sequence.size()) {
             return new Result(ActionResult.failed("saved action cursor is outside the sequence", Set.of()), firstAction);
@@ -40,7 +48,7 @@ public final class ActionSequenceRunner {
             catch (Pause pause) {
                 return paused(pause, index, ran, lineId, text, replacements, flash, capabilities);
             }
-            ActionResult outcome = VillagerActionRegistry.execute(context, action, replacements);
+            ActionResult outcome = executor.apply(action, replacements);
             VillagerActionResult result = outcome.legacyResult();
             replacements.putAll(result.replacements());
             capabilities.addAll(outcome.capabilities());

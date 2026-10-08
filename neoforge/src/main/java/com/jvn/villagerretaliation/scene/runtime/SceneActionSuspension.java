@@ -40,14 +40,22 @@ public final class SceneActionSuspension {
     }
 
     public static boolean dependsOnScene(SceneSavedData data, ActionResult waiting, UUID sceneId) {
+        return dependsOn(data, waiting, new Target(ActionResult.SuspensionKind.SCENE, sceneId));
+    }
+
+    public static boolean dependsOnContinuation(SceneSavedData data, ActionResult waiting, UUID continuationId) {
+        return dependsOn(data, waiting, new Target(ActionResult.SuspensionKind.CONTINUATION, continuationId));
+    }
+
+    private static boolean dependsOn(SceneSavedData data, ActionResult waiting, Target expected) {
         ArrayDeque<Target> pending = new ArrayDeque<>();
         Set<Target> visited = new HashSet<>();
         enqueue(pending, waiting);
         while (!pending.isEmpty()) {
             Target target = pending.removeFirst();
             if (!visited.add(target)) continue;
+            if (target.equals(expected)) return true;
             if (target.kind() == ActionResult.SuspensionKind.SCENE) {
-                if (target.id().equals(sceneId)) return true;
                 SceneInstance scene = data.get(target.id()).orElse(null);
                 if (scene != null && !scene.state().terminal()) {
                     scene.receipts().values().forEach(receipt -> enqueue(pending, receipt.actionResult()));

@@ -277,6 +277,11 @@ public final class CampaignConversationGameTests {
 
         Fixture(GameTestHelper helper, boolean replacement, boolean impact, boolean fixedOutcome,
                 java.util.function.Consumer<JsonObject> campaignChanges) throws IOException {
+            this(helper, replacement, impact, fixedOutcome, campaignChanges, quest -> { });
+        }
+
+        Fixture(GameTestHelper helper, boolean replacement, boolean impact, boolean fixedOutcome,
+                java.util.function.Consumer<JsonObject> campaignChanges, java.util.function.Consumer<JsonObject> questChanges) throws IOException {
             this.helper = helper;
             base = new CampaignCharacterTestFixture(helper, "characters", "character_greeting", List.of(), quest -> {
                 if (impact) {
@@ -284,6 +289,7 @@ public final class CampaignConversationGameTests {
                     stage.remove("on_enter");
                     stage.add("objectives", JsonParser.parseString("[{\"id\":\"decide\",\"type\":\"choice\"}]"));
                 }
+                questChanges.accept(quest);
             }, campaign -> {
                 if (impact) campaign.add("milestones", JsonParser.parseString("""
                         [{"id":"decision","chapter":"arrival","quest":"campaign_fixture:characters","stage":"visit","irreversible":true,

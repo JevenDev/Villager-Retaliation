@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
+import com.jvn.villagerretaliation.scene.runtime.SceneContinuation;
 import com.jvn.villagerretaliation.scene.runtime.SceneActionSuspension;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -33,7 +34,14 @@ public final class ConversationSceneExecution {
     }
 
     public static <T> T withScene(SceneInstance scene, Supplier<T> work) {
-        var tag = scene.conversationEffect();
+        return withSource(scene.conversationEffect(), work);
+    }
+
+    public static <T> T withContinuation(SceneContinuation continuation, Supplier<T> work) {
+        return withSource(continuation.conversationEffect(), work);
+    }
+
+    private static <T> T withSource(CompoundTag tag, Supplier<T> work) {
         if (tag.isEmpty()) return work.get();
         var source = Source.load(tag);
         return withEffect(source.session(), source.effect(), work);
@@ -45,43 +53,57 @@ public final class ConversationSceneExecution {
     }
 
     public static Access resolve(MinecraftServer server, SceneInstance scene) {
+        return resolve(server, scene.conversationEffect(), scene.owner().playerId(), scene.owningCampaignId(),
+                scene.owningQuestId(), scene.owningQuestInstance(), scene.decisionParticipants(),
+                result -> SceneActionSuspension.dependsOnScene(SceneSavedData.get(server.overworld()), result, scene.id()));
+    }
+
+    public static Access resolve(MinecraftServer server, SceneContinuation continuation) {
+        return resolve(server, continuation.conversationEffect(), continuation.playerId(), continuation.campaignId(),
+                continuation.questId(), continuation.questRunId(), continuation.decisionParticipants(),
+                result -> SceneActionSuspension.dependsOnContinuation(SceneSavedData.get(server.overworld()), result, continuation.id()));
+    }
+
+    private static Access resolve(MinecraftServer server, CompoundTag sourceTag, UUID owner,
+            net.minecraft.resources.ResourceLocation campaign, net.minecraft.resources.ResourceLocation quest, UUID questRun,
+            CompoundTag participants, java.util.function.Predicate<com.jvn.villagerretaliation.action.ActionResult> waiting) {
         try {
-            var source = Source.load(scene.conversationEffect());
+            var source = Source.load(sourceTag);
             var data = ConversationSavedData.get(server.overworld());
             ConversationService.require(data.diagnostic().isBlank(), data.diagnostic());
             var session = data.session(source.session());
-            ConversationService.require(session != null && session.active(), "The scene's conversation is unavailable or has already ended.");
+            ConversationService.require(session != null && session.active(), "The suspended action's conversation is unavailable or has already ended.");
             ConversationService.require(data.issue(source.session()).isBlank(), data.issue(source.session()));
             var definition = ConversationService.definition(server, session);
             boolean node = session.phase == ConversationSession.Phase.NODE_EFFECTS;
-            ConversationService.require(node || session.phase == ConversationSession.Phase.RESPONSE_EFFECTS, "The conversation is no longer waiting for this scene.");
+            ConversationService.require(node || session.phase == ConversationSession.Phase.RESPONSE_EFFECTS, "The conversation is no longer waiting for this action.");
             var current = definition.nodes().get(session.node);
             var response = node ? null : current.responses().get(session.response);
-            ConversationService.require(node || response != null, "The scene's original conversation response is unavailable.");
+            ConversationService.require(node || response != null, "The suspended action's original conversation response is unavailable.");
             var effects = node ? current.effects() : response.effects();
-            ConversationService.require(session.effect >= 0 && session.effect < effects.size(), "The scene's original conversation effect is unavailable.");
+            ConversationService.require(session.effect >= 0 && session.effect < effects.size(), "The suspended action's original conversation effect is unavailable.");
             String key = session.visit + "/" + (node ? "node" : "response/" + session.response) + "/" + effects.get(session.effect).id();
-            ConversationService.require(key.equals(source.effect()), "The scene belongs to another saved conversation effect.");
+            ConversationService.require(key.equals(source.effect()), "The suspended action belongs to another saved conversation effect.");
             var receipt = session.receipts.get(key);
             ConversationService.require(receipt != null && receipt.state() == ConversationSession.ReceiptState.RESOLVED
-                    && SceneActionSuspension.dependsOnScene(SceneSavedData.get(server.overworld()), receipt.result(), scene.id()), "The conversation has not saved its wait for this scene.");
+                    && waiting.test(receipt.result()), "The conversation has not saved its wait for this action.");
             UUID actor = receipt.actor();
-            ConversationService.require(scene.owningCampaignId() == null || scene.owningCampaignId().equals(session.identity.campaign()),
-                    "The scene belongs to another campaign.");
-            ConversationService.require(actor.equals(session.actingPlayer), "The scene's deciding player changed.");
-            ConversationService.require(scene.owner().playerId() == null || actor.equals(scene.owner().playerId()), "The scene belongs to another player.");
+            ConversationService.require(campaign == null || campaign.equals(session.identity.campaign()),
+                    "The suspended action belongs to another campaign.");
+            ConversationService.require(actor.equals(session.actingPlayer), "The suspended action's deciding player changed.");
+            ConversationService.require(owner == null || actor.equals(owner), "The suspended action belongs to another player.");
             if (session.questRun != null) ConversationService.require(session.questRun.equals(ConversationService.questRun(server, actor, session.identity.quest())),
                     "The conversation's original quest run changed.");
             if (receipt.questRun() != null) ConversationService.require(receipt.questRun().equals(ConversationService.questRun(server, actor, receipt.action().questId())),
-                    "The scene effect's original quest run changed.");
-            if (scene.owningQuestInstance() != null && scene.owningQuestId() != null) {
-                var progress = VillagerQuestSavedData.get(server.overworld()).get(actor, scene.owningQuestId());
-                ConversationService.require(progress != null && scene.owningQuestInstance().equals(progress.questRunId()), "The scene's original quest run changed.");
+                    "The suspended effect's original quest run changed.");
+            if (questRun != null && quest != null) {
+                var progress = VillagerQuestSavedData.get(server.overworld()).get(actor, quest);
+                ConversationService.require(progress != null && questRun.equals(progress.questRunId()), "The suspended action's original quest run changed.");
             }
-            var decision = scene.decisionParticipants().isEmpty() ? null : CampaignDecisionParticipants.load(scene.decisionParticipants());
-            ConversationService.require(java.util.Objects.equals(decision, session.decisionParticipants), "The scene's participation record belongs to another decision.");
+            var decision = participants.isEmpty() ? null : CampaignDecisionParticipants.load(participants);
+            ConversationService.require(java.util.Objects.equals(decision, session.decisionParticipants), "The suspended action's participation record belongs to another decision.");
             var controller = session.controller == null ? null : server.getPlayerList().getPlayer(session.controller);
-            ConversationService.require(controller != null && ConversationService.member(controller, session), "The scene is waiting for an authorized conversation controller.");
+            ConversationService.require(controller != null && ConversationService.member(controller, session), "The suspended action is waiting for an authorized conversation controller.");
             String issue = CampaignAuthority.controlIssue(controller, actor);
             ConversationService.require(issue.isBlank(), issue);
             var character = ConversationService.character(controller, session);

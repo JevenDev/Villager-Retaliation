@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.conversation.ConversationSceneExecution;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
@@ -94,6 +95,7 @@ public final class SceneContinuationService {
                         context.villager().getUUID(), pointer(sourcePointer, suspendedAction, index),
                         actions, sequence.nextActionIndex(), result.legacyResult().replacements(), ownerQuest, ownerRun);
         continuation.bindCampaign(CampaignQuestAccess.campaignFor(context.level().getServer(), ownerQuest));
+        if (!continuation.conversationEffect().isEmpty()) continuation.bindRecoveryFingerprint(fingerprint);
         if (continuation.completionReceipt()) {
             return RunResult.of(new ActionResult(continuation.actionStatus(), continuation.actionDiagnostic(),
                     result.capabilities(), result.legacyResult()), continuation.id());
@@ -110,7 +112,7 @@ public final class SceneContinuationService {
         continuation.decisionParticipants(com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.capture());
         data.changed();
         CampaignRewardRecovery.persist(context.level().getServer(), data, continuation);
-        return RunResult.of(continuation.campaignRecovery()
+        return RunResult.of(continuation.actionRecovery()
                 ? ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(), result.capabilities(), result.legacyResult())
                 : result, continuation.id());
     }
@@ -178,6 +180,10 @@ public final class SceneContinuationService {
                             context.player().getUUID(), continuation.questId());
                     if (progress == null || !continuation.questRunId().equals(progress.questRunId())) continue;
                 }
+                if (!continuation.conversationEffect().equals(ConversationSceneExecution.capture())) {
+                    return RunResult.of(ActionResult.unavailable("This suspended sequence belongs to another conversation effect.",
+                            Set.of(), VillagerActionResult.EMPTY), continuation.id());
+                }
                 String recoveryIssue = CampaignRewardRecovery.issue(context.level().getServer(), continuation);
                 if (!recoveryIssue.isBlank()) return RunResult.of(ActionResult.unavailable(recoveryIssue,
                         Set.of(), VillagerActionResult.EMPTY), continuation.id());
@@ -186,7 +192,7 @@ public final class SceneContinuationService {
                             Set.of(), VillagerActionResult.EMPTY), continuation.id());
                 }
                 VillagerActionResult output = new VillagerActionResult(false, "", "", continuation.replacements(), false);
-                return RunResult.of(continuation.campaignRecovery() && !continuation.completionReceipt()
+                return RunResult.of(continuation.actionRecovery() && !continuation.completionReceipt()
                         ? ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(), Set.of(), output)
                         : new ActionResult(continuation.actionStatus(), continuation.actionDiagnostic(),
                                 Set.of(), output, continuation.sceneInstanceId()), continuation.id());
@@ -334,13 +340,18 @@ public final class SceneContinuationService {
             if (continuation.pauseForConsent("A saved campaign action is unreadable. Repair the action before resuming.")) data.changed();
             return;
         }
-        ServerPlayer player = server.getPlayerList().getPlayer(continuation.playerId());
+        var authority = continuation.conversationEffect().isEmpty() ? null : ConversationSceneExecution.resolve(server, continuation);
+        if (authority != null && !authority.diagnostic().isBlank()) {
+            if (continuation.pauseForConsent(authority.diagnostic())) data.changed();
+            return;
+        }
+        ServerPlayer player = authority == null ? server.getPlayerList().getPlayer(continuation.playerId()) : authority.controller();
         Villager provider = findVillager(server, com.jvn.villagerretaliation.campaign.CampaignQuestCharacters.continuationProvider(
                 server, continuation.questId(), continuation.providerId()));
         if (player == null || provider == null || provider.level() != player.serverLevel()) return;
         if (continuation.questId() != null && continuation.questRunId() != null) {
             var progress = VillagerQuestSavedData.get(player.serverLevel())
-                    .get(player.getUUID(), continuation.questId());
+                    .get(continuation.playerId(), continuation.questId());
             if (progress == null || !continuation.questRunId().equals(progress.questRunId())) {
                 continuation.finish(ActionResult.unavailable("quest run changed", Set.of(), VillagerActionResult.EMPTY));
                 data.changed();
@@ -349,10 +360,10 @@ public final class SceneContinuationService {
             }
         }
         DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
-        if (continuation.campaignRecovery()) {
-            String authority = com.jvn.villagerretaliation.campaign.CampaignAuthority.controlIssue(player);
-            if (!authority.isBlank()) {
-                if (continuation.pauseForConsent(authority)) data.changed();
+        if (continuation.campaignRecovery() && authority == null) {
+            String issue = com.jvn.villagerretaliation.campaign.CampaignAuthority.controlIssue(player);
+            if (!issue.isBlank()) {
+                if (continuation.pauseForConsent(issue)) data.changed();
                 return;
             }
         }
@@ -361,7 +372,7 @@ public final class SceneContinuationService {
             if (continuation.pauseForConsent(participationIssue)) data.changed();
             return;
         }
-        var access = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.resumeAccess(context, continuation.campaignConsent());
+        var access = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.resumeAccess(context, continuation.playerId(), continuation.campaignConsent());
         if (!access.allowed()) {
             if (access.paused()) {
                 if (continuation.pauseForConsent(access.diagnostic())) data.changed();
@@ -373,32 +384,53 @@ public final class SceneContinuationService {
             return;
         }
         if (!CampaignQuestAccess.executionIssue(server, continuation.questId(), continuation.campaignId(), continuation.playerId()).isBlank()) return;
-        var remaining = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.remainingConsent(context, continuation.campaignConsent());
+        var remaining = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.remainingConsent(context, continuation.playerId(), continuation.campaignConsent());
         if (!remaining.equals(continuation.campaignConsent())) {
             continuation.campaignConsent(remaining);
             data.changed();
         }
+        DialogueContext personal = personalContext(context, continuation);
+        if (continuation.dialogueResume() != null && personal == null) {
+            if (continuation.pauseForConsent("The original player must return before their dialogue can resume.")) data.changed();
+            return;
+        }
         if (continuation.completionReceipt()) {
             if (continuation.actionStatus() == ActionStatus.SUCCESS || continuation.actionStatus() == ActionStatus.ALREADY_SATISFIED) {
-                if (continuation.dialogueResume() != null) DialogueTreeService.resumeAfterActions(context, continuation.dialogueResume(), continuation.replacements());
+                if (continuation.dialogueResume() != null) DialogueTreeService.resumeAfterActions(personal, continuation.dialogueResume(), continuation.replacements());
             }
             return;
         }
         if (!CampaignRewardRecovery.persist(server, data, continuation)) return;
         com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.withConsent(remaining,
                 () -> com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(continuation.decisionParticipants(),
-                        () -> resumeActions(context, data, continuation, true, () -> VillagerQuestService.flashTracker(player, true))));
+                        () -> resumeActions(context, data, continuation, true, () -> {
+                            var recipient = server.getPlayerList().getPlayer(continuation.playerId());
+                            if (recipient != null) VillagerQuestService.flashTracker(recipient, true);
+                        }, authority)));
+    }
+
+    private static DialogueContext personalContext(DialogueContext context, SceneContinuation continuation) {
+        var player = context.level().getServer().getPlayerList().getPlayer(continuation.playerId());
+        return player == null || player.serverLevel() != context.level() ? null
+                : VillagerInteractionService.createDialogueContext(context.level(), player, context.villager());
     }
 
     private static ActionResult resumeActions(DialogueContext context, SceneSavedData data, SceneContinuation continuation, boolean resumeDialogue, Runnable trackerFlashHandler) {
-        ServerPlayer player = context.player();
+        return resumeActions(context, data, continuation, resumeDialogue, trackerFlashHandler, null);
+    }
+
+    private static ActionResult resumeActions(DialogueContext context, SceneSavedData data, SceneContinuation continuation,
+            boolean resumeDialogue, Runnable trackerFlashHandler, ConversationSceneExecution.Access authority) {
+        var server = context.level().getServer();
+        var held = new boolean[1];
+        var actionContext = new DialogueContext[] { context };
         ActionSequenceRunner.Result sequence = ActionSequenceRunner.run(context, continuation.actions(),
                 continuation.nextActionIndex(), continuation.replacements(),
                 trackerFlashHandler, (next, outcome) -> {
                     continuation.nextActionIndex(next);
                     continuation.clearPreparedRecoveryAction();
                     if (continuation.questId() != null) {
-                        var progress = VillagerQuestSavedData.get(context.level()).get(player.getUUID(), continuation.questId());
+                        var progress = VillagerQuestSavedData.get(context.level()).get(continuation.playerId(), continuation.questId());
                         if (progress != null) continuation.bindQuestRun(progress.questRunId());
                     }
                     continuation.replacements().putAll(outcome.legacyResult().replacements());
@@ -407,16 +439,39 @@ public final class SceneContinuationService {
                     if (!outcome.suspended() && (outcome.success() || !continuation.actions().get(next - 1).required())
                             && !CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) throw pauseForSave(continuation);
                 }, index -> {
-                    if (continuation.campaignRecovery()) {
+                    if (authority != null) {
+                        var current = ConversationSceneExecution.resolve(server, continuation);
+                        actionContext[0] = continuation.actions().get(index).kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME
+                                ? context : personalContext(context, continuation);
+                        String issue = current.diagnostic();
+                        if (issue.isBlank() && actionContext[0] == null) issue = "The suspended action is waiting for its original player.";
+                        if (!issue.isBlank()) {
+                            continuation.pauseForConsent(issue);
+                            held[0] = true;
+                            data.changed();
+                            CampaignRewardRecovery.persist(server, data, continuation);
+                            throw pauseForSave(continuation);
+                        }
+                    }
+                    if (continuation.actionRecovery()) {
                         continuation.prepareRecoveryAction(index);
                         if (!CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) {
                             continuation.clearPreparedRecoveryAction();
                             throw pauseForSave(continuation);
                         }
                     }
+                }, (action, replacements) -> {
+                    if (authority == null) return com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(context, action, replacements);
+                    var progress = action.questId() == null ? null : VillagerQuestSavedData.get(context.level()).get(continuation.playerId(), action.questId());
+                    boolean shared = action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME;
+                    if (shared && progress == null) return ActionResult.unavailable("The deciding player's original quest run is unavailable.", Set.of(), VillagerActionResult.EMPTY);
+                    var actor = shared ? new com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor(continuation.playerId(), progress.questRunId()) : null;
+                    return com.jvn.villagerretaliation.campaign.CampaignAuthority.withController(authority.controller(), continuation.playerId(),
+                            () -> ConversationSceneExecution.withContinuation(continuation,
+                                    () -> com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(actionContext[0], action, replacements, actor)));
                 });
         ActionResult result = sequence.outcome();
-        if (continuation.recoveryPersistencePending()) return result;
+        if (held[0] || continuation.recoveryPersistencePending()) return result;
         if (result.suspended()) {
             WaitTarget target = waitTarget(data, result);
             if (target == null || cyclicDependency(data, continuation.id(), target.dependencyId())) {
@@ -435,9 +490,10 @@ public final class SceneContinuationService {
         }
         QuestStageActionService.settleContinuation(context.level(), continuation);
         if (resumeDialogue && result.success() && continuation.dialogueResume() != null) {
-            DialogueTreeService.resumeAfterActions(context, continuation.dialogueResume(), continuation.replacements());
+            DialogueTreeService.resumeAfterActions(authority == null ? context : personalContext(context, continuation),
+                    continuation.dialogueResume(), continuation.replacements());
         }
-        return result.suspended() && continuation.campaignRecovery()
+        return result.suspended() && continuation.actionRecovery()
                 ? ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(), result.capabilities(), result.legacyResult()) : result;
     }
 

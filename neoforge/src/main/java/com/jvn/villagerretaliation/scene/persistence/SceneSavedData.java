@@ -37,7 +37,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public final class SceneSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 16;
+    public static final int CURRENT_DATA_VERSION = 17;
     public static final int DEFAULT_COMPACTION_WORK = 16;
     public static final long TERMINAL_RETENTION_TICKS = 7L * 24000L;
     private static final int MAX_TOMBSTONES = 4096;
@@ -554,6 +554,7 @@ public final class SceneSavedData extends SavedData {
                         actions,
                         nextActionIndex,
                         replacements);
+        continuation.conversationEffect(com.jvn.villagerretaliation.dialogue.conversation.ConversationSceneExecution.capture());
         continuations.put(id, continuation);
         continuationKeys.put(key, id);
         setDirty();
