@@ -71,6 +71,12 @@ public final class EncounterService {
             SceneSavedData data,
             EncounterInstance encounter,
             EncounterTemplate template) {
+        String storageIssue = EncounterPersistence.prepare(server, data, encounter);
+        if (!storageIssue.isBlank()) {
+            if (encounter.markContentUnresolved(storageIssue)) data.changed();
+            hideBossBars(encounter);
+            return Result.waiting(storageIssue);
+        }
         ServerLevel level = level(server, encounter);
         if (level == null) return Result.waiting("spawn anchor dimension is unavailable");
         Result retry = processFailureRetry(server, data, encounter, template, level.getGameTime());
@@ -2747,6 +2753,7 @@ public final class EncounterService {
     }
 
     public static void clearRuntimeState() {
+        EncounterPersistence.clearRuntimeState();
         BOSS_BARS.values().forEach(ServerBossEvent::removeAllPlayers);
         MOB_BOSS_BARS.values().forEach(ServerBossEvent::removeAllPlayers);
         BOSS_BARS.clear();

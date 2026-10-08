@@ -109,7 +109,7 @@ public final class SceneReceiptGuard {
         if (requiresPersistence(instance) && data.campaignPersistencePending()) persist(server, data);
     }
 
-    private static boolean requiresPersistence(SceneInstance instance) {
+    public static boolean requiresPersistence(SceneInstance instance) {
         return instance.owningCampaignId() != null || !instance.conversationEffect().isEmpty() || !instance.campaignConsent().isEmpty();
     }
 

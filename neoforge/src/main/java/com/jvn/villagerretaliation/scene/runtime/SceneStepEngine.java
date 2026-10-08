@@ -97,7 +97,11 @@ public final class SceneStepEngine {
             case APPLIED -> {record.status(StepExecutionStatus.APPLIED,time);data.changed();yield SceneScheduler.ProcessResult.now();}
             case COMPLETE -> {record.status(StepExecutionStatus.COMPLETED,time);if(!result.transition().isBlank())record.chooseTransition(result.transition());PREPARED_THIS_SESSION.remove(key);data.changed();yield advance(instance,definition,step,record,time,data,result.transition());}
             case SKIP -> {record.status(StepExecutionStatus.SKIPPED,time);PREPARED_THIS_SESSION.remove(key);data.changed();yield advance(instance,definition,step,record,time,data,result.transition());}
-            case WAIT -> {record.wakeTime(result.wakeTime());instance.transition(SceneState.WAITING,time);data.changed();yield SceneScheduler.ProcessResult.wakeAt(result.wakeTime());}
+            case WAIT -> {
+                if (data.campaignPersistencePending() && SceneReceiptGuard.requiresPersistence(instance))
+                    instance.pauseCampaign(result.diagnostic(), time);
+                record.wakeTime(result.wakeTime());instance.transition(SceneState.WAITING,time);data.changed();yield SceneScheduler.ProcessResult.wakeAt(result.wakeTime());
+            }
             case BLOCK -> {instance.block(result.code().isBlank()?"step_blocked":result.code(),result.diagnostic(),time);data.changed();yield SceneScheduler.ProcessResult.idle();}
             case FAIL -> {record.fail(result.code());data.changed();yield SceneTransitionService.fail(
                     data,instance,definition,result.code(),result.diagnostic(),time);}

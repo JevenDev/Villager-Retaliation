@@ -207,6 +207,10 @@ public final class EncounterStepExecutors {
             if (!choice.variantId().isBlank()
                     && c.step().transitions().containsKey(choice.variantId()))
                 c.record().chooseTransition(choice.variantId());
+            c.repository().changed();
+            String storageIssue = com.jvn.villagerretaliation.scene.encounter.EncounterPersistence.checkpoint(
+                    c.server(), c.repository(), encounter);
+            if (!storageIssue.isBlank()) return SceneStepResult.waitUntil(c.gameTime() + 20, storageIssue);
             return SceneStepResult.applied();
         }
     }
