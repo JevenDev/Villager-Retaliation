@@ -154,18 +154,18 @@ public final class CampaignConversationClientSmoke {
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Check text presentation is unavailable", exception); }
     }
 
-    private static CampaignConversationScreenController controller(VillagerInteractionScreen screen) {
+    static CampaignConversationScreenController controller(VillagerInteractionScreen screen) {
         try {
             var field = VillagerInteractionScreen.class.getDeclaredField("campaignConversation"); field.setAccessible(true);
             return (CampaignConversationScreenController) field.get(screen);
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Conversation screen state is unavailable", exception); }
     }
 
-    private static void choose(VillagerInteractionScreen screen, String label) {
+    static void choose(VillagerInteractionScreen screen, String label) {
         require(chooseIfPresent(screen, label), "Conversation option is unavailable: " + label);
     }
 
-    private static boolean chooseIfPresent(VillagerInteractionScreen screen, String label) {
+    static boolean chooseIfPresent(VillagerInteractionScreen screen, String label) {
         try {
             var field = VillagerInteractionScreen.class.getDeclaredField("options"); field.setAccessible(true);
             for (var option : (List<?>) field.get(screen)) {
@@ -181,7 +181,7 @@ public final class CampaignConversationClientSmoke {
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Conversation option could not be invoked", exception); }
     }
 
-    private static String localized(String key, Object... arguments) { return I18n.get("villagerretaliation.gui.conversation." + key, arguments); }
+    static String localized(String key, Object... arguments) { return I18n.get("villagerretaliation.gui.conversation." + key, arguments); }
 
     private static void capture(String name) {
         try (var image = Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())) {

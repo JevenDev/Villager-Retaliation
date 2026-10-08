@@ -35,6 +35,7 @@ sourceSets.main.resources {
 }
 
 def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
+def campaignConversationMultiplayerDirectory = layout.buildDirectory.dir("campaign-conversation-multiplayer/${System.currentTimeMillis()}")
 def campaignConversationClientSmokeDirectory = layout.buildDirectory.dir("campaign-conversation-client-smoke/${System.currentTimeMillis()}")
 
 def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
@@ -62,6 +63,25 @@ neoForge {
             gameDirectory.set(campaignConversationClientSmokeDirectory)
             systemProperty 'villagerretaliation.campaignConversationClientSmoke', campaignConversationClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'CampaignConversationSmoke', '--width', '1280', '--height', '720'
+        }
+
+        campaignConversationMultiplayerHost {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(campaignConversationMultiplayerDirectory.map { it.dir('host') })
+            systemProperty 'villagerretaliation.campaignConversationMultiplayer', campaignConversationMultiplayerDirectory.get().asFile.absolutePath
+            systemProperty 'villagerretaliation.campaignConversationMultiplayer.role', 'host'
+            systemProperty 'villagerretaliation.campaignConversationMultiplayer.args', layout.buildDirectory.dir('moddev').get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'CampaignMultiplayer', '--username', 'CampaignHost', '--width', '1280', '--height', '720'
+        }
+
+        campaignConversationMultiplayerPeer {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(campaignConversationMultiplayerDirectory.map { it.dir('peer') })
+            systemProperty 'villagerretaliation.campaignConversationMultiplayer', campaignConversationMultiplayerDirectory.get().asFile.absolutePath
+            systemProperty 'villagerretaliation.campaignConversationMultiplayer.role', 'peer'
+            programArguments.addAll '--username', 'CampaignPeer', '--width', '1280', '--height', '720'
         }
 
         settlementClientSmoke {
@@ -169,6 +189,31 @@ tasks.named('runCampaignConversationClientSmoke') {
         def result = new File(campaignConversationClientSmokeDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Campaign conversation client smoke passed')) {
             throw new GradleException("Campaign conversation client checks did not finish. Inspect ${campaignConversationClientSmokeDirectory.get().asFile}")
+        }
+    }
+}
+
+tasks.named('runCampaignConversationMultiplayerHost') {
+    dependsOn tasks.named('runGameTestServer'), tasks.named('prepareCampaignConversationMultiplayerPeerRun')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Campaign multiplayer checks require generated GameTest world metadata.')
+        def output = campaignConversationMultiplayerDirectory.get().asFile
+        copy {
+            from metadata
+            into new File(output, 'host/saves/CampaignMultiplayer')
+        }
+        ['host', 'peer'].each { role ->
+            def directory = new File(output, role)
+            directory.mkdirs()
+            new File(directory, 'options.txt').text =
+                    'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\n'
+        }
+    }
+    doLast {
+        def result = new File(campaignConversationMultiplayerDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Campaign conversation multiplayer acceptance passed')) {
+            throw new GradleException("Campaign multiplayer checks did not finish. Inspect ${campaignConversationMultiplayerDirectory.get().asFile}")
         }
     }
 }
