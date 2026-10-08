@@ -20,19 +20,18 @@ final class CampaignReferenceCommands {
     private CampaignReferenceCommands() { }
 
     static LiteralArgumentBuilder<CommandSourceStack> root() {
-        return literal("campaign").requires(source -> source.hasPermission(2))
-                .then(literal("references")
-                        .then(literal("list").executes(context -> list(context, "all", 1))
-                                .then(argument("kind", StringArgumentType.word())
-                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
-                                                java.util.stream.Stream.concat(java.util.stream.Stream.of("all"),
-                                                        java.util.Arrays.stream(CampaignReferenceReport.Kind.values()).map(value -> value.name().toLowerCase(Locale.ROOT))), builder))
-                                        .executes(context -> list(context, StringArgumentType.getString(context, "kind"), 1))
-                                        .then(argument("page", IntegerArgumentType.integer(1)).executes(context ->
-                                                list(context, StringArgumentType.getString(context, "kind"), IntegerArgumentType.getInteger(context, "page"))))))
-                        .then(literal("inspect").then(reference().executes(CampaignReferenceCommands::inspect)))
-                        .then(query("dependencies", CampaignReferenceReport.Direction.DEPENDENCIES))
-                        .then(query("dependents", CampaignReferenceReport.Direction.DEPENDENTS)));
+        return literal("references")
+                .then(literal("list").executes(context -> list(context, "all", 1))
+                        .then(argument("kind", StringArgumentType.word())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        java.util.stream.Stream.concat(java.util.stream.Stream.of("all"),
+                                                java.util.Arrays.stream(CampaignReferenceReport.Kind.values()).map(value -> value.name().toLowerCase(Locale.ROOT))), builder))
+                                .executes(context -> list(context, StringArgumentType.getString(context, "kind"), 1))
+                                .then(argument("page", IntegerArgumentType.integer(1)).executes(context ->
+                                        list(context, StringArgumentType.getString(context, "kind"), IntegerArgumentType.getInteger(context, "page"))))))
+                .then(literal("inspect").then(reference().executes(CampaignReferenceCommands::inspect)))
+                .then(query("dependencies", CampaignReferenceReport.Direction.DEPENDENCIES))
+                .then(query("dependents", CampaignReferenceReport.Direction.DEPENDENTS));
     }
 
     private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, String> reference() {

@@ -66,7 +66,7 @@ final class VrAdminCommands {
                 .then(dialogue())
                 .then(VrConversationCommands.root())
                 .then(CampaignLocationCommands.root())
-                .then(CampaignReferenceCommands.root())
+                .then(CampaignCommands.root())
                 .then(quest())
                 .then(scene())
                 .then(debug());

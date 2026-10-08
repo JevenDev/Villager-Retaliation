@@ -9,10 +9,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 
-final class CampaignBindingQueries {
+public final class CampaignBindingQueries {
     private CampaignBindingQueries() { }
 
-    static CharacterState character(MinecraftServer server, ResourceLocation campaign, String role) {
+    public static CharacterState character(MinecraftServer server, ResourceLocation campaign, String role) {
         var visited = new java.util.HashSet<String>();
         while (visited.add(role)) {
             var state = originalCharacter(server, campaign, role);
@@ -75,7 +75,7 @@ final class CampaignBindingQueries {
         return new CharacterState(binding, villager, "");
     }
 
-    static LocationState location(MinecraftServer server, ResourceLocation campaign, String alias) {
+    public static LocationState location(MinecraftServer server, ResourceLocation campaign, String alias) {
         var context = context(server, campaign);
         if (!context.diagnostic().isBlank()) return new LocationState(null, context.diagnostic());
         var definition = context.content().definition();
@@ -109,8 +109,8 @@ final class CampaignBindingQueries {
     }
 
     private record Context(CampaignContentCatalog.Entry content, CampaignInstance instance, String diagnostic) { }
-    record LocationState(CampaignLocationBinding binding, String diagnostic) { }
-    record CharacterState(CampaignCharacterBinding binding, Villager entity, String diagnostic) {
-        boolean available() { return entity != null && diagnostic.isBlank() && !VillagerDownedService.isDowned(entity); }
+    public record LocationState(CampaignLocationBinding binding, String diagnostic) { }
+    public record CharacterState(CampaignCharacterBinding binding, Villager entity, String diagnostic) {
+        public boolean available() { return entity != null && diagnostic.isBlank() && !VillagerDownedService.isDowned(entity); }
     }
 }
