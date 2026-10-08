@@ -40,12 +40,8 @@ public final class VillagerReputationNetworking {
         network.safePlayToClientThreaded(CampaignConversationViewPayload.TYPE, CampaignConversationViewPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler", "acceptCampaignConversation");
         network.playToServer(CampaignConversationRequestPayload.TYPE, CampaignConversationRequestPayload.STREAM_CODEC,
-                (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context, player -> {
-                    if (payload.action() == CampaignConversationRequestPayload.Action.CLOSE
-                            || ServerboundRequestLimiter.tryAcquire(player, CampaignConversationRequestPayload.TYPE.id(), 2L)) {
-                        com.jvn.villagerretaliation.dialogue.conversation.ConversationPresentationService.handle(player, payload);
-                    }
-                })));
+                (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context, player ->
+                        com.jvn.villagerretaliation.dialogue.conversation.ConversationPresentationService.handle(player, payload))));
         network.safePlayToClientThreaded(CampaignJournalPagePayload.TYPE, CampaignJournalPagePayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.interaction.CampaignJournalScreen", "accept");
         network.playToServer(CampaignJournalRequestPayload.TYPE, CampaignJournalRequestPayload.STREAM_CODEC,

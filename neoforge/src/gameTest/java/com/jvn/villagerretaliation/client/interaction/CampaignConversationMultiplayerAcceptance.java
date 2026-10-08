@@ -204,6 +204,7 @@ public final class CampaignConversationMultiplayerAcceptance {
             if (step == 0 && session.canControl() && session.phase() == Phase.CHECK) {
                 var request = request(screen, session, Action.ROLL, "");
                 write("roll-request.json", JSON.toJson(request));
+                PacketDistributor.sendToServer(request(screen, session, Action.VIEW, ""));
                 PacketDistributor.sendToServer(request);
                 step++;
             } else if (step == 1 && session.phase() == Phase.ROLLED && control.dieProgress() >= 0.25F) {

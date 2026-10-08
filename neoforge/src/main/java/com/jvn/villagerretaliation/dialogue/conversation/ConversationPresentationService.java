@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionScreenOpener;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.CampaignConversationRequestPayload;
 import com.jvn.villagerretaliation.network.CampaignConversationViewPayload;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.CampaignConversationViewPayload.*;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
@@ -30,6 +31,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class ConversationPresentationService {
+    private static final ResourceLocation PRESENTATION_REQUEST = com.jvn.villagerretaliation.VillagerRetaliation.id("campaign_conversation_view");
     private static final Map<MinecraftServer, Map<UUID, Viewer>> VIEWERS = new HashMap<>();
 
     private ConversationPresentationService() { }
@@ -46,6 +48,11 @@ public final class ConversationPresentationService {
     }
 
     public static void handle(ServerPlayer player, CampaignConversationRequestPayload request) {
+        if (!player.server.isSameThread()) throw new IllegalStateException("Conversation presentation requires the server thread");
+        boolean presentation = request.action() == CampaignConversationRequestPayload.Action.TOPICS
+                || request.action() == CampaignConversationRequestPayload.Action.VIEW;
+        if (request.action() != CampaignConversationRequestPayload.Action.CLOSE
+                && !ServerboundRequestLimiter.tryAcquire(player, presentation ? PRESENTATION_REQUEST : CampaignConversationRequestPayload.TYPE.id(), 2L)) return;
         var result = respond(player, request);
         if (result != null) PacketDistributor.sendToPlayer(player, result);
     }

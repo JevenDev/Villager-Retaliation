@@ -239,6 +239,43 @@ public final class CampaignConversationPresentationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_presentation")
+    public static void backgroundPollsCannotConsumeThePlayersRollOrAdvanceBudget(GameTestHelper helper) throws IOException {
+        try (var fixture = new CampaignConversationGameTests.Fixture(helper)) {
+            var player = fixture.player(); var view = UUID.randomUUID();
+            fixture.start(player);
+            var current = send(player, fixture, view, Action.TOPICS, null, "", "", 0, 0);
+            for (int index = 0; index < 3; index++) current = send(player, fixture, view, Action.ADVANCE, current, "", "", 0, 0);
+            current = send(player, fixture, view, Action.CHOOSE, current, "", "appeal", 0, 0);
+            var id = current.session().id();
+            net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(player.connection.getConnection());
+            var level = fixture.base.server.overworld(); long time = level.getGameTime();
+            try {
+                ConversationPresentationService.handle(player, packet(fixture, view, Action.VIEW, current, "", "", 0, 0));
+                ConversationPresentationService.handle(player, packet(fixture, view, Action.ROLL, current, "", "", 0, 0));
+                var rolled = ConversationService.view(player, id).session();
+                helper.assertValueEqual(rolled.phase(), ConversationSession.Phase.ROLLED, "a poll and roll in the same server tick still resolve the authorized roll");
+                helper.assertValueEqual(rolled.checks().size(), 1, "one server-controlled check is saved");
+                current = send(player, fixture, view, Action.VIEW, current, "", "", 0, 0);
+                ConversationPresentationService.handle(player, packet(fixture, view, Action.ADVANCE, current, "", "", 0, 0));
+                helper.assertValueEqual(ConversationService.view(player, id).session().revision(), rolled.revision(), "consecutive player actions still share the two-tick rate limit");
+                ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData()).setGameTime(time + 2);
+                ConversationPresentationService.handle(player, packet(fixture, view, Action.VIEW, current, "", "", 0, 0));
+                ConversationPresentationService.handle(player, packet(fixture, view, Action.ADVANCE, current, "", "", 0, 0));
+                var advanced = ConversationService.view(player, id).session();
+                helper.assertValueEqual(advanced.phase(), ConversationSession.Phase.EXCHANGES, "a new poll cannot suppress the next eligible advance");
+                helper.assertValueEqual(advanced.checks(), rolled.checks(), "advancing retains the exact saved roll");
+                current = send(player, fixture, view, Action.VIEW, current, "", "", 0, 0);
+                ConversationPresentationService.handle(player, packet(fixture, view, Action.CLOSE, current, "", "", 0, 0));
+                helper.assertTrue(ConversationService.view(player, id).session().controller() == null, "closing remains available while the action budget is busy");
+            } finally {
+                ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData()).setGameTime(time);
+                com.jvn.villagerretaliation.network.ServerboundRequestLimiter.clear(player.getUUID());
+            }
+        }
+        helper.succeed();
+    }
+
     private static CampaignConversationViewPayload send(ServerPlayer player, CampaignConversationGameTests.Fixture fixture,
             UUID view, Action action, CampaignConversationViewPayload prior, String conversation, String argument, int page, int textPage) {
         return ConversationPresentationService.respond(player, packet(fixture, view, action, prior, conversation, argument, page, textPage));
