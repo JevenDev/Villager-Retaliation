@@ -339,7 +339,12 @@ public final class CampaignConversationGameTests {
         }
 
         ServerPlayer player() {
-            var profile = new GameProfile(UUID.randomUUID(), "conv_" + UUID.randomUUID().toString().substring(0, 8));
+            return player(new GameProfile(UUID.randomUUID(), "conv_" + UUID.randomUUID().toString().substring(0, 8)));
+        }
+
+        ServerPlayer reconnect(ServerPlayer previous) { return player(previous.getGameProfile()); }
+
+        private ServerPlayer player(GameProfile profile) {
             var cookie = CommonListenerCookie.createInitial(profile, false);
             var player = new ServerPlayer(base.server, helper.getLevel(), profile, cookie.clientInformation());
             var connection = new Connection(PacketFlow.SERVERBOUND);

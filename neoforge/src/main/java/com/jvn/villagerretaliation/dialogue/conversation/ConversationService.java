@@ -297,7 +297,11 @@ public final class ConversationService {
     }
 
     static UUID questRun(ServerPlayer player, ResourceLocation quest) {
-        var progress = quest == null ? null : VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), quest);
+        return questRun(player.server, player.getUUID(), quest);
+    }
+
+    static UUID questRun(MinecraftServer server, UUID player, ResourceLocation quest) {
+        var progress = quest == null ? null : VillagerQuestSavedData.get(server.overworld()).get(player, quest);
         return progress == null ? null : progress.questRunId();
     }
 

@@ -166,21 +166,30 @@ public final class VillagerActionRegistry {
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements) {
-        return run(context, action, inheritedReplacements, false);
+        return run(context, action, inheritedReplacements, false, null);
+    }
+
+    public static ActionResult execute(
+            DialogueContext context,
+            VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements,
+            com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor outcomeActor) {
+        return run(context, action, inheritedReplacements, false, outcomeActor);
     }
 
     public static ActionResult dryRun(
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements) {
-        return run(context, action, inheritedReplacements, true);
+        return run(context, action, inheritedReplacements, true, null);
     }
 
     private static ActionResult run(
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements,
-            boolean dryRun) {
+            boolean dryRun,
+            com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor outcomeActor) {
         if (action == null || action.kind() == VillagerActionDefinition.Kind.NONE) {
             return ActionResult.skipped("action is empty", Set.of());
         }
@@ -191,6 +200,9 @@ public final class VillagerActionRegistry {
         if (context == null && requiresLiveContext(capabilities)) {
             return ActionResult.failed("live dialogue context unavailable", capabilities);
         }
+        if (outcomeActor != null && action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
+            return ActionResult.failed("A saved decision actor cannot receive another player's personal effects.", capabilities);
+        }
         if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
             return com.jvn.villagerretaliation.campaign.CampaignRewardService.execute(context, action);
         }
@@ -198,7 +210,7 @@ public final class VillagerActionRegistry {
             return com.jvn.villagerretaliation.campaign.CampaignFactService.execute(context, action);
         }
         if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
-            return com.jvn.villagerretaliation.campaign.CampaignOutcomeService.execute(context, action);
+            return com.jvn.villagerretaliation.campaign.CampaignOutcomeService.execute(context, action, outcomeActor);
         }
         if (action.kind() == VillagerActionDefinition.Kind.FORCED_DIALOGUE) {
             ActionResult result = VillagerActionExecutor.executeForcedDialogue(context, action, inheritedReplacements);

@@ -327,7 +327,11 @@ public final class CampaignQuestAcceptanceService {
     }
 
     private static CompoundTag snapshot(ServerPlayer player, ResourceLocation questId) {
-        var progress = VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), questId);
+        return snapshot(player.serverLevel(), player.getUUID(), questId);
+    }
+
+    private static CompoundTag snapshot(net.minecraft.server.level.ServerLevel level, UUID player, ResourceLocation questId) {
+        var progress = VillagerQuestSavedData.get(level).get(player, questId);
         return progress == null ? new CompoundTag() : progress.campaignRequestSnapshot();
     }
 
@@ -380,26 +384,31 @@ public final class CampaignQuestAcceptanceService {
 
     public static ResumeAccess resumeAccess(DialogueContext context, CompoundTag tag) {
         if (tag.isEmpty()) return new ResumeAccess(false, "");
+        return resumeAccess(context, context.player().getUUID(), tag);
+    }
+
+    public static ResumeAccess resumeAccess(DialogueContext context, UUID actor, CompoundTag tag) {
+        if (tag.isEmpty()) return new ResumeAccess(false, "");
         CampaignQuestConsent consent;
         try {
             consent = CampaignQuestConsent.load(tag);
         } catch (IllegalArgumentException exception) {
             return new ResumeAccess(true, exception.getMessage());
         }
-        if (!consent.playerId().equals(context.player().getUUID()) || !matchesConsentProvider(context, consent)) {
+        if (!consent.playerId().equals(actor) || !matchesConsentProvider(context, consent)) {
             return new ResumeAccess(false, "The player or character for this accepted quest changed.");
         }
-        String authority = CampaignAuthority.controlIssue(context.player());
+        String authority = CampaignAuthority.controlIssue(context.player(), actor);
         if (!authority.isBlank()) return new ResumeAccess(true, authority);
         for (var decision : consent.decisions().values()) {
-            var access = CampaignOutcomeService.resumeAccess(context, decision);
+            var access = CampaignOutcomeService.resumeAccess(context, actor, decision);
             if (!access.allowed()) return access;
         }
         for (var entry : consent.quests().entrySet()) {
-            if (alreadyAccepted(context, entry.getKey(), entry.getValue().acceptance())) continue;
+            if (alreadyAccepted(context.level(), actor, entry.getKey(), entry.getValue().acceptance())) continue;
             var quest = VillagerQuestResources.quest(context.level().getServer(), entry.getKey()).orElse(null);
             if (quest == null) return new ResumeAccess(true, "Accepted campaign quest content is unavailable: " + entry.getKey());
-            String issue = CampaignQuestAccess.contentIssue(context, quest);
+            String issue = CampaignQuestAccess.contentIssue(context.level(), quest, VillagerQuestSavedData.get(context.level()).get(actor, quest.id()));
             if (!issue.isBlank()) return new ResumeAccess(true, issue);
             var accepted = entry.getValue().acceptance();
             var instance = quest.campaign() == null ? null : CampaignSavedData.get(context.level()).instances().get(quest.campaign());
@@ -409,7 +418,7 @@ public final class CampaignQuestAcceptanceService {
             if (accepted.worldRevision() != instance.worldRevision()) {
                 return new ResumeAccess(false, "The shared story changed while this quest offer was interrupted. Review its current path again.");
             }
-            if (!entry.getValue().progress().equals(snapshot(context.player(), entry.getKey()))) {
+            if (!entry.getValue().progress().equals(snapshot(context.level(), actor, entry.getKey()))) {
                 return new ResumeAccess(false, "Your quest progress changed while this offer was interrupted. Review the quest again.");
             }
         }
@@ -418,10 +427,15 @@ public final class CampaignQuestAcceptanceService {
 
     public static CompoundTag remainingConsent(DialogueContext context, CompoundTag tag) {
         if (tag.isEmpty()) return tag;
+        return remainingConsent(context, context.player().getUUID(), tag);
+    }
+
+    public static CompoundTag remainingConsent(DialogueContext context, UUID actor, CompoundTag tag) {
+        if (tag.isEmpty()) return tag;
         var consent = CampaignQuestConsent.load(tag);
-        if (!consent.playerId().equals(context.player().getUUID()) || !matchesConsentProvider(context, consent)) return tag;
+        if (!consent.playerId().equals(actor) || !matchesConsentProvider(context, consent)) return tag;
         var remaining = new LinkedHashMap<>(consent.quests());
-        remaining.entrySet().removeIf(entry -> alreadyAccepted(context, entry.getKey(), entry.getValue().acceptance()));
+        remaining.entrySet().removeIf(entry -> alreadyAccepted(context.level(), actor, entry.getKey(), entry.getValue().acceptance()));
         var decisions = new LinkedHashMap<>(consent.decisions());
         decisions.values().removeIf(value -> CampaignOutcomeService.committed(context, value));
         return remaining.isEmpty() && decisions.isEmpty() ? new CompoundTag()
@@ -436,9 +450,9 @@ public final class CampaignQuestAcceptanceService {
                 && consent.decisions().values().stream().allMatch(decision -> CampaignQuestCharacters.canReplaceProvider(server, decision.questId(), consent.providerId(), replacement));
     }
 
-    static boolean approvedOutcome(DialogueContext context, CampaignOutcomeConsent consent) {
+    static boolean approvedOutcome(DialogueContext context, UUID actor, CampaignOutcomeConsent consent) {
         var approval = APPROVAL.get();
-        return approval != null && approval.consent.playerId().equals(context.player().getUUID())
+        return approval != null && approval.consent.playerId().equals(actor)
                 && approval.consent.providerId().equals(context.villager().getUUID())
                 && consent.equals(approval.decisions.get(consent.operationId()));
     }
@@ -448,8 +462,8 @@ public final class CampaignQuestAcceptanceService {
         if (approval != null) approval.decisions.remove(operationId);
     }
 
-    private static boolean alreadyAccepted(DialogueContext context, ResourceLocation questId, CampaignQuestAcceptance acceptance) {
-        var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), questId);
+    private static boolean alreadyAccepted(net.minecraft.server.level.ServerLevel level, UUID actor, ResourceLocation questId, CampaignQuestAcceptance acceptance) {
+        var progress = VillagerQuestSavedData.get(level).get(actor, questId);
         var receipt = progress == null ? null : progress.campaignAcceptance();
         return receipt != null && receipt.requestId().equals(acceptance.requestId())
                 && receipt.instanceId().equals(acceptance.instanceId()) && receipt.fingerprint().equals(acceptance.fingerprint());

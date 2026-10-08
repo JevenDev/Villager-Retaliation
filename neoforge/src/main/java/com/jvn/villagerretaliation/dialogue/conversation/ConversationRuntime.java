@@ -134,17 +134,20 @@ final class ConversationRuntime {
         }
         if (!execute) return false;
         var actorId = receipt == null ? session.actingPlayer : receipt.actor();
-        var actor = actorId.equals(controller.getUUID()) ? controller : controller.server.getPlayerList().getPlayer(actorId);
-        ConversationService.require(actor != null, "The player who chose this effect must reconnect before it can finish.");
-        var character = ConversationService.character(controller, session);
-        ConversationService.require(actor.serverLevel() == character.level(), "The player who chose this effect must return to its dimension.");
-        if (session.questRun != null) ConversationService.require(session.questRun.equals(ConversationService.questRun(actor, session.identity.quest())),
-                "The original quest run changed. Repair this conversation before applying its remaining effects.");
         var action = receipt == null ? scopedAction(session.identity.id(), key, effect.action()) : receipt.action();
-        UUID run = receipt == null ? ConversationService.questRun(actor, action.questId()) : receipt.questRun();
-        ConversationService.require(run == null || run.equals(ConversationService.questRun(actor, action.questId())), "The effect's original quest run changed.");
+        boolean sharedOutcome = action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME;
+        var actor = sharedOutcome || actorId.equals(controller.getUUID()) ? controller : controller.server.getPlayerList().getPlayer(actorId);
+        ConversationService.require(actor != null, "The player who chose this personal effect must reconnect before it can finish.");
+        var character = ConversationService.character(controller, session);
+        ConversationService.require(actor.serverLevel() == character.level(), "The player who chose this personal effect must return to its dimension.");
+        if (session.questRun != null) ConversationService.require(session.questRun.equals(ConversationService.questRun(controller.server, actorId, session.identity.quest())),
+                "The original quest run changed. Repair this conversation before applying its remaining effects.");
+        UUID run = receipt == null ? ConversationService.questRun(controller.server, actorId, action.questId()) : receipt.questRun();
+        ConversationService.require(run == null || run.equals(ConversationService.questRun(controller.server, actorId, action.questId())), "The effect's original quest run changed.");
+        ConversationService.require(!sharedOutcome || run != null, "The deciding player's original quest run is unavailable.");
         var context = VillagerInteractionService.createDialogueContext(actor.serverLevel(), actor, character);
-        var access = CampaignQuestAcceptanceService.resumeAccess(context, session.consent);
+        var access = sharedOutcome ? CampaignQuestAcceptanceService.resumeAccess(context, actorId, session.consent)
+                : CampaignQuestAcceptanceService.resumeAccess(context, session.consent);
         ConversationService.require(access.allowed(), access.diagnostic());
         receipt = new ConversationSession.Receipt(key, actorId, run, action, ConversationSession.ReceiptState.PREPARED,
                 ActionResult.unavailable("Effect completion has not been saved.", VillagerActionRegistry.capabilities(action), VillagerActionResult.EMPTY));
@@ -153,17 +156,18 @@ final class ConversationRuntime {
         var applied = new ActionResult[1];
         var replacements = session.replacements;
         var participants = session.decisionParticipants == null ? new net.minecraft.nbt.CompoundTag() : session.decisionParticipants.save();
+        var outcomeActor = sharedOutcome ? new com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor(actorId, run) : null;
         CampaignQuestAcceptanceService.withConsent(session.consent, () -> applied[0] =
                 com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
-                        () -> VillagerActionRegistry.execute(context, action, replacements)));
+                        () -> VillagerActionRegistry.execute(context, action, replacements, outcomeActor)));
         var outcome = applied[0];
         if (outcome.suspended() && outcome.suspensionId() == null) outcome = ActionResult.failed("Suspended effect has no persistent dependency.", outcome.capabilities());
         session = data.session(session.identity.id());
-        session.consent = CampaignQuestAcceptanceService.remainingConsent(context, session.consent);
+        session.consent = CampaignQuestAcceptanceService.remainingConsent(context, actorId, session.consent);
         receipt = new ConversationSession.Receipt(key, actorId, run, action, ConversationSession.ReceiptState.RESOLVED, outcome);
         session.receipts.put(key, receipt);
         session.replacements.putAll(outcome.legacyResult().replacements());
-        if (session.questRun == null) session.questRun = ConversationService.questRun(actor, session.identity.quest());
+        if (session.questRun == null) session.questRun = ConversationService.questRun(controller.server, actorId, session.identity.quest());
         if (outcome.suspended()) {
             session.diagnostic = outcome.message();
             ConversationService.save(controller, data, session);
