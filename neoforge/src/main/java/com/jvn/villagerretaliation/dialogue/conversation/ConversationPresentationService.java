@@ -167,7 +167,18 @@ public final class ConversationPresentationService {
         });
         handover.sort(java.util.Comparator.comparing(Member::name).thenComparing(member -> member.id().toString()));
         Line line = null;
-        if (!snapshot.transcript().isEmpty()) {
+        if (snapshot.confirmation() != null) {
+            String key = "confirmation/" + snapshot.confirmation().id();
+            var viewer = viewers(player.server).get(player.getUUID());
+            if (viewer != null && viewer.view.equals(view) && !viewer.lineKey.equals(key)) {
+                viewer.lineKey = key;
+                viewer.textPage = 0;
+                textPage = 0;
+            }
+            var parts = splitText(snapshot.confirmation().text());
+            int part = Math.min(textPage, parts.size() - 1);
+            line = new Line(key, null, -1, "", parts.get(part), part, parts.size());
+        } else if (!snapshot.transcript().isEmpty()) {
             var entry = snapshot.transcript().getLast();
             var speaker = entry.speaker() == null ? null : player.serverLevel().getEntity(entry.speaker());
             String key = id + "/" + entry.visit() + "/" + entry.exchange();
@@ -193,7 +204,7 @@ public final class ConversationPresentationService {
         int pages = pages(responses.size());
         page = Math.min(page, pages - 1);
         var session = new Session(id, snapshot.revision(), label(snapshot.identity().title()), snapshot.phase(), line, control, takeover,
-                controller == null ? "" : label(controller.getName().getString()), handover, slice(responses, page), check, label(outcome));
+                controller == null ? "" : label(controller.getName().getString()), handover, slice(responses, page), check, label(outcome), snapshot.confirmation() == null ? null : snapshot.confirmation().id());
         return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), page, pages, List.of(), session,
                 text(issue.isBlank() ? result.diagnostic() : issue));
     }

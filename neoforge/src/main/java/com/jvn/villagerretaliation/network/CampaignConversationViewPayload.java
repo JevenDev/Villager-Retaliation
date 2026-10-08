@@ -46,14 +46,20 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
     }
     public record Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
             boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
-            List<Response> responses, Check check, String outcome) {
+            List<Response> responses, Check check, String outcome, UUID confirmation) {
         public Session {
             handover = List.copyOf(handover);
             responses = List.copyOf(responses);
             if (id == null || revision < 1 || phase == null || handover.size() > 32 || responses.size() > PAGE_SIZE) {
                 throw new IllegalArgumentException("Invalid conversation session presentation");
             }
+            if ((phase == ConversationSession.Phase.CONFIRMATION) != (confirmation != null)) throw new IllegalArgumentException("Invalid conversation confirmation presentation");
             bounded(title, MAX_LABEL_LENGTH); bounded(controller, MAX_LABEL_LENGTH); bounded(outcome, MAX_LABEL_LENGTH);
+        }
+        public Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
+                boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
+                List<Response> responses, Check check, String outcome) {
+            this(id, revision, title, phase, line, canControl, canTakeControl, controller, handover, responses, check, outcome, null);
         }
     }
 
@@ -109,6 +115,8 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             buffer.writeVarInt(check.die()); buffer.writeBoolean(check.success());
         }
         buffer.writeUtf(value.outcome(), MAX_LABEL_LENGTH);
+        buffer.writeBoolean(value.confirmation() != null);
+        if (value.confirmation() != null) buffer.writeUUID(value.confirmation());
     }
 
     private static Session readSession(RegistryFriendlyByteBuf buffer) {
@@ -123,7 +131,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         var responses = new ArrayList<Response>();
         for (int count = count(buffer, PAGE_SIZE); count > 0; count--) responses.add(new Response(buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean()));
         Check check = buffer.readBoolean() ? new Check(buffer.readUtf(256), buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readBoolean()) : null;
-        return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, buffer.readUtf(MAX_LABEL_LENGTH));
+        return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean() ? buffer.readUUID() : null);
     }
 
     private static int count(RegistryFriendlyByteBuf buffer, int maximum) {

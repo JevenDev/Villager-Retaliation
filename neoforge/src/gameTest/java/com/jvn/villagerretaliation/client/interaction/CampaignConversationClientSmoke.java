@@ -36,6 +36,7 @@ public final class CampaignConversationClientSmoke {
     private static int phase;
     private static int ticks;
     private static int die;
+    private static java.util.UUID confirmation;
 
     private CampaignConversationClientSmoke() { }
 
@@ -69,7 +70,23 @@ public final class CampaignConversationClientSmoke {
             var controller = controller(screen);
             var session = controller.session();
             if (session == null) return;
-            if (phase == 2 && session.phase() == ConversationSession.Phase.EXCHANGES && ++ticks >= 35) {
+            if (phase == 2 && confirmation == null && session.phase() == ConversationSession.Phase.CONFIRMATION && ++ticks >= 20) {
+                require(checkTextIsImmediate(screen), "shared consequences are immediately readable");
+                confirmation = session.confirmation();
+                capture("quest-impact-confirmation"); choose(screen, localized("leave")); ticks = 0; phase = 13;
+            } else if (phase == 14 && verification.isDone() && session.phase() == ConversationSession.Phase.CONFIRMATION && ++ticks >= 20) {
+                verification.join(); verification = null;
+                require(confirmation.equals(session.confirmation()) && session.canTakeControl(), "reopening retains the pending approval");
+                capture("reopened-confirmation"); choose(screen, localized("take_control")); ticks = 0; phase = 15;
+            } else if (phase == 15 && session.canControl() && ++ticks >= 10) {
+                if (chooseIfPresent(screen, localized("more_consequences"))) { ticks = 0; return; }
+                capture("quest-impact-details"); choose(screen, localized("confirm")); ticks = 0; phase = 2;
+            } else if (phase == 6 && session.phase() == ConversationSession.Phase.CONFIRMATION && ++ticks >= 20) {
+                require(checkTextIsImmediate(screen), "irreversible decision is immediately readable");
+                capture("outcome-confirmation");
+                if (chooseIfPresent(screen, localized("more_consequences"))) { ticks = 0; return; }
+                capture("outcome-details"); choose(screen, localized("confirm")); ticks = 0;
+            } else if (phase == 2 && session.phase() == ConversationSession.Phase.EXCHANGES && ++ticks >= 35) {
                 require(session.line().speaker().equals(fixture.character()), "mentor portrait belongs to the saved speaker");
                 capture("mentor"); choose(screen, localized("continue")); ticks = 0; phase = 3;
             } else if (phase == 3 && session.line().speaker() != null && session.line().speaker().equals(playerId) && ++ticks >= 35) {
@@ -100,11 +117,24 @@ public final class CampaignConversationClientSmoke {
                 capture("reopened-check");
                 minecraft.setScreen(new DieFacesScreen()); ticks = 0; phase = 11;
             }
+        } else if (phase == 13 && minecraft.screen == null) {
+            verification = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var saved = ConversationService.view(player, fixture.session()).session();
+                require(saved != null && saved.controller() == null && saved.confirmation().id().equals(confirmation), "pending acceptance persists after closing");
+                require(player.totalExperience == 0, "unconfirmed quest applies no preceding effects");
+                require(ConversationPresentationService.tryOpen(player, (Villager) server.overworld().getEntity(fixture.character())), "pending confirmation reopens");
+            });
+            phase = 14;
         } else if (phase == 9 && minecraft.screen == null) {
             if (verification == null) verification = server.submit(() -> {
                 var player = server.getPlayerList().getPlayer(playerId);
                 var saved = ConversationService.view(player, fixture.session()).session();
                 require(saved != null && saved.controller() == null && saved.checks().get("convince").die() == die, "server retained the roll and released control");
+                require(player.totalExperience == 20, "confirmed quest and outcome effects each apply once");
+                var campaign = com.jvn.villagerretaliation.campaign.CampaignSavedData.get(player.serverLevel()).instances()
+                        .get(net.minecraft.resources.ResourceLocation.parse("campaign_fixture:characters"));
+                require(campaign.outcomes().get("decision").outcome().equals("help"), "confirmed decision commits before the check");
                 require(ConversationPresentationService.tryOpen(player, (Villager) server.overworld().getEntity(fixture.character())), "reopening saved check succeeds");
             });
             phase = 10;
@@ -132,6 +162,10 @@ public final class CampaignConversationClientSmoke {
     }
 
     private static void choose(VillagerInteractionScreen screen, String label) {
+        require(chooseIfPresent(screen, label), "Conversation option is unavailable: " + label);
+    }
+
+    private static boolean chooseIfPresent(VillagerInteractionScreen screen, String label) {
         try {
             var field = VillagerInteractionScreen.class.getDeclaredField("options"); field.setAccessible(true);
             for (var option : (List<?>) field.get(screen)) {
@@ -141,9 +175,9 @@ public final class CampaignConversationClientSmoke {
                 require(!(Boolean) locked.invoke(option), "requested option is enabled: " + label);
                 var action = option.getClass().getDeclaredMethod("action"); action.setAccessible(true);
                 ((Runnable) action.invoke(option)).run();
-                return;
+                return true;
             }
-            throw new IllegalStateException("Conversation option is unavailable: " + label);
+            return false;
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Conversation option could not be invoked", exception); }
     }
 

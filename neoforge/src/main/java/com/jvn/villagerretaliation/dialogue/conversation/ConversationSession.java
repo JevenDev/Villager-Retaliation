@@ -27,6 +27,9 @@ public final class ConversationSession {
     UUID controller;
     UUID actingPlayer;
     UUID questRun;
+    com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation;
+    UUID pendingChoice;
+    net.minecraft.nbt.CompoundTag consent = new net.minecraft.nbt.CompoundTag();
     final Set<UUID> participants = new LinkedHashSet<>();
     final Map<String, Speaker> speakers = new LinkedHashMap<>();
     final List<Line> transcript = new ArrayList<>();
@@ -64,6 +67,9 @@ public final class ConversationSession {
         controller = source.controller;
         actingPlayer = source.actingPlayer;
         questRun = source.questRun;
+        confirmation = source.confirmation;
+        pendingChoice = source.pendingChoice;
+        consent = source.consent.copy();
         participants.addAll(source.participants);
         speakers.putAll(source.speakers);
         transcript.addAll(source.transcript);
@@ -81,16 +87,16 @@ public final class ConversationSession {
     public Snapshot snapshot() {
         return new Snapshot(identity, revision, visit, node, phase, exchange, response, check, outcome,
                 controller, Set.copyOf(participants), ordered(speakers), List.copyOf(transcript),
-                List.copyOf(choices), ordered(checks), ordered(receipts), diagnostic);
+                List.copyOf(choices), ordered(checks), ordered(receipts), diagnostic, confirmation);
     }
 
     private static <K, V> Map<K, V> ordered(Map<K, V> values) {
         return Collections.unmodifiableMap(new LinkedHashMap<>(values));
     }
 
-    public enum Phase { NODE_EFFECTS, EXCHANGES, RESPONSES, RESPONSE_EFFECTS, CHECK, ROLLED, COMPLETE }
+    public enum Phase { NODE_EFFECTS, EXCHANGES, RESPONSES, RESPONSE_EFFECTS, CHECK, ROLLED, COMPLETE, CONFIRMATION }
     public enum ReceiptState { PREPARED, RESOLVED }
-    public enum Intent { ADVANCE, CHOOSE, ROLL, RESUME, JOIN, TAKE_CONTROL, HAND_OVER, RELEASE_CONTROL }
+    public enum Intent { ADVANCE, CHOOSE, ROLL, RESUME, JOIN, TAKE_CONTROL, HAND_OVER, RELEASE_CONTROL, CONFIRM, DECLINE }
 
     public record Identity(UUID id, ResourceLocation conversation, int definitionRevision, String fingerprint,
             ResourceLocation campaign, UUID campaignInstance, String campaignFingerprint,
@@ -131,5 +137,5 @@ public final class ConversationSession {
     public record Snapshot(Identity identity, long revision, long visit, String node, Phase phase,
             int exchange, String response, String check, String outcome, UUID controller,
             Set<UUID> participants, Map<String, Speaker> speakers, List<Line> transcript,
-            List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, String diagnostic) { }
+            List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation) { }
 }

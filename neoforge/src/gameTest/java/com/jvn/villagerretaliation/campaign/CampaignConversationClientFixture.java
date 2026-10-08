@@ -39,7 +39,24 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
         var resources = new ArrayList<QuestBundleTransactions.RawResource>();
         for (String file : List.of("quest.json", "locales/en_us.json", "scenes/character_greeting.json", "conversations/mentor.json")) {
             String path = "quests/campaign_fixture/characters/" + file;
-            resources.add(QuestBundleTransactions.RawResource.valid(0, "campaign_fixture", id(path), CampaignCharacterTestFixture.resource(path)));
+            var raw = CampaignCharacterTestFixture.resource(path);
+            if (file.equals("quest.json")) {
+                var stage = raw.getAsJsonArray("stages").get(0).getAsJsonObject();
+                stage.remove("on_enter");
+                stage.add("objectives", com.google.gson.JsonParser.parseString("[{\"id\":\"decide\",\"type\":\"choice\"}]"));
+            } else if (file.equals("conversations/mentor.json")) {
+                var node = raw.getAsJsonArray("nodes").get(0).getAsJsonObject();
+                node.add("effects", com.google.gson.JsonParser.parseString("""
+                        [{"id":"before_acceptance","action":{"type":"experience","amount":7}},
+                         {"id":"accept","action":{"type":"quest","quest":"campaign_fixture:characters","action":"start","required":true}}]
+                        """));
+                node.getAsJsonArray("responses").get(0).getAsJsonObject().add("effects", com.google.gson.JsonParser.parseString("""
+                        [{"id":"before_decision","action":{"type":"experience","amount":13}},
+                         {"id":"decide","action":{"type":"campaign_outcome","quest":"campaign_fixture:characters",
+                          "milestone":"decision","outcome":"help","operation_id":"mentor_decision"}}]
+                        """));
+            }
+            resources.add(QuestBundleTransactions.RawResource.valid(0, "campaign_fixture", id(path), raw));
         }
         var bundles = QuestBundleTransactions.compile(resources, QuestBundleTransactions.CompatibilityRules.empty());
         require(bundles.diagnostics().isEmpty(), "client fixture bundle compiles: " + bundles.diagnostics());
@@ -55,13 +72,21 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
                 Map.of(sceneId, scene.scene()), Map.of(), List.of(), bundles.bundles(), bundles.localization(), QuestRewardCatalog.fromBundles(bundles.bundles()), conversations.conversations());
         QuestContentCatalogs.installForTests(player.server, catalog, QuestContentCatalogs.loadReport(player.server));
         var campaign = CampaignCharacterTestFixture.resource("campaigns/characters/campaign.json");
+        campaign.add("milestones", com.google.gson.JsonParser.parseString("""
+                [{"id":"decision","chapter":"arrival","quest":"campaign_fixture:characters","stage":"visit","irreversible":true,
+                  "outcomes":[{"id":"help","title_key":"campaign_fixture.campaign.characters.help"},
+                              {"id":"leave","title_key":"campaign_fixture.campaign.characters.leave"}],
+                  "catch_up":{"quest":"campaign_fixture:characters","stage":"report"}}]
+                """));
         var location = campaign.getAsJsonArray("locations").get(0).getAsJsonObject();
         location.addProperty("source", "marker"); location.remove("search_radius");
         var origin = new JsonObject(); origin.addProperty("x", 0); origin.addProperty("y", 1); origin.addProperty("z", 0);
         location.add("origin", origin);
         var locale = QuestLocaleCatalog.read(CampaignCharacterTestFixture.resource("campaigns/characters/locales/en_us.json"));
         var campaigns = CampaignContentCatalog.compile(catalog, List.of(new CampaignContentCatalog.Source(id("campaigns/characters/campaign.json"), "campaign_fixture",
-                campaign, QuestLocaleCatalog.empty().overlay("en_us", locale.messages()), List.of())));
+                campaign, QuestLocaleCatalog.empty().overlay("en_us", locale.messages()).overlay("en_us", Map.of(
+                        "campaign_fixture.campaign.characters.help", new com.google.gson.JsonPrimitive("The mentor will help the village"),
+                        "campaign_fixture.campaign.characters.leave", new com.google.gson.JsonPrimitive("The village must find another guide"))), List.of())));
         require(campaigns.diagnostics().isEmpty(), "client fixture campaign compiles: " + campaigns.diagnostics());
         CampaignResources.installForTests(player.server, campaigns);
         var mode = new CompoundTag(); mode.putInt("DataVersion", 1); mode.putString("Mode", "campaign");

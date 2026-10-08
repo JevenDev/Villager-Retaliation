@@ -17,7 +17,7 @@ public record CampaignConversationRequestPayload(UUID viewId, UUID requestId, in
             throw new IllegalArgumentException("Invalid campaign conversation request");
         }
         if (action == Action.START ? session != null || conversation.isBlank() || argument.isBlank()
-                : !conversation.isEmpty() || action != Action.CHOOSE && action != Action.HAND_OVER && !argument.isEmpty()) {
+                : !conversation.isEmpty() || action != Action.CHOOSE && action != Action.HAND_OVER && action != Action.CONFIRM && action != Action.DECLINE && !argument.isEmpty()) {
             throw new IllegalArgumentException("Unexpected campaign conversation arguments");
         }
         if (action != Action.TOPICS && action != Action.START && action != Action.CLOSE && session == null) {
@@ -46,7 +46,7 @@ public record CampaignConversationRequestPayload(UUID viewId, UUID requestId, in
                 buffer.readUtf(256), buffer.readUtf(256), buffer.readVarInt(), buffer.readVarInt());
     }
 
-    public enum Action { TOPICS, START, VIEW, CLOSE, ADVANCE, CHOOSE, ROLL, RESUME, TAKE_CONTROL, HAND_OVER }
+    public enum Action { TOPICS, START, VIEW, CLOSE, ADVANCE, CHOOSE, ROLL, RESUME, TAKE_CONTROL, HAND_OVER, CONFIRM, DECLINE }
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }

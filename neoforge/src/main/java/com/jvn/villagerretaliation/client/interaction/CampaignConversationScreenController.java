@@ -32,7 +32,7 @@ public final class CampaignConversationScreenController {
         if (session() != null && payload.session() == null && !payload.diagnostic().isBlank()) {
             var prior = session();
             var unavailable = new CampaignConversationViewPayload.Session(prior.id(), prior.revision(), prior.title(), prior.phase(), prior.line(),
-                    false, false, prior.controller(), java.util.List.of(), prior.responses(), prior.check(), prior.outcome());
+                    false, false, prior.controller(), java.util.List.of(), prior.responses(), prior.check(), prior.outcome(), prior.confirmation());
             payload = new CampaignConversationViewPayload(payload.viewId(), payload.entityId(), payload.character(), state.page(), state.pageCount(),
                     java.util.List.of(), unavailable, payload.diagnostic());
         }
@@ -82,6 +82,16 @@ public final class CampaignConversationScreenController {
                     addPages(Action.VIEW);
                 }
                 case NODE_EFFECTS, RESPONSE_EFFECTS -> { if (session.canControl()) intent("conversation.retry", Action.RESUME, ""); }
+                case CONFIRMATION -> {
+                    if (session.canControl() && session.confirmation() != null) {
+                        if (!host.confirmationTextRead()) {
+                            host.option(host.translate("conversation.more_consequences"), host::readConfirmationText, false);
+                        } else if (session.line() != null && session.line().part() + 1 == session.line().parts()) {
+                            intent("conversation.confirm", Action.CONFIRM, session.confirmation().toString());
+                        }
+                        intent("conversation.decline", Action.DECLINE, session.confirmation().toString());
+                    }
+                }
                 case COMPLETE -> { }
             }
             if (dieAnimation.playing()) host.option(host.translate("conversation.skip_roll"), this::skipDieAnimation, false);
@@ -158,6 +168,8 @@ public final class CampaignConversationScreenController {
         UUID character();
         long now();
         default boolean animateChecks() { return true; }
+        default boolean confirmationTextRead() { return true; }
+        default void readConfirmationText() { }
         String translate(String key, Object... arguments);
         void send(CampaignConversationRequestPayload payload);
         void option(String label, Runnable action, boolean locked);

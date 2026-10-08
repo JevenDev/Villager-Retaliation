@@ -89,7 +89,8 @@ public final class ConversationService {
             require(session != null && member(player, session), "This conversation belongs to another player or party.");
             require(data.issue(sessionId).isBlank(), data.issue(sessionId));
             require(requestId != null && intent != null && argument != null && argument.length() <= 256, "Conversation intent is incomplete or too large.");
-            require(intent == ConversationSession.Intent.CHOOSE || intent == ConversationSession.Intent.HAND_OVER || argument.isEmpty(), "This conversation intent does not accept an argument.");
+            require(intent == ConversationSession.Intent.CHOOSE || intent == ConversationSession.Intent.HAND_OVER || intent == ConversationSession.Intent.CONFIRM
+                    || intent == ConversationSession.Intent.DECLINE || argument.isEmpty(), "This conversation intent does not accept an argument.");
             var request = new ConversationSession.Request(player.getUUID(), revision, intent, argument);
             var prior = session.requests.get(requestId);
             if (prior != null) {
@@ -126,11 +127,21 @@ public final class ConversationService {
                         session.response = response.id();
                         session.actingPlayer = player.getUUID();
                         session.questRun = questRun(player, definition.quest());
-                        session.choices.add(new ConversationSession.Choice(requestId, session.node, session.visit, response.id(), player.getUUID(),
-                                presentParticipants(player, session), player.serverLevel().getGameTime()));
-                        session.phase = ConversationSession.Phase.RESPONSE_EFFECTS;
-                        session.effect = 0;
+                        if (!ConversationConfirmations.prepare(player, session, response.effects(), requestId)) {
+                            selectResponse(player, session, requestId, response.id());
+                        }
                     }
+                    case CONFIRM -> {
+                        String issue = ConversationConfirmations.confirm(player, session, definition, argument);
+                        if (!issue.isBlank()) {
+                            session.requests.put(requestId, request);
+                            session.diagnostic = issue;
+                            save(player, data, session);
+                            var result = view(player, sessionId);
+                            return new Result(result.session(), result.responses(), issue);
+                        }
+                    }
+                    case DECLINE -> ConversationConfirmations.decline(session, argument);
                     case ROLL -> {
                         require(session.phase == ConversationSession.Phase.CHECK, "The conversation is not waiting for a check.");
                         var check = definition.checks().get(session.check);
@@ -149,7 +160,7 @@ public final class ConversationService {
             session.requests.put(requestId, request);
             session.diagnostic = "";
             save(player, data, session);
-            if (intent != ConversationSession.Intent.JOIN && intent != ConversationSession.Intent.HAND_OVER) ConversationRuntime.drive(player, sessionId);
+            if (intent != ConversationSession.Intent.JOIN && intent != ConversationSession.Intent.HAND_OVER && intent != ConversationSession.Intent.DECLINE) ConversationRuntime.drive(player, sessionId);
             return view(player, sessionId);
         } catch (Unavailable | ConversationSavedData.Conflict | IOException exception) {
             var result = view(player, sessionId);
@@ -181,6 +192,16 @@ public final class ConversationService {
             issue = session.controller == null ? "The conversation is paused until an authorized member takes control." : session.diagnostic;
         } catch (Unavailable exception) { issue = exception.getMessage(); }
         return new Result(session.snapshot(), List.copyOf(responses), issue);
+    }
+
+    static void selectResponse(ServerPlayer player, ConversationSession session, UUID request, String response) {
+        session.response = response;
+        session.actingPlayer = player.getUUID();
+        session.questRun = questRun(player, session.identity.quest());
+        session.choices.add(new ConversationSession.Choice(request, session.node, session.visit, response, player.getUUID(),
+                presentParticipants(player, session), player.serverLevel().getGameTime()));
+        session.phase = ConversationSession.Phase.RESPONSE_EFFECTS;
+        session.effect = 0;
     }
 
     static void advance(ServerPlayer player, ConversationSession session, ConversationDefinition definition) {
@@ -229,6 +250,11 @@ public final class ConversationService {
             var current = session.controller == null ? null : player.server.getPlayerList().getPlayer(session.controller);
             require(current == null || !member(current, session) || !CampaignAuthority.canControl(current) || !near(current, character(player, session)),
                     "The current controller must hand over the conversation explicitly.");
+        }
+        if (session.confirmation != null && !next.getUUID().equals(session.actingPlayer)) {
+            ConversationConfirmations.discard(session);
+            session.actingPlayer = next.getUUID();
+            session.questRun = questRun(next, session.identity.quest());
         }
         session.controller = next.getUUID();
         session.participants.add(next.getUUID());

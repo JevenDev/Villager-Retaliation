@@ -19,7 +19,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class ConversationSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 1;
+    public static final int CURRENT_DATA_VERSION = 2;
     static final String DATA_NAME = "villagerretaliation_conversations";
     private final Path directory;
     private Map<UUID, ConversationSession> sessions = Map.of();
@@ -50,10 +50,13 @@ public final class ConversationSavedData extends SavedData {
         var data = new ConversationSavedData(directory);
         if (tag.isEmpty() && Files.notExists(directory.resolve(DATA_NAME + ".dat"))) return data;
         try {
-            ConversationSessionCodec.require(ConversationSessionCodec.integer(tag, "DataVersion") == CURRENT_DATA_VERSION, "unsupported conversation save version");
+            int version = ConversationSessionCodec.integer(tag, "DataVersion");
+            ConversationSessionCodec.require(version >= 1 && version <= CURRENT_DATA_VERSION, "unsupported conversation save version");
             var sessions = new LinkedHashMap<UUID, ConversationSession>();
             for (var raw : ConversationSessionCodec.list(tag, "Sessions")) {
-                var session = ConversationSessionCodec.load((CompoundTag) raw);
+                var saved = ((CompoundTag) raw).copy();
+                if (version == 1) saved.put("Consent", new CompoundTag());
+                var session = ConversationSessionCodec.load(saved);
                 ConversationSessionCodec.require(sessions.putIfAbsent(session.identity.id(), session) == null, "duplicate conversation session identity");
             }
             data.install(sessions);

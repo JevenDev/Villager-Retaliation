@@ -105,6 +105,42 @@ public final class CampaignQuestAcceptanceService {
                 && approval.optionId.equals(optionId)) return false;
         var pending = requests(player);
         pending.remove(player.getUUID());
+        Preparation prepared;
+        try {
+            prepared = prepareSelection(context, starts, referenced, actions);
+        } catch (IOException exception) {
+            LogUtils.getLogger().error("Could not save campaign quest confirmation for {}", player.getUUID(), exception);
+            notice(context, "Campaign state could not be saved. Check world storage before retrying.");
+            return true;
+        }
+        if (!prepared.diagnostic().isBlank()) {
+            notice(context, prepared.diagnostic());
+            return true;
+        }
+        var confirmation = prepared.confirmation();
+        if (confirmation == null) return false;
+        UUID sessionId = VillagerConversationService.sessionId(player, context.villager());
+        if (sessionId == null) return true;
+        var impacts = new LinkedHashMap<ResourceLocation, CampaignQuestAcceptance>();
+        confirmation.consent().quests().forEach((id, entry) -> impacts.put(id, entry.acceptance()));
+        var request = new Request(confirmation.id(), 1L, player.getUUID(), context.villager().getUUID(), context.villager().getId(),
+                sessionId, optionId, confirmation.createdAt(), QuestContentCatalogs.current(player.server), confirmation.snapshots(),
+                impacts, confirmation.consent().decisions(), stillSelected, execute, confirmation.text());
+        pending.put(player.getUUID(), request);
+        send(player, request, true, confirmation.text());
+        return true;
+    }
+
+    public static Preparation prepareActions(DialogueContext context, List<VillagerActionDefinition> actions) throws IOException {
+        var starts = new LinkedHashSet<ResourceLocation>();
+        var referenced = new LinkedHashSet<ResourceLocation>();
+        collectActions(context, actions, starts, referenced);
+        return prepareSelection(context, starts, referenced, actions);
+    }
+
+    private static Preparation prepareSelection(DialogueContext context, Set<ResourceLocation> starts,
+            Set<ResourceLocation> referenced, List<VillagerActionDefinition> actions) throws IOException {
+        ServerPlayer player = context.player();
         var impacts = new LinkedHashMap<ResourceLocation, CampaignQuestAcceptance>();
         var descriptions = new ArrayList<String>();
         var decisions = new LinkedHashMap<UUID, CampaignOutcomeConsent>();
@@ -112,61 +148,49 @@ public final class CampaignQuestAcceptanceService {
             if (action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) continue;
             var prepared = CampaignOutcomeService.prepare(context, action);
             if (!prepared.diagnostic().isBlank() || prepared.applied()) {
-                notice(context, prepared.applied() ? "This shared outcome is already committed: " + prepared.title() : prepared.diagnostic());
-                return true;
+                return new Preparation(null, prepared.applied() ? "This shared outcome is already committed: " + prepared.title() : prepared.diagnostic());
             }
             if (prepared.requiresConfirmation()) {
                 var consent = prepared.consent();
                 var previous = decisions.putIfAbsent(consent.operationId(), consent);
                 if (previous != null && !previous.equals(consent)) {
-                    notice(context, "This choice contains conflicting outcomes for one operation. Ask the author to separate them.");
-                    return true;
+                    return new Preparation(null, "This choice contains conflicting outcomes for one operation. Ask the author to separate them.");
                 }
                 descriptions.add(prepared.title());
             }
         }
         if (actions.stream().filter(value -> value.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME).count() > 1) {
-            notice(context, "A choice can resolve only one shared milestone. Ask the author to separate these decisions.");
-            return true;
+            return new Preparation(null, "A choice can resolve only one shared milestone. Ask the author to separate these decisions.");
         }
         UUID requestId = UUID.randomUUID();
         long now = context.level().getGameTime();
-        try {
-            for (ResourceLocation questId : starts) {
-                var quest = VillagerQuestResources.quest(player.server, questId).orElse(null);
-                if (quest == null || !requiresConfirmation(context, quest)) continue;
-                String issue = CampaignQuestAccess.availabilityIssue(context, quest);
-                if (issue.isBlank()) issue = CampaignAuthority.controlIssue(player);
-                if (!issue.isBlank()) {
-                    notice(context, issue);
-                    return true;
-                }
-                var content = CampaignResources.current(player.server).campaigns().get(quest.campaign());
-                var instance = CampaignSavedData.get(context.level()).open(content, now);
-                String title = QuestContentCatalogs.current(player.server).localization()
-                        .plainText(context.locale(), quest.titleKey()).orElse(quest.title());
-                var fixed = new LinkedHashMap<String, String>();
-                for (var milestone : content.definition().milestones().values()) {
-                    if (!milestone.quest().equals(quest.id()) || !milestone.irreversible()
-                            || instance.outcomes().containsKey(milestone.id())) continue;
-                    var titles = new ArrayList<String>();
-                    for (var outcome : milestone.outcomes().values()) {
-                        titles.add(content.localization().plainText(context.locale(), outcome.titleKey()).orElse(outcome.id()));
-                    }
-                    descriptions.add(title + ": " + String.join(" / ", titles));
-                    if (milestone.outcomes().size() == 1) fixed.put(milestone.id(), milestone.outcomes().keySet().iterator().next());
-                }
-                impacts.put(questId, new CampaignQuestAcceptance(requestId, instance.instanceId(), instance.fingerprint(),
-                        instance.worldRevision(), now, fixed));
+        for (ResourceLocation questId : starts) {
+            var quest = VillagerQuestResources.quest(player.server, questId).orElse(null);
+            if (quest == null || !requiresConfirmation(context, quest)) continue;
+            String issue = CampaignQuestAccess.availabilityIssue(context, quest);
+            if (issue.isBlank()) issue = CampaignAuthority.controlIssue(player);
+            if (!issue.isBlank()) {
+                return new Preparation(null, issue);
             }
-        } catch (IOException exception) {
-            LogUtils.getLogger().error("Could not save campaign quest confirmation for {}", player.getUUID(), exception);
-            notice(context, "Campaign state could not be saved. Check world storage before retrying.");
-            return true;
+            var content = CampaignResources.current(player.server).campaigns().get(quest.campaign());
+            var instance = CampaignSavedData.get(context.level()).open(content, now);
+            String title = QuestContentCatalogs.current(player.server).localization()
+                    .plainText(context.locale(), quest.titleKey()).orElse(quest.title());
+            var fixed = new LinkedHashMap<String, String>();
+            for (var milestone : content.definition().milestones().values()) {
+                if (!milestone.quest().equals(quest.id()) || !milestone.irreversible()
+                        || instance.outcomes().containsKey(milestone.id())) continue;
+                var titles = new ArrayList<String>();
+                for (var outcome : milestone.outcomes().values()) {
+                    titles.add(content.localization().plainText(context.locale(), outcome.titleKey()).orElse(outcome.id()));
+                }
+                descriptions.add(title + ": " + String.join(" / ", titles));
+                if (milestone.outcomes().size() == 1) fixed.put(milestone.id(), milestone.outcomes().keySet().iterator().next());
+            }
+            impacts.put(questId, new CampaignQuestAcceptance(requestId, instance.instanceId(), instance.fingerprint(),
+                    instance.worldRevision(), now, fixed));
         }
-        if (impacts.isEmpty() && decisions.isEmpty()) return false;
-        UUID sessionId = VillagerConversationService.sessionId(player, context.villager());
-        if (sessionId == null) return true;
+        if (impacts.isEmpty() && decisions.isEmpty()) return new Preparation(null, "");
         var snapshots = new LinkedHashMap<ResourceLocation, CompoundTag>();
         var allReferences = new LinkedHashSet<>(referenced);
         allReferences.addAll(starts);
@@ -179,15 +203,31 @@ public final class CampaignQuestAcceptanceService {
                 : "This decision permanently changes the shared story for everyone, including players who are offline."
                         + "\n\n" + String.join("\n", descriptions) + "\n\nCommit this outcome?";
         if (text.length() > CampaignQuestConfirmationPayload.MAX_TEXT_LENGTH) {
-            notice(context, "This quest has too many shared consequences to display. Ask the author to split the quest.");
-            return true;
+            return new Preparation(null, "This quest has too many shared consequences to display. Ask the author to split the quest.");
         }
-        var request = new Request(requestId, 1L, player.getUUID(), context.villager().getUUID(), context.villager().getId(),
-                sessionId, optionId, now, QuestContentCatalogs.current(player.server), snapshots, impacts, decisions, stillSelected, execute, text);
-        pending.put(player.getUUID(), request);
-        send(player, request, true, text);
-        return true;
+        var entries = new LinkedHashMap<ResourceLocation, CampaignQuestConsent.Entry>();
+        impacts.forEach((id, acceptance) -> entries.put(id, new CampaignQuestConsent.Entry(acceptance, snapshots.get(id))));
+        var consent = new CampaignQuestConsent(player.getUUID(), context.villager().getUUID(), entries, decisions);
+        return new Preparation(new CampaignConfirmation(requestId, now, consent, snapshots, text), "");
     }
+
+    public static ResumeAccess confirmationAccess(DialogueContext context, CampaignConfirmation confirmation) {
+        var access = resumeAccess(context, confirmation.consent().save());
+        if (!access.allowed()) return access;
+        for (var entry : confirmation.snapshots().entrySet()) {
+            if (!entry.getValue().equals(snapshot(context.player(), entry.getKey()))) {
+                return new ResumeAccess(false, "Your quest progress changed. Review the current consequences again.");
+            }
+        }
+        for (var quest : confirmation.consent().quests().keySet()) {
+            if (!com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(context, quest, Set.of("available"))) {
+                return new ResumeAccess(false, "This quest is no longer available. Review the current choices.");
+            }
+        }
+        return new ResumeAccess(false, "");
+    }
+
+    public record Preparation(CampaignConfirmation confirmation, String diagnostic) { }
 
     public static boolean requiresConfirmation(DialogueContext context, QuestDefinition quest) {
         if (quest.campaign() == null) return false;

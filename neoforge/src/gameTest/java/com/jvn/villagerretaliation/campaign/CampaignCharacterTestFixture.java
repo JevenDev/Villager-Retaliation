@@ -66,6 +66,11 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
     }
 
     CampaignCharacterTestFixture(GameTestHelper helper, String fixtureName, String sceneName, List<String> additionalQuests) throws IOException {
+        this(helper, fixtureName, sceneName, additionalQuests, quest -> { }, campaign -> { });
+    }
+
+    CampaignCharacterTestFixture(GameTestHelper helper, String fixtureName, String sceneName, List<String> additionalQuests,
+            java.util.function.Consumer<JsonObject> questContent, java.util.function.Consumer<JsonObject> campaignContent) throws IOException {
         this.helper = helper;
         this.fixtureName = fixtureName;
         this.sceneName = sceneName;
@@ -85,7 +90,9 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         var resources = new ArrayList<QuestBundleTransactions.RawResource>();
         for (String file : List.of("quest.json", "locales/en_us.json", "scenes/" + sceneName + ".json")) {
             String path = "quests/campaign_fixture/" + fixtureName + "/" + file;
-            resources.add(QuestBundleTransactions.RawResource.valid(0, "campaign_fixture", id(path), resource(path)));
+            var content = resource(path);
+            if (file.equals("quest.json")) questContent.accept(content);
+            resources.add(QuestBundleTransactions.RawResource.valid(0, "campaign_fixture", id(path), content));
         }
         for (String quest : additionalQuests) {
             for (String file : List.of("quest.json", "locales/en_us.json")) {
@@ -103,6 +110,7 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
                 quests.objectiveEventQuestIds(), quests.factQuestIds(), quests.memoryEventQuestIds(), quests.exclusiveGroupQuestIds(),
                 quests.triggerEventQuestIds(), Map.of(sceneId, scene), Map.of(), List.of(), bundles.bundles(), bundles.localization(), QuestRewardCatalog.fromBundles(bundles.bundles()));
         var root = resource("campaigns/" + fixtureName + "/campaign.json");
+        campaignContent.accept(root);
         origin = helper.absolutePos(new BlockPos(1, 1, 1));
         var position = new JsonObject();
         position.addProperty("x", origin.getX());

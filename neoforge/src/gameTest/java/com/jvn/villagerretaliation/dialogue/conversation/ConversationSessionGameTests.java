@@ -182,6 +182,64 @@ public final class ConversationSessionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void legacySessionsMigrateWithoutInventingConsent(GameTestHelper helper) throws IOException {
+        try (var disk = new Disk()) {
+            var original = session(UUID.randomUUID());
+            disk.open().write(null, 0, original);
+            var saved = disk.read();
+            saved.putInt("DataVersion", 1);
+            first(saved).remove("Consent");
+            var restored = ConversationSavedData.load(saved, disk.directory);
+            helper.assertTrue(restored.diagnostic().isBlank(), "version one remains readable");
+            helper.assertValueEqual(restored.session(original.identity.id()).snapshot(), original.snapshot(), "migration preserves existing history");
+            helper.assertTrue(restored.session(original.identity.id()).consent.isEmpty(), "migration grants no approval");
+            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 2, "next save uses the explicit consent format");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void malformedConfirmationsStayDormantWithRecoverableData(GameTestHelper helper) throws IOException {
+        try (var disk = new Disk()) {
+            var session = session(UUID.randomUUID());
+            UUID request = UUID.randomUUID();
+            var quest = ResourceLocation.parse("campaign_fixture:characters");
+            var acceptance = new com.jvn.villagerretaliation.campaign.CampaignQuestAcceptance(UUID.randomUUID(), session.identity.campaignInstance(),
+                    "campaign-v1", 0, 0, Map.of());
+            var consent = new com.jvn.villagerretaliation.campaign.CampaignQuestConsent(session.actingPlayer, session.identity.character(),
+                    Map.of(quest, new com.jvn.villagerretaliation.campaign.CampaignQuestConsent.Entry(acceptance, new CompoundTag())));
+            session.confirmation = new com.jvn.villagerretaliation.campaign.CampaignConfirmation(acceptance.requestId(), 0, consent,
+                    Map.of(quest, new CompoundTag()), "Review the shared consequences.");
+            session.pendingChoice = request;
+            session.response = "accept";
+            session.phase = ConversationSession.Phase.CONFIRMATION;
+            session.requests.put(request, new ConversationSession.Request(session.actingPlayer, 1, ConversationSession.Intent.CHOOSE, "accept"));
+            var data = disk.open();
+            var opening = new ConversationSession(session);
+            opening.confirmation = null; opening.pendingChoice = null; opening.requests.clear(); opening.phase = ConversationSession.Phase.RESPONSES;
+            data.write(null, 0, opening);
+            session.revision = 2;
+            data.write(null, 1, session);
+            helper.assertValueEqual(disk.reload().session(session.identity.id()).confirmation, session.confirmation, "valid pending confirmation survives reload");
+            var original = disk.read();
+            for (Consumer<CompoundTag> corrupt : List.<Consumer<CompoundTag>>of(
+                    tag -> first(tag).remove("Consent"),
+                    tag -> first(tag).remove("Confirmation"),
+                    tag -> first(tag).putUUID("PendingChoice", UUID.randomUUID()),
+                    tag -> first(tag).getCompound("Confirmation").putInt("Version", 99),
+                    tag -> first(tag).getCompound("Confirmation").getList("Snapshots", 10).clear(),
+                    tag -> first(tag).getCompound("Confirmation").getCompound("Consent").putUUID("Player", UUID.randomUUID()),
+                    tag -> first(tag).put("Consent", consent.save()))) {
+                var broken = original.copy(); corrupt.accept(broken);
+                var dormant = ConversationSavedData.load(broken, disk.directory);
+                helper.assertFalse(dormant.diagnostic().isBlank(), "inconsistent confirmation cannot execute");
+                helper.assertValueEqual(dormant.save(new CompoundTag(), helper.getLevel().registryAccess()), broken, "repair retains every raw record");
+            }
+        }
+        helper.succeed();
+    }
+
     private static CompoundTag first(CompoundTag tag) { return tag.getList("Sessions", 10).getCompound(0); }
 
     private static ConversationSession session(UUID character) {

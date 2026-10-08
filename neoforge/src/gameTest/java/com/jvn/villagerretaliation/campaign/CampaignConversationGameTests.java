@@ -267,9 +267,24 @@ public final class CampaignConversationGameTests {
 
         Fixture(GameTestHelper helper) throws IOException { this(helper, false); }
 
-        Fixture(GameTestHelper helper, boolean replacement) throws IOException {
+        Fixture(GameTestHelper helper, boolean replacement) throws IOException { this(helper, replacement, false); }
+
+        Fixture(GameTestHelper helper, boolean replacement, boolean impact) throws IOException {
             this.helper = helper;
-            base = new CampaignCharacterTestFixture(helper, "characters", "character_greeting");
+            base = new CampaignCharacterTestFixture(helper, "characters", "character_greeting", List.of(), quest -> {
+                if (impact) {
+                    var stage = quest.getAsJsonArray("stages").get(0).getAsJsonObject();
+                    stage.remove("on_enter");
+                    stage.add("objectives", JsonParser.parseString("[{\"id\":\"decide\",\"type\":\"choice\"}]"));
+                }
+            }, campaign -> {
+                if (impact) campaign.add("milestones", JsonParser.parseString("""
+                        [{"id":"decision","chapter":"arrival","quest":"campaign_fixture:characters","stage":"visit","irreversible":true,
+                          "outcomes":[{"id":"help","title_key":"campaign_fixture.campaign.characters.mentor"},
+                                      {"id":"leave","title_key":"campaign_fixture.campaign.characters.home"}],
+                          "catch_up":{"quest":"campaign_fixture:characters","stage":"report"}}]
+                        """));
+            });
             storage = new ConversationTestStorage(helper.getLevel());
             priorParties = PartySavedData.get(helper.getLevel());
             base.server.overworld().getDataStorage().set("villagerretaliation_parties", new PartySavedData());

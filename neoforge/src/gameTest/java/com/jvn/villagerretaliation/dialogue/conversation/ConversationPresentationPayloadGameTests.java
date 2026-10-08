@@ -147,6 +147,48 @@ public final class ConversationPresentationPayloadGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void confirmationPresentationSubmitsOnlyTheAcknowledgedIdentity(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        UUID session = UUID.randomUUID(); UUID confirmation = UUID.randomUUID();
+        var line = new Line("confirmation/" + confirmation, null, -1, "", "Shared consequences", 0, 2);
+        var first = new Session(session, 9, "Guidance", ConversationSession.Phase.CONFIRMATION, line,
+                true, false, "Player", List.of(), List.of(), null, "", confirmation);
+        var message = new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), first, "");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            CampaignConversationViewPayload.STREAM_CODEC.encode(buffer, message);
+            helper.assertValueEqual(CampaignConversationViewPayload.STREAM_CODEC.decode(buffer), message, "confirmation identity survives the wire");
+            controller.accept(message);
+            controller.addSessionOptions();
+            helper.assertTrue(host.options.stream().noneMatch(option -> option.label.equals("conversation.confirm")), "all consequence pages precede approval");
+            host.options.clear();
+            var last = new Session(session, 9, "Guidance", ConversationSession.Phase.CONFIRMATION,
+                    new Line(line.key(), null, -1, "", "Final consequences", 1, 2), true, false, "Player", List.of(), List.of(), null, "", confirmation);
+            controller.accept(new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), last, ""));
+            host.read = false;
+            controller.addSessionOptions();
+            int sent = host.sent.size();
+            helper.assertTrue(host.options.stream().noneMatch(option -> option.label.equals("conversation.confirm")), "confirmation waits for visible text to be reviewed");
+            host.options.stream().filter(option -> option.label.equals("conversation.more_consequences")).findFirst().orElseThrow().action.run();
+            helper.assertValueEqual(host.sent.size(), sent, "reading consequences sends no approval");
+            host.options.clear(); controller.addSessionOptions();
+            host.options.stream().filter(option -> option.label.equals("conversation.confirm")).findFirst().orElseThrow().action.run();
+            var intent = host.sent.getLast();
+            helper.assertValueEqual(intent.action(), Action.CONFIRM, "approval submits server intent");
+            helper.assertValueEqual(intent.argument(), confirmation.toString(), "approval names only the displayed confirmation");
+            helper.assertValueEqual(intent.revision(), 9L, "approval uses the acknowledged session revision");
+            buffer.clear();
+            CampaignConversationRequestPayload.STREAM_CODEC.encode(buffer, intent);
+            helper.assertValueEqual(CampaignConversationRequestPayload.STREAM_CODEC.decode(buffer), intent, "confirmation request survives the wire");
+            helper.assertValueEqual(controller.session().phase(), ConversationSession.Phase.CONFIRMATION, "client waits for durable server approval");
+        } finally { buffer.release(); }
+        helper.succeed();
+    }
+
     private static CampaignConversationViewPayload message(CampaignConversationRequestPayload request, UUID id, long revision, String key, String text, boolean control) {
         var line = new Line(key, request.character(), request.entityId(), "Mira", text, 0, 1);
         var session = new Session(id, revision, "Guidance", ConversationSession.Phase.EXCHANGES, line, control, false, "Player", List.of(), List.of(), null, "");
@@ -159,6 +201,9 @@ public final class ConversationPresentationPayloadGameTests {
         final List<Option> options = new ArrayList<>();
         final List<String> texts = new ArrayList<>();
         long now;
+        boolean read = true;
+        @Override public boolean confirmationTextRead() { return read; }
+        @Override public void readConfirmationText() { read = true; }
         @Override public int entityId() { return 4; }
         @Override public UUID character() { return character; }
         @Override public long now() { return now; }

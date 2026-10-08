@@ -50,6 +50,9 @@ final class ConversationSessionCodec {
         if (session.controller != null) tag.putUUID("Controller", session.controller);
         tag.putUUID("ActingPlayer", session.actingPlayer);
         if (session.questRun != null) tag.putUUID("QuestRun", session.questRun);
+        tag.put("Consent", session.consent.copy());
+        if (session.confirmation != null) tag.put("Confirmation", session.confirmation.save());
+        if (session.pendingChoice != null) tag.putUUID("PendingChoice", session.pendingChoice);
         tag.put("Participants", players(session.participants));
         var speakers = new ListTag();
         session.speakers.values().forEach(speaker -> {
@@ -153,6 +156,21 @@ final class ConversationSessionCodec {
         session.diagnostic = string(tag, "Diagnostic");
         require(session.revision > 0 && session.revision < Long.MAX_VALUE && session.visit > 0 && session.visit < Long.MAX_VALUE
                 && session.exchange >= 0 && session.effect >= 0, "invalid conversation cursor");
+        session.consent = compound(tag, "Consent").copy();
+        if (!session.consent.isEmpty()) com.jvn.villagerretaliation.campaign.CampaignQuestConsent.load(session.consent);
+        if (tag.contains("Confirmation")) session.confirmation = com.jvn.villagerretaliation.campaign.CampaignConfirmation.load(compound(tag, "Confirmation"));
+        session.pendingChoice = optionalId(tag, "PendingChoice");
+        require((session.phase == ConversationSession.Phase.CONFIRMATION) == (session.confirmation != null)
+                && (session.confirmation == null || session.consent.isEmpty()), "conversation confirmation phase has inconsistent consent");
+        require(session.confirmation == null || session.confirmation.consent().playerId().equals(session.actingPlayer)
+                && session.confirmation.consent().providerId().equals(identity.character()), "conversation confirmation belongs to another actor");
+        require(session.pendingChoice == null || session.confirmation != null, "conversation choice has no pending confirmation");
+        if (!session.consent.isEmpty()) {
+            var consent = com.jvn.villagerretaliation.campaign.CampaignQuestConsent.load(session.consent);
+            require(consent.playerId().equals(session.actingPlayer) && consent.providerId().equals(identity.character())
+                    && (session.phase == ConversationSession.Phase.NODE_EFFECTS || session.phase == ConversationSession.Phase.RESPONSE_EFFECTS),
+                    "conversation approval belongs to another actor or execution phase");
+        }
         session.participants.clear();
         session.participants.addAll(players(list(tag, "Participants")));
         require(session.participants.contains(identity.owner()) && session.participants.contains(session.actingPlayer)
@@ -204,9 +222,16 @@ final class ConversationSessionCodec {
             var request = new ConversationSession.Request(uuid(value, "Player"), number(value, "Revision"),
                     ConversationSession.Intent.valueOf(text(value, "Intent")), string(value, "Argument"));
             require(request.argument().length() <= 256 && (request.intent() == ConversationSession.Intent.CHOOSE
-                    || request.intent() == ConversationSession.Intent.HAND_OVER || request.argument().isEmpty()), "invalid saved conversation intent");
+                    || request.intent() == ConversationSession.Intent.HAND_OVER || request.intent() == ConversationSession.Intent.CONFIRM
+                    || request.intent() == ConversationSession.Intent.DECLINE || request.argument().isEmpty()), "invalid saved conversation intent");
             require(request.revision() > 0 && request.revision() < session.revision && session.participants.contains(request.player())
                     && session.requests.putIfAbsent(uuid(value, "Id"), request) == null, "duplicate or invalid conversation request");
+        }
+        if (session.pendingChoice != null) {
+            var request = session.requests.get(session.pendingChoice);
+            require(request != null && request.intent() == ConversationSession.Intent.CHOOSE && request.player().equals(session.actingPlayer)
+                    && request.argument().equals(session.response) && session.choices.stream().noneMatch(choice -> choice.visit() == session.visit),
+                    "pending conversation choice does not match its request receipt");
         }
         session.choices.forEach(choice -> {
             var request = session.requests.get(choice.request());

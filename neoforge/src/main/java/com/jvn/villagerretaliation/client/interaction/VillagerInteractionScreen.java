@@ -6243,6 +6243,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private String campaignSpeakerName() {
         var session = this.campaignConversation.session();
         if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) return this.villagerName;
+        if (session.confirmation() != null) return translate("conversation.confirmation");
         if (session.check() != null) return translate("conversation.check");
         return session.line() == null || session.line().name().isBlank() ? session.title() : session.line().name();
     }
@@ -6256,6 +6257,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         @Override public long now() { return Util.getMillis(); }
         @Override public boolean animateChecks() { return !dialogueTextSpeed().instant() && CampaignDieRenderer.available(); }
+        @Override public boolean confirmationTextRead() {
+            return dialogueLineScroll >= maxInteractionDialogueLineScroll(wrappedInteractionDialogueLines(villagerDialogueText));
+        }
+        @Override public void readConfirmationText() {
+            int maximum = maxInteractionDialogueLineScroll(wrappedInteractionDialogueLines(villagerDialogueText));
+            dialogueLineScroll = Math.min(maximum, dialogueLineScroll + interactionDialogueVisibleLineCount());
+            rebuildOptionsKeepingListPosition();
+        }
         @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
         @Override public void send(com.jvn.villagerretaliation.network.CampaignConversationRequestPayload payload) { sendToServer(payload); }
         @Override public void option(String label, Runnable action, boolean locked) { options.add(DialogueOption.enabled(label, action, locked)); }
@@ -6264,9 +6273,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             else if (page == DialoguePage.CAMPAIGN_CONVERSATION || page == DialoguePage.TALK) rebuildOptionsKeepingListPosition();
             if (text != null) {
                 acceptVillagerDialogue(text, List.of());
-                if (campaignConversation.session() != null && campaignConversation.session().check() != null) {
+                if (campaignConversation.session() != null && (campaignConversation.session().check() != null || campaignConversation.session().confirmation() != null)) {
                     dialogueTextAnimationSkipped = true;
                     nextDialogueBlipVisibleCharacter = Integer.MAX_VALUE;
+                    if (campaignConversation.session().confirmation() != null) rebuildOptionsKeepingListPosition();
                 }
             }
         }
