@@ -1,0 +1,14 @@
+{
+  "processors": [
+    {
+      "processor_type": "villagerretaliation:campaign_owned_blocks",
+      "layout": "campaign_fixture:waystation",
+      "revision": 1,
+      "anchor": [2, 1, 2],
+      "cells": [
+        {"id": "floor", "position": [2, 0, 2]},
+        {"id": "entry", "position": [2, 1, 0]}
+      ]
+    }
+  ]
+}

@@ -43,6 +43,28 @@ public final class CampaignBlockOwnership {
         return ledger == null ? "" : ledger.diagnostic();
     }
 
+    static String claimGenerated(ServerLevel level, LevelChunk chunk, CampaignGeneratedBlock generated) {
+        if (!level.getServer().isSameThread() || !generated.dimension().equals(level.dimension().location())
+                || !chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(generated.position())))
+            return "Generated ownership does not belong to this chunk or server thread.";
+        var ledger = chunk.getData(OWNERSHIP);
+        if (!ledger.diagnostic().isBlank()) return ledger.diagnostic();
+        if (!chunk.getBlockState(generated.position()).equals(generated.expected()))
+            return "The generated block no longer matches its structure processor. Existing terrain was preserved.";
+        try {
+            var snapshot = CampaignBlockSnapshot.capture(level, chunk, generated.position());
+            var receipt = new Receipt(generated.position(), generated.site(), generated.operation(), snapshot, snapshot, State.APPLIED, "");
+            var prior = ledger.get(generated.position());
+            if (prior != null && (!prior.sameIdentity(receipt) || prior.state() != State.APPLIED))
+                return "Another operation already owns or changed this generated block.";
+            ledger.record(receipt);
+            chunk.setUnsaved(true);
+            return "";
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            return "The generated block or its data cannot be claimed. Restore its compatible structure definition.";
+        }
+    }
+
     public static Result reserve(ServerLevel level, Receipt requested) {
         var chunk = loaded(level, requested.position());
         if (chunk == null) return waiting("Campaign block ownership requires its loaded chunk on the server thread.");

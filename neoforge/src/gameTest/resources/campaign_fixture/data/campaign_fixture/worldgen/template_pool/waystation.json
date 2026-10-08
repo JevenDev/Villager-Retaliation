@@ -6,7 +6,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "campaign_fixture:waystation",
-        "processors": "minecraft:empty",
+        "processors": "campaign_fixture:owned_waystation",
         "projection": "rigid"
       }
     }

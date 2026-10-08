@@ -143,6 +143,9 @@ public final class CampaignStructureMarkerGameTests {
     public static void optionalWorldgenFixtureUsesNativeCodecsAndAValidPersistentMarkerTemplate(GameTestHelper helper) throws IOException {
         var ops = RegistryOps.create(JsonOps.INSTANCE, helper.getLevel().registryAccess());
         var pool = CampaignCharacterTestFixture.resource("worldgen/template_pool/waystation.json");
+        var element = pool.getAsJsonArray("elements").get(0).getAsJsonObject().getAsJsonObject("element");
+        helper.assertValueEqual(element.get("processors").getAsString(), "campaign_fixture:owned_waystation", "pool references its authored ownership processor");
+        element.add("processors", CampaignCharacterTestFixture.resource("worldgen/processor_list/owned_waystation.json"));
         helper.assertTrue(StructureTemplatePool.DIRECT_CODEC.parse(ops, pool).result().isPresent(), "optional template pool uses the native worldgen codec");
         var structure = CampaignCharacterTestFixture.resource("worldgen/structure/waystation.json");
         helper.assertValueEqual(structure.get("start_pool").getAsString(), "campaign_fixture:waystation", "structure references the packaged pool");
