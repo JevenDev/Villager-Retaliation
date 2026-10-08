@@ -145,9 +145,11 @@ final class ConversationRuntime {
         UUID run = receipt == null ? ConversationService.questRun(controller.server, actorId, action.questId()) : receipt.questRun();
         ConversationService.require(run == null || run.equals(ConversationService.questRun(controller.server, actorId, action.questId())), "The effect's original quest run changed.");
         ConversationService.require(!sharedOutcome || run != null, "The deciding player's original quest run is unavailable.");
+        String authority = CampaignAuthority.controlIssue(controller, actorId);
+        ConversationService.require(authority.isBlank(), authority);
         var context = VillagerInteractionService.createDialogueContext(actor.serverLevel(), actor, character);
-        var access = sharedOutcome ? CampaignQuestAcceptanceService.resumeAccess(context, actorId, session.consent)
-                : CampaignQuestAcceptanceService.resumeAccess(context, session.consent);
+        var controllerContext = VillagerInteractionService.createDialogueContext(controller.serverLevel(), controller, character);
+        var access = CampaignQuestAcceptanceService.resumeAccess(controllerContext, actorId, session.consent);
         ConversationService.require(access.allowed(), access.diagnostic());
         receipt = new ConversationSession.Receipt(key, actorId, run, action, ConversationSession.ReceiptState.PREPARED,
                 ActionResult.unavailable("Effect completion has not been saved.", VillagerActionRegistry.capabilities(action), VillagerActionResult.EMPTY));
@@ -157,9 +159,12 @@ final class ConversationRuntime {
         var replacements = session.replacements;
         var participants = session.decisionParticipants == null ? new net.minecraft.nbt.CompoundTag() : session.decisionParticipants.save();
         var outcomeActor = sharedOutcome ? new com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor(actorId, run) : null;
+        UUID sessionId = session.identity.id();
         CampaignQuestAcceptanceService.withConsent(session.consent, () -> applied[0] =
-                com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
-                        () -> VillagerActionRegistry.execute(context, action, replacements, outcomeActor)));
+                ConversationSceneExecution.withEffect(sessionId, key,
+                        () -> com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
+                                () -> CampaignAuthority.withController(controller, actorId,
+                                        () -> VillagerActionRegistry.execute(context, action, replacements, outcomeActor)))));
         var outcome = applied[0];
         if (outcome.suspended() && outcome.suspensionId() == null) outcome = ActionResult.failed("Suspended effect has no persistent dependency.", outcome.capabilities());
         session = data.session(session.identity.id());

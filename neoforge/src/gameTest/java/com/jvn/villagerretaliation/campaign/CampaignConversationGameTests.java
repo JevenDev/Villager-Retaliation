@@ -272,6 +272,11 @@ public final class CampaignConversationGameTests {
         Fixture(GameTestHelper helper, boolean replacement, boolean impact) throws IOException { this(helper, replacement, impact, false); }
 
         Fixture(GameTestHelper helper, boolean replacement, boolean impact, boolean fixedOutcome) throws IOException {
+            this(helper, replacement, impact, fixedOutcome, campaign -> { });
+        }
+
+        Fixture(GameTestHelper helper, boolean replacement, boolean impact, boolean fixedOutcome,
+                java.util.function.Consumer<JsonObject> campaignChanges) throws IOException {
             this.helper = helper;
             base = new CampaignCharacterTestFixture(helper, "characters", "character_greeting", List.of(), quest -> {
                 if (impact) {
@@ -287,6 +292,7 @@ public final class CampaignConversationGameTests {
                           "catch_up":{"quest":"campaign_fixture:characters","stage":"report"}}]
                         """));
                 if (impact && fixedOutcome) campaign.getAsJsonArray("milestones").get(0).getAsJsonObject().getAsJsonArray("outcomes").remove(1);
+                campaignChanges.accept(campaign);
             });
             storage = new ConversationTestStorage(helper.getLevel());
             priorParties = PartySavedData.get(helper.getLevel());

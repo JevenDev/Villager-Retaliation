@@ -30,7 +30,11 @@ public final class CampaignSceneApproval {
                 return new Access(null, "The scene approval and participation record belong to different players.");
             }
         }
-        var player = server.getPlayerList().getPlayer(consent.playerId());
+        var authority = scene.conversationEffect().isEmpty() ? null
+                : com.jvn.villagerretaliation.dialogue.conversation.ConversationSceneExecution.resolve(server, scene);
+        if (authority != null && !authority.diagnostic().isBlank()) return new Access(null, authority.diagnostic());
+        if (authority != null && !authority.actor().equals(consent.playerId())) return new Access(null, "The scene approval belongs to another conversation actor.");
+        var player = authority == null ? server.getPlayerList().getPlayer(consent.playerId()) : authority.controller();
         if (player == null) return new Access(null, "The player who approved this scene must reconnect before its effects can continue.");
         var quest = scene.owningQuestId();
         if (quest == null) quest = consent.quests().keySet().stream().findFirst().orElseGet(() -> consent.decisions().values().iterator().next().questId());
@@ -39,7 +43,7 @@ public final class CampaignSceneApproval {
             if (!(level.getEntity(provider) instanceof Villager villager)) continue;
             if (level != player.serverLevel()) return new Access(null, "The player who approved this scene must return to its character's dimension.");
             var context = VillagerInteractionService.createDialogueContext(level, player, villager);
-            var access = CampaignQuestAcceptanceService.resumeAccess(context, scene.campaignConsent());
+            var access = CampaignQuestAcceptanceService.resumeAccess(context, consent.playerId(), scene.campaignConsent());
             return new Access(access.allowed() ? context : null, access.diagnostic());
         }
         return new Access(null, "The scene is waiting for its approved campaign character.");

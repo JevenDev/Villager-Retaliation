@@ -32,6 +32,7 @@ public final class SceneInstance {
     private String campaignDiagnostic = "";
     private CompoundTag decisionParticipants = new CompoundTag();
     private CompoundTag campaignConsent = new CompoundTag();
+    private CompoundTag conversationEffect = new CompoundTag();
     private final Set<UUID> participants;
     private SceneState state;
     private String currentStep;
@@ -152,6 +153,10 @@ public final class SceneInstance {
     public UUID owningQuestInstance() {
         return owningQuestInstance;
     }
+
+    public CompoundTag conversationEffect() { return conversationEffect.copy(); }
+
+    public void conversationEffect(CompoundTag effect) { conversationEffect = effect.copy(); }
 
     public CompoundTag campaignConsent() { return campaignConsent.copy(); }
 
@@ -455,6 +460,7 @@ public final class SceneInstance {
         tag.putString("CampaignDiagnostic", campaignDiagnostic);
         if (!decisionParticipants.isEmpty()) tag.put("DecisionParticipants", decisionParticipants.copy());
         if (!campaignConsent.isEmpty()) tag.put("CampaignConsent", campaignConsent.copy());
+        if (!conversationEffect.isEmpty()) tag.put("ConversationEffect", conversationEffect.copy());
         tag.putLong("StartGameTime", startGameTime);
         tag.putLong("UpdateGameTime", updateGameTime);
         tag.putInt("RetryCount", retryCount);
@@ -531,6 +537,10 @@ public final class SceneInstance {
         value.campaignPausedAt = tag.contains("CampaignPausedAt", Tag.TAG_LONG) ? tag.getLong("CampaignPausedAt") : -1L;
         value.campaignPausedTicks = Math.max(0L, tag.getLong("CampaignPausedTicks"));
         value.campaignDiagnostic = tag.getString("CampaignDiagnostic");
+        value.conversationEffect = tag.getCompound("ConversationEffect").copy();
+        if (tag.contains("ConversationEffect") && (!tag.contains("ConversationEffect", Tag.TAG_COMPOUND) || value.conversationEffect.isEmpty())) {
+            value.conversationEffect.put("Unreadable", tag.get("ConversationEffect").copy());
+        }
         value.campaignConsent = tag.getCompound("CampaignConsent").copy();
         if (tag.contains("CampaignConsent") && (!tag.contains("CampaignConsent", Tag.TAG_COMPOUND) || value.campaignConsent.isEmpty())) {
             value.campaignConsent.put("Unreadable", tag.get("CampaignConsent").copy());

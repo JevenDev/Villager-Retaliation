@@ -310,10 +310,24 @@ public final class BuiltinSceneStepExecutors {
         String issue = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.issue(participants);
         if (!issue.isBlank()) return com.jvn.villagerretaliation.action.ActionResult.unavailable(issue,
                 VillagerActionRegistry.capabilities(action), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
+        var authority = execution.instance().conversationEffect().isEmpty() ? null
+                : com.jvn.villagerretaliation.dialogue.conversation.ConversationSceneExecution.resolve(execution.server(), execution.instance());
+        if (authority != null && !authority.diagnostic().isBlank()) return com.jvn.villagerretaliation.action.ActionResult.unavailable(authority.diagnostic(),
+                VillagerActionRegistry.capabilities(action), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
+        var progress = authority == null || action.questId() == null ? null
+                : com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(context.level()).get(authority.actor(), action.questId());
+        boolean shared = authority != null && action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME;
+        if (shared && progress == null) return com.jvn.villagerretaliation.action.ActionResult.unavailable("The deciding player's original quest run is unavailable.",
+                VillagerActionRegistry.capabilities(action), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
+        var actor = shared ? new com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor(authority.actor(), progress.questRunId()) : null;
+        java.util.function.Supplier<com.jvn.villagerretaliation.action.ActionResult> apply = () ->
+                com.jvn.villagerretaliation.dialogue.conversation.ConversationSceneExecution.withScene(execution.instance(),
+                        () -> VillagerActionRegistry.execute(context, action, java.util.Map.of(), actor));
         var result = new com.jvn.villagerretaliation.action.ActionResult[1];
         com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.withConsent(execution.instance().campaignConsent(),
                 () -> result[0] = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
-                        () -> VillagerActionRegistry.execute(context, action, java.util.Map.of())));
+                        () -> authority == null ? apply.get()
+                                : com.jvn.villagerretaliation.campaign.CampaignAuthority.withController(authority.controller(), authority.actor(), apply)));
         return result[0];
     }
 
@@ -339,9 +353,6 @@ public final class BuiltinSceneStepExecutors {
         }
 
         public SceneStepResult apply(SceneExecutionContext c) {
-            DialogueContext dialogue = context(c);
-            if (dialogue == null)
-                return actorUnavailable(c, "action context actors are unavailable");
             for (JsonElement raw : c.step().parameters().getAsJsonArray("actions")) {
                 JsonObject object = raw.getAsJsonObject();
                 String id = string(object, "id", "");
@@ -356,8 +367,22 @@ public final class BuiltinSceneStepExecutors {
                     return SceneStepResult.fail(
                             "action_invalid", "safe action " + id + " did not parse");
                 var action = parsed.getFirst();
-                SceneOperationReceipt.Kind kind = receiptKind(action);
                 SceneOperationReceipt previous = c.instance().receipts().get(c.operationId("action/" + id));
+                boolean recorded = !c.instance().conversationEffect().isEmpty() && previous != null
+                        && previous.settled() && !previous.actionResult().suspended();
+                DialogueContext dialogue = recorded ? null
+                        : c.instance().conversationEffect().isEmpty() ? context(c) : conversationContext(c, action);
+                if (dialogue == null && !recorded) {
+                    if (c.instance().conversationEffect().isEmpty()) return actorUnavailable(c, "action context actors are unavailable");
+                    if (c.preparedThisSession() && previous == null) c.record().putDurableValue("waiting_player_action", id);
+                    return SceneStepResult.waitUntil(c.gameTime() + 20L, "waiting for the original player and scene character");
+                }
+                SceneOperationReceipt.Kind kind = receiptKind(action);
+                boolean playerReturned = previous == null && id.equals(c.record().durableValues().get("waiting_player_action"));
+                if (playerReturned) {
+                    c = new SceneExecutionContext(c.server(), c.repository(), c.instance(), c.definition(),
+                            c.step(), c.record(), c.gameTime(), true);
+                }
                 boolean resuming = previous != null && previous.state() == SceneOperationReceipt.ReceiptState.WAITING;
                 UUID originatingScene = c.instance().id();
                 var execution = c;
@@ -380,6 +405,7 @@ public final class BuiltinSceneStepExecutors {
                 if (action.required() && !guarded.outcome().success()) {
                     return SceneStepResult.fail("required_action_failed", "action " + id + ": " + guarded.outcome().message());
                 }
+                if (playerReturned) c.record().putDurableValue("waiting_player_action", "");
                 if (resuming) {
                     // the persisted wait proves later batch actions have not run yet
                     c = new SceneExecutionContext(c.server(), c.repository(), c.instance(), c.definition(),
@@ -401,8 +427,15 @@ public final class BuiltinSceneStepExecutors {
 
         public SceneStepResult apply(SceneExecutionContext c) {
             DialogueContext dialogue = context(c);
-            if (dialogue == null)
-                return actorUnavailable(c, "quest transition context is unavailable");
+            if (dialogue == null) {
+                if (c.instance().conversationEffect().isEmpty()) return actorUnavailable(c, "quest transition context is unavailable");
+                if (c.preparedThisSession() && !c.instance().receipts().containsKey(c.operationId("quest_transition"))) {
+                    c.record().putDurableValue("waiting_player_transition", "true");
+                }
+                return SceneStepResult.waitUntil(c.gameTime() + 20L, "waiting for the original player and scene character");
+            }
+            boolean playerReturned = !c.instance().receipts().containsKey(c.operationId("quest_transition"))
+                    && "true".equals(c.record().durableValues().get("waiting_player_transition"));
             SceneQuestTransition transition;
             try {
                 transition = SceneQuestTransition.parse(c.step().parameters());
@@ -458,7 +491,8 @@ public final class BuiltinSceneStepExecutors {
                                     SceneLifecycleIntegration.withOriginatingScene(
                                             c.instance().id(),
                                             () ->
-                                                    executeAction(c, dialogue, parsed.getFirst())));
+                                                    executeAction(c, dialogue, parsed.getFirst())),
+                            playerReturned);
             if (guarded.ambiguous())
                 return SceneStepResult.block(
                         "quest_transition_ambiguous",
@@ -469,6 +503,7 @@ public final class BuiltinSceneStepExecutors {
             if (!guarded.outcome().success()) {
                 return SceneStepResult.fail("quest_transition_failed", guarded.outcome().message());
             }
+            if (playerReturned) c.record().putDurableValue("waiting_player_transition", "");
             return SceneStepResult.applied();
         }
 
@@ -538,6 +573,9 @@ public final class BuiltinSceneStepExecutors {
     }
 
     private static DialogueContext context(SceneExecutionContext c) {
+        if (!c.instance().conversationEffect().isEmpty()) {
+            return conversationContext(c, null);
+        }
         if (!c.instance().campaignConsent().isEmpty()) {
             return com.jvn.villagerretaliation.campaign.CampaignSceneApproval.resolve(c.server(), c.instance()).context();
         }
@@ -554,18 +592,23 @@ public final class BuiltinSceneStepExecutors {
             if (player == null && c.instance().owner().playerId() != null)
                 player = c.server().getPlayerList().getPlayer(c.instance().owner().playerId());
         }
-        Villager villager = null;
-        for (SceneActorBinding binding : c.instance().actorBindings().values()) {
-            Entity entity = find(c, binding);
-            if (entity instanceof Villager value) {
-                villager = value;
-                break;
-            }
-        }
+        Villager villager = firstVillager(c);
         return player == null || villager == null
                 ? null
                 : VillagerInteractionService.createDialogueContext(
                         player.serverLevel(), player, villager);
+    }
+
+    private static DialogueContext conversationContext(SceneExecutionContext c, VillagerActionDefinition action) {
+        return com.jvn.villagerretaliation.dialogue.conversation.ConversationSceneExecution.context(c.server(), c.instance(), action,
+                c.instance().campaignConsent().isEmpty() ? firstVillager(c) : null);
+    }
+
+    private static Villager firstVillager(SceneExecutionContext c) {
+        for (SceneActorBinding binding : c.instance().actorBindings().values()) {
+            if (find(c, binding) instanceof Villager villager) return villager;
+        }
+        return null;
     }
 
     private static Entity actor(SceneExecutionContext c, String alias) {

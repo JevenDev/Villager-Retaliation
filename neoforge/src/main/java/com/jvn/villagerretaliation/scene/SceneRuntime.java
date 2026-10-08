@@ -62,6 +62,7 @@ public final class SceneRuntime {
         if (result.created()) {
             result.instance().decisionParticipants(com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.capture());
             result.instance().campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
+            if (request.waitForResult()) result.instance().conversationEffect(com.jvn.villagerretaliation.dialogue.conversation.ConversationSceneExecution.capture());
         }
         result.instance().bindCampaign(CampaignQuestAccess.campaignFor(request.server(), request.questId()));
         data.changed();
