@@ -31,6 +31,7 @@ public final class SceneInstance {
     private long campaignPausedTicks;
     private String campaignDiagnostic = "";
     private CompoundTag decisionParticipants = new CompoundTag();
+    private CompoundTag campaignConsent = new CompoundTag();
     private final Set<UUID> participants;
     private SceneState state;
     private String currentStep;
@@ -151,6 +152,10 @@ public final class SceneInstance {
     public UUID owningQuestInstance() {
         return owningQuestInstance;
     }
+
+    public CompoundTag campaignConsent() { return campaignConsent.copy(); }
+
+    public void campaignConsent(CompoundTag consent) { campaignConsent = consent.copy(); }
 
     public CompoundTag decisionParticipants() { return decisionParticipants.copy(); }
 
@@ -449,6 +454,7 @@ public final class SceneInstance {
         tag.putLong("CampaignPausedTicks", campaignPausedTicks);
         tag.putString("CampaignDiagnostic", campaignDiagnostic);
         if (!decisionParticipants.isEmpty()) tag.put("DecisionParticipants", decisionParticipants.copy());
+        if (!campaignConsent.isEmpty()) tag.put("CampaignConsent", campaignConsent.copy());
         tag.putLong("StartGameTime", startGameTime);
         tag.putLong("UpdateGameTime", updateGameTime);
         tag.putInt("RetryCount", retryCount);
@@ -525,6 +531,10 @@ public final class SceneInstance {
         value.campaignPausedAt = tag.contains("CampaignPausedAt", Tag.TAG_LONG) ? tag.getLong("CampaignPausedAt") : -1L;
         value.campaignPausedTicks = Math.max(0L, tag.getLong("CampaignPausedTicks"));
         value.campaignDiagnostic = tag.getString("CampaignDiagnostic");
+        value.campaignConsent = tag.getCompound("CampaignConsent").copy();
+        if (tag.contains("CampaignConsent") && (!tag.contains("CampaignConsent", Tag.TAG_COMPOUND) || value.campaignConsent.isEmpty())) {
+            value.campaignConsent.put("Unreadable", tag.get("CampaignConsent").copy());
+        }
         value.decisionParticipants = tag.getCompound("DecisionParticipants").copy();
         if (tag.contains("DecisionParticipants") && (!tag.contains("DecisionParticipants", Tag.TAG_COMPOUND) || value.decisionParticipants.isEmpty())) {
             value.decisionParticipants.put("Unreadable", tag.get("DecisionParticipants").copy());

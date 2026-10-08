@@ -12,21 +12,23 @@ final class ConversationConfirmations {
 
     static boolean prepare(ServerPlayer player, ConversationSession session, List<ConversationDefinition.Effect> effects, UUID choice) throws IOException {
         var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
-        var prepared = CampaignQuestAcceptanceService.prepareActions(context, effects.stream().map(ConversationDefinition.Effect::action).toList());
+        if (session.questRun != null) ConversationService.require(session.questRun.equals(
+                ConversationService.questRun(player.server, session.actingPlayer, session.identity.quest())),
+                "The original quest run changed. Repair this conversation before reviewing its remaining effects.");
+        var prepared = CampaignQuestAcceptanceService.prepareActions(context, session.actingPlayer,
+                effects.stream().map(ConversationDefinition.Effect::action).toList());
         ConversationService.require(prepared.diagnostic().isBlank(), prepared.diagnostic());
         if (prepared.confirmation() == null) return false;
         session.confirmation = prepared.confirmation();
         session.pendingChoice = choice;
         session.phase = ConversationSession.Phase.CONFIRMATION;
-        session.actingPlayer = player.getUUID();
-        session.questRun = ConversationService.questRun(player, session.identity.quest());
         return true;
     }
 
     static String confirm(ServerPlayer player, ConversationSession session, ConversationDefinition definition, String id) {
         requirePending(session, id);
         var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
-        var access = CampaignQuestAcceptanceService.confirmationAccess(context, session.confirmation);
+        var access = CampaignQuestAcceptanceService.confirmationAccess(context, session.actingPlayer, session.confirmation);
         if (!access.allowed()) {
             if (!access.paused()) {
                 boolean entry = session.pendingChoice == null;
@@ -44,12 +46,16 @@ final class ConversationConfirmations {
         }
         session.consent = session.confirmation.acceptedConsent(player.serverLevel().getGameTime());
         UUID choice = session.pendingChoice;
-        if (choice == null) ConversationService.captureDecisionParticipants(player, session, session.confirmation.id());
+        if (choice == null && !continuesDecision(session)) ConversationService.captureDecisionParticipants(player, session, session.confirmation.id());
         session.confirmation = null;
         session.pendingChoice = null;
         if (choice == null) session.phase = ConversationSession.Phase.NODE_EFFECTS;
         else ConversationService.selectResponse(player, session, choice, session.response);
         return "";
+    }
+
+    static boolean continuesDecision(ConversationSession session) {
+        return session.decisionParticipants != null && session.decisionParticipants.player().equals(session.actingPlayer);
     }
 
     static void decline(ConversationSession session, String id) {

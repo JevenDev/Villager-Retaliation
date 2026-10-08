@@ -23,7 +23,7 @@ public final class CampaignOutcomeService {
         return prepare(context, action, context == null ? null : context.player().getUUID());
     }
 
-    private static Preparation prepare(DialogueContext context, VillagerActionDefinition action, UUID actor) {
+    static Preparation prepare(DialogueContext context, VillagerActionDefinition action, UUID actor) {
         if (context == null || action.questId() == null || action.campaignOutcome() == null) return unavailable("Campaign decision is missing its quest or outcome.");
         String issue = CampaignAuthority.controlIssue(context.player(), actor);
         if (!issue.isBlank()) return unavailable(issue);

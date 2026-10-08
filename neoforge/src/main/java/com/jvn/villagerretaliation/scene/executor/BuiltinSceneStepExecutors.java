@@ -304,13 +304,17 @@ public final class BuiltinSceneStepExecutors {
         }
     }
 
-    private static com.jvn.villagerretaliation.action.ActionResult executeAction(DialogueContext context,
-            VillagerActionDefinition action, net.minecraft.nbt.CompoundTag participants) {
+    private static com.jvn.villagerretaliation.action.ActionResult executeAction(SceneExecutionContext execution,
+            DialogueContext context, VillagerActionDefinition action) {
+        var participants = execution.instance().decisionParticipants();
         String issue = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.issue(participants);
         if (!issue.isBlank()) return com.jvn.villagerretaliation.action.ActionResult.unavailable(issue,
                 VillagerActionRegistry.capabilities(action), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
-        return com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
-                () -> VillagerActionRegistry.execute(context, action, java.util.Map.of()));
+        var result = new com.jvn.villagerretaliation.action.ActionResult[1];
+        com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.withConsent(execution.instance().campaignConsent(),
+                () -> result[0] = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
+                        () -> VillagerActionRegistry.execute(context, action, java.util.Map.of())));
+        return result[0];
     }
 
     private static final class ActionBatch extends Base {
@@ -356,7 +360,7 @@ public final class BuiltinSceneStepExecutors {
                 SceneOperationReceipt previous = c.instance().receipts().get(c.operationId("action/" + id));
                 boolean resuming = previous != null && previous.state() == SceneOperationReceipt.ReceiptState.WAITING;
                 UUID originatingScene = c.instance().id();
-                var decisionParticipants = c.instance().decisionParticipants();
+                var execution = c;
                 var guarded =
                         SceneReceiptGuard.applyActionOnce(
                                 c,
@@ -364,7 +368,8 @@ public final class BuiltinSceneStepExecutors {
                                 kind,
                                 () ->
                                         SceneLifecycleIntegration.withOriginatingScene(originatingScene, () ->
-                                                executeAction(dialogue, action, decisionParticipants)));
+                                                executeAction(execution, dialogue, action)),
+                                com.jvn.villagerretaliation.campaign.CampaignSceneApproval.canRecover(c.instance(), action));
                 if (guarded.ambiguous())
                     return SceneStepResult.block(
                             "action_ambiguous",
@@ -453,10 +458,7 @@ public final class BuiltinSceneStepExecutors {
                                     SceneLifecycleIntegration.withOriginatingScene(
                                             c.instance().id(),
                                             () ->
-                                                    executeAction(
-                                                            dialogue,
-                                                            parsed.getFirst(),
-                                                            c.instance().decisionParticipants())));
+                                                    executeAction(c, dialogue, parsed.getFirst())));
             if (guarded.ambiguous())
                 return SceneStepResult.block(
                         "quest_transition_ambiguous",
@@ -536,6 +538,9 @@ public final class BuiltinSceneStepExecutors {
     }
 
     private static DialogueContext context(SceneExecutionContext c) {
+        if (!c.instance().campaignConsent().isEmpty()) {
+            return com.jvn.villagerretaliation.campaign.CampaignSceneApproval.resolve(c.server(), c.instance()).context();
+        }
         ServerPlayer player = null;
         var decision = c.instance().decisionParticipants();
         if (!decision.isEmpty()) {

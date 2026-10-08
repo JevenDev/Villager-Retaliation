@@ -132,21 +132,32 @@ public final class CampaignQuestAcceptanceService {
     }
 
     public static Preparation prepareActions(DialogueContext context, List<VillagerActionDefinition> actions) throws IOException {
+        return prepareActions(context, context.player().getUUID(), actions);
+    }
+
+    public static Preparation prepareActions(DialogueContext context, UUID actor, List<VillagerActionDefinition> actions) throws IOException {
         var starts = new LinkedHashSet<ResourceLocation>();
         var referenced = new LinkedHashSet<ResourceLocation>();
         collectActions(context, actions, starts, referenced);
-        return prepareSelection(context, starts, referenced, actions);
+        return prepareSelection(context, starts, referenced, actions, actor);
     }
 
     private static Preparation prepareSelection(DialogueContext context, Set<ResourceLocation> starts,
             Set<ResourceLocation> referenced, List<VillagerActionDefinition> actions) throws IOException {
+        return prepareSelection(context, starts, referenced, actions, context.player().getUUID());
+    }
+
+    private static Preparation prepareSelection(DialogueContext context, Set<ResourceLocation> starts,
+            Set<ResourceLocation> referenced, List<VillagerActionDefinition> actions, UUID actor) throws IOException {
         ServerPlayer player = context.player();
+        DialogueContext personal = starts.isEmpty() ? null : personalContext(context, actor);
+        if (!starts.isEmpty() && personal == null) return new Preparation(null, "The original player must return before accepting another personal quest.");
         var impacts = new LinkedHashMap<ResourceLocation, CampaignQuestAcceptance>();
         var descriptions = new ArrayList<String>();
         var decisions = new LinkedHashMap<UUID, CampaignOutcomeConsent>();
         for (var action : actions) {
             if (action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) continue;
-            var prepared = CampaignOutcomeService.prepare(context, action);
+            var prepared = CampaignOutcomeService.prepare(context, action, actor);
             if (!prepared.diagnostic().isBlank() || prepared.applied()) {
                 return new Preparation(null, prepared.applied() ? "This shared outcome is already committed: " + prepared.title() : prepared.diagnostic());
             }
@@ -166,9 +177,9 @@ public final class CampaignQuestAcceptanceService {
         long now = context.level().getGameTime();
         for (ResourceLocation questId : starts) {
             var quest = VillagerQuestResources.quest(player.server, questId).orElse(null);
-            if (quest == null || !requiresConfirmation(context, quest)) continue;
-            String issue = CampaignQuestAccess.availabilityIssue(context, quest);
-            if (issue.isBlank()) issue = CampaignAuthority.controlIssue(player);
+            if (quest == null || !requiresConfirmation(personal, quest)) continue;
+            String issue = CampaignQuestAccess.availabilityIssue(personal, quest);
+            if (issue.isBlank()) issue = CampaignAuthority.controlIssue(player, actor);
             if (!issue.isBlank()) {
                 return new Preparation(null, issue);
             }
@@ -195,7 +206,7 @@ public final class CampaignQuestAcceptanceService {
         var allReferences = new LinkedHashSet<>(referenced);
         allReferences.addAll(starts);
         decisions.values().forEach(value -> allReferences.add(value.questId()));
-        allReferences.forEach(id -> snapshots.put(id, snapshot(player, id)));
+        allReferences.forEach(id -> snapshots.put(id, snapshot(context.level(), actor, id)));
         String text = decisions.isEmpty()
                 ? "This quest can permanently change the shared world for everyone, including players who are offline."
                         + "\n\n" + String.join("\n", descriptions)
@@ -207,24 +218,37 @@ public final class CampaignQuestAcceptanceService {
         }
         var entries = new LinkedHashMap<ResourceLocation, CampaignQuestConsent.Entry>();
         impacts.forEach((id, acceptance) -> entries.put(id, new CampaignQuestConsent.Entry(acceptance, snapshots.get(id))));
-        var consent = new CampaignQuestConsent(player.getUUID(), context.villager().getUUID(), entries, decisions);
+        var consent = new CampaignQuestConsent(actor, context.villager().getUUID(), entries, decisions);
         return new Preparation(new CampaignConfirmation(requestId, now, consent, snapshots, text), "");
     }
 
     public static ResumeAccess confirmationAccess(DialogueContext context, CampaignConfirmation confirmation) {
-        var access = resumeAccess(context, confirmation.consent().save());
+        return confirmationAccess(context, context.player().getUUID(), confirmation);
+    }
+
+    public static ResumeAccess confirmationAccess(DialogueContext context, UUID actor, CampaignConfirmation confirmation) {
+        var access = resumeAccess(context, actor, confirmation.consent().save());
         if (!access.allowed()) return access;
         for (var entry : confirmation.snapshots().entrySet()) {
-            if (!entry.getValue().equals(snapshot(context.player(), entry.getKey()))) {
+            if (!entry.getValue().equals(snapshot(context.level(), actor, entry.getKey()))) {
                 return new ResumeAccess(false, "Your quest progress changed. Review the current consequences again.");
             }
         }
         for (var quest : confirmation.consent().quests().keySet()) {
-            if (!com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(context, quest, Set.of("available"))) {
+            var personal = personalContext(context, actor);
+            if (personal == null) return new ResumeAccess(true, "The original player must return before accepting another personal quest.");
+            if (!com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(personal, quest, Set.of("available"))) {
                 return new ResumeAccess(false, "This quest is no longer available. Review the current choices.");
             }
         }
         return new ResumeAccess(false, "");
+    }
+
+    private static DialogueContext personalContext(DialogueContext controller, UUID actor) {
+        if (actor.equals(controller.player().getUUID())) return controller;
+        var player = controller.player().server.getPlayerList().getPlayer(actor);
+        return player == null || player.serverLevel() != controller.level() ? null
+                : VillagerInteractionService.createDialogueContext(player.serverLevel(), player, controller.villager());
     }
 
     public record Preparation(CampaignConfirmation confirmation, String diagnostic) { }

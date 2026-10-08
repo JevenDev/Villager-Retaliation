@@ -16,6 +16,11 @@ public final class SceneReceiptGuard {
     }
     public static ActionApplyResult applyActionOnce(SceneExecutionContext context, String suffix,
             SceneOperationReceipt.Kind kind, Supplier<ActionResult> effect) {
+        return applyActionOnce(context, suffix, kind, effect, false);
+    }
+
+    public static ActionApplyResult applyActionOnce(SceneExecutionContext context, String suffix,
+            SceneOperationReceipt.Kind kind, Supplier<ActionResult> effect, boolean recoverPrepared) {
         SceneOperationReceipt receipt = context.prepareReceipt(suffix, kind);
         if (receipt.actionResult().suspended()) {
             ActionResult waiting = receipt.actionResult();
@@ -33,7 +38,7 @@ public final class SceneReceiptGuard {
             }
             return new ActionApplyResult(receipt.actionResult(), receipt, false);
         }
-        if (!context.preparedThisSession()) {
+        if (!context.preparedThisSession() && !recoverPrepared) {
             return new ActionApplyResult(ActionResult.failed("effect receipt is ambiguous after reload", Set.of()),
                     receipt, true);
         }

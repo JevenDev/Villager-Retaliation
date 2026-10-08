@@ -252,7 +252,8 @@ public final class ConversationService {
             require(current == null || !member(current, session) || !CampaignAuthority.canControl(current) || !near(current, character(player, session)),
                     "The current controller must hand over the conversation explicitly.");
         }
-        if (session.confirmation != null && !next.getUUID().equals(session.actingPlayer)) {
+        if (session.confirmation != null && !next.getUUID().equals(session.actingPlayer)
+                && (session.pendingChoice != null || !ConversationConfirmations.continuesDecision(session))) {
             ConversationConfirmations.discard(session);
             session.actingPlayer = next.getUUID();
             session.questRun = questRun(next, session.identity.quest());
