@@ -80,6 +80,12 @@ public final class VillagerInteractionScreenOpener {
         VillagerInteractionService.sendPersonalRoutineVillagerChat(player, villager, greetingText);
     }
 
+    public static void openCampaign(ServerPlayer player, Villager villager) {
+        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager);
+        trySendToPlayer(player, createPayload(player.serverLevel(), player, villager, VillagerDialogueService.moodFor(context),
+                context.primaryMood(), false, false, false, List.of()));
+    }
+
     public static void openForced(
             ServerPlayer player,
             Villager villager,

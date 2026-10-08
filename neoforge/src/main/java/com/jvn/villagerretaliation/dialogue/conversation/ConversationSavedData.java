@@ -88,7 +88,21 @@ public final class ConversationSavedData extends SavedData {
     }
 
     synchronized java.util.List<UUID> controlledBy(UUID player) {
-        return maintenance.stream().filter(id -> player.equals(sessions.get(id).controller)).toList();
+        var ids = new java.util.LinkedHashSet<UUID>();
+        maintenance.stream().filter(id -> player.equals(sessions.get(id).controller)).forEach(ids::add);
+        pending.values().stream().filter(session -> player.equals(session.controller)).forEach(session -> ids.add(session.identity.id()));
+        return java.util.List.copyOf(ids);
+    }
+
+    synchronized boolean pausePendingController(UUID id, UUID player, String reason) {
+        var candidate = pending.get(id);
+        if (candidate == null || !player.equals(candidate.controller)) return false;
+        candidate = new ConversationSession(candidate);
+        candidate.controller = null;
+        candidate.diagnostic = reason;
+        candidate.revision++;
+        pending.put(id, candidate);
+        return true;
     }
 
     synchronized UUID activeCharacter(UUID character) {

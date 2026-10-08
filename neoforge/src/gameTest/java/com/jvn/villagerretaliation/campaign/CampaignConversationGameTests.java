@@ -255,7 +255,7 @@ public final class CampaignConversationGameTests {
         helper.succeed();
     }
 
-    private static final class Fixture implements AutoCloseable {
+    static final class Fixture implements AutoCloseable {
         final GameTestHelper helper;
         final CampaignCharacterTestFixture base;
         final ConversationTestStorage storage;
@@ -265,12 +265,24 @@ public final class CampaignConversationGameTests {
         final Villager mentor;
         JsonObject graph;
 
-        Fixture(GameTestHelper helper) throws IOException {
+        Fixture(GameTestHelper helper) throws IOException { this(helper, false); }
+
+        Fixture(GameTestHelper helper, boolean replacement) throws IOException {
             this.helper = helper;
             base = new CampaignCharacterTestFixture(helper, "characters", "character_greeting");
             storage = new ConversationTestStorage(helper.getLevel());
             priorParties = PartySavedData.get(helper.getLevel());
             base.server.overworld().getDataStorage().set("villagerretaliation_parties", new PartySavedData());
+            if (replacement) {
+                var campaign = base.raw();
+                var role = campaign.getAsJsonArray("characters").get(0).getAsJsonObject();
+                var successor = role.deepCopy();
+                successor.addProperty("id", "successor");
+                campaign.getAsJsonArray("characters").add(successor);
+                role.addProperty("loss_policy", "replacement");
+                role.addProperty("replacement_role", "successor");
+                base.install(campaign);
+            }
             mentor = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
             mentor.setNoAi(true);
             helper.assertValueEqual(base.resolve().entity(), mentor, "fixture binds the mentor");
@@ -297,8 +309,9 @@ public final class CampaignConversationGameTests {
             var catalog = new QuestContentCatalog(old.generation() + 1, old.compiledQuestCatalog(), old.dialogueCatalog(), old.quests(),
                     old.objectiveEventQuestIds(), old.factQuestIds(), old.memoryEventQuestIds(), old.exclusiveGroupQuestIds(), old.triggerEventQuestIds(),
                     old.scenes(), old.encounters(), old.pools(), old.bundles(), old.localization(), old.rewards(), conversations);
+            var campaigns = CampaignResources.current(base.server).campaigns();
             QuestContentCatalogs.installForTests(base.server, catalog, base.report);
-            CampaignResources.installForTests(base.server, new CampaignContentCatalog(catalog, base.campaigns.campaigns(), List.of()));
+            CampaignResources.installForTests(base.server, new CampaignContentCatalog(catalog, campaigns, List.of()));
         }
 
         void party(ServerPlayer leader, ServerPlayer member) {
@@ -331,6 +344,8 @@ public final class CampaignConversationGameTests {
 
         @Override public void close() throws IOException {
             for (var player : players) {
+                com.jvn.villagerretaliation.dialogue.conversation.ConversationPresentationService.onLogout(
+                        new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent(player));
                 VillagerConversationService.endForPlayer(player, false);
                 PartyService.leaveParty(player);
                 base.server.getPlayerList().remove(player);

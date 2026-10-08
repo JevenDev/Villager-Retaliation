@@ -328,6 +328,9 @@ public final class VillagerInteractionService {
             return InteractionResult.CONSUME;
         }
 
+        if (com.jvn.villagerretaliation.dialogue.conversation.ConversationPresentationService.tryOpen(player, villager)) {
+            return InteractionResult.CONSUME;
+        }
         if (!VillagerConversationService.start(player, villager)) {
             sendVillagerNotice(player, villager, "interaction.busy");
             return InteractionResult.FAIL;

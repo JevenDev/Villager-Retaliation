@@ -84,6 +84,7 @@ public final class ConversationService {
         if (!player.server.isSameThread()) return new Result(null, List.of(), "Conversation requests require the server thread.");
         var data = ConversationSavedData.get(player.serverLevel());
         try {
+            require(data.diagnostic().isBlank(), data.diagnostic());
             var session = data.session(sessionId);
             require(session != null && member(player, session), "This conversation belongs to another player or party.");
             require(data.issue(sessionId).isBlank(), data.issue(sessionId));
@@ -97,6 +98,14 @@ public final class ConversationService {
             }
             require(session.revision == revision, "The conversation changed. Refresh before choosing again.");
             require(session.active(), "This conversation has already reached its outcome.");
+            if (intent == ConversationSession.Intent.RELEASE_CONTROL) {
+                require(player.getUUID().equals(session.controller), "Only the current controller can release this conversation.");
+                session.controller = null;
+                session.requests.put(requestId, request);
+                session.diagnostic = "";
+                save(player, data, session);
+                return view(player, sessionId);
+            }
             var definition = definition(player.server, session);
             var character = character(player, session);
             require(near(player, character), "Return to the conversation to continue.");
@@ -296,17 +305,23 @@ public final class ConversationService {
 
     private static void pauseController(MinecraftServer server, UUID player, String reason) {
         var data = ConversationSavedData.get(server.overworld());
-        for (UUID id : data.controlledBy(player)) pause(server, data, id, reason);
+        for (UUID id : data.controlledBy(player)) pause(server, data, id, player, reason);
     }
 
-    private static void pause(MinecraftServer server, ConversationSavedData data, UUID id, String reason) {
-        if (!data.issue(id).isBlank()) return;
+    private static void pause(MinecraftServer server, ConversationSavedData data, UUID id, UUID controller, String reason) {
+        if (data.pausePendingController(id, controller, reason) || !data.issue(id).isBlank()) return;
         var session = data.session(id);
+        if (session == null || !session.active() || !controller.equals(session.controller)) return;
         session.controller = null;
         session.diagnostic = reason;
         long revision = session.revision++;
         try { data.write(server.overworld(), revision, session); }
         catch (IOException exception) { com.mojang.logging.LogUtils.getLogger().warn("Conversation {} is waiting to save its paused controller", id, exception); }
+    }
+
+    public static void releasePresentationControl(ServerPlayer player, UUID id) {
+        if (!player.server.isSameThread()) throw new IllegalStateException("Conversation ownership requires the server thread");
+        pause(player.server, ConversationSavedData.get(player.serverLevel()), id, player.getUUID(), "Controller left the conversation.");
     }
 
     public static boolean isCharacterReserved(Villager character) {
@@ -329,7 +344,7 @@ public final class ConversationService {
             if (session.controller == null || !data.issue(id).isBlank()) continue;
             var player = server.getPlayerList().getPlayer(session.controller);
             if (player == null || !member(player, session) || !CampaignAuthority.canControl(player)) {
-                pause(server, data, id, "Controller is unavailable or no longer has permission.");
+                pause(server, data, id, session.controller, "Controller is unavailable or no longer has permission.");
                 continue;
             }
             if (session.phase != ConversationSession.Phase.NODE_EFFECTS && session.phase != ConversationSession.Phase.RESPONSE_EFFECTS) continue;

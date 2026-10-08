@@ -376,6 +376,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private final EnumMap<DialoguePage, VillagerInteractionScreenState.OptionListPosition> rememberedPageOptionPositions =
             new EnumMap<>(DialoguePage.class);
+    private final CampaignConversationScreenController campaignConversation = new CampaignConversationScreenController(new CampaignConversationHost());
     private DialoguePage page = DialoguePage.ROOT;
     private com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload campaignConfirmation;
     private DialoguePage campaignReturnPage = DialoguePage.ROOT;
@@ -647,6 +648,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             finishClosingAnimation();
             return;
         }
+        if (!this.forcedDialogue && !this.clipboardMenu && !this.closingWithAnimation) this.campaignConversation.tick();
         this.giftLimitFeedback.tick();
         tickSkillsProfileKeepAlive();
         updateDialogueMouthAnimation();
@@ -1027,6 +1029,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         if (!this.replacingFromServer) {
+            this.campaignConversation.close();
             VillagerChatEffectRenderer.startReappearFade();
             ClientVillagerConversationState.clear();
         }
@@ -1163,6 +1166,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     @Override
+    public void acceptCampaignConversation(com.jvn.villagerretaliation.network.CampaignConversationViewPayload payload) {
+        if (this.forcedDialogue || this.clipboardMenu || this.closingWithAnimation) return;
+        clearDialogueMouthAnimation();
+        this.campaignConversation.accept(payload);
+    }
+
+    @Override
     public void acceptCampaignConfirmation(com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload payload) {
         if (payload.entityId() != this.villagerEntityId) return;
         if (payload.pending()) {
@@ -1200,7 +1210,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void rebuildOptions() {
         this.options.clear();
         this.optionLayoutVersion++;
-        if (this.page == DialoguePage.CAMPAIGN_CONFIRMATION) {
+        if (this.page == DialoguePage.CAMPAIGN_CONVERSATION) {
+            this.campaignConversation.addSessionOptions();
+        } else if (this.page == DialoguePage.CAMPAIGN_CONFIRMATION) {
             if (this.awaitingCampaignConfirmation) {
                 addPassiveOption("campaign.waiting");
             } else {
@@ -1212,6 +1224,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addDialogueOptions();
             } else {
                 addDialogueOptions(false);
+                this.campaignConversation.addTopics();
             }
         } else if (this.page == DialoguePage.ADVENTURES) {
             addDialogueOptions(true);
@@ -4226,7 +4239,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private VillagerInteractionTextLayout.Nameplate interactionNameplate() {
         return VillagerInteractionTextLayout.nameplate(
                 this.font,
-                this.villagerName,
+                campaignSpeakerName(),
                 INTERACTION_NAMEPLATE_TEXTURE_WIDTH,
                 INTERACTION_NAMEPLATE_TEXT_HORIZONTAL_PADDING
         );
@@ -4322,9 +4335,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderInteractionVillagerPortrait(GuiGraphics graphics, int left, int top) {
-        Entity entity = Minecraft.getInstance().level == null
-                ? null
-                : Minecraft.getInstance().level.getEntity(this.villagerEntityId);
+        var session = this.campaignConversation.session();
+        if (this.page == DialoguePage.CAMPAIGN_CONVERSATION && session != null && session.check() != null && session.check().resolved()) {
+            float x = left + (INTERACTION_PORTRAIT_LEFT + INTERACTION_PORTRAIT_RIGHT) / 2.0F;
+            float y = top + (INTERACTION_PORTRAIT_TOP + INTERACTION_PORTRAIT_BOTTOM) / 2.0F;
+            if (!CampaignDieRenderer.render(graphics, this.font, x, y, 22, session.check().die(), this.campaignConversation.dieProgress())) {
+                this.campaignConversation.skipDieAnimation();
+                CampaignDieRenderer.renderFallback(graphics, this.font, x, y, session.check().die());
+            }
+            return;
+        }
+        Entity entity = dialogueSpeakerEntity();
         if (!(entity instanceof LivingEntity livingEntity)) {
             return;
         }
@@ -4697,7 +4718,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void updateDialogueMouthAnimation() {
         boolean talking = isDialogueMouthAnimationActive();
-        VillagerDialogueMouthAnimation.update(this.villagerEntityId, talking);
+        var speaker = dialogueSpeakerEntity();
+        if (speaker instanceof Villager) VillagerDialogueMouthAnimation.update(speaker.getId(), talking);
     }
 
     private boolean isDialogueMouthAnimationActive() {
@@ -4708,6 +4730,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void clearDialogueMouthAnimation() {
         VillagerDialogueMouthAnimation.clear(this.villagerEntityId);
+        var speaker = dialogueSpeakerEntity();
+        if (speaker != null) VillagerDialogueMouthAnimation.clear(speaker.getId());
     }
 
     private boolean tryScrollInteractionDialogue(double mouseX, double mouseY, double scrollY) {
@@ -5470,7 +5494,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean canNavigateBack() {
-        return !this.forcedDialogue && this.page != DialoguePage.ROOT;
+        return !this.forcedDialogue && this.page != DialoguePage.ROOT && this.page != DialoguePage.CAMPAIGN_CONVERSATION;
     }
 
     private boolean isPointInsideTopBackButton(double mouseX, double mouseY) {
@@ -6177,7 +6201,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static int interactionPageDepth(DialoguePage page) {
         return switch (page) {
             case ROOT -> 0;
-            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, STUDY, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT, CAMPAIGN_CONFIRMATION -> 1;
+            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, STUDY, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT, CAMPAIGN_CONFIRMATION, CAMPAIGN_CONVERSATION -> 1;
             case DUEL_LOADOUT, DUEL_WAGER, DUEL_CONFIRM, ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
             case HIRE_DURATION,
                     END_CONTRACT_CONFIRMATION,
@@ -6206,9 +6230,53 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 || page == DialoguePage.DUEL_CONFIRM;
     }
 
+    private Entity dialogueSpeakerEntity() {
+        var level = Minecraft.getInstance().level;
+        if (level == null) return null;
+        var session = this.campaignConversation.session();
+        if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) return level.getEntity(this.villagerEntityId);
+        if (session.check() != null || session.line() == null || session.line().speaker() == null) return null;
+        var entity = level.getEntity(session.line().entityId());
+        return entity != null && entity.getUUID().equals(session.line().speaker()) ? entity : null;
+    }
+
+    private String campaignSpeakerName() {
+        var session = this.campaignConversation.session();
+        if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) return this.villagerName;
+        if (session.check() != null) return translate("conversation.check");
+        return session.line() == null || session.line().name().isBlank() ? session.title() : session.line().name();
+    }
+
+    private final class CampaignConversationHost implements CampaignConversationScreenController.Host {
+        @Override public int entityId() { return villagerEntityId; }
+        @Override public java.util.UUID character() {
+            var level = Minecraft.getInstance().level;
+            var entity = level == null ? null : level.getEntity(villagerEntityId);
+            return entity == null ? null : entity.getUUID();
+        }
+        @Override public long now() { return Util.getMillis(); }
+        @Override public boolean animateChecks() { return !dialogueTextSpeed().instant() && CampaignDieRenderer.available(); }
+        @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
+        @Override public void send(com.jvn.villagerretaliation.network.CampaignConversationRequestPayload payload) { sendToServer(payload); }
+        @Override public void option(String label, Runnable action, boolean locked) { options.add(DialogueOption.enabled(label, action, locked)); }
+        @Override public void updated(boolean session, String text) {
+            if (session && page != DialoguePage.CAMPAIGN_CONVERSATION && page != DialoguePage.CAMPAIGN_CONFIRMATION) openPage(DialoguePage.CAMPAIGN_CONVERSATION);
+            else if (page == DialoguePage.CAMPAIGN_CONVERSATION || page == DialoguePage.TALK) rebuildOptionsKeepingListPosition();
+            if (text != null) {
+                acceptVillagerDialogue(text, List.of());
+                if (campaignConversation.session() != null && campaignConversation.session().check() != null) {
+                    dialogueTextAnimationSkipped = true;
+                    nextDialogueBlipVisibleCharacter = Integer.MAX_VALUE;
+                }
+            }
+        }
+        @Override public void close() { leaveConversation(); }
+    }
+
     private enum DialoguePage {
         ROOT,
         CAMPAIGN_CONFIRMATION,
+        CAMPAIGN_CONVERSATION,
         TALK,
         ADVENTURES,
         DUEL,

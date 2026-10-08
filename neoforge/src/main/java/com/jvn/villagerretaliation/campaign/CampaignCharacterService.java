@@ -101,6 +101,12 @@ public final class CampaignCharacterService {
         return new Result(binding, villager, VillagerDownedService.isDowned(villager) ? "Campaign character is downed and must recover before continuing." : "");
     }
 
+    public static boolean matchesBoundCharacter(MinecraftServer server, ResourceLocation campaign, String role, UUID entity) {
+        if (entity == null) return false;
+        var state = CampaignBindingQueries.character(server, campaign, role);
+        return state.available() && entity.equals(state.binding().entityId());
+    }
+
     public static boolean matchesProvider(MinecraftServer server, QuestDefinition quest, UUID entity) {
         if (quest == null || quest.campaign() == null) return true;
         String role = VillagerQuestResources.compiledQuest(server, quest.id()).map(value -> value.provider().campaignRole()).orElse("");

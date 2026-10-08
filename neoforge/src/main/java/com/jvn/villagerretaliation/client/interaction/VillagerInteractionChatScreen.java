@@ -84,6 +84,11 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     }
 
     @Override
+    public void acceptCampaignConversation(com.jvn.villagerretaliation.network.CampaignConversationViewPayload payload) {
+        this.interactionScreen.acceptCampaignConversation(payload);
+    }
+
+    @Override
     public void acceptCampaignConfirmation(com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload payload) {
         this.interactionScreen.acceptCampaignConfirmation(payload);
         returnToInteractionScreen();

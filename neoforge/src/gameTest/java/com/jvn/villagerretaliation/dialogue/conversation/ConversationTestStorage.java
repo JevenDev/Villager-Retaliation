@@ -26,6 +26,25 @@ public final class ConversationTestStorage implements AutoCloseable {
                 ConversationSavedData.load(NbtIo.readCompressed(directory.resolve(ConversationSavedData.DATA_NAME + ".dat"), NbtAccounter.unlimitedHeap()).getCompound("data"), directory));
     }
 
+    public void setLastText(UUID id, String text) throws IOException {
+        var data = ConversationSavedData.get(level);
+        var session = data.session(id);
+        var line = session.transcript.removeLast();
+        session.transcript.add(new ConversationSession.Line(line.node(), line.visit(), line.exchange(), line.kind(), line.role(), line.speaker(), line.name(), line.textKey(), text));
+        data.write(level, session.revision++, session);
+    }
+
+    public void blockWrites() throws IOException {
+        var file = directory.resolve(ConversationSavedData.DATA_NAME + ".dat");
+        Files.move(file, directory.resolve("previous.dat"));
+        Files.createDirectory(file);
+    }
+
+    public void restoreWrites() throws IOException {
+        Files.delete(directory.resolve(ConversationSavedData.DATA_NAME + ".dat"));
+        Files.move(directory.resolve("previous.dat"), directory.resolve(ConversationSavedData.DATA_NAME + ".dat"));
+    }
+
     public static void maintain(MinecraftServer server) { ConversationService.maintain(server); }
 
     public void leavePrepared(UUID id) throws IOException {

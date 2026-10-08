@@ -90,7 +90,7 @@ public final class ConversationSession {
 
     public enum Phase { NODE_EFFECTS, EXCHANGES, RESPONSES, RESPONSE_EFFECTS, CHECK, ROLLED, COMPLETE }
     public enum ReceiptState { PREPARED, RESOLVED }
-    public enum Intent { ADVANCE, CHOOSE, ROLL, RESUME, JOIN, TAKE_CONTROL, HAND_OVER }
+    public enum Intent { ADVANCE, CHOOSE, ROLL, RESUME, JOIN, TAKE_CONTROL, HAND_OVER, RELEASE_CONTROL }
 
     public record Identity(UUID id, ResourceLocation conversation, int definitionRevision, String fingerprint,
             ResourceLocation campaign, UUID campaignInstance, String campaignFingerprint,

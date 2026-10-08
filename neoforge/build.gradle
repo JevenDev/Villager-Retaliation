@@ -35,6 +35,8 @@ sourceSets.main.resources {
 }
 
 def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
+def campaignConversationClientSmokeDirectory = layout.buildDirectory.dir("campaign-conversation-client-smoke/${System.currentTimeMillis()}")
+
 def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
 def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
 def settlementManyVillageProfileDirectory = layout.buildDirectory.dir("settlement-many-village-profile/${System.currentTimeMillis()}")
@@ -52,6 +54,14 @@ neoForge {
     runs {
         client {
             client()
+        }
+
+        campaignConversationClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(campaignConversationClientSmokeDirectory)
+            systemProperty 'villagerretaliation.campaignConversationClientSmoke', campaignConversationClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'CampaignConversationSmoke', '--width', '1280', '--height', '720'
         }
 
         settlementClientSmoke {
@@ -141,6 +151,26 @@ neoForge {
     }
 
     addModdingDependenciesTo sourceSets.gameTest
+}
+
+tasks.named('runCampaignConversationClientSmoke') {
+    dependsOn tasks.named('runGameTestServer')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Campaign conversation checks require generated GameTest world metadata.')
+        copy {
+            from metadata
+            into new File(campaignConversationClientSmokeDirectory.get().asFile, 'saves/CampaignConversationSmoke')
+        }
+        new File(campaignConversationClientSmokeDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\n'
+    }
+    doLast {
+        def result = new File(campaignConversationClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Campaign conversation client smoke passed')) {
+            throw new GradleException("Campaign conversation client checks did not finish. Inspect ${campaignConversationClientSmokeDirectory.get().asFile}")
+        }
+    }
 }
 
 tasks.named('runSettlementClientSmoke') {
