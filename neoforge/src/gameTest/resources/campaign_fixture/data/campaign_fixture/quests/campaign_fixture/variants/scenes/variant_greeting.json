@@ -1,0 +1,14 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "campaign_fixture:variant_greeting",
+  "definition_version": 1,
+  "ownership": "player",
+  "entry_step": "finish",
+  "actors": [],
+  "steps": [
+    {
+      "id": "finish",
+      "type": "villagerretaliation:scene_complete"
+    }
+  ]
+}

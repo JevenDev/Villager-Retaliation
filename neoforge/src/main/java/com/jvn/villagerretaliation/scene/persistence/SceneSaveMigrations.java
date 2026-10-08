@@ -72,6 +72,8 @@ public final class SceneSaveMigrations {
             } else if (version == 17) {
                 markLegacyBlockOwnership(data);
                 version = 18;
+            } else if (version == 18) {
+                version = 19;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);

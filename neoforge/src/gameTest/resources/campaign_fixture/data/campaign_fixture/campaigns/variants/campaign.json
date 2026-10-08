@@ -1,0 +1,160 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:variants",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.variants.title",
+  "localization_prefix": "campaign_fixture.campaign.variants.",
+  "quest_bundles": [
+    "campaign_fixture:variants",
+    "campaign_fixture:variants_catch_up"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.variants.chapter",
+      "quests": [
+        "campaign_fixture:variants"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "gate",
+      "chapter": "arrival",
+      "quest": "campaign_fixture:variants",
+      "stage": "choose",
+      "outcomes": [
+        {
+          "id": "open",
+          "title_key": "campaign_fixture.campaign.variants.open",
+          "location_variants": [
+            "open"
+          ]
+        },
+        {
+          "id": "sealed",
+          "title_key": "campaign_fixture.campaign.variants.sealed",
+          "location_variants": [
+            "sealed"
+          ]
+        }
+      ],
+      "catch_up": {
+        "quest": "campaign_fixture:variants_catch_up",
+        "stage": "learn"
+      }
+    },
+    {
+      "id": "restoration",
+      "chapter": "arrival",
+      "quest": "campaign_fixture:variants",
+      "stage": "restore",
+      "outcomes": [
+        {
+          "id": "restored",
+          "title_key": "campaign_fixture.campaign.variants.restored",
+          "location_variants": [
+            "restored"
+          ]
+        }
+      ],
+      "catch_up": {
+        "quest": "campaign_fixture:variants_catch_up",
+        "stage": "learn"
+      }
+    }
+  ],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.variants.home",
+      "source": "structure",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256,
+      "structure": "campaign_fixture:waystation",
+      "structure_marker": "campaign_fixture:waystation_entry"
+    }
+  ],
+  "characters": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.variants.mentor",
+      "source": "owned_spawn",
+      "location": "home",
+      "search_radius": 4,
+      "loss_policy": "downed",
+      "profession": "minecraft:librarian"
+    }
+  ],
+  "rewards": [
+    {
+      "id": "participant",
+      "quest": "campaign_fixture:variants",
+      "scope": "participants",
+      "milestone": "gate",
+      "experience": 13
+    },
+    {
+      "id": "catch_up",
+      "quest": "campaign_fixture:variants_catch_up",
+      "scope": "personal",
+      "experience": 5
+    }
+  ],
+  "location_variants": [
+    {
+      "id": "open",
+      "location": "home",
+      "layout": "campaign_fixture:waystation",
+      "layout_revision": 1,
+      "cells": [
+        {
+          "id": "floor",
+          "expected": "minecraft:stone_bricks",
+          "placed": "minecraft:mossy_stone_bricks"
+        },
+        {
+          "id": "entry",
+          "expected": "minecraft:air",
+          "placed": "minecraft:air"
+        }
+      ]
+    },
+    {
+      "id": "sealed",
+      "location": "home",
+      "layout": "campaign_fixture:waystation",
+      "layout_revision": 1,
+      "cells": [
+        {
+          "id": "floor",
+          "expected": "minecraft:stone_bricks",
+          "placed": "minecraft:cracked_stone_bricks"
+        },
+        {
+          "id": "entry",
+          "expected": "minecraft:air",
+          "placed": "minecraft:iron_bars"
+        }
+      ]
+    },
+    {
+      "id": "restored",
+      "location": "home",
+      "layout": "campaign_fixture:waystation",
+      "layout_revision": 1,
+      "cells": [
+        {
+          "id": "floor",
+          "expected": "minecraft:cracked_stone_bricks",
+          "placed": "minecraft:stone_bricks"
+        },
+        {
+          "id": "entry",
+          "expected": "minecraft:iron_bars",
+          "placed": "minecraft:air"
+        }
+      ]
+    }
+  ]
+}

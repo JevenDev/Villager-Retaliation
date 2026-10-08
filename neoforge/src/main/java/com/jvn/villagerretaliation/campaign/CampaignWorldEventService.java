@@ -52,8 +52,9 @@ public final class CampaignWorldEventService {
             try {
                 reconcile(data, content, end, server.overworld().getGameTime());
                 String characterIssue = reconcileCharacterLosses(server, data, content, server.overworld().getGameTime());
-                if (characterIssue.isBlank()) REPORTED.remove(id);
-                else report(id, characterIssue);
+                String locationIssue = CampaignLocationVariants.reconcile(server, id);
+                if (characterIssue.isBlank() && locationIssue.isBlank()) REPORTED.remove(id);
+                else report(id, characterIssue.isBlank() ? locationIssue : characterIssue);
             } catch (IOException exception) {
                 report(id, "Could not save campaign state: " + exception.getMessage() + ". The failed change remains unapplied. Check world storage before retrying.");
             }

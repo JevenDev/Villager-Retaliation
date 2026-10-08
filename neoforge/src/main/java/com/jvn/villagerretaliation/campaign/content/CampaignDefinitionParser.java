@@ -59,7 +59,8 @@ public final class CampaignDefinitionParser {
                 JsonObject outcome = outcomeEntries.get(outcomeIndex).getAsJsonObject();
                 String outcomeId = text(outcome, "id");
                 String outcomePointer = pointer + "/outcomes/" + outcomeIndex;
-                put(outcomes, outcomeId, new CampaignDefinition.Outcome(outcomeId, text(outcome, "title_key"), outcomePointer),
+                put(outcomes, outcomeId, new CampaignDefinition.Outcome(outcomeId, text(outcome, "title_key"),
+                        java.util.stream.StreamSupport.stream(array(outcome, "location_variants").spliterator(), false).map(JsonElement::getAsString).toList(), outcomePointer),
                         source, outcomePointer, diagnostics);
             }
             CampaignDefinition.CatchUp catchUp = null;
@@ -147,8 +148,10 @@ public final class CampaignDefinitionParser {
                     pointer), source, pointer, diagnostics);
         }
         CampaignDefinition definition = new CampaignDefinition(resource(root, "id"), root.get("revision").getAsInt(),
-                QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, locations, characters, evidence, source);
+                QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, locations, characters, evidence,
+                CampaignLocationVariant.read(source, array(root, "location_variants"), diagnostics), source);
         validateReferences(definition, diagnostics);
+        CampaignLocationVariant.validate(definition, diagnostics);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
     }
 

@@ -88,8 +88,8 @@ public final class SceneContinuationService {
                 : VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), ownerQuest);
         UUID ownerRun = questId == null && ownerProgress != null ? ownerProgress.questRunId() : questRunId;
         String fingerprint = CampaignRewardRecovery.fingerprint(context.level().getServer(), ownerQuest);
-        if (target.rewardOperation() != null && (ownerRun == null || fingerprint.isBlank())) {
-            return RunResult.of(ActionResult.unavailable("Campaign reward recovery requires its active quest bundle and run.",
+        if ((target.rewardOperation() != null || target.outcomeOperation() != null) && (ownerRun == null || fingerprint.isBlank())) {
+            return RunResult.of(ActionResult.unavailable("Campaign action recovery requires its active quest bundle and run.",
                     result.capabilities(), result.legacyResult()), null);
         }
         SceneContinuation continuation = scene == null
@@ -293,6 +293,10 @@ public final class SceneContinuationService {
             if (continuation.rewardOperation() != null) {
                 dependencyResult = CampaignRewardRecovery.poll(server, ActionResult.suspendedReward(
                         continuation.rewardOperation(), continuation.actionDiagnostic(), Set.of(), VillagerActionResult.EMPTY));
+                if (dependencyResult.suspended()) continue;
+            } else if (continuation.outcomeOperation() != null) {
+                dependencyResult = com.jvn.villagerretaliation.campaign.CampaignLocationVariants.poll(server, ActionResult.suspendedOutcome(
+                        continuation.outcomeOperation(), continuation.actionDiagnostic(), Set.of(), VillagerActionResult.EMPTY));
                 if (dependencyResult.suspended()) continue;
             } else if (continuation.dependencyContinuationId() != null) {
                 if (cyclicDependency(data, continuation.id(), continuation.dependencyContinuationId())) {
@@ -532,7 +536,10 @@ public final class SceneContinuationService {
 
     private static WaitTarget waitTarget(SceneSavedData data, ActionResult result) {
         if (result.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_REWARD) {
-            return result.suspensionId() == null ? null : new WaitTarget(null, null, result.suspensionId());
+            return result.suspensionId() == null ? null : new WaitTarget(null, null, result.suspensionId(), null);
+        }
+        if (result.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_OUTCOME) {
+            return result.suspensionId() == null ? null : new WaitTarget(null, null, null, result.suspensionId());
         }
         UUID dependencyId = result.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION
                 ? result.suspensionId() : null;
@@ -540,7 +547,7 @@ public final class SceneContinuationService {
         if (dependencyId != null && dependency == null) return null;
         UUID sceneId = dependency == null ? result.suspensionId() : dependency.sceneInstanceId();
         SceneInstance scene = data.get(sceneId).orElse(null);
-        return scene == null && (dependency == null || !dependency.campaignRecovery()) ? null : new WaitTarget(scene, dependencyId, null);
+        return scene == null && (dependency == null || !dependency.campaignRecovery()) ? null : new WaitTarget(scene, dependencyId, null, null);
     }
 
     private static boolean cyclicDependency(SceneSavedData data, UUID parentId, UUID dependencyId) {
@@ -557,6 +564,8 @@ public final class SceneContinuationService {
     private static void applyWait(MinecraftServer server, SceneSavedData data, SceneContinuation continuation, WaitTarget target, ActionResult result) {
         if (target.rewardOperation() != null) {
             continuation.waitForReward(target.rewardOperation(), CampaignRewardRecovery.fingerprint(server, continuation.questId()));
+        } else if (target.outcomeOperation() != null) {
+            continuation.waitForOutcome(target.outcomeOperation(), CampaignRewardRecovery.fingerprint(server, continuation.questId()));
         } else {
             continuation.waitOn(target.scene() == null ? null : target.scene().id(), target.dependencyId(), result.retryOnResume());
             var dependency = target.dependencyId() == null ? null : data.continuation(target.dependencyId()).orElse(null);
@@ -566,7 +575,7 @@ public final class SceneContinuationService {
         }
     }
 
-    private record WaitTarget(SceneInstance scene, UUID dependencyId, UUID rewardOperation) { }
+    private record WaitTarget(SceneInstance scene, UUID dependencyId, UUID rewardOperation, UUID outcomeOperation) { }
 
     private static Villager findVillager(MinecraftServer server, UUID id) {
         if (id == null) return null;

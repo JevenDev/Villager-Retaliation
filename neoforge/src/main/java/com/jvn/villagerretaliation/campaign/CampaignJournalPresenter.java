@@ -16,8 +16,39 @@ public final class CampaignJournalPresenter {
     }
 
     public static List<Entry> entries(ServerPlayer player) {
-        return entries(CampaignWorldModeSavedData.get(player.serverLevel()).mode(), CampaignResources.current(player.server),
-                CampaignSavedData.get(player.serverLevel()), player.getUUID(), VillagerLocale.locale(player));
+        var catalog = CampaignResources.current(player.server);
+        var campaigns = CampaignSavedData.get(player.serverLevel());
+        var entries = entries(CampaignWorldModeSavedData.get(player.serverLevel()).mode(), catalog,
+                campaigns, player.getUUID(), VillagerLocale.locale(player));
+        var changes = CampaignVariantSavedData.get(player.serverLevel());
+        return entries.stream().map(entry -> {
+            if (!pendingLocationChange(entry, catalog, campaigns, changes)) return entry;
+            String issue = "A shared location change is pending. Visit the affected area or ask an operator to inspect campaign state.";
+            return new Entry(entry.campaignId(), entry.title(), entry.diagnostic().isBlank() ? issue : entry.diagnostic() + "\n" + issue,
+                    entry.worldRevision(), entry.personalRevision(), entry.chapters(), entry.milestones());
+        }).toList();
+    }
+
+    private static boolean pendingLocationChange(Entry entry, CampaignContentCatalog catalog, CampaignSavedData campaigns,
+            CampaignVariantSavedData changes) {
+        var discovered = entry.milestones().stream().filter(Milestone::discovered).map(Milestone::id).collect(java.util.stream.Collectors.toSet());
+        var id = ResourceLocation.parse(entry.campaignId());
+        if (changes.receipts().values().stream().anyMatch(receipt -> receipt.campaign().equals(id)
+                && discovered.contains(receipt.milestone()) && !receipt.complete())) return true;
+        var instance = campaigns.instances().get(id);
+        var content = catalog.campaigns().get(id);
+        if (instance == null || content == null || !campaigns.compatibility(content.definition()).isBlank()) return false;
+        for (String milestoneId : discovered) {
+            var milestone = content.definition().milestones().get(milestoneId);
+            var committed = instance.outcomes().get(milestoneId);
+            var outcome = milestone == null || committed == null ? null : milestone.outcomes().get(committed.outcome());
+            if (outcome == null) continue;
+            for (String variant : outcome.locationVariants()) {
+                var receipt = changes.receipts().get(CampaignVariantReceipt.operation(instance.instanceId(), committed.operationId(), variant));
+                if (!changes.diagnostic().isBlank() || receipt == null || !receipt.complete()) return true;
+            }
+        }
+        return false;
     }
 
     static List<Entry> entries(CampaignWorldMode mode, CampaignContentCatalog catalog, CampaignSavedData data, UUID playerId, String locale) {

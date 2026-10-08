@@ -80,7 +80,11 @@ public final class CampaignOutcomeService {
         if (owner != null && !owner.questRunId().equals(consent.questRunId())) {
             return ActionResult.unavailable("The deciding player's original quest run changed.", capabilities, VillagerActionResult.EMPTY);
         }
-        if (prepared.applied()) return ActionResult.alreadySatisfied("Campaign outcome already committed", capabilities, result(consent, false));
+        if (prepared.applied()) {
+            String pending = CampaignLocationVariants.reconcile(context.player().server, consent.campaignId(), consent.operationId());
+            return pending.isBlank() ? ActionResult.alreadySatisfied("Campaign outcome already committed", capabilities, result(consent, false))
+                    : ActionResult.suspendedOutcome(consent.operationId(), pending, capabilities, result(consent, false));
+        }
         if (prepared.requiresConfirmation() && !CampaignQuestAcceptanceService.approvedOutcome(context, actor, consent)) {
             return ActionResult.unavailable("Review and confirm this shared outcome before continuing.", capabilities, VillagerActionResult.EMPTY);
         }
@@ -93,7 +97,9 @@ public final class CampaignOutcomeService {
                 return ActionResult.unavailable(diagnostic, capabilities, VillagerActionResult.EMPTY);
             }
             CampaignQuestAcceptanceService.outcomeApplied(consent.operationId());
-            return ActionResult.success(result(consent, true), capabilities);
+            String pending = CampaignLocationVariants.reconcile(context.player().server, consent.campaignId(), consent.operationId());
+            return pending.isBlank() ? ActionResult.success(result(consent, true), capabilities)
+                    : ActionResult.suspendedOutcome(consent.operationId(), pending, capabilities, result(consent, true));
         } catch (IOException exception) {
             LogUtils.getLogger().error("Could not save campaign outcome {} for {}", consent.action().milestone(), consent.campaignId(), exception);
             return ActionResult.failed("The shared outcome could not be saved. Check world storage before retrying.", capabilities);

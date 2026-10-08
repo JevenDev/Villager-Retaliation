@@ -23,7 +23,8 @@ public final class CampaignSchema {
         JsonObject chapter = object(List.of("id", "title_key", "quests"),
                 "id", text(LOCAL_ID), "title_key", text(""),
                 "prerequisites", array(prerequisite, 0), "quests", array(text(RESOURCE_ID), 1));
-        JsonObject outcome = object(List.of("id", "title_key"), "id", text(LOCAL_ID), "title_key", text(""));
+        JsonObject outcome = object(List.of("id", "title_key"), "id", text(LOCAL_ID), "title_key", text(""),
+                "location_variants", array(text(LOCAL_ID), 0));
         JsonObject catchUp = object(List.of("quest", "stage"), "quest", text(RESOURCE_ID), "stage", text(LOCAL_ID));
         JsonObject observation = object(List.of("event", "outcome"),
                 "event", enumeration("minecraft:ender_dragon_defeated", CampaignDefinition.Observation.CHARACTER_LOST.toString()),
@@ -105,7 +106,8 @@ public final class CampaignSchema {
                 "title_key", text(""), "localization_prefix", text(""),
                 "quest_bundles", array(text(RESOURCE_ID), 1), "chapters", array(chapter, 1),
                 "milestones", array(milestone, 0), "facts", array(fact, 0), "rewards", array(reward, 0),
-                "locations", array(location, 0), "characters", array(character, 0), "evidence", array(evidence, 0));
+                "locations", array(location, 0), "characters", array(character, 0), "evidence", array(evidence, 0),
+                "location_variants", array(CampaignLocationVariant.schema(), 0));
         root.addProperty("$schema", "https://json-schema.org/draft/2020-12/schema");
         root.addProperty("$id", "https://villagerretaliation.dev/schema/campaign-v1.schema.json");
         root.addProperty("title", "Villager Retaliation Campaign v1");
@@ -123,7 +125,7 @@ public final class CampaignSchema {
                 "Correct the campaign definition at this source location and reload datapacks.", Set.of());
     }
 
-    private static JsonObject object(List<String> required, Object... fields) {
+    static JsonObject object(List<String> required, Object... fields) {
         JsonObject result = type("object");
         result.addProperty("additionalProperties", false);
         JsonArray requiredFields = new JsonArray();
@@ -145,13 +147,13 @@ public final class CampaignSchema {
         return result;
     }
 
-    private static JsonObject type(String type) {
+    static JsonObject type(String type) {
         JsonObject result = new JsonObject();
         result.addProperty("type", type);
         return result;
     }
 
-    private static JsonObject text(String pattern) {
+    static JsonObject text(String pattern) {
         JsonObject result = type("string");
         result.addProperty("minLength", 1);
         result.addProperty("maxLength", 256);
@@ -167,7 +169,7 @@ public final class CampaignSchema {
         return result;
     }
 
-    private static JsonObject array(JsonObject items, int minimum) {
+    static JsonObject array(JsonObject items, int minimum) {
         JsonObject result = type("array");
         result.add("items", items);
         result.addProperty("minItems", minimum);

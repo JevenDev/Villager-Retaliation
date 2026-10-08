@@ -65,10 +65,17 @@ public record ActionResult(
                 operation, SuspensionKind.CAMPAIGN_REWARD, true);
     }
 
+    public static ActionResult suspendedOutcome(UUID operation, String message, Set<ActionCapability> capabilities,
+            VillagerActionResult legacyResult) {
+        return new ActionResult(ActionStatus.SUSPENDED, message, capabilities, legacyResult,
+                operation, SuspensionKind.CAMPAIGN_OUTCOME, true);
+    }
+
     public enum SuspensionKind {
         SCENE,
         CONTINUATION,
-        CAMPAIGN_REWARD
+        CAMPAIGN_REWARD,
+        CAMPAIGN_OUTCOME
     }
 
     public boolean skipped() {

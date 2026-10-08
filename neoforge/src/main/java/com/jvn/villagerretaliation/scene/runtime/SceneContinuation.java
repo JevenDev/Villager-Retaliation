@@ -26,6 +26,7 @@ public final class SceneContinuation {
     private boolean campaignRecovery;
     private String recoveryFingerprint = "";
     private UUID rewardOperation;
+    private UUID outcomeOperation;
     private Tag unreadableRecovery;
     private Tag unreadableRecoveryCursor;
     private Tag unreadableConversationRecovery;
@@ -100,6 +101,7 @@ public final class SceneContinuation {
     public String recoveryFingerprint() { return recoveryFingerprint; }
     public void bindRecoveryFingerprint(String fingerprint) { if (recoveryFingerprint.isBlank()) recoveryFingerprint = fingerprint; }
     public UUID rewardOperation() { return rewardOperation; }
+    public UUID outcomeOperation() { return outcomeOperation; }
     public String recoveryIssue() { return unreadableRecovery == null && unreadableConversationRecovery == null ? "" : "Saved campaign action recovery is unreadable. Restore compatible scene data."; }
 
     public boolean recoveryPersistencePending() { return !recoveryPersistenceIssue.isBlank(); }
@@ -115,11 +117,19 @@ public final class SceneContinuation {
         if (operation == null) throw new IllegalArgumentException("reward recovery requires its operation");
         enableCampaignRecovery(fingerprint);
         rewardOperation = operation;
+        outcomeOperation = null;
         dependencyContinuationId = null;
         retrySuspendedAction = true;
         state = State.WAITING;
         actionStatus = ActionStatus.SUSPENDED;
         actionDiagnostic = "Campaign reward is waiting for durable delivery.";
+    }
+
+    public void waitForOutcome(UUID operation, String fingerprint) {
+        waitForReward(operation, fingerprint);
+        rewardOperation = null;
+        outcomeOperation = operation;
+        actionDiagnostic = "Campaign outcome is waiting for its location changes.";
     }
 
     public UUID playerId() { return playerId; }
@@ -154,6 +164,7 @@ public final class SceneContinuation {
     public void waitOn(UUID sceneId, UUID dependencyId, boolean retryAction) {
         sceneInstanceId = sceneId;
         rewardOperation = null;
+        outcomeOperation = null;
         dependencyContinuationId = dependencyId;
         retrySuspendedAction = retryAction;
         state = State.WAITING;
@@ -183,6 +194,10 @@ public final class SceneContinuation {
             recovery.putString("QuestFingerprint", recoveryFingerprint);
             recovery.putInt("PreparedAction", preparedRecoveryAction);
             if (rewardOperation != null) recovery.putUUID("RewardOperation", rewardOperation);
+            if (outcomeOperation != null) {
+                recovery.putInt("DataVersion", 2);
+                recovery.putUUID("OutcomeOperation", outcomeOperation);
+            }
             tag.put("CampaignRecovery", unreadableRecovery == null ? recovery : unreadableRecovery.copy());
         }
 
@@ -276,19 +291,23 @@ public final class SceneContinuation {
         if (value.campaignRecovery) {
             var recovery = tag.getCompound("CampaignRecovery");
             if (!tag.contains("CampaignRecovery", Tag.TAG_COMPOUND) || !recovery.contains("DataVersion", Tag.TAG_INT)
-                    || recovery.getInt("DataVersion") != 1 || !recovery.contains("QuestFingerprint", Tag.TAG_STRING)
+                    || recovery.getInt("DataVersion") < 1 || recovery.getInt("DataVersion") > 2 || !recovery.contains("QuestFingerprint", Tag.TAG_STRING)
                     || recovery.getString("QuestFingerprint").isBlank()
                     || !tag.contains("Next", Tag.TAG_INT) || tag.getInt("Next") < 0 || tag.getInt("Next") > actions.size()
                     || !recovery.contains("PreparedAction", Tag.TAG_INT) || recovery.getInt("PreparedAction") < -1
                     || recovery.getInt("PreparedAction") >= actions.size()
                     || recovery.getInt("PreparedAction") >= 0 && recovery.getInt("PreparedAction") != tag.getInt("Next")
-                    || recovery.contains("RewardOperation") && !recovery.hasUUID("RewardOperation")) {
+                    || recovery.contains("RewardOperation") && !recovery.hasUUID("RewardOperation")
+                    || recovery.contains("OutcomeOperation") && (recovery.getInt("DataVersion") != 2
+                            || !recovery.hasUUID("OutcomeOperation") || recovery.contains("RewardOperation"))
+                    || recovery.getInt("DataVersion") == 2 && !recovery.hasUUID("OutcomeOperation")) {
                 value.unreadableRecovery = tag.get("CampaignRecovery").copy();
                 value.unreadableRecoveryCursor = tag.contains("Next") ? tag.get("Next").copy() : null;
             } else {
                 value.recoveryFingerprint = recovery.getString("QuestFingerprint");
                 value.preparedRecoveryAction = recovery.getInt("PreparedAction");
                 value.rewardOperation = recovery.hasUUID("RewardOperation") ? recovery.getUUID("RewardOperation") : null;
+                value.outcomeOperation = recovery.hasUUID("OutcomeOperation") ? recovery.getUUID("OutcomeOperation") : null;
             }
         }
 

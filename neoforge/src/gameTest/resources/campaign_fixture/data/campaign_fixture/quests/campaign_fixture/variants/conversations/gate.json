@@ -1,0 +1,141 @@
+{
+  "schema": "villagerretaliation:conversation/v1",
+  "id": "campaign_fixture:gate_decision",
+  "revision": 1,
+  "campaign": "campaign_fixture:variants",
+  "quest": "campaign_fixture:variants",
+  "character": "mentor",
+  "title": {
+    "key": "#title"
+  },
+  "topics": [
+    {
+      "id": "gate",
+      "label": {
+        "key": "#choose.label"
+      },
+      "start": "choose"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "choose",
+      "exchanges": [
+        {
+          "id": "keeper",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#description"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "open",
+          "label": {
+            "key": "#open"
+          },
+          "effects": [
+            {
+              "id": "decide_gate",
+              "action": {
+                "type": "campaign_outcome",
+                "milestone": "gate",
+                "outcome": "open",
+                "operation_id": "conversation_gate"
+              }
+            },
+            {
+              "id": "continue_quest",
+              "action": {
+                "type": "quest_transition",
+                "from_stage": "choose",
+                "scene_path": "conversation/gate/choose",
+                "response_id": "open",
+                "target_stage": "report",
+                "required": true
+              }
+            }
+          ],
+          "next": "open"
+        },
+        {
+          "id": "sealed",
+          "label": {
+            "key": "#sealed"
+          },
+          "effects": [
+            {
+              "id": "decide_gate",
+              "action": {
+                "type": "campaign_outcome",
+                "milestone": "gate",
+                "outcome": "sealed",
+                "operation_id": "conversation_gate"
+              }
+            },
+            {
+              "id": "continue_quest",
+              "action": {
+                "type": "quest_transition",
+                "from_stage": "choose",
+                "scene_path": "conversation/gate/choose",
+                "response_id": "sealed",
+                "target_stage": "restore",
+                "required": true
+              }
+            }
+          ],
+          "next": "sealed"
+        }
+      ]
+    },
+    {
+      "id": "open",
+      "exchanges": [
+        {
+          "id": "result",
+          "speaker": {
+            "type": "narrator"
+          },
+          "text": {
+            "key": "#open"
+          }
+        }
+      ],
+      "outcome": "open"
+    },
+    {
+      "id": "sealed",
+      "exchanges": [
+        {
+          "id": "result",
+          "speaker": {
+            "type": "narrator"
+          },
+          "text": {
+            "key": "#sealed"
+          }
+        }
+      ],
+      "outcome": "sealed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "open",
+      "label": {
+        "key": "#open"
+      }
+    },
+    {
+      "id": "sealed",
+      "label": {
+        "key": "#sealed"
+      }
+    }
+  ]
+}

@@ -10,7 +10,7 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
         List<ResourceLocation> questBundles, Map<String, Chapter> chapters, Map<String, Milestone> milestones,
         Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards,
         Map<String, CampaignLocationDefinition> locations, Map<String, CampaignCharacterDefinition> characters,
-        Map<String, CampaignEvidenceDefinition> evidence, ResourceLocation source) {
+        Map<String, CampaignEvidenceDefinition> evidence, Map<String, CampaignLocationVariant> locationVariants, ResourceLocation source) {
     public CampaignDefinition {
         questBundles = List.copyOf(questBundles);
         chapters = ordered(chapters);
@@ -20,6 +20,7 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
         locations = ordered(locations);
         characters = ordered(characters);
         evidence = ordered(evidence);
+        locationVariants = ordered(locationVariants);
     }
 
     public CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,
@@ -46,6 +47,13 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
             Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards,
             Map<String, CampaignLocationDefinition> locations, ResourceLocation source) {
         this(id, revision, fingerprint, titleKey, localizationPrefix, questBundles, chapters, milestones, facts, rewards, locations, Map.of(), source);
+    }
+
+    public CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,
+            List<ResourceLocation> questBundles, Map<String, Chapter> chapters, Map<String, Milestone> milestones,
+            Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards, Map<String, CampaignLocationDefinition> locations,
+            Map<String, CampaignCharacterDefinition> characters, Map<String, CampaignEvidenceDefinition> evidence, ResourceLocation source) {
+        this(id, revision, fingerprint, titleKey, localizationPrefix, questBundles, chapters, milestones, facts, rewards, locations, characters, evidence, Map.of(), source);
     }
 
     private static <T> Map<String, T> ordered(Map<String, T> values) {
@@ -75,7 +83,9 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
         }
     }
 
-    public record Outcome(String id, String titleKey, String pointer) {
+    public record Outcome(String id, String titleKey, List<String> locationVariants, String pointer) {
+        public Outcome { locationVariants = List.copyOf(locationVariants); }
+        public Outcome(String id, String titleKey, String pointer) { this(id, titleKey, List.of(), pointer); }
     }
 
     public record CatchUp(ResourceLocation quest, String stage, String pointer) {

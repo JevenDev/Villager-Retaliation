@@ -91,6 +91,32 @@ public final class CampaignBlockOwnership {
         }
     }
 
+    static Result advance(ServerLevel level, Receipt previous, Receipt requested) {
+        var chunk = loaded(level, requested.position());
+        if (chunk == null) return waiting("Load the campaign location before changing its variant.");
+        var ledger = chunk.getExistingDataOrNull(OWNERSHIP.get());
+        if (ledger == null || !ledger.diagnostic().isBlank()) return waiting("Campaign location ownership is missing or unreadable.");
+        var current = ledger.get(requested.position());
+        try {
+            if (current != null && current.sameIdentity(requested)) {
+                persist(level, chunk, requested.position());
+                return current.state() == State.CONFLICT ? conflict(current.diagnostic()) : new Result(Status.READY, "");
+            }
+            if (!previous.equals(current) || previous.state() != State.APPLIED)
+                return conflict("The campaign cell no longer belongs to its expected prior operation.");
+            if (!CampaignBlockSnapshot.capture(level, chunk, requested.position()).equals(previous.placed()))
+                return preserve(level, chunk, ledger, previous, "The campaign location cell was edited.");
+            ledger.advance(previous, requested);
+            chunk.setUnsaved(true);
+            persist(level, chunk, requested.position());
+            return new Result(Status.READY, "");
+        } catch (IOException exception) {
+            return waiting("Campaign location ownership could not be saved: " + exception.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            return waiting(exception.getMessage());
+        }
+    }
+
     public static Result apply(ServerLevel level, Receipt requested) { return change(level, requested, false); }
     public static Result restore(ServerLevel level, Receipt requested) { return change(level, requested, true); }
 

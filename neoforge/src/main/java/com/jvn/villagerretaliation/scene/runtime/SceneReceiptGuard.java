@@ -40,7 +40,9 @@ public final class SceneReceiptGuard {
             ActionResult waiting = receipt.actionResult();
             ActionResult result = waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_REWARD
                     ? com.jvn.villagerretaliation.campaign.CampaignRewardRecovery.poll(context.server(), waiting)
-                    : SceneActionSuspension.poll(context.repository(), waiting);
+                    : waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_OUTCOME
+                            ? com.jvn.villagerretaliation.campaign.CampaignLocationVariants.poll(context.server(), waiting)
+                            : SceneActionSuspension.poll(context.repository(), waiting);
             if (result.suspended()) return new ActionApplyResult(result, receipt, false);
             if (requiresPersistence(context.instance())) {
                 checkpoint(context);

@@ -19,7 +19,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class ConversationSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 6;
+    public static final int CURRENT_DATA_VERSION = 7;
     static final String DATA_NAME = "villagerretaliation_conversations";
     private final Path directory;
     private Map<UUID, ConversationSession> sessions = Map.of();
@@ -182,7 +182,9 @@ public final class ConversationSavedData extends SavedData {
         var nextLocks = locks(next);
         boolean sceneDependency = candidate.receipts.values().stream().anyMatch(receipt ->
                 receipt.action().kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.START_SCENE
-                        || receipt.result().suspended() && receipt.result().suspensionKind() != com.jvn.villagerretaliation.action.ActionResult.SuspensionKind.CAMPAIGN_REWARD);
+                        || receipt.result().suspended()
+                                && (receipt.result().suspensionKind() == com.jvn.villagerretaliation.action.ActionResult.SuspensionKind.SCENE
+                                        || receipt.result().suspensionKind() == com.jvn.villagerretaliation.action.ActionResult.SuspensionKind.CONTINUATION));
         if (level != null && sceneDependency) SceneSavedData.get(level).persistCampaignHandoff(level.getServer().overworld());
         var wrapper = new CompoundTag();
         wrapper.put("data", encode(next));

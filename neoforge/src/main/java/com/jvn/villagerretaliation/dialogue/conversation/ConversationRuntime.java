@@ -200,6 +200,8 @@ final class ConversationRuntime {
 
     private static ActionResult poll(ServerPlayer player, ActionResult waiting) {
         if (waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_REWARD) return CampaignRewardRecovery.poll(player.server, waiting);
+        if (waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_OUTCOME)
+            return com.jvn.villagerretaliation.campaign.CampaignLocationVariants.poll(player.server, waiting);
         var scenes = SceneSavedData.get(player.serverLevel());
         if (waiting.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION) {
             var continuation = scenes.continuation(waiting.suspensionId()).orElse(null);

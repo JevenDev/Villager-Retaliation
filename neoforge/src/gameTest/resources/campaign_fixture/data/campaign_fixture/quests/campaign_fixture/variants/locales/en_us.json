@@ -1,0 +1,28 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.variants.title": "Campaign fixture: the waystation gate",
+    "campaign_fixture.quest.variants.description": "Decide whether to welcome visitors or seal the waystation. Your choice changes this shared location.",
+    "campaign_fixture.quest.variants.offer.label": "Decide the waystation's future",
+    "campaign_fixture.quest.variants.offer.lines": [
+      "Visitors are approaching. Should we keep the gate open or seal it?"
+    ],
+    "campaign_fixture.quest.variants.accept": "I will help decide.",
+    "campaign_fixture.quest.variants.choose.label": "What should happen to the gate?",
+    "campaign_fixture.quest.variants.choose.lines": [
+      "This decision will change the waystation for everyone."
+    ],
+    "campaign_fixture.quest.variants.open": "Welcome the visitors.",
+    "campaign_fixture.quest.variants.sealed": "Seal the gate.",
+    "campaign_fixture.quest.variants.restore.label": "Reopen the waystation",
+    "campaign_fixture.quest.variants.restore.lines": [
+      "We can reopen the gate now. This will remove our barricade."
+    ],
+    "campaign_fixture.quest.variants.restore": "Reopen it.",
+    "campaign_fixture.quest.variants.report.label": "Report on the gate",
+    "campaign_fixture.quest.variants.report.lines": [
+      "The decision has been recorded. Everyone shares this outcome."
+    ],
+    "campaign_fixture.quest.variants.finish": "Finish my report."
+  }
+}

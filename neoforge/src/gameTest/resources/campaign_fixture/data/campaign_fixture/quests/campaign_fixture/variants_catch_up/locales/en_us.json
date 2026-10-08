@@ -1,0 +1,17 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.variants_catch_up.title": "Campaign fixture: a changed waystation",
+    "campaign_fixture.quest.variants_catch_up.description": "Learn what happened before your arrival and continue without repeating the shared decision.",
+    "campaign_fixture.quest.variants_catch_up.offer.label": "What happened here?",
+    "campaign_fixture.quest.variants_catch_up.offer.lines": [
+      "The gate's future was decided before you arrived. I can tell you what changed."
+    ],
+    "campaign_fixture.quest.variants_catch_up.accept": "Tell me what happened.",
+    "campaign_fixture.quest.variants_catch_up.report.label": "I understand the decision",
+    "campaign_fixture.quest.variants_catch_up.report.lines": [
+      "You can continue from here. The earlier participants keep their own credit."
+    ],
+    "campaign_fixture.quest.variants_catch_up.finish": "Record what I learned."
+  }
+}

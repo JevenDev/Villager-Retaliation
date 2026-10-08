@@ -15,7 +15,8 @@ public final class SceneActionSuspension {
     public static ActionResult poll(SceneSavedData data, ActionResult waiting) {
         if (!waiting.suspended()) return waiting;
         if (waiting.suspensionId() == null) return unavailable("saved suspension target is missing");
-        if (waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_REWARD) return waiting;
+        if (waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_REWARD
+                || waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_OUTCOME) return waiting;
         if (waiting.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION) {
             SceneContinuation continuation = data.continuation(waiting.suspensionId()).orElse(null);
             if (continuation == null) return unavailable("saved continuation is unavailable");
@@ -62,7 +63,7 @@ public final class SceneActionSuspension {
                 }
             } else if (target.kind() == ActionResult.SuspensionKind.CONTINUATION) {
                 SceneContinuation continuation = data.continuation(target.id()).orElse(null);
-                if (continuation == null || continuation.completionReceipt() || continuation.rewardOperation() != null) continue;
+                if (continuation == null || continuation.completionReceipt() || continuation.rewardOperation() != null || continuation.outcomeOperation() != null) continue;
                 if (continuation.dependencyContinuationId() != null) {
                     pending.addLast(new Target(ActionResult.SuspensionKind.CONTINUATION, continuation.dependencyContinuationId()));
                 } else if (continuation.sceneInstanceId() != null) {

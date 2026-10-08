@@ -29,6 +29,15 @@ public final class CampaignBlockOwnershipLedger {
         receipts.put(receipt.position(), receipt);
     }
 
+    void advance(Receipt previous, Receipt next) {
+        CampaignStateCodec.require(diagnostic.isBlank(), diagnostic);
+        CampaignStateCodec.require(previous.equals(receipts.get(previous.position())) && previous.state() == State.APPLIED
+                && previous.position().equals(next.position()) && previous.owner().equals(next.owner())
+                && !previous.operation().equals(next.operation()) && previous.placed().equals(next.original())
+                && next.state() == State.RESERVED, "campaign block ownership changed before its next operation");
+        receipts.put(next.position(), next);
+    }
+
     boolean changedOutsideOperation(BlockPos position, String reason) {
         if (!diagnostic.isBlank()) return false;
         var receipt = receipts.get(position);
@@ -42,17 +51,7 @@ public final class CampaignBlockOwnershipLedger {
         var tag = new CompoundTag();
         tag.putInt("DataVersion", CURRENT_DATA_VERSION);
         var entries = new ListTag();
-        receipts.values().forEach(receipt -> {
-            var value = new CompoundTag();
-            value.putLong("Position", receipt.position().asLong());
-            value.putUUID("Owner", receipt.owner());
-            value.putUUID("Operation", receipt.operation());
-            value.put("Original", receipt.original().save());
-            value.put("Placed", receipt.placed().save());
-            value.putString("State", receipt.state().name());
-            value.putString("Diagnostic", receipt.diagnostic());
-            entries.add(value);
-        });
+        receipts.values().forEach(receipt -> entries.add(receipt.save()));
         tag.put("Receipts", entries);
         return tag;
     }
@@ -67,13 +66,7 @@ public final class CampaignBlockOwnershipLedger {
             CampaignStateCodec.require(entries.size() <= MAX_POSITIONS, "campaign block ownership capacity exceeded");
             for (var raw : entries) {
                 var value = (CompoundTag) raw;
-                CampaignStateCodec.require(value.getAllKeys().equals(java.util.Set.of("Position", "Owner", "Operation", "Original", "Placed", "State", "Diagnostic"))
-                        && value.contains("Position", Tag.TAG_LONG) && value.hasUUID("Owner") && value.hasUUID("Operation")
-                        && value.contains("Original", Tag.TAG_COMPOUND) && value.contains("Placed", Tag.TAG_COMPOUND)
-                        && value.contains("State", Tag.TAG_STRING) && value.contains("Diagnostic", Tag.TAG_STRING), "incomplete campaign block ownership");
-                var receipt = new Receipt(BlockPos.of(value.getLong("Position")), value.getUUID("Owner"), value.getUUID("Operation"),
-                        CampaignBlockSnapshot.load(value.getCompound("Original")), CampaignBlockSnapshot.load(value.getCompound("Placed")),
-                        State.valueOf(value.getString("State")), value.getString("Diagnostic"));
+                var receipt = Receipt.load(value);
                 CampaignStateCodec.require(ledger.receipts.putIfAbsent(receipt.position(), receipt) == null, "duplicate campaign block ownership");
             }
         } catch (IllegalArgumentException | IllegalStateException exception) {
@@ -96,6 +89,28 @@ public final class CampaignBlockOwnershipLedger {
             position = position.immutable();
             original.validatePosition(position);
             placed.validatePosition(position);
+        }
+
+        CompoundTag save() {
+            var value = new CompoundTag();
+            value.putLong("Position", position.asLong());
+            value.putUUID("Owner", owner);
+            value.putUUID("Operation", operation);
+            value.put("Original", original.save());
+            value.put("Placed", placed.save());
+            value.putString("State", state.name());
+            value.putString("Diagnostic", diagnostic);
+            return value;
+        }
+
+        static Receipt load(CompoundTag value) {
+            CampaignStateCodec.require(value.getAllKeys().equals(java.util.Set.of("Position", "Owner", "Operation", "Original", "Placed", "State", "Diagnostic"))
+                    && value.contains("Position", Tag.TAG_LONG) && value.hasUUID("Owner") && value.hasUUID("Operation")
+                    && value.contains("Original", Tag.TAG_COMPOUND) && value.contains("Placed", Tag.TAG_COMPOUND)
+                    && value.contains("State", Tag.TAG_STRING) && value.contains("Diagnostic", Tag.TAG_STRING), "incomplete campaign block ownership");
+            return new Receipt(BlockPos.of(value.getLong("Position")), value.getUUID("Owner"), value.getUUID("Operation"),
+                    CampaignBlockSnapshot.load(value.getCompound("Original")), CampaignBlockSnapshot.load(value.getCompound("Placed")),
+                    State.valueOf(value.getString("State")), value.getString("Diagnostic"));
         }
 
         public boolean sameIdentity(Receipt other) {

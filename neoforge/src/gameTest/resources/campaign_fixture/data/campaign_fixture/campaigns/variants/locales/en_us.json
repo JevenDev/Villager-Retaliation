@@ -1,0 +1,12 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.variants.title": "Campaign fixture: waystation consequences",
+    "campaign_fixture.campaign.variants.chapter": "At the waystation",
+    "campaign_fixture.campaign.variants.home": "The waystation",
+    "campaign_fixture.campaign.variants.mentor": "The waystation keeper",
+    "campaign_fixture.campaign.variants.open": "Visitors welcomed",
+    "campaign_fixture.campaign.variants.sealed": "The gate was sealed",
+    "campaign_fixture.campaign.variants.restored": "The waystation reopened"
+  }
+}

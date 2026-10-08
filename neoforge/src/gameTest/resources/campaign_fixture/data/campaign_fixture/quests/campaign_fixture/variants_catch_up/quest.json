@@ -1,0 +1,85 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "campaign_fixture:variants_catch_up",
+  "localization_prefix": "campaign_fixture.quest.variants_catch_up",
+  "metadata": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    },
+    "questline": "campaign_fixture",
+    "campaign": "campaign_fixture:variants"
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "campaign_role": "mentor"
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": false,
+    "cross_villager_compatible": true
+  },
+  "entry_stage": "learn",
+  "stages": [
+    {
+      "id": "learn",
+      "objectives": [],
+      "dialogue": {
+        "offer": {
+          "request": "question",
+          "label": {
+            "key": "#offer.label"
+          },
+          "lines": {
+            "key": "#offer.lines"
+          },
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#accept"
+              },
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "start"
+                }
+              ]
+            }
+          ]
+        },
+        "turn_in": {
+          "request": "question",
+          "label": {
+            "key": "#report.label"
+          },
+          "lines": {
+            "key": "#report.lines"
+          },
+          "responses": [
+            {
+              "id": "finish",
+              "label": {
+                "key": "#finish"
+              },
+              "actions": [
+                {
+                  "type": "campaign_reward",
+                  "reward": "catch_up",
+                  "operation_id": "catch_up_reward"
+                },
+                {
+                  "type": "quest",
+                  "action": "turn_in"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

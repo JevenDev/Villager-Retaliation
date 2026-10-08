@@ -212,7 +212,7 @@ public final class ConversationSessionGameTests {
             var migratedThree = ConversationSavedData.load(versionThree, disk.directory);
             helper.assertTrue(migratedThree.diagnostic().isBlank() && migratedThree.session(original.identity.id()).nestedDecision == null,
                     "version three migrates without inventing a pending decision");
-            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 6, "next save supports saved objective evidence");
+            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), ConversationSavedData.CURRENT_DATA_VERSION, "next save supports saved objective evidence");
         }
         helper.succeed();
     }
@@ -407,6 +407,38 @@ public final class ConversationSessionGameTests {
             var current = migrated.save(new CompoundTag(), helper.getLevel().registryAccess());
             helper.assertTrue(ConversationSavedData.load(current, disk.directory).diagnostic().isBlank(), "migrated witness evidence passes current validation");
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void outcomeSuspensionPersistsWithoutAnUnrelatedSceneCheckpoint(GameTestHelper helper) throws IOException {
+        var level = helper.getLevel();
+        var original = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(level);
+        var future = new CompoundTag();
+        future.putInt("DataVersion", 99);
+        level.getServer().overworld().getDataStorage().set("villagerretaliation_scenes",
+                com.jvn.villagerretaliation.scene.persistence.SceneSavedData.load(future, level.registryAccess()));
+        try (var disk = new Disk()) {
+            var data = disk.open();
+            var session = session(UUID.randomUUID());
+            var operation = UUID.randomUUID();
+            var waiting = ActionResult.suspendedOutcome(operation, "Waiting for location changes.", VillagerActionRegistry.capabilities(action()), VillagerActionResult.EMPTY);
+            String key = "1/node/outcome";
+            session.receipts.put(key, new ConversationSession.Receipt(key, session.identity.owner(), null, action(),
+                    ConversationSession.ReceiptState.RESOLVED, waiting));
+            data.write(level, 0, session);
+            helper.assertValueEqual(disk.reload().session(session.identity.id()).receipts.get(key).result(), waiting,
+                    "outcome recovery is durable without scene state");
+            session.revision++;
+            session.receipts.put(key, new ConversationSession.Receipt(key, session.identity.owner(), null, action(),
+                    ConversationSession.ReceiptState.RESOLVED, ActionResult.suspended(UUID.randomUUID(), Set.of())));
+            boolean denied = false;
+            try { data.write(level, 1, session); }
+            catch (IOException expected) { denied = true; }
+            helper.assertTrue(denied, "a real scene dependency still requires its checkpoint");
+            helper.assertValueEqual(disk.reload().session(session.identity.id()).receipts.get(key).result(), waiting,
+                    "failed scene checkpoint cannot replace the durable outcome wait");
+        } finally { level.getServer().overworld().getDataStorage().set("villagerretaliation_scenes", original); }
         helper.succeed();
     }
 
