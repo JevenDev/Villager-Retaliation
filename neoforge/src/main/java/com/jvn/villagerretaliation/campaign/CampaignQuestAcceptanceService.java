@@ -142,6 +142,25 @@ public final class CampaignQuestAcceptanceService {
         return prepareSelection(context, starts, referenced, actions, actor);
     }
 
+    public static Preparation prepareRemainingAction(DialogueContext context, UUID actor, VillagerActionDefinition action, CompoundTag savedConsent) throws IOException {
+        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
+            var prepared = CampaignOutcomeService.prepare(context, action, actor);
+            if (!prepared.diagnostic().isBlank()) return new Preparation(null, prepared.diagnostic());
+            if (prepared.applied() || !prepared.requiresConfirmation()) return new Preparation(null, "");
+            if (!savedConsent.isEmpty()) {
+                var consent = CampaignQuestConsent.load(savedConsent);
+                if (consent.playerId().equals(actor) && matchesConsentProvider(context, consent)
+                        && prepared.consent().equals(consent.decisions().get(prepared.consent().operationId()))) return new Preparation(null, "");
+            }
+        } else if (action.kind() == VillagerActionDefinition.Kind.QUEST && action.questAction() == VillagerActionDefinition.QuestAction.START
+                && !savedConsent.isEmpty()) {
+            var consent = CampaignQuestConsent.load(savedConsent);
+            if (consent.playerId().equals(actor) && matchesConsentProvider(context, consent) && consent.quests().containsKey(action.questId())
+                    && resumeAccess(context, actor, savedConsent).allowed()) return new Preparation(null, "");
+        }
+        return prepareActions(context, actor, List.of(action));
+    }
+
     private static Preparation prepareSelection(DialogueContext context, Set<ResourceLocation> starts,
             Set<ResourceLocation> referenced, List<VillagerActionDefinition> actions) throws IOException {
         return prepareSelection(context, starts, referenced, actions, context.player().getUUID());

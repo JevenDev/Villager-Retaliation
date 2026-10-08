@@ -306,7 +306,13 @@ public final class BuiltinSceneStepExecutors {
 
     private static com.jvn.villagerretaliation.action.ActionResult executeAction(SceneExecutionContext execution,
             DialogueContext context, VillagerActionDefinition action) {
-        var participants = execution.instance().decisionParticipants();
+        return executeAction(execution, context, action, null);
+    }
+
+    private static com.jvn.villagerretaliation.action.ActionResult executeAction(SceneExecutionContext execution,
+            DialogueContext context, VillagerActionDefinition action,
+            com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants approvalParticipants) {
+        var participants = approvalParticipants == null ? execution.instance().decisionParticipants() : approvalParticipants.save();
         String issue = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.issue(participants);
         if (!issue.isBlank()) return com.jvn.villagerretaliation.action.ActionResult.unavailable(issue,
                 VillagerActionRegistry.capabilities(action), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
@@ -383,6 +389,10 @@ public final class BuiltinSceneStepExecutors {
                     c = new SceneExecutionContext(c.server(), c.repository(), c.instance(), c.definition(),
                             c.step(), c.record(), c.gameTime(), true);
                 }
+                var approval = com.jvn.villagerretaliation.dialogue.conversation.ConversationNestedConfirmations.beforeScene(c, dialogue, id, action);
+                if (!approval.waiting().isBlank()) return SceneStepResult.waitUntil(c.gameTime() + 20L, approval.waiting());
+                if (approval.resolved() && previous == null) c = new SceneExecutionContext(c.server(), c.repository(), c.instance(), c.definition(),
+                        c.step(), c.record(), c.gameTime(), true);
                 boolean resuming = previous != null && previous.state() == SceneOperationReceipt.ReceiptState.WAITING;
                 UUID originatingScene = c.instance().id();
                 var execution = c;
@@ -392,9 +402,11 @@ public final class BuiltinSceneStepExecutors {
                                 "action/" + id,
                                 kind,
                                 () ->
-                                        SceneLifecycleIntegration.withOriginatingScene(originatingScene, () ->
-                                                executeAction(execution, dialogue, action)),
-                                com.jvn.villagerretaliation.campaign.CampaignSceneApproval.canRecover(c.instance(), action));
+                                        approval.rejection() != null ? approval.rejection() : SceneLifecycleIntegration.withOriginatingScene(originatingScene, () ->
+                                                executeAction(execution, dialogue, action, approval.participants())),
+                                approval.resolved() && approval.rejection() != null
+                                        || com.jvn.villagerretaliation.campaign.CampaignSceneApproval.canRecover(c.instance(), action));
+                com.jvn.villagerretaliation.dialogue.conversation.ConversationNestedConfirmations.settle(c.server(), c.instance().conversationEffect());
                 if (guarded.ambiguous())
                     return SceneStepResult.block(
                             "action_ambiguous",

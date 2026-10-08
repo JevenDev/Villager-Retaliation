@@ -141,7 +141,7 @@ public final class ConversationService {
                             return new Result(result.session(), result.responses(), issue);
                         }
                     }
-                    case DECLINE -> ConversationConfirmations.decline(session, argument);
+                    case DECLINE -> ConversationConfirmations.decline(player, session, argument);
                     case ROLL -> {
                         require(session.phase == ConversationSession.Phase.CHECK, "The conversation is not waiting for a check.");
                         var check = definition.checks().get(session.check);
@@ -320,7 +320,7 @@ public final class ConversationService {
                 player.getUUID(), presentParticipants(player, session));
     }
 
-    private static Set<UUID> presentParticipants(ServerPlayer controller, ConversationSession session) {
+    static Set<UUID> presentParticipants(ServerPlayer controller, ConversationSession session) {
         var participants = new java.util.LinkedHashSet<UUID>();
         participants.add(controller.getUUID());
         var character = character(controller, session);
@@ -385,7 +385,8 @@ public final class ConversationService {
                 pause(server, data, id, session.controller, "Controller is unavailable or no longer has permission.");
                 continue;
             }
-            if (session.phase != ConversationSession.Phase.NODE_EFFECTS && session.phase != ConversationSession.Phase.RESPONSE_EFFECTS) continue;
+            if (session.phase != ConversationSession.Phase.NODE_EFFECTS && session.phase != ConversationSession.Phase.RESPONSE_EFFECTS
+                    && session.nestedDecision == null) continue;
             try { ConversationRuntime.drive(player, id, false); }
             catch (Unavailable exception) {
                 session = data.session(id);

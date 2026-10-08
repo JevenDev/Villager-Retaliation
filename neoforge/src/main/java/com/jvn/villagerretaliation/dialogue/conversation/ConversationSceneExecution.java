@@ -53,20 +53,32 @@ public final class ConversationSceneExecution {
     }
 
     public static Access resolve(MinecraftServer server, SceneInstance scene) {
+        return resolveScene(server, scene, false);
+    }
+
+    static Access resolveConfirmation(MinecraftServer server, SceneInstance scene) { return resolveScene(server, scene, true); }
+
+    private static Access resolveScene(MinecraftServer server, SceneInstance scene, boolean confirming) {
         return resolve(server, scene.conversationEffect(), scene.owner().playerId(), scene.owningCampaignId(),
                 scene.owningQuestId(), scene.owningQuestInstance(), scene.decisionParticipants(),
-                result -> SceneActionSuspension.dependsOnScene(SceneSavedData.get(server.overworld()), result, scene.id()));
+                result -> SceneActionSuspension.dependsOnScene(SceneSavedData.get(server.overworld()), result, scene.id()), confirming);
     }
 
     public static Access resolve(MinecraftServer server, SceneContinuation continuation) {
+        return resolveContinuation(server, continuation, false);
+    }
+
+    static Access resolveConfirmation(MinecraftServer server, SceneContinuation continuation) { return resolveContinuation(server, continuation, true); }
+
+    private static Access resolveContinuation(MinecraftServer server, SceneContinuation continuation, boolean confirming) {
         return resolve(server, continuation.conversationEffect(), continuation.playerId(), continuation.campaignId(),
                 continuation.questId(), continuation.questRunId(), continuation.decisionParticipants(),
-                result -> SceneActionSuspension.dependsOnContinuation(SceneSavedData.get(server.overworld()), result, continuation.id()));
+                result -> SceneActionSuspension.dependsOnContinuation(SceneSavedData.get(server.overworld()), result, continuation.id()), confirming);
     }
 
     private static Access resolve(MinecraftServer server, CompoundTag sourceTag, UUID owner,
             net.minecraft.resources.ResourceLocation campaign, net.minecraft.resources.ResourceLocation quest, UUID questRun,
-            CompoundTag participants, java.util.function.Predicate<com.jvn.villagerretaliation.action.ActionResult> waiting) {
+            CompoundTag participants, java.util.function.Predicate<com.jvn.villagerretaliation.action.ActionResult> waiting, boolean confirming) {
         try {
             var source = Source.load(sourceTag);
             var data = ConversationSavedData.get(server.overworld());
@@ -75,8 +87,13 @@ public final class ConversationSceneExecution {
             ConversationService.require(session != null && session.active(), "The suspended action's conversation is unavailable or has already ended.");
             ConversationService.require(data.issue(source.session()).isBlank(), data.issue(source.session()));
             var definition = ConversationService.definition(server, session);
-            boolean node = session.phase == ConversationSession.Phase.NODE_EFFECTS;
-            ConversationService.require(node || session.phase == ConversationSession.Phase.RESPONSE_EFFECTS, "The conversation is no longer waiting for this action.");
+            var phase = session.phase;
+            if (phase == ConversationSession.Phase.CONFIRMATION && session.nestedDecision != null) {
+                ConversationService.require(confirming, "Review the pending shared consequence before this action continues.");
+                phase = session.nestedDecision.resumePhase();
+            }
+            boolean node = phase == ConversationSession.Phase.NODE_EFFECTS;
+            ConversationService.require(node || phase == ConversationSession.Phase.RESPONSE_EFFECTS, "The conversation is no longer waiting for this action.");
             var current = definition.nodes().get(session.node);
             var response = node ? null : current.responses().get(session.response);
             ConversationService.require(node || response != null, "The suspended action's original conversation response is unavailable.");
@@ -101,7 +118,10 @@ public final class ConversationSceneExecution {
                 ConversationService.require(progress != null && questRun.equals(progress.questRunId()), "The suspended action's original quest run changed.");
             }
             var decision = participants.isEmpty() ? null : CampaignDecisionParticipants.load(participants);
-            ConversationService.require(java.util.Objects.equals(decision, session.decisionParticipants), "The suspended action's participation record belongs to another decision.");
+            var nestedEvidence = decision == null ? null : session.nestedParticipation.get(decision.decision());
+            ConversationService.require(java.util.Objects.equals(decision, session.decisionParticipants)
+                    || nestedEvidence != null && nestedEvidence.effect().equals(source.effect()) && nestedEvidence.participants().equals(decision),
+                    "The suspended action's participation record belongs to another decision.");
             var controller = session.controller == null ? null : server.getPlayerList().getPlayer(session.controller);
             ConversationService.require(controller != null && ConversationService.member(controller, session), "The suspended action is waiting for an authorized conversation controller.");
             String issue = CampaignAuthority.controlIssue(controller, actor);
@@ -139,7 +159,7 @@ public final class ConversationSceneExecution {
 
     public record Access(ServerPlayer controller, UUID actor, String diagnostic) { }
 
-    private record Source(UUID session, String effect) {
+    record Source(UUID session, String effect) {
         CompoundTag save() {
             var tag = new CompoundTag();
             tag.putInt("Version", 1);

@@ -29,6 +29,8 @@ public final class ConversationSession {
     UUID questRun;
     com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation;
     UUID pendingChoice;
+    ConversationNestedDecision nestedDecision;
+    final Map<UUID, ConversationParticipationEvidence> nestedParticipation = new LinkedHashMap<>();
     com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants decisionParticipants;
     net.minecraft.nbt.CompoundTag consent = new net.minecraft.nbt.CompoundTag();
     final Set<UUID> participants = new LinkedHashSet<>();
@@ -70,6 +72,8 @@ public final class ConversationSession {
         questRun = source.questRun;
         confirmation = source.confirmation;
         pendingChoice = source.pendingChoice;
+        nestedDecision = source.nestedDecision;
+        nestedParticipation.putAll(source.nestedParticipation);
         decisionParticipants = source.decisionParticipants;
         consent = source.consent.copy();
         participants.addAll(source.participants);
@@ -89,7 +93,8 @@ public final class ConversationSession {
     public Snapshot snapshot() {
         return new Snapshot(identity, revision, visit, node, phase, exchange, response, check, outcome,
                 controller, Set.copyOf(participants), ordered(speakers), List.copyOf(transcript),
-                List.copyOf(choices), ordered(checks), ordered(receipts), diagnostic, confirmation);
+                List.copyOf(choices), ordered(checks), ordered(receipts), diagnostic, confirmation != null ? confirmation
+                        : nestedDecision != null && nestedDecision.state() == ConversationNestedDecision.State.PENDING ? nestedDecision.confirmation() : null);
     }
 
     private static <K, V> Map<K, V> ordered(Map<K, V> values) {

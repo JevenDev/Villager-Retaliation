@@ -30,6 +30,7 @@ final class ConversationRuntime {
         var data = ConversationSavedData.get(player.serverLevel());
         for (int step = 0; step < MAX_STEPS; step++) {
             ConversationService.require(data.issue(id).isBlank(), data.issue(id));
+            ConversationNestedConfirmations.settleSession(player.server, id);
             var session = data.session(id);
             if (session == null || !session.active()) return;
             ConversationService.require(player.getUUID().equals(session.controller) && ConversationService.member(player, session)

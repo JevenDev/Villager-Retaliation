@@ -56,8 +56,13 @@ public final class SceneContinuationService {
             SceneContinuation.DialogueResume dialogueResume, ResourceLocation questId, UUID questRunId) {
         RunResult existing = existingContinuation(context, actions, sourcePointer);
         if (existing != null) return existing;
+        boolean conversation = !ConversationSceneExecution.capture().isEmpty();
         for (int index = 0; actions != null && index < actions.size(); index++) {
-            if (actions.get(index).kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
+            var action = actions.get(index);
+            boolean decision = conversation && (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME
+                    || action.kind() == VillagerActionDefinition.Kind.QUEST && action.questAction() == VillagerActionDefinition.QuestAction.START);
+            if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD
+                    || decision && CampaignQuestAccess.campaignFor(context.level().getServer(), questId == null ? action.questId() : questId) != null) {
                 return runCampaignActions(context, actions, baseReplacements, trackerFlashHandler, sourcePointer, dialogueResume, questId, questRunId, index);
             }
         }
@@ -169,6 +174,7 @@ public final class SceneContinuationService {
             if (!(action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene())
                     && action.kind() != VillagerActionDefinition.Kind.FORCED_DIALOGUE
                     && action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_REWARD
+                    && action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME
                     && !questOperation(action)) continue;
             String source = pointer(sourcePointer, action, index);
             for (SceneContinuation continuation : SceneSavedData.get(context.level()).continuations()) {
@@ -424,6 +430,8 @@ public final class SceneContinuationService {
         var server = context.level().getServer();
         var held = new boolean[1];
         var actionContext = new DialogueContext[] { context };
+        var rejected = new ActionResult[1];
+        var participants = new com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants[1];
         ActionSequenceRunner.Result sequence = ActionSequenceRunner.run(context, continuation.actions(),
                 continuation.nextActionIndex(), continuation.replacements(),
                 trackerFlashHandler, (next, outcome) -> {
@@ -434,11 +442,13 @@ public final class SceneContinuationService {
                         if (progress != null) continuation.bindQuestRun(progress.questRunId());
                     }
                     continuation.replacements().putAll(outcome.legacyResult().replacements());
-                    continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
+                    if (authority == null) continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
                     data.changed();
                     if (!outcome.suspended() && (outcome.success() || !continuation.actions().get(next - 1).required())
                             && !CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) throw pauseForSave(continuation);
                 }, index -> {
+                    rejected[0] = null;
+                    participants[0] = null;
                     if (authority != null) {
                         var current = ConversationSceneExecution.resolve(server, continuation);
                         actionContext[0] = continuation.actions().get(index).kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME
@@ -453,7 +463,17 @@ public final class SceneContinuationService {
                             throw pauseForSave(continuation);
                         }
                     }
-                    if (continuation.actionRecovery()) {
+                    var approval = com.jvn.villagerretaliation.dialogue.conversation.ConversationNestedConfirmations.beforeContinuation(context, continuation, index);
+                    if (!approval.waiting().isBlank()) {
+                        continuation.pauseForConsent(approval.waiting());
+                        held[0] = true;
+                        data.changed();
+                        CampaignRewardRecovery.persist(server, data, continuation);
+                        throw pauseForSave(continuation);
+                    }
+                    rejected[0] = approval.rejection();
+                    participants[0] = approval.participants();
+                    if (continuation.actionRecovery() && rejected[0] == null) {
                         continuation.prepareRecoveryAction(index);
                         if (!CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) {
                             continuation.clearPreparedRecoveryAction();
@@ -461,14 +481,22 @@ public final class SceneContinuationService {
                         }
                     }
                 }, (action, replacements) -> {
+                    if (rejected[0] != null) return rejected[0];
                     if (authority == null) return com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(context, action, replacements);
                     var progress = action.questId() == null ? null : VillagerQuestSavedData.get(context.level()).get(continuation.playerId(), action.questId());
                     boolean shared = action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME;
                     if (shared && progress == null) return ActionResult.unavailable("The deciding player's original quest run is unavailable.", Set.of(), VillagerActionResult.EMPTY);
                     var actor = shared ? new com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor(continuation.playerId(), progress.questRunId()) : null;
-                    return com.jvn.villagerretaliation.campaign.CampaignAuthority.withController(authority.controller(), continuation.playerId(),
-                            () -> ConversationSceneExecution.withContinuation(continuation,
-                                    () -> com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(actionContext[0], action, replacements, actor)));
+                    var applied = new ActionResult[1];
+                    com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.withConsent(continuation.campaignConsent(), () -> {
+                        var evidence = participants[0] == null ? continuation.decisionParticipants() : participants[0].save();
+                        applied[0] = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(evidence,
+                                () -> com.jvn.villagerretaliation.campaign.CampaignAuthority.withController(authority.controller(), continuation.playerId(),
+                                        () -> ConversationSceneExecution.withContinuation(continuation,
+                                                () -> com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(actionContext[0], action, replacements, actor))));
+                        continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
+                    });
+                    return applied[0];
                 });
         ActionResult result = sequence.outcome();
         if (held[0] || continuation.recoveryPersistencePending()) return result;

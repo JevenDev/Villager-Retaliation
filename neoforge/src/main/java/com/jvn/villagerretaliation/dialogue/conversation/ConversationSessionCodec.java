@@ -53,6 +53,10 @@ final class ConversationSessionCodec {
         tag.put("Consent", session.consent.copy());
         tag.put("DecisionParticipants", session.decisionParticipants == null ? new CompoundTag() : session.decisionParticipants.save());
         if (session.confirmation != null) tag.put("Confirmation", session.confirmation.save());
+        if (session.nestedDecision != null) tag.put("NestedDecision", session.nestedDecision.save());
+        var nestedParticipation = new ListTag();
+        session.nestedParticipation.values().forEach(evidence -> nestedParticipation.add(evidence.save()));
+        tag.put("NestedParticipation", nestedParticipation);
         if (session.pendingChoice != null) tag.putUUID("PendingChoice", session.pendingChoice);
         tag.put("Participants", players(session.participants));
         var speakers = new ListTag();
@@ -161,15 +165,22 @@ final class ConversationSessionCodec {
         if (!session.consent.isEmpty()) com.jvn.villagerretaliation.campaign.CampaignQuestConsent.load(session.consent);
         if (tag.contains("Confirmation")) session.confirmation = com.jvn.villagerretaliation.campaign.CampaignConfirmation.load(compound(tag, "Confirmation"));
         session.pendingChoice = optionalId(tag, "PendingChoice");
-        require((session.phase == ConversationSession.Phase.CONFIRMATION) == (session.confirmation != null)
-                && (session.confirmation == null || session.consent.isEmpty()), "conversation confirmation phase has inconsistent consent");
+        if (tag.contains("NestedDecision")) session.nestedDecision = ConversationNestedDecision.load(compound(tag, "NestedDecision"));
+        boolean nestedPending = session.nestedDecision != null && session.nestedDecision.state() == ConversationNestedDecision.State.PENDING;
+        require((session.phase == ConversationSession.Phase.CONFIRMATION) == (session.confirmation != null || nestedPending)
+                && (session.confirmation == null || session.consent.isEmpty() && session.nestedDecision == null), "conversation confirmation phase has inconsistent consent");
+        if (session.nestedDecision != null) {
+            require(session.pendingChoice == null && session.confirmation == null
+                    && session.nestedDecision.confirmation().consent().playerId().equals(session.actingPlayer)
+                    && (nestedPending || session.phase == session.nestedDecision.resumePhase()), "nested confirmation belongs to another actor or execution phase");
+        }
         require(session.confirmation == null || session.confirmation.consent().playerId().equals(session.actingPlayer)
                 && session.confirmation.consent().providerId().equals(identity.character()), "conversation confirmation belongs to another actor");
         require(session.pendingChoice == null || session.confirmation != null, "conversation choice has no pending confirmation");
         if (!session.consent.isEmpty()) {
             var consent = com.jvn.villagerretaliation.campaign.CampaignQuestConsent.load(session.consent);
             require(consent.playerId().equals(session.actingPlayer) && consent.providerId().equals(identity.character())
-                    && (session.phase == ConversationSession.Phase.NODE_EFFECTS || session.phase == ConversationSession.Phase.RESPONSE_EFFECTS),
+                    && (session.phase == ConversationSession.Phase.NODE_EFFECTS || session.phase == ConversationSession.Phase.RESPONSE_EFFECTS || nestedPending),
                     "conversation approval belongs to another actor or execution phase");
         }
         session.participants.clear();
@@ -254,6 +265,30 @@ final class ConversationSessionCodec {
                     && request.player().equals(decision.player()) && request.argument().equals(decision.decision().toString()));
             require(choice == null ? confirmed : choice.player().equals(decision.player()) && choice.participants().equals(decision.participants()),
                     "conversation participation has no matching decision receipt");
+        }
+        for (var raw : list(tag, "NestedParticipation")) {
+            var evidence = ConversationParticipationEvidence.load((CompoundTag) raw);
+            evidence.validate(session);
+            require(session.nestedParticipation.putIfAbsent(evidence.participants().decision(), evidence) == null,
+                    "duplicate nested participation record");
+        }
+        if (session.nestedDecision != null) {
+            var nested = session.nestedDecision;
+            var evidence = session.nestedParticipation.get(nested.confirmation().id());
+            require((nested.state() == ConversationNestedDecision.State.APPROVED) == (evidence != null),
+                    "nested approval has inconsistent participation evidence");
+            require(evidence == null || evidence.effect().equals(nested.origin().effect()) && evidence.controller().equals(nested.resolver()),
+                    "nested approval belongs to another participation record");
+            var root = session.receipts.get(nested.origin().effect());
+            require(root != null && root.state() == ConversationSession.ReceiptState.RESOLVED && root.result().suspended()
+                    && root.actor().equals(session.actingPlayer), "nested confirmation has no saved parent suspension");
+            if (nested.state() != ConversationNestedDecision.State.PENDING) {
+                require(session.participants.contains(nested.resolver()) && session.requests.values().stream().anyMatch(request ->
+                        request.player().equals(nested.resolver()) && request.argument().equals(nested.confirmation().id().toString())
+                                && request.intent() == (nested.state() == ConversationNestedDecision.State.DECLINED
+                                        ? ConversationSession.Intent.DECLINE : ConversationSession.Intent.CONFIRM)),
+                        "nested confirmation resolution has no matching request receipt");
+            }
         }
         session.checks.values().forEach(check -> {
             var request = session.requests.get(check.request());

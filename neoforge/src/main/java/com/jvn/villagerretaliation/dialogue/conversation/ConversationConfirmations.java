@@ -26,6 +26,7 @@ final class ConversationConfirmations {
     }
 
     static String confirm(ServerPlayer player, ConversationSession session, ConversationDefinition definition, String id) {
+        if (session.nestedDecision != null) return ConversationNestedConfirmations.confirm(player, session, id);
         requirePending(session, id);
         var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
         var access = CampaignQuestAcceptanceService.confirmationAccess(context, session.actingPlayer, session.confirmation);
@@ -58,7 +59,8 @@ final class ConversationConfirmations {
         return session.decisionParticipants != null && session.decisionParticipants.player().equals(session.actingPlayer);
     }
 
-    static void decline(ConversationSession session, String id) {
+    static void decline(ServerPlayer player, ConversationSession session, String id) {
+        if (session.nestedDecision != null) { ConversationNestedConfirmations.decline(player, session, id); return; }
         requirePending(session, id);
         boolean entry = session.pendingChoice == null;
         discard(session);

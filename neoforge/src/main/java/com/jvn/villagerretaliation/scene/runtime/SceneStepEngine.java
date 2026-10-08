@@ -21,7 +21,7 @@ public final class SceneStepEngine {
         try {
             SceneReceiptGuard.retryPending(server, data, instance);
             return processStep(server, data, instance, definition, time);
-        } catch (SceneReceiptGuard.PersistenceWait wait) {
+        } catch (SceneReceiptGuard.PersistenceWait | com.jvn.villagerretaliation.dialogue.conversation.ConversationNestedConfirmations.Pause wait) {
             if (instance.pauseCampaign(wait.getMessage(), time)) data.changed();
             return SceneScheduler.ProcessResult.wakeAt(deadline(time, 100L));
         }

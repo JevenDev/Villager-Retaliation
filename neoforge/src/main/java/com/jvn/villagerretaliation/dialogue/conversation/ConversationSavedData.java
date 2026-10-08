@@ -19,7 +19,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class ConversationSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 3;
+    public static final int CURRENT_DATA_VERSION = 5;
     static final String DATA_NAME = "villagerretaliation_conversations";
     private final Path directory;
     private Map<UUID, ConversationSession> sessions = Map.of();
@@ -57,6 +57,8 @@ public final class ConversationSavedData extends SavedData {
                 var saved = ((CompoundTag) raw).copy();
                 if (version == 1) saved.put("Consent", new CompoundTag());
                 if (version < 3) saved.put("DecisionParticipants", new CompoundTag());
+                if (version < 4) saved.remove("NestedDecision");
+                if (version < 5) ConversationParticipationEvidence.migrate(saved);
                 var session = ConversationSessionCodec.load(saved);
                 if (version < 3 && (session.phase == ConversationSession.Phase.RESPONSE_EFFECTS
                         || session.phase == ConversationSession.Phase.CHECK || session.phase == ConversationSession.Phase.ROLLED)) {

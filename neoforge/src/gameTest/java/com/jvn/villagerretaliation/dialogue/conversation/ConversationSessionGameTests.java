@@ -207,7 +207,12 @@ public final class ConversationSessionGameTests {
             var migratedTwo = ConversationSavedData.load(versionTwo, disk.directory);
             helper.assertTrue(migratedTwo.diagnostic().isBlank() && migratedTwo.session(original.identity.id()).decisionParticipants == null,
                     "version two migrates without inventing listener credit");
-            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 3, "next save uses the explicit participation format");
+            var versionThree = disk.read();
+            versionThree.putInt("DataVersion", 3);
+            var migratedThree = ConversationSavedData.load(versionThree, disk.directory);
+            helper.assertTrue(migratedThree.diagnostic().isBlank() && migratedThree.session(original.identity.id()).nestedDecision == null,
+                    "version three migrates without inventing a pending decision");
+            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 5, "next save supports saved nested participation");
         }
         helper.succeed();
     }
@@ -294,6 +299,113 @@ public final class ConversationSessionGameTests {
                 helper.assertFalse(dormant.diagnostic().isBlank(), "inconsistent confirmation cannot execute");
                 helper.assertValueEqual(dormant.save(new CompoundTag(), helper.getLevel().registryAccess()), broken, "repair retains every raw record");
             }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void nestedDecisionRecordsRequireTheirParentAndResolutionEvidence(GameTestHelper helper) throws IOException {
+        try (var disk = new Disk()) {
+            var session = session(UUID.randomUUID());
+            var data = disk.open();
+            data.write(null, 0, session);
+            var quest = ResourceLocation.parse("campaign_fixture:characters");
+            var acceptance = new com.jvn.villagerretaliation.campaign.CampaignQuestAcceptance(UUID.randomUUID(),
+                    session.identity.campaignInstance(), "campaign-v1", 0, 0, Map.of());
+            var consent = new com.jvn.villagerretaliation.campaign.CampaignQuestConsent(session.actingPlayer, session.identity.character(),
+                    Map.of(quest, new com.jvn.villagerretaliation.campaign.CampaignQuestConsent.Entry(acceptance, new CompoundTag())));
+            var confirmation = new com.jvn.villagerretaliation.campaign.CampaignConfirmation(acceptance.requestId(), 0, consent,
+                    Map.of(quest, new CompoundTag()), "Review the shared consequences.");
+            var parent = VillagerActionDefinition.readListOrInline(quest, "parent",
+                    JsonParser.parseString("{\"type\":\"start_scene\",\"scene_id\":\"campaign_fixture:character_greeting\",\"operation_id\":\"nested_parent\",\"wait_for_result\":true}").getAsJsonObject()).getFirst();
+            var action = VillagerActionDefinition.readListOrInline(quest, "nested",
+                    JsonParser.parseString("{\"type\":\"quest\",\"action\":\"start\",\"quest\":\"campaign_fixture:characters\"}").getAsJsonObject()).getFirst();
+            UUID scene = UUID.randomUUID();
+            String effect = "1/node/scene";
+            session.receipts.put(effect, new ConversationSession.Receipt(effect, session.actingPlayer, null, parent,
+                    ConversationSession.ReceiptState.RESOLVED, ActionResult.suspended(scene, VillagerActionRegistry.capabilities(parent))));
+            session.nestedDecision = new ConversationNestedDecision(new ConversationNestedDecision.Origin(ConversationNestedDecision.Kind.SCENE,
+                    scene, effect, "decide", "accept", -1, "scene-v1", action), ConversationSession.Phase.NODE_EFFECTS, confirmation,
+                    ConversationNestedDecision.State.PENDING, null, 0, "");
+            session.phase = ConversationSession.Phase.CONFIRMATION;
+            session.revision++;
+            data.write(null, 1, session);
+            helper.assertValueEqual(disk.reload().session(session.identity.id()).nestedDecision, session.nestedDecision,
+                    "pending nested decision retains its exact action and parent");
+            var pending = disk.read();
+            for (Consumer<CompoundTag> corrupt : List.<Consumer<CompoundTag>>of(
+                    tag -> first(tag).remove("NestedDecision"),
+                    tag -> first(tag).getCompound("NestedDecision").putInt("Version", 99),
+                    tag -> first(tag).getCompound("NestedDecision").getCompound("Origin").putString("Effect", "another/effect"),
+                    tag -> first(tag).getCompound("NestedDecision").getCompound("Origin").putInt("Index", 1),
+                    tag -> first(tag).getCompound("NestedDecision").getCompound("Origin").remove("Action"),
+                    tag -> first(tag).getCompound("NestedDecision").getCompound("Confirmation").getCompound("Consent").putUUID("Player", UUID.randomUUID()),
+                    tag -> first(tag).putString("Phase", "RESPONSES"),
+                    tag -> first(tag).getList("Receipts", 10).clear())) {
+                var broken = pending.copy(); corrupt.accept(broken);
+                var dormant = ConversationSavedData.load(broken, disk.directory);
+                helper.assertFalse(dormant.diagnostic().isBlank(), "altered nested decision cannot execute");
+                helper.assertValueEqual(dormant.save(new CompoundTag(), helper.getLevel().registryAccess()), broken,
+                        "invalid decision retains its readable raw data for repair");
+            }
+            session.nestedDecision = session.nestedDecision.resolved(ConversationNestedDecision.State.APPROVED, session.actingPlayer, 1, "");
+            session.phase = ConversationSession.Phase.NODE_EFFECTS;
+            session.nestedParticipation.put(confirmation.id(), new ConversationParticipationEvidence(effect,
+                    new com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants(session.identity.id(), confirmation.id(),
+                            session.identity.campaign(), session.identity.campaignInstance(), session.actingPlayer, Set.of(session.actingPlayer)),
+                    session.actingPlayer));
+            session.requests.put(UUID.randomUUID(), new ConversationSession.Request(session.actingPlayer, 2, ConversationSession.Intent.CONFIRM,
+                    confirmation.id().toString()));
+            session.revision++;
+            data.write(null, 2, session);
+            helper.assertValueEqual(disk.reload().session(session.identity.id()).nestedDecision, session.nestedDecision,
+                    "resolved decision retains its confirming request across reloads");
+            var approved = disk.read();
+            for (Consumer<CompoundTag> corrupt : List.<Consumer<CompoundTag>>of(
+                    tag -> first(tag).getList("Requests", 10).clear(),
+                    tag -> first(tag).getList("NestedParticipation", 10).clear(),
+                    tag -> first(tag).getList("NestedParticipation", 10).getCompound(0).putInt("Version", 99),
+                    tag -> first(tag).getList("NestedParticipation", 10).getCompound(0).putString("Effect", "another/effect"),
+                    tag -> first(tag).getList("NestedParticipation", 10).getCompound(0).putUUID("Controller", UUID.randomUUID()),
+                    tag -> first(tag).getList("NestedParticipation", 10).getCompound(0).getCompound("Participants").putUUID("Instance", UUID.randomUUID()),
+                    tag -> first(tag).getList("NestedParticipation", 10).getCompound(0).getCompound("Participants").putUUID("Decision", UUID.randomUUID()),
+                    tag -> first(tag).getList("NestedParticipation", 10).getCompound(0).getCompound("Participants").getList("Participants", 10)
+                            .getCompound(0).putUUID("Player", UUID.randomUUID()),
+                    tag -> first(tag).getList("NestedParticipation", 10).add(first(tag).getList("NestedParticipation", 10).get(0).copy()))) {
+                var unproven = approved.copy(); corrupt.accept(unproven);
+                var dormant = ConversationSavedData.load(unproven, disk.directory);
+                helper.assertFalse(dormant.diagnostic().isBlank(), "approval without matching participation evidence cannot execute");
+                helper.assertValueEqual(dormant.save(new CompoundTag(), helper.getLevel().registryAccess()), unproven,
+                        "invalid participation evidence remains repairable");
+            }
+            var legacy = approved.copy();
+            legacy.putInt("DataVersion", 4);
+            first(legacy).remove("NestedParticipation");
+            var migrated = ConversationSavedData.load(legacy, disk.directory);
+            helper.assertTrue(migrated.diagnostic().isBlank(), "version four approval remains readable: " + migrated.diagnostic());
+            helper.assertValueEqual(migrated.session(session.identity.id()).nestedParticipation.get(confirmation.id()).participants().participants(),
+                    Set.of(session.actingPlayer), "legacy node approval retains only its original actor");
+
+            UUID witness = UUID.randomUUID(); UUID successor = UUID.randomUUID(); UUID decision = UUID.randomUUID();
+            session.participants.add(witness); session.participants.add(successor);
+            session.decisionParticipants = new com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants(session.identity.id(),
+                    decision, session.identity.campaign(), session.identity.campaignInstance(), session.actingPlayer, Set.of(session.actingPlayer, witness));
+            session.requests.clear();
+            session.requests.put(UUID.randomUUID(), new ConversationSession.Request(session.actingPlayer, 1, ConversationSession.Intent.CONFIRM,
+                    decision.toString()));
+            session.requests.put(UUID.randomUUID(), new ConversationSession.Request(successor, 2, ConversationSession.Intent.CONFIRM,
+                    confirmation.id().toString()));
+            session.nestedDecision = new ConversationNestedDecision(session.nestedDecision.origin(), session.nestedDecision.resumePhase(),
+                    confirmation, ConversationNestedDecision.State.APPROVED, successor, 1, "");
+            var legacyEntry = ConversationSessionCodec.save(session);
+            legacyEntry.remove("NestedParticipation");
+            legacy.getList("Sessions", 10).set(0, legacyEntry);
+            migrated = ConversationSavedData.load(legacy, disk.directory);
+            helper.assertTrue(migrated.diagnostic().isBlank(), "legacy handover approval remains readable: " + migrated.diagnostic());
+            helper.assertValueEqual(migrated.session(session.identity.id()).nestedParticipation.get(confirmation.id()).participants().participants(),
+                    Set.of(session.actingPlayer, witness), "migration keeps recorded witnesses without inventing successor participation");
+            var current = migrated.save(new CompoundTag(), helper.getLevel().registryAccess());
+            helper.assertTrue(ConversationSavedData.load(current, disk.directory).diagnostic().isBlank(), "migrated witness evidence passes current validation");
         }
         helper.succeed();
     }
