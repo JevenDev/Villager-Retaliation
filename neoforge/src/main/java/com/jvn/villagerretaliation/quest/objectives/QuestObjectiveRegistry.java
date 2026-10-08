@@ -116,6 +116,18 @@ public final class QuestObjectiveRegistry {
                     requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
                     new CriterionObjectiveType()),
             register(
+                    "campaign_outcome",
+                    QuestDefinition.ObjectiveType.CAMPAIGN_OUTCOME,
+                    aliases(),
+                    requirements(QuestObjectiveRequirement.POLLING),
+                    new com.jvn.villagerretaliation.campaign.CampaignStoryObjectiveType(QuestDefinition.ObjectiveType.CAMPAIGN_OUTCOME)),
+            register(
+                    "campaign_speak",
+                    QuestDefinition.ObjectiveType.CAMPAIGN_SPEAK,
+                    aliases(),
+                    requirements(QuestObjectiveRequirement.POLLING),
+                    new com.jvn.villagerretaliation.campaign.CampaignStoryObjectiveType(QuestDefinition.ObjectiveType.CAMPAIGN_SPEAK)),
+            register(
                     "condition",
                     QuestDefinition.ObjectiveType.CONDITION,
                     aliases(),
@@ -157,6 +169,41 @@ public final class QuestObjectiveRegistry {
         }
         QuestObjectiveTypeDescriptor<?> descriptor = BY_TYPE.get(objective.type());
         return descriptor == null ? Set.of() : descriptor.requirements();
+    }
+
+    public static JsonObject structuralSchema() {
+        var schema = new JsonObject();
+        var rules = new com.google.gson.JsonArray();
+        var storyTypes = new com.google.gson.JsonArray();
+        for (var descriptor : REGISTRATIONS) {
+            if (descriptor.implementation() == null) continue;
+            var fields = descriptor.implementation().structuralSchema();
+            if (fields.isEmpty()) continue;
+            var names = new com.google.gson.JsonArray();
+            names.add(descriptor.id());
+            descriptor.aliases().forEach(names::add);
+            var type = new JsonObject(); type.add("enum", names);
+            var properties = new JsonObject(); properties.add("type", type);
+            var when = new JsonObject(); when.add("properties", properties);
+            var required = new com.google.gson.JsonArray(); required.add("type"); when.add("required", required);
+            var rule = new JsonObject(); rule.add("if", when); rule.add("then", fields.get()); rules.add(rule);
+            if (fields.get().getAsJsonObject("properties").has("story")) names.forEach(storyTypes::add);
+        }
+        var storyPresent = new JsonObject();
+        var requiredStory = new com.google.gson.JsonArray(); requiredStory.add("story");
+        storyPresent.add("required", requiredStory);
+        var supportedType = new JsonObject(); supportedType.add("enum", storyTypes);
+        var properties = new JsonObject(); properties.add("type", supportedType);
+        var allowed = new JsonObject(); allowed.add("properties", properties);
+        var requiredType = new com.google.gson.JsonArray(); requiredType.add("type"); allowed.add("required", requiredType);
+        var storyRule = new JsonObject(); storyRule.add("if", storyPresent); storyRule.add("then", allowed);
+        rules.add(storyRule);
+        schema.add("allOf", rules);
+        return schema;
+    }
+
+    public static List<com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.Issue> structuralIssues(JsonObject objective) {
+        return com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(objective, structuralSchema());
     }
 
     public static Optional<String> campaignLocationError(JsonObject objective) {

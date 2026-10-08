@@ -7211,6 +7211,8 @@ public final class VillagerQuestService {
             case CHOICE -> "Make a quest choice.";
             case FACT -> "Resolve {objective_fact}.";
             case CRITERION -> "Complete {objective_count} quest events.";
+            case CAMPAIGN_OUTCOME -> "Resolve the story outcome.";
+            case CAMPAIGN_SPEAK -> "Speak with the campaign character.";
             case CONDITION -> "Meet the quest condition.";
         };
     }

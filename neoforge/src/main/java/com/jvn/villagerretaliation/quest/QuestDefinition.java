@@ -306,8 +306,54 @@ public record QuestDefinition(
             ObjectiveTracker tracker,
             List<ItemSelectionEntry> itemSelections,
             ItemSelectionMode itemSelectionMode,
-            String campaignLocation
+            String campaignLocation,
+            com.jvn.villagerretaliation.campaign.CampaignStoryObjective story
     ) {
+        public Objective(
+                String id,
+                ObjectiveType type,
+                boolean optional,
+                ResourceLocation structure,
+                ResourceKey<Level> dimension,
+                BlockPos location,
+                int radius,
+                List<String> pieces,
+                int searchRadius,
+                int discoveryRadius,
+                ResourceLocation item,
+                Set<ResourceLocation> entityTypes,
+                Set<ResourceLocation> entityTags,
+                Set<ResourceLocation> blockTypes,
+                Set<ResourceLocation> blockTags,
+                Set<ResourceLocation> memoryTags,
+                Set<String> giftReactions,
+                Set<VillagerReputationLevel> reputationLevels,
+                Integer minReputation,
+                Integer maxReputation,
+                QuestFactScope factScope,
+                ResourceLocation factQuestId,
+                Set<ResourceLocation> factTags,
+                String factKey,
+                Set<String> factValues,
+                Integer factMin,
+                Integer factMax,
+                ResourceLocation criterion,
+                Map<String, String> criterionData,
+                int count,
+                boolean consume,
+                ItemRequirements itemRequirements,
+                List<DialogueCondition> conditions,
+                ObjectiveTracker tracker,
+                List<ItemSelectionEntry> itemSelections,
+                ItemSelectionMode itemSelectionMode,
+                String campaignLocation) {
+            this(id, type, optional, structure, dimension, location, radius, pieces, searchRadius, discoveryRadius, item,
+                    entityTypes, entityTags, blockTypes, blockTags, memoryTags, giftReactions, reputationLevels, minReputation,
+                    maxReputation, factScope, factQuestId, factTags, factKey, factValues, factMin, factMax, criterion,
+                    criterionData, count, consume, itemRequirements, conditions, tracker, itemSelections, itemSelectionMode,
+                    campaignLocation, null);
+        }
+
         public Objective {
             campaignLocation = campaignLocation == null ? "" : campaignLocation;
             id = id == null || id.isBlank() ? "objective" : id;
@@ -616,6 +662,8 @@ public record QuestDefinition(
         CHOICE,
         FACT,
         CRITERION,
+        CAMPAIGN_OUTCOME,
+        CAMPAIGN_SPEAK,
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {

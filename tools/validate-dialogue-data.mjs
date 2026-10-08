@@ -559,7 +559,6 @@ const dialogueRequestTypes = new Set([
 ]);
 const dialogueDispositions = new Set(["friendly", "respectful", "neutral", "cautious", "rude", "hostile", "fearful"]);
 const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove", "block", "lock", "consume", "close", "close_branch", "branch_lock"]);
-const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use", "memory_event", "village_event", "village_memory", "memory", "event", "trade", "villager_trade", "trading", "merchant_trade", "gift", "give_gift", "gift_given", "reputation", "rep", "reputation_level", "trust", "choice", "dialogue_choice", "branch_choice", "quest_choice", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
 const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
 const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
 const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use"]);
@@ -956,6 +955,7 @@ validateQuestRegistryMetadata(questRegistryMetadata);
 const skillTradeSchema = await loadSkillTradeSchema();
 validateSkillTradeSchema(skillTradeSchema);
 const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
+const questObjectiveTypes = questV2RegistryIndex.objectives.values;
 const conversationSchema = await parseJson(path.join(root, "tools/datapack-builder/conversation-v1.schema.json"));
 
 if (cli.help) {
@@ -1823,6 +1823,8 @@ function checkQuestV2(file, data) {
   if (!stringValue(data.metadata?.campaign)) {
     for (const [stageIndex, stage] of (Array.isArray(data.stages) ? data.stages : []).entries()) {
       for (const [objectiveIndex, objective] of (Array.isArray(stage?.objectives) ? stage.objectives : []).entries()) {
+        if (objective?.story !== undefined) questV2Error(file, `/stages/${stageIndex}/objectives/${objectiveIndex}/story`,
+          "story", "story objectives require metadata.campaign.", "Declare the owning campaign.");
         if (objective?.campaign_location !== undefined) questV2Error(file, `/stages/${stageIndex}/objectives/${objectiveIndex}/campaign_location`,
           "campaign_location", "campaign location objectives require metadata.campaign.", "Declare the owning campaign.");
       }
@@ -2317,7 +2319,15 @@ function validateRandomItemEntries(items, report) {
   });
 }
 
+function checkRegisteredObjectiveSchema(file, objective, pointer, location) {
+  for (const issue of validateConversationSchema(objective, { allOf: questV2Schema.$defs.objective.allOf ?? [] })) {
+    if (pointer) questV2Error(file, pointer + issue.pointer, location, issue.message, "Use the registered objective schema.");
+    else errors.push(`${relative(file)}: ${location}${issue.pointer}: ${issue.message}`);
+  }
+}
+
 function checkQuestV2ObjectiveRuntimeRequirements(file, objective, pointer, location, type) {
+  checkRegisteredObjectiveSchema(file, objective, pointer, location);
   const canonical = questV2RegistryIndex.objectives.canonical.get(type) || type;
   if (objective.campaign_location !== undefined) {
     const descriptor = questV2Schema.$defs.objective.properties.campaign_location;
@@ -3359,6 +3369,9 @@ function checkQuest(file, data) {
       && data.objectives.some((objective) => objective?.campaign_location !== undefined)) {
     errors.push(`${relative(file)}: campaign_location objectives require an owning campaign.`);
   }
+  if (!stringValue(data.campaign) && Array.isArray(data.objectives) && data.objectives.some((objective) => objective?.story !== undefined)) {
+    errors.push(`${relative(file)}: story objectives require an owning campaign.`);
+  }
   checkQuestRules(file, data.rules, "rules", defaultQuestId);
   checkQuestTracker(file, data.tracker, "tracker", objectiveIds);
   checkQuestStages(file, data.stages, "stages", defaultQuestId, objectiveIds);
@@ -3489,6 +3502,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "type",
       "optional",
       "campaign_location",
+      "story",
       "structure",
       "dimension",
       "x",
@@ -3633,6 +3647,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "fact objective"
     );
 
+    checkRegisteredObjectiveSchema(file, objective, "", objectiveLocation);
     if (type === "structure_visit" && !stringValue(objective.structure)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.structure is required for a structure_visit objective.`);
     }

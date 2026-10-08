@@ -48,15 +48,19 @@ public record CampaignOutcomePredicate(ResourceLocation campaign, String milesto
     }
 
     public Evaluation evaluate(DialogueContext context) {
-        if (context == null || context.player() == null || CampaignWorldModeSavedData.get(context.level()).mode() != CampaignWorldMode.CAMPAIGN) {
+        return evaluate(context == null ? null : context.level(), context == null || context.player() == null ? null : context.player().getUUID());
+    }
+
+    public Evaluation evaluate(net.minecraft.server.level.ServerLevel level, UUID playerId) {
+        if (level == null || playerId == null || CampaignWorldModeSavedData.get(level).mode() != CampaignWorldMode.CAMPAIGN) {
             return new Evaluation(false, "Campaign Mode is required for this story condition.");
         }
-        var content = CampaignResources.current(context.level().getServer()).campaigns().get(campaign);
+        var content = CampaignResources.current(level.getServer()).campaigns().get(campaign);
         if (content == null) return new Evaluation(false, "Campaign content is missing or invalid: " + campaign);
-        var data = CampaignSavedData.get(context.level());
+        var data = CampaignSavedData.get(level);
         String issue = data.compatibility(content.definition());
         if (!issue.isBlank()) return new Evaluation(false, issue);
-        return evaluate(content.definition(), data.instances().get(campaign), context.player().getUUID());
+        return evaluate(content.definition(), data.instances().get(campaign), playerId);
     }
 
     Evaluation evaluate(CampaignDefinition definition, CampaignInstance instance, UUID playerId) {

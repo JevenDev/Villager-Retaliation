@@ -171,6 +171,10 @@ public final class CampaignDefinitionParser {
                         "unknown campaign character " + quest.provider().campaignRole()), quest.source().sourcePackId()));
             }
             for (var objective : quest.objectives()) {
+                com.jvn.villagerretaliation.campaign.CampaignStoryObjective.referenceIssues(objective.definition().story(), definition, quests, questId)
+                        .forEach((field, message) -> diagnostics.add(CampaignContentCatalog.inPack(CampaignSchema.error(
+                                objective.source().resource(), objective.source().jsonPointer() + "/story/" + field, message),
+                                objective.source().sourcePackId())));
                 String alias = objective.definition().campaignLocation();
                 if (!alias.isBlank() && !definition.locations().containsKey(alias)) diagnostics.add(CampaignContentCatalog.inPack(CampaignSchema.error(
                         objective.source().resource(), objective.source().jsonPointer() + "/campaign_location", "unknown campaign location " + alias),

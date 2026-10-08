@@ -1008,6 +1008,120 @@
         "implementation": "CriterionObjectiveType"
       },
       {
+        "id": "campaign_outcome",
+        "aliases": [],
+        "type": "campaign_outcome",
+        "requirements": [
+          "polling"
+        ],
+        "has_runtime": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {},
+            "optional": {},
+            "tracker": {},
+            "conditions": {},
+            "metadata": {},
+            "ui": {},
+            "type": {
+              "const": "campaign_outcome"
+            },
+            "story": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "milestone": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "outcome": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "world",
+                    "discovered",
+                    "participated",
+                    "completed"
+                  ]
+                }
+              },
+              "required": [
+                "milestone",
+                "outcome",
+                "scope"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "story"
+          ]
+        },
+        "implementation": "CampaignStoryObjectiveType"
+      },
+      {
+        "id": "campaign_speak",
+        "aliases": [],
+        "type": "campaign_speak",
+        "requirements": [
+          "polling"
+        ],
+        "has_runtime": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {},
+            "optional": {},
+            "tracker": {},
+            "conditions": {},
+            "metadata": {},
+            "ui": {},
+            "type": {
+              "const": "campaign_speak"
+            },
+            "story": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "conversation": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "node": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                }
+              },
+              "required": [
+                "role",
+                "conversation",
+                "node"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "story"
+          ]
+        },
+        "implementation": "CampaignStoryObjectiveType"
+      },
+      {
         "id": "condition",
         "aliases": [],
         "type": "condition",
@@ -2568,6 +2682,8 @@
         "block_use",
         "branch_choice",
         "break_block",
+        "campaign_outcome",
+        "campaign_speak",
         "choice",
         "condition",
         "coordinate",

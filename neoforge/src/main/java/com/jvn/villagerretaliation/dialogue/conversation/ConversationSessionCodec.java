@@ -84,6 +84,9 @@ final class ConversationSessionCodec {
             lines.add(value);
         });
         tag.put("Transcript", lines);
+        var objectiveEvidence = new ListTag();
+        session.objectiveEvidence.values().forEach(evidence -> objectiveEvidence.add(evidence.save()));
+        tag.put("ObjectiveEvidence", objectiveEvidence);
         var choices = new ListTag();
         session.choices.forEach(choice -> {
             var value = new CompoundTag();
@@ -212,6 +215,10 @@ final class ConversationSessionCodec {
             require(line.visit() > 0 && line.visit() <= session.visit && lines.add(line.visit() + "/" + line.exchange()), "duplicate or invalid conversation exchange");
             require(line.kind() == ConversationDefinition.SpeakerKind.NARRATOR ? line.speaker() == null : line.speaker() != null, "invalid saved exchange speaker");
             session.transcript.add(line);
+        }
+        for (var raw : list(tag, "ObjectiveEvidence")) {
+            var evidence = ConversationObjectiveEvidence.load((CompoundTag) raw, session);
+            require(session.objectiveEvidence.putIfAbsent(evidence.key(identity), evidence) == null, "duplicate conversation objective evidence");
         }
         var choiceVisits = new LinkedHashSet<Long>();
         for (var raw : list(tag, "Choices")) {

@@ -37,6 +37,7 @@ public final class ConversationSession {
     final Map<String, Speaker> speakers = new LinkedHashMap<>();
     final List<Line> transcript = new ArrayList<>();
     final List<Choice> choices = new ArrayList<>();
+    final Map<ConversationObjectiveEvidence.Key, ConversationObjectiveEvidence> objectiveEvidence = new LinkedHashMap<>();
     final Map<String, Check> checks = new LinkedHashMap<>();
     final Map<String, Receipt> receipts = new LinkedHashMap<>();
     final Map<UUID, Request> requests = new LinkedHashMap<>();
@@ -80,6 +81,7 @@ public final class ConversationSession {
         speakers.putAll(source.speakers);
         transcript.addAll(source.transcript);
         choices.addAll(source.choices);
+        objectiveEvidence.putAll(source.objectiveEvidence);
         checks.putAll(source.checks);
         receipts.putAll(source.receipts);
         requests.putAll(source.requests);

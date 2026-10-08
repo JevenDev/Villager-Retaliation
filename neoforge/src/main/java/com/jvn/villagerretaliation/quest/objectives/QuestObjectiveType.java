@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface QuestObjectiveType<C> {
+    default Optional<com.google.gson.JsonObject> structuralSchema() { return Optional.empty(); }
+
     QuestObjectiveResult evaluate(
             QuestObjectiveEvaluationContext context,
             QuestDefinition.Objective objective);

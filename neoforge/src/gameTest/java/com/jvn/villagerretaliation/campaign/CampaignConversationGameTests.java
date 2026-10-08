@@ -299,7 +299,7 @@ public final class CampaignConversationGameTests {
                         """));
                 if (impact && fixedOutcome) campaign.getAsJsonArray("milestones").get(0).getAsJsonObject().getAsJsonArray("outcomes").remove(1);
                 campaignChanges.accept(campaign);
-            });
+            }, List.of("conversations/mentor.json"));
             storage = new ConversationTestStorage(helper.getLevel());
             priorParties = PartySavedData.get(helper.getLevel());
             base.server.overworld().getDataStorage().set("villagerretaliation_parties", new PartySavedData());

@@ -365,6 +365,8 @@ public final class QuestV2Parser {
                         "Use one of the objective types exported in quest-registry-metadata.json.",
                         Set.of(type));
             }
+            for (var issue : QuestObjectiveRegistry.structuralIssues(object)) validator.error(
+                    objectivePointer + issue.pointer(), issue.message(), "Use the registered objective schema.", Set.of(id));
             readConditionObjects(validator, object.get("conditions"), objectivePointer + "/conditions");
             validateItemPredicateObjects(
                     validator, object, objectivePointer, "components", "durability", "custom_data", "nbt");
@@ -811,6 +813,9 @@ public final class QuestV2Parser {
             String stagePointer = stagePointer(resource, stage.id());
             if (!resource.metadata().containsKey("campaign")) {
                 for (int index = 0; index < stage.objectives().size(); index++) {
+                    if (stage.objectives().get(index).data().has("story")) validator.error(
+                            stagePointer + "/objectives/" + index + "/story", "story objectives require metadata.campaign.",
+                            "Declare the owning campaign.", Set.of());
                     if (stage.objectives().get(index).data().has("campaign_location")) validator.error(
                             stagePointer + "/objectives/" + index + "/campaign_location", "campaign location objectives require metadata.campaign.",
                             "Declare the owning campaign.", Set.of());

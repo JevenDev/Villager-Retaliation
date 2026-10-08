@@ -858,6 +858,150 @@
         "id",
         "type"
       ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_outcome"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {},
+              "optional": {},
+              "tracker": {},
+              "conditions": {},
+              "metadata": {},
+              "ui": {},
+              "type": {
+                "const": "campaign_outcome"
+              },
+              "story": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "milestone": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "world",
+                      "discovered",
+                      "participated",
+                      "completed"
+                    ]
+                  }
+                },
+                "required": [
+                  "milestone",
+                  "outcome",
+                  "scope"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "story"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_speak"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {},
+              "optional": {},
+              "tracker": {},
+              "conditions": {},
+              "metadata": {},
+              "ui": {},
+              "type": {
+                "const": "campaign_speak"
+              },
+              "story": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                  },
+                  "conversation": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "node": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                  }
+                },
+                "required": [
+                  "role",
+                  "conversation",
+                  "node"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "story"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "story"
+            ]
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_outcome",
+                  "campaign_speak"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          }
+        }
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -873,6 +1017,8 @@
             "block_use",
             "branch_choice",
             "break_block",
+            "campaign_outcome",
+            "campaign_speak",
             "choice",
             "condition",
             "coordinate",
@@ -986,6 +1132,9 @@
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9_./-]*$",
           "maxLength": 256
+        },
+        "story": {
+          "type": "object"
         },
         "radius": {
           "type": "number"

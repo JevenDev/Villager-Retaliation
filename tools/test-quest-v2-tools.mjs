@@ -394,6 +394,50 @@ try {
   }
   await writeJson(validQuest, conditionFixture);
 
+  for (const [type, story] of [
+    ["campaign_speak", { role: "mentor", conversation: "villagerretaliation:mentor", node: "welcome" }],
+    ["campaign_outcome", { milestone: "dragon", outcome: "defeated", scope: "participated" }]
+  ]) {
+    const variants = [
+      [{ story }, true, false],
+      [{ story }, false, true],
+      [{}, true, true],
+      [{ story: null }, true, true],
+      [{ type: undefined, story }, true, true],
+      [{ type: "missing", story }, true, true],
+      [{ story: { ...story, unexpected: true } }, true, true],
+      [{ story, count: 1 }, true, true],
+      [{ story, item: "minecraft:paper" }, true, true],
+      ...Object.keys(story).flatMap((field) => [
+        [{ story: Object.fromEntries(Object.entries(story).filter(([key]) => key !== field)) }, true, true],
+        [{ story: { ...story, [field]: true } }, true, true],
+        [{ story: { ...story, [field]: "has spaces" } }, true, true]
+      ])
+    ];
+    for (const [fields, owner, expectFailure] of variants) {
+      const candidate = structuredClone(conditionFixture);
+      candidate.stages[0].objectives = [{ id: "story", type, ...fields }];
+      delete candidate.stages[0].complete_when;
+      delete candidate.stages[0].bonuses;
+      if (owner) candidate.metadata.campaign = "villagerretaliation:tool_campaign";
+      else delete candidate.metadata.campaign;
+      await writeJson(validQuest, candidate);
+      const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
+      if (expectFailure) assert(result.stderr.includes("pointer=/stages/0/objectives/0"), "Story objective diagnostic lost its source pointer.");
+    }
+    const legacy = path.join(workspace, "legacy-story-objective.json");
+    for (const [owner, fields, expectFailure] of [
+      [true, { story }, false], [false, { story }, true],
+      [true, { story: null }, true], [true, { story, item: "minecraft:paper" }, true],
+      [true, { type: undefined, story }, true], [true, { type: "missing", story }, true]
+    ]) {
+      await writeJson(legacy, { id: "villagerretaliation:legacy_story", ...(owner ? { campaign: "villagerretaliation:tool_campaign" } : {}),
+        objectives: [{ id: "story", type, ...fields }] });
+      run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", legacy], { expectFailure });
+    }
+  }
+  await writeJson(validQuest, conditionFixture);
+
   const legacyLocationQuest = path.join(workspace, "legacy-campaign-location.json");
   for (const [owner, expectFailure] of [["villagerretaliation:tool_campaign", false], [undefined, true], [true, true]]) {
     await writeJson(legacyLocationQuest, { id: "villagerretaliation:legacy_location", campaign: owner,

@@ -19,11 +19,12 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class ConversationSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 5;
+    public static final int CURRENT_DATA_VERSION = 6;
     static final String DATA_NAME = "villagerretaliation_conversations";
     private final Path directory;
     private Map<UUID, ConversationSession> sessions = Map.of();
     private Map<UUID, UUID> locks = Map.of();
+    private java.util.Set<ConversationObjectiveEvidence.Key> objectiveEvidence = java.util.Set.of();
     private final java.util.ArrayDeque<UUID> maintenance = new java.util.ArrayDeque<>();
     private final Map<UUID, ConversationSession> pending = new LinkedHashMap<>();
     private final Map<UUID, String> persistenceIssues = new LinkedHashMap<>();
@@ -59,6 +60,7 @@ public final class ConversationSavedData extends SavedData {
                 if (version < 3) saved.put("DecisionParticipants", new CompoundTag());
                 if (version < 4) saved.remove("NestedDecision");
                 if (version < 5) ConversationParticipationEvidence.migrate(saved);
+                if (version < 6) saved.put("ObjectiveEvidence", new ListTag());
                 var session = ConversationSessionCodec.load(saved);
                 if (version < 3 && (session.phase == ConversationSession.Phase.RESPONSE_EFFECTS
                         || session.phase == ConversationSession.Phase.CHECK || session.phase == ConversationSession.Phase.ROLLED)) {
@@ -84,6 +86,16 @@ public final class ConversationSavedData extends SavedData {
         var result = new LinkedHashMap<UUID, ConversationSession.Snapshot>();
         sessions.forEach((id, session) -> result.put(id, session.snapshot()));
         return java.util.Collections.unmodifiableMap(result);
+    }
+
+    public synchronized boolean hasObjectiveEvidence(ConversationObjectiveEvidence.Key key) {
+        return diagnostic.isBlank() && objectiveEvidence.contains(key);
+    }
+
+    private static java.util.Set<ConversationObjectiveEvidence.Key> objectiveEvidence(Map<UUID, ConversationSession> sessions) {
+        var keys = new java.util.HashSet<ConversationObjectiveEvidence.Key>();
+        sessions.values().forEach(session -> keys.addAll(session.objectiveEvidence.keySet()));
+        return java.util.Set.copyOf(keys);
     }
 
     synchronized ConversationSession session(UUID id) {
@@ -180,6 +192,7 @@ public final class ConversationSavedData extends SavedData {
         IOUtilities.writeNbtCompressed(wrapper, directory.resolve(DATA_NAME + ".dat"));
         sessions = java.util.Collections.unmodifiableMap(next);
         locks = nextLocks;
+        objectiveEvidence = objectiveEvidence(next);
         if (candidate.active()) {
             if (!maintenance.contains(candidate.identity.id())) maintenance.addLast(candidate.identity.id());
         } else maintenance.remove(candidate.identity.id());
@@ -190,6 +203,7 @@ public final class ConversationSavedData extends SavedData {
         var nextLocks = locks(next);
         sessions = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(next));
         locks = nextLocks;
+        objectiveEvidence = objectiveEvidence(next);
         maintenance.clear();
         next.values().stream().filter(ConversationSession::active).forEach(session -> maintenance.addLast(session.identity.id()));
     }

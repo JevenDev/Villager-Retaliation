@@ -219,7 +219,8 @@ public final class VillagerQuestResources {
             case MEMORY_EVENT -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.MEMORY_EVENT);
             case REPUTATION -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.REPUTATION);
             case CRITERION -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.CRITERION);
-            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, CHOICE, CONDITION -> Set.of();
+            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, CHOICE, CONDITION,
+                    CAMPAIGN_OUTCOME, CAMPAIGN_SPEAK -> Set.of();
         };
     }
 
@@ -499,8 +500,8 @@ public final class VillagerQuestResources {
             campaign = com.jvn.villagerretaliation.campaign.content.CampaignQuestReference.read(root.get("campaign"));
             target = readTarget(root, registries);
             objectives = readObjectives(location, root, id, registries);
-            if (campaign == null && objectives.stream().anyMatch(objective -> !objective.campaignLocation().isBlank())) {
-                throw new IllegalArgumentException("campaign location objectives require a campaign owner");
+            if (campaign == null && objectives.stream().anyMatch(objective -> !objective.campaignLocation().isBlank() || objective.story() != null)) {
+                throw new IllegalArgumentException("campaign location and story objectives require a campaign owner");
             }
         } catch (IllegalArgumentException exception) {
             DatapackDiagnostics.warnSkippedEntry(location, "quest", id.toString(), exception.getMessage());
@@ -707,13 +708,16 @@ public final class VillagerQuestResources {
             HolderLookup.Provider registries) {
         String id = firstNonBlank(DatapackJsonReader.readString(entry, "id"), "objective_" + index);
         String context = "quest objective \"" + id + "\"";
+        var structuralIssues = QuestObjectiveRegistry.structuralIssues(entry);
+        if (!structuralIssues.isEmpty()) {
+            throw new IllegalArgumentException(context + ": " + structuralIssues);
+        }
         QuestDefinition.ObjectiveType type = QuestDefinition.ObjectiveType.bySerializedName(
                 DatapackJsonReader.readString(entry, "type"));
         if (type == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "unknown objective type.");
             return Optional.empty();
         }
-
         var campaignLocationError = QuestObjectiveRegistry.campaignLocationError(entry);
         if (campaignLocationError.isPresent()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, campaignLocationError.get());
@@ -774,7 +778,8 @@ public final class VillagerQuestResources {
                 readObjectiveTracker(entry),
                 itemSelection.entries(),
                 itemSelection.mode(),
-                DatapackJsonReader.readString(entry, "campaign_location"));
+                DatapackJsonReader.readString(entry, "campaign_location"),
+                com.jvn.villagerretaliation.campaign.CampaignStoryObjective.read(type, entry));
         Optional<String> registryValidation = QuestObjectiveRegistry.validationError(objective);
         if (registryValidation.isPresent()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, registryValidation.get());

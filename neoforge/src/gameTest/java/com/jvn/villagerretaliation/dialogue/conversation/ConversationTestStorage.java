@@ -26,6 +26,10 @@ public final class ConversationTestStorage implements AutoCloseable {
                 ConversationSavedData.load(NbtIo.readCompressed(directory.resolve(ConversationSavedData.DATA_NAME + ".dat"), NbtAccounter.unlimitedHeap()).getCompound("data"), directory));
     }
 
+    public void reload(CompoundTag saved) {
+        level.getServer().overworld().getDataStorage().set(ConversationSavedData.DATA_NAME, ConversationSavedData.load(saved, directory));
+    }
+
     public void setLastText(UUID id, String text) throws IOException {
         var data = ConversationSavedData.get(level);
         var session = data.session(id);

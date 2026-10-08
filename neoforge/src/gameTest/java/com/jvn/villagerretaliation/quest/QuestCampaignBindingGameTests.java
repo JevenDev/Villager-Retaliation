@@ -80,6 +80,30 @@ public final class QuestCampaignBindingGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_quest_binding")
+    public static void malformedStoryObjectivesCannotDisappearFromLegacyQuests(GameTestHelper helper) {
+        for (String type : List.of("campaign_speak", "campaign_outcome")) {
+            String fields = type.equals("campaign_speak")
+                    ? "{\"role\":\"mentor\",\"conversation\":\"test:mentor\",\"node\":\"welcome\"}"
+                    : "{\"milestone\":\"decision\",\"outcome\":\"help\",\"scope\":\"world\"}";
+            var objective = JsonParser.parseString("{\"id\":\"story\",\"type\":\"" + type + "\",\"story\":" + fields + "}").getAsJsonObject();
+            var root = JsonParser.parseString("{\"id\":\"test:campaign_quest\",\"campaign\":\"test:journey\",\"objectives\":[]}").getAsJsonObject();
+            root.getAsJsonArray("objectives").add(objective);
+            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) != null, "valid legacy story objective loads");
+            objective.addProperty("item", "minecraft:paper");
+            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null, "invalid selector rejects the entire legacy quest");
+            objective.remove("item");
+            objective.remove("type");
+            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null, "missing story type rejects the entire quest");
+            objective.addProperty("type", "missing");
+            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null, "unknown story type rejects the entire quest");
+            objective.addProperty("type", type);
+            objective.remove("story");
+            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null, "missing story cannot silently disappear");
+        }
+        helper.succeed();
+    }
+
     private static JsonObject fixture() {
         return JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"test:campaign_quest",

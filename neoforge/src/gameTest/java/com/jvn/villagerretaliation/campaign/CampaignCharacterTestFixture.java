@@ -71,6 +71,12 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
 
     CampaignCharacterTestFixture(GameTestHelper helper, String fixtureName, String sceneName, List<String> additionalQuests,
             java.util.function.Consumer<JsonObject> questContent, java.util.function.Consumer<JsonObject> campaignContent) throws IOException {
+        this(helper, fixtureName, sceneName, additionalQuests, questContent, campaignContent, List.of());
+    }
+
+    CampaignCharacterTestFixture(GameTestHelper helper, String fixtureName, String sceneName, List<String> additionalQuests,
+            java.util.function.Consumer<JsonObject> questContent, java.util.function.Consumer<JsonObject> campaignContent,
+            List<String> extraBundleFiles) throws IOException {
         this.helper = helper;
         this.fixtureName = fixtureName;
         this.sceneName = sceneName;
@@ -88,7 +94,9 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         priorQuests = VillagerQuestSavedData.get(helper.getLevel());
         priorScenes = SceneSavedData.get(helper.getLevel());
         var resources = new ArrayList<QuestBundleTransactions.RawResource>();
-        for (String file : List.of("quest.json", "locales/en_us.json", "scenes/" + sceneName + ".json")) {
+        var bundleFiles = new ArrayList<>(List.of("quest.json", "locales/en_us.json", "scenes/" + sceneName + ".json"));
+        bundleFiles.addAll(extraBundleFiles);
+        for (String file : bundleFiles) {
             String path = "quests/campaign_fixture/" + fixtureName + "/" + file;
             var content = resource(path);
             if (file.equals("quest.json")) questContent.accept(content);
@@ -106,9 +114,12 @@ final class CampaignCharacterTestFixture implements AutoCloseable {
         var compiledScene = SceneCompiler.compile(SceneParser.parse(sceneId, resource("quests/campaign_fixture/" + fixtureName + "/scenes/" + sceneName + ".json")).resource());
         scene = compiledScene.scene();
         helper.assertTrue(scene != null, "fixture scene compiles: " + compiledScene.diagnostics());
+        var conversations = com.jvn.villagerretaliation.dialogue.conversation.ConversationResources.compile(
+                bundles, java.util.Set.of(sceneId), quests.quests().keySet());
+        helper.assertTrue(conversations.diagnostics().isEmpty(), "fixture conversations compile: " + conversations.diagnostics());
         catalog = new QuestContentCatalog(prior.generation() + 1L, quests.compiledCatalog(), quests.dialogueCatalog(), quests.quests(),
                 quests.objectiveEventQuestIds(), quests.factQuestIds(), quests.memoryEventQuestIds(), quests.exclusiveGroupQuestIds(),
-                quests.triggerEventQuestIds(), Map.of(sceneId, scene), Map.of(), List.of(), bundles.bundles(), bundles.localization(), QuestRewardCatalog.fromBundles(bundles.bundles()));
+                quests.triggerEventQuestIds(), Map.of(sceneId, scene), Map.of(), List.of(), bundles.bundles(), bundles.localization(), QuestRewardCatalog.fromBundles(bundles.bundles()), conversations.conversations());
         var root = resource("campaigns/" + fixtureName + "/campaign.json");
         campaignContent.accept(root);
         origin = helper.absolutePos(new BlockPos(1, 1, 1));

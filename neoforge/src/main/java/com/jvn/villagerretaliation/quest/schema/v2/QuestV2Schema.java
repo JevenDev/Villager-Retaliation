@@ -378,6 +378,8 @@ public final class QuestV2Schema {
         properties.add("dimension", resourceLocation());
         properties.add("location", openObject());
         properties.add("campaign_location", campaignLocalId());
+        properties.add("story", openObject());
+        schema.add("allOf", QuestObjectiveRegistry.structuralSchema().getAsJsonArray("allOf"));
         properties.add("radius", number());
         properties.add("search_radius", number());
         properties.add("discovery_radius", number());

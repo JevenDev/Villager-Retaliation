@@ -212,7 +212,7 @@ public final class ConversationSessionGameTests {
             var migratedThree = ConversationSavedData.load(versionThree, disk.directory);
             helper.assertTrue(migratedThree.diagnostic().isBlank() && migratedThree.session(original.identity.id()).nestedDecision == null,
                     "version three migrates without inventing a pending decision");
-            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 5, "next save supports saved nested participation");
+            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 6, "next save supports saved objective evidence");
         }
         helper.succeed();
     }

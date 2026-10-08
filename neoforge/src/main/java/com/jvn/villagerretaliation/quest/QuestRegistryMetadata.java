@@ -123,6 +123,7 @@ public final class QuestRegistryMetadata {
             entry.add("requirements", enumNames(descriptor.requirements()));
             entry.addProperty("has_runtime", descriptor.hasImplementation());
             if (descriptor.implementation() != null) {
+                descriptor.implementation().structuralSchema().ifPresent(schema -> entry.add("schema", schema));
                 entry.addProperty("implementation", descriptor.implementation().getClass().getSimpleName());
             }
             objectives.add(entry);
