@@ -13,7 +13,6 @@ import com.mojang.logging.LogUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public final class CampaignOutcomeService {
@@ -76,7 +75,7 @@ public final class CampaignOutcomeService {
         var content = CampaignResources.current(context.player().server).campaigns().get(consent.campaignId());
         try {
             var committed = CampaignSavedData.get(context.level()).commitWorldOutcome(content, consent.action().milestone(), consent.action().outcome(),
-                    consent.operationId(), consent.worldRevision(), CampaignInstance.Origin.PLAYER_DECISION, Set.of(context.player().getUUID()), context.level().getGameTime());
+                    consent.operationId(), consent.worldRevision(), CampaignInstance.Origin.PLAYER_DECISION, CampaignDecisionParticipants.forOutcome(context.player().getUUID(), consent), context.level().getGameTime());
             if (committed.status() != CampaignSavedData.Status.APPLIED) {
                 String diagnostic = committed.committed() == null ? committed.diagnostic() : "The shared outcome is already committed: " + committed.committed().title();
                 return ActionResult.unavailable(diagnostic, capabilities, VillagerActionResult.EMPTY);

@@ -202,7 +202,7 @@ public final class CampaignConversationConfirmationGameTests {
         helper.succeed();
     }
 
-    private static CampaignConversationGameTests.Fixture fixture(GameTestHelper helper, String effects, boolean entry) throws IOException {
+    static CampaignConversationGameTests.Fixture fixture(GameTestHelper helper, String effects, boolean entry) throws IOException {
         var fixture = new CampaignConversationGameTests.Fixture(helper, false, true);
         var opening = fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject();
         opening.add("exchanges", JsonParser.parseString("[]"));
@@ -222,7 +222,7 @@ public final class CampaignConversationConfirmationGameTests {
         return VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), fixture.base.campaignId);
     }
 
-    private static void acceptQuest(CampaignConversationGameTests.Fixture fixture, ServerPlayer player) throws IOException {
+    static void acceptQuest(CampaignConversationGameTests.Fixture fixture, ServerPlayer player) throws IOException {
         var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, fixture.mentor);
         var action = VillagerActionDefinition.readList(fixture.base.campaignId, "fixture", JsonParser.parseString("""
                 {"actions":[{"type":"quest","quest":"campaign_fixture:characters","action":"start","required":true}]}

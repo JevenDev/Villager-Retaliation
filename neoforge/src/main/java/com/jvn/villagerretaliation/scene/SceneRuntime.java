@@ -59,6 +59,7 @@ public final class SceneRuntime {
         if (result.instance() == null) {
             return SceneLaunchService.LaunchResult.accepted(result.instanceId(), false);
         }
+        if (result.created()) result.instance().decisionParticipants(com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.capture());
         result.instance().bindCampaign(CampaignQuestAccess.campaignFor(request.server(), request.questId()));
         data.changed();
         scheduler(request.server()).enqueue(result.instance());

@@ -51,6 +51,7 @@ final class ConversationSessionCodec {
         tag.putUUID("ActingPlayer", session.actingPlayer);
         if (session.questRun != null) tag.putUUID("QuestRun", session.questRun);
         tag.put("Consent", session.consent.copy());
+        tag.put("DecisionParticipants", session.decisionParticipants == null ? new CompoundTag() : session.decisionParticipants.save());
         if (session.confirmation != null) tag.put("Confirmation", session.confirmation.save());
         if (session.pendingChoice != null) tag.putUUID("PendingChoice", session.pendingChoice);
         tag.put("Participants", players(session.participants));
@@ -175,6 +176,14 @@ final class ConversationSessionCodec {
         session.participants.addAll(players(list(tag, "Participants")));
         require(session.participants.contains(identity.owner()) && session.participants.contains(session.actingPlayer)
                 && (session.controller == null || session.participants.contains(session.controller)), "conversation actor is not a recorded participant");
+        var decisionParticipants = compound(tag, "DecisionParticipants");
+        if (!decisionParticipants.isEmpty()) {
+            session.decisionParticipants = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.load(decisionParticipants);
+            require(session.decisionParticipants.conversation().equals(identity.id())
+                    && session.decisionParticipants.campaign().equals(identity.campaign())
+                    && session.decisionParticipants.instance().equals(identity.campaignInstance())
+                    && session.participants.containsAll(session.decisionParticipants.participants()), "conversation participation belongs to another session");
+        }
         session.speakers.clear();
         for (var raw : list(tag, "Speakers")) {
             var value = (CompoundTag) raw;
@@ -238,6 +247,14 @@ final class ConversationSessionCodec {
             require(request != null && request.intent() == ConversationSession.Intent.CHOOSE && request.player().equals(choice.player())
                     && request.argument().equals(choice.response()), "conversation choice does not match its request receipt");
         });
+        if (session.decisionParticipants != null) {
+            var decision = session.decisionParticipants;
+            var choice = session.choices.stream().filter(value -> value.request().equals(decision.decision())).findFirst().orElse(null);
+            boolean confirmed = session.requests.values().stream().anyMatch(request -> request.intent() == ConversationSession.Intent.CONFIRM
+                    && request.player().equals(decision.player()) && request.argument().equals(decision.decision().toString()));
+            require(choice == null ? confirmed : choice.player().equals(decision.player()) && choice.participants().equals(decision.participants()),
+                    "conversation participation has no matching decision receipt");
+        }
         session.checks.values().forEach(check -> {
             var request = session.requests.get(check.request());
             require(request != null && request.intent() == ConversationSession.Intent.ROLL && request.player().equals(check.player())

@@ -30,6 +30,7 @@ public final class SceneInstance {
     private long campaignPausedAt = -1L;
     private long campaignPausedTicks;
     private String campaignDiagnostic = "";
+    private CompoundTag decisionParticipants = new CompoundTag();
     private final Set<UUID> participants;
     private SceneState state;
     private String currentStep;
@@ -150,6 +151,10 @@ public final class SceneInstance {
     public UUID owningQuestInstance() {
         return owningQuestInstance;
     }
+
+    public CompoundTag decisionParticipants() { return decisionParticipants.copy(); }
+
+    public void decisionParticipants(CompoundTag participants) { decisionParticipants = participants.copy(); }
 
     public Set<UUID> participants() {
         return Set.copyOf(participants);
@@ -443,6 +448,7 @@ public final class SceneInstance {
         tag.putLong("CampaignPausedAt", campaignPausedAt);
         tag.putLong("CampaignPausedTicks", campaignPausedTicks);
         tag.putString("CampaignDiagnostic", campaignDiagnostic);
+        if (!decisionParticipants.isEmpty()) tag.put("DecisionParticipants", decisionParticipants.copy());
         tag.putLong("StartGameTime", startGameTime);
         tag.putLong("UpdateGameTime", updateGameTime);
         tag.putInt("RetryCount", retryCount);
@@ -519,6 +525,10 @@ public final class SceneInstance {
         value.campaignPausedAt = tag.contains("CampaignPausedAt", Tag.TAG_LONG) ? tag.getLong("CampaignPausedAt") : -1L;
         value.campaignPausedTicks = Math.max(0L, tag.getLong("CampaignPausedTicks"));
         value.campaignDiagnostic = tag.getString("CampaignDiagnostic");
+        value.decisionParticipants = tag.getCompound("DecisionParticipants").copy();
+        if (tag.contains("DecisionParticipants") && (!tag.contains("DecisionParticipants", Tag.TAG_COMPOUND) || value.decisionParticipants.isEmpty())) {
+            value.decisionParticipants.put("Unreadable", tag.get("DecisionParticipants").copy());
+        }
         try {
             value.cleanupStatus = CleanupStatus.valueOf(tag.getString("CleanupStatus"));
         } catch (IllegalArgumentException ignored) {

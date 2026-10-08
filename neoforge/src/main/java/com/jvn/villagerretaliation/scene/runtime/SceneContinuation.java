@@ -46,7 +46,11 @@ public final class SceneContinuation {
     private String actionDiagnostic = "";
     private DialogueResume dialogueResume;
     private CompoundTag campaignConsent = new CompoundTag();
+    private CompoundTag decisionParticipants = new CompoundTag();
     private final Map<Integer, CompoundTag> unreadableCampaignActions = new LinkedHashMap<>();
+
+    public CompoundTag decisionParticipants() { return decisionParticipants.copy(); }
+    public void decisionParticipants(CompoundTag participants) { decisionParticipants = participants.copy(); }
 
     public CompoundTag campaignConsent() { return campaignConsent.copy(); }
     public void campaignConsent(CompoundTag consent) { campaignConsent = consent.copy(); }
@@ -194,6 +198,7 @@ public final class SceneContinuation {
         tag.putString("ActionStatus", actionStatus.name());
         tag.putString("ActionDiagnostic", actionDiagnostic);
         if (!campaignConsent.isEmpty()) tag.put("CampaignConsent", campaignConsent.copy());
+        if (!decisionParticipants.isEmpty()) tag.put("DecisionParticipants", decisionParticipants.copy());
         if (dialogueResume != null) {
             CompoundTag dialogue = new CompoundTag();
             dialogue.putString("Tree", dialogueResume.treeId().toString());
@@ -273,6 +278,10 @@ public final class SceneContinuation {
         }
 
         value.campaignId = NbtDataUtil.readResourceLocation(tag, "Campaign").orElse(null);
+        value.decisionParticipants = tag.getCompound("DecisionParticipants").copy();
+        if (tag.contains("DecisionParticipants") && (!tag.contains("DecisionParticipants", Tag.TAG_COMPOUND) || value.decisionParticipants.isEmpty())) {
+            value.decisionParticipants.put("Unreadable", tag.get("DecisionParticipants").copy());
+        }
         value.campaignConsent = tag.getCompound("CampaignConsent").copy();
         if (tag.contains("CampaignConsent") && (!tag.contains("CampaignConsent", Tag.TAG_COMPOUND) || value.campaignConsent.isEmpty())) {
             value.campaignConsent.put("Unreadable", tag.get("CampaignConsent").copy());

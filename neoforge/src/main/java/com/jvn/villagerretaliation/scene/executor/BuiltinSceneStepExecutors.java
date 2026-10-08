@@ -304,6 +304,15 @@ public final class BuiltinSceneStepExecutors {
         }
     }
 
+    private static com.jvn.villagerretaliation.action.ActionResult executeAction(DialogueContext context,
+            VillagerActionDefinition action, net.minecraft.nbt.CompoundTag participants) {
+        String issue = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.issue(participants);
+        if (!issue.isBlank()) return com.jvn.villagerretaliation.action.ActionResult.unavailable(issue,
+                VillagerActionRegistry.capabilities(action), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
+        return com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
+                () -> VillagerActionRegistry.execute(context, action, java.util.Map.of()));
+    }
+
     private static final class ActionBatch extends Base {
         ActionBatch() {
             super(RecoveryMode.RECEIPT_REQUIRED);
@@ -347,6 +356,7 @@ public final class BuiltinSceneStepExecutors {
                 SceneOperationReceipt previous = c.instance().receipts().get(c.operationId("action/" + id));
                 boolean resuming = previous != null && previous.state() == SceneOperationReceipt.ReceiptState.WAITING;
                 UUID originatingScene = c.instance().id();
+                var decisionParticipants = c.instance().decisionParticipants();
                 var guarded =
                         SceneReceiptGuard.applyActionOnce(
                                 c,
@@ -354,7 +364,7 @@ public final class BuiltinSceneStepExecutors {
                                 kind,
                                 () ->
                                         SceneLifecycleIntegration.withOriginatingScene(originatingScene, () ->
-                                                VillagerActionRegistry.execute(dialogue, action, java.util.Map.of())));
+                                                executeAction(dialogue, action, decisionParticipants)));
                 if (guarded.ambiguous())
                     return SceneStepResult.block(
                             "action_ambiguous",
@@ -443,10 +453,10 @@ public final class BuiltinSceneStepExecutors {
                                     SceneLifecycleIntegration.withOriginatingScene(
                                             c.instance().id(),
                                             () ->
-                                                    VillagerActionRegistry.execute(
+                                                    executeAction(
                                                             dialogue,
                                                             parsed.getFirst(),
-                                                            java.util.Map.of())));
+                                                            c.instance().decisionParticipants())));
             if (guarded.ambiguous())
                 return SceneStepResult.block(
                         "quest_transition_ambiguous",
@@ -527,12 +537,18 @@ public final class BuiltinSceneStepExecutors {
 
     private static DialogueContext context(SceneExecutionContext c) {
         ServerPlayer player = null;
-        for (UUID id : c.instance().participants()) {
-            player = c.server().getPlayerList().getPlayer(id);
-            if (player != null) break;
+        var decision = c.instance().decisionParticipants();
+        if (!decision.isEmpty()) {
+            if (!com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.issue(decision).isBlank()) return null;
+            player = c.server().getPlayerList().getPlayer(com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.load(decision).player());
+        } else {
+            for (UUID id : c.instance().participants()) {
+                player = c.server().getPlayerList().getPlayer(id);
+                if (player != null) break;
+            }
+            if (player == null && c.instance().owner().playerId() != null)
+                player = c.server().getPlayerList().getPlayer(c.instance().owner().playerId());
         }
-        if (player == null && c.instance().owner().playerId() != null)
-            player = c.server().getPlayerList().getPlayer(c.instance().owner().playerId());
         Villager villager = null;
         for (SceneActorBinding binding : c.instance().actorBindings().values()) {
             Entity entity = find(c, binding);

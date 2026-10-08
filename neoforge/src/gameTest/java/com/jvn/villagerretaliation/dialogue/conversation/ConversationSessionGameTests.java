@@ -43,6 +43,8 @@ public final class ConversationSessionGameTests {
             session.requests.put(choice, new ConversationSession.Request(identity.owner(), 1, ConversationSession.Intent.CHOOSE, "appeal"));
             session.requests.put(roll, new ConversationSession.Request(identity.owner(), 1, ConversationSession.Intent.ROLL, ""));
             session.choices.add(new ConversationSession.Choice(choice, "welcome", 1, "appeal", identity.owner(), Set.of(identity.owner()), 4));
+            session.decisionParticipants = new com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants(identity.id(), choice,
+                    identity.campaign(), identity.campaignInstance(), identity.owner(), Set.of(identity.owner()));
             var check = new ConversationDefinition.Check("convince", 10, "yes", "no", "");
             session.checks.put("convince", ConversationSession.Check.roll(roll, check, 13, identity.owner(), 5));
             session.transcript.add(new ConversationSession.Line("welcome", 1, "greet", ConversationDefinition.SpeakerKind.ROLE,
@@ -56,6 +58,7 @@ public final class ConversationSessionGameTests {
             var restored = disk.reload().session(identity.id());
             helper.assertValueEqual(restored.snapshot(), session.snapshot(), "durable record matches acknowledged presentation");
             helper.assertValueEqual(restored.requests, session.requests, "request identities survive reload");
+            helper.assertValueEqual(restored.decisionParticipants, session.decisionParticipants, "decision evidence survives reload");
             helper.assertValueEqual(restored.replacements, session.replacements, "effect replacements survive reload");
             restored.controller = null;
             helper.assertValueEqual(data.session(identity.id()).controller, identity.owner(), "returned copies cannot mutate saved sessions");
@@ -92,6 +95,8 @@ public final class ConversationSessionGameTests {
                     tag -> first(tag).putLong("Revision", 0),
                     tag -> first(tag).putUUID("Controller", UUID.randomUUID()),
                     tag -> first(tag).remove("Participants"),
+                    tag -> first(tag).remove("DecisionParticipants"),
+                    tag -> first(tag).getCompound("DecisionParticipants").putInt("Version", 99),
                     tag -> first(tag).putString("Phase", "ROLLED"),
                     tag -> first(tag).putString("Phase", "COMPLETE"),
                     tag -> tag.getList("Sessions", 10).add(first(tag).copy()))) {
@@ -190,11 +195,64 @@ public final class ConversationSessionGameTests {
             var saved = disk.read();
             saved.putInt("DataVersion", 1);
             first(saved).remove("Consent");
+            first(saved).remove("DecisionParticipants");
             var restored = ConversationSavedData.load(saved, disk.directory);
             helper.assertTrue(restored.diagnostic().isBlank(), "version one remains readable");
             helper.assertValueEqual(restored.session(original.identity.id()).snapshot(), original.snapshot(), "migration preserves existing history");
             helper.assertTrue(restored.session(original.identity.id()).consent.isEmpty(), "migration grants no approval");
-            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 2, "next save uses the explicit consent format");
+            helper.assertTrue(restored.session(original.identity.id()).decisionParticipants == null, "version one grants no listener credit");
+            var versionTwo = disk.read();
+            versionTwo.putInt("DataVersion", 2);
+            first(versionTwo).remove("DecisionParticipants");
+            var migratedTwo = ConversationSavedData.load(versionTwo, disk.directory);
+            helper.assertTrue(migratedTwo.diagnostic().isBlank() && migratedTwo.session(original.identity.id()).decisionParticipants == null,
+                    "version two migrates without inventing listener credit");
+            helper.assertValueEqual(restored.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 3, "next save uses the explicit participation format");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void legacyPendingChoicesRetainTheirRecordedWitnesses(GameTestHelper helper) throws IOException {
+        try (var disk = new Disk()) {
+            var original = session(UUID.randomUUID());
+            UUID listener = UUID.randomUUID(); UUID request = UUID.randomUUID();
+            original.participants.add(listener);
+            original.response = "appeal";
+            original.phase = ConversationSession.Phase.RESPONSE_EFFECTS;
+            original.revision = 2;
+            original.requests.put(request, new ConversationSession.Request(original.actingPlayer, 1, ConversationSession.Intent.CHOOSE, "appeal"));
+            original.choices.add(new ConversationSession.Choice(request, original.node, original.visit, "appeal", original.actingPlayer,
+                    Set.of(original.actingPlayer, listener), 0));
+            var saved = new CompoundTag();
+            saved.putInt("DataVersion", 2);
+            var sessions = new net.minecraft.nbt.ListTag();
+            var entry = ConversationSessionCodec.save(original);
+            entry.remove("DecisionParticipants");
+            sessions.add(entry);
+            saved.put("Sessions", sessions);
+            var migrated = ConversationSavedData.load(saved, disk.directory);
+            helper.assertTrue(migrated.diagnostic().isBlank(), "pending legacy choice remains readable");
+            var decision = migrated.session(original.identity.id()).decisionParticipants;
+            helper.assertTrue(decision != null, "migration uses recorded choice evidence");
+            helper.assertValueEqual(decision.participants(), Set.of(original.actingPlayer, listener), "migration retains the actual witnesses");
+            helper.assertValueEqual(decision.decision(), request, "migration keeps the original decision identity");
+            var current = migrated.save(new CompoundTag(), helper.getLevel().registryAccess());
+            helper.assertTrue(ConversationSavedData.load(current, disk.directory).diagnostic().isBlank(), "migrated evidence passes current validation");
+            for (Consumer<CompoundTag> corrupt : List.<Consumer<CompoundTag>>of(
+                    tag -> tag.putUUID("Conversation", UUID.randomUUID()),
+                    tag -> tag.putUUID("Instance", UUID.randomUUID()),
+                    tag -> tag.putUUID("Decision", UUID.randomUUID()),
+                    tag -> tag.getList("Participants", 10).add(tag.getList("Participants", 10).get(0).copy()))) {
+                var invalid = current.copy();
+                corrupt.accept(first(invalid).getCompound("DecisionParticipants"));
+                var dormant = ConversationSavedData.load(invalid, disk.directory);
+                helper.assertFalse(dormant.diagnostic().isBlank(), "invalid decision provenance cannot execute");
+                helper.assertValueEqual(dormant.save(new CompoundTag(), helper.getLevel().registryAccess()), invalid, "invalid evidence remains repairable");
+            }
+            first(saved).putString("Phase", "NODE_EFFECTS");
+            var ambiguous = ConversationSavedData.load(saved, disk.directory);
+            helper.assertTrue(ambiguous.session(original.identity.id()).decisionParticipants == null, "later nodes cannot borrow witnesses from an older choice");
         }
         helper.succeed();
     }

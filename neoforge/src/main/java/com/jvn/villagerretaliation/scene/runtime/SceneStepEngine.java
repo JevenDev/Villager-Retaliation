@@ -21,6 +21,7 @@ public final class SceneStepEngine {
         if (instance.state().terminal()) return SceneScheduler.ProcessResult.idle();
         String campaignIssue = CampaignQuestAccess.executionIssue(
                 server, instance.owningQuestId(), instance.owningCampaignId(), instance.owner().playerId());
+        if (campaignIssue.isBlank()) campaignIssue = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.issue(instance.decisionParticipants());
         if (campaignIssue.isBlank() && instance.owner().playerId() == null && instance.owningQuestInstance() != null) {
             for (var player : instance.participants()) {
                 var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(server.overworld()).get(player, instance.owningQuestId());

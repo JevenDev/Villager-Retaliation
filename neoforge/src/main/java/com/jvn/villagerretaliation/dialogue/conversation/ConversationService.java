@@ -198,8 +198,9 @@ public final class ConversationService {
         session.response = response;
         session.actingPlayer = player.getUUID();
         session.questRun = questRun(player, session.identity.quest());
+        captureDecisionParticipants(player, session, request);
         session.choices.add(new ConversationSession.Choice(request, session.node, session.visit, response, player.getUUID(),
-                presentParticipants(player, session), player.serverLevel().getGameTime()));
+                session.decisionParticipants.participants(), player.serverLevel().getGameTime()));
         session.phase = ConversationSession.Phase.RESPONSE_EFFECTS;
         session.effect = 0;
     }
@@ -306,6 +307,12 @@ public final class ConversationService {
 
     static String text(ServerPlayer player, String key) {
         return QuestContentCatalogs.current(player.server).localization().plainText(player.clientInformation().language(), key).orElse(key);
+    }
+
+    static void captureDecisionParticipants(ServerPlayer player, ConversationSession session, UUID decision) {
+        session.decisionParticipants = new com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants(
+                session.identity.id(), decision, session.identity.campaign(), session.identity.campaignInstance(),
+                player.getUUID(), presentParticipants(player, session));
     }
 
     private static Set<UUID> presentParticipants(ServerPlayer controller, ConversationSession session) {

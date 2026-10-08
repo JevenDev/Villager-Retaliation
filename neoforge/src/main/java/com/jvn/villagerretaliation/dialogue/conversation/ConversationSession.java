@@ -29,6 +29,7 @@ public final class ConversationSession {
     UUID questRun;
     com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation;
     UUID pendingChoice;
+    com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants decisionParticipants;
     net.minecraft.nbt.CompoundTag consent = new net.minecraft.nbt.CompoundTag();
     final Set<UUID> participants = new LinkedHashSet<>();
     final Map<String, Speaker> speakers = new LinkedHashMap<>();
@@ -69,6 +70,7 @@ public final class ConversationSession {
         questRun = source.questRun;
         confirmation = source.confirmation;
         pendingChoice = source.pendingChoice;
+        decisionParticipants = source.decisionParticipants;
         consent = source.consent.copy();
         participants.addAll(source.participants);
         speakers.putAll(source.speakers);

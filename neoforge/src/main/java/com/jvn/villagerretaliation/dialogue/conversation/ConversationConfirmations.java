@@ -44,6 +44,7 @@ final class ConversationConfirmations {
         }
         session.consent = session.confirmation.acceptedConsent(player.serverLevel().getGameTime());
         UUID choice = session.pendingChoice;
+        if (choice == null) ConversationService.captureDecisionParticipants(player, session, session.confirmation.id());
         session.confirmation = null;
         session.pendingChoice = null;
         if (choice == null) session.phase = ConversationSession.Phase.NODE_EFFECTS;

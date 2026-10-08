@@ -152,7 +152,10 @@ final class ConversationRuntime {
         ConversationService.save(controller, data, session);
         var applied = new ActionResult[1];
         var replacements = session.replacements;
-        CampaignQuestAcceptanceService.withConsent(session.consent, () -> applied[0] = VillagerActionRegistry.execute(context, action, replacements));
+        var participants = session.decisionParticipants == null ? new net.minecraft.nbt.CompoundTag() : session.decisionParticipants.save();
+        CampaignQuestAcceptanceService.withConsent(session.consent, () -> applied[0] =
+                com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
+                        () -> VillagerActionRegistry.execute(context, action, replacements)));
         var outcome = applied[0];
         if (outcome.suspended() && outcome.suspensionId() == null) outcome = ActionResult.failed("Suspended effect has no persistent dependency.", outcome.capabilities());
         session = data.session(session.identity.id());

@@ -19,7 +19,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class ConversationSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 2;
+    public static final int CURRENT_DATA_VERSION = 3;
     static final String DATA_NAME = "villagerretaliation_conversations";
     private final Path directory;
     private Map<UUID, ConversationSession> sessions = Map.of();
@@ -56,7 +56,16 @@ public final class ConversationSavedData extends SavedData {
             for (var raw : ConversationSessionCodec.list(tag, "Sessions")) {
                 var saved = ((CompoundTag) raw).copy();
                 if (version == 1) saved.put("Consent", new CompoundTag());
+                if (version < 3) saved.put("DecisionParticipants", new CompoundTag());
                 var session = ConversationSessionCodec.load(saved);
+                if (version < 3 && (session.phase == ConversationSession.Phase.RESPONSE_EFFECTS
+                        || session.phase == ConversationSession.Phase.CHECK || session.phase == ConversationSession.Phase.ROLLED)) {
+                    session.choices.stream().filter(choice -> choice.visit() == session.visit && choice.node().equals(session.node)
+                            && choice.response().equals(session.response) && choice.player().equals(session.actingPlayer)).findFirst().ifPresent(choice ->
+                            session.decisionParticipants = new com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants(
+                                    session.identity.id(), choice.request(), session.identity.campaign(), session.identity.campaignInstance(),
+                                    choice.player(), choice.participants()));
+                }
                 ConversationSessionCodec.require(sessions.putIfAbsent(session.identity.id(), session) == null, "duplicate conversation session identity");
             }
             data.install(sessions);

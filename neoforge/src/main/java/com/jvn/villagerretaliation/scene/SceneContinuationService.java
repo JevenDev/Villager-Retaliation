@@ -107,6 +107,7 @@ public final class SceneContinuationService {
         applyWait(context.level().getServer(), data, continuation, target, result);
         continuation.dialogueResume(dialogueResume);
         continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
+        continuation.decisionParticipants(com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.capture());
         data.changed();
         CampaignRewardRecovery.persist(context.level().getServer(), data, continuation);
         return RunResult.of(continuation.campaignRecovery()
@@ -145,6 +146,7 @@ public final class SceneContinuationService {
         continuation.resuming(SceneInstance.CompletionResult.SUCCESS);
         continuation.dialogueResume(dialogueResume);
         continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());
+        continuation.decisionParticipants(com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.capture());
         data.changed();
         ActionResult result;
         if (CampaignRewardRecovery.persist(context.level().getServer(), data, continuation)) {
@@ -354,6 +356,11 @@ public final class SceneContinuationService {
                 return;
             }
         }
+        String participationIssue = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.issue(continuation.decisionParticipants());
+        if (!participationIssue.isBlank()) {
+            if (continuation.pauseForConsent(participationIssue)) data.changed();
+            return;
+        }
         var access = com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.resumeAccess(context, continuation.campaignConsent());
         if (!access.allowed()) {
             if (access.paused()) {
@@ -379,7 +386,8 @@ public final class SceneContinuationService {
         }
         if (!CampaignRewardRecovery.persist(server, data, continuation)) return;
         com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.withConsent(remaining,
-                () -> { resumeActions(context, data, continuation, true, () -> VillagerQuestService.flashTracker(player, true)); });
+                () -> com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(continuation.decisionParticipants(),
+                        () -> resumeActions(context, data, continuation, true, () -> VillagerQuestService.flashTracker(player, true))));
     }
 
     private static ActionResult resumeActions(DialogueContext context, SceneSavedData data, SceneContinuation continuation, boolean resumeDialogue, Runnable trackerFlashHandler) {
