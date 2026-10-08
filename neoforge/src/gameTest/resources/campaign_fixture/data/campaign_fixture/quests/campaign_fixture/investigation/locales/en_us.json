@@ -1,0 +1,22 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.investigation.title": "Campaign fixture: investigation",
+    "campaign_fixture.quest.investigation.description": "Read the authored evidence near the mentor. Each player must inspect it personally.",
+    "campaign_fixture.quest.investigation.investigate": "Inspect the damaged ledger near the mentor.",
+    "campaign_fixture.quest.investigation.offer.label": "Investigate the missing shipment",
+    "campaign_fixture.quest.investigation.offer.lines": [
+      "An old ledger could tell us where the shipment went. Read it and return to me."
+    ],
+    "campaign_fixture.quest.investigation.accept": "I'll inspect the ledger.",
+    "campaign_fixture.quest.investigation.reminder.label": "Where is the ledger?",
+    "campaign_fixture.quest.investigation.reminder.lines": [
+      "Look for the damaged ledger near our village."
+    ],
+    "campaign_fixture.quest.investigation.report.label": "Report the discovery",
+    "campaign_fixture.quest.investigation.report.lines": [
+      "The old watchtower. That gives us somewhere to look."
+    ],
+    "campaign_fixture.quest.investigation.finish": "Record what I found."
+  }
+}

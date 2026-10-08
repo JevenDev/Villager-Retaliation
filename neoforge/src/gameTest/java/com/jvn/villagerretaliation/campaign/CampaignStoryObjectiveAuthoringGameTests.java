@@ -32,8 +32,13 @@ public final class CampaignStoryObjectiveAuthoringGameTests {
 
     @GameTest(template = "empty", batch = "campaign_story_authoring")
     public static void storyFieldsUseTheSameRuntimeAndExportedSchema(GameTestHelper helper) throws IOException {
-        var schemas = QuestRegistryMetadata.export().getAsJsonObject("registries").getAsJsonArray("objectives");
-        for (String raw : List.of(SPEAK, OUTCOME)) {
+        var registries = QuestRegistryMetadata.export().getAsJsonObject("registries");
+        var schemas = registries.getAsJsonArray("objectives");
+        var publicTypes = new java.util.HashSet<String>();
+        registries.getAsJsonArray("public_quest_objectives").forEach(entry -> publicTypes.add(entry.getAsJsonObject().get("id").getAsString()));
+        for (var entry : schemas) helper.assertTrue(publicTypes.contains("villagerretaliation:" + entry.getAsJsonObject().get("id").getAsString()),
+                "every built-in objective is present in the public registry");
+        for (String raw : List.of(SPEAK, OUTCOME, "{\"id\":\"inspect\",\"type\":\"campaign_investigate\",\"story\":{\"evidence\":\"ledger\"}}")) {
             var objective = JsonParser.parseString(raw).getAsJsonObject();
             JsonObject schema = null;
             for (var entry : schemas) if (entry.getAsJsonObject().get("id").getAsString().equals(objective.get("type").getAsString()))

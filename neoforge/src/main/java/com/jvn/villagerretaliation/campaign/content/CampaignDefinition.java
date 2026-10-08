@@ -9,7 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 public record CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,
         List<ResourceLocation> questBundles, Map<String, Chapter> chapters, Map<String, Milestone> milestones,
         Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards,
-        Map<String, CampaignLocationDefinition> locations, Map<String, CampaignCharacterDefinition> characters, ResourceLocation source) {
+        Map<String, CampaignLocationDefinition> locations, Map<String, CampaignCharacterDefinition> characters,
+        Map<String, CampaignEvidenceDefinition> evidence, ResourceLocation source) {
     public CampaignDefinition {
         questBundles = List.copyOf(questBundles);
         chapters = ordered(chapters);
@@ -18,6 +19,14 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
         rewards = ordered(rewards);
         locations = ordered(locations);
         characters = ordered(characters);
+        evidence = ordered(evidence);
+    }
+
+    public CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,
+            List<ResourceLocation> questBundles, Map<String, Chapter> chapters, Map<String, Milestone> milestones,
+            Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards,
+            Map<String, CampaignLocationDefinition> locations, Map<String, CampaignCharacterDefinition> characters, ResourceLocation source) {
+        this(id, revision, fingerprint, titleKey, localizationPrefix, questBundles, chapters, milestones, facts, rewards, locations, characters, Map.of(), source);
     }
 
     public CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,

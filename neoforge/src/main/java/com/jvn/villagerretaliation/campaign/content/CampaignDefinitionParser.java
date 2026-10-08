@@ -136,8 +136,18 @@ public final class CampaignDefinitionParser {
                     CampaignCharacterDefinition.LossPolicy.valueOf(text(entry, "loss_policy").toUpperCase(Locale.ROOT)),
                     text(entry, "replacement_role"), pointer), source, pointer, diagnostics);
         }
+        Map<String, CampaignEvidenceDefinition> evidence = new LinkedHashMap<>();
+        JsonArray evidenceEntries = array(root, "evidence");
+        for (int index = 0; index < evidenceEntries.size(); index++) {
+            JsonObject entry = evidenceEntries.get(index).getAsJsonObject();
+            String pointer = "/evidence/" + index;
+            String id = text(entry, "id");
+            put(evidence, id, new CampaignEvidenceDefinition(id, text(entry, "title_key"), text(entry, "text_key"),
+                    text(entry, "location"), resource(entry, "entity_tag"), entry.has("search_radius") ? entry.get("search_radius").getAsInt() : 8,
+                    pointer), source, pointer, diagnostics);
+        }
         CampaignDefinition definition = new CampaignDefinition(resource(root, "id"), root.get("revision").getAsInt(),
-                QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, locations, characters, source);
+                QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, locations, characters, evidence, source);
         validateReferences(definition, diagnostics);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
     }
@@ -280,6 +290,12 @@ public final class CampaignDefinitionParser {
         Map<String, Set<String>> dependencies = new LinkedHashMap<>();
         localized(definition, definition.titleKey(), "/title_key", diagnostics);
         definition.locations().values().forEach(location -> localized(definition, location.titleKey(), location.pointer() + "/title_key", diagnostics));
+        for (var evidence : definition.evidence().values()) {
+            localized(definition, evidence.titleKey(), evidence.pointer() + "/title_key", diagnostics);
+            localized(definition, evidence.textKey(), evidence.pointer() + "/text_key", diagnostics);
+            if (!definition.locations().containsKey(evidence.location())) diagnostics.add(CampaignSchema.error(source,
+                    evidence.pointer() + "/location", "unknown campaign location " + evidence.location()));
+        }
         for (var chapter : definition.chapters().values()) {
             localized(definition, chapter.titleKey(), chapter.pointer() + "/title_key", diagnostics);
             Set<String> requiredChapters = new LinkedHashSet<>();

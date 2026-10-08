@@ -37,6 +37,17 @@ public final class CampaignStoryObjectiveType implements QuestObjectiveType<Camp
             return result.matches() ? QuestObjectiveResult.complete("Story outcome resolved.")
                     : incomplete(result.diagnostic().isBlank() ? "The named story outcome has not been resolved in this scope." : result.diagnostic());
         }
+        if (objective.story() instanceof CampaignStoryObjective.Investigate investigation) {
+            var instance = CampaignSavedData.get(context.level()).instances().get(context.definition().campaign());
+            if (instance == null || context.progress().questRunId() == null) return incomplete("The original campaign quest run is unavailable.");
+            var data = CampaignEvidenceSavedData.get(context.level());
+            if (!data.diagnostic().isBlank()) return incomplete(data.diagnostic());
+            var key = new CampaignInvestigationReceipt.Key(context.definition().campaign(), instance.instanceId(), instance.fingerprint(),
+                    context.player().getUUID(), context.definition().id(), context.progress().questRunId(), objective.id(), investigation.evidence());
+            if (data.investigated(key)) return QuestObjectiveResult.complete("Evidence investigated.");
+            var source = CampaignEvidenceService.resolve(context.level().getServer(), context.definition().campaign(), investigation.evidence());
+            return incomplete(source.available() ? "Investigate the bound campaign evidence source." : source.diagnostic());
+        }
         var speak = (CampaignStoryObjective.Speak) objective.story();
         var campaign = CampaignResources.current(context.level().getServer()).campaigns().get(context.definition().campaign());
         var instance = CampaignSavedData.get(context.level()).instances().get(context.definition().campaign());

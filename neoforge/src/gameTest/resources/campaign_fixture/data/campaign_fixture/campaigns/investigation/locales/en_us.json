@@ -1,0 +1,11 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.investigation.title": "Campaign fixture: investigation",
+    "campaign_fixture.campaign.investigation.chapter": "Read the missing ledger",
+    "campaign_fixture.campaign.investigation.home": "The mentor's village",
+    "campaign_fixture.campaign.investigation.mentor": "Mentor",
+    "campaign_fixture.campaign.investigation.ledger": "A damaged ledger",
+    "campaign_fixture.campaign.investigation.ledger.text": "The final shipment was taken to the old watchtower."
+  }
+}

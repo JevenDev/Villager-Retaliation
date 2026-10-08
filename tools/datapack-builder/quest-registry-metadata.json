@@ -1122,6 +1122,49 @@
         "implementation": "CampaignStoryObjectiveType"
       },
       {
+        "id": "campaign_investigate",
+        "aliases": [],
+        "type": "campaign_investigate",
+        "requirements": [
+          "polling"
+        ],
+        "has_runtime": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {},
+            "optional": {},
+            "tracker": {},
+            "conditions": {},
+            "metadata": {},
+            "ui": {},
+            "type": {
+              "const": "campaign_investigate"
+            },
+            "story": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "evidence": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                }
+              },
+              "required": [
+                "evidence"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "story"
+          ]
+        },
+        "implementation": "CampaignStoryObjectiveType"
+      },
+      {
         "id": "condition",
         "aliases": [],
         "type": "condition",
@@ -1711,6 +1754,48 @@
         }
       },
       {
+        "id": "villagerretaliation:campaign_investigate",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Campaign investigate",
+        "description": "Built-in Campaign investigate type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_outcome",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Campaign outcome",
+        "description": "Built-in Campaign outcome type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_speak",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Campaign speak",
+        "description": "Built-in Campaign speak type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:choice",
         "aliases": [],
         "live_capabilities": [],
@@ -1733,6 +1818,20 @@
         "client_sync": "owner",
         "title": "Condition",
         "description": "Built-in Condition type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:criterion",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Criterion",
+        "description": "Built-in Criterion type.",
         "browser_available": true,
         "schema": {
           "type": "object"
@@ -2682,6 +2781,7 @@
         "block_use",
         "branch_choice",
         "break_block",
+        "campaign_investigate",
         "campaign_outcome",
         "campaign_speak",
         "choice",

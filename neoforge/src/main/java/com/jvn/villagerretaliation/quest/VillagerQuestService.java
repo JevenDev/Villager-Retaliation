@@ -7213,6 +7213,7 @@ public final class VillagerQuestService {
             case CRITERION -> "Complete {objective_count} quest events.";
             case CAMPAIGN_OUTCOME -> "Resolve the story outcome.";
             case CAMPAIGN_SPEAK -> "Speak with the campaign character.";
+            case CAMPAIGN_INVESTIGATE -> "Investigate the evidence.";
             case CONDITION -> "Meet the quest condition.";
         };
     }

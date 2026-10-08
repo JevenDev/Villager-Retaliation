@@ -1,0 +1,50 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:investigation",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.investigation.title",
+  "localization_prefix": "campaign_fixture.campaign.investigation.",
+  "quest_bundles": [
+    "campaign_fixture:investigation"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.investigation.chapter",
+      "quests": [
+        "campaign_fixture:investigation"
+      ]
+    }
+  ],
+  "milestones": [],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.investigation.home",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    }
+  ],
+  "characters": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.investigation.mentor",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "downed"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ledger",
+      "title_key": "campaign_fixture.campaign.investigation.ledger",
+      "text_key": "campaign_fixture.campaign.investigation.ledger.text",
+      "source": "interaction",
+      "location": "home",
+      "entity_tag": "campaign_fixture:ledger",
+      "search_radius": 8
+    }
+  ]
+}

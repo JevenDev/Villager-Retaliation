@@ -25,7 +25,15 @@ public sealed interface CampaignStoryObjective {
         @Override public QuestDefinition.ObjectiveType type() { return QuestDefinition.ObjectiveType.CAMPAIGN_SPEAK; }
     }
 
+    record Investigate(String evidence) implements CampaignStoryObjective {
+        public Investigate {
+            if (!CampaignFactFields.validId(evidence)) throw new IllegalArgumentException("Investigation requires an authored evidence source.");
+        }
+        @Override public QuestDefinition.ObjectiveType type() { return QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE; }
+    }
+
     static CampaignStoryObjective read(QuestDefinition.ObjectiveType type, JsonObject objective) {
+        if (type == QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE) return new Investigate(objective.getAsJsonObject("story").get("evidence").getAsString());
         if (type != QuestDefinition.ObjectiveType.CAMPAIGN_OUTCOME && type != QuestDefinition.ObjectiveType.CAMPAIGN_SPEAK) return null;
         var story = objective.getAsJsonObject("story");
         return type == QuestDefinition.ObjectiveType.CAMPAIGN_OUTCOME
@@ -39,7 +47,9 @@ public sealed interface CampaignStoryObjective {
             com.jvn.villagerretaliation.campaign.content.CampaignDefinition campaign,
             com.jvn.villagerretaliation.quest.content.QuestContentCatalog catalog, ResourceLocation quest) {
         var issues = new java.util.LinkedHashMap<String, String>();
-        if (story instanceof Outcome outcome) {
+        if (story instanceof Investigate investigation) {
+            if (!campaign.evidence().containsKey(investigation.evidence())) issues.put("evidence", "Unknown campaign evidence source: " + investigation.evidence());
+        } else if (story instanceof Outcome outcome) {
             var milestone = campaign.milestones().get(outcome.milestone());
             if (milestone == null) issues.put("milestone", "Unknown campaign milestone: " + outcome.milestone());
             else {
@@ -67,7 +77,10 @@ public sealed interface CampaignStoryObjective {
     static JsonObject schema(QuestDefinition.ObjectiveType type) {
         var fields = new JsonObject();
         var required = new JsonArray();
-        if (type == QuestDefinition.ObjectiveType.CAMPAIGN_OUTCOME) {
+        if (type == QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE) {
+            fields.add("evidence", CampaignFieldSchema.string(CampaignOutcomeAction.ID_PATTERN, 256));
+            required.add("evidence");
+        } else if (type == QuestDefinition.ObjectiveType.CAMPAIGN_OUTCOME) {
             fields.add("milestone", CampaignFieldSchema.string(CampaignOutcomeAction.ID_PATTERN, 256));
             fields.add("outcome", CampaignFieldSchema.string(CampaignOutcomeAction.ID_PATTERN, 256));
             fields.add("scope", CampaignFieldSchema.enumeration("world", "discovered", "participated", "completed"));

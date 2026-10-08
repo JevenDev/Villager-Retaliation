@@ -61,6 +61,10 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
                     character.titleKey(), character.pointer() + "/title_key", issues));
             definition.locations().values().forEach(location -> requireText(definition, source.locales(),
                     location.titleKey(), location.pointer() + "/title_key", issues));
+            definition.evidence().values().forEach(evidence -> {
+                requireText(definition, source.locales(), evidence.titleKey(), evidence.pointer() + "/title_key", issues);
+                requireText(definition, source.locales(), evidence.textKey(), evidence.pointer() + "/text_key", issues);
+            });
             definition.chapters().values().forEach(chapter -> requireText(definition, source.locales(),
                     chapter.titleKey(), chapter.pointer() + "/title_key", issues));
             definition.milestones().values().forEach(milestone -> milestone.outcomes().values().forEach(outcome ->

@@ -983,6 +983,53 @@
         },
         {
           "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_investigate"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {},
+              "optional": {},
+              "tracker": {},
+              "conditions": {},
+              "metadata": {},
+              "ui": {},
+              "type": {
+                "const": "campaign_investigate"
+              },
+              "story": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "evidence": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                  }
+                },
+                "required": [
+                  "evidence"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "story"
+            ]
+          }
+        },
+        {
+          "if": {
             "required": [
               "story"
             ]
@@ -992,7 +1039,8 @@
               "type": {
                 "enum": [
                   "campaign_outcome",
-                  "campaign_speak"
+                  "campaign_speak",
+                  "campaign_investigate"
                 ]
               }
             },
@@ -1017,6 +1065,7 @@
             "block_use",
             "branch_choice",
             "break_block",
+            "campaign_investigate",
             "campaign_outcome",
             "campaign_speak",
             "choice",

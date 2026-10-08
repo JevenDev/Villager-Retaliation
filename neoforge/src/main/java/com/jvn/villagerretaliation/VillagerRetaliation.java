@@ -175,6 +175,8 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onEntityLeaveLevel)
                 .listener(VillageAllegianceService::onEntityLeaveLevel);
 
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, com.jvn.villagerretaliation.campaign.CampaignEvidenceService::onInteract);
+
         // Death is cancellable (for example, Second Wind converts it into a downed state).
         // Run irreversible death bookkeeping only after other mods have had a chance to cancel it.
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerRetaliationEvents::stabilizeGameTestOrigin);

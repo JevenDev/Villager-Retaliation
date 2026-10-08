@@ -128,6 +128,12 @@ public final class QuestObjectiveRegistry {
                     requirements(QuestObjectiveRequirement.POLLING),
                     new com.jvn.villagerretaliation.campaign.CampaignStoryObjectiveType(QuestDefinition.ObjectiveType.CAMPAIGN_SPEAK)),
             register(
+                    "campaign_investigate",
+                    QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE,
+                    aliases(),
+                    requirements(QuestObjectiveRequirement.POLLING),
+                    new com.jvn.villagerretaliation.campaign.CampaignStoryObjectiveType(QuestDefinition.ObjectiveType.CAMPAIGN_INVESTIGATE)),
+            register(
                     "condition",
                     QuestDefinition.ObjectiveType.CONDITION,
                     aliases(),

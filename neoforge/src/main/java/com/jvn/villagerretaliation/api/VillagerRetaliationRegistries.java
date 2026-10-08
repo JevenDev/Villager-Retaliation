@@ -49,7 +49,8 @@ public final class VillagerRetaliationRegistries {
 
         registerSimple(QUEST_PROVIDERS, "villager", RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
         for (String id : List.of("mob_kill", "block_break", "block_place", "block_interact", "structure_visit",
-                "location_visit", "item_check", "memory_event", "trade", "gift", "reputation", "choice", "fact", "condition")) {
+                "location_visit", "item_check", "memory_event", "trade", "gift", "reputation", "choice", "fact", "condition", "criterion",
+                "campaign_outcome", "campaign_speak", "campaign_investigate")) {
             registerSimple(QUEST_OBJECTIVES, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.OWNER);
         }
         for (String id : List.of("notification", "tracker", "forced_dialogue", "quest", "quest_transition", "campaign_outcome", "campaign_fact", "campaign_reward", "experience",

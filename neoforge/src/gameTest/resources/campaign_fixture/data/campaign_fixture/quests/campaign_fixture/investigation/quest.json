@@ -1,0 +1,111 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "campaign_fixture:investigation",
+  "localization_prefix": "campaign_fixture.quest.investigation",
+  "metadata": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    },
+    "questline": "campaign_fixture",
+    "campaign": "campaign_fixture:investigation"
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "campaign_role": "mentor"
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": false,
+    "cross_villager_compatible": true
+  },
+  "entry_stage": "inspect",
+  "stages": [
+    {
+      "id": "inspect",
+      "objectives": [
+        {
+          "id": "ledger",
+          "type": "campaign_investigate",
+          "story": {
+            "evidence": "ledger"
+          },
+          "tracker": {
+            "text": {
+              "key": "#investigate"
+            }
+          }
+        }
+      ],
+      "next": {
+        "stage": "report"
+      },
+      "dialogue": {
+        "offer": {
+          "request": "question",
+          "label": {
+            "key": "#offer.label"
+          },
+          "lines": {
+            "key": "#offer.lines"
+          },
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#accept"
+              },
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "start"
+                }
+              ]
+            }
+          ]
+        },
+        "reminder": {
+          "request": "question",
+          "label": {
+            "key": "#reminder.label"
+          },
+          "lines": {
+            "key": "#reminder.lines"
+          }
+        }
+      }
+    },
+    {
+      "id": "report",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "request": "question",
+          "label": {
+            "key": "#report.label"
+          },
+          "lines": {
+            "key": "#report.lines"
+          },
+          "responses": [
+            {
+              "id": "finish",
+              "label": {
+                "key": "#finish"
+              },
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "turn_in"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
