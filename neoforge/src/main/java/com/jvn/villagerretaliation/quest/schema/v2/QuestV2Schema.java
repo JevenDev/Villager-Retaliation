@@ -605,6 +605,25 @@ public final class QuestV2Schema {
         rules.add(typeRule("campaign_outcome", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema()));
         rules.add(typeRule("campaign_character", com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema()));
         rules.add(typeRule("campaign_location", com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.schema()));
+        JsonObject compound = typedObject();
+        compound.add("required", strings("conditions"));
+        JsonObject compoundProperties = object();
+        JsonObject children = arrayOf(ref("#/$defs/condition"));
+        children.addProperty("minItems", 1);
+        compoundProperties.add("conditions", children);
+        compound.add("properties", compoundProperties);
+        compound.addProperty("additionalProperties", true);
+        JsonObject negation = typedObject();
+        negation.add("required", strings("condition"));
+        JsonObject negationProperties = object();
+        negationProperties.add("condition", ref("#/$defs/condition"));
+        negation.add("properties", negationProperties);
+        negation.addProperty("additionalProperties", true);
+        for (String name : conditionTypes()) {
+            String canonical = DialogueCondition.canonicalTypeId(name);
+            if (canonical.equals("all") || canonical.equals("any")) rules.add(typeRule(name, compound));
+            if (canonical.equals("not")) rules.add(typeRule(name, negation));
+        }
         schema.add("allOf", rules);
         return schema;
     }
@@ -614,7 +633,8 @@ public final class QuestV2Schema {
         schema.add("required", strings("type"));
         JsonObject properties = object();
         properties.add("type", stringEnum(actionTypes()));
-        properties.add("action", stringEnum(actionTypes()));
+        properties.add("action", stringEnum(Stream.concat(actionTypes().stream(),
+                com.jvn.villagerretaliation.action.VillagerActionDefinition.QuestAction.serializedNames().stream()).distinct().sorted().toList()));
         properties.add("memory_scope", stringEnum(List.of("villager", "village", "both")));
         properties.add("attribute", stringEnum(List.of("knowledge", "guts", "proficiency", "kindness", "charm")));
         properties.add("amount", integer());

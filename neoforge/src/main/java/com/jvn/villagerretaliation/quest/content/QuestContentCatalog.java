@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest.content;
 
 import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
+import com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestTriggerIndex;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
@@ -40,7 +41,8 @@ public record QuestContentCatalog(
         List<QuestPoolDefinition> pools,
         Map<QuestBundlePath.Owner, QuestBundleTransactions.EffectiveBundle> bundles,
         QuestLocaleCatalog localization,
-        QuestRewardCatalog rewards) {
+        QuestRewardCatalog rewards,
+        Map<ResourceLocation, ConversationDefinition> conversations) {
     public QuestContentCatalog {
         compiledQuestCatalog = compiledQuestCatalog == null
                 ? new CompiledQuestCatalog(Map.of())
@@ -58,6 +60,23 @@ public record QuestContentCatalog(
         bundles = freezeMap(bundles);
         localization = localization == null ? QuestLocaleCatalog.empty() : localization;
         rewards = rewards == null ? QuestRewardCatalog.empty() : rewards;
+        conversations = freezeMap(conversations);
+    }
+
+    public QuestContentCatalog(long generation, CompiledQuestCatalog compiledQuestCatalog, QuestDialogueCatalog dialogueCatalog,
+            Map<ResourceLocation, QuestDefinition> quests, Map<QuestObjectiveEventKind, Set<ResourceLocation>> objectiveEventQuestIds,
+            Set<ResourceLocation> factQuestIds, Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
+            Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds,
+            Map<ResourceLocation, CompiledScene> scenes, Map<ResourceLocation, EncounterTemplate> encounters,
+            List<QuestPoolDefinition> pools, Map<QuestBundlePath.Owner, QuestBundleTransactions.EffectiveBundle> bundles,
+            QuestLocaleCatalog localization, QuestRewardCatalog rewards) {
+        this(generation, compiledQuestCatalog, dialogueCatalog, quests, objectiveEventQuestIds, factQuestIds, memoryEventQuestIds,
+                exclusiveGroupQuestIds, triggerEventQuestIds, scenes, encounters, pools, bundles, localization, rewards, Map.of());
+    }
+
+    public Optional<ConversationDefinition> conversation(ResourceLocation id) {
+        return Optional.ofNullable(id == null ? null : conversations.get(id));
     }
 
     public static QuestContentCatalog empty() {

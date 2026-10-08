@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest.content;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.dialogue.conversation.ConversationResources;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.content.bundle.BuiltInQuestBundleCompatibility;
@@ -129,9 +130,12 @@ public final class QuestContentCatalogs {
     }
 
     private static BuildResult build(MinecraftServer server) {
+        return build(server, QuestBundleDiscovery.discover(server));
+    }
+
+    static BuildResult build(MinecraftServer server, List<QuestBundleTransactions.RawResource> resources) {
         long generation = GENERATIONS.incrementAndGet();
-        List<QuestBundleTransactions.RawResource> remaining =
-                new ArrayList<>(QuestBundleDiscovery.discover(server));
+        List<QuestBundleTransactions.RawResource> remaining = new ArrayList<>(resources);
         List<ManualDiagnostic> manualDiagnostics = new ArrayList<>();
         QuestBundleTransactions.Result bundles = null;
         CompiledCandidate compiled = null;
@@ -220,6 +224,7 @@ public final class QuestContentCatalogs {
         QuestPoolResources.ContentSnapshot pool =
                 QuestPoolResources.snapshotForCatalog(server, bundles);
 
+        var conversations = ConversationResources.compile(bundles, scene.scenes().keySet(), quest.quests().keySet());
         QuestContentCatalog catalog = new QuestContentCatalog(
                 generation,
                 quest.compiledCatalog(),
@@ -235,7 +240,8 @@ public final class QuestContentCatalogs {
                 pool.pools(),
                 bundles.bundles(),
                 bundles.localization(),
-                rewards);
+                rewards,
+                conversations.conversations());
         boolean questOverride = VillagerQuestResources.hasTestOverride(server);
         boolean sceneOverride = SceneResources.hasTestOverride(server);
         boolean encounterOverride = EncounterResources.hasTestOverride(server);
@@ -243,18 +249,22 @@ public final class QuestContentCatalogs {
                 catalog,
                 scene,
                 encounter,
+                conversations,
                 compilationErrors(
-                        bundles, catalog, questOverride, sceneOverride, encounterOverride),
+                        bundles, catalog, conversations, questOverride, sceneOverride, encounterOverride),
                 questOverride);
     }
 
     private static Map<QuestBundlePath.Owner, List<String>> compilationErrors(
             QuestBundleTransactions.Result bundles,
             QuestContentCatalog catalog,
+            ConversationResources.Snapshot conversations,
             boolean questOverride,
             boolean sceneOverride,
             boolean encounterOverride) {
         Map<QuestBundlePath.Owner, List<String>> errors = new LinkedHashMap<>();
+        conversations.diagnostics().forEach((owner, values) -> values.forEach(issue -> error(errors, owner,
+                issue.resourcePath() + issue.jsonPointer() + ": " + issue.message())));
         Set<ResourceLocation> poolIds = new LinkedHashSet<>();
         catalog.pools().forEach(pool -> poolIds.add(pool.id()));
         Map<ResourceLocation, QuestBundlePath.Owner> questOwners = new LinkedHashMap<>();
@@ -272,6 +282,7 @@ public final class QuestContentCatalogs {
                     boolean present = switch (kind) {
                         case QUEST -> questOverride || catalog.quests().containsKey(id);
                         case SCENE -> sceneOverride || catalog.scenes().containsKey(id);
+                        case CONVERSATION -> catalog.conversations().containsKey(id);
                         case ENCOUNTER -> encounterOverride || catalog.encounters().containsKey(id);
                         case POOL -> poolIds.contains(id);
                         case REWARD -> catalog.rewards().bundled(id).isPresent();
@@ -390,6 +401,9 @@ public final class QuestContentCatalogs {
                 "encounter",
                 QuestContentLoadReport.Severity.ERROR,
                 message)));
+        compiled.conversations().diagnostics().values().forEach(entries -> entries.forEach(diagnostic -> report.add(
+                diagnostic.resourceId(), "conversation", QuestContentLoadReport.Severity.ERROR,
+                diagnostic.jsonPointer() + ": " + diagnostic.message())));
         bundles.diagnostics().forEach(diagnostic -> report.add(
                 diagnostic.location() == null ? ownerSource(diagnostic.owner()) : diagnostic.location(),
                 "quest_bundle/" + diagnostic.code(),
@@ -404,7 +418,7 @@ public final class QuestContentCatalogs {
         return report.build();
     }
 
-    private record BuildResult(
+    record BuildResult(
             QuestContentCatalog catalog,
             QuestContentLoadReport report,
             boolean publishable) {
@@ -414,6 +428,7 @@ public final class QuestContentCatalogs {
             QuestContentCatalog catalog,
             SceneResources.ContentSnapshot scene,
             EncounterResources.ContentSnapshot encounter,
+            ConversationResources.Snapshot conversations,
             Map<QuestBundlePath.Owner, List<String>> invalidOwners,
             boolean questOverride) {
     }

@@ -735,24 +735,24 @@ public record VillagerActionDefinition(
 
     public enum QuestAction {
         NONE,
-        START,
-        REMIND,
-        TURN_IN,
-        FAIL,
-        ABANDON,
-        BLOCK;
+        START("start", "accept", "begin"),
+        REMIND("remind", "reminder", "details"),
+        TURN_IN("turn_in", "turnin", "complete", "claim"),
+        FAIL("fail", "failed"),
+        ABANDON("abandon", "drop", "cancel", "remove"),
+        BLOCK("block", "lock", "consume", "close", "close_branch", "branch_lock");
+
+        private final List<String> names;
+        private static final Map<String, QuestAction> BY_NAME = java.util.Arrays.stream(values())
+                .flatMap(action -> action.names.stream().map(name -> Map.entry(name, action)))
+                .collect(java.util.stream.Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        QuestAction(String... names) { this.names = List.of(names); }
+
+        public static java.util.Set<String> serializedNames() { return BY_NAME.keySet(); }
 
         public static QuestAction bySerializedName(String value) {
-            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-            return switch (normalized) {
-                case "start", "accept", "begin" -> START;
-                case "remind", "reminder", "details" -> REMIND;
-                case "turn_in", "turnin", "complete", "claim" -> TURN_IN;
-                case "fail", "failed" -> FAIL;
-                case "abandon", "drop", "cancel", "remove" -> ABANDON;
-                case "block", "lock", "consume", "close", "close_branch", "branch_lock" -> BLOCK;
-                default -> NONE;
-            };
+            return BY_NAME.getOrDefault(value == null ? "" : value.trim().toLowerCase(Locale.ROOT), NONE);
         }
     }
 }

@@ -54,6 +54,8 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
             if (questPrefixes.contains(definition.localizationPrefix())) issues.add(CampaignSchema.error(source.location(),
                     "/localization_prefix", "localization prefix belongs to an existing quest bundle"));
             issues.addAll(CampaignDefinitionParser.validateQuestReferences(definition, quests));
+            quests.conversations().values().stream().filter(conversation -> conversation.campaign().equals(definition.id()))
+                    .forEach(conversation -> issues.addAll(com.jvn.villagerretaliation.dialogue.conversation.ConversationCompiler.validateCampaign(conversation, definition)));
             requireText(definition, source.locales(), definition.titleKey(), "/title_key", issues);
             definition.characters().values().forEach(character -> requireText(definition, source.locales(),
                     character.titleKey(), character.pointer() + "/title_key", issues));
@@ -80,6 +82,9 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
             issues.forEach(issue -> diagnostics.add(inPack(issue, source.pack())));
         }
         rejected.forEach(entries::remove);
+        quests.conversations().values().stream().filter(conversation -> !owners.containsKey(conversation.campaign()))
+                .forEach(conversation -> diagnostics.add(com.jvn.villagerretaliation.dialogue.conversation.ConversationCompiler.error(
+                        conversation.source(), "/campaign", "campaign content is unavailable: " + conversation.campaign())));
         return new CampaignContentCatalog(quests, entries, diagnostics);
     }
 

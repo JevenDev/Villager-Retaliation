@@ -1,0 +1,241 @@
+[
+  {
+    "name": "default check and ordered speakers",
+    "patches": [],
+    "valid": true
+  },
+  {
+    "name": "difficult check still permits a natural twenty",
+    "patches": [
+      {
+        "path": "/checks/0/difficulty",
+        "value": 25
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "fractional difficulty",
+    "patches": [
+      {
+        "path": "/checks/0/difficulty",
+        "value": 1.5
+      }
+    ],
+    "pointer": "/checks/0/difficulty"
+  },
+  {
+    "name": "future schema",
+    "patches": [
+      {
+        "path": "/schema",
+        "value": "villagerretaliation:conversation/v2"
+      }
+    ],
+    "pointer": "/schema"
+  },
+  {
+    "name": "unknown node field",
+    "patches": [
+      {
+        "path": "/nodes/0/surprise",
+        "value": true
+      }
+    ],
+    "pointer": "/nodes/0/surprise"
+  },
+  {
+    "name": "ambiguous response",
+    "patches": [
+      {
+        "path": "/nodes/0/responses/0/next",
+        "value": "agreed"
+      }
+    ],
+    "pointer": "/nodes/0/responses/0"
+  },
+  {
+    "name": "missing destination",
+    "patches": [
+      {
+        "path": "/nodes/0/responses/1/next",
+        "value": "missing"
+      }
+    ],
+    "pointer": "/nodes/0/responses/1/next"
+  },
+  {
+    "name": "missing check",
+    "patches": [
+      {
+        "path": "/nodes/0/responses/0/check",
+        "value": "missing"
+      }
+    ],
+    "pointer": "/nodes/0/responses/0/check"
+  },
+  {
+    "name": "missing failure branch",
+    "patches": [
+      {
+        "path": "/checks/0/failure",
+        "value": "missing"
+      }
+    ],
+    "pointer": "/checks/0/failure"
+  },
+  {
+    "name": "duplicate node",
+    "patches": [
+      {
+        "path": "/nodes/1/id",
+        "value": "welcome"
+      }
+    ],
+    "pointer": "/nodes/1/id"
+  },
+  {
+    "name": "duplicate response",
+    "patches": [
+      {
+        "path": "/nodes/0/responses/1/id",
+        "value": "appeal"
+      }
+    ],
+    "pointer": "/nodes/0/responses/1/id"
+  },
+  {
+    "name": "duplicate exchange",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/1/id",
+        "value": "mentor"
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/1/id"
+  },
+  {
+    "name": "missing localization",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/text/key",
+        "value": "#conversation.missing"
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/text"
+  },
+  {
+    "name": "unknown speaker",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/speaker/role",
+        "value": "missing"
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/speaker/role"
+  },
+  {
+    "name": "player cannot also name a role",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/1/speaker/role",
+        "value": "mentor"
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/1/speaker"
+  },
+  {
+    "name": "trapped automatic loop",
+    "patches": [
+      {
+        "path": "/nodes/0/responses",
+        "remove": true
+      },
+      {
+        "path": "/nodes/0/next",
+        "value": "welcome"
+      }
+    ],
+    "pointer": "/nodes/0"
+  },
+  {
+    "name": "player loop with an exit",
+    "patches": [
+      {
+        "path": "/nodes/0/responses/1/next",
+        "value": "welcome"
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "empty compound alias",
+    "patches": [
+      {
+        "path": "/topics/0/conditions",
+        "value": [
+          {
+            "type": "all_of",
+            "conditions": []
+          }
+        ]
+      }
+    ],
+    "pointer": "/topics/0/conditions/0/conditions"
+  },
+  {
+    "name": "unknown negated condition",
+    "patches": [
+      {
+        "path": "/topics/0/conditions",
+        "value": [
+          {
+            "type": "not",
+            "condition": {
+              "type": "unknown"
+            }
+          }
+        ]
+      }
+    ],
+    "pointer": "/topics/0/conditions/0/condition/type"
+  },
+  {
+    "name": "nested campaign condition",
+    "patches": [
+      {
+        "path": "/topics/0/conditions",
+        "value": [
+          {
+            "type": "and",
+            "conditions": [
+              {
+                "type": "not",
+                "condition": {
+                  "type": "campaign_character",
+                  "campaign": "campaign_fixture:characters",
+                  "role": "mentor",
+                  "state": "lost"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "quest action uses lifecycle vocabulary",
+    "patches": [
+      {
+        "path": "/nodes/1/effects/0/action",
+        "value": {
+          "type": "quest",
+          "action": "reminder"
+        }
+      }
+    ],
+    "valid": true
+  }
+]

@@ -151,9 +151,11 @@ public final class QuestBundleTransactions {
             }
             if (resource.path().kind() == QuestBundlePath.Kind.QUEST) {
                 candidate.definitions.remove(QuestBundlePath.Kind.QUEST);
+                candidate.sources.keySet().removeIf(value -> value.kind() == QuestBundlePath.Kind.QUEST);
             }
             candidate.definitions.computeIfAbsent(resource.path().kind(), ignored -> new LinkedHashMap<>())
                     .put(id, resource.resource().root().deepCopy());
+            candidate.sources.put(key, new DefinitionSource(resource.resource().location(), resource.resource().packId()));
             if (resource.path().kind() == QuestBundlePath.Kind.QUEST) {
                 candidate.questId = id;
                 candidate.quest = resource.resource().root().deepCopy();
@@ -364,9 +366,6 @@ public final class QuestBundleTransactions {
             if (bundle == null) {
                 continue;
             }
-            if (bundle.owner().shared()) {
-                continue;
-            }
             for (Map.Entry<QuestBundlePath.Kind, Map<ResourceLocation, JsonObject>> kind : bundle.definitions().entrySet()) {
                 if (kind.getKey() == QuestBundlePath.Kind.REWARD) {
                     continue;
@@ -429,6 +428,7 @@ public final class QuestBundleTransactions {
     private static QuestBundlePath.Kind referenceKind(String key) {
         return switch (key) {
             case "scene", "scene_id" -> QuestBundlePath.Kind.SCENE;
+            case "conversation", "conversation_id" -> QuestBundlePath.Kind.CONVERSATION;
             case "encounter", "encounter_id", "template" -> QuestBundlePath.Kind.ENCOUNTER;
             case "reward", "reward_id", "loot_table" -> QuestBundlePath.Kind.REWARD;
             case "pool", "pool_id" -> QuestBundlePath.Kind.POOL;
@@ -504,18 +504,30 @@ public final class QuestBundleTransactions {
             Map<QuestBundlePath.Kind, Map<ResourceLocation, JsonObject>> definitions,
             Map<ResourceLocation, BundledQuestReward> rewards,
             QuestLocaleCatalog locales,
-            Set<String> references) {
+            Set<String> references,
+            Map<DefinitionKey, DefinitionSource> sources) {
         public EffectiveBundle {
             localizationPrefix = localizationPrefix == null ? "" : localizationPrefix;
             definitions = freezeDefinitions(definitions);
             rewards = rewards == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(rewards));
             locales = locales == null ? QuestLocaleCatalog.empty() : locales;
             references = references == null ? Set.of() : Set.copyOf(references);
+            sources = sources == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(sources));
+        }
+
+        public EffectiveBundle(QuestBundlePath.Owner owner, ResourceLocation questId, String localizationPrefix,
+                Map<QuestBundlePath.Kind, Map<ResourceLocation, JsonObject>> definitions,
+                Map<ResourceLocation, BundledQuestReward> rewards, QuestLocaleCatalog locales, Set<String> references) {
+            this(owner, questId, localizationPrefix, definitions, rewards, locales, references, Map.of());
+        }
+
+        public DefinitionSource source(QuestBundlePath.Kind kind, ResourceLocation id) {
+            return sources.getOrDefault(new DefinitionKey(kind, id), new DefinitionSource(id, ""));
         }
 
         public EffectiveBundle withLocales(QuestLocaleCatalog replacement) {
             return new EffectiveBundle(this.owner, this.questId, this.localizationPrefix,
-                    this.definitions, this.rewards, replacement, this.references);
+                    this.definitions, this.rewards, replacement, this.references, this.sources);
         }
 
         public Map<QuestBundlePath.Kind, Map<ResourceLocation, JsonObject>> definitions() {
@@ -570,7 +582,11 @@ public final class QuestBundleTransactions {
     private record Classified(RawResource resource, QuestBundlePath path) {
     }
 
-    private record DefinitionKey(QuestBundlePath.Kind kind, ResourceLocation id) {
+    public record DefinitionKey(QuestBundlePath.Kind kind, ResourceLocation id) {
+    }
+
+    public record DefinitionSource(ResourceLocation resource, String pack) {
+        public DefinitionSource { pack = pack == null ? "" : pack; }
     }
 
     private record CompanionReference(QuestBundlePath.Kind kind, ResourceLocation id) {
@@ -587,6 +603,7 @@ public final class QuestBundleTransactions {
         private final Map<QuestBundlePath.Kind, Map<ResourceLocation, JsonObject>> definitions =
                 new EnumMap<>(QuestBundlePath.Kind.class);
         private final Map<ResourceLocation, BundledQuestReward> rewards = new LinkedHashMap<>();
+        private final Map<DefinitionKey, DefinitionSource> sources = new LinkedHashMap<>();
         private QuestLocaleCatalog locales = QuestLocaleCatalog.empty();
         private final Set<String> references = new LinkedHashSet<>();
         private boolean englishFileInLayer;
@@ -609,6 +626,7 @@ public final class QuestBundleTransactions {
                     result.definitions.put(kind, copy);
                 });
                 result.rewards.putAll(lower.rewards());
+                result.sources.putAll(lower.sources());
                 result.locales = lower.locales();
                 result.references.addAll(lower.references());
             }
@@ -617,7 +635,7 @@ public final class QuestBundleTransactions {
 
         private EffectiveBundle freeze() {
             return new EffectiveBundle(this.owner, this.questId, this.prefix,
-                    this.definitions, this.rewards, this.locales, this.references);
+                    this.definitions, this.rewards, this.locales, this.references, this.sources);
         }
     }
 

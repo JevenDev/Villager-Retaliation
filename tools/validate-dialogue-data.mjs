@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateConversation, validateConversationSchema, materializeConversationAction } from "./conversation-validation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
@@ -895,6 +896,7 @@ const knownPlaceholders = new Set([
 const errors = [];
 const warnings = [];
 const questDefinitions = new Map();
+const conversationDatapacks = new Map();
 const dialogueTreeDefinitions = new Map();
 const forcedDialogueDefinitions = new Map();
 const dialogueMessageKeys = new Map();
@@ -954,15 +956,23 @@ validateQuestRegistryMetadata(questRegistryMetadata);
 const skillTradeSchema = await loadSkillTradeSchema();
 validateSkillTradeSchema(skillTradeSchema);
 const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
+const conversationSchema = await parseJson(path.join(root, "tools/datapack-builder/conversation-v1.schema.json"));
 
 if (cli.help) {
   printValidatorHelp();
   process.exit(0);
 }
 
-if (cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0) {
+if (cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0) {
   if (cli.questFiles.length > 0) await validateQuestFiles(cli.questFiles);
   if (cli.skillTradeFiles.length > 0) await validateSkillTradeFiles(cli.skillTradeFiles);
+  if (cli.conversationFiles.length > 0) {
+    if (cli.questFiles.length === 0) await indexBuiltInReferenceData();
+    for (const file of cli.conversationFiles) {
+      const data = await parseJson(file);
+      if (data !== undefined) await checkConversationFile(file, data, true);
+    }
+  }
 } else {
   await validateBuiltInData();
 }
@@ -989,7 +999,8 @@ function parseValidatorArgs(args) {
     help: false,
     quiet: false,
     questFiles: [],
-    skillTradeFiles: []
+    skillTradeFiles: [],
+    conversationFiles: []
   };
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
@@ -1008,6 +1019,10 @@ function parseValidatorArgs(args) {
       const file = args[++index];
       if (!file) errors.push("tools/validate-dialogue-data.mjs: --skill-trade requires a JSON file path.");
       else parsed.skillTradeFiles.push(path.resolve(file));
+    } else if (arg === "--conversation" || arg === "--conversation-file") {
+      const file = args[++index];
+      if (!file) errors.push("tools/validate-dialogue-data.mjs: --conversation requires a JSON file path.");
+      else parsed.conversationFiles.push(path.resolve(file));
     } else if (arg.startsWith("--")) {
       errors.push(`tools/validate-dialogue-data.mjs: unsupported option "${arg}".`);
     } else {
@@ -1019,10 +1034,10 @@ function parseValidatorArgs(args) {
 
 function printValidatorHelp() {
   console.log([
-    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...]",
+    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...]",
     "",
-    "Without --quest, validates the checked-in built-in datapack dialogue and quest data.",
-    "With --quest or --skill-trade, validates the supplied resource files plus generated metadata."
+    "Without file arguments, validates the checked-in built-in datapack dialogue and quest data.",
+    "With --quest, --skill-trade, or --conversation, validates the supplied resource files plus generated metadata."
   ].join("\n"));
 }
 
@@ -1042,6 +1057,8 @@ async function validateBuiltInData() {
           indexQuestBundleLocale(file, data);
         } else if (stringValue(data?.schema) === "villagerretaliation:quest_reward/v1") {
           indexBundledQuestReward(file, data);
+        } else if (stringValue(data?.schema) === "villagerretaliation:conversation/v1") {
+          await checkConversationFile(file, data);
         } else if (!isQuestBundleCompanion(data)) {
           errors.push(`${relative(file)}: unsupported resource in the public quests bundle layout.`);
         }
@@ -1090,6 +1107,128 @@ async function validateQuestFiles(files) {
     checkEquipmentPredicateFlags(file, data);
     indexQuestResource(file, data);
     checkQuestResource(file, data);
+  }
+}
+
+function conversationLocale(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const messages = data.messages && typeof data.messages === "object" && !Array.isArray(data.messages) ? data.messages : data;
+  const entries = Object.entries(messages).filter(([key]) => messages !== data || key !== "schema");
+  if (entries.some(([key, value]) => !key.trim() || value === null)) return null;
+  return Object.fromEntries(entries);
+}
+
+async function conversationDatapack(dataRoot) {
+  if (!conversationDatapacks.has(dataRoot)) {
+    const resources = [];
+    for (const file of await jsonFiles(dataRoot)) {
+      const local = path.relative(dataRoot, file).replaceAll(path.sep, "/");
+      if (!/^[^/]+\/(quests|campaigns)\//.test(local)) continue;
+      const data = await parseJson(file);
+      if (data && typeof data === "object" && !Array.isArray(data)) resources.push({ file, data });
+    }
+    conversationDatapacks.set(dataRoot, resources);
+  }
+  return conversationDatapacks.get(dataRoot);
+}
+
+async function checkConversationFile(file, data, indexReferences = false) {
+  if (!conversationSchema) return;
+  const structuralIssues = validateConversationSchema(data, conversationSchema);
+  for (const issue of structuralIssues) errors.push(`${relative(file)}: ${issue.pointer || "/"}: ${issue.message}.`);
+  if (structuralIssues.length) return;
+  const normalized = path.resolve(file).replaceAll(path.sep, "/");
+  const layout = normalized.match(/^(.*\/data\/([a-z0-9_.-]+))\/quests\/(_shared|[a-z0-9_.-]+\/[a-z0-9_.-]+)\/conversations\/[^/]+\.json$/);
+  if (!layout) {
+    errors.push(`${relative(file)}: conversation must belong to a public quest bundle or quests/_shared/conversations.`);
+    return;
+  }
+  const namespaceRoot = layout[1];
+  const owner = path.join(namespaceRoot, "quests", layout[3]);
+  const shared = layout[3] === "_shared";
+  const ownerQuestFile = path.join(owner, "quest.json");
+  const ownerQuest = shared ? null : await parseJson(ownerQuestFile);
+  if (!shared && !isQuestModuleV2(ownerQuest)) {
+    errors.push(`${relative(file)}: conversation requires its owning quest.json.`);
+    return;
+  }
+  const context = { prefix: ownerQuest?.localization_prefix ?? "", quest: ownerQuest?.id, messages: Object.create(null) };
+  const dataRoot = path.dirname(namespaceRoot);
+  const resources = await conversationDatapack(dataRoot);
+  for (const { file: resource, data: definition } of resources) {
+    const local = path.relative(dataRoot, resource).replaceAll(path.sep, "/");
+    if (definition.schema === "villagerretaliation:conversation/v1" && definition.id === data.id && path.resolve(resource) !== path.resolve(file)) {
+      errors.push(`${relative(file)}: /id: duplicate conversation id also defined in ${relative(resource)}.`);
+    }
+    if (local.endsWith("/quests/_shared/locales/en_us.json")) {
+      const messages = conversationLocale(definition);
+      if (messages === null) errors.push(`${relative(resource)}: invalid shared English locale.`);
+      else Object.assign(context.messages, messages);
+    }
+    if (definition.schema === "villagerretaliation:campaign/v1" && definition.id === data.campaign) {
+      if (context.campaign) errors.push(`${relative(resource)}: duplicate campaign id ${definition.id}.`);
+      else context.campaign = definition;
+    }
+    if (indexReferences && isQuestModuleV2(definition)) {
+      const previous = questDefinitions.get(definition.id);
+      if (!previous || previous.file !== relative(resource)) indexQuestResource(resource, definition);
+    }
+    if (indexReferences && definition.schema === "villagerretaliation:quest_locale/v1") indexQuestBundleLocale(resource, definition);
+    if (indexReferences && definition.schema === "villagerretaliation:quest_reward/v1") indexBundledQuestReward(resource, definition);
+  }
+  const localeFile = path.join(owner, "locales", "en_us.json");
+  const locale = resources.find(entry => path.resolve(entry.file) === path.resolve(localeFile))?.data;
+  const messages = conversationLocale(locale);
+  if ((!shared || locale !== undefined) && messages === null) {
+    errors.push(`${relative(file)}: conversation requires readable locales/en_us.json.`);
+    return;
+  }
+  Object.assign(context.messages, messages);
+  if (!context.campaign) errors.push(`${relative(file)}: /campaign: campaign content is unavailable: ${data.campaign}.`);
+  const issues = validateConversation(data, conversationSchema, context);
+  for (const issue of issues) errors.push(`${relative(file)}: ${issue.pointer || "/"}: ${issue.message}.`);
+  if (issues.length) return;
+  if (!data.id.startsWith(layout[2] + ":")) errors.push(`${relative(file)}: /id: conversation id must use the bundle namespace.`);
+  const questId = data.quest ?? context.quest ?? "";
+  if (questId) pendingQuestReferences.push({ file, location: "/quest", id: questId, reason: "conversation quest context" });
+  const checkEffects = (effects, pointer) => {
+    for (const [index, effect] of (effects ?? []).entries()) {
+      const actionPointer = `${pointer}/${index}/action`;
+      const action = materializeConversationAction(effect.action, context);
+      checkQuestV2Actions(file, [action], actionPointer, actionPointer, questId, { singleAction: true });
+      const type = questV2RegistryIndex.actions.canonical.get(action.type ?? action.action);
+      if (["campaign_fact", "campaign_outcome", "campaign_reward"].includes(type) && !action.quest && !action.quest_id && !questId) {
+        errors.push(`${relative(file)}: ${actionPointer}/quest: campaign effect requires an owning quest.`);
+      }
+      if (type === "start_scene") {
+        if (!firstString(action.operation_id, action.scene_operation_id).trim()) {
+          errors.push(`${relative(file)}: ${actionPointer}/operation_id: scene action requires a stable operation id.`);
+        }
+        const authoredScene = firstString(action.scene_id, action.scene, action.start_scene);
+        const scene = authoredScene.includes(":") ? authoredScene : `${layout[2]}:${authoredScene}`;
+        const target = resources.find(entry => entry.data.schema === "villagerretaliation:scene/v1" && entry.data.id === scene);
+        if (!target) errors.push(`${relative(file)}: ${actionPointer}/scene_id: unknown scene ${scene}.`);
+        else {
+          const sceneOwner = path.dirname(path.dirname(target.file));
+          const publicScene = path.basename(sceneOwner) === "_shared";
+          if (!publicScene && path.resolve(sceneOwner) !== path.resolve(owner)) {
+            errors.push(`${relative(file)}: ${actionPointer}/scene_id: private scene belongs to another quest bundle.`);
+          }
+        }
+      }
+    }
+  };
+  for (const [index, topic] of data.topics.entries()) {
+    const pointer = `/topics/${index}/conditions`;
+    checkQuestV2Conditions(file, topic.conditions, pointer, pointer, questId, "conversation topic");
+  }
+  for (const [index, node] of data.nodes.entries()) {
+    checkEffects(node.effects, `/nodes/${index}/effects`);
+    for (const [responseIndex, response] of (node.responses ?? []).entries()) {
+      const pointer = `/nodes/${index}/responses/${responseIndex}`;
+      checkQuestV2Conditions(file, response.conditions, `${pointer}/conditions`, `${pointer}/conditions`, questId, "conversation response");
+      checkEffects(response.effects, `${pointer}/effects`);
+    }
   }
 }
 
@@ -2577,7 +2716,7 @@ function checkQuestV2Actions(file, actions, pointer, location, questId, options 
     return;
   }
   for (const [index, action] of actions.entries()) {
-    const actionPointer = `${pointer}/${index}`;
+    const actionPointer = options.singleAction ? pointer : `${pointer}/${index}`;
     const actionLocation = `${location}[${index}]`;
     if (!action || typeof action !== "object" || Array.isArray(action)) {
       questV2Error(file, actionPointer, actionLocation, "action must be an object.", "Use an action object with a type field.");

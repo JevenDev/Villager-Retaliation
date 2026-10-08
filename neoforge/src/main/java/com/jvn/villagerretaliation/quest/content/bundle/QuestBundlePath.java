@@ -50,7 +50,7 @@ public record QuestBundlePath(
             }
             Kind kind = Kind.sharedDirectory(parts[1]).orElse(null);
             if (kind == null || parts.length != 3 || !parts[2].endsWith(".json")) {
-                return Classification.error("_shared accepts locales, pools, scenes, encounters, and rewards JSON");
+                return Classification.error("_shared accepts locales, pools, scenes, conversations, encounters, and rewards JSON");
             }
             return Classification.ok(new QuestBundlePath(
                     resource, owner, kind, "", String.join("/", Arrays.copyOfRange(parts, 2, parts.length))));
@@ -70,7 +70,7 @@ public record QuestBundlePath(
         }
         Kind kind = Kind.privateDirectory(parts[2]).orElse(null);
         if (kind == null || parts.length != 4 || !parts[3].endsWith(".json")) {
-            return Classification.error("quest bundle accepts quest.json, locales, scenes, encounters, and rewards");
+            return Classification.error("quest bundle accepts quest.json, locales, scenes, conversations, encounters, and rewards");
         }
         return Classification.ok(new QuestBundlePath(
                 resource, owner, kind, "", String.join("/", Arrays.copyOfRange(parts, 3, parts.length))));
@@ -89,11 +89,12 @@ public record QuestBundlePath(
     }
 
     public enum Kind {
-        QUEST, LOCALE, SCENE, ENCOUNTER, REWARD, POOL;
+        QUEST, LOCALE, SCENE, ENCOUNTER, REWARD, POOL, CONVERSATION;
 
         private static Optional<Kind> sharedDirectory(String value) {
             return switch (value) {
                 case "scenes" -> Optional.of(SCENE);
+                case "conversations" -> Optional.of(CONVERSATION);
                 case "encounters" -> Optional.of(ENCOUNTER);
                 case "rewards" -> Optional.of(REWARD);
                 case "pools" -> Optional.of(POOL);
@@ -104,6 +105,7 @@ public record QuestBundlePath(
         private static Optional<Kind> privateDirectory(String value) {
             return switch (value) {
                 case "scenes" -> Optional.of(SCENE);
+                case "conversations" -> Optional.of(CONVERSATION);
                 case "encounters" -> Optional.of(ENCOUNTER);
                 case "rewards" -> Optional.of(REWARD);
                 default -> Optional.empty();

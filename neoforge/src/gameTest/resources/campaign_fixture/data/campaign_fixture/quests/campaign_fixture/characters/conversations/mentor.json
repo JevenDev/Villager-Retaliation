@@ -1,0 +1,135 @@
+{
+  "schema": "villagerretaliation:conversation/v1",
+  "id": "campaign_fixture:mentor_conversation",
+  "revision": 1,
+  "campaign": "campaign_fixture:characters",
+  "character": "mentor",
+  "title": {
+    "key": "#conversation.title"
+  },
+  "topics": [
+    {
+      "id": "guidance",
+      "label": {
+        "key": "#conversation.topic"
+      },
+      "start": "welcome"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "welcome",
+      "exchanges": [
+        {
+          "id": "mentor",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#conversation.welcome"
+          }
+        },
+        {
+          "id": "player",
+          "speaker": {
+            "type": "player"
+          },
+          "text": {
+            "key": "#conversation.question"
+          }
+        },
+        {
+          "id": "pause",
+          "speaker": {
+            "type": "narrator"
+          },
+          "text": {
+            "key": "#conversation.pause"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "appeal",
+          "label": {
+            "key": "#conversation.appeal"
+          },
+          "check": "convince"
+        },
+        {
+          "id": "leave",
+          "label": {
+            "key": "#conversation.leave"
+          },
+          "next": "declined"
+        }
+      ]
+    },
+    {
+      "id": "agreed",
+      "exchanges": [
+        {
+          "id": "answer",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#conversation.agreed"
+          }
+        }
+      ],
+      "effects": [
+        {
+          "id": "record_answer",
+          "action": {
+            "type": "notification",
+            "text": {
+              "key": "#conversation.recorded"
+            },
+            "required": true
+          }
+        }
+      ],
+      "outcome": "guidance_given"
+    },
+    {
+      "id": "declined",
+      "exchanges": [
+        {
+          "id": "answer",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#conversation.declined"
+          }
+        }
+      ],
+      "outcome": "guidance_declined"
+    }
+  ],
+  "checks": [
+    {
+      "id": "convince",
+      "success": "agreed",
+      "failure": "declined"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "guidance_given",
+      "label": {
+        "key": "#conversation.success"
+      }
+    },
+    {
+      "id": "guidance_declined",
+      "label": {
+        "key": "#conversation.failure"
+      }
+    }
+  ]
+}

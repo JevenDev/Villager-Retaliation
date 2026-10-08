@@ -1,0 +1,1178 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "campaign",
+    "character",
+    "title",
+    "topics",
+    "nodes",
+    "outcomes"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "enum": [
+        "villagerretaliation:conversation/v1"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "campaign": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+    },
+    "character": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+    },
+    "quest": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+    },
+    "title": {
+      "$ref": "#/$defs/localized_reference"
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/topic"
+      },
+      "minItems": 1,
+      "maxItems": 1024
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      },
+      "minItems": 1,
+      "maxItems": 1024
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/check"
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    },
+    "outcomes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/outcome"
+      },
+      "minItems": 1,
+      "maxItems": 1024
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/conversation-v1.schema.json",
+  "title": "Villager Retaliation Conversation v1",
+  "$defs": {
+    "condition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "advancement",
+            "advancements",
+            "all",
+            "all_of",
+            "and",
+            "any",
+            "any_of",
+            "armed",
+            "attribute",
+            "biome",
+            "campaign_character",
+            "campaign_fact",
+            "campaign_location",
+            "campaign_outcome",
+            "choice_selected",
+            "dimension",
+            "entity_nearby",
+            "equipment",
+            "event_payload",
+            "fact",
+            "family",
+            "held_item",
+            "item",
+            "memory",
+            "mood",
+            "nearby_entities",
+            "nearby_entity",
+            "not",
+            "or",
+            "player_item",
+            "quest",
+            "quest_choice_selected",
+            "quest_counter",
+            "quest_fact",
+            "quest_stage",
+            "quest_stage_history",
+            "quest_tag",
+            "quest_trigger_payload",
+            "quest_variable",
+            "recruitment_memory",
+            "relationship",
+            "reputation",
+            "response_selected",
+            "score",
+            "scoreboard",
+            "selected_choice",
+            "skill",
+            "social_attribute",
+            "stage",
+            "stage_history",
+            "stat",
+            "time",
+            "time_of_day",
+            "trade_level",
+            "trigger_payload",
+            "village",
+            "village_presence",
+            "villager_age",
+            "villager_equipment",
+            "villager_level",
+            "villager_mood",
+            "visited_stage",
+            "weather"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_fact"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "fact",
+              "value",
+              "campaign"
+            ],
+            "properties": {
+              "fact": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "value": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "type": {
+                "const": "campaign_fact"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "comparison": {
+                "type": "string",
+                "enum": [
+                  "equals",
+                  "not_equals",
+                  "at_least",
+                  "at_most"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_outcome"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "campaign",
+              "milestone",
+              "outcome",
+              "scope"
+            ],
+            "properties": {
+              "type": {
+                "const": "campaign_outcome"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "milestone": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "outcome": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "world",
+                  "discovered",
+                  "participated",
+                  "completed"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_character"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "description": "Checks a campaign role and its saved replacements without casting or spawning.",
+            "additionalProperties": false,
+            "required": [
+              "campaign",
+              "role",
+              "state"
+            ],
+            "properties": {
+              "type": {
+                "const": "campaign_character"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "role": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "bound",
+                  "available",
+                  "downed",
+                  "lost",
+                  "speaker",
+                  "replaced"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_location"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "description": "Checks a player's distance from an already-bound campaign destination.",
+            "additionalProperties": false,
+            "required": [
+              "campaign",
+              "location"
+            ],
+            "properties": {
+              "type": {
+                "const": "campaign_location"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "location": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "radius": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 256,
+                "default": 12
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "all"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "conditions"
+            ],
+            "properties": {
+              "conditions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/condition"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "all_of"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "conditions"
+            ],
+            "properties": {
+              "conditions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/condition"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "and"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "conditions"
+            ],
+            "properties": {
+              "conditions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/condition"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "any"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "conditions"
+            ],
+            "properties": {
+              "conditions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/condition"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "any_of"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "conditions"
+            ],
+            "properties": {
+              "conditions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/condition"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "not"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "condition"
+            ],
+            "properties": {
+              "condition": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "or"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "conditions"
+            ],
+            "properties": {
+              "conditions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/condition"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_outcome"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "milestone",
+              "outcome",
+              "operation_id"
+            ],
+            "properties": {
+              "milestone": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "outcome": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "operation_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_fact"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "fact",
+              "value",
+              "operation_id"
+            ],
+            "properties": {
+              "fact": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "value": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "milestone": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "operation_id": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "mutation": {
+                "type": "string",
+                "enum": [
+                  "set",
+                  "add"
+                ]
+              },
+              "required": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_reward"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "reward": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "operation_id": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            },
+            "required": [
+              "reward",
+              "operation_id"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "add_counter",
+            "add_tag",
+            "arm",
+            "attribute_reward",
+            "branch_transition",
+            "campaign_fact",
+            "campaign_outcome",
+            "campaign_reward",
+            "clear_tag",
+            "counter",
+            "dialogue",
+            "draw_weapon",
+            "experience",
+            "fact",
+            "flash_tracker",
+            "force_dialogue",
+            "forced_dialogue",
+            "gossip",
+            "gossip_reputation",
+            "hud",
+            "increment_counter",
+            "loot",
+            "loot_table",
+            "memory",
+            "memory_event",
+            "message",
+            "notification",
+            "notify",
+            "profile_attribute",
+            "quest",
+            "quest_action",
+            "quest_response_transition",
+            "quest_stage",
+            "quest_tag",
+            "quest_tracker",
+            "quest_transition",
+            "ready_weapon",
+            "remove_tag",
+            "rep",
+            "reputation",
+            "response_transition",
+            "scene",
+            "scene_start",
+            "set_fact",
+            "set_stage",
+            "set_tag",
+            "set_variable",
+            "social_attribute",
+            "stage",
+            "start_scene",
+            "tag",
+            "tracker",
+            "unset_tag",
+            "variable",
+            "xp"
+          ]
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "abandon",
+            "accept",
+            "add_counter",
+            "add_tag",
+            "arm",
+            "attribute_reward",
+            "begin",
+            "block",
+            "branch_lock",
+            "branch_transition",
+            "campaign_fact",
+            "campaign_outcome",
+            "campaign_reward",
+            "cancel",
+            "claim",
+            "clear_tag",
+            "close",
+            "close_branch",
+            "complete",
+            "consume",
+            "counter",
+            "details",
+            "dialogue",
+            "draw_weapon",
+            "drop",
+            "experience",
+            "fact",
+            "fail",
+            "failed",
+            "flash_tracker",
+            "force_dialogue",
+            "forced_dialogue",
+            "gossip",
+            "gossip_reputation",
+            "hud",
+            "increment_counter",
+            "lock",
+            "loot",
+            "loot_table",
+            "memory",
+            "memory_event",
+            "message",
+            "notification",
+            "notify",
+            "profile_attribute",
+            "quest",
+            "quest_action",
+            "quest_response_transition",
+            "quest_stage",
+            "quest_tag",
+            "quest_tracker",
+            "quest_transition",
+            "ready_weapon",
+            "remind",
+            "reminder",
+            "remove",
+            "remove_tag",
+            "rep",
+            "reputation",
+            "response_transition",
+            "scene",
+            "scene_start",
+            "set_fact",
+            "set_stage",
+            "set_tag",
+            "set_variable",
+            "social_attribute",
+            "stage",
+            "start",
+            "start_scene",
+            "tag",
+            "tracker",
+            "turn_in",
+            "turnin",
+            "unset_tag",
+            "variable",
+            "xp"
+          ]
+        },
+        "memory_scope": {
+          "type": "string",
+          "enum": [
+            "both",
+            "village",
+            "villager"
+          ]
+        },
+        "attribute": {
+          "type": "string",
+          "enum": [
+            "charm",
+            "guts",
+            "kindness",
+            "knowledge",
+            "proficiency"
+          ]
+        },
+        "amount": {
+          "type": "integer"
+        },
+        "duration_ticks": {
+          "type": "integer"
+        },
+        "duration_seconds": {
+          "type": "integer"
+        },
+        "duration_days": {
+          "type": "integer"
+        }
+      }
+    },
+    "localized_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "action"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "action": {
+          "$ref": "#/$defs/action"
+        }
+      }
+    },
+    "speaker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "role",
+            "player",
+            "narrator"
+          ]
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        }
+      },
+      "if": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "role"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "role"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "role"
+          ]
+        }
+      }
+    },
+    "exchange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "speaker",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "speaker": {
+          "$ref": "#/$defs/speaker"
+        },
+        "text": {
+          "$ref": "#/$defs/localized_reference"
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "label": {
+          "$ref": "#/$defs/localized_reference"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/effect"
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "check": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "next"
+          ]
+        },
+        {
+          "required": [
+            "check"
+          ]
+        }
+      ]
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "exchanges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/exchange"
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/effect"
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          },
+          "minItems": 1,
+          "maxItems": 1024
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "outcome": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "responses"
+          ]
+        },
+        {
+          "required": [
+            "next"
+          ]
+        },
+        {
+          "required": [
+            "outcome"
+          ]
+        }
+      ]
+    },
+    "topic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "start"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "label": {
+          "$ref": "#/$defs/localized_reference"
+        },
+        "start": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "success",
+        "failure"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "difficulty": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647,
+          "default": 10
+        },
+        "success": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "failure": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "label": {
+          "$ref": "#/$defs/localized_reference"
+        }
+      }
+    }
+  }
+}
