@@ -31,6 +31,7 @@ public final class EncounterInstance {
     private final BlockPos anchor;
     private final Set<UUID> spawned = new LinkedHashSet<>();
     private EncounterActorSpawns actorSpawns = new EncounterActorSpawns();
+    private EncounterRewardLedger rewardLedger = new EncounterRewardLedger();
     private final Set<UUID> defeated = new LinkedHashSet<>();
     private final Set<UUID> missing = new LinkedHashSet<>();
     private final Map<UUID, Long> leaveDeadlines = new LinkedHashMap<>();
@@ -195,6 +196,8 @@ public final class EncounterInstance {
     }
 
     EncounterActorSpawns actorSpawns() { return actorSpawns; }
+    EncounterRewardLedger rewardLedger() { return rewardLedger; }
+    public boolean hasRewardHistory() { return rewardLedger.hasHistory(); }
 
     public boolean hasDurableActorHistory() {
         return !actorSpawns.records().isEmpty() || !actorSpawns.diagnostic().isBlank();
@@ -748,6 +751,8 @@ public final class EncounterInstance {
         t.put("Spawned", uuids(spawned));
         var actors = actorSpawns.save();
         if (actors != null) t.put("ActorSpawns", actors);
+        var rewards = rewardLedger.save();
+        if (rewards != null) t.put("RewardHistory", rewards);
         t.put("Defeated", uuids(defeated));
         t.put("Missing", uuids(missing));
         t.put("LeaveDeadlines", deadlines(leaveDeadlines));
@@ -830,6 +835,7 @@ public final class EncounterInstance {
                         t.getInt("ExpectedCount"));
         v.spawned.addAll(readUuids(t, "Spawned"));
         v.actorSpawns = EncounterActorSpawns.load(t.get("ActorSpawns"), v.id);
+        v.rewardLedger = EncounterRewardLedger.load(t.get("RewardHistory"), v.sceneId, v.id);
         v.defeated.addAll(readUuids(t, "Defeated"));
         v.missing.addAll(readUuids(t, "Missing"));
         v.leaveDeadlines.putAll(readDeadlines(t, "LeaveDeadlines"));

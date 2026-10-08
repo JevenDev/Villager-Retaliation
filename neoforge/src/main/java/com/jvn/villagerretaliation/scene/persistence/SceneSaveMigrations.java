@@ -76,6 +76,18 @@ public final class SceneSaveMigrations {
                 version = 19;
             } else if (version == 19) {
                 version = 20;
+            } else if (version == 20) {
+                for (Tag raw : data.getList("Encounters", Tag.TAG_COMPOUND)) {
+                    var encounter = (CompoundTag) raw;
+                    if (!encounter.contains("RewardHistory")) {
+                        var rewards = new CompoundTag();
+                        rewards.putInt("Version", 1);
+                        rewards.put("Definition", new CompoundTag());
+                        rewards.put("Batches", new ListTag());
+                        encounter.put("RewardHistory", rewards);
+                    }
+                }
+                version = 21;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);

@@ -32,6 +32,24 @@ public final class CampaignPlayerRewards {
     static Path directory(ServerPlayer player) { return player.server.getWorldPath(LevelResource.PLAYER_DATA_DIR); }
 
     static boolean delivered(ServerPlayer player, CampaignRewardReceipt receipt) {
+        return delivered(player, delivery(receipt));
+    }
+
+    private static Delivery delivery(CampaignRewardReceipt receipt) {
+        return new Delivery(receipt.operation(), receipt.token(), receipt.player(), receipt.experience(), receipt.items(), receipt.delivered());
+    }
+
+    public record Delivery(UUID operation, UUID token, UUID player, int experience, List<CompoundTag> items, boolean delivered) {
+        public Delivery {
+            if (operation == null || token == null || player == null || experience < 0 || items == null || items.size() > 256)
+                throw new IllegalArgumentException("Invalid persistent player reward.");
+            items = items.stream().map(CompoundTag::copy).toList();
+        }
+
+        @Override public List<CompoundTag> items() { return items.stream().map(CompoundTag::copy).toList(); }
+    }
+
+    private static boolean delivered(ServerPlayer player, Delivery receipt) {
         var receipts = read(persistentLedger(player.getPersistentData()));
         UUID token = receipts.get(receipt.operation());
         if (token != null && !token.equals(receipt.token())) throw new IllegalArgumentException("The player's reward receipt belongs to a different grant. Restore consistent campaign and player saves.");
@@ -39,6 +57,14 @@ public final class CampaignPlayerRewards {
     }
 
     static boolean deliver(ServerPlayer player, CampaignRewardReceipt receipt, Path directory) throws IOException {
+        return deliver(player, delivery(receipt), directory);
+    }
+
+    public static boolean deliver(ServerPlayer player, Delivery receipt) throws IOException {
+        return deliver(player, receipt, directory(player));
+    }
+
+    private static boolean deliver(ServerPlayer player, Delivery receipt, Path directory) throws IOException {
         if (!receipt.player().equals(player.getUUID())) throw new IllegalArgumentException("Campaign reward belongs to another player.");
         if (delivered(player, receipt)) return false;
         if (receipt.delivered()) throw new IllegalArgumentException("Player data is older than the delivered campaign reward. Restore a matching player save before continuing.");

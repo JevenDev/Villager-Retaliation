@@ -919,7 +919,7 @@ public final class EncounterService {
 
     public static void maintainCleanup(MinecraftServer server, SceneSavedData data) {
         for (EncounterInstance encounter : data.encounters()) {
-            if (encounter.completionRewardEligible()) {
+            if (encounter.completionRewardEligible() || encounter.hasRewardHistory()) {
                 EncounterTemplate template =
                         EncounterResources.template(server, encounter.templateId()).orElse(null);
                 String rewardError =
@@ -951,13 +951,16 @@ public final class EncounterService {
             EncounterInstance encounter,
             EncounterTemplate template) {
         EncounterTemplate.RewardPolicy policy = template.rewards();
-        if (policy == null
+        boolean persistent = EncounterPersistence.required(data, encounter);
+        if (!persistent && (policy == null
                 || policy.waves().isEmpty()
                         && policy.phases().isEmpty()
-                        && policy.completion().isEmpty())
+                        && policy.completion().isEmpty()))
             return grantVillagerCompletionGuts(server, data, encounter, template);
         if (encounter.state() != EncounterInstance.EncounterState.ACTIVE
-                && !encounter.completionRewardEligible()) return "";
+                && !encounter.completionRewardEligible())
+            return persistent ? EncounterRewards.grant(server, data, encounter, template, List.of()) : "";
+        if (policy == null) policy = new EncounterTemplate.RewardPolicy(List.of(), List.of(), List.of(), List.of(), EncounterTemplate.DropPolicy.NORMAL);
         SceneInstance scene = data.get(encounter.sceneId()).orElse(null);
         if (scene == null) return "encounter rewards require their owning scene";
         List<RewardGrant> grants = new ArrayList<>();
@@ -989,6 +992,7 @@ public final class EncounterService {
         if (encounter.completionRewardEligible())
             for (EncounterTemplate.Reward reward : policy.completion())
                 grants.add(new RewardGrant(reward, "completion"));
+        if (persistent) return EncounterRewards.grant(server, data, encounter, template, grants);
         for (RewardGrant grant : grants) {
             QuestRewardResolver.Resolution resolution =
                     grant.reward().lootTable() == null
@@ -1118,6 +1122,11 @@ public final class EncounterService {
             EncounterInstance encounter,
             EncounterTemplate.Reward reward,
             String trigger) {
+        for (var item : rewardItems(player, encounter, reward, trigger)) if (!item.isEmpty()) give(player, item.copy());
+    }
+
+    static List<ItemStack> rewardItems(net.minecraft.server.level.ServerPlayer player,
+            EncounterInstance encounter, EncounterTemplate.Reward reward, String trigger) {
         if (reward.item() != null) {
             ItemStack stack =
                     new ItemStack(BuiltInRegistries.ITEM.get(reward.item()), reward.count());
@@ -1130,8 +1139,7 @@ public final class EncounterService {
                     Map.of());
             if (!trophyName.isBlank())
                 stack.set(DataComponents.CUSTOM_NAME, Component.literal(trophyName));
-            give(player, stack);
-            return;
+            return List.of(stack);
         }
         long seed =
                 encounter.variantSeed()
@@ -1145,16 +1153,14 @@ public final class EncounterService {
                         player.getLuck(),
                         reward.lootTable(),
                         RandomSource.create(seed));
-        if (!roll.resolution().resolved()) return;
-        for (ItemStack stack : roll.items())
-            if (!stack.isEmpty()) give(player, stack.copy());
+        return roll.resolution().resolved() ? roll.items() : List.of();
     }
 
     private static void give(net.minecraft.server.level.ServerPlayer player, ItemStack stack) {
         if (!player.addItem(stack) && !stack.isEmpty()) player.drop(stack, false);
     }
 
-    private record RewardGrant(EncounterTemplate.Reward reward, String trigger) {}
+    record RewardGrant(EncounterTemplate.Reward reward, String trigger) {}
 
     public static void onDrops(LivingDropsEvent event) {
         if (event.getEntity().level() instanceof ServerLevel level)
@@ -1655,12 +1661,10 @@ public final class EncounterService {
                                     EncounterResources.template(
                                                     level.getServer(), encounter.templateId())
                                             .ifPresent(
-                                                    template ->
-                                                            grantEligibleRewards(
-                                                                    level.getServer(),
-                                                                    data,
-                                                                    encounter,
-                                                                    template));
+                                                    template -> {
+                                                        String rewardIssue = grantEligibleRewards(level.getServer(), data, encounter, template);
+                                                        if (!rewardIssue.isBlank() && encounter.markContentUnresolved(rewardIssue)) data.changed();
+                                                    });
                                 if (encounter.state() == EncounterInstance.EncounterState.COMPLETED
                                         || encounter.state()
                                                 == EncounterInstance.EncounterState.FAILED)
