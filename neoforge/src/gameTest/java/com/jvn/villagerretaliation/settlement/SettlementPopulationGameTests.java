@@ -146,6 +146,8 @@ public final class SettlementPopulationGameTests {
         resident.setPos(fixture.leader().position());
         resident.setNoAi(true);
         level.addFreshEntity(resident);
+        resident.getBrain().setSchedule(new net.minecraft.world.entity.schedule.ScheduleBuilder(new net.minecraft.world.entity.schedule.Schedule())
+                .changeActivityAt(0, net.minecraft.world.entity.schedule.Activity.IDLE).build());
         VillageAllegianceApi.assignKnown(level, resident, fixture.town().id(), AllegianceAssignmentSource.EXPLICIT_API);
         SettlementPopulationService.provideFamilyFood(level, fixture.town(), resident);
         helper.assertValueEqual(resident.getInventory().countItem(Items.BREAD), 3, "residents receive real food for ordinary family life");
@@ -156,7 +158,8 @@ public final class SettlementPopulationGameTests {
         helper.assertValueEqual(VillagerBreedingPolicy.evaluateParent(level, resident).reason(), BreedingBlockReason.SETTLEMENT_NEEDS,
                 "shortages stall growth without erasing family relationships");
         fixture.depot().setItem(0, new ItemStack(Items.BREAD, 64));
-        helper.assertTrue(VillagerBreedingPolicy.evaluateParent(level, resident).allowed(), "restoring support permits family life again");
+        var recovered = VillagerBreedingPolicy.evaluateParent(level, resident);
+        helper.assertTrue(recovered.allowed(), "restoring support permits family life again: " + recovered.reason());
         resident.discard();
         helper.succeed();
     }
