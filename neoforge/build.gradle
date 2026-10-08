@@ -403,6 +403,15 @@ tasks.register('generateQuestV2Schema', JavaExec) {
     args rootProject.file('tools/datapack-builder/quest-v2.schema.json').absolutePath
 }
 
+tasks.register('generateCampaignSchema', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports the campaign v1 JSON Schema.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.campaign.content.CampaignSchemaTool'
+    args rootProject.file('tools/datapack-builder/campaign-v1.schema.json').absolutePath
+}
+
 tasks.register('generateConversationSchema', JavaExec) {
     group = 'datapack tooling'
     description = 'Exports the conversation v1 JSON Schema.'

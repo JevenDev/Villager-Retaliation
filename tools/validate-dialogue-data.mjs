@@ -2,6 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateConversation, validateConversationSchema, materializeConversationAction } from "./conversation-validation.mjs";
+import { campaignDataRoot, validateCampaignPack } from "./campaign-pack-validation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
@@ -16,7 +17,8 @@ const roots = {
   lootTables: "neoforge/src/main/resources/data/villagerretaliation/loot_table",
   notifications: "neoforge/src/main/resources/data/villagerretaliation/notifications/en_us",
   quests: "neoforge/src/main/resources/data/villagerretaliation/quests",
-  skillTrades: "neoforge/src/main/resources/data/villagerretaliation/skill_trades"
+  skillTrades: "neoforge/src/main/resources/data/villagerretaliation/skill_trades",
+  campaigns: "neoforge/src/main/resources/data/villagerretaliation/campaigns"
 };
 
 const legacyLineFields = new Set([
@@ -896,6 +898,8 @@ const errors = [];
 const warnings = [];
 const questDefinitions = new Map();
 const conversationDatapacks = new Map();
+const campaignDatapacks = new Map();
+const checkedCampaigns = new Set();
 const dialogueTreeDefinitions = new Map();
 const forcedDialogueDefinitions = new Map();
 const dialogueMessageKeys = new Map();
@@ -957,13 +961,15 @@ validateSkillTradeSchema(skillTradeSchema);
 const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
 const questObjectiveTypes = questV2RegistryIndex.objectives.values;
 const conversationSchema = await parseJson(path.join(root, "tools/datapack-builder/conversation-v1.schema.json"));
+const campaignSchema = await parseJson(path.join(root, "tools/datapack-builder/campaign-v1.schema.json"));
+const sceneSchema = await parseJson(path.join(root, "tools/datapack-builder/scene-v1.schema.json"));
 
 if (cli.help) {
   printValidatorHelp();
   process.exit(0);
 }
 
-if (cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0) {
+if (cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0 || cli.campaignFiles.length > 0) {
   if (cli.questFiles.length > 0) await validateQuestFiles(cli.questFiles);
   if (cli.skillTradeFiles.length > 0) await validateSkillTradeFiles(cli.skillTradeFiles);
   if (cli.conversationFiles.length > 0) {
@@ -971,6 +977,13 @@ if (cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversat
     for (const file of cli.conversationFiles) {
       const data = await parseJson(file);
       if (data !== undefined) await checkConversationFile(file, data, true);
+    }
+  }
+  if (cli.campaignFiles.length > 0) {
+    if (cli.questFiles.length === 0 && cli.conversationFiles.length === 0) await indexBuiltInReferenceData();
+    for (const file of cli.campaignFiles) {
+      const data = await parseJson(file);
+      if (data !== undefined) await checkCampaignFile(file, data);
     }
   }
 } else {
@@ -1000,7 +1013,8 @@ function parseValidatorArgs(args) {
     quiet: false,
     questFiles: [],
     skillTradeFiles: [],
-    conversationFiles: []
+    conversationFiles: [],
+    campaignFiles: []
   };
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
@@ -1023,6 +1037,10 @@ function parseValidatorArgs(args) {
       const file = args[++index];
       if (!file) errors.push("tools/validate-dialogue-data.mjs: --conversation requires a JSON file path.");
       else parsed.conversationFiles.push(path.resolve(file));
+    } else if (arg === "--campaign" || arg === "--campaign-file") {
+      const file = args[++index];
+      if (!file) errors.push("tools/validate-dialogue-data.mjs: --campaign requires a JSON file path.");
+      else parsed.campaignFiles.push(path.resolve(file));
     } else if (arg.startsWith("--")) {
       errors.push(`tools/validate-dialogue-data.mjs: unsupported option "${arg}".`);
     } else {
@@ -1034,10 +1052,10 @@ function parseValidatorArgs(args) {
 
 function printValidatorHelp() {
   console.log([
-    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...]",
+    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...] [--campaign path/to/campaign.json ...]",
     "",
     "Without file arguments, validates the checked-in built-in datapack dialogue and quest data.",
-    "With --quest, --skill-trade, or --conversation, validates the supplied resource files plus generated metadata."
+    "With --quest, --skill-trade, --conversation, or --campaign, validates the supplied resources and their authored references."
   ].join("\n"));
 }
 
@@ -1046,6 +1064,10 @@ async function validateBuiltInData() {
     for (const file of await jsonFiles(path.join(root, relativeRoot))) {
       const data = await parseJson(file);
       if (data === undefined) {
+        continue;
+      }
+      if (kind === "campaigns") {
+        if (path.basename(file) === "campaign.json") await checkCampaignFile(file, data);
         continue;
       }
       if (kind === "quests") {
@@ -1230,6 +1252,44 @@ async function checkConversationFile(file, data, indexReferences = false) {
       checkEffects(response.effects, `${pointer}/effects`);
     }
   }
+}
+
+async function checkCampaignFile(file, data) {
+  const absolute = path.resolve(file);
+  if (checkedCampaigns.has(absolute)) return;
+  checkedCampaigns.add(absolute);
+  const dataRoot = campaignDataRoot(file);
+  let resources = [];
+  if (dataRoot) {
+    if (!campaignDatapacks.has(dataRoot)) {
+      const found = [];
+      for (const resource of await jsonFiles(dataRoot)) {
+        const local = path.relative(dataRoot, resource).replaceAll(path.sep, "/");
+        if (!/^[^/]+\/(quests|campaigns)\//.test(local)) continue;
+        const definition = await parseJson(resource);
+        if (definition !== undefined) found.push({ file: resource, data: definition });
+      }
+      campaignDatapacks.set(dataRoot, found);
+    }
+    resources = campaignDatapacks.get(dataRoot);
+  }
+  if (!campaignSchema || !questV2Schema || !sceneSchema) return;
+  const report = validateCampaignPack(file, data, resources, { campaign: campaignSchema, quest: questV2Schema, scene: sceneSchema });
+  for (const problem of report.issues) errors.push(relative(problem.file) + ": " + (problem.pointer || "/") + ": " + problem.message + ".");
+  for (const resource of resources) {
+    const definition = resource.data;
+    if (isQuestModuleV2(definition)) {
+      const previous = questDefinitions.get(definition.id);
+      if (!previous || previous.file !== relative(resource.file)) indexQuestResource(resource.file, definition);
+    }
+    if (definition?.schema === "villagerretaliation:quest_locale/v1") indexQuestBundleLocale(resource.file, definition);
+    if (definition?.schema === "villagerretaliation:quest_reward/v1") indexBundledQuestReward(resource.file, definition);
+  }
+  for (const resource of report.quests) {
+    checkEquipmentPredicateFlags(resource.file, resource.data);
+    checkQuestResource(resource.file, resource.data);
+  }
+  for (const resource of report.conversations) await checkConversationFile(resource.file, resource.data, true);
 }
 
 async function validateSkillTradeFiles(files) {

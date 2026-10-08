@@ -1,0 +1,875 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "title_key",
+    "localization_prefix",
+    "quest_bundles",
+    "chapters",
+    "milestones"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+      "enum": [
+        "villagerretaliation:campaign/v1"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "title_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+    },
+    "localization_prefix": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+    },
+    "quest_bundles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+      },
+      "minItems": 1,
+      "maxItems": 1024
+    },
+    "chapters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title_key",
+          "quests"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "title_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+          },
+          "prerequisites": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [],
+              "properties": {
+                "chapter": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                },
+                "milestone": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                },
+                "outcome": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                }
+              }
+            },
+            "minItems": 0,
+            "maxItems": 1024
+          },
+          "quests": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+            },
+            "minItems": 1,
+            "maxItems": 1024
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 1024
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "chapter",
+          "quest",
+          "outcomes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "chapter": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "quest": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          },
+          "stage": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "irreversible": {
+            "type": "boolean"
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "title_key"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                },
+                "title_key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+                },
+                "location_variants": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                  },
+                  "minItems": 0,
+                  "maxItems": 1024
+                }
+              }
+            },
+            "minItems": 1,
+            "maxItems": 1024
+          },
+          "catch_up": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "quest",
+              "stage"
+            ],
+            "properties": {
+              "quest": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "stage": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              }
+            }
+          },
+          "observe": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "event",
+              "outcome"
+            ],
+            "properties": {
+              "event": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+                "enum": [
+                  "minecraft:ender_dragon_defeated",
+                  "villagerretaliation:campaign_character_lost"
+                ]
+              },
+              "outcome": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "character": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              }
+            },
+            "if": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "event"
+              ],
+              "properties": {
+                "event": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+                  "enum": [
+                    "villagerretaliation:campaign_character_lost"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "character"
+              ],
+              "properties": {
+                "character": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                }
+              }
+            },
+            "else": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "event",
+                "outcome"
+              ],
+              "properties": {
+                "event": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+                  "enum": [
+                    "minecraft:ender_dragon_defeated"
+                  ]
+                },
+                "outcome": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    },
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "scope",
+          "kind"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+            "enum": [
+              "world",
+              "player"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+            "enum": [
+              "tag",
+              "variable",
+              "counter"
+            ]
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    },
+    "rewards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "quest",
+          "scope"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "quest": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+            "enum": [
+              "personal",
+              "participants",
+              "shared"
+            ]
+          },
+          "milestone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "outcome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "experience": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "loot_table": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title_key",
+          "source",
+          "dimension"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "title_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+            "enum": [
+              "marker",
+              "village",
+              "structure"
+            ]
+          },
+          "dimension": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          },
+          "origin": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer",
+                "minimum": -30000000,
+                "maximum": 30000000
+              },
+              "y": {
+                "type": "integer",
+                "minimum": -30000000,
+                "maximum": 30000000
+              },
+              "z": {
+                "type": "integer",
+                "minimum": -30000000,
+                "maximum": 30000000
+              }
+            }
+          },
+          "search_radius": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 256
+          },
+          "structure": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          },
+          "structure_marker": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])",
+            "description": "Tag on a persistent minecraft:marker entity inside the registered structure."
+          }
+        },
+        "if": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "structure_marker"
+          ],
+          "properties": {
+            "structure_marker": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+            }
+          }
+        },
+        "then": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+              "enum": [
+                "structure"
+              ]
+            }
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    },
+    "characters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title_key",
+          "source",
+          "location",
+          "loss_policy"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "title_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+            "enum": [
+              "existing_villager",
+              "owned_spawn"
+            ]
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "search_radius": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "profession": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          },
+          "loss_policy": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+            "enum": [
+              "downed",
+              "alternate_path",
+              "replacement"
+            ]
+          },
+          "replacement_role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          }
+        },
+        "allOf": [
+          {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [],
+            "properties": {},
+            "if": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "loss_policy"
+              ],
+              "properties": {
+                "loss_policy": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+                  "enum": [
+                    "replacement"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "replacement_role"
+              ],
+              "properties": {
+                "replacement_role": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [],
+            "properties": {},
+            "if": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "replacement_role"
+              ],
+              "properties": {
+                "replacement_role": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                }
+              }
+            },
+            "then": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "loss_policy"
+              ],
+              "properties": {
+                "loss_policy": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+                  "enum": [
+                    "replacement"
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "if": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+              "enum": [
+                "owned_spawn"
+              ]
+            }
+          }
+        },
+        "then": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [],
+          "properties": {
+            "search_radius": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8
+            }
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title_key",
+          "text_key",
+          "source",
+          "location",
+          "entity_tag"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "title_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+          },
+          "text_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])",
+            "enum": [
+              "interaction"
+            ]
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "entity_tag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          },
+          "search_radius": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    },
+    "location_variants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "location",
+          "layout",
+          "layout_revision",
+          "cells"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "layout": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          },
+          "layout_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "expected",
+                "placed"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                },
+                "expected": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+(?:\\[[a-z0-9_]+=[a-z0-9_]+(?:,[a-z0-9_]+=[a-z0-9_]+)*\\])?$(?![\\s\\S])"
+                },
+                "placed": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+(?:\\[[a-z0-9_]+=[a-z0-9_]+(?:,[a-z0-9_]+=[a-z0-9_]+)*\\])?$(?![\\s\\S])"
+                }
+              }
+            },
+            "minItems": 1,
+            "maxItems": 256
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/campaign-v1.schema.json",
+  "title": "Villager Retaliation Campaign v1"
+}

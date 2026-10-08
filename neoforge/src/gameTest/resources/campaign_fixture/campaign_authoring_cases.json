@@ -1,0 +1,730 @@
+[
+  {
+    "name": "authored reconciliation",
+    "fixture": "reconciliation",
+    "valid": true,
+    "patches": []
+  },
+  {
+    "name": "unknown root field",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/unsupported",
+    "patches": [
+      {
+        "path": "/unsupported",
+        "value": true
+      }
+    ]
+  },
+  {
+    "name": "revision is numeric",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/revision",
+    "patches": [
+      {
+        "path": "/revision",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "name": "revision must be positive",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/revision",
+    "patches": [
+      {
+        "path": "/revision",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "name": "campaign id rejects whitespace",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/id",
+    "patches": [
+      {
+        "path": "/id",
+        "value": "campaign_fixture:reconciliation\n"
+      }
+    ]
+  },
+  {
+    "name": "campaign text stays owned",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/title_key",
+    "patches": [
+      {
+        "path": "/title_key",
+        "value": "other.title"
+      }
+    ]
+  },
+  {
+    "name": "duplicate bundles",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/quest_bundles/1",
+    "patches": [
+      {
+        "path": "/quest_bundles",
+        "value": [
+          "campaign_fixture:decision",
+          "campaign_fixture:decision"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "duplicate chapter ids",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/1/id",
+    "patches": [
+      {
+        "path": "/chapters/1/id",
+        "value": "decision"
+      }
+    ]
+  },
+  {
+    "name": "duplicate milestone ids",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/milestones/1/id",
+    "patches": [
+      {
+        "path": "/milestones/1/id",
+        "value": "decision"
+      }
+    ]
+  },
+  {
+    "name": "duplicate outcome ids",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/milestones/0/outcomes/1/id",
+    "patches": [
+      {
+        "path": "/milestones/0/outcomes/1/id",
+        "value": "admitted"
+      }
+    ]
+  },
+  {
+    "name": "duplicate fact ids",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/facts/1/id",
+    "patches": [
+      {
+        "path": "/facts/1/id",
+        "value": "learned_decision"
+      }
+    ]
+  },
+  {
+    "name": "duplicate reward ids",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/rewards/1/id",
+    "patches": [
+      {
+        "path": "/rewards/1/id",
+        "value": "decision_participant"
+      }
+    ]
+  },
+  {
+    "name": "missing chapter",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/milestones/0/chapter",
+    "patches": [
+      {
+        "path": "/milestones/0/chapter",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "milestone belongs to its chapter",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/milestones/0/quest",
+    "patches": [
+      {
+        "path": "/milestones/0/quest",
+        "value": "campaign_fixture:dragon"
+      }
+    ]
+  },
+  {
+    "name": "catch-up is required by default",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/milestones/0/catch_up",
+    "patches": [
+      {
+        "path": "/milestones/0/irreversible",
+        "remove": true
+      },
+      {
+        "path": "/milestones/0/catch_up",
+        "remove": true
+      }
+    ]
+  },
+  {
+    "name": "catch-up uses declared bundles",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/milestones/0/catch_up/quest",
+    "patches": [
+      {
+        "path": "/milestones/0/catch_up/quest",
+        "value": "campaign_fixture:missing"
+      }
+    ]
+  },
+  {
+    "name": "chapter prerequisite cycle",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/0/prerequisites",
+    "patches": [
+      {
+        "path": "/chapters/0/prerequisites",
+        "value": [
+          {
+            "chapter": "dragon"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "milestone prerequisite cycle",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/0/prerequisites",
+    "patches": [
+      {
+        "path": "/chapters/0/prerequisites",
+        "value": [
+          {
+            "milestone": "decision"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "prerequisite needs one target",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/1/prerequisites/0",
+    "patches": [
+      {
+        "path": "/chapters/1/prerequisites",
+        "value": [
+          {}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "prerequisite rejects two targets",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/1/prerequisites/0",
+    "patches": [
+      {
+        "path": "/chapters/1/prerequisites",
+        "value": [
+          {
+            "chapter": "decision",
+            "milestone": "decision"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown prerequisite chapter",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/1/prerequisites/0/chapter",
+    "patches": [
+      {
+        "path": "/chapters/1/prerequisites",
+        "value": [
+          {
+            "chapter": "missing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown prerequisite milestone",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/1/prerequisites/0/milestone",
+    "patches": [
+      {
+        "path": "/chapters/1/prerequisites",
+        "value": [
+          {
+            "milestone": "missing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown prerequisite outcome",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/1/prerequisites/0/outcome",
+    "patches": [
+      {
+        "path": "/chapters/1/prerequisites",
+        "value": [
+          {
+            "milestone": "decision",
+            "outcome": "missing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "chapters cannot name outcomes",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/1/prerequisites/0/outcome",
+    "patches": [
+      {
+        "path": "/chapters/1/prerequisites",
+        "value": [
+          {
+            "chapter": "decision",
+            "outcome": "admitted"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "duplicate prerequisite",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/chapters/1/prerequisites/1",
+    "patches": [
+      {
+        "path": "/chapters/1/prerequisites",
+        "value": [
+          {
+            "chapter": "decision"
+          },
+          {
+            "chapter": "decision"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "named prerequisite outcome",
+    "fixture": "reconciliation",
+    "valid": true,
+    "patches": [
+      {
+        "path": "/chapters/1/prerequisites",
+        "value": [
+          {
+            "milestone": "decision",
+            "outcome": "admitted"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown observed outcome",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/milestones/1/observe/outcome",
+    "patches": [
+      {
+        "path": "/milestones/1/observe/outcome",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "observations require world milestones",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/milestones/1/observe",
+    "patches": [
+      {
+        "path": "/milestones/1/irreversible",
+        "value": false
+      }
+    ]
+  },
+  {
+    "name": "reversible milestones need no catch-up",
+    "fixture": "reconciliation",
+    "valid": true,
+    "patches": [
+      {
+        "path": "/milestones/1/irreversible",
+        "value": false
+      },
+      {
+        "path": "/milestones/1/observe",
+        "remove": true
+      },
+      {
+        "path": "/milestones/1/catch_up",
+        "remove": true
+      }
+    ]
+  },
+  {
+    "name": "shared reward requires matching milestone",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/rewards/0/milestone",
+    "patches": [
+      {
+        "path": "/rewards/0/milestone",
+        "value": "dragon"
+      }
+    ]
+  },
+  {
+    "name": "reward needs an effect",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/rewards/0",
+    "patches": [
+      {
+        "path": "/rewards/0/experience",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "name": "reward outcome must exist",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/rewards/0/outcome",
+    "patches": [
+      {
+        "path": "/rewards/0/outcome",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "personal rewards cannot demand participation",
+    "fixture": "reconciliation",
+    "valid": false,
+    "pointer": "/rewards/2",
+    "patches": [
+      {
+        "path": "/rewards/2/milestone",
+        "value": "decision"
+      }
+    ]
+  },
+  {
+    "name": "quest stage must exist",
+    "fixture": "reconciliation",
+    "catalog": true,
+    "valid": false,
+    "pointer": "/milestones/0/stage",
+    "patches": [
+      {
+        "path": "/milestones/0/stage",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "catch-up stage must exist",
+    "fixture": "reconciliation",
+    "catalog": true,
+    "valid": false,
+    "pointer": "/milestones/0/catch_up/stage",
+    "patches": [
+      {
+        "path": "/milestones/0/catch_up/stage",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "catch-up entry must be alternate",
+    "fixture": "reconciliation",
+    "catalog": true,
+    "valid": false,
+    "pointer": "/milestones/0/catch_up/stage",
+    "patches": [
+      {
+        "path": "/milestones/0/catch_up",
+        "value": {
+          "quest": "campaign_fixture:decision",
+          "stage": "choose"
+        }
+      }
+    ]
+  },
+  {
+    "name": "quest ownership must match",
+    "fixture": "reconciliation",
+    "catalog": true,
+    "valid": false,
+    "pointer": "/chapters/0/quests/0",
+    "patches": [
+      {
+        "path": "/id",
+        "value": "campaign_fixture:other"
+      }
+    ]
+  },
+  {
+    "name": "authored characters",
+    "fixture": "characters",
+    "valid": true,
+    "patches": []
+  },
+  {
+    "name": "unknown character location",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/characters/0/location",
+    "patches": [
+      {
+        "path": "/characters/0/location",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "replacement requires a role",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/characters/0/replacement_role",
+    "patches": [
+      {
+        "path": "/characters/0/loss_policy",
+        "value": "replacement"
+      }
+    ]
+  },
+  {
+    "name": "replacement role must exist",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/characters/0/replacement_role",
+    "patches": [
+      {
+        "path": "/characters/0/loss_policy",
+        "value": "replacement"
+      },
+      {
+        "path": "/characters/0/replacement_role",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "replacement cannot cycle",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/characters/0/replacement_role",
+    "patches": [
+      {
+        "path": "/characters/0/loss_policy",
+        "value": "replacement"
+      },
+      {
+        "path": "/characters/0/replacement_role",
+        "value": "mentor"
+      }
+    ]
+  },
+  {
+    "name": "loss needs an authored alternate",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/characters/0/loss_policy",
+    "patches": [
+      {
+        "path": "/characters/0/loss_policy",
+        "value": "alternate_path"
+      }
+    ]
+  },
+  {
+    "name": "markers require coordinates",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/locations/0",
+    "patches": [
+      {
+        "path": "/locations/0/source",
+        "value": "marker"
+      },
+      {
+        "path": "/locations/0/search_radius",
+        "remove": true
+      }
+    ]
+  },
+  {
+    "name": "village cannot have a structure id",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/locations/0/structure",
+    "patches": [
+      {
+        "path": "/locations/0/structure",
+        "value": "minecraft:village_plains"
+      }
+    ]
+  },
+  {
+    "name": "structure requires its id",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/locations/0/structure",
+    "patches": [
+      {
+        "path": "/locations/0/source",
+        "value": "structure"
+      }
+    ]
+  },
+  {
+    "name": "bounded location search",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/locations/0/search_radius",
+    "patches": [
+      {
+        "path": "/locations/0/search_radius",
+        "value": 999999
+      }
+    ]
+  },
+  {
+    "name": "bounded owned spawn search",
+    "fixture": "characters",
+    "valid": false,
+    "pointer": "/characters/0/search_radius",
+    "patches": [
+      {
+        "path": "/characters/0/source",
+        "value": "owned_spawn"
+      },
+      {
+        "path": "/characters/0/search_radius",
+        "value": 999999
+      }
+    ]
+  },
+  {
+    "name": "authored variants",
+    "fixture": "variants",
+    "valid": true,
+    "patches": []
+  },
+  {
+    "name": "variant requires declared location",
+    "fixture": "variants",
+    "valid": false,
+    "pointer": "/location_variants/0/location",
+    "patches": [
+      {
+        "path": "/location_variants/0/location",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "variant cell identities are unique",
+    "fixture": "variants",
+    "valid": false,
+    "pointer": "/location_variants/0/cells/1/id",
+    "patches": [
+      {
+        "path": "/location_variants/0/cells/1/id",
+        "value": "floor"
+      }
+    ]
+  },
+  {
+    "name": "outcome variant must exist",
+    "fixture": "variants",
+    "valid": false,
+    "pointer": "/milestones/0/outcomes/0/location_variants/0",
+    "patches": [
+      {
+        "path": "/milestones/0/outcomes/0/location_variants",
+        "value": [
+          "missing"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "outcome variants cannot repeat",
+    "fixture": "variants",
+    "valid": false,
+    "pointer": "/milestones/0/outcomes/0/location_variants/1",
+    "patches": [
+      {
+        "path": "/milestones/0/outcomes/0/location_variants",
+        "value": [
+          "open",
+          "open"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "personal outcomes cannot alter terrain",
+    "fixture": "variants",
+    "valid": false,
+    "pointer": "/milestones/0/outcomes/0/location_variants/0",
+    "patches": [
+      {
+        "path": "/milestones/0/irreversible",
+        "value": false
+      }
+    ]
+  },
+  {
+    "name": "variant block syntax is bounded",
+    "fixture": "variants",
+    "valid": false,
+    "pointer": "/location_variants/0/cells/0/placed",
+    "patches": [
+      {
+        "path": "/location_variants/0/cells/0/placed",
+        "value": "minecraft:stone{bad}"
+      }
+    ]
+  }
+]

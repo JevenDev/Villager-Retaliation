@@ -870,7 +870,7 @@ public final class SceneSchema {
     private static JsonObject actor() {
         JsonObject actor = object("Actor declaration");
         actor.addProperty("additionalProperties", false);
-        actor.add("required", strings("alias", "type", "binding_source", "replacement_policy"));
+        actor.add("required", strings("alias", "type"));
         JsonObject properties = new JsonObject();
         properties.add("alias", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
         properties.add("type", registeredIds(VillagerRetaliationRegistries.ACTOR_TYPES));
@@ -878,6 +878,7 @@ public final class SceneSchema {
         properties.add("capabilities", array(resourceLocation(), 0));
         properties.add("binding_source", enumValues(SceneActorDeclaration.BindingSource.values()));
         properties.add("binding", text());
+        properties.add("source", text());
         properties.add(
                 "replacement_policy", enumValues(SceneActorDeclaration.ReplacementPolicy.values()));
         properties.add(

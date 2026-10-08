@@ -88,9 +88,7 @@
         "additionalProperties": false,
         "required": [
           "alias",
-          "type",
-          "binding_source",
-          "replacement_policy"
+          "type"
         ],
         "properties": {
           "alias": {
@@ -139,6 +137,10 @@
             ]
           },
           "binding": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
             "type": "string",
             "minLength": 1
           },
