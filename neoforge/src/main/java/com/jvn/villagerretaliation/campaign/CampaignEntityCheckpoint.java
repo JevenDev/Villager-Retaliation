@@ -13,10 +13,14 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.storage.EntityStorage;
 
-final class CampaignEntityCheckpoint {
+public final class CampaignEntityCheckpoint {
     private CampaignEntityCheckpoint() { }
 
     static void persist(ServerLevel level, Entity entity) throws IOException {
+        persistTree(level, entity, snapshot -> true);
+    }
+
+    public static void persistTree(ServerLevel level, Entity entity, java.util.function.Predicate<CompoundTag> verify) throws IOException {
         if (!level.getServer().isSameThread() || entity.level() != level || entity.isRemoved() || entity.isPassenger()) {
             throw new IOException("Campaign spawn checkpoint requires a live, unmounted entity on the server thread.");
         }
@@ -44,6 +48,7 @@ final class CampaignEntityCheckpoint {
             } catch (net.minecraft.ReportedException failure) {
                 throw new IOException("Entity chunk could not be serialized without losing another entity.", failure);
             }
+            if (root == entity && !verify.test(entry)) throw new IOException("Native entity serialization omitted or changed required campaign actor data.");
             entries.add(entry);
         }
         var snapshot = NbtUtils.addCurrentDataVersion(new CompoundTag());

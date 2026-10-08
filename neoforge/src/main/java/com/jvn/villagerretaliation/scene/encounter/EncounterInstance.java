@@ -30,6 +30,7 @@ public final class EncounterInstance {
     private final ResourceLocation anchorDimension;
     private final BlockPos anchor;
     private final Set<UUID> spawned = new LinkedHashSet<>();
+    private EncounterActorSpawns actorSpawns = new EncounterActorSpawns();
     private final Set<UUID> defeated = new LinkedHashSet<>();
     private final Set<UUID> missing = new LinkedHashSet<>();
     private final Map<UUID, Long> leaveDeadlines = new LinkedHashMap<>();
@@ -191,6 +192,12 @@ public final class EncounterInstance {
 
     public BlockPos anchor() {
         return anchor;
+    }
+
+    EncounterActorSpawns actorSpawns() { return actorSpawns; }
+
+    public boolean hasDurableActorHistory() {
+        return !actorSpawns.records().isEmpty() || !actorSpawns.diagnostic().isBlank();
     }
 
     public Set<UUID> spawned() {
@@ -739,6 +746,8 @@ public final class EncounterInstance {
         NbtDataUtil.putBlockPos(t, "Anchor", anchor);
         t.put("Participants", uuids(participants));
         t.put("Spawned", uuids(spawned));
+        var actors = actorSpawns.save();
+        if (actors != null) t.put("ActorSpawns", actors);
         t.put("Defeated", uuids(defeated));
         t.put("Missing", uuids(missing));
         t.put("LeaveDeadlines", deadlines(leaveDeadlines));
@@ -820,6 +829,7 @@ public final class EncounterInstance {
                                 t.getString("CompletionCondition")),
                         t.getInt("ExpectedCount"));
         v.spawned.addAll(readUuids(t, "Spawned"));
+        v.actorSpawns = EncounterActorSpawns.load(t.get("ActorSpawns"), v.id);
         v.defeated.addAll(readUuids(t, "Defeated"));
         v.missing.addAll(readUuids(t, "Missing"));
         v.leaveDeadlines.putAll(readDeadlines(t, "LeaveDeadlines"));

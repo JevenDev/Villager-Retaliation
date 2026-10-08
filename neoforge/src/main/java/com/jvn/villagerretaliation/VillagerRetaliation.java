@@ -64,6 +64,7 @@ public class VillagerRetaliation {
         com.jvn.villagerretaliation.settlement.SettlementChunkReceipts.register(modEventBus);
         com.jvn.villagerretaliation.campaign.CampaignBlockOwnership.register(modEventBus);
         com.jvn.villagerretaliation.campaign.CampaignGeneratedBlocks.register(modEventBus);
+        com.jvn.villagerretaliation.scene.encounter.EncounterActorBirths.register(modEventBus);
         VillagerRetaliationBlocks.register(modEventBus);
         VillagerRetaliationBlockEntityTypes.register(modEventBus);
         VillagerRetaliationEntityTypes.register(modEventBus);
@@ -83,6 +84,7 @@ public class VillagerRetaliation {
                 .listener(com.jvn.villagerretaliation.dialogue.conversation.ConversationPresentationService::onLogout)
                 .listener(com.jvn.villagerretaliation.dialogue.conversation.ConversationPresentationService::onServerStopped)
                 .listener(com.jvn.villagerretaliation.campaign.CampaignOwnedSpawns::onEntityJoin)
+                .listener(com.jvn.villagerretaliation.scene.encounter.EncounterActorSpawning::onEntityJoin)
                 .listener(com.jvn.villagerretaliation.campaign.CampaignCharacterLossService::onServerTickPost)
                 .listener(com.jvn.villagerretaliation.campaign.CampaignCharacterLossService::onServerStopped)
                 .listener(com.jvn.villagerretaliation.campaign.CampaignCharacterActivation::onServerTickPost)

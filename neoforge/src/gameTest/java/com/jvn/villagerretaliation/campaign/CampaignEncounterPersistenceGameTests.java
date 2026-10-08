@@ -142,10 +142,20 @@ public final class CampaignEncounterPersistenceGameTests {
         final BlockPos anchor;
         private final net.minecraft.world.level.chunk.LevelChunk ownershipChunk;
         private final CampaignBlockOwnershipLedger priorOwnership;
+        private final com.jvn.villagerretaliation.scene.encounter.EncounterActorTestStorage actorStorage;
         private Path backup;
         private long time;
 
         Fixture(GameTestHelper helper) throws IOException {
+            this(helper, """
+                    {"schema":"villagerretaliation:encounter/v1","id":"campaign_fixture:persistent_encounter",
+                     "spawn_mode":"fixed","spawn_radius":0,"members":[{"entity":"minecraft:cow"}],
+                     "allies":[{"id":"guard","entity":"minecraft:iron_golem","cleanup_policy":"remove"}],
+                     "environment":{"temporary_blocks":[{"id":"barrier","block":"minecraft:glass","offset_x":2,"offset_y":2}]}}
+                    """);
+        }
+
+        Fixture(GameTestHelper helper, String encounterJson) throws IOException {
             this.helper = helper;
             base = new CampaignConversationGameTests.Fixture(helper, false, true, false);
             base.effects("""
@@ -153,6 +163,7 @@ public final class CampaignEncounterPersistenceGameTests {
                       "scene_id":"campaign_fixture:character_greeting","operation_id":"encounter_scene","wait_for_result":true,"required":true}}]
                     """);
             anchor = helper.absolutePos(new BlockPos(5, 2, 5));
+            actorStorage = new com.jvn.villagerretaliation.scene.encounter.EncounterActorTestStorage(helper.getLevel(), anchor, 4);
             ownershipChunk = helper.getLevel().getChunkSource().getChunkNow(barrier().getX() >> 4, barrier().getZ() >> 4);
             priorOwnership = ownershipChunk.getExistingDataOrNull(CampaignBlockOwnership.OWNERSHIP.get());
             ownershipChunk.setData(CampaignBlockOwnership.OWNERSHIP, new CampaignBlockOwnershipLedger());
@@ -165,12 +176,7 @@ public final class CampaignEncounterPersistenceGameTests {
                       {"id":"done","type":"villagerretaliation:scene_complete"}]}
                     """.formatted(anchor.getX(), anchor.getY(), anchor.getZ()));
             var errors = new ArrayList<String>();
-            template = EncounterResources.parse(ResourceLocation.parse("campaign_fixture:persistent_encounter"), JsonParser.parseString("""
-                    {"schema":"villagerretaliation:encounter/v1","id":"campaign_fixture:persistent_encounter",
-                     "spawn_mode":"fixed","spawn_radius":0,"members":[{"entity":"minecraft:cow"}],
-                     "allies":[{"id":"guard","entity":"minecraft:iron_golem","cleanup_policy":"remove"}],
-                     "environment":{"temporary_blocks":[{"id":"barrier","block":"minecraft:glass","offset_x":2,"offset_y":2}]}}
-                    """).getAsJsonObject(), errors);
+            template = EncounterResources.parse(ResourceLocation.parse("campaign_fixture:persistent_encounter"), JsonParser.parseString(encounterJson).getAsJsonObject(), errors);
             helper.assertTrue(template != null && errors.isEmpty(), "encounter fixture parses: " + errors);
             var old = QuestContentCatalogs.current(base.base.server);
             var campaigns = CampaignResources.current(base.base.server).campaigns();
@@ -232,6 +238,7 @@ public final class CampaignEncounterPersistenceGameTests {
             if (priorOwnership == null) ownershipChunk.removeData(CampaignBlockOwnership.OWNERSHIP);
             else ownershipChunk.setData(CampaignBlockOwnership.OWNERSHIP, priorOwnership);
             EncounterService.clearRuntimeState(); SceneStepEngine.clearRuntimeState();
+            actorStorage.close();
             base.close();
         }
     }

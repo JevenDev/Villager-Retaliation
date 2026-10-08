@@ -77,6 +77,10 @@ public final class EncounterService {
             hideBossBars(encounter);
             return Result.waiting(storageIssue);
         }
+        if (EncounterPersistence.required(data, encounter) && !encounter.actorSpawns().diagnostic().isBlank())
+            return Result.waiting(encounter.actorSpawns().diagnostic());
+        storageIssue = EncounterActorSpawning.resumeRetirements(server, data, encounter);
+        if (!storageIssue.isBlank()) return Result.waiting(storageIssue);
         ServerLevel level = level(server, encounter);
         if (level == null) return Result.waiting("spawn anchor dimension is unavailable");
         Result retry = processFailureRetry(server, data, encounter, template, level.getGameTime());
@@ -222,7 +226,7 @@ public final class EncounterService {
             data.changed();
             EncounterTemplate.Member member = desiredMember.member();
             SpawnResult spawnedEntity =
-                    spawn(level, member, encounter, template, index, selection.point());
+                    spawn(level, data, member, encounter, template, index, selection.point());
             Entity entity = spawnedEntity.entity();
             if (spawnedEntity.waiting()) return Result.waiting(spawnedEntity.diagnostic());
             if (entity == null) {
@@ -239,6 +243,8 @@ public final class EncounterService {
             }
             encounter.addSpawn(entity.getUUID());
             data.changed();
+            storageIssue = EncounterActorSpawning.complete(server, data, encounter, entity);
+            if (!storageIssue.isBlank()) return Result.waiting(storageIssue);
         }
         updateBossBar(server, encounter, template);
         updateMobBossBars(server, encounter);
@@ -312,7 +318,8 @@ public final class EncounterService {
                                             ResourceKey.create(
                                                     Registries.DIMENSION, binding.lastDimension()));
                             if (actorLevel == null
-                                    || !actorLevel.hasChunkAt(binding.lastPosition()))
+                                    || !actorLevel.hasChunkAt(binding.lastPosition())
+                                    || !actorLevel.areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(binding.lastPosition()).toLong()))
                                 return Result.waiting(
                                         "waiting for bound ally " + definition.id() + " to load");
                             encounter.fail(
@@ -323,7 +330,7 @@ public final class EncounterService {
                             return Result.failed(encounter.diagnostic());
                         }
                     } else {
-                        SpawnResult result = spawnAlly(server, encounter, definition, key, index);
+                        SpawnResult result = spawnAlly(server, data, encounter, definition, key, index);
                         if (result.waiting()) return Result.waiting(result.diagnostic());
                         entity = result.entity();
                         if (entity == null) {
@@ -334,9 +341,6 @@ public final class EncounterService {
                     }
                     ResourceLocation type = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
                     boolean original = entity.isInvulnerable();
-                    if (definition.invulnerable()) entity.setInvulnerable(true);
-                    entity.getPersistentData().putUUID(ALLY_OWNER, encounter.id());
-                    entity.getPersistentData().putString(ALLY_KEY, key);
                     encounter.putAlly(
                             new EncounterInstance.AllyIdentity(
                                     key,
@@ -354,6 +358,8 @@ public final class EncounterService {
                                     original,
                                     definition.invulnerable()));
                     data.changed();
+                    String issue = checkpointAlly(server, data, encounter, entity, encounter.allies().get(key));
+                    if (!issue.isBlank()) return Result.waiting(issue);
                     continue;
                 }
                 Entity entity = find(server, identity.entityId());
@@ -364,7 +370,7 @@ public final class EncounterService {
                         return Result.failed(encounter.diagnostic());
                     }
                     if (definition.revivable() && gameTime >= identity.recoverAt()) {
-                        SpawnResult result = spawnAlly(server, encounter, definition, key, index);
+                        SpawnResult result = spawnAlly(server, data, encounter, definition, key, index);
                         if (result.waiting()) return Result.waiting(result.diagnostic());
                         if (result.entity() == null) {
                             encounter.fail(result.diagnostic());
@@ -373,7 +379,6 @@ public final class EncounterService {
                         }
                         entity = result.entity();
                         boolean original = entity.isInvulnerable();
-                        if (definition.invulnerable()) entity.setInvulnerable(true);
                         encounter.replaceAlly(
                                 identity.replaced(
                                         entity.getUUID(),
@@ -382,6 +387,9 @@ public final class EncounterService {
                                         original,
                                         definition.invulnerable()));
                         data.changed();
+                        String issue = EncounterActorSpawning.retire(server, data, encounter, identity.entityId(), true);
+                        if (issue.isBlank()) issue = checkpointAlly(server, data, encounter, entity, encounter.allies().get(key));
+                        if (!issue.isBlank()) return Result.waiting(issue);
                     }
                     continue;
                 }
@@ -389,10 +397,11 @@ public final class EncounterService {
                     ServerLevel lastLevel =
                             server.getLevel(
                                     ResourceKey.create(Registries.DIMENSION, identity.dimension()));
-                    if (lastLevel == null || !lastLevel.hasChunkAt(identity.position())) continue;
+                    if (lastLevel == null || !lastLevel.hasChunkAt(identity.position())
+                            || !lastLevel.areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(identity.position()).toLong())) continue;
                     if (definition.replacementPolicy()
                             == EncounterTemplate.AllyReplacementPolicy.MISSING_IF_LOADED) {
-                        SpawnResult result = spawnAlly(server, encounter, definition, key, index);
+                        SpawnResult result = spawnAlly(server, data, encounter, definition, key, index);
                         if (result.waiting()) return Result.waiting(result.diagnostic());
                         if (result.entity() == null) {
                             encounter.fail(result.diagnostic());
@@ -401,7 +410,6 @@ public final class EncounterService {
                         }
                         entity = result.entity();
                         boolean original = entity.isInvulnerable();
-                        if (definition.invulnerable()) entity.setInvulnerable(true);
                         encounter.replaceAlly(
                                 identity.replaced(
                                         entity.getUUID(),
@@ -410,6 +418,9 @@ public final class EncounterService {
                                         original,
                                         definition.invulnerable()));
                         data.changed();
+                        String issue = EncounterActorSpawning.retire(server, data, encounter, identity.entityId(), true);
+                        if (issue.isBlank()) issue = checkpointAlly(server, data, encounter, entity, encounter.allies().get(key));
+                        if (!issue.isBlank()) return Result.waiting(issue);
                     } else {
                         encounter.replaceAlly(identity.missing(0L));
                         if (definition.requiredSurvival()) {
@@ -424,6 +435,11 @@ public final class EncounterService {
                     encounter.fail("ally " + definition.id() + " resolved to a non-living entity");
                     data.changed();
                     return Result.failed(encounter.diagnostic());
+                }
+                var birth = encounter.actorSpawns().forEntity(entity.getUUID());
+                if (birth != null && birth.state() == EncounterActorSpawn.State.RESERVED) {
+                    String issue = checkpointAlly(server, data, encounter, entity, identity);
+                    if (!issue.isBlank()) return Result.waiting(issue);
                 }
                 if (definition.invulnerable()) entity.setInvulnerable(true);
                 entity.getPersistentData().putUUID(ALLY_OWNER, encounter.id());
@@ -464,8 +480,39 @@ public final class EncounterService {
         return Result.active();
     }
 
+    private static String checkpointAlly(MinecraftServer server, SceneSavedData data, EncounterInstance encounter,
+            Entity entity, EncounterInstance.AllyIdentity identity) {
+        String issue = EncounterPersistence.checkpoint(server, data, encounter);
+        if (!issue.isBlank()) return issue;
+        if (identity.invulnerabilityApplied()) entity.setInvulnerable(true);
+        entity.getPersistentData().putUUID(ALLY_OWNER, encounter.id());
+        entity.getPersistentData().putString(ALLY_KEY, identity.key());
+        if (EncounterPersistence.required(data, encounter) && encounter.actorSpawns().forEntity(entity.getUUID()) != null) {
+            try {
+                com.jvn.villagerretaliation.campaign.CampaignEntityCheckpoint.persistTree((ServerLevel) entity.level(),
+                        entity.getRootVehicle(), snapshot -> true);
+            } catch (java.io.IOException exception) {
+                return "Encounter ally ownership could not be saved: " + exception.getMessage();
+            }
+        }
+        return EncounterActorSpawning.complete(server, data, encounter, entity);
+    }
+
+    private static String initializeAlly(ServerLevel level, EncounterInstance encounter, Entity entity,
+            EncounterTemplate.Member member, String key) {
+        if (entity instanceof Mob mob)
+            mob.finalizeSpawn(level, level.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.EVENT, null);
+        String issue = applyMobOptions(level.getServer(), encounter, entity, member);
+        if (!issue.isBlank()) return issue;
+        applyEquipment(level, entity, member);
+        entity.getPersistentData().putUUID(ALLY_OWNER, encounter.id());
+        entity.getPersistentData().putString(ALLY_KEY, key);
+        return "";
+    }
+
     private static SpawnResult spawnAlly(
             MinecraftServer server,
+            SceneSavedData data,
             EncounterInstance encounter,
             EncounterTemplate.Ally ally,
             String key,
@@ -473,9 +520,15 @@ public final class EncounterService {
         ServerLevel level = level(server, encounter);
         if (level == null || !level.hasChunkAt(encounter.anchor()))
             return new SpawnResult(null, "ally spawn anchor chunk is unloaded", true);
+        boolean durable = EncounterPersistence.required(data, encounter);
+        var prior = encounter.allies().get(key);
+        String birthKey = "ally/" + encounter.spawnGeneration() + "/" + key + "/" + (prior == null ? 1 : prior.generation() + 1);
+        if (durable) {
+            var recovered = EncounterActorSpawning.resume(server, data, encounter, birthKey);
+            if (recovered != null) return new SpawnResult(recovered.entity(), recovered.diagnostic(), recovered.entity() == null);
+        }
         ResourceLocation entityType = ally.entityType();
         if (entityType == null) {
-            EncounterInstance.AllyIdentity prior = encounter.allies().get(key);
             entityType = prior == null ? null : prior.entityType();
         }
         if (entityType == null)
@@ -484,6 +537,7 @@ public final class EncounterService {
                     "bound ally " + ally.id() + " has no captured entity type for recovery",
                     false);
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(entityType);
+        var member = new EncounterTemplate.Member(entityType, 1, ally.equipment(), ally.options(), "");
         for (int attempt = 0; attempt < 32; attempt++) {
             int radius = 3,
                     width = radius * 2 + 1,
@@ -506,27 +560,16 @@ public final class EncounterService {
                 entity.discard();
                 continue;
             }
-            if (entity instanceof Mob mob)
-                mob.finalizeSpawn(
-                        level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null);
-            String error =
-                    applyMobOptions(
-                            server,
-                            encounter,
-                            entity,
-                            new EncounterTemplate.Member(
-                                    entityType, 1, ally.equipment(), ally.options(), ""));
+            if (durable) {
+                var result = EncounterActorSpawning.initialize(level, data, encounter, birthKey, entity,
+                        actor -> initializeAlly(level, encounter, actor, member, key));
+                return new SpawnResult(result.entity(), result.diagnostic(), result.entity() == null);
+            }
+            String error = initializeAlly(level, encounter, entity, member, key);
             if (!error.isBlank()) {
                 entity.discard();
                 return new SpawnResult(null, error, false);
             }
-            applyEquipment(
-                    level,
-                    entity,
-                    new EncounterTemplate.Member(
-                            entityType, 1, ally.equipment(), ally.options(), ""));
-            entity.getPersistentData().putUUID(ALLY_OWNER, encounter.id());
-            entity.getPersistentData().putString(ALLY_KEY, key);
             if (level.addFreshEntity(entity)) return new SpawnResult(entity, "", false);
         }
         return new SpawnResult(null, "safe placement exhausted for ally " + ally.id(), false);
@@ -1238,19 +1281,22 @@ public final class EncounterService {
                         .map(EncounterTemplate.Member::id)
                         .filter(id -> !id.isBlank())
                         .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        int generation = encounter.spawnGeneration();
         Set<UUID> removed =
                 encounter.resetForRetry(
                         start,
                         template.failure() != null && template.failure().retainDefeated(),
                         resetMemberIds);
-        for (UUID id : removed) {
-            Entity entity = find(server, id);
-            if (entity != null) entity.discard();
-        }
         if (action == EncounterTemplate.FailureAction.RESTART_ENCOUNTER)
             encounter.advanceWave(0, template.wave(0).id());
         else encounter.advanceWave(waveIndex, template.wave(waveIndex).id());
         data.changed();
+        String issue = EncounterActorSpawning.retireRetry(server, data, encounter, removed, generation, start);
+        if (!issue.isBlank()) return Result.waiting(issue);
+        for (UUID id : removed) {
+            Entity entity = find(server, id);
+            if (entity != null) entity.discard();
+        }
         return Result.active();
     }
 
@@ -1403,11 +1449,13 @@ public final class EncounterService {
         Result environment = restoreEnvironment(server, data, encounter);
         boolean waiting = environment.status() == Status.WAITING;
         if (waiting && EncounterPersistence.required(data, encounter)) return environment;
+        storageIssue = EncounterActorSpawning.retireAll(server, data, encounter, forceRemove);
+        if (!storageIssue.isBlank()) return Result.waiting(storageIssue);
         for (UUID id : encounter.spawned()) {
             if (encounter.defeated().contains(id)) continue;
             Entity entity = find(server, id);
             if (entity == null) {
-                waiting = true;
+                if (encounter.actorSpawns().forEntity(id) == null) waiting = true;
                 continue;
             }
             if (forceRemove
@@ -1423,8 +1471,8 @@ public final class EncounterService {
                     forceRemove
                             || ally.cleanupPolicy() == EncounterTemplate.AllyCleanupPolicy.REMOVE;
             if (entity == null) {
-                if (remove) waiting = true;
-                else encounter.setAllyState(ally.key(), EncounterInstance.AllyState.PRESERVED);
+                if (remove && encounter.actorSpawns().forEntity(ally.entityId()) == null) waiting = true;
+                else encounter.setAllyState(ally.key(), remove ? EncounterInstance.AllyState.REMOVED : EncounterInstance.AllyState.PRESERVED);
                 continue;
             }
             if (remove) {
@@ -1690,11 +1738,18 @@ public final class EncounterService {
 
     private static SpawnResult spawn(
             ServerLevel level,
+            SceneSavedData data,
             EncounterTemplate.Member member,
             EncounterInstance encounter,
             EncounterTemplate template,
             int index,
             EncounterInstance.ResolvedSpawnPoint spawnPoint) {
+        String key = "member/" + encounter.spawnGeneration() + "/" + index;
+        boolean durable = EncounterPersistence.required(data, encounter);
+        if (durable) {
+            var recovered = EncounterActorSpawning.resume(level.getServer(), data, encounter, key);
+            if (recovered != null) return new SpawnResult(recovered.entity(), recovered.diagnostic(), recovered.entity() == null);
+        }
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(member.entityType());
         if (spawnPoint != null && !level.hasChunkAt(spawnPoint.position()))
             return new SpawnResult(null, "selected spawn point chunk is unloaded", true);
@@ -1721,33 +1776,40 @@ public final class EncounterService {
                 entity.discard();
                 continue;
             }
-            // Direct EntityType#create skips vanilla mob initialization (including a pillager's
-            // crossbow).
-            if (entity instanceof Mob mob)
-                mob.finalizeSpawn(
-                        level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null);
-            String optionError =
-                    applyMobOptions(level.getServer(), encounter, entity, member);
+            if (durable) {
+                var result = EncounterActorSpawning.initialize(level, data, encounter, key, entity,
+                        actor -> initializeMember(level, encounter, actor, member, index, spawnPoint));
+                return new SpawnResult(result.entity(), result.diagnostic(), result.entity() == null);
+            }
+            String optionError = initializeMember(level, encounter, entity, member, index, spawnPoint);
             if (!optionError.isBlank()) {
                 entity.discard();
                 return new SpawnResult(null, optionError, false);
             }
-            applyEquipment(level, entity, member);
-            entity.getPersistentData().putUUID(OWNER, encounter.id());
-            entity.getPersistentData().putUUID(SCENE, encounter.sceneId());
-            entity.getPersistentData()
-                    .putInt("VillagerRetaliationSpawnGeneration", encounter.spawnGeneration());
-            entity.getPersistentData().putInt(SPAWN_INDEX, index);
-            entity.getPersistentData().putInt(SPAWN_SEQUENCE, encounter.spawnPointSequence());
-            if (spawnPoint != null)
-                entity.getPersistentData().putString(SPAWN_POINT, spawnPoint.id());
-            if (!member.id().isBlank())
-                entity.getPersistentData().putString(MEMBER_ID, member.id());
             if (level.addFreshEntity(entity)) return new SpawnResult(entity, "", false);
         }
         return loadedCandidate
                 ? new SpawnResult(null, "", false)
                 : new SpawnResult(null, "selected spawn point chunk is unloaded", true);
+    }
+
+    private static String initializeMember(ServerLevel level, EncounterInstance encounter, Entity entity,
+            EncounterTemplate.Member member, int index, EncounterInstance.ResolvedSpawnPoint spawnPoint) {
+        // Direct EntityType#create skips vanilla mob initialization (including a pillager's
+        // crossbow).
+        if (entity instanceof Mob mob)
+            mob.finalizeSpawn(level, level.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.EVENT, null);
+        String issue = applyMobOptions(level.getServer(), encounter, entity, member);
+        if (!issue.isBlank()) return issue;
+        applyEquipment(level, entity, member);
+        entity.getPersistentData().putUUID(OWNER, encounter.id());
+        entity.getPersistentData().putUUID(SCENE, encounter.sceneId());
+        entity.getPersistentData().putInt("VillagerRetaliationSpawnGeneration", encounter.spawnGeneration());
+        entity.getPersistentData().putInt(SPAWN_INDEX, index);
+        entity.getPersistentData().putInt(SPAWN_SEQUENCE, encounter.spawnPointSequence());
+        if (spawnPoint != null) entity.getPersistentData().putString(SPAWN_POINT, spawnPoint.id());
+        if (!member.id().isBlank()) entity.getPersistentData().putString(MEMBER_ID, member.id());
+        return "";
     }
 
     private static BlockPos horizontalPosition(
@@ -2812,6 +2874,7 @@ public final class EncounterService {
 
     private static void recoverSpawn(EncounterInstance encounter, Entity entity) {
         CompoundTag tag = entity.getPersistentData();
+        if (tag.contains(EncounterActorSpawning.OWNER)) return;
         if (!encounter.spawned().contains(entity.getUUID())) encounter.addSpawn(entity.getUUID());
         if (tag.contains(SPAWN_POINT, Tag.TAG_STRING))
             encounter.restoreSpawnPoint(
@@ -2837,9 +2900,16 @@ public final class EncounterService {
                 && id.equals(entity.getPersistentData().getUUID(OWNER));
     }
 
+    static void releaseActor(Entity entity, EncounterInstance encounter) {
+        var ally = encounter.ally(entity.getUUID());
+        if (ally != null) releaseAlly(entity, ally);
+        else release(entity);
+    }
+
     private static void release(Entity entity) {
         hideMobBossBar(entity.getUUID());
         entity.getPersistentData().remove(OWNER);
+        entity.getPersistentData().remove(EncounterActorSpawning.OWNER);
         entity.getPersistentData().remove(SCENE);
         entity.getPersistentData().remove("VillagerRetaliationSpawnGeneration");
         entity.getPersistentData().remove(SPAWN_INDEX);
@@ -2855,6 +2925,7 @@ public final class EncounterService {
         if (identity.invulnerabilityApplied())
             entity.setInvulnerable(identity.originalInvulnerable());
         entity.getPersistentData().remove(ALLY_OWNER);
+        entity.getPersistentData().remove(EncounterActorSpawning.OWNER);
         entity.getPersistentData().remove(ALLY_KEY);
         if (entity instanceof Mob mob) mob.setTarget(null);
     }

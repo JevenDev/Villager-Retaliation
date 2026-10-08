@@ -348,6 +348,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        if (com.jvn.villagerretaliation.scene.encounter.EncounterActorSpawning.blocked(event.getEntity())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+        }
         if (com.jvn.villagerretaliation.duel.DuelService.onIncomingDamage(event)) {
             return;
         }
@@ -382,6 +387,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
+        if (com.jvn.villagerretaliation.scene.encounter.EncounterActorSpawning.blocked(event.getEntity())) {
+            event.setCanceled(true);
+            event.getEntity().setHealth(Math.max(1.0F, event.getEntity().getHealth()));
+            return;
+        }
         HiredCombatSkillPracticeService.onKill(event);
         EncounterService.onDeath(event.getEntity());
         SceneLifecycleIntegration.onActorDeath(event.getEntity());
@@ -420,6 +430,10 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
+        if (!com.jvn.villagerretaliation.scene.encounter.EncounterActorSpawning.beforeTick(entity)) {
+            event.setCanceled(true);
+            return;
+        }
         if (entity instanceof net.minecraft.world.entity.projectile.Projectile projectile
                 && !com.jvn.villagerretaliation.settlement.SettlementProjectileService.onActive(projectile)) {
             event.setCanceled(true);
