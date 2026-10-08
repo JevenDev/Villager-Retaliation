@@ -765,14 +765,21 @@ public final class EncounterService {
                 if (!level.hasChunkAt(position))
                     return Result.waiting(
                             "environment block " + definition.id() + " chunk is unloaded");
+                String storageIssue = EncounterPersistence.checkpoint(server, data, encounter);
+                if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
                 var current = level.getBlockState(position);
-                if (current.equals(owned.placed()))
-                    encounter.replaceEnvironmentBlock(owned.applied());
-                else if (current.equals(owned.original())) {
+                boolean applied = current.equals(owned.placed()) || current.equals(owned.original());
+                if (applied && !current.equals(owned.placed())) {
                     level.setBlock(position, owned.placed(), Block.UPDATE_CLIENTS);
-                    encounter.replaceEnvironmentBlock(owned.applied());
-                } else encounter.replaceEnvironmentBlock(owned.preserved());
+                    if (!level.getBlockState(position).equals(owned.placed()))
+                        return environmentWait(data, encounter, "environment block " + definition.id() + " could not be placed");
+                }
+                storageIssue = EncounterPersistence.checkpointBlock(server, data, encounter, level, position);
+                if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
+                encounter.replaceEnvironmentBlock(applied ? owned.applied() : owned.preserved());
                 data.changed();
+                storageIssue = EncounterPersistence.checkpoint(server, data, encounter);
+                if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
             }
         }
         for (EncounterTemplate.EnvironmentCue cue : environment.cues())
@@ -820,7 +827,7 @@ public final class EncounterService {
         return Result.active();
     }
 
-    private static boolean restoreEnvironment(
+    private static Result restoreEnvironment(
             MinecraftServer server, SceneSavedData data, EncounterInstance encounter) {
         boolean complete = true;
         for (EncounterInstance.EnvironmentBlock owned : encounter.environmentBlocks().values()) {
@@ -832,14 +839,28 @@ public final class EncounterService {
                 complete = false;
                 continue;
             }
+            String storageIssue = EncounterPersistence.checkpoint(server, data, encounter);
+            if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
             var current = level.getBlockState(owned.position());
+            boolean restored = current.equals(owned.placed()) || current.equals(owned.original());
             if (current.equals(owned.placed())) {
                 level.setBlock(owned.position(), owned.original(), Block.UPDATE_CLIENTS);
-                encounter.replaceEnvironmentBlock(owned.restored());
-            } else encounter.replaceEnvironmentBlock(owned.preserved());
+                if (!level.getBlockState(owned.position()).equals(owned.original()))
+                    return environmentWait(data, encounter, "environment block " + owned.id() + " could not be restored");
+            }
+            storageIssue = EncounterPersistence.checkpointBlock(server, data, encounter, level, owned.position());
+            if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
+            encounter.replaceEnvironmentBlock(restored ? owned.restored() : owned.preserved());
             data.changed();
+            storageIssue = EncounterPersistence.checkpoint(server, data, encounter);
+            if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
         }
-        return complete;
+        return complete ? Result.completed() : Result.waiting("owned encounter environment blocks are unloaded");
+    }
+
+    private static Result environmentWait(SceneSavedData data, EncounterInstance encounter, String diagnostic) {
+        if (encounter.markContentUnresolved(diagnostic)) data.changed();
+        return Result.waiting(diagnostic);
     }
 
     public static void maintainCleanup(MinecraftServer server, SceneSavedData data) {
@@ -1365,7 +1386,12 @@ public final class EncounterService {
         hideBossBars(encounter);
         removeGuidance(server, data, encounter);
         encounter.cleaning();
-        boolean waiting = !restoreEnvironment(server, data, encounter);
+        data.changed();
+        String storageIssue = EncounterPersistence.checkpoint(server, data, encounter);
+        if (!storageIssue.isBlank()) return environmentWait(data, encounter, storageIssue);
+        Result environment = restoreEnvironment(server, data, encounter);
+        boolean waiting = environment.status() == Status.WAITING;
+        if (waiting && EncounterPersistence.required(data, encounter)) return environment;
         for (UUID id : encounter.spawned()) {
             if (encounter.defeated().contains(id)) continue;
             Entity entity = find(server, id);

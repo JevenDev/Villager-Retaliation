@@ -133,7 +133,7 @@ public final class CampaignEncounterPersistenceGameTests {
         helper.succeed();
     }
 
-    private static final class Fixture implements AutoCloseable {
+    static final class Fixture implements AutoCloseable {
         final GameTestHelper helper;
         final CampaignConversationGameTests.Fixture base;
         final CompiledScene definition;

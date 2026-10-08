@@ -31,7 +31,21 @@ public final class EncounterPersistence {
         }
     }
 
-    private static boolean required(SceneSavedData data, EncounterInstance encounter) {
+    static String checkpointBlock(MinecraftServer server, SceneSavedData data, EncounterInstance encounter,
+            net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos position) {
+        if (!required(data, encounter)) return "";
+        try {
+            com.jvn.villagerretaliation.util.WorldChunkCheckpoint.persist(level, position);
+            return "";
+        } catch (IOException exception) {
+            String diagnostic = "Campaign encounter blocks could not be saved. Restore writable world storage to continue: " + exception.getMessage();
+            var scene = data.get(encounter.sceneId()).orElse(null);
+            if (scene != null && scene.pauseCampaign(diagnostic, server.overworld().getGameTime())) data.changed();
+            return diagnostic;
+        }
+    }
+
+    static boolean required(SceneSavedData data, EncounterInstance encounter) {
         var scene = data.get(encounter.sceneId()).orElse(null);
         return scene != null && SceneReceiptGuard.requiresPersistence(scene);
     }
