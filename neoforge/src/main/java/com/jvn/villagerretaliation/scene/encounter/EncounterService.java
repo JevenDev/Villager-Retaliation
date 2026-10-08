@@ -161,7 +161,7 @@ public final class EncounterService {
                 }
         }
         Result phases = evaluatePhases(server, data, encounter, template, level.getGameTime());
-        if (phases.status() == Status.FAILED) return phases;
+        if (phases.status() != Status.ACTIVE) return phases;
         Result objectives =
                 evaluateObjectives(server, data, encounter, template, level.getGameTime());
         String rewardError = grantEligibleRewards(server, data, encounter, template);
@@ -209,7 +209,7 @@ public final class EncounterService {
             fireWaveHooks(server, data, encounter, wave);
             data.changed();
             phases = evaluatePhases(server, data, encounter, template, level.getGameTime());
-            if (phases.status() == Status.FAILED) return phases;
+            if (phases.status() != Status.ACTIVE) return phases;
         }
         List<SpawnMember> desired = desiredMembers(wave, template, encounter.partySize());
         for (int index = spawned; index < target; index++) {
@@ -919,7 +919,15 @@ public final class EncounterService {
 
     public static void maintainCleanup(MinecraftServer server, SceneSavedData data) {
         for (EncounterInstance encounter : data.encounters()) {
-            if (encounter.completionRewardEligible() || encounter.hasRewardHistory()) {
+            boolean phasesReady = true;
+            if (EncounterPersistence.required(data, encounter) && encounter.hasPhaseHistory()) {
+                var phaseTemplate = availableTemplate(server, data, encounter);
+                if (phaseTemplate == null) {
+                    if (encounter.markContentUnresolved("Encounter phase content is unavailable.")) data.changed();
+                    phasesReady = false;
+                } else phasesReady = EncounterPhases.evaluate(server, data, encounter, phaseTemplate, server.overworld().getGameTime()).status() == Status.ACTIVE;
+            }
+            if (phasesReady && (encounter.completionRewardEligible() || encounter.hasRewardHistory() || encounter.hasPhaseHistory())) {
                 EncounterTemplate template =
                         EncounterResources.template(server, encounter.templateId()).orElse(null);
                 String rewardError =
@@ -952,6 +960,10 @@ public final class EncounterService {
             EncounterTemplate template) {
         EncounterTemplate.RewardPolicy policy = template.rewards();
         boolean persistent = EncounterPersistence.required(data, encounter);
+        if (persistent) {
+            Result phases = EncounterPhases.evaluate(server, data, encounter, template, server.overworld().getGameTime());
+            if (phases.status() != Status.ACTIVE) return phases.diagnostic();
+        }
         if (!persistent && (policy == null
                 || policy.waves().isEmpty()
                         && policy.phases().isEmpty()
@@ -1618,58 +1630,31 @@ public final class EncounterService {
                                                     });
                                 affected.add(encounter.id());
                             });
-        for (UUID id : affected)
-            data.encounter(id)
-                    .ifPresent(
-                            encounter -> {
-                                if (encounter.state() == EncounterInstance.EncounterState.ACTIVE)
-                                    EncounterResources.template(
-                                                    level.getServer(), encounter.templateId())
-                                            .ifPresent(
-                                                    template -> {
-                                                        evaluatePhases(
-                                                                level.getServer(),
-                                                                data,
-                                                                encounter,
-                                                                template,
-                                                                level.getGameTime());
-                                                        evaluateObjectives(
-                                                                level.getServer(),
-                                                                data,
-                                                                encounter,
-                                                                template,
-                                                                level.getGameTime());
-                                                        if (encounter.state()
-                                                                        != EncounterInstance
-                                                                                .EncounterState
-                                                                                .COMPLETED
-                                                                && encounter.state()
-                                                                        != EncounterInstance
-                                                                                .EncounterState
-                                                                                .FAILED) {
-                                                            updateBossBar(
-                                                                    level.getServer(),
-                                                                    encounter,
-                                                                    template);
-                                                            updateMobBossBars(
-                                                                    level.getServer(), encounter);
-                                                        }
-                                                    });
-                                if (encounter.state() == EncounterInstance.EncounterState.ACTIVE
-                                        || encounter.state()
-                                                == EncounterInstance.EncounterState.COMPLETED)
-                                    EncounterResources.template(
-                                                    level.getServer(), encounter.templateId())
-                                            .ifPresent(
-                                                    template -> {
-                                                        String rewardIssue = grantEligibleRewards(level.getServer(), data, encounter, template);
-                                                        if (!rewardIssue.isBlank() && encounter.markContentUnresolved(rewardIssue)) data.changed();
-                                                    });
-                                if (encounter.state() == EncounterInstance.EncounterState.COMPLETED
-                                        || encounter.state()
-                                                == EncounterInstance.EncounterState.FAILED)
-                                    hideBossBars(encounter);
-                            });
+        for (UUID id : affected) {
+            var encounter = data.encounter(id).orElse(null);
+            var template = availableTemplate(level.getServer(), data, encounter);
+            if (encounter == null || template == null) continue;
+            if (encounter.state() == EncounterInstance.EncounterState.ACTIVE
+                    || EncounterPersistence.required(data, encounter) && encounter.state() == EncounterInstance.EncounterState.COMPLETED) {
+                Result phases = evaluatePhases(level.getServer(), data, encounter, template, level.getGameTime());
+                if (phases.status() != Status.ACTIVE) {
+                    hideBossBars(encounter);
+                    continue;
+                }
+                if (encounter.state() == EncounterInstance.EncounterState.ACTIVE)
+                    evaluateObjectives(level.getServer(), data, encounter, template, level.getGameTime());
+                if (encounter.state() != EncounterInstance.EncounterState.COMPLETED && encounter.state() != EncounterInstance.EncounterState.FAILED) {
+                    updateBossBar(level.getServer(), encounter, template);
+                    updateMobBossBars(level.getServer(), encounter);
+                }
+            }
+            if (encounter.state() == EncounterInstance.EncounterState.ACTIVE || encounter.state() == EncounterInstance.EncounterState.COMPLETED) {
+                String rewardIssue = grantEligibleRewards(level.getServer(), data, encounter, template);
+                if (!rewardIssue.isBlank() && encounter.markContentUnresolved(rewardIssue)) data.changed();
+            }
+            if (encounter.state() == EncounterInstance.EncounterState.COMPLETED || encounter.state() == EncounterInstance.EncounterState.FAILED)
+                hideBossBars(encounter);
+        }
         data.changed();
     }
 
@@ -1974,6 +1959,7 @@ public final class EncounterService {
             EncounterInstance encounter,
             EncounterTemplate template,
             long gameTime) {
+        if (EncounterPersistence.required(data, encounter)) return EncounterPhases.evaluate(server, data, encounter, template, gameTime);
         if (template.phases().isEmpty()) return Result.active();
         SceneInstance scene = data.get(encounter.sceneId()).orElse(null);
         if (scene == null) {
@@ -2239,7 +2225,7 @@ public final class EncounterService {
                 && dx * dx + dz * dz <= (double) radius * radius;
     }
 
-    private static boolean phaseMatches(
+    static boolean phaseMatches(
             EncounterInstance encounter,
             EncounterTemplate template,
             EncounterTemplate.Phase phase,
@@ -2307,7 +2293,7 @@ public final class EncounterService {
         return "";
     }
 
-    private static SceneOperationReceipt.Kind phaseActionKind(
+    static SceneOperationReceipt.Kind phaseActionKind(
             EncounterTemplate.PhaseAction action) {
         return switch (action.type()) {
             case NOTIFICATION, DIALOGUE -> SceneOperationReceipt.Kind.DIALOGUE_DELIVERY;
@@ -2316,7 +2302,7 @@ public final class EncounterService {
         };
     }
 
-    private static String executePhaseAction(
+    static String executePhaseAction(
             MinecraftServer server,
             SceneSavedData data,
             EncounterInstance encounter,

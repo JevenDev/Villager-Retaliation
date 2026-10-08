@@ -88,6 +88,20 @@ public final class SceneSaveMigrations {
                     }
                 }
                 version = 21;
+            } else if (version == 21) {
+                for (Tag raw : data.getList("Encounters", Tag.TAG_COMPOUND)) {
+                    var encounter = (CompoundTag) raw;
+                    if (!encounter.contains("PhaseHistory")) {
+                        var phases = new CompoundTag();
+                        phases.putInt("Version", 1);
+                        phases.put("Definition", new CompoundTag());
+                        phases.putBoolean("CompletionCaptured", java.util.Set.of("COMPLETED", "FAILED", "CANCELLED", "CLEANING_UP", "CLEANED", "RELEASED").contains(encounter.getString("State")));
+                        phases.put("CompletionTriggers", new ListTag());
+                        phases.put("Runs", new ListTag());
+                        encounter.put("PhaseHistory", phases);
+                    }
+                }
+                version = 22;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);

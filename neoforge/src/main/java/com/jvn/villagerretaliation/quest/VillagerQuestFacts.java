@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.quest;
 
 import com.mojang.logging.LogUtils;
 import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -19,7 +21,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestFacts extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 1;
+    public static final int CURRENT_DATA_VERSION = 2;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "villagerretaliation_quest_facts";
     private static final String TAG_ENTRIES = "Entries";
@@ -32,10 +34,17 @@ public class VillagerQuestFacts extends SavedData {
 
     private final Map<String, FactBucket> factsByScope = new HashMap<>();
     private CompoundTag futureVersionData;
+    private final Map<java.util.UUID, QuestFactReceipt> campaignEffects = new HashMap<>();
+    private Tag preservedEffects;
+    private String effectDiagnostic = "";
 
     public static VillagerQuestFacts get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(VillagerQuestFacts::new, VillagerQuestFacts::load, DataFixTypes.LEVEL),
+                new SavedData.Factory<>(() -> {
+                    var data = new VillagerQuestFacts();
+                    if (Files.exists(campaignPath(level))) data.effectDiagnostic = "Quest facts could not be read. Restore their saved data before continuing the campaign.";
+                    return data;
+                }, VillagerQuestFacts::load, DataFixTypes.LEVEL),
                 DATA_NAME
         );
     }
@@ -51,6 +60,8 @@ public class VillagerQuestFacts extends SavedData {
         if (migration.futureVersion()) {
             data.futureVersionData = tag.copy();
         }
+        if (migration.sourceVersion() < 2 && !tag.contains("CampaignEffects")) tag.put("CampaignEffects", writeEffects(Map.of()));
+        data.readEffects(tag.get("CampaignEffects"));
         ListTag entriesTag = tag.getList(TAG_ENTRIES, Tag.TAG_COMPOUND);
         for (Tag rawEntry : entriesTag) {
             if (!(rawEntry instanceof CompoundTag entryTag) || !entryTag.contains(TAG_SCOPE, Tag.TAG_STRING)) {
@@ -84,7 +95,89 @@ public class VillagerQuestFacts extends SavedData {
             entriesTag.add(entryTag);
         }
         tag.put(TAG_ENTRIES, entriesTag);
+        if (preservedEffects != null) tag.put("CampaignEffects", preservedEffects.copy());
+        else if (effectDiagnostic.isBlank()) tag.put("CampaignEffects", writeEffects(campaignEffects));
         return tag;
+    }
+
+    public boolean hasCampaignFact(QuestFactReceipt receipt) {
+        QuestFactReceipt.require(futureVersionData == null, "Quest facts use a newer save format. Restore compatible data before continuing.");
+        QuestFactReceipt.require(effectDiagnostic.isBlank(), effectDiagnostic);
+        var prior = campaignEffects.get(receipt.operation());
+        QuestFactReceipt.require(prior == null || prior.equals(receipt), "The fact receipt belongs to a different action. Restore matching scene and fact data.");
+        return prior != null;
+    }
+
+    public boolean applyCampaignFact(ServerLevel level, QuestFactReceipt receipt, boolean acknowledged) throws IOException {
+        if (hasCampaignFact(receipt)) return false;
+        QuestFactReceipt.require(!acknowledged, "Quest facts are older than the acknowledged phase action. Restore matching fact data.");
+        QuestFactReceipt.require(campaignEffects.values().stream().noneMatch(value -> value.token().equals(receipt.token())), "Duplicate campaign fact token.");
+        var candidate = new VillagerQuestFacts();
+        candidate.factsByScope.putAll(factsByScope);
+        candidate.campaignEffects.putAll(campaignEffects);
+        for (var scope : receipt.scopes()) {
+            var bucket = factsByScope.get(scope.asString());
+            var updated = bucket == null ? new FactBucket() : FactBucket.load(bucket.save());
+            if (receipt.tag() != null) updated.tags.add(receipt.tag());
+            else updated.variables.put(receipt.key(), receipt.value());
+            candidate.factsByScope.put(scope.asString(), updated);
+        }
+        candidate.campaignEffects.put(receipt.operation(), receipt);
+        var root = new CompoundTag();
+        root.put("data", candidate.save(new CompoundTag(), level.registryAccess()));
+        net.minecraft.nbt.NbtUtils.addCurrentDataVersion(root);
+        net.neoforged.neoforge.common.IOUtilities.waitUntilIOWorkerComplete();
+        var path = campaignPath(level);
+        Files.createDirectories(path.getParent());
+        net.neoforged.neoforge.common.IOUtilities.writeNbtCompressed(root, path);
+        factsByScope.clear();
+        factsByScope.putAll(candidate.factsByScope);
+        campaignEffects.put(receipt.operation(), receipt);
+        setDirty(false);
+        return true;
+    }
+
+    private static java.nio.file.Path campaignPath(ServerLevel level) {
+        return level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data").resolve(DATA_NAME + ".dat");
+    }
+
+    private void readEffects(Tag input) {
+        if (input == null) {
+            effectDiagnostic = "Campaign fact receipts are missing. Restore compatible quest fact data.";
+            return;
+        }
+        try {
+            QuestFactReceipt.require(input instanceof CompoundTag, "Invalid campaign fact history.");
+            var tag = (CompoundTag) input;
+            QuestFactReceipt.require(tag.getAllKeys().equals(Set.of("Version", "Receipts")) && tag.contains("Version", Tag.TAG_INT)
+                    && tag.getInt("Version") == 1 && tag.get("Receipts") instanceof ListTag, "Unsupported campaign fact history.");
+            var entries = (ListTag) tag.get("Receipts");
+            QuestFactReceipt.require(entries.isEmpty() || entries.getElementType() == Tag.TAG_COMPOUND, "Invalid campaign fact receipts.");
+            var tokens = new HashSet<java.util.UUID>();
+            for (var raw : entries) {
+                var receipt = QuestFactReceipt.load((CompoundTag) raw);
+                QuestFactReceipt.require(campaignEffects.putIfAbsent(receipt.operation(), receipt) == null && tokens.add(receipt.token()), "Duplicate campaign fact receipt.");
+            }
+        } catch (IllegalArgumentException exception) {
+            campaignEffects.clear();
+            preservedEffects = input.copy();
+            effectDiagnostic = "Campaign fact receipts are unreadable. Restore compatible quest fact data.";
+        }
+    }
+
+    private static CompoundTag writeEffects(Map<java.util.UUID, QuestFactReceipt> receipts) {
+        var tag = new CompoundTag();
+        tag.putInt("Version", 1);
+        var entries = new ListTag();
+        receipts.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> entries.add(entry.getValue().save()));
+        tag.put("Receipts", entries);
+        return tag;
+    }
+
+    @Override
+    public void save(java.io.File file, HolderLookup.Provider provider) {
+        if (!effectDiagnostic.isBlank() && preservedEffects == null) return;
+        super.save(file, provider);
     }
 
     public boolean setTag(String scopeKey, ResourceLocation tag) {

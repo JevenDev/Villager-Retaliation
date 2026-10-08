@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.scene.runtime;
 
 import com.jvn.villagerretaliation.campaign.CampaignSceneLocations;
-import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutor;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutors;
 import com.jvn.villagerretaliation.scene.model.CompiledScene;
@@ -30,23 +29,7 @@ public final class SceneStepEngine {
     private static SceneScheduler.ProcessResult processStep(MinecraftServer server, SceneSavedData data, SceneInstance instance,
             CompiledScene definition, long time) {
         if (instance.state().terminal()) return SceneScheduler.ProcessResult.idle();
-        String campaignIssue = CampaignQuestAccess.executionIssue(
-                server, instance.owningQuestId(), instance.owningCampaignId(), instance.owner().playerId());
-        if (campaignIssue.isBlank()) campaignIssue = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.issue(instance.decisionParticipants());
-        if (campaignIssue.isBlank() && !instance.conversationEffect().isEmpty()) {
-            campaignIssue = com.jvn.villagerretaliation.dialogue.conversation.ConversationSceneExecution.resolve(server, instance).diagnostic();
-        }
-        if (campaignIssue.isBlank() && !instance.campaignConsent().isEmpty()) {
-            campaignIssue = com.jvn.villagerretaliation.campaign.CampaignSceneApproval.resolve(server, instance).diagnostic();
-        }
-        if (campaignIssue.isBlank() && instance.owner().playerId() == null && instance.owningQuestInstance() != null) {
-            for (var player : instance.participants()) {
-                var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(server.overworld()).get(player, instance.owningQuestId());
-                if (progress == null || !instance.owningQuestInstance().equals(progress.questRunId())) continue;
-                campaignIssue = CampaignQuestAccess.executionIssue(server, instance.owningQuestId(), instance.owningCampaignId(), player);
-                if (!campaignIssue.isBlank()) break;
-            }
-        }
+        String campaignIssue = SceneExecutionAuthority.campaignIssue(server, instance);
         if (campaignIssue.isBlank() && definition != null && SceneDefinitionReconciler.reconcile(instance, definition).safe()
                 && instance.transitionIntent() == SceneInstance.TransitionIntent.NONE) {
             campaignIssue = CampaignSceneLocations.resolve(server, data, instance, definition);

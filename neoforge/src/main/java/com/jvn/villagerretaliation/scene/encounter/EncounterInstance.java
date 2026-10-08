@@ -32,6 +32,7 @@ public final class EncounterInstance {
     private final Set<UUID> spawned = new LinkedHashSet<>();
     private EncounterActorSpawns actorSpawns = new EncounterActorSpawns();
     private EncounterRewardLedger rewardLedger = new EncounterRewardLedger();
+    private EncounterPhaseLedger phaseLedger = new EncounterPhaseLedger();
     private final Set<UUID> defeated = new LinkedHashSet<>();
     private final Set<UUID> missing = new LinkedHashSet<>();
     private final Map<UUID, Long> leaveDeadlines = new LinkedHashMap<>();
@@ -198,6 +199,8 @@ public final class EncounterInstance {
     EncounterActorSpawns actorSpawns() { return actorSpawns; }
     EncounterRewardLedger rewardLedger() { return rewardLedger; }
     public boolean hasRewardHistory() { return rewardLedger.hasHistory(); }
+    EncounterPhaseLedger phaseLedger() { return phaseLedger; }
+    public boolean hasPhaseHistory() { return phaseLedger.hasHistory(); }
 
     public boolean hasDurableActorHistory() {
         return !actorSpawns.records().isEmpty() || !actorSpawns.diagnostic().isBlank();
@@ -753,6 +756,8 @@ public final class EncounterInstance {
         if (actors != null) t.put("ActorSpawns", actors);
         var rewards = rewardLedger.save();
         if (rewards != null) t.put("RewardHistory", rewards);
+        var phases = phaseLedger.save();
+        if (phases != null) t.put("PhaseHistory", phases);
         t.put("Defeated", uuids(defeated));
         t.put("Missing", uuids(missing));
         t.put("LeaveDeadlines", deadlines(leaveDeadlines));
@@ -836,6 +841,7 @@ public final class EncounterInstance {
         v.spawned.addAll(readUuids(t, "Spawned"));
         v.actorSpawns = EncounterActorSpawns.load(t.get("ActorSpawns"), v.id);
         v.rewardLedger = EncounterRewardLedger.load(t.get("RewardHistory"), v.sceneId, v.id);
+        v.phaseLedger = EncounterPhaseLedger.load(t.get("PhaseHistory"));
         v.defeated.addAll(readUuids(t, "Defeated"));
         v.missing.addAll(readUuids(t, "Missing"));
         v.leaveDeadlines.putAll(readDeadlines(t, "LeaveDeadlines"));

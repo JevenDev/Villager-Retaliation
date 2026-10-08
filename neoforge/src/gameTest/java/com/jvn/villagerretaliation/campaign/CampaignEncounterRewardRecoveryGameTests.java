@@ -271,9 +271,12 @@ public final class CampaignEncounterRewardRecoveryGameTests {
         try (var fixture = new CampaignEncounterPersistenceGameTests.Fixture(helper, PLAYER)) {
             fixture.run();
             var player = player(fixture);
-            fixture.block(); defeat(helper, fixture); fixture.restore();
+            try (var blocked = new BlockedFile(CampaignPlayerRewards.directory(player).resolve(player.getStringUUID() + ".dat"))) {
+                defeat(helper, fixture);
+            }
             var snapshot = fixture.data().save(new CompoundTag(), helper.getLevel().registryAccess());
             var history = encounter(snapshot, fixture).getCompound("RewardHistory");
+            helper.assertValueEqual(history.getList("Batches", Tag.TAG_COMPOUND).size(), 1, "fixture reaches a saved reward receipt");
             history.getList("Batches", Tag.TAG_COMPOUND).getCompound(0).getCompound("Reward").putString("Item", "invalid:Broken identity");
             install(helper, fixture, snapshot);
             helper.assertTrue(fixture.encounter() != null, "invalid receipt content cannot discard its encounter");
