@@ -75,7 +75,7 @@ public final class CampaignAuthoringGameTests {
         helper.succeed();
     }
 
-    private static QuestContentCatalog quests(GameTestHelper helper) throws IOException {
+    static QuestContentCatalog quests(GameTestHelper helper) throws IOException {
         var resources = new ArrayList<QuestBundleTransactions.RawResource>();
         for (String quest : List.of("decision", "dragon", "decision_catch_up", "dragon_catch_up")) {
             for (String file : List.of("quest.json", "locales/en_us.json")) {

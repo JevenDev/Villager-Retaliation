@@ -81,7 +81,7 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
                     }
                 }
             }
-            if (issues.isEmpty()) entries.put(definition.id(), new Entry(definition, source.locales()));
+            if (issues.isEmpty()) entries.put(definition.id(), new Entry(definition, source.locales(), source.pack()));
             else rejected.add(definition.id());
             issues.forEach(issue -> diagnostics.add(inPack(issue, source.pack())));
         }
@@ -105,7 +105,9 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
                 diagnostic.jsonPointer(), diagnostic.message(), diagnostic.suggestedFix(), diagnostic.relevantIds());
     }
 
-    public record Entry(CampaignDefinition definition, QuestLocaleCatalog localization) {
+    public record Entry(CampaignDefinition definition, QuestLocaleCatalog localization, String sourcePack) {
+        public Entry { sourcePack = sourcePack == null ? "" : sourcePack; }
+        public Entry(CampaignDefinition definition, QuestLocaleCatalog localization) { this(definition, localization, ""); }
     }
 
     public record Source(ResourceLocation location, String pack, JsonObject root, QuestLocaleCatalog locales,
