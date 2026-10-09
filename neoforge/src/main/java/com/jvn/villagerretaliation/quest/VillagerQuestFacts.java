@@ -129,7 +129,7 @@ public class VillagerQuestFacts extends SavedData {
         net.neoforged.neoforge.common.IOUtilities.waitUntilIOWorkerComplete();
         var path = campaignPath(level);
         Files.createDirectories(path.getParent());
-        net.neoforged.neoforge.common.IOUtilities.writeNbtCompressed(root, path);
+        com.jvn.villagerretaliation.util.AtomicDataFiles.writeCompressed(root, path);
         factsByScope.clear();
         factsByScope.putAll(candidate.factsByScope);
         campaignEffects.put(receipt.operation(), receipt);

@@ -299,7 +299,7 @@ public final class SceneSavedData extends SavedData {
             IOUtilities.waitUntilIOWorkerComplete();
             var directory = level.getServer().getWorldPath(LevelResource.ROOT).resolve("data");
             Files.createDirectories(directory);
-            IOUtilities.writeNbtCompressed(wrapper, directory.resolve(DATA_NAME + ".dat"));
+            com.jvn.villagerretaliation.util.AtomicDataFiles.writeCompressed(wrapper, directory.resolve(DATA_NAME + ".dat"));
             setDirty(false);
             campaignPersistencePending = false;
         } catch (IOException exception) {

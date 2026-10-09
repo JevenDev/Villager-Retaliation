@@ -377,7 +377,7 @@ public final class CampaignSavedData extends SavedData {
         NbtUtils.addCurrentDataVersion(wrapper);
         IOUtilities.waitUntilIOWorkerComplete();
         Files.createDirectories(this.directory);
-        IOUtilities.writeNbtCompressed(wrapper, this.directory.resolve(DATA_NAME + ".dat"));
+        com.jvn.villagerretaliation.util.AtomicDataFiles.writeCompressed(wrapper, this.directory.resolve(DATA_NAME + ".dat"));
         this.instances = immutable(candidate);
         setDirty(false);
     }

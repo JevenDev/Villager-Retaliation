@@ -166,8 +166,8 @@ public final class CampaignPlayerRewards {
         Path target = directory.resolve(player.getStringUUID() + ".dat");
         IOUtilities.waitUntilIOWorkerComplete();
         Files.createDirectories(directory);
-        if (Files.exists(target)) IOUtilities.atomicWrite(directory.resolve(player.getStringUUID() + ".dat_old"), stream -> Files.copy(target, stream));
-        IOUtilities.writeNbtCompressed(snapshot, target);
+        if (Files.exists(target)) com.jvn.villagerretaliation.util.AtomicDataFiles.backup(target, directory.resolve(player.getStringUUID() + ".dat_old"));
+        com.jvn.villagerretaliation.util.AtomicDataFiles.writeCompressed(snapshot, target);
     }
 
     public static CompoundTag loadedOwnerTag(ServerPlayer player, CompoundTag original) {

@@ -119,7 +119,7 @@ public final class CampaignRewardRecoveryGameTests {
                 helper.assertValueEqual(fixture.player.totalExperience, 0, "retry cannot cross the failed save");
             }
             fixture.retry();
-            helper.assertValueEqual(fixture.player.totalExperience, 15, "restored storage allows the original sequence to finish");
+            helper.assertValueEqual(fixture.player.totalExperience, 15, "restored storage allows the original sequence to finish: " + fixture.continuation().actionDiagnostic());
             helper.assertTrue(fixture.continuation().completionReceipt(), "completion is acknowledged only after persistence");
         }
         helper.succeed();
@@ -143,7 +143,7 @@ public final class CampaignRewardRecoveryGameTests {
                 helper.assertValueEqual(fixture.player.totalExperience, 3, "pending cursor save blocks all later effects");
             } finally { if (blocked[0] != null) blocked[0].close(); }
             fixture.retry();
-            helper.assertValueEqual(fixture.player.totalExperience, 15, "saved cursor resumes after the applied tracker action");
+            helper.assertValueEqual(fixture.player.totalExperience, 15, "saved cursor resumes after the applied tracker action: " + fixture.continuation().actionDiagnostic());
             helper.assertValueEqual(flashes[0], 1, "recovery never repeats the applied callback");
         }
         helper.succeed();
@@ -286,7 +286,7 @@ public final class CampaignRewardRecoveryGameTests {
             int[] flashes = {0};
             var result = SceneContinuationService.run(fixture.context(), actions, Map.of("inherited", "kept"), () -> flashes[0]++,
                     "/recovery/synchronous", null, QUEST, fixture.progress().questRunId());
-            helper.assertTrue(result.outcome().success(), "healthy sequence completes synchronously");
+            helper.assertTrue(result.outcome().success(), "healthy sequence completes synchronously: " + result.outcome().message());
             helper.assertValueEqual(result.outcome().legacyResult().text(), expected.legacyResult().text(), "synchronous dialogue text survives persistence");
             helper.assertValueEqual(result.outcome().legacyResult().lineId(), expected.legacyResult().lineId(), "synchronous line identity is preserved");
             helper.assertValueEqual(result.outcome().legacyResult().replacements().get("inherited"), "kept", "inherited replacements are retained");
