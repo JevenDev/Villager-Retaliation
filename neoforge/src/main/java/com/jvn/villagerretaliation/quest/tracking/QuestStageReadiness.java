@@ -23,6 +23,12 @@ public record QuestStageReadiness(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             Predicate<QuestDefinition.Objective> objectiveComplete) {
+        return forCurrentStage(definition, progress, objectiveComplete, conditions -> DialogueCondition.matchesAll(context, conditions));
+    }
+
+    public static QuestStageReadiness forCurrentStage(QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress, Predicate<QuestDefinition.Objective> objectiveComplete,
+            Predicate<java.util.List<DialogueCondition>> conditionsMet) {
         if (definition == null || progress == null || definition.stages().isEmpty()) {
             return notReady("", "", "stage context unavailable");
         }
@@ -40,12 +46,11 @@ public record QuestStageReadiness(
             return notReady(stage.id(), stage.next(), "next stage missing");
         }
         if (!compositionMet(
-                context,
                 definition,
                 stage.completeWhen(),
                 stage.completionMode(),
                 stage.completionCount(),
-                objectiveComplete)) {
+                objectiveComplete, conditionsMet)) {
             return notReady(stage.id(), stage.next(), "stage predicates unmet");
         }
         return new QuestStageReadiness(true, stage.id(), stage.next(), "stage ready");
@@ -62,12 +67,19 @@ public record QuestStageReadiness(
             QuestDefinition.CompletionMode mode,
             int requiredCount,
             Predicate<QuestDefinition.Objective> objectiveComplete) {
+        return compositionMet(definition, predicates, mode, requiredCount, objectiveComplete,
+                conditions -> DialogueCondition.matchesAll(context, conditions));
+    }
+
+    public static boolean compositionMet(QuestDefinition definition, java.util.List<QuestDefinition.StagePredicate> predicates,
+            QuestDefinition.CompletionMode mode, int requiredCount, Predicate<QuestDefinition.Objective> objectiveComplete,
+            Predicate<java.util.List<DialogueCondition>> conditionsMet) {
         if (predicates == null || predicates.isEmpty()) {
             return false;
         }
         int matched = 0;
         for (QuestDefinition.StagePredicate predicate : predicates) {
-            if (predicateMet(context, definition, predicate, objectiveComplete)) {
+            if (predicateMet(definition, predicate, objectiveComplete, conditionsMet)) {
                 matched++;
             }
         }
@@ -80,10 +92,10 @@ public record QuestStageReadiness(
     }
 
     private static boolean predicateMet(
-            DialogueContext context,
             QuestDefinition definition,
             QuestDefinition.StagePredicate predicate,
-            Predicate<QuestDefinition.Objective> objectiveComplete) {
+            Predicate<QuestDefinition.Objective> objectiveComplete,
+            Predicate<java.util.List<DialogueCondition>> conditionsMet) {
         if (predicate == null || predicate.isEmpty() || objectiveComplete == null) {
             return false;
         }
@@ -96,6 +108,6 @@ public record QuestStageReadiness(
                 return false;
             }
         }
-        return DialogueCondition.matchesAll(context, predicate.conditions());
+        return conditionsMet.test(predicate.conditions());
     }
 }

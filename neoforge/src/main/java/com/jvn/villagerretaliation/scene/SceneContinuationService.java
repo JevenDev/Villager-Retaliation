@@ -233,11 +233,15 @@ public final class SceneContinuationService {
     }
 
     public static boolean hasPendingQuestOperation(DialogueContext context, ResourceLocation questId) {
-        SceneSavedData data = SceneSavedData.get(context.level());
+        return hasPendingQuestOperation(context.level(), context.player().getUUID(), questId);
+    }
+
+    public static boolean hasPendingQuestOperation(ServerLevel level, UUID playerId, ResourceLocation questId) {
+        SceneSavedData data = SceneSavedData.get(level);
         if (data.continuations().stream().anyMatch(continuation ->
                 !continuation.completionReceipt() && continuation.retrySuspendedAction()
                         && !RESUMING.get().contains(continuation.id())
-                        && context.player().getUUID().equals(continuation.playerId())
+                        && playerId.equals(continuation.playerId())
                         && continuation.nextActionIndex() < continuation.actions().size()
                         && questId.equals(continuation.actions().get(continuation.nextActionIndex()).questId()))) return true;
         return data.active().stream().filter(scene -> !SceneLifecycleIntegration.isOriginatingScene(scene.id()))
@@ -246,7 +250,7 @@ public final class SceneContinuationService {
                 .filter(result -> result.suspended() && result.retryOnResume()
                         && result.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION)
                 .flatMap(result -> data.continuation(result.suspensionId()).stream())
-                .anyMatch(continuation -> context.player().getUUID().equals(continuation.playerId())
+                .anyMatch(continuation -> playerId.equals(continuation.playerId())
                         && questId.equals(continuation.questId()));
     }
 

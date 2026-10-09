@@ -21,6 +21,7 @@ import com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageActionService;
 import com.jvn.villagerretaliation.quest.runtime.QuestRewardService;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressionService;
 import com.jvn.villagerretaliation.quest.persistence.QuestDefinitionMigration;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
@@ -762,7 +763,8 @@ public final class VillagerQuestService {
                     replacements).dialogueResult());
         }
 
-        if (!QuestStageActionService.ready(context, progress) || !progress.pendingStageTransition().isBlank()) {
+        if (!QuestStageActionService.ready(context, progress) || !progress.pendingStageTransition().isBlank()
+                || !progress.pendingStageEntry().isBlank()) {
             return Optional.of(stageBranchUnavailableResult(context, definition, progress).dialogueResult());
         }
         recordStageBranchFact(context, definition, progress, branch, QUEST_BRANCH_SELECTED_FACT, "selected");
@@ -1194,8 +1196,7 @@ public final class VillagerQuestService {
         }
 
         if (progressScanTick) {
-            attachPendingPartyQuests(player);
-            deliverPendingPartyRewards(player);
+            attachPendingPartyQuests(player, false);
         }
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
@@ -1208,24 +1209,21 @@ public final class VillagerQuestService {
 
         boolean changed = false;
         boolean progressNotice = false;
-        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.progress(player.getUUID())) {
-            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
-            if (!progress.hasPendingLifecycleEvents() && !progress.hasPendingTriggerEvents() && progress.campaignId().isBlank()) continue;
-            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
-            if (definition != null) {
+        for (var entry : data.progress(player.getUUID())) {
+            var progress = entry.getValue();
+            if (progress.pendingPartyReward()) PartyQuestRewardService.deliverPendingPartyReward(player, entry.getKey(), progress);
+            boolean maintenance = progress.hasPendingLifecycleEvents() || progress.hasPendingTriggerEvents() || !progress.campaignId().isBlank();
+            if (!maintenance && progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) continue;
+            var definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
+            if (definition == null) continue;
+            if (maintenance) {
                 changed |= CampaignQuestReconciliation.reconcile(player, definition, progress);
                 changed |= CampaignQuestEntries.syncCompletion(player, definition, progress);
                 if (progress.hasPendingLifecycleEvents() || progress.hasPendingTriggerEvents()) {
                     changed |= resumePendingTriggerWork(player, definition, progress);
                 }
             }
-        }
-        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
-            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
-            if (definition == null) {
-                continue;
-            }
-            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) continue;
             if (!CampaignQuestAccess.executionIssue(level, player.getUUID(), definition, progress).isBlank()) continue;
             DialogueContext questContext = contextForStartedVillager(level, player, progress).orElse(null);
             if (reconcileDefinitionRevision(level, player, definition, progress, questContext)) {
@@ -1237,8 +1235,9 @@ public final class VillagerQuestService {
             }
             if (progress.completionPending()) {
                 if (questContext != null) {
-                    finishQuestCompletion(questContext, definition, progress);
-                    changed = true;
+                    var rewardDeliveryBefore = progress.rewardDelivery();
+                    var outcome = finishQuestCompletion(questContext, definition, progress);
+                    changed |= outcome.status().equals("completed") || !Objects.equals(rewardDeliveryBefore, progress.rewardDelivery());
                 }
                 continue;
             }
@@ -1306,7 +1305,7 @@ public final class VillagerQuestService {
                         "quest.updated",
                         "Quest updated: {quest}");
             }
-            if (questContext != null && advanceStageIfComplete(questContext, definition, progress)) {
+            if (advanceStageAfterEvent(level, player, definition, progress, questContext)) {
                 changed = true;
                 progressNotice = true;
                 questProgressChanged = true;
@@ -2217,10 +2216,8 @@ public final class VillagerQuestService {
         QuestDefinition.Stage stage = definition.stages().get(progress.pendingStageEntry());
         if (stage == null) return false;
         progress.requestStageEntry("");
-        if (progress.campaignAlternateEntry()) {
-            syncQuestStageFact(context, definition, progress.currentStage());
-            ensureStageTarget(context, definition, progress);
-        }
+        syncQuestStageFact(context, definition, progress.currentStage());
+        ensureStageTarget(context, definition, progress);
         VillagerQuestSavedData.get(context.level()).setDirty();
         runStageActions(context, definition, progress, "entry", stage.entryActions());
         return true;
@@ -2337,9 +2334,22 @@ public final class VillagerQuestService {
             ServerPlayer player,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        return contextForStartedVillager(level, player, progress)
-                .map(context -> advanceStageIfComplete(context, definition, progress))
-                .orElse(false);
+        return advanceStageAfterEvent(level, player, definition, progress, contextForStartedVillager(level, player, progress).orElse(null));
+    }
+
+    private static boolean advanceStageAfterEvent(ServerLevel level, ServerPlayer player, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress, DialogueContext context) {
+        if (context != null) return advanceStageIfComplete(context, definition, progress);
+        if (!CampaignQuestAccess.executionIssue(level, player.getUUID(), definition, progress).isBlank()
+                || com.jvn.villagerretaliation.scene.SceneContinuationService.hasPendingQuestOperation(level, player.getUUID(), definition.id())) return false;
+        boolean changed = false;
+        for (int index = 0; index < MAX_STAGE_ADVANCES_PER_CHECK; index++) {
+            if (!QuestProgressionService.advanceSaved(level, player, definition, progress,
+                    objective -> objectiveComplete(player, null, level, definition, progress, objective),
+                    conditions -> conditionsStateWithoutLiveContext(player, level, definition, progress, conditions) == ConditionMatch.MET)) break;
+            changed = true;
+        }
+        return changed;
     }
 
     private static ActionResult runStageActions(
@@ -2365,8 +2375,12 @@ public final class VillagerQuestService {
         if (!campaignIssue.isBlank()) return result("unavailable", lineId(definition, "unavailable"), campaignIssue, Map.of());
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+        if (progress != null && progress.completionPending()) {
+            return result("reward_pending", lineId(definition, "unavailable"),
+                    "Finish claiming this quest's rewards before restarting it.", replacements(context, definition, progress));
+        }
         if (progress != null && progress.pendingPartyReward()) {
-            deliverPendingPartyRewards(context.player());
+            PartyQuestRewardService.deliverPendingPartyRewards(context.player());
             if (progress.pendingPartyReward()) {
                 return result(
                         "pending_reward",
@@ -2704,6 +2718,10 @@ public final class VillagerQuestService {
     }
 
     public static void attachPendingPartyQuests(ServerPlayer player) {
+        attachPendingPartyQuests(player, true);
+    }
+
+    private static void attachPendingPartyQuests(ServerPlayer player, boolean deliverRewards) {
         if (player == null) {
             return;
         }
@@ -2749,7 +2767,7 @@ public final class VillagerQuestService {
             }
             com.jvn.villagerretaliation.party.PartyService.markChanged(level);
         }
-        deliverPendingPartyRewards(player);
+        if (deliverRewards) PartyQuestRewardService.deliverPendingPartyRewards(player);
     }
 
     private static VillagerQuestSavedData.QuestProgress canonicalSharedProgress(
@@ -2816,8 +2834,12 @@ public final class VillagerQuestService {
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
+        if (!progress.rewardDeliveryIssue().isBlank()) {
+            return result("reward_pending", lineId(definition, "unavailable"), progress.rewardDeliveryIssue(), replacements(context, definition, progress));
+        }
         if (progress.completionPending()) return finishQuestCompletion(context, definition, progress);
-        if (!QuestStageActionService.ready(context, progress) || !progress.pendingStageTransition().isBlank()) {
+        if (!QuestStageActionService.ready(context, progress) || !progress.pendingStageTransition().isBlank()
+                || !progress.pendingStageEntry().isBlank()) {
             return result("unavailable", lineId(definition, "unavailable"),
                     QuestPresentationService.resolveQuestText(context, definition.dialogue().selectUnavailableText(context),
                             replacements(context, definition, progress)), replacements(context, definition, progress));
@@ -2928,7 +2950,7 @@ public final class VillagerQuestService {
         if (!progress.campaignAlternateEntry()) rewardQuestProviderKnowledge(context, definition, progress);
         clearTrackedQuestIf(data, context.player(), definition.id());
         if (!progress.campaignAlternateEntry()) {
-            completeSharedQuest(context, definition, progress);
+            PartyQuestRewardService.completeSharedQuest(context, definition, progress);
             VillagerReputationAdvancements.onQuestCompleted(
                     context.player(), definition, progress.startedVillagerId(), progress.issuerDimension());
         }
@@ -2966,103 +2988,8 @@ public final class VillagerQuestService {
         }
     }
 
-    private static void completeSharedQuest(
-            DialogueContext completingContext,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress completingProgress) {
-        Optional<com.jvn.villagerretaliation.party.PartySharedQuestRecord> sharedOptional =
-                PartyQuestService.sharedForPlayer(
-                        completingContext.level(),
-                        completingContext.player().getUUID(),
-                        definition.id());
-        if (sharedOptional.isEmpty()) {
-            return;
-        }
-        com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = sharedOptional.get();
-        com.jvn.villagerretaliation.party.PartyRecord party =
-                com.jvn.villagerretaliation.party.PartyService
-                        .getPartyForPlayer(completingContext.level(), completingContext.player().getUUID())
-                        .orElse(null);
-        shared.markCompleted();
-        if (party != null && party.removeTrackedQuest(definition.id())) {
-            PartyService.markChanged(completingContext.level());
-        }
-        com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment completingEnrollment =
-                shared.enrollment(completingContext.player().getUUID());
-        if (completingEnrollment != null) {
-            completingEnrollment.markRewardClaimed();
-        }
-        completingProgress.markPartyRewardClaimed();
-        PartyQuestService.mergePersonalProgress(shared, definition, completingProgress);
-
-        VillagerQuestSavedData data = VillagerQuestSavedData.get(completingContext.level());
-        for (com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment
-                : shared.enrollments().values()) {
-            if (enrollment.playerId().equals(completingContext.player().getUUID())) {
-                continue;
-            }
-            if (enrollment.pendingStart()) {
-                enrollment.markPendingReward();
-                continue;
-            }
-            VillagerQuestSavedData.QuestProgress progress = data.get(enrollment.playerId(), definition.id());
-            if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
-                if (progress != null && progress.completionCount() > 0) {
-                    enrollment.markRewardClaimed();
-                }
-                continue;
-            }
-            PartyQuestService.syncPersonalProgress(shared, definition, progress);
-            QuestLifecycleService.complete(
-                    definition.id(),
-                    progress,
-                    completingContext.level().getGameTime(),
-                    definition.rules().consumeOnCompletion());
-            SceneLifecycleIntegration.onQuestTerminal(completingContext.level(), enrollment.playerId(), definition.id(), "completed");
-            ServerPlayer player = completingContext.level().getServer().getPlayerList().getPlayer(enrollment.playerId());
-            Villager provider = VillagerEntityResolver.loaded(
-                    completingContext.level().getServer(), shared.sourceVillagerId());
-            if (player == null || provider == null || player.serverLevel() != provider.level()) {
-                enrollment.markPendingReward();
-                progress.markPendingPartyReward();
-                continue;
-            }
-            DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
-            if (!finishLinkedPartyReward(context, definition, progress, enrollment)) {
-                enrollment.markPendingReward();
-                progress.markPendingPartyReward();
-            }
-        }
-        if (party != null && shared.settled()) {
-            party.removeSharedQuest(shared.instanceId());
-        }
-        data.setDirty();
-        com.jvn.villagerretaliation.party.PartyService.markChanged(completingContext.level());
-    }
-
-    private static boolean finishLinkedPartyReward(
-            DialogueContext context,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
-            com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment) {
-        if (progress.partyRewardClaimed()) {
-            if (enrollment != null && !enrollment.rewardClaimed()) {
-                enrollment.markRewardClaimed();
-            }
-            return true;
-        }
-        if (enrollment != null && enrollment.rewardClaimed()) {
-            progress.markPartyRewardClaimed();
-            VillagerQuestSavedData.get(context.level()).setDirty();
-            return true;
-        }
-        if (progress.rewardDelivery() == null
-                && !unresolvedQuestRewardDiagnostic(context.level().getServer(), definition).isBlank()) return false;
-        if (!awardRewards(context, definition, progress).success()) return false;
-        progress.markPartyRewardClaimed();
-        if (enrollment != null) {
-            enrollment.markRewardClaimed();
-        }
+    static void onLinkedPartyRewardDelivered(DialogueContext context, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
         markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_COMPLETED_FACT, "completed");
         recordScopedCompletion(context, definition);
         lockBranchQuests(context, definition, QuestDefinition.BranchLockEvent.COMPLETED);
@@ -3074,57 +3001,10 @@ public final class VillagerQuestService {
         dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.COMPLETED);
         data.setDirty();
         sendTrackerSync(context.player(), true);
-        return true;
     }
 
-    private static void deliverPendingPartyRewards(ServerPlayer player) {
-        VillagerQuestSavedData data = VillagerQuestSavedData.get(player.serverLevel());
-        com.jvn.villagerretaliation.party.PartyRecord party =
-                com.jvn.villagerretaliation.party.PartyService
-                        .getPartyForPlayer(player.serverLevel(), player.getUUID())
-                        .orElse(null);
-        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry
-                : data.progress(player.getUUID())) {
-            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
-            if (!progress.pendingPartyReward() || progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
-                continue;
-            }
-            CompiledQuest compiled = VillagerQuestResources.compiledQuest(player.getServer(), entry.getKey()).orElse(null);
-            QuestDefinition definition = compiled == null ? null : compiled.asQuestDefinition();
-            if (definition == null) {
-                continue;
-            }
-            Villager provider = pendingPartyRewardProvider(player, progress);
-            if (provider == null) {
-                continue;
-            }
-            com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = null;
-            com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment = null;
-            if (party != null && progress.partyQuestInstanceId() != null) {
-                shared = party.sharedQuests().stream()
-                        .filter(candidate -> candidate.instanceId().equals(progress.partyQuestInstanceId()))
-                        .findFirst()
-                        .orElse(null);
-                enrollment = shared == null ? null : shared.enrollment(player.getUUID());
-            }
-            DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
-            finishLinkedPartyReward(context, definition, progress, enrollment);
-            if (shared != null && shared.settled()) {
-                party.removeSharedQuest(shared.instanceId());
-            }
-            if (enrollment != null || shared != null) {
-                com.jvn.villagerretaliation.party.PartyService.markChanged(player.serverLevel());
-            }
-        }
-    }
-
-    static Villager pendingPartyRewardProvider(
-            ServerPlayer player,
-            VillagerQuestSavedData.QuestProgress progress) {
-        Villager provider = VillagerEntityResolver.loaded(player.getServer(), progress.startedVillagerId());
-        return provider != null && provider.isAlive() && provider.level() == player.serverLevel()
-                ? provider
-                : null;
+    static Villager pendingPartyRewardProvider(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+        return PartyQuestRewardService.pendingPartyRewardProvider(player, progress);
     }
 
     private static QuestActionOutcome abandonQuest(DialogueContext context, QuestDefinition definition) {
@@ -5430,7 +5310,7 @@ public final class VillagerQuestService {
         return QuestRewardService.unresolvedDiagnostic(server, definition);
     }
 
-    private static ActionResult awardRewards(DialogueContext context, QuestDefinition definition,
+    static ActionResult awardRewards(DialogueContext context, QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
         return QuestRewardService.award(context, definition, progress, replacements(context, definition, progress));
     }
@@ -7254,6 +7134,9 @@ public final class VillagerQuestService {
             ConditionMatch activeConditions,
             Map<String, String> replacements,
             boolean readyToTurnIn) {
+        if (progress.completionPending()) {
+            return QuestPresentationService.resolveGlobalText(player, "quest.tracker.status.reward_pending", "Rewards pending", replacements);
+        }
         return switch (progress.state()) {
             case ACTIVE -> {
                 boolean activeConditionsMet = activeConditions == ConditionMatch.MET;

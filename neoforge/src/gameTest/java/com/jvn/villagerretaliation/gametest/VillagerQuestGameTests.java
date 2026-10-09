@@ -6527,6 +6527,108 @@ public final class VillagerQuestGameTests {
         }
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "quest_saved_progression")
+    public static void savedStageAdvancementDefersProviderActionsUntilReturn(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var root = runtimeQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:saved_progression_fixture");
+        root.getAsJsonArray("stages").get(1).getAsJsonObject().add("on_enter",
+                JsonParser.parseString("[{\"type\":\"experience\",\"amount\":3}]").getAsJsonArray());
+        var envelope = QuestResourceEnvelope.read(VillagerRetaliation.id("quests/saved_progression_fixture.json"), root).orElseThrow();
+        var parsed = QuestV2Parser.parse(envelope).orElseThrow();
+        var compiled = QuestV2Compiler.compile(parsed, envelope).orElseThrow();
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled), QuestDialogueCompiler.compile(parsed, envelope));
+            helper.assertTrue(VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true).started(), "saved progression fixture starts");
+            var data = VillagerQuestSavedData.get(level);
+            var progress = data.get(player.getUUID(), compiled.id());
+            progress.setIssuer(UUID.randomUUID(), "Unavailable provider", "", 1, level.dimension(), villager.blockPosition(), "");
+            VillagerQuestFacts.get(level).setVariable(QuestScopeKey.quest(player.getUUID(), compiled.id()), "ready", "yes");
+            int experience = player.totalExperience;
+            player.tickCount = 0;
+            VillagerQuestService.onPlayerTick(player);
+            helper.assertValueEqual(progress.currentStage(), "done", "saved requirements advance without a loaded provider");
+            helper.assertValueEqual(progress.pendingStageEntry(), "done", "provider entry effects remain pending");
+            helper.assertValueEqual(player.totalExperience, experience, "unloaded provider does not apply entry effects");
+            helper.assertValueEqual(VillagerQuestFacts.get(level).variable(QuestScopeKey.quest(player.getUUID(), compiled.id()), "stage").orElse(""), "done", "saved stage fact advances with the cursor");
+            var reloaded = VillagerQuestSavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess()).get(player.getUUID(), compiled.id());
+            helper.assertValueEqual(reloaded.pendingStageEntry(), "done", "deferred entry survives reload");
+            progress.setIssuer(villager.getUUID(), "Provider", "", 1, level.dimension(), villager.blockPosition(), "");
+            VillagerQuestService.onPlayerTick(player);
+            helper.assertTrue(progress.pendingStageEntry().isBlank(), "provider return settles entry work");
+            helper.assertValueEqual(player.totalExperience, experience + 3, "entry effect runs after provider return");
+            VillagerQuestService.onPlayerTick(player);
+            helper.assertValueEqual(player.totalExperience, experience + 3, "entry effect is not repeated");
+            helper.succeed();
+        } finally {
+            VillagerQuestResources.clearCache();
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+        }
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "quest_submission_recovery")
+    public static void submittedItemsStaySettledWhileRewardsAwaitRecovery(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var root = runtimeQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:submission_recovery_fixture");
+        root.addProperty("entry_stage", "done");
+        var done = root.getAsJsonArray("stages").get(1).getAsJsonObject();
+        root.getAsJsonArray("stages").remove(0);
+        done.add("objectives", JsonParser.parseString("[{\"id\":\"bread\",\"type\":\"item_check\",\"item\":\"minecraft:bread\",\"count\":2,\"consume\":true}]").getAsJsonArray());
+        done.add("on_enter", new JsonArray());
+        root.getAsJsonObject("rewards").addProperty("memory_event", "fixture:submission_complete");
+        root.getAsJsonObject("rewards").addProperty("memory_scope", "village");
+        var envelope = QuestResourceEnvelope.read(VillagerRetaliation.id("quests/submission_recovery_fixture.json"), root).orElseThrow();
+        var parsed = QuestV2Parser.parse(envelope).orElseThrow();
+        var compiled = QuestV2Compiler.compile(parsed, envelope).orElseThrow();
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        var storage = level.getServer().overworld().getDataStorage();
+        var priorRegistry = com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(level);
+        var priorQuests = VillagerQuestSavedData.get(level);
+        var registry = new com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData();
+        storage.set("villagerretaliation_village_allegiances", registry);
+        storage.set("villagerretaliation_quests", new VillagerQuestSavedData());
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled), QuestDialogueCompiler.compile(parsed, envelope));
+            helper.assertTrue(VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true).started(), "submission fixture starts");
+            player.getInventory().add(new ItemStack(Items.BREAD, 2));
+            var outcome = VillagerQuestService.performAction(VillagerInteractionService.createDialogueContext(level, player, villager),
+                    compiled.id(), VillagerActionDefinition.QuestAction.TURN_IN).orElseThrow();
+            helper.assertValueEqual(outcome.status(), "reward_pending", "failed delivery retains a pending completion");
+            helper.assertValueEqual(player.getInventory().countItem(Items.BREAD), 0, "submission was consumed once");
+            helper.assertValueEqual(player.totalExperience, 7, "earlier reward was delivered once");
+            var data = VillagerQuestSavedData.get(level);
+            var progress = data.get(player.getUUID(), compiled.id());
+            helper.assertTrue(progress.completionPending() && progress.completionCount() == 0, "completion waits for every reward");
+            var tracker = VillagerQuestService.debugTrackerEntryForTests(player,
+                    VillagerInteractionService.createDialogueContext(level, player, villager), compiled.asQuestDefinition(), progress, true);
+            helper.assertValueEqual(tracker.status(), "Rewards pending", "journal explains the pending delivery");
+            data = VillagerQuestSavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
+            storage.set("villagerretaliation_quests", data);
+            var village = registry.create(level.getGameTime(), level.dimension().location(), villager.blockPosition(), "Recovery Village");
+            registry.manage(village, villager.blockPosition(), Set.of(net.minecraft.core.SectionPos.asLong(villager.blockPosition())));
+            player.tickCount = 0;
+            VillagerQuestService.onPlayerTick(player);
+            progress = data.get(player.getUUID(), compiled.id());
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.COMPLETED, "automatic retry completes after reward storage becomes available");
+            helper.assertValueEqual(player.totalExperience, 7, "recovery does not repeat earlier XP");
+            helper.assertValueEqual(player.getInventory().countItem(Items.BREAD), 0, "recovery does not require another submission");
+            helper.succeed();
+        } finally {
+            storage.set("villagerretaliation_village_allegiances", priorRegistry);
+            storage.set("villagerretaliation_quests", priorQuests);
+            VillagerQuestResources.clearCache();
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+        }
+    }
+
     private static JsonObject runtimeQuestV2Fixture() {
         return JsonParser.parseString("""
                 {
