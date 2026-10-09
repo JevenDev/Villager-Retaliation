@@ -207,7 +207,8 @@ public final class ConversationPresentationService {
             if (rolled != null) check = new Check(rolled.id(), rolled.difficulty(), true, rolled.die(), rolled.success(),
                     rolled.modifier(), rolled.total(), rolled.social() == null ? null : rolled.social().skill(),
                     rolled.social() == null ? 0 : rolled.social().rewardExperience(), snapshot.socialAwards().contains(rolled.id()),
-                    rolled.social() == null ? "" : playerName(player, rolled.player()));
+                    rolled.social() == null ? "" : playerName(player, rolled.player()),
+                    rolled.modifiers().stream().map(modifier -> new Modifier(modifier.id(), label(modifier.label()), modifier.amount(), modifier.applied())).toList());
             else if (definition != null && definition.checks().containsKey(snapshot.check())) {
                 var authored = definition.checks().get(snapshot.check());
                 check = new Check(snapshot.check(), authored.difficulty(), false, 0, false, 0, 0,

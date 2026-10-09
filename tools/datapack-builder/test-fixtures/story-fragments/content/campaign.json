@@ -35,5 +35,57 @@
         "location": "home"
       }
     }
+  ],
+  "relationships": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.characters.relationship",
+      "minimum": -100,
+      "maximum": 100,
+      "initial": 0,
+      "reactions": [
+        {
+          "id": "hostile",
+          "title_key": "campaign_fixture.campaign.characters.hostile",
+          "minimum": -100
+        },
+        {
+          "id": "neutral",
+          "title_key": "campaign_fixture.campaign.characters.neutral",
+          "minimum": 0
+        },
+        {
+          "id": "trusted",
+          "title_key": "campaign_fixture.campaign.characters.trusted",
+          "minimum": 10
+        }
+      ]
+    }
+  ],
+  "factions": [
+    {
+      "id": "wardens",
+      "title_key": "campaign_fixture.campaign.characters.wardens",
+      "minimum": -100,
+      "maximum": 100,
+      "initial": 0,
+      "reactions": [
+        {
+          "id": "hostile",
+          "title_key": "campaign_fixture.campaign.characters.hostile",
+          "minimum": -100
+        },
+        {
+          "id": "neutral",
+          "title_key": "campaign_fixture.campaign.characters.neutral",
+          "minimum": 0
+        },
+        {
+          "id": "trusted",
+          "title_key": "campaign_fixture.campaign.characters.trusted",
+          "minimum": 10
+        }
+      ]
+    }
   ]
 }

@@ -237,5 +237,477 @@
       }
     ],
     "valid": true
+  },
+  {
+    "name": "empty situational modifiers",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": []
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "signed situational modifiers",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "positive",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 20
+          },
+          {
+            "id": "negative",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": -20
+          },
+          {
+            "id": "neutral",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 0
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "maximum situational modifier count",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "modifier_0",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_1",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_2",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_3",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_4",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_5",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_6",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_7",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_8",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_9",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_10",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_11",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_12",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_13",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_14",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_15",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "conditional situational modifier",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "wardens",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 3,
+            "conditions": [
+              {
+                "type": "campaign_standing",
+                "campaign": "campaign_fixture:characters",
+                "scope": "faction",
+                "subject": "wardens",
+                "reaction": "neutral"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "too many situational modifiers",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "modifier_0",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_1",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_2",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_3",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_4",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_5",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_6",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_7",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_8",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_9",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_10",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_11",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_12",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_13",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_14",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_15",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "modifier_16",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers"
+  },
+  {
+    "name": "fractional situational modifier",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "fraction",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1.5
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers/0/amount"
+  },
+  {
+    "name": "situational bonus exceeds bound",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "large",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 21
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers/0/amount"
+  },
+  {
+    "name": "situational penalty exceeds bound",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "small",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": -21
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers/0/amount"
+  },
+  {
+    "name": "duplicate modifier identity",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "repeated",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          },
+          {
+            "id": "repeated",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 2
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers/1/id"
+  },
+  {
+    "name": "invalid modifier identity",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "BAD ID",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers/0/id"
+  },
+  {
+    "name": "unknown modifier field",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "unknown",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 1,
+            "skill": "persuasion"
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers/0/skill"
+  },
+  {
+    "name": "missing modifier text",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "missing",
+            "label": {
+              "key": "#missing.modifier"
+            },
+            "amount": 1
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers/0/label"
+  },
+  {
+    "name": "inline modifier text",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "inline",
+            "label": "A bonus",
+            "amount": 1
+          }
+        ]
+      }
+    ],
+    "pointer": "/checks/0/modifiers/0/label"
   }
 ]

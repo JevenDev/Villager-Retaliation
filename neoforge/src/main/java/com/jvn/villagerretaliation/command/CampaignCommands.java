@@ -195,8 +195,13 @@ final class CampaignCommands {
                 + ", node " + session.node() + ", " + session.phase() + ", revision " + session.revision());
         lines.add("Controller: " + session.controller() + ", participants: " + session.participants().stream().sorted().toList()
                 + ", choices: " + session.choices().size() + ", receipts: " + session.receipts().size());
-        session.checks().forEach((id, check) -> lines.add("Saved check " + id + ": die " + check.die() + ", modifier " + check.modifier()
-                + ", total " + check.total() + ", difficulty " + check.difficulty() + ", success: " + check.success() + ", request " + check.request()));
+        session.checks().forEach((id, check) -> {
+            lines.add("Saved check " + id + ": die " + check.die() + ", modifier " + check.modifier()
+                    + ", total " + check.total() + ", difficulty " + check.difficulty() + ", success: " + check.success() + ", request " + check.request());
+            if (check.social() != null) lines.add("  Skill " + check.social().skill().id() + ": " + check.social().bonus());
+            check.modifiers().forEach(modifier -> lines.add("  Modifier " + modifier.id() + " (" + modifier.label() + "): "
+                    + modifier.amount() + ", applied: " + modifier.applied()));
+        });
         if (!session.diagnostic().isBlank()) lines.add("Conversation diagnostic: " + session.diagnostic());
     }
 

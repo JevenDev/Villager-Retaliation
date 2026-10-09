@@ -63,13 +63,13 @@ public final class ConversationSpeakerRepairGameTests {
         helper.assertTrue(migrated.diagnostic().isBlank(), "version seven remains readable");
         helper.assertValueEqual(migrated.session(original.identity.id()).snapshot(), original.snapshot(), "migration changes no saved presentation");
         helper.assertTrue(migrated.session(original.identity.id()).speakerHistory.isEmpty(), "migration invents no repair");
-        helper.assertValueEqual(migrated.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 9, "next save carries repair history");
+        helper.assertValueEqual(migrated.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), ConversationSavedData.CURRENT_DATA_VERSION, "next save carries repair history");
         var duplicate = session(original.identity.campaignInstance());
         var conflicting = root(8, ConversationSessionCodec.save(original), ConversationSessionCodec.save(duplicate));
         var blocked = ConversationSavedData.load(conflicting, directory);
         helper.assertFalse(blocked.diagnostic().isBlank(), "different UUIDs cannot host simultaneous conversations for one campaign role");
         helper.assertValueEqual(blocked.save(new CompoundTag(), helper.getLevel().registryAccess()), conflicting, "conflicting sessions remain available for recovery");
-        var future = root(9, ConversationSessionCodec.save(original));
+        var future = root(ConversationSavedData.CURRENT_DATA_VERSION + 1, ConversationSessionCodec.save(original));
         helper.assertValueEqual(ConversationSavedData.load(future, directory).save(new CompoundTag(), helper.getLevel().registryAccess()),
                 future, "future save is never downgraded");
         helper.succeed();

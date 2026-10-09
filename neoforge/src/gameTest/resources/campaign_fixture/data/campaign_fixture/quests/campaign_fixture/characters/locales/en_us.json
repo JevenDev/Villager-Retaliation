@@ -29,6 +29,9 @@
     "campaign_fixture.quest.characters.conversation.declined": "You will need to find another way.",
     "campaign_fixture.quest.characters.conversation.recorded": "The mentor agreed to help.",
     "campaign_fixture.quest.characters.conversation.success": "The mentor agreed",
-    "campaign_fixture.quest.characters.conversation.failure": "The mentor declined"
+    "campaign_fixture.quest.characters.conversation.failure": "The mentor declined",
+    "campaign_fixture.quest.characters.modifier.familiar": "A familiar face",
+    "campaign_fixture.quest.characters.modifier.cautious": "A difficult request",
+    "campaign_fixture.quest.characters.modifier.support": "Support from the wardens"
   }
 }

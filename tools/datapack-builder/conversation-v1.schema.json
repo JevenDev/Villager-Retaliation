@@ -1264,6 +1264,39 @@
         }
       }
     },
+    "modifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "amount"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "label": {
+          "$ref": "#/$defs/localized_reference"
+        },
+        "amount": {
+          "type": "integer",
+          "minimum": -20,
+          "maximum": 20
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        }
+      }
+    },
     "check": {
       "type": "object",
       "additionalProperties": false,
@@ -1325,6 +1358,14 @@
               "maximum": 2147483647
             }
           }
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/modifier"
+          },
+          "minItems": 0,
+          "maxItems": 16
         }
       }
     },

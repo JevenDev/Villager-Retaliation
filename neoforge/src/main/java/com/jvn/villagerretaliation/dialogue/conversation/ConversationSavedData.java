@@ -19,7 +19,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class ConversationSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 9;
+    public static final int CURRENT_DATA_VERSION = 10;
     static final String DATA_NAME = "villagerretaliation_conversations";
     private final Path directory;
     private Map<UUID, ConversationSession> sessions = Map.of();
@@ -74,6 +74,12 @@ public final class ConversationSavedData extends SavedData {
                     for (var check : ConversationSessionCodec.list(saved, "Checks"))
                         ConversationSessionCodec.require(!((CompoundTag) check).contains("Social"), "legacy conversation data contains social modifiers");
                     saved.put("SocialAwards", new CompoundTag());
+                }
+                if (version < 10) for (var checkTag : ConversationSessionCodec.list(saved, "Checks")) {
+                    var check = (CompoundTag) checkTag;
+                    ConversationSessionCodec.require(!check.contains("Modifiers") || ConversationSessionCodec.list(check, "Modifiers").isEmpty(),
+                            "legacy conversation data contains situational modifiers");
+                    check.put("Modifiers", new ListTag());
                 }
                 var session = ConversationSessionCodec.load(saved);
                 if (version < 3 && (session.phase == ConversationSession.Phase.RESPONSE_EFFECTS

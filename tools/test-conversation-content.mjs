@@ -66,6 +66,20 @@ try {
   const missingCampaign = await run(unavailable);
   assert.equal(missingCampaign.status, 1);
   assert.match(missingCampaign.stderr, /campaign content is unavailable/);
+  const contextual = structuredClone(conversation);
+  contextual.checks[0].modifiers = [{ id: "support", label: { key: "#conversation.topic" }, amount: -3,
+    conditions: [{ type: "campaign_standing", campaign: campaign.id, scope: "faction", subject: "wardens", reaction: "trusted" }] }];
+  const validModifier = await run(contextual);
+  assert.equal(validModifier.status, 0, validModifier.stdout + validModifier.stderr);
+  contextual.checks[0].modifiers[0].conditions[0].reaction = "missing";
+  const missingReaction = await run(contextual);
+  assert.equal(missingReaction.status, 1);
+  assert.match(missingReaction.stderr, /\/checks\/0\/modifiers\/0\/conditions\/0\/reaction/);
+  contextual.checks[0].modifiers[0].conditions[0].reaction = "trusted";
+  contextual.checks[0].modifiers[0].conditions[0].subject = "missing";
+  const missingStanding = await run(contextual);
+  assert.equal(missingStanding.status, 1);
+  assert.match(missingStanding.stderr, /\/checks\/0\/modifiers\/0\/conditions\/0\/subject/);
   const missing = structuredClone(conversation);
   missing.nodes[0].responses[1].next = "missing";
   const broken = await run(missing);

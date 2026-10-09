@@ -115,6 +115,7 @@ final class ConversationSessionCodec {
             value.putUUID("Player", check.player());
             value.putLong("RolledAt", check.rolledAt());
             if (check.social() != null) value.put("Social", check.social().save());
+            value.put("Modifiers", ConversationCheckModifier.save(check.modifiers()));
             checks.add(value);
         });
         tag.put("Checks", checks);
@@ -241,7 +242,8 @@ final class ConversationSessionCodec {
             var value = (CompoundTag) raw;
             var check = new ConversationSession.Check(uuid(value, "Request"), text(value, "Id"), integer(value, "Die"), integer(value, "Difficulty"),
                     integer(value, "Modifier"), integer(value, "Total"), bool(value, "Success"), text(value, "Destination"), uuid(value, "Player"), number(value, "RolledAt"),
-                    value.contains("Social") ? com.jvn.villagerretaliation.skill.player.SocialCheckBreakdown.load(compound(value, "Social")) : null);
+                    value.contains("Social") ? com.jvn.villagerretaliation.skill.player.SocialCheckBreakdown.load(compound(value, "Social")) : null,
+                    ConversationCheckModifier.load(value));
             require(session.participants.contains(check.player()) && session.checks.putIfAbsent(check.id(), check) == null, "duplicate or invalid conversation check");
         }
         var socialAwards = compound(tag, "SocialAwards");

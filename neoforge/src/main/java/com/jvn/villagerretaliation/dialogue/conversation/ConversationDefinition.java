@@ -58,9 +58,30 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
     public record Effect(String id, VillagerActionDefinition action, String pointer) {
     }
 
-    public record Check(String id, int difficulty, String success, String failure, Social social, String pointer) {
+    public record Check(String id, int difficulty, String success, String failure, Social social, List<Modifier> modifiers, String pointer) {
+        public Check {
+            modifiers = List.copyOf(modifiers);
+            if (modifiers.size() > ConversationCheckModifier.MAX_COUNT
+                    || modifiers.stream().map(Modifier::id).distinct().count() != modifiers.size())
+                throw new IllegalArgumentException("Invalid authored conversation modifiers");
+        }
+
+        public Check(String id, int difficulty, String success, String failure, Social social, String pointer) {
+            this(id, difficulty, success, failure, social, List.of(), pointer);
+        }
+
         public Check(String id, int difficulty, String success, String failure, String pointer) {
-            this(id, difficulty, success, failure, null, pointer);
+            this(id, difficulty, success, failure, null, List.of(), pointer);
+        }
+    }
+
+    public record Modifier(String id, String labelKey, int amount, List<DialogueCondition> conditions, String pointer) {
+        public Modifier {
+            conditions = List.copyOf(conditions);
+            if (id == null || id.length() > 256 || !id.matches("[a-z0-9][a-z0-9_./-]*")
+                    || labelKey == null || labelKey.isBlank()
+                    || amount < -ConversationCheckModifier.MAX_AMOUNT || amount > ConversationCheckModifier.MAX_AMOUNT)
+                throw new IllegalArgumentException("Invalid authored conversation modifier");
         }
     }
 

@@ -257,6 +257,8 @@ final class CampaignReferenceCollector {
         ref(owner, key(CHARACTER, definition.campaign(), definition.character()), SPEAKS, at.child("character"));
         if (!definition.owner().shared()) ref(key(QUEST, definition.quest()), owner, INCLUDES, at);
         for (var check : definition.checks().values()) {
+            for (var modifier : check.modifiers()) conditions(owner, modifier.conditions(),
+                    new Source(at.resource(), at.pack(), modifier.pointer()));
             if (check.social() == null) continue;
             var where = new Source(at.resource(), at.pack(), check.pointer()).child("social");
             ref(owner, key(SOCIAL_PROGRESSION, check.social().progression()), REQUIRES, where.child("progression"));

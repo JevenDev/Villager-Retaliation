@@ -52,7 +52,7 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
                 stage.remove("on_enter");
                 stage.add("objectives", com.google.gson.JsonParser.parseString("[{\"id\":\"decide\",\"type\":\"choice\"}]"));
             } else if (file.equals("conversations/mentor.json")) {
-                var social = SocialProgressionTestData.resource("quests/campaign_fixture/characters/conversations/social_mentor.json");
+                var social = SocialProgressionTestData.resource("quests/campaign_fixture/characters/conversations/context_mentor.json");
                 raw.add("checks", social.getAsJsonArray("checks").deepCopy());
                 var node = raw.getAsJsonArray("nodes").get(0).getAsJsonObject();
                 node.add("effects", com.google.gson.JsonParser.parseString("""

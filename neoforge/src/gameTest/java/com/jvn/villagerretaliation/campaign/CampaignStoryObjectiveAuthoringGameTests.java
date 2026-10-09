@@ -100,7 +100,10 @@ public final class CampaignStoryObjectiveAuthoringGameTests {
                     .containsKey("conversation"), "private conversations cannot be borrowed by another quest");
             var raw = fixture.base.raw();
             raw.getAsJsonArray("characters").get(0).getAsJsonObject().addProperty("id", "renamed");
-            var changed = CampaignDefinitionParser.parse(QUEST, raw).definition();
+            raw.getAsJsonArray("relationships").get(0).getAsJsonObject().addProperty("id", "renamed");
+            var changedDefinition = CampaignDefinitionParser.parse(QUEST, raw);
+            helper.assertTrue(changedDefinition.valid(), "renamed role and its relationship remain structurally valid");
+            var changed = changedDefinition.definition();
             var diagnostics = CampaignDefinitionParser.validateQuestReferences(changed, catalog);
             helper.assertTrue(diagnostics.stream().anyMatch(value -> value.toString().contains("/stages/0/objectives/0/story/role")),
                     "reference diagnostic retains the authored objective pointer: " + diagnostics);

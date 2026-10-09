@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationSession;
+import com.jvn.villagerretaliation.dialogue.conversation.ConversationCheckModifier;
 import com.jvn.villagerretaliation.skill.player.PlayerSocialSkill;
 import com.jvn.villagerretaliation.skill.player.SocialProgressionSchema;
 import java.util.ArrayList;
@@ -38,27 +39,50 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
     public record Line(String key, UUID speaker, int entityId, String name, String text, int part, int parts) {
         public Line { if (part < 0 || parts < 1 || part >= parts) throw new IllegalArgumentException("Invalid conversation text page"); bounded(key, 512); bounded(name, MAX_LABEL_LENGTH); bounded(text, MAX_TEXT_LENGTH); }
     }
+    public record Modifier(String id, String label, int amount, boolean applied) {
+        public Modifier {
+            bounded(id, 256); bounded(label, MAX_LABEL_LENGTH);
+            if (!id.matches("[a-z0-9][a-z0-9_./-]*") || label.isBlank()
+                    || amount < -ConversationCheckModifier.MAX_AMOUNT || amount > ConversationCheckModifier.MAX_AMOUNT)
+                throw new IllegalArgumentException("Invalid conversation modifier presentation");
+        }
+    }
     public record Check(String id, int difficulty, boolean resolved, int die, boolean success,
-            int modifier, int total, PlayerSocialSkill skill, int rewardExperience, boolean experienceAwarded, String experiencePlayer) {
+            int modifier, int total, PlayerSocialSkill skill, int rewardExperience, boolean experienceAwarded, String experiencePlayer,
+            List<Modifier> modifiers) {
         public Check {
             bounded(id, 256);
             bounded(experiencePlayer, MAX_LABEL_LENGTH);
-            if (difficulty < 0 || modifier < 0 || modifier > SocialProgressionSchema.MAX_BONUS || rewardExperience < 0
-                    || skill == null && (modifier != 0 || rewardExperience != 0 || experienceAwarded)
+            modifiers = List.copyOf(modifiers);
+            int situational = modifiers.stream().filter(Modifier::applied).mapToInt(Modifier::amount).sum();
+            int skillBonus = modifier - situational;
+            if (modifiers.size() > ConversationCheckModifier.MAX_COUNT
+                    || modifiers.stream().map(Modifier::id).distinct().count() != modifiers.size()
+                    || difficulty < 0 || skillBonus < 0 || skillBonus > SocialProgressionSchema.MAX_BONUS || rewardExperience < 0
+                    || skill == null && (skillBonus != 0 || rewardExperience != 0 || experienceAwarded)
                     || (resolved ? die < 1 || die > 20 || total != die + modifier
                             || success != (die == 20 || die != 1 && total >= difficulty)
-                            : die != 0 || total != 0 || modifier != 0 || success || experienceAwarded)) {
+                            : die != 0 || total != 0 || modifier != 0 || success || experienceAwarded || !modifiers.isEmpty())) {
                 throw new IllegalArgumentException("Invalid conversation check presentation");
             }
         }
 
+        public int skillBonus() {
+            return modifier - modifiers.stream().filter(Modifier::applied).mapToInt(Modifier::amount).sum();
+        }
+
+        public Check(String id, int difficulty, boolean resolved, int die, boolean success,
+                int modifier, int total, PlayerSocialSkill skill, int rewardExperience, boolean experienceAwarded, String experiencePlayer) {
+            this(id, difficulty, resolved, die, success, modifier, total, skill, rewardExperience, experienceAwarded, experiencePlayer, List.of());
+        }
+
         public Check(String id, int difficulty, boolean resolved, int die, boolean success,
                 int modifier, int total, PlayerSocialSkill skill, int rewardExperience, boolean experienceAwarded) {
-            this(id, difficulty, resolved, die, success, modifier, total, skill, rewardExperience, experienceAwarded, "");
+            this(id, difficulty, resolved, die, success, modifier, total, skill, rewardExperience, experienceAwarded, "", List.of());
         }
 
         public Check(String id, int difficulty, boolean resolved, int die, boolean success) {
-            this(id, difficulty, resolved, die, success, 0, die, null, 0, false, "");
+            this(id, difficulty, resolved, die, success, 0, die, null, 0, false, "", List.of());
         }
     }
     public record Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
@@ -135,6 +159,11 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             if (check.skill() != null) buffer.writeEnum(check.skill());
             buffer.writeVarInt(check.rewardExperience()); buffer.writeBoolean(check.experienceAwarded());
             buffer.writeUtf(check.experiencePlayer(), MAX_LABEL_LENGTH);
+            buffer.writeVarInt(check.modifiers().size());
+            for (var modifier : check.modifiers()) {
+                buffer.writeUtf(modifier.id(), 256); buffer.writeUtf(modifier.label(), MAX_LABEL_LENGTH);
+                buffer.writeVarInt(modifier.amount()); buffer.writeBoolean(modifier.applied());
+            }
         }
         buffer.writeUtf(value.outcome(), MAX_LABEL_LENGTH);
         buffer.writeBoolean(value.confirmation() != null);
@@ -155,8 +184,15 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         Check check = null;
         if (buffer.readBoolean()) check = new Check(buffer.readUtf(256), buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(),
                 buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readBoolean() ? buffer.readEnum(PlayerSocialSkill.class) : null,
-                buffer.readVarInt(), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH));
+                buffer.readVarInt(), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH), readModifiers(buffer));
         return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean() ? buffer.readUUID() : null);
+    }
+
+    private static List<Modifier> readModifiers(RegistryFriendlyByteBuf buffer) {
+        var modifiers = new ArrayList<Modifier>();
+        for (int count = count(buffer, ConversationCheckModifier.MAX_COUNT); count > 0; count--)
+            modifiers.add(new Modifier(buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readVarInt(), buffer.readBoolean()));
+        return List.copyOf(modifiers);
     }
 
     private static int count(RegistryFriendlyByteBuf buffer, int maximum) {

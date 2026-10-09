@@ -107,7 +107,10 @@ public final class CampaignCharacterGameTests {
         try (var fixture = fixture(helper)) {
             var campaign = resource("campaigns/characters/campaign.json");
             campaign.remove("characters");
-            var missing = CampaignDefinitionParser.parse(CAMPAIGN, campaign).definition();
+            campaign.remove("relationships");
+            var missingDefinition = CampaignDefinitionParser.parse(CAMPAIGN, campaign);
+            helper.assertTrue(missingDefinition.valid(), "campaign structure remains valid before checking external role references");
+            var missing = missingDefinition.definition();
             var issues = CampaignDefinitionParser.validateQuestReferences(missing, fixture.catalog);
             helper.assertTrue(issues.stream().anyMatch(issue -> issue.jsonPointer().equals("/provider/campaign_role")), "provider reference checked");
             helper.assertTrue(issues.stream().anyMatch(issue -> issue.message().contains("scene")), "scene role reference checked");

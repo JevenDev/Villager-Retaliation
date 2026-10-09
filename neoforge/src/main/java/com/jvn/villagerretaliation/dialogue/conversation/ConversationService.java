@@ -149,8 +149,9 @@ public final class ConversationService {
                         require(check != null, "The authored check is unavailable.");
                         if (!session.checks.containsKey(check.id())) {
                             var social = ConversationSocialProgression.capture(player, data, check);
+                            var modifiers = ConversationCheckModifier.capture(context, check);
                             session.checks.put(check.id(), ConversationSession.Check.roll(requestId, check, player.getRandom().nextInt(20) + 1,
-                                    player.getUUID(), player.serverLevel().getGameTime(), social));
+                                    player.getUUID(), player.serverLevel().getGameTime(), social, modifiers));
                         }
                         session.phase = ConversationSession.Phase.ROLLED;
                     }

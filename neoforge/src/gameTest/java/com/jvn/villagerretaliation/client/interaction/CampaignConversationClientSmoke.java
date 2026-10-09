@@ -109,11 +109,17 @@ public final class CampaignConversationClientSmoke {
             } else if (phase == 8 && ++ticks >= 30) {
                 require(session.check().die() == die, "skip preserves the saved result");
                 require(session.check().skill() == com.jvn.villagerretaliation.skill.player.PlayerSocialSkill.PERSUASION
-                        && session.check().modifier() == 2 && session.check().total() == die + 2, "social result retains the authored bonus");
+                        && session.check().skillBonus() == 2 && session.check().modifier() == -1 && session.check().total() == die - 1,
+                        "social result retains the signed contextual breakdown");
+                require(session.check().modifiers().size() == 3 && session.check().modifiers().get(0).applied()
+                        && session.check().modifiers().get(1).amount() == -5 && !session.check().modifiers().get(2).applied(),
+                        "screen retains applied and inactive rules");
                 require(session.check().experienceAwarded() && session.check().rewardExperience() == 10, "screen acknowledges the authored experience");
                 require(session.check().experiencePlayer().equals(minecraft.player.getGameProfile().getName()), "screen names the player who earned experience");
                 require(checkTextIsImmediate(screen), "skip reveals the complete saved result immediately");
-                capture("die-result"); choose(screen, localized("leave")); ticks = 0; phase = 9;
+                capture("die-result"); scrollBreakdown(screen); ticks = 0; phase = 16;
+            } else if (phase == 16 && ++ticks >= 10) {
+                capture("die-breakdown"); choose(screen, localized("leave")); ticks = 0; phase = 9;
             } else if (phase == 10 && verification.isDone() && session.check() != null && session.check().resolved() && ++ticks >= 25) {
                 verification.join();
                 require(session.check().die() == die && !controller.dieAnimating(), "reopening shows the same result without replaying animation");
@@ -152,6 +158,24 @@ public final class CampaignConversationClientSmoke {
             phase = 12;
             minecraft.stop();
         }
+    }
+
+    private static void scrollBreakdown(VillagerInteractionScreen screen) {
+        try {
+            var textField = VillagerInteractionScreen.class.getDeclaredField("villagerDialogueText"); textField.setAccessible(true);
+            String text = (String) textField.get(screen);
+            require(text.contains(localized("modifier_applied", "A difficult request", "-5"))
+                    && text.contains(localized("modifier_inactive", "Support from the wardens")), "full breakdown reaches the readable text");
+            var left = VillagerInteractionScreen.class.getDeclaredMethod("interactionContainerLeft"); left.setAccessible(true);
+            var top = VillagerInteractionScreen.class.getDeclaredMethod("interactionContainerTop"); top.setAccessible(true);
+            var horizontal = VillagerInteractionScreen.class.getDeclaredField("INTERACTION_DIALOGUE_LEFT"); horizontal.setAccessible(true);
+            var vertical = VillagerInteractionScreen.class.getDeclaredField("INTERACTION_DIALOGUE_TOP"); vertical.setAccessible(true);
+            double x = (Integer) left.invoke(screen) + horizontal.getInt(null) + 10;
+            double y = (Integer) top.invoke(screen) + vertical.getInt(null) + 10;
+            for (int index = 0; index < 20; index++) require(screen.mouseScrolled(x, y, 0, -1), "dialogue scroll accepts input");
+            var scroll = VillagerInteractionScreen.class.getDeclaredField("dialogueLineScroll"); scroll.setAccessible(true);
+            require(scroll.getInt(screen) > 0, "the remaining modifier lines can be reached by scrolling");
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Check breakdown presentation is unavailable", exception); }
     }
 
     private static boolean checkTextIsImmediate(VillagerInteractionScreen screen) {

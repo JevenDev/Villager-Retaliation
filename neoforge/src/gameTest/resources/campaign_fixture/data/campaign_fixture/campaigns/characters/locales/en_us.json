@@ -4,6 +4,11 @@
     "campaign_fixture.campaign.characters.title": "Campaign fixture: recurring characters",
     "campaign_fixture.campaign.characters.chapter": "Meet the same mentor",
     "campaign_fixture.campaign.characters.home": "The mentor's village",
-    "campaign_fixture.campaign.characters.mentor": "Mentor"
+    "campaign_fixture.campaign.characters.mentor": "Mentor",
+    "campaign_fixture.campaign.characters.relationship": "The mentor's trust",
+    "campaign_fixture.campaign.characters.wardens": "Standing with the wardens",
+    "campaign_fixture.campaign.characters.hostile": "Hostile",
+    "campaign_fixture.campaign.characters.neutral": "Neutral",
+    "campaign_fixture.campaign.characters.trusted": "Trusted"
   }
 }

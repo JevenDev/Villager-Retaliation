@@ -44,9 +44,15 @@ public final class ConversationSchema {
                 "label", ref("localized_reference"), "start", id(), "conditions", array(ref("condition"), 0)));
         JsonObject difficulty = integer(0);
         difficulty.addProperty("default", DEFAULT_DIFFICULTY);
+        JsonObject amount = integer(-ConversationCheckModifier.MAX_AMOUNT);
+        amount.addProperty("maximum", ConversationCheckModifier.MAX_AMOUNT);
+        definitions.add("modifier", object(List.of("id", "label", "amount"), "id", id(),
+                "label", ref("localized_reference"), "amount", amount, "conditions", array(ref("condition"), 0)));
+        JsonObject modifiers = array(ref("modifier"), 0);
+        modifiers.addProperty("maxItems", ConversationCheckModifier.MAX_COUNT);
         definitions.add("check", object(List.of("id", "success", "failure"), "id", id(),
                 "difficulty", difficulty, "success", id(), "failure", id(),
-                "social", com.jvn.villagerretaliation.skill.player.SocialProgressionSchema.check()));
+                "social", com.jvn.villagerretaliation.skill.player.SocialProgressionSchema.check(), "modifiers", modifiers));
         definitions.add("outcome", object(List.of("id", "label"), "id", id(), "label", ref("localized_reference")));
         JsonObject root = object(List.of("schema", "id", "revision", "campaign", "character", "title", "topics", "nodes", "outcomes"),
                 "schema", enumeration(SCHEMA_ID), "id", resource(), "revision", integer(1),

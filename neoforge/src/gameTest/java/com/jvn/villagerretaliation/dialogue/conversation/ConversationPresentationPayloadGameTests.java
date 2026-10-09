@@ -229,6 +229,52 @@ public final class ConversationPresentationPayloadGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void situationalResultsShowSignedAndInactiveContributionsAfterSkipping(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        UUID id = UUID.randomUUID();
+        var modifiers = List.of(new Modifier("trust", "Trust", 3, true), new Modifier("risk", "Risk", -8, true),
+                new Modifier("support", "Support", 4, false));
+        var check = new Check("convince", 10, true, 12, false, -5, 7, null, 0, false, "", modifiers);
+        var session = new Session(id, 2, "Guidance", ConversationSession.Phase.ROLLED, null, true, false, "Player",
+                List.of(), List.of(), check, "");
+        var payload = new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), session, "");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            CampaignConversationViewPayload.STREAM_CODEC.encode(buffer, payload);
+            helper.assertValueEqual(CampaignConversationViewPayload.STREAM_CODEC.decode(buffer), payload, "wire preserves the signed breakdown and inactive rule");
+        } finally { buffer.release(); }
+        var waiting = new Session(id, 1, "Guidance", ConversationSession.Phase.CHECK, null, true, false, "Player",
+                List.of(), List.of(), new Check("convince", 10, false, 0, false), "");
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), waiting, ""));
+        controller.accept(payload);
+        helper.assertTrue(controller.dieAnimating(), "acknowledged situational result animates");
+        helper.assertFalse(host.texts.getLast().contains("Risk"), "animation does not reveal the outcome breakdown early");
+        int requests = host.sent.size();
+        controller.skipDieAnimation();
+        helper.assertValueEqual(host.sent.size(), requests, "skipping only affects presentation");
+        String text = host.texts.getLast();
+        helper.assertTrue(text.contains("conversation.modified_result[12, -5, 7, 10"), "fallback shows the signed saved total");
+        helper.assertTrue(text.contains("conversation.modifier_applied[Trust, +3]")
+                && text.contains("conversation.modifier_applied[Risk, -8]")
+                && text.contains("conversation.modifier_inactive[Support]"), "each authored contribution is readable");
+        controller.accept(payload);
+        helper.assertFalse(controller.dieAnimating(), "refreshing the saved result does not replay animation");
+        try {
+            new Check("convince", 10, true, 12, false, -4, 8, null, 0, false, "", modifiers);
+            helper.fail("display total must agree with the saved breakdown");
+        } catch (IllegalArgumentException expected) { }
+        try {
+            new Check("convince", 10, true, 12, false, -5, 7, null, 0, false, "",
+                    List.of(modifiers.get(0), modifiers.get(0)));
+            helper.fail("duplicate contributions must be rejected");
+        } catch (IllegalArgumentException expected) { }
+        helper.succeed();
+    }
+
     private static CampaignConversationViewPayload message(CampaignConversationRequestPayload request, UUID id, long revision, String key, String text, boolean control) {
         var line = new Line(key, request.character(), request.entityId(), "Mira", text, 0, 1);
         var session = new Session(id, revision, "Guidance", ConversationSession.Phase.EXCHANGES, line, control, false, "Player", List.of(), List.of(), null, "");

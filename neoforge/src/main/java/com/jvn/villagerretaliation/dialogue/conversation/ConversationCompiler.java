@@ -73,7 +73,7 @@ public final class ConversationCompiler {
             String key = string(value, "id");
             put(checks, key, new ConversationDefinition.Check(key,
                     value.has("difficulty") ? value.get("difficulty").getAsInt() : ConversationSchema.DEFAULT_DIFFICULTY,
-                    string(value, "success"), string(value, "failure"), social(value), pointer), pointer);
+                    string(value, "success"), string(value, "failure"), social(value), modifiers(value, pointer), pointer), pointer);
         }
         entries = array(root, "outcomes");
         for (int index = 0; index < entries.size(); index++) {
@@ -118,6 +118,19 @@ public final class ConversationCompiler {
                 topics, nodes, checks, outcomes, bundle.owner(), source);
         validateGraph(definition);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
+    }
+
+    private List<ConversationDefinition.Modifier> modifiers(JsonObject check, String pointer) {
+        Map<String, ConversationDefinition.Modifier> result = new LinkedHashMap<>();
+        JsonArray entries = array(check, "modifiers");
+        for (int index = 0; index < entries.size(); index++) {
+            var value = entries.get(index).getAsJsonObject();
+            String location = pointer + "/modifiers/" + index;
+            String id = string(value, "id");
+            put(result, id, new ConversationDefinition.Modifier(id, text(value, "label", location),
+                    value.get("amount").getAsInt(), conditions(value, location), location), location);
+        }
+        return List.copyOf(result.values());
     }
 
     private static ConversationDefinition.Social social(JsonObject check) {

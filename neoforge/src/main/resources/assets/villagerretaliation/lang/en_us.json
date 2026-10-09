@@ -3643,6 +3643,9 @@
   "villagerretaliation.gui.conversation.skill.deception": "Deception",
   "villagerretaliation.gui.conversation.skill.insight": "Insight",
   "villagerretaliation.gui.conversation.social_check": "%s check",
+  "villagerretaliation.gui.conversation.modified_result": "d20 %s %s = %s against difficulty %s. %s",
+  "villagerretaliation.gui.conversation.modifier_applied": "%s: %s",
+  "villagerretaliation.gui.conversation.modifier_inactive": "%s: not applied",
   "villagerretaliation.gui.conversation.social_result": "%s: d20 %s + %s = %s against difficulty %s. %s",
   "villagerretaliation.gui.conversation.social_experience": "%s gained %s %s experience.",
   "villagerretaliation.gui.conversation.social_experience_pending": "%s: +%s %s experience waiting to save"

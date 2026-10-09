@@ -477,6 +477,12 @@ public final class ConversationSessionGameTests {
             var restored = disk.reload();
             helper.assertValueEqual(restored.session(session.identity.id()).checks, session.checks, "full social breakdown survives reload");
             helper.assertTrue(restored.hasPendingSocialAwards(session.controller), "unacknowledged experience survives reload");
+            var legacySocial = disk.read();
+            legacySocial.putInt("DataVersion", 9);
+            first(legacySocial).getList("Checks", 10).getCompound(0).remove("Modifiers");
+            var migratedSocial = ConversationSavedData.load(legacySocial, disk.directory);
+            helper.assertTrue(migratedSocial.diagnostic().isBlank(), "version nine social history migrates");
+            helper.assertValueEqual(migratedSocial.session(session.identity.id()).checks, session.checks, "migration retains the original skill bonus");
             session.phase = ConversationSession.Phase.COMPLETE;
             session.outcome = "finished";
             session.revision++;
@@ -519,14 +525,65 @@ public final class ConversationSessionGameTests {
             session.checks.put("convince", ConversationSession.Check.roll(roll,
                     new ConversationDefinition.Check("convince", 10, "yes", "no", ""), 12, session.controller, 1));
             data.write(null, 1, session);
-            for (int version = 1; version <= 8; version++) {
+            for (int version = 1; version <= 9; version++) {
                 var legacy = disk.read();
                 legacy.putInt("DataVersion", version);
-                first(legacy).remove("SocialAwards");
+                if (version < 9) first(legacy).remove("SocialAwards");
+                first(legacy).getList("Checks", 10).getCompound(0).remove("Modifiers");
                 var migrated = ConversationSavedData.load(legacy, disk.directory);
                 helper.assertTrue(migrated.diagnostic().isBlank(), "legacy version " + version + " remains readable: " + migrated.diagnostic());
                 helper.assertValueEqual(migrated.session(session.identity.id()).checks, session.checks, "legacy result retains zero modifiers");
                 helper.assertTrue(migrated.socialAwardBatch().isEmpty(), "legacy checks invent no social rewards");
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void situationalBreakdownsKeepSignedTotalsAndRejectChangedHistory(GameTestHelper helper) throws IOException {
+        var authored = List.of(new ConversationDefinition.Modifier("trust", "fixture.trust", 3, List.of(), "/checks/0/modifiers/0"),
+                new ConversationDefinition.Modifier("risk", "fixture.risk", -8, List.of(), "/checks/0/modifiers/1"),
+                new ConversationDefinition.Modifier("support", "fixture.support", 4, List.of(), "/checks/0/modifiers/2"));
+        var modifiers = List.of(new ConversationCheckModifier("trust", "fixture.trust", "Trust", 3, true),
+                new ConversationCheckModifier("risk", "fixture.risk", "Risk", -8, true),
+                new ConversationCheckModifier("support", "fixture.support", "Support", 4, false));
+        for (int difficulty : List.of(0, 10, 25)) for (int die = 1; die <= 20; die++) {
+            var definition = new ConversationDefinition.Check("convince", difficulty, "yes", "no", null, authored, "");
+            var check = ConversationSession.Check.roll(UUID.randomUUID(), definition, die, UUID.randomUUID(), 0, null, modifiers);
+            helper.assertValueEqual(check.modifier(), -5, "only applied signed modifiers contribute");
+            helper.assertValueEqual(check.total(), die - 5, "negative totals remain valid");
+            helper.assertValueEqual(check.success(), die == 20 || die != 1 && die - 5 >= difficulty, "natural roll rules survive penalties");
+        }
+        var definition = new ConversationDefinition.Check("convince", 10, "yes", "no", null, authored, "");
+        try {
+            ConversationSession.Check.roll(UUID.randomUUID(), definition, 12, UUID.randomUUID(), 0);
+            helper.fail("authored situational rules require their captured breakdown");
+        } catch (IllegalArgumentException expected) { }
+        try (var disk = new Disk()) {
+            var session = session(UUID.randomUUID());
+            var data = disk.open();
+            data.write(null, 0, session);
+            session.revision++;
+            UUID roll = UUID.randomUUID();
+            session.phase = ConversationSession.Phase.ROLLED;
+            session.check = "convince";
+            session.requests.put(roll, new ConversationSession.Request(session.controller, 1, ConversationSession.Intent.ROLL, ""));
+            session.checks.put("convince", ConversationSession.Check.roll(roll, definition, 12, session.controller, 1, null, modifiers));
+            data.write(null, 1, session);
+            helper.assertValueEqual(disk.reload().session(session.identity.id()).checks, session.checks, "captured labels and applicability survive reload");
+            var saved = disk.read();
+            for (Consumer<CompoundTag> corrupt : List.<Consumer<CompoundTag>>of(
+                    tag -> tag.putInt("DataVersion", 9),
+                    tag -> first(tag).getList("Checks", 10).getCompound(0).remove("Modifiers"),
+                    tag -> first(tag).getList("Checks", 10).getCompound(0).putInt("Modifier", 0),
+                    tag -> first(tag).getList("Checks", 10).getCompound(0).getList("Modifiers", 10).getCompound(1).putInt("Amount", -7),
+                    tag -> first(tag).getList("Checks", 10).getCompound(0).getList("Modifiers", 10).getCompound(2).putBoolean("Applied", true),
+                    tag -> first(tag).getList("Checks", 10).getCompound(0).getList("Modifiers", 10).getCompound(1).putString("Id", "trust"))) {
+                var broken = saved.copy();
+                corrupt.accept(broken);
+                var dormant = ConversationSavedData.load(broken, disk.directory);
+                helper.assertFalse(dormant.diagnostic().isBlank(), "inconsistent situational history cannot execute");
+                helper.assertValueEqual(dormant.save(new CompoundTag(), helper.getLevel().registryAccess()), broken, "invalid breakdown remains recoverable");
             }
         }
         helper.succeed();

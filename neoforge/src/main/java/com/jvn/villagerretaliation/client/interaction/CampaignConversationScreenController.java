@@ -150,12 +150,15 @@ public final class CampaignConversationScreenController {
                 var check = session.check();
                 String skill = check.skill() == null ? "" : host.translate("conversation.skill." + check.skill().id());
                 if (!skill.isBlank() && (!check.resolved() || dieAnimation.playing())) append(text, host.translate("conversation.social_check", skill));
-                append(text, dieAnimation.playing() ? host.translate("conversation.rolling", check.difficulty())
-                        : check.resolved() ? skill.isBlank()
-                                ? host.translate("conversation.result", check.die(), check.difficulty(), host.translate(check.success() ? "conversation.success" : "conversation.failure"))
-                                : host.translate("conversation.social_result", skill, check.die(), check.modifier(), check.total(),
-                                        check.difficulty(), host.translate(check.success() ? "conversation.success" : "conversation.failure"))
-                        : host.translate("conversation.difficulty", check.difficulty()));
+                append(text, checkText(check, skill));
+                if (check.resolved() && !dieAnimation.playing() && !check.modifiers().isEmpty()) {
+                    var breakdown = new java.util.ArrayList<String>();
+                    if (!skill.isBlank()) breakdown.add(host.translate("conversation.modifier_applied", skill, signed(check.skillBonus())));
+                    for (var modifier : check.modifiers()) breakdown.add(modifier.applied()
+                            ? host.translate("conversation.modifier_applied", modifier.label(), signed(modifier.amount()))
+                            : host.translate("conversation.modifier_inactive", modifier.label()));
+                    append(text, String.join("\n", breakdown));
+                }
                 if (check.resolved() && !dieAnimation.playing() && check.rewardExperience() > 0)
                     append(text, host.translate(check.experienceAwarded() ? "conversation.social_experience" : "conversation.social_experience_pending",
                             check.experiencePlayer(), check.rewardExperience(), skill));
@@ -164,6 +167,21 @@ public final class CampaignConversationScreenController {
         }
         if (!state.diagnostic().isBlank()) append(text, state.diagnostic());
         return text.toString();
+    }
+
+    private String checkText(CampaignConversationViewPayload.Check check, String skill) {
+        if (dieAnimation.playing()) return host.translate("conversation.rolling", check.difficulty());
+        if (!check.resolved()) return host.translate("conversation.difficulty", check.difficulty());
+        String outcome = host.translate(check.success() ? "conversation.success" : "conversation.failure");
+        if (!check.modifiers().isEmpty())
+            return host.translate("conversation.modified_result", check.die(), signed(check.modifier()), check.total(), check.difficulty(), outcome);
+        if (!skill.isBlank())
+            return host.translate("conversation.social_result", skill, check.die(), check.modifier(), check.total(), check.difficulty(), outcome);
+        return host.translate("conversation.result", check.die(), check.difficulty(), outcome);
+    }
+
+    private static String signed(int value) {
+        return value < 0 ? Integer.toString(value) : "+" + value;
     }
 
     private static void append(StringBuilder text, String line) {

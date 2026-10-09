@@ -57,6 +57,7 @@ export function validateConversation(root, schema, context) {
     entries.add(topic.start);
   }
   for (const check of checks.values()) {
+    index(check.modifiers ?? [], `${check.pointer}/modifiers`);
     require(nodes, check.success, `${check.pointer}/success`, "node");
     require(nodes, check.failure, `${check.pointer}/failure`, "node");
     if (check.social) require(context.progressions ?? new Map(), check.social.progression, `${check.pointer}/social/progression`, "social progression");

@@ -131,33 +131,54 @@ public final class ConversationSession {
     }
 
     public record Check(UUID request, String id, int die, int difficulty, int modifier, int total,
-            boolean success, String destination, UUID player, long rolledAt, SocialCheckBreakdown social) {
+            boolean success, String destination, UUID player, long rolledAt, SocialCheckBreakdown social,
+            List<ConversationCheckModifier> modifiers) {
         public Check {
-            if (die < 1 || die > 20 || difficulty < 0 || modifier != (social == null ? 0 : social.bonus()) || total != die + modifier
+            modifiers = List.copyOf(modifiers);
+            int expected = (social == null ? 0 : social.bonus()) + ConversationCheckModifier.total(modifiers);
+            if (die < 1 || die > 20 || difficulty < 0 || modifier != expected || total != die + modifier
                     || success != (die == 20 || die != 1 && total >= difficulty)) {
                 throw new IllegalArgumentException("Saved conversation check has an invalid result.");
             }
         }
 
         public Check(UUID request, String id, int die, int difficulty, int modifier, int total,
+                boolean success, String destination, UUID player, long rolledAt, SocialCheckBreakdown social) {
+            this(request, id, die, difficulty, modifier, total, success, destination, player, rolledAt, social, List.of());
+        }
+
+        public Check(UUID request, String id, int die, int difficulty, int modifier, int total,
                 boolean success, String destination, UUID player, long rolledAt) {
-            this(request, id, die, difficulty, modifier, total, success, destination, player, rolledAt, null);
+            this(request, id, die, difficulty, modifier, total, success, destination, player, rolledAt, null, List.of());
         }
 
         static Check roll(UUID request, ConversationDefinition.Check definition, int die, UUID player, long time) {
-            return roll(request, definition, die, player, time, null);
+            return roll(request, definition, die, player, time, null, List.of());
         }
 
         static Check roll(UUID request, ConversationDefinition.Check definition, int die, UUID player, long time, SocialCheckBreakdown social) {
+            return roll(request, definition, die, player, time, social, List.of());
+        }
+
+        static Check roll(UUID request, ConversationDefinition.Check definition, int die, UUID player, long time,
+                SocialCheckBreakdown social, List<ConversationCheckModifier> modifiers) {
             if (definition.social() == null ? social != null : social == null
                     || !definition.social().progression().equals(social.progression()) || definition.social().skill() != social.skill()
                     || definition.social().experience() != social.rewardExperience())
                 throw new IllegalArgumentException("The check requires its authored social progression snapshot.");
-            int modifier = social == null ? 0 : social.bonus();
+            if (definition.modifiers().size() != modifiers.size())
+                throw new IllegalArgumentException("The check requires its authored situational modifiers.");
+            for (int index = 0; index < modifiers.size(); index++) {
+                var authored = definition.modifiers().get(index);
+                var captured = modifiers.get(index);
+                if (!authored.id().equals(captured.id()) || !authored.labelKey().equals(captured.labelKey()) || authored.amount() != captured.amount())
+                    throw new IllegalArgumentException("The check requires its authored situational modifiers.");
+            }
+            int modifier = (social == null ? 0 : social.bonus()) + ConversationCheckModifier.total(modifiers);
             int total = die + modifier;
             boolean success = die == 20 || die != 1 && total >= definition.difficulty();
             return new Check(request, definition.id(), die, definition.difficulty(), modifier, total, success,
-                    success ? definition.success() : definition.failure(), player, time, social);
+                    success ? definition.success() : definition.failure(), player, time, social, modifiers);
         }
     }
 
