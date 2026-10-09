@@ -318,12 +318,12 @@ final class CampaignReferenceCollector {
             if (action.campaignStanding() != null) {
                 var campaignContent = context == null ? null : content.campaigns().get(context);
                 if (campaignContent == null || !campaignContent.definition().questBundles().contains(action.questId()))
-                    standingIssues.add(CampaignContentCatalog.inPack(CampaignSchema.error(source.resource(), standingField(owner, source, "quest").pointer(),
+                    standingIssues.add(CampaignContentCatalog.inPack(CampaignSchema.error(source.resource(), referenceField(owner, source, "quest").pointer(),
                             "standing action requires a quest declared by its campaign"), source.pack()));
-                ref(owner, key(standingKind(action.campaignStanding().scope()), context, action.campaignStanding().subject()), WRITES, standingField(owner, source, "subject"));
+                ref(owner, key(standingKind(action.campaignStanding().scope()), context, action.campaignStanding().subject()), WRITES, referenceField(owner, source, "subject"));
             }
             if (action.campaignPayment() != null) transaction(owner, context, action.questId(), action.campaignPayment().transaction(), WRITES,
-                    standingField(owner, source, "transaction"));
+                    referenceField(owner, source, "transaction"));
             if (action.campaignReward() != null) ref(owner, key(REWARD, context, action.campaignReward().reward()), GRANTS, source);
             if (action.sceneId() != null) scene(owner, context, action.sceneId(), source);
         }
@@ -353,7 +353,7 @@ final class CampaignReferenceCollector {
     }
 
     private void conditions(Key owner, List<DialogueCondition> conditions, Source source) {
-        standingConditions(owner, conditions, source);
+        referenceConditions(owner, conditions, source);
         var pending = new ArrayList<>(conditions);
         for (int index = 0; index < pending.size(); index++) {
             var condition = pending.get(index);
@@ -377,24 +377,28 @@ final class CampaignReferenceCollector {
         }
     }
 
-    private void standingConditions(Key owner, List<DialogueCondition> conditions, Source source) {
+    private void referenceConditions(Key owner, List<DialogueCondition> conditions, Source source) {
         for (int index = 0; index < conditions.size(); index++)
-            standingCondition(owner, conditions.get(index), standingField(owner, source, "conditions", Integer.toString(index)));
+            referenceCondition(owner, conditions.get(index), referenceField(owner, source, "conditions", Integer.toString(index)));
     }
 
-    private void standingCondition(Key owner, DialogueCondition condition, Source source) {
-        if (condition instanceof DialogueCondition.AllOf all) standingConditions(owner, all.conditions(), source);
-        else if (condition instanceof DialogueCondition.AnyOf any) standingConditions(owner, any.conditions(), source);
-        else if (condition instanceof DialogueCondition.Not not && not.condition() != null) standingCondition(owner, not.condition(), standingField(owner, source, "condition"));
+    private void referenceCondition(Key owner, DialogueCondition condition, Source source) {
+        if (condition instanceof DialogueCondition.AllOf all) referenceConditions(owner, all.conditions(), source);
+        else if (condition instanceof DialogueCondition.AnyOf any) referenceConditions(owner, any.conditions(), source);
+        else if (condition instanceof DialogueCondition.Not not && not.condition() != null) referenceCondition(owner, not.condition(), referenceField(owner, source, "condition"));
+        else if (condition instanceof DialogueCondition.CampaignCompanion companion) {
+            var query = companion.reference();
+            ref(owner, key(CHARACTER, query.campaign(), query.role()), ACCOMPANIES, referenceField(owner, source, "role"));
+        }
         else if (condition instanceof DialogueCondition.CampaignStanding standing) {
             var query = standing.reference();
-            ref(owner, key(standingKind(query.scope()), query.campaign(), query.subject()), READS, standingField(owner, source, "subject"));
+            ref(owner, key(standingKind(query.scope()), query.campaign(), query.subject()), READS, referenceField(owner, source, "subject"));
             if (!query.reaction().isEmpty()) ref(owner, key(REACTION, query.campaign(),
-                    query.scope().name().toLowerCase(java.util.Locale.ROOT), query.subject(), query.reaction()), READS, standingField(owner, source, "reaction"));
+                    query.scope().name().toLowerCase(java.util.Locale.ROOT), query.subject(), query.reaction()), READS, referenceField(owner, source, "reaction"));
         }
     }
 
-    private static Source standingField(Key owner, Source source, String... path) {
+    private static Source referenceField(Key owner, Source source, String... path) {
         return owner.kind() == CONVERSATION ? source.child(path) : source;
     }
 
@@ -442,6 +446,13 @@ final class CampaignReferenceCollector {
                 break;
             }
             var owner = declare(SCENE, entry.getKey(), origin);
+            if (authored != null) {
+                for (var reference : com.jvn.villagerretaliation.campaign.CampaignCompanionFields.references(authored)) {
+                    var condition = reference.condition();
+                    ref(owner, key(CHARACTER, condition.campaign(), condition.role()), ACCOMPANIES,
+                            new Source(origin.resource(), origin.pack(), reference.pointer()));
+                }
+            }
             var stepOrder = new ArrayList<String>();
             if (authored != null && authored.has("steps")) authored.getAsJsonArray("steps").forEach(raw ->
                     stepOrder.add(raw.getAsJsonObject().get("id").getAsString()));

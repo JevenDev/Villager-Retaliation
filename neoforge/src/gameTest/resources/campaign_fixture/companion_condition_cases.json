@@ -1,0 +1,144 @@
+[
+  {
+    "name": "default companion radius",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor"
+    },
+    "valid": true
+  },
+  {
+    "name": "companion radius 1",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "radius": 1
+    },
+    "valid": true
+  },
+  {
+    "name": "companion radius 8",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "radius": 8
+    },
+    "valid": true
+  },
+  {
+    "name": "companion radius 32",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "radius": 32
+    },
+    "valid": true
+  },
+  {
+    "name": "invalid companion radius 0",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "radius": 0
+    },
+    "pointer": "/radius"
+  },
+  {
+    "name": "invalid companion radius 33",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "radius": 33
+    },
+    "pointer": "/radius"
+  },
+  {
+    "name": "invalid companion radius 1.5",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "radius": 1.5
+    },
+    "pointer": "/radius"
+  },
+  {
+    "name": "invalid companion radius \"8\"",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "radius": "8"
+    },
+    "pointer": "/radius"
+  },
+  {
+    "name": "invalid companion radius null",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "radius": null
+    },
+    "pointer": "/radius"
+  },
+  {
+    "name": "missing companion campaign",
+    "condition": {
+      "type": "campaign_companion",
+      "role": "mentor"
+    },
+    "pointer": "/campaign"
+  },
+  {
+    "name": "missing companion role",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters"
+    },
+    "pointer": "/role"
+  },
+  {
+    "name": "invalid companion campaign",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "bad id",
+      "role": "mentor"
+    },
+    "pointer": "/campaign"
+  },
+  {
+    "name": "invalid companion role",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "bad role"
+    },
+    "pointer": "/role"
+  },
+  {
+    "name": "wrong companion role type",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": true
+    },
+    "pointer": "/role"
+  },
+  {
+    "name": "extra companion field",
+    "condition": {
+      "type": "campaign_companion",
+      "campaign": "campaign_fixture:characters",
+      "role": "mentor",
+      "state": "available"
+    },
+    "pointer": "/state"
+  }
+]

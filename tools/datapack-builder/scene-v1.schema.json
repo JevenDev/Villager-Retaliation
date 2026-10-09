@@ -254,6 +254,9 @@
               },
               {
                 "$ref": "#/$defs/campaign_evidence_fields"
+              },
+              {
+                "$ref": "#/$defs/campaign_companion_fields"
               }
             ]
           },
@@ -640,6 +643,75 @@
           "then": {
             "items": {
               "$ref": "#/$defs/campaign_transaction_fields"
+            }
+          }
+        }
+      ]
+    },
+    "campaign_companion_fields": {
+      "allOf": [
+        {
+          "if": {
+            "type": "object"
+          },
+          "then": {
+            "additionalProperties": {
+              "$ref": "#/$defs/campaign_companion_fields"
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "pattern": "^[\\x00-\\x20]*[cC][aA][mM][pP][aA][iI][gG][nN]_[cC][oO][mM][pP][aA][nN][iI][oO][nN][\\x00-\\x20]*$"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "type": "object",
+                  "description": "Checks whether a bound, loaded campaign character is nearby and actively recruited into the player's party without casting or spawning.",
+                  "additionalProperties": false,
+                  "required": [
+                    "campaign",
+                    "role"
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "campaign_companion"
+                    },
+                    "campaign": {
+                      "type": "string",
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "role": {
+                      "type": "string",
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                    },
+                    "radius": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 32,
+                      "default": 8
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "type": "array"
+          },
+          "then": {
+            "items": {
+              "$ref": "#/$defs/campaign_companion_fields"
             }
           }
         }

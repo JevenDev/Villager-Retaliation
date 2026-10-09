@@ -279,11 +279,11 @@ public final class ConversationCompiler {
             issues.add(error(conversation.source(), "/character", "unknown campaign character " + conversation.character()));
         }
         for (var topic : conversation.topics().values())
-            transactionConditions(conversation, campaign, topic.conditions(), topic.pointer() + "/conditions", issues);
+            campaignConditions(conversation, campaign, topic.conditions(), topic.pointer() + "/conditions", issues);
         for (var node : conversation.nodes().values()) for (var response : node.responses().values())
-            transactionConditions(conversation, campaign, response.conditions(), response.pointer() + "/conditions", issues);
+            campaignConditions(conversation, campaign, response.conditions(), response.pointer() + "/conditions", issues);
         for (var check : conversation.checks().values()) for (var modifier : check.modifiers())
-            transactionConditions(conversation, campaign, modifier.conditions(), modifier.pointer() + "/conditions", issues);
+            campaignConditions(conversation, campaign, modifier.conditions(), modifier.pointer() + "/conditions", issues);
         Set<String> transactions = new HashSet<>();
         for (var check : conversation.checks().values()) if (!check.transaction().isEmpty()) {
             var transaction = campaign.transactions().get(check.transaction());
@@ -311,7 +311,7 @@ public final class ConversationCompiler {
             }
         }
         for (var node : conversation.nodes().values()) for (var exchange : node.exchanges()) {
-            transactionConditions(conversation, campaign, exchange.conditions(), exchange.pointer() + "/conditions", issues);
+            campaignConditions(conversation, campaign, exchange.conditions(), exchange.pointer() + "/conditions", issues);
             if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE && !campaign.characters().containsKey(exchange.speaker().role())) {
                 issues.add(error(conversation.source(), exchange.pointer() + "/speaker/role", "unknown campaign character " + exchange.speaker().role()));
             }
@@ -319,18 +319,21 @@ public final class ConversationCompiler {
         return List.copyOf(issues);
     }
 
-    private static void transactionConditions(ConversationDefinition conversation, CampaignDefinition campaign,
+    private static void campaignConditions(ConversationDefinition conversation, CampaignDefinition campaign,
             List<DialogueCondition> conditions, String pointer, List<QuestDiagnostic> issues) {
         for (int index = 0; index < conditions.size(); index++)
-            transactionCondition(conversation, campaign, conditions.get(index), pointer + "/" + index, issues);
+            campaignCondition(conversation, campaign, conditions.get(index), pointer + "/" + index, issues);
     }
 
-    private static void transactionCondition(ConversationDefinition conversation, CampaignDefinition campaign,
+    private static void campaignCondition(ConversationDefinition conversation, CampaignDefinition campaign,
             DialogueCondition condition, String pointer, List<QuestDiagnostic> issues) {
-        if (condition instanceof DialogueCondition.AllOf all) transactionConditions(conversation, campaign, all.conditions(), pointer + "/conditions", issues);
-        else if (condition instanceof DialogueCondition.AnyOf any) transactionConditions(conversation, campaign, any.conditions(), pointer + "/conditions", issues);
-        else if (condition instanceof DialogueCondition.Not not) transactionCondition(conversation, campaign, not.condition(), pointer + "/condition", issues);
-        else if (condition instanceof DialogueCondition.CampaignTransaction query && query.reference().campaign().equals(campaign.id())) {
+        if (condition instanceof DialogueCondition.AllOf all) campaignConditions(conversation, campaign, all.conditions(), pointer + "/conditions", issues);
+        else if (condition instanceof DialogueCondition.AnyOf any) campaignConditions(conversation, campaign, any.conditions(), pointer + "/conditions", issues);
+        else if (condition instanceof DialogueCondition.Not not) campaignCondition(conversation, campaign, not.condition(), pointer + "/condition", issues);
+        else if (condition instanceof DialogueCondition.CampaignCompanion companion && companion.reference().campaign().equals(campaign.id())) {
+            if (!campaign.characters().containsKey(companion.reference().role()))
+                issues.add(error(conversation.source(), pointer + "/role", "unknown campaign companion " + companion.reference().role()));
+        } else if (condition instanceof DialogueCondition.CampaignTransaction query && query.reference().campaign().equals(campaign.id())) {
             var value = query.reference();
             var transaction = campaign.transactions().get(value.transaction());
             if (!campaign.questBundles().contains(value.quest())) issues.add(error(conversation.source(), pointer + "/quest", "transaction requires a quest declared by its campaign"));

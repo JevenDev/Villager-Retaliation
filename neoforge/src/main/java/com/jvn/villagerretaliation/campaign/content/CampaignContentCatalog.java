@@ -99,6 +99,7 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
         diagnostics.addAll(CampaignStandingReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
         diagnostics.addAll(CampaignTransactionReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
         diagnostics.addAll(CampaignEvidenceReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
+        diagnostics.addAll(CampaignCompanionReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
         return new CampaignContentCatalog(quests, entries, diagnostics);
     }
 

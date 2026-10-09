@@ -1220,6 +1220,10 @@ public final class QuestV2Parser {
             com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.issues(object).forEach((field, message) ->
                     validator.error(pointer + "/" + field, message, "Use the campaign character condition schema.", Set.of()));
         }
+        if (canonical.equals("campaign_companion")) {
+            com.jvn.villagerretaliation.campaign.CampaignCompanionPredicate.issues(object).forEach((field, message) ->
+                    validator.error(pointer + "/" + field, message, "Use the campaign companion condition schema.", Set.of()));
+        }
         if (canonical.equals("campaign_location")) {
             com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.issues(object).forEach((field, message) ->
                     validator.error(pointer + "/" + field, message, "Use the campaign location condition schema.", Set.of()));

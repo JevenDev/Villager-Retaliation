@@ -3620,6 +3620,10 @@ public final class VillagerQuestService {
             var result = character.reference().evaluate(level, null);
             return campaignConditionState(result.matches(), result.diagnostic());
         }
+        if (condition instanceof DialogueCondition.CampaignCompanion companion) {
+            var result = companion.reference().evaluate(level, player);
+            return campaignConditionState(result.matches(), result.diagnostic());
+        }
         if (condition instanceof DialogueCondition.CampaignLocation location) {
             var result = location.reference().evaluate(level, player);
             return campaignConditionState(result.matches(), result.diagnostic());

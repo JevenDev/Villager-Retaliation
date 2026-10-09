@@ -38,6 +38,8 @@ public final class SceneSchema {
         var definitions = localizedDefinitions();
         definitions.add(com.jvn.villagerretaliation.campaign.CampaignEvidenceFields.DEFINITION,
                 com.jvn.villagerretaliation.campaign.CampaignEvidenceFields.definition());
+        definitions.add(com.jvn.villagerretaliation.campaign.CampaignCompanionFields.DEFINITION,
+                com.jvn.villagerretaliation.campaign.CampaignCompanionFields.definition());
         definitions.add(com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.DEFINITION,
                 com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.definition());
         root.add("$defs", definitions);
@@ -911,6 +913,7 @@ public final class SceneSchema {
         var fieldRules = new JsonArray();
         fieldRules.add(com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.reference());
         fieldRules.add(com.jvn.villagerretaliation.campaign.CampaignEvidenceFields.reference());
+        fieldRules.add(com.jvn.villagerretaliation.campaign.CampaignCompanionFields.reference());
         data.add("allOf", fieldRules);
         properties.add("data", data);
         properties.add("next", text());

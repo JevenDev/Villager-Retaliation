@@ -37,7 +37,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
         DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact, DialogueCondition.CampaignFact, DialogueCondition.CampaignStanding, DialogueCondition.CampaignTransaction, DialogueCondition.CampaignEvidence,
-        DialogueCondition.CampaignOutcome, DialogueCondition.CampaignCharacter, DialogueCondition.CampaignLocation, DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
+        DialogueCondition.CampaignOutcome, DialogueCondition.CampaignCharacter, DialogueCondition.CampaignCompanion, DialogueCondition.CampaignLocation, DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
         DialogueCondition.PlayerItem, DialogueCondition.VillagerEquipment,
         DialogueCondition.Biome, DialogueCondition.Dimension, DialogueCondition.Advancement,
         DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
@@ -57,6 +57,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         if (this instanceof CampaignFact fact) return fact.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignOutcome outcome) return outcome.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignCharacter character) return character.reference().evaluate(context).diagnostic();
+        if (this instanceof CampaignCompanion companion) return companion.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignLocation location) return location.reference().evaluate(context).diagnostic();
         List<DialogueCondition> children = this instanceof AllOf all ? all.conditions()
                 : this instanceof AnyOf any ? any.conditions()
@@ -1118,6 +1119,19 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                             return Optional.of(new CampaignCharacter(value));
                         }),
                 register(
+                        "campaign_companion",
+                        CampaignCompanion.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> {
+                            var value = com.jvn.villagerretaliation.campaign.CampaignCompanionPredicate.read(condition);
+                            if (value == null) {
+                                warnInvalid(location, context, "campaign companion condition does not match its registered schema");
+                                return Optional.empty();
+                            }
+                            return Optional.of(new CampaignCompanion(value));
+                        }),
+                register(
                         "campaign_location",
                         CampaignLocation.class,
                         Set.of(),
@@ -1871,6 +1885,14 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     }
 
     record CampaignCharacter(com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate reference) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) { return reference.evaluate(context).matches(); }
+
+        @Override
+        public int specificityScore() { return 8; }
+    }
+
+    record CampaignCompanion(com.jvn.villagerretaliation.campaign.CampaignCompanionPredicate reference) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) { return reference.evaluate(context).matches(); }
 

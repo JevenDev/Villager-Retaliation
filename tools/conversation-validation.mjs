@@ -3,6 +3,7 @@ export { validateConversationSchema };
 import { validateStandingReferences } from "./campaign-standing-validation.mjs";
 import { validateTransactionReferences } from "./campaign-transaction-validation.mjs";
 import { validateEvidenceReferences } from "./campaign-evidence-validation.mjs";
+import { validateCompanionReferences } from "./campaign-companion-validation.mjs";
 
 const child = (pointer, key) => `${pointer}/${String(key).replaceAll("~", "~0").replaceAll("/", "~1")}`;
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -72,6 +73,7 @@ export function validateConversation(root, schema, context) {
   issues.push(...validateStandingReferences(root, { ...context, quest: root.quest ?? context.quest }));
   issues.push(...validateTransactionReferences(root, { ...context, quest: root.quest ?? context.quest }));
   issues.push(...validateEvidenceReferences(root, context));
+  issues.push(...validateCompanionReferences(root, context));
   const roles = new Set((context.campaign?.characters ?? []).map(role => role?.id));
   if (context.campaign) {
     if (context.campaign.id !== root.campaign) issue("/campaign", "conversation belongs to another campaign");

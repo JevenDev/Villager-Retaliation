@@ -609,6 +609,7 @@ public final class QuestV2Schema {
         rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema()));
         rules.add(typeRule("campaign_outcome", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema()));
         rules.add(typeRule("campaign_character", com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema()));
+        rules.add(typeRule("campaign_companion", com.jvn.villagerretaliation.campaign.CampaignCompanionPredicate.schema()));
         rules.add(typeRule("campaign_location", com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.schema()));
         JsonObject compound = typedObject();
         compound.add("required", strings("conditions"));

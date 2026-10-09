@@ -109,6 +109,7 @@
             "attribute",
             "biome",
             "campaign_character",
+            "campaign_companion",
             "campaign_evidence",
             "campaign_fact",
             "campaign_location",
@@ -492,6 +493,48 @@
                   "speaker",
                   "replaced"
                 ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_companion"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "description": "Checks whether a bound, loaded campaign character is nearby and actively recruited into the player's party without casting or spawning.",
+            "additionalProperties": false,
+            "required": [
+              "campaign",
+              "role"
+            ],
+            "properties": {
+              "type": {
+                "const": "campaign_companion"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "role": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "radius": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 32,
+                "default": 8
               }
             }
           }

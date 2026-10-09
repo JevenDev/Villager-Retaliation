@@ -1521,5 +1521,99 @@
       }
     ],
     "pointer": "/nodes/0/exchanges/0/conditions/0/condition/transaction"
+  },
+  {
+    "name": "nearby party companion exchange",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/conditions",
+        "value": [
+          {
+            "type": "campaign_companion",
+            "campaign": "campaign_fixture:characters",
+            "role": "mentor"
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "companion check modifier",
+    "patches": [
+      {
+        "path": "/checks/0/modifiers",
+        "value": [
+          {
+            "id": "support",
+            "label": {
+              "key": "#conversation.topic"
+            },
+            "amount": 2,
+            "conditions": [
+              {
+                "type": "campaign_companion",
+                "campaign": "campaign_fixture:characters",
+                "role": "mentor",
+                "radius": 32
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "unknown companion role in nested line condition",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/conditions",
+        "value": [
+          {
+            "type": "not",
+            "condition": {
+              "type": "campaign_companion",
+              "campaign": "campaign_fixture:characters",
+              "role": "missing"
+            }
+          }
+        ]
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/conditions/0/condition/role"
+  },
+  {
+    "name": "companion radius bounded in conversation",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/conditions",
+        "value": [
+          {
+            "type": "campaign_companion",
+            "campaign": "campaign_fixture:characters",
+            "role": "mentor",
+            "radius": 33
+          }
+        ]
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/conditions/0/radius"
+  },
+  {
+    "name": "unknown companion in response",
+    "patches": [
+      {
+        "path": "/nodes/0/responses/0/conditions",
+        "value": [
+          {
+            "type": "campaign_companion",
+            "campaign": "campaign_fixture:characters",
+            "role": "missing"
+          }
+        ]
+      }
+    ],
+    "pointer": "/nodes/0/responses/0/conditions/0/role"
   }
 ]

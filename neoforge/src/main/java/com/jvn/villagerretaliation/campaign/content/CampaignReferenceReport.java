@@ -61,7 +61,7 @@ public record CampaignReferenceReport(long generation, Map<Key, Node> nodes, Lis
 
     public enum Relation {
         INCLUDES, REQUIRES, PROVIDER, READS, WRITES, COMMITS, GRANTS, CATCH_UP, OBSERVES,
-        SPEAKS, INVESTIGATES, FOLLOWS, STARTS, LOCATED_AT, REPLACES, CHANGES, BLOCKS_ON_START, BLOCKS_ON_COMPLETION
+        SPEAKS, INVESTIGATES, FOLLOWS, ACCOMPANIES, STARTS, LOCATED_AT, REPLACES, CHANGES, BLOCKS_ON_START, BLOCKS_ON_COMPLETION
     }
 
     public record Key(Kind kind, ResourceLocation owner, List<String> path) {
