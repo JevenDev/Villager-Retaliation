@@ -65,6 +65,17 @@ final class CampaignScenarioReferences {
                     issue(scenario, issues, at + "/quest", "quest does not belong to this campaign");
                 else if (!assertion.stage().isBlank() && !quest.stagesById().containsKey(assertion.stage()))
                     issue(scenario, issues, at + "/stage", "unknown quest stage");
+            } else if (step instanceof SpawnEvidence spawn) {
+                var evidence = campaign.evidence().get(spawn.evidence());
+                if (evidence == null) issue(scenario, issues, at + "/evidence", "unknown campaign evidence");
+                else {
+                    var location = campaign.locations().get(evidence.location());
+                    if (location == null || !location.dimension().toString().equals("minecraft:overworld"))
+                        issue(scenario, issues, at + "/evidence", "scenario evidence requires an overworld campaign location");
+                }
+            } else if (step instanceof AssertEvidence assertion) {
+                if (!campaign.evidence().containsKey(assertion.evidence()))
+                    issue(scenario, issues, at + "/evidence", "unknown campaign evidence");
             } else if (step instanceof AssertTransaction assertion) {
                 var transaction = campaign.transactions().get(assertion.transaction());
                 if (!campaign.questBundles().contains(assertion.quest()))

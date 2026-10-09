@@ -1,0 +1,134 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:investigation_identity",
+  "campaign": "campaign_fixture:investigation",
+  "players": [
+    "first"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "role": "mentor",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "home",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "original",
+      "type": "spawn_evidence",
+      "evidence": "ledger",
+      "position": {
+        "x": 9,
+        "y": 1,
+        "z": 1
+      }
+    },
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "accept",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:investigation",
+      "stage": "inspect",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "out_of_reach",
+      "type": "investigate",
+      "player": "first",
+      "source": "original",
+      "applied": false,
+      "matched": false,
+      "approach": false
+    },
+    {
+      "id": "distance_keeps_undiscovered",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": false,
+      "receipts": 0
+    },
+    {
+      "id": "original_investigation",
+      "type": "investigate",
+      "player": "first",
+      "source": "original",
+      "applied": true
+    },
+    {
+      "id": "closer_copy",
+      "type": "spawn_evidence",
+      "evidence": "ledger",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 2
+      }
+    },
+    {
+      "id": "copy_rejected",
+      "type": "investigate",
+      "player": "first",
+      "source": "closer_copy",
+      "applied": false,
+      "matched": false
+    },
+    {
+      "id": "copy_cannot_add_receipts",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "copy_after_reload",
+      "type": "investigate",
+      "player": "first",
+      "source": "closer_copy",
+      "applied": false,
+      "matched": false
+    },
+    {
+      "id": "original_repeat",
+      "type": "investigate",
+      "player": "first",
+      "source": "original",
+      "applied": false
+    },
+    {
+      "id": "original_identity_preserved",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    }
+  ]
+}

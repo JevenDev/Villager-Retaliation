@@ -18,6 +18,11 @@ public final class CampaignScenarioSchema {
         var questSymbol = QuestV2Schema.export().getAsJsonObject("properties").getAsJsonObject("entry_stage");
         var steps = new JsonArray();
         steps.add(step("player", "player action", "player", local(), "action", choices("connect", "disconnect")));
+        steps.add(step("spawn_evidence", "evidence position", "evidence", local(), "position", position()));
+        steps.add(step("investigate", "player source applied", "player", local(), "source", local(), "approach", bool(),
+                "matched", bool(), "applied", bool(), "unavailable", bool()));
+        steps.add(step("assert_evidence", "player evidence discovered", "player", local(), "evidence", local(),
+                "discovered", bool(), "receipts", integer(0, 65536)));
         steps.add(step("give_item", "player item count", "player", local(), "item", resource(), "count", integer(1, 256)));
         steps.add(step("assert_item_count", "player item count", "player", local(), "item", resource(), "count", integer(0, 2304)));
         steps.add(step("assert_transaction", "player quest transaction state", "player", local(), "quest", resource(), "transaction", local(),
@@ -61,8 +66,7 @@ public final class CampaignScenarioSchema {
                 "subject", local(), "value", integer(Integer.MIN_VALUE, Integer.MAX_VALUE), "reaction", local()));
         var stepSchema = new JsonObject();
         stepSchema.add("oneOf", steps);
-        var position = CampaignSchema.object(List.of("x", "y", "z"),
-                "x", integer(-32, 32), "y", integer(0, 32), "z", integer(-32, 32));
+        var position = position();
         var actor = CampaignSchema.object(List.of("id", "position"), "id", local(), "role", local(), "position", position);
         var location = CampaignSchema.object(List.of("alias", "position"), "alias", local(), "position", position);
         var schema = CampaignSchema.object(List.of("schema", "id", "campaign", "players", "steps"),
@@ -73,6 +77,11 @@ public final class CampaignScenarioSchema {
         schema.addProperty("$id", "https://villagerretaliation.dev/schema/campaign-scenario-v1.schema.json");
         schema.addProperty("title", "Villager Retaliation Campaign Scenario v1");
         return schema;
+    }
+
+    private static JsonObject position() {
+        return CampaignSchema.object(List.of("x", "y", "z"),
+                "x", integer(-32, 32), "y", integer(0, 32), "z", integer(-32, 32));
     }
 
     private static JsonObject step(String type, String required, Object... fields) {

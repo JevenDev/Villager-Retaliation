@@ -1,0 +1,266 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:investigation_personal",
+  "campaign": "campaign_fixture:investigation",
+  "players": [
+    "first",
+    "late"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "role": "mentor",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "home",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "ledger",
+      "type": "spawn_evidence",
+      "evidence": "ledger",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 2
+      }
+    },
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "late_connect",
+      "type": "player",
+      "player": "late",
+      "action": "connect"
+    },
+    {
+      "id": "party",
+      "type": "party",
+      "leader": "first",
+      "member": "late",
+      "admin": true
+    },
+    {
+      "id": "first_accept",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:investigation",
+      "stage": "inspect",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "book",
+      "type": "give_item",
+      "player": "first",
+      "item": "minecraft:written_book",
+      "count": 1
+    },
+    {
+      "id": "inventory_progress",
+      "type": "wait",
+      "ticks": 40
+    },
+    {
+      "id": "investigation_still_required",
+      "type": "assert_quest",
+      "player": "first",
+      "quest": "campaign_fixture:investigation",
+      "stage": "inspect"
+    },
+    {
+      "id": "inventory_is_not_discovery",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": false,
+      "receipts": 0
+    },
+    {
+      "id": "first_investigates",
+      "type": "investigate",
+      "player": "first",
+      "source": "ledger",
+      "applied": true
+    },
+    {
+      "id": "repeat_interaction",
+      "type": "investigate",
+      "player": "first",
+      "source": "ledger",
+      "applied": false
+    },
+    {
+      "id": "one_receipt",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    },
+    {
+      "id": "party_has_not_discovered",
+      "type": "assert_evidence",
+      "player": "late",
+      "evidence": "ledger",
+      "discovered": false,
+      "receipts": 0
+    },
+    {
+      "id": "quest_is_required",
+      "type": "investigate",
+      "player": "late",
+      "source": "ledger",
+      "applied": false,
+      "matched": false
+    },
+    {
+      "id": "first_disconnect",
+      "type": "player",
+      "player": "first",
+      "action": "disconnect"
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "offline_discovery",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    },
+    {
+      "id": "late_still_undiscovered",
+      "type": "assert_evidence",
+      "player": "late",
+      "evidence": "ledger",
+      "discovered": false,
+      "receipts": 0
+    },
+    {
+      "id": "late_accept",
+      "type": "quest_response",
+      "player": "late",
+      "actor": "guide",
+      "quest": "campaign_fixture:investigation",
+      "stage": "inspect",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "late_investigates",
+      "type": "investigate",
+      "player": "late",
+      "source": "ledger",
+      "applied": true
+    },
+    {
+      "id": "late_personal_receipt",
+      "type": "assert_evidence",
+      "player": "late",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    },
+    {
+      "id": "first_reconnect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "reconnect_receipt_unchanged",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    },
+    {
+      "id": "progress",
+      "type": "wait",
+      "ticks": 40
+    },
+    {
+      "id": "first_report",
+      "type": "assert_quest",
+      "player": "first",
+      "quest": "campaign_fixture:investigation",
+      "stage": "report"
+    },
+    {
+      "id": "late_report",
+      "type": "assert_quest",
+      "player": "late",
+      "quest": "campaign_fixture:investigation",
+      "stage": "report"
+    },
+    {
+      "id": "evidence_topic",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "proof",
+      "conversation": "campaign_fixture:ledger_challenge",
+      "topic": "discovery"
+    },
+    {
+      "id": "evidence_line",
+      "type": "assert_conversation",
+      "session": "proof",
+      "node": "proved",
+      "phase": "exchanges"
+    },
+    {
+      "id": "finish",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "proof",
+      "intent": "advance"
+    },
+    {
+      "id": "proved",
+      "type": "assert_conversation",
+      "session": "proof",
+      "node": "proved",
+      "phase": "complete",
+      "outcome": "proved"
+    },
+    {
+      "id": "dialogue_keeps_receipt",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    },
+    {
+      "id": "late_receipt_unchanged",
+      "type": "assert_evidence",
+      "player": "late",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    }
+  ]
+}

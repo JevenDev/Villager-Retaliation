@@ -41,6 +41,10 @@ public final class CampaignScenarioParser {
             String id = text(step, "id"), at = "/steps/" + steps.size(), player = text(step, "player"), session = text(step, "session");
             steps.add(switch (text(step, "type")) {
                 case "player" -> new Player(id, player, kind(PlayerAction.class, step, "action"), at);
+                case "spawn_evidence" -> new SpawnEvidence(id, text(step, "evidence"), position(step), at);
+                case "investigate" -> new Investigate(id, player, text(step, "source"), bool(step, "approach", true),
+                        bool(step, "matched", true), bool(step, "applied", false), bool(step, "unavailable", false), at);
+                case "assert_evidence" -> new AssertEvidence(id, player, text(step, "evidence"), bool(step, "discovered", false), integer(step, "receipts"), at);
                 case "give_item" -> new GiveItem(id, player, resource(step, "item"), integer(step, "count"), at);
                 case "assert_item_count" -> new AssertItemCount(id, player, resource(step, "item"), integer(step, "count"), at);
                 case "assert_transaction" -> new AssertTransaction(id, player, resource(step, "quest"), text(step, "transaction"),
@@ -98,6 +102,7 @@ public final class CampaignScenarioParser {
         var prior = new LinkedHashMap<String, Step>();
         var sessions = new HashSet<String>();
         int ticks = 0;
+        int sources = 0;
         for (var step : scenario.steps()) {
             String at = step.pointer();
             for (var player : playerReferences(step).entrySet()) if (!players.contains(player.getValue()))
@@ -107,6 +112,14 @@ public final class CampaignScenarioParser {
             String session = sessionReference(step);
             if (!session.isBlank() && !sessions.contains(session)) issue(scenario, issues, at + "/session", "session must be started earlier in the scenario");
             if (step instanceof StartConversation start && !sessions.add(start.session())) issue(scenario, issues, at + "/session", "duplicate scenario session");
+            if (step instanceof SpawnEvidence) sources++;
+            if (step instanceof Investigate investigation) {
+                if (!(prior.get(investigation.source()) instanceof SpawnEvidence))
+                    issue(scenario, issues, at + "/source", "investigation requires an earlier evidence source");
+                if (investigation.applied() && (!investigation.matched() || investigation.unavailable())
+                        || investigation.unavailable() && !investigation.matched())
+                    issue(scenario, issues, at, "investigation result expectations contradict each other");
+            }
             if (step instanceof QuestSelect select && !(prior.get(select.prompt()) instanceof QuestPrompt))
                 issue(scenario, issues, at + "/prompt", "quest selection requires an earlier prompt");
             if (step instanceof Replay replay && !(prior.get(replay.request()) instanceof QuestResponse || prior.get(replay.request()) instanceof QuestSelect
@@ -141,6 +154,7 @@ public final class CampaignScenarioParser {
             if (step instanceof Wait wait) ticks += wait.ticks();
             if (prior.putIfAbsent(step.id(), step) != null) issue(scenario, issues, at + "/id", "duplicate scenario step " + step.id());
         }
+        if (sources > 64) issue(scenario, issues, "/steps", "scenario evidence sources exceed 64");
         if (ticks > 6000) issue(scenario, issues, "/steps", "scenario waits exceed 6000 ticks");
     }
 
@@ -158,6 +172,8 @@ public final class CampaignScenarioParser {
             case Interrupt value -> Map.of("player", value.player());
             case Fixture value -> Map.of("player", value.player());
             case AssertPlayer value -> Map.of("player", value.player());
+            case Investigate value -> Map.of("player", value.player());
+            case AssertEvidence value -> Map.of("player", value.player());
             case GiveItem value -> Map.of("player", value.player());
             case AssertItemCount value -> Map.of("player", value.player());
             case AssertTransaction value -> Map.of("player", value.player());

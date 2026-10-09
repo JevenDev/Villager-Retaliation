@@ -43,6 +43,9 @@ final class CampaignScenarioExecution {
                 else fixture.disconnect(value.player());
                 ConversationTestStorage.maintain(fixture.server);
             }
+            case SpawnEvidence value -> CampaignScenarioEvidence.spawn(fixture, value);
+            case Investigate value -> lastDiagnostic = CampaignScenarioEvidence.investigate(fixture, value);
+            case AssertEvidence value -> CampaignScenarioEvidence.assertDiscovery(fixture, value);
             case GiveItem value -> {
                 var stack = new net.minecraft.world.item.ItemStack(item(value.item()), value.count());
                 fixture.player(value.player()).getInventory().add(stack);

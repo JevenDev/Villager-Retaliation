@@ -1,0 +1,110 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:investigation_source_recovery",
+  "campaign": "campaign_fixture:investigation",
+  "players": [
+    "first"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "role": "mentor",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "home",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "distant",
+      "type": "spawn_evidence",
+      "evidence": "ledger",
+      "position": {
+        "x": 12,
+        "y": 1,
+        "z": 1
+      }
+    },
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "accept",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:investigation",
+      "stage": "inspect",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "no_eligible_source",
+      "type": "investigate",
+      "player": "first",
+      "source": "distant",
+      "applied": false,
+      "unavailable": true
+    },
+    {
+      "id": "unavailable_keeps_undiscovered",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": false,
+      "receipts": 0
+    },
+    {
+      "id": "available",
+      "type": "spawn_evidence",
+      "evidence": "ledger",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 2
+      }
+    },
+    {
+      "id": "wrong_source",
+      "type": "investigate",
+      "player": "first",
+      "source": "distant",
+      "applied": false,
+      "matched": false
+    },
+    {
+      "id": "recovered",
+      "type": "investigate",
+      "player": "first",
+      "source": "available",
+      "applied": true
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "saved",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    }
+  ]
+}

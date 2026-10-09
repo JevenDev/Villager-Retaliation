@@ -181,6 +181,156 @@
           },
           {
             "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "evidence",
+              "position"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "spawn_evidence"
+                ]
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "position": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y",
+                  "z"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "integer",
+                    "minimum": -32,
+                    "maximum": 32
+                  },
+                  "y": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 32
+                  },
+                  "z": {
+                    "type": "integer",
+                    "minimum": -32,
+                    "maximum": 32
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "source",
+              "applied"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "investigate"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "source": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "approach": {
+                "type": "boolean"
+              },
+              "matched": {
+                "type": "boolean"
+              },
+              "applied": {
+                "type": "boolean"
+              },
+              "unavailable": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "evidence",
+              "discovered"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_evidence"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "discovered": {
+                "type": "boolean"
+              },
+              "receipts": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65536
+              }
+            }
+          },
+          {
+            "type": "object",
             "properties": {
               "id": {
                 "type": "string",

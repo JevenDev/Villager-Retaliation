@@ -5,7 +5,7 @@ const values = entries => Array.isArray(entries) ? entries : [];
 const named = entries => new Map(values(entries).map(entry => [entry.id, entry]));
 const requests = new Set(["quest_response", "quest_select", "quest_confirmation", "conversation_start", "conversation_intent", "fixture_entry"]);
 const ordinaryRequests = new Set(["quest_response", "quest_select", "quest_confirmation"]);
-const playerSteps = new Set(["player", "quest_prompt", "quest_response", "quest_confirmation", "conversation_start", "conversation_intent", "interrupt", "fixture_entry", "assert_player", "assert_quest", "assert_standing", "give_item", "assert_item_count", "assert_transaction"]);
+const playerSteps = new Set(["player", "quest_prompt", "quest_response", "quest_confirmation", "conversation_start", "conversation_intent", "interrupt", "fixture_entry", "assert_player", "assert_quest", "assert_standing", "give_item", "assert_item_count", "assert_transaction", "investigate", "assert_evidence"]);
 
 export function scenarioPath(file) {
   const normalized = path.resolve(file).replaceAll(path.sep, "/");
@@ -34,6 +34,7 @@ export function validateCampaignScenario(root, schema, context) {
   const prior = new Map();
   const sessions = new Set();
   let ticks = 0;
+  let sources = 0;
   root.steps.forEach((step, index) => {
     const at = "/steps/" + index;
     const refs = playerSteps.has(step.type) ? ["player"] : [];
@@ -46,6 +47,13 @@ export function validateCampaignScenario(root, schema, context) {
     if (step.type === "conversation_start") {
       if (sessions.has(step.session)) issue(at + "/session", "duplicate scenario session");
       sessions.add(step.session);
+    }
+    if (step.type === "spawn_evidence") sources++;
+    if (step.type === "investigate") {
+      if (prior.get(step.source)?.type !== "spawn_evidence") issue(at + "/source", "investigation requires an earlier evidence source");
+      const matched = step.matched ?? true;
+      if (step.applied && (!matched || step.unavailable) || step.unavailable && !matched)
+        issue(at, "investigation result expectations contradict each other");
     }
     if (step.type === "quest_select" && prior.get(step.prompt)?.type !== "quest_prompt") issue(at + "/prompt", "quest selection requires an earlier prompt");
     if (step.type === "replay") {
@@ -71,6 +79,7 @@ export function validateCampaignScenario(root, schema, context) {
     if (prior.has(step.id)) issue(at + "/id", "duplicate scenario step " + step.id);
     else prior.set(step.id, step);
   });
+  if (sources > 64) issue("/steps", "scenario evidence sources exceed 64");
   if (ticks > 6000) issue("/steps", "scenario waits exceed 6000 ticks");
   if (issues.length || !context) return issues;
   validateReferences(root, context, issue);
@@ -113,6 +122,11 @@ function validateReferences(root, context, issue) {
       const quest = context.quests.get(step.quest);
       if (!quest || !owned.has(step.quest)) issue(at + "/quest", "quest does not belong to this campaign");
       else if (step.stage && !values(quest.stages).some(value => value.id === step.stage)) issue(at + "/stage", "unknown quest stage");
+    } else if (step.type === "spawn_evidence" || step.type === "assert_evidence") {
+      const evidence = values(campaign.evidence).find(value => value.id === step.evidence);
+      if (!evidence) issue(at + "/evidence", "unknown campaign evidence");
+      else if (step.type === "spawn_evidence" && locations.get(evidence.location)?.dimension !== "minecraft:overworld")
+        issue(at + "/evidence", "scenario evidence requires an overworld campaign location");
     } else if (step.type === "assert_transaction") {
       const transaction = values(campaign.transactions).find(value => value.id === step.transaction);
       if (!owned.has(step.quest)) issue(at + "/quest", "quest does not belong to this campaign");

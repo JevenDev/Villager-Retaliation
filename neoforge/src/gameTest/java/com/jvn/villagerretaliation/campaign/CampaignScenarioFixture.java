@@ -52,6 +52,7 @@ final class CampaignScenarioFixture implements AutoCloseable {
     final CampaignScenario scenario;
     final Path directory;
     final Map<String, Villager> actors = new LinkedHashMap<>();
+    final Map<String, UUID> evidenceSources = new LinkedHashMap<>();
     final Map<String, GameProfile> profiles = new LinkedHashMap<>();
     final Map<String, ServerPlayer> players = new LinkedHashMap<>();
     final Map<String, ServerPlayer> lastPlayers = new LinkedHashMap<>();
@@ -233,6 +234,10 @@ final class CampaignScenarioFixture implements AutoCloseable {
                     if (entity != null) entity.discard();
                 }
                 actors.values().forEach(Villager::discard);
+                for (var id : evidenceSources.values()) {
+                    var entity = helper.getLevel().getEntity(id);
+                    if (entity != null) entity.discard();
+                }
                 channels.forEach(EmbeddedChannel::finishAndReleaseAll);
             }
         } finally {

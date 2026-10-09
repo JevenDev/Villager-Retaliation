@@ -1002,5 +1002,823 @@
       }
     ],
     "pointer": "/steps/7/price"
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": true,
+    "name": "personal investigation and late discovery",
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "fixture": "investigation_identity",
+    "valid": true,
+    "name": "investigation reach and saved source identity",
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "unknown evidence source definition",
+    "pointer": "/steps/0/evidence",
+    "catalog": true,
+    "patches": [
+      {
+        "path": "/steps/0/evidence",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "bounded evidence source position",
+    "pointer": "/steps/0/position/x",
+    "patches": [
+      {
+        "path": "/steps/0/position/x",
+        "value": 33
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "investigation requires a preceding source",
+    "pointer": "/steps/9/source",
+    "patches": [
+      {
+        "path": "/steps/9/source",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "investigation source cannot be another kind of step",
+    "pointer": "/steps/9/source",
+    "patches": [
+      {
+        "path": "/steps/9/source",
+        "value": "first_connect"
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "investigation player must be declared",
+    "pointer": "/steps/9/player",
+    "patches": [
+      {
+        "path": "/steps/9/player",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "successful investigation must match its source",
+    "pointer": "/steps/9",
+    "patches": [
+      {
+        "path": "/steps/9/matched",
+        "value": false
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "successful investigation cannot be unavailable",
+    "pointer": "/steps/9",
+    "patches": [
+      {
+        "path": "/steps/9/unavailable",
+        "value": true
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "investigation requires its expected result",
+    "pointer": "/steps/9/applied",
+    "patches": [
+      {
+        "path": "/steps/9/applied",
+        "remove": true
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "unknown evidence discovery assertion",
+    "pointer": "/steps/8/evidence",
+    "catalog": true,
+    "patches": [
+      {
+        "path": "/steps/8/evidence",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "investigation receipt counts are nonnegative",
+    "pointer": "/steps/8/receipts",
+    "patches": [
+      {
+        "path": "/steps/8/receipts",
+        "value": -1
+      }
+    ]
+  },
+  {
+    "fixture": "investigation_personal",
+    "valid": false,
+    "name": "evidence source count is bounded",
+    "pointer": "/steps",
+    "patches": [
+      {
+        "path": "/steps",
+        "value": [
+          {
+            "id": "source_0",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_1",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_2",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_3",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_4",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_5",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_6",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_7",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_8",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_9",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_10",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_11",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_12",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_13",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_14",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_15",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_16",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_17",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_18",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_19",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_20",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_21",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_22",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_23",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_24",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_25",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_26",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_27",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_28",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_29",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_30",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_31",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_32",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_33",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_34",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_35",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_36",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_37",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_38",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_39",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_40",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_41",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_42",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_43",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_44",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_45",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_46",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_47",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_48",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_49",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_50",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_51",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_52",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_53",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_54",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_55",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_56",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_57",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_58",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_59",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_60",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_61",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_62",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_63",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "source_64",
+            "type": "spawn_evidence",
+            "evidence": "ledger",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "recover unavailable evidence without changing the authored source",
+    "fixture": "investigation_source_recovery",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "unavailable investigation must match an authored objective",
+    "fixture": "investigation_source_recovery",
+    "valid": false,
+    "pointer": "/steps/3",
+    "patches": [
+      {
+        "path": "/steps/3/matched",
+        "value": false
+      }
+    ]
   }
 ]

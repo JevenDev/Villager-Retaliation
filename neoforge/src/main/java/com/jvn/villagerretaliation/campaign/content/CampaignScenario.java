@@ -24,12 +24,16 @@ public record CampaignScenario(ResourceLocation id, ResourceLocation campaign, L
     public sealed interface Step permits Player, Party, Privilege, QuestPrompt, QuestSelect, QuestResponse, QuestConfirmation, StartConversation,
             ConversationIntent, Replay, Interrupt, Fixture, WorldEvent, Storage, Reload, Wait, Checkpoint, AssertSame,
             AssertOutcome, AssertPlayer, AssertQuest, AssertConversation, AssertCheck, AssertCampaign, AssertStanding,
-            GiveItem, AssertItemCount, AssertTransaction {
+            GiveItem, AssertItemCount, AssertTransaction, SpawnEvidence, Investigate, AssertEvidence {
         String id();
         String pointer();
     }
 
     public record Player(String id, String player, PlayerAction action, String pointer) implements Step { }
+    public record SpawnEvidence(String id, String evidence, BlockPos position, String pointer) implements Step { }
+    public record Investigate(String id, String player, String source, boolean approach, boolean matched,
+            boolean applied, boolean unavailable, String pointer) implements Step { }
+    public record AssertEvidence(String id, String player, String evidence, boolean discovered, int receipts, String pointer) implements Step { }
     public record GiveItem(String id, String player, ResourceLocation item, int count, String pointer) implements Step { }
     public record AssertItemCount(String id, String player, ResourceLocation item, int count, String pointer) implements Step { }
     public record AssertTransaction(String id, String player, ResourceLocation quest, String transaction,
