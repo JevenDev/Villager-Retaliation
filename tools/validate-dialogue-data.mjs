@@ -954,6 +954,7 @@ const questV2UiKeys = questStructureKeys("ui");
 const questV2LifecycleCoverageSlots = new Set(["offer", "reminder", "turn_in"]);
 
 const cli = parseValidatorArgs(process.argv.slice(2));
+await readValidatorFileLists(cli);
 const questRegistryMetadata = await loadQuestRegistryMetadata();
 validateQuestRegistryMetadata(questRegistryMetadata);
 const skillTradeSchema = await loadSkillTradeSchema();
@@ -969,7 +970,7 @@ if (cli.help) {
   process.exit(0);
 }
 
-if (cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0 || cli.campaignFiles.length > 0) {
+if (cli.fileLists.length > 0 || cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0 || cli.campaignFiles.length > 0) {
   if (cli.questFiles.length > 0) await validateQuestFiles(cli.questFiles);
   if (cli.skillTradeFiles.length > 0) await validateSkillTradeFiles(cli.skillTradeFiles);
   if (cli.conversationFiles.length > 0) {
@@ -992,25 +993,21 @@ if (cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversat
 
 validateCrossReferences();
 
-if (errors.length > 0) {
-  for (const error of errors) {
-    console.error(formatIssue(error, "error"));
-  }
-  process.exitCode = 1;
-} else if (!cli.quiet) {
-  console.log("Built-in dialogue data validation passed.");
-}
-
-if (warnings.length > 0) {
-  for (const warning of warnings) {
-    console.warn(formatIssue(warning, "warning"));
-  }
+if (errors.length > 0) process.exitCode = 1;
+if (cli.json) {
+  console.log(JSON.stringify({ errors, warnings }));
+} else {
+  for (const error of errors) console.error(formatIssue(error, "error"));
+  if (errors.length === 0 && !cli.quiet) console.log("Built-in dialogue data validation passed.");
+  for (const warning of warnings) console.warn(formatIssue(warning, "warning"));
 }
 
 function parseValidatorArgs(args) {
   const parsed = {
     help: false,
     quiet: false,
+    json: false,
+    fileLists: [],
     questFiles: [],
     skillTradeFiles: [],
     conversationFiles: [],
@@ -1022,6 +1019,12 @@ function parseValidatorArgs(args) {
       parsed.help = true;
     } else if (arg === "--quiet" || arg === "-q") {
       parsed.quiet = true;
+    } else if (arg === "--json") {
+      parsed.json = true;
+    } else if (arg === "--file-list") {
+      const file = args[++index];
+      if (!file) errors.push("tools/validate-dialogue-data.mjs: --file-list requires a JSON file path.");
+      else parsed.fileLists.push(path.resolve(file));
     } else if (arg === "--quest" || arg === "--quest-file") {
       const file = args[++index];
       if (!file) {
@@ -1050,12 +1053,31 @@ function parseValidatorArgs(args) {
   return parsed;
 }
 
+async function readValidatorFileLists(cli) {
+  const fields = { quests: "questFiles", conversations: "conversationFiles", campaigns: "campaignFiles" };
+  for (const file of cli.fileLists) {
+    const data = await parseJson(file);
+    if (!data || typeof data !== "object" || Array.isArray(data) || Object.keys(data).some(key => !Object.hasOwn(fields, key))
+        || Object.values(data).some(entries => !Array.isArray(entries) || entries.length > 4096
+          || entries.some(entry => typeof entry !== "string" || !entry.trim()))) {
+      errors.push(relative(file) + ": file list must contain quests, conversations, or campaigns arrays of JSON file paths.");
+      continue;
+    }
+    for (const [key, entries] of Object.entries(data)) {
+      cli[fields[key]].push(...entries.map(entry => path.resolve(path.dirname(file), entry)));
+    }
+  }
+  for (const field of Object.values(fields)) cli[field] = [...new Set(cli[field])];
+}
+
 function printValidatorHelp() {
   console.log([
-    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...] [--campaign path/to/campaign.json ...]",
+    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--json] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...] [--campaign path/to/campaign.json ...]",
     "",
     "Without file arguments, validates the checked-in built-in datapack dialogue and quest data.",
-    "With --quest, --skill-trade, --conversation, or --campaign, validates the supplied resources and their authored references."
+    "With --quest, --skill-trade, --conversation, or --campaign, validates the supplied resources and their authored references.",
+    "--file-list accepts JSON with quests, conversations, and campaigns arrays. Paths are relative to that file.",
+    "--json emits errors and warnings as JSON."
   ].join("\n"));
 }
 

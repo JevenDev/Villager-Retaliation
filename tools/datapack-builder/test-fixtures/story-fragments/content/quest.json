@@ -1,0 +1,125 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "campaign_fixture:characters",
+  "localization_prefix": "campaign_fixture.quest.characters",
+  "metadata": {
+    "title": {
+      "$use": "campaign_fixture:text",
+      "args": {
+        "key": "#title"
+      }
+    },
+    "description": {
+      "$use": "campaign_fixture:text",
+      "args": {
+        "key": "#description"
+      }
+    },
+    "questline": "campaign_fixture",
+    "campaign": "campaign_fixture:characters"
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "campaign_role": "mentor"
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": false,
+    "cross_villager_compatible": true
+  },
+  "entry_stage": "visit",
+  "stages": [
+    {
+      "id": "visit",
+      "objectives": [
+        {
+          "id": "home",
+          "type": "location_visit",
+          "campaign_location": "home",
+          "radius": 12,
+          "tracker": {
+            "text": {
+              "key": "#travel"
+            }
+          }
+        }
+      ],
+      "on_enter": [
+        {
+          "$use": "campaign_fixture:required_scene",
+          "args": {
+            "scene": "campaign_fixture:character_greeting",
+            "operation": "greeting"
+          }
+        }
+      ],
+      "next": {
+        "stage": "report"
+      },
+      "dialogue": {
+        "offer": {
+          "request": "question",
+          "label": {
+            "key": "#offer.label"
+          },
+          "lines": {
+            "key": "#offer.lines"
+          },
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#accept"
+              },
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "start"
+                }
+              ]
+            }
+          ]
+        },
+        "reminder": {
+          "request": "question",
+          "label": {
+            "key": "#reminder.label"
+          },
+          "lines": {
+            "key": "#reminder.lines"
+          }
+        }
+      }
+    },
+    {
+      "id": "report",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "request": "question",
+          "label": {
+            "key": "#report.label"
+          },
+          "lines": {
+            "key": "#report.lines"
+          },
+          "responses": [
+            {
+              "id": "finish",
+              "label": {
+                "key": "#finish"
+              },
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "turn_in"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

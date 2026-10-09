@@ -1,0 +1,69 @@
+{
+  "schema": "villagerretaliation:story_fragments/v1",
+  "libraries": [
+    "common.json"
+  ],
+  "fragments": {
+    "campaign_fixture:role_exchange": {
+      "parameters": {
+        "id": "string",
+        "role": "string",
+        "text": "string"
+      },
+      "value": {
+        "id": {
+          "$arg": "id"
+        },
+        "speaker": {
+          "type": "role",
+          "role": {
+            "$arg": "role"
+          }
+        },
+        "text": {
+          "$use": "campaign_fixture:text",
+          "args": {
+            "key": {
+              "$arg": "text"
+            }
+          }
+        }
+      }
+    },
+    "campaign_fixture:opening": {
+      "parameters": {
+        "role": "string",
+        "greeting": "string",
+        "question": "string"
+      },
+      "value": [
+        {
+          "$use": "campaign_fixture:role_exchange",
+          "args": {
+            "id": "mentor",
+            "role": {
+              "$arg": "role"
+            },
+            "text": {
+              "$arg": "greeting"
+            }
+          }
+        },
+        {
+          "id": "player",
+          "speaker": {
+            "type": "player"
+          },
+          "text": {
+            "$use": "campaign_fixture:text",
+            "args": {
+              "key": {
+                "$arg": "question"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

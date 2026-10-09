@@ -1,0 +1,34 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.characters.title": "Campaign fixture: recurring characters",
+    "campaign_fixture.quest.characters.description": "Meet the existing villager cast as this campaign's mentor. All players share the same character.",
+    "campaign_fixture.quest.characters.travel": "Visit our village at {objective_target_x}, {objective_target_y}, {objective_target_z}.",
+    "campaign_fixture.quest.characters.offer.label": "Test a recurring campaign character",
+    "campaign_fixture.quest.characters.offer.lines": [
+      "This test chooses one adult villager near the saved village. Quests and scenes keep that identity through reloads and unloaded chunks."
+    ],
+    "campaign_fixture.quest.characters.accept": "Begin the character test.",
+    "campaign_fixture.quest.characters.reminder.label": "Where is our village?",
+    "campaign_fixture.quest.characters.reminder.lines": [
+      "Reach the village marked by this quest. Exploring a closer village will not change the destination."
+    ],
+    "campaign_fixture.quest.characters.report.label": "Finish the character test",
+    "campaign_fixture.quest.characters.report.lines": [
+      "You returned to the same mentor. Another villager cannot finish this test, even when ordinary quests allow compatible providers."
+    ],
+    "campaign_fixture.quest.characters.finish": "Record my visit.",
+    "campaign_fixture.quest.characters.conversation.title": "The mentor's advice",
+    "campaign_fixture.quest.characters.conversation.topic": "Ask for guidance",
+    "campaign_fixture.quest.characters.conversation.welcome": "You have returned. What do you need?",
+    "campaign_fixture.quest.characters.conversation.question": "Will you help us find our way?",
+    "campaign_fixture.quest.characters.conversation.pause": "The mentor considers your request.",
+    "campaign_fixture.quest.characters.conversation.appeal": "Ask the mentor to trust you.",
+    "campaign_fixture.quest.characters.conversation.leave": "Leave without asking for help.",
+    "campaign_fixture.quest.characters.conversation.agreed": "I will help you find a way forward.",
+    "campaign_fixture.quest.characters.conversation.declined": "You will need to find another way.",
+    "campaign_fixture.quest.characters.conversation.recorded": "The mentor agreed to help.",
+    "campaign_fixture.quest.characters.conversation.success": "The mentor agreed",
+    "campaign_fixture.quest.characters.conversation.failure": "The mentor declined"
+  }
+}

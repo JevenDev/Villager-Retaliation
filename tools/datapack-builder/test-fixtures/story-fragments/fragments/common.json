@@ -1,0 +1,53 @@
+{
+  "schema": "villagerretaliation:story_fragments/v1",
+  "fragments": {
+    "campaign_fixture:text": {
+      "parameters": {
+        "key": "string"
+      },
+      "value": {
+        "key": {
+          "$arg": "key"
+        }
+      }
+    },
+    "campaign_fixture:resident": {
+      "parameters": {
+        "id": "string",
+        "title": "string",
+        "location": "string"
+      },
+      "value": {
+        "id": {
+          "$arg": "id"
+        },
+        "title_key": {
+          "$arg": "title"
+        },
+        "source": "existing_villager",
+        "location": {
+          "$arg": "location"
+        },
+        "search_radius": 32,
+        "loss_policy": "downed"
+      }
+    },
+    "campaign_fixture:required_scene": {
+      "parameters": {
+        "scene": "string",
+        "operation": "string"
+      },
+      "value": {
+        "type": "start_scene",
+        "scene": {
+          "$arg": "scene"
+        },
+        "operation_id": {
+          "$arg": "operation"
+        },
+        "wait_for_result": true,
+        "required": true
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.characters.title": "Campaign fixture: recurring characters",
+    "campaign_fixture.campaign.characters.chapter": "Meet the same mentor",
+    "campaign_fixture.campaign.characters.home": "The mentor's village",
+    "campaign_fixture.campaign.characters.mentor": "Mentor"
+  }
+}

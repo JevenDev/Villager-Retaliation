@@ -1,0 +1,36 @@
+{
+  "schema": "villagerretaliation:story_authoring/v1",
+  "libraries": [
+    "fragments/conversation.json"
+  ],
+  "resources": [
+    {
+      "path": "pack.mcmeta",
+      "source": "pack.mcmeta"
+    },
+    {
+      "path": "data/campaign_fixture/campaigns/characters/campaign.json",
+      "source": "content/campaign.json"
+    },
+    {
+      "path": "data/campaign_fixture/campaigns/characters/locales/en_us.json",
+      "source": "content/campaign.en_us.json"
+    },
+    {
+      "path": "data/campaign_fixture/quests/campaign_fixture/characters/quest.json",
+      "source": "content/quest.json"
+    },
+    {
+      "path": "data/campaign_fixture/quests/campaign_fixture/characters/locales/en_us.json",
+      "source": "content/quest.en_us.json"
+    },
+    {
+      "path": "data/campaign_fixture/quests/campaign_fixture/characters/scenes/character_greeting.json",
+      "source": "content/greeting.json"
+    },
+    {
+      "path": "data/campaign_fixture/quests/campaign_fixture/characters/conversations/mentor.json",
+      "source": "content/mentor.json"
+    }
+  ]
+}

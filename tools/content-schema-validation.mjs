@@ -12,7 +12,7 @@ export function validateContentSchema(value, schema) {
   const keywords = new Set([
     "$schema", "$id", "$defs", "$ref", "title", "description", "default", "examples",
     "type", "const", "enum", "allOf", "anyOf", "oneOf", "not", "if", "then", "else",
-    "properties", "required", "additionalProperties", "items", "minItems", "maxItems",
+    "properties", "propertyNames", "required", "additionalProperties", "items", "minItems", "maxItems",
     "uniqueItems", "minLength", "maxLength", "pattern", "minimum", "maximum", "minProperties", "maxProperties"
   ]);
   const references = new Set();
@@ -32,7 +32,7 @@ export function validateContentSchema(value, schema) {
     }
     for (const key of ["$defs", "properties"]) for (const child of Object.values(rule[key] ?? {})) checkSchema(child);
     for (const key of ["allOf", "anyOf", "oneOf"]) for (const child of rule[key] ?? []) checkSchema(child);
-    for (const key of ["not", "if", "then", "else", "items", "additionalProperties"]) if (Object.hasOwn(rule, key)) checkSchema(rule[key]);
+    for (const key of ["not", "if", "then", "else", "items", "additionalProperties", "propertyNames"]) if (Object.hasOwn(rule, key)) checkSchema(rule[key]);
   };
   checkSchema(schema);
   let remaining = 100000;
@@ -67,6 +67,7 @@ export function validateContentSchema(value, schema) {
       for (const key of rule.required ?? []) if (!Object.hasOwn(value, key)) issue("required field is missing", child(pointer, key));
       for (const [key, entry] of Object.entries(value)) {
         if (issues.length >= 128) break;
+        if (rule.propertyNames !== undefined) issues.push(...validate(key, rule.propertyNames, child(pointer, key), depth + 1));
         if (Object.hasOwn(rule.properties ?? {}, key)) issues.push(...validate(entry, rule.properties[key], child(pointer, key), depth + 1));
         else if (rule.additionalProperties === false) issue("unsupported field", child(pointer, key));
         else if (object(rule.additionalProperties)) issues.push(...validate(entry, rule.additionalProperties, child(pointer, key), depth + 1));

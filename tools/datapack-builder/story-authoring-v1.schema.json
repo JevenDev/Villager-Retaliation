@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/story-authoring-v1.schema.json",
+  "title": "Villager Retaliation story authoring",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "resources"
+      ],
+      "properties": {
+        "schema": {
+          "const": "villagerretaliation:story_authoring/v1"
+        },
+        "libraries": {
+          "$ref": "#/$defs/libraries"
+        },
+        "fragments": {
+          "$ref": "#/$defs/fragments"
+        },
+        "resources": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/resource"
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "fragments"
+      ],
+      "properties": {
+        "schema": {
+          "const": "villagerretaliation:story_fragments/v1"
+        },
+        "libraries": {
+          "$ref": "#/$defs/libraries"
+        },
+        "fragments": {
+          "$ref": "#/$defs/fragments"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "libraries": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "fragments": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "parameters",
+          "value"
+        ],
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "maxProperties": 64,
+            "additionalProperties": {
+              "enum": [
+                "string",
+                "number",
+                "integer",
+                "boolean",
+                "object",
+                "array",
+                "null"
+              ]
+            }
+          },
+          "value": true
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "value": true
+      },
+      "oneOf": [
+        {
+          "required": [
+            "source"
+          ],
+          "not": {
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "required": [
+            "value"
+          ],
+          "not": {
+            "required": [
+              "source"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

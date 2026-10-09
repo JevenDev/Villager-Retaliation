@@ -1,0 +1,125 @@
+{
+  "schema": "villagerretaliation:conversation/v1",
+  "id": "campaign_fixture:mentor_conversation",
+  "revision": 1,
+  "campaign": "campaign_fixture:characters",
+  "character": "mentor",
+  "title": {
+    "$use": "campaign_fixture:text",
+    "args": {
+      "key": "#conversation.title"
+    }
+  },
+  "topics": [
+    {
+      "id": "guidance",
+      "label": {
+        "key": "#conversation.topic"
+      },
+      "start": "welcome"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "welcome",
+      "exchanges": [
+        {
+          "$splice": {
+            "$use": "campaign_fixture:opening",
+            "args": {
+              "role": "mentor",
+              "greeting": "#conversation.welcome",
+              "question": "#conversation.question"
+            }
+          }
+        },
+        {
+          "id": "pause",
+          "speaker": {
+            "type": "narrator"
+          },
+          "text": {
+            "key": "#conversation.pause"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "appeal",
+          "label": {
+            "key": "#conversation.appeal"
+          },
+          "check": "convince"
+        },
+        {
+          "id": "leave",
+          "label": {
+            "key": "#conversation.leave"
+          },
+          "next": "declined"
+        }
+      ]
+    },
+    {
+      "id": "agreed",
+      "exchanges": [
+        {
+          "$use": "campaign_fixture:role_exchange",
+          "args": {
+            "id": "answer",
+            "role": "mentor",
+            "text": "#conversation.agreed"
+          }
+        }
+      ],
+      "effects": [
+        {
+          "id": "record_answer",
+          "action": {
+            "type": "notification",
+            "text": {
+              "key": "#conversation.recorded"
+            },
+            "required": true
+          }
+        }
+      ],
+      "outcome": "guidance_given"
+    },
+    {
+      "id": "declined",
+      "exchanges": [
+        {
+          "$use": "campaign_fixture:role_exchange",
+          "args": {
+            "id": "answer",
+            "role": "mentor",
+            "text": "#conversation.declined"
+          }
+        }
+      ],
+      "outcome": "guidance_declined"
+    }
+  ],
+  "checks": [
+    {
+      "id": "convince",
+      "success": "agreed",
+      "failure": "declined"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "guidance_given",
+      "label": {
+        "key": "#conversation.success"
+      }
+    },
+    {
+      "id": "guidance_declined",
+      "label": {
+        "key": "#conversation.failure"
+      }
+    }
+  ]
+}
