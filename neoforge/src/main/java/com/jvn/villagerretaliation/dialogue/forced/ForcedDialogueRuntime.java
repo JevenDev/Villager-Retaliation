@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueContext;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueDefinition;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueOption;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.LocalizedText;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
@@ -219,6 +220,57 @@ public final class ForcedDialogueRuntime<S extends ForcedDialogueRuntime.Session
                 option.label(),
                 session.context(),
                 option.itemPayment().removal().replacements());
+    }
+
+    public static ForcedDialogueDefinition definitionWithOptions(
+            String id,
+            ForcedDialogueDefinition source,
+            String line,
+            List<ForcedDialogueOption> options,
+            ForcedDialogueOption leaveOption) {
+        return new ForcedDialogueDefinition(
+                id,
+                source.source(),
+                source.trigger(),
+                source.output(),
+                line.isBlank() ? List.of() : List.of(LocalizedText.inline(line)),
+                true,
+                false,
+                source.forceCameraTowardsVillager(),
+                source.requiresLineOfSight(),
+                source.witnessRadius(),
+                source.chance(),
+                0,
+                source.priority(),
+                source.weight(),
+                source.cooldownTicks(),
+                source.minRecentContainerThefts(),
+                source.maxRecentContainerThefts(),
+                source.minRecentRetaliations(),
+                source.maxRecentRetaliations(),
+                source.lootTables(),
+                source.targetEntityTypes(),
+                source.witnessProfessions(),
+                source.minTradeLevel(),
+                source.maxTradeLevel(),
+                source.requiresHeldTradeItem(),
+                source.requiresPlayerAimingAtWitness(),
+                source.requiredAimDurationTicks(),
+                source.requiresSameParty(),
+                source.witnessEquipmentCondition(),
+                source.playerItemCondition(),
+                source.reputationCondition(),
+                source.drawWeaponTicks(),
+                List.copyOf(options),
+                leaveOption,
+                List.of(leaveOption),
+                source.metadata(),
+                source.conditions());
+    }
+
+    public interface GeneratedMenu {
+        void open(ForcedDialogueDefinition definition);
+        void disable(String optionId, String response);
     }
 
     public interface Session {
