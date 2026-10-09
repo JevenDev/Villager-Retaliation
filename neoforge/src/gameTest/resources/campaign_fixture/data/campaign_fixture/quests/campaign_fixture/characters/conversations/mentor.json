@@ -28,6 +28,13 @@
           },
           "text": {
             "key": "#conversation.welcome"
+          },
+          "camera": {
+            "target": "speaker",
+            "zoom": 0.2
+          },
+          "voices": {
+            "en_us": "minecraft:entity.villager.ambient"
           }
         },
         {
@@ -37,6 +44,10 @@
           },
           "text": {
             "key": "#conversation.question"
+          },
+          "camera": {
+            "target": "character",
+            "zoom": 0
           }
         },
         {
@@ -46,6 +57,12 @@
           },
           "text": {
             "key": "#conversation.pause"
+          },
+          "camera": {
+            "target": "none"
+          },
+          "voices": {
+            "en_us": "campaign_fixture:missing_voice"
           }
         }
       ],

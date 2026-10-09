@@ -59,6 +59,15 @@ public final class CampaignConversationScreenController {
 
     public CampaignConversationViewPayload.Session session() { return state == null ? null : state.session(); }
 
+    public UUID characterId() { return character; }
+
+    public CampaignConversationViewPayload.Line presentationLine() {
+        var session = session();
+        return session != null && state.diagnostic().isBlank()
+                && session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.EXCHANGES
+                ? session.line() : null;
+    }
+
     public void addTopics() {
         if (state == null || session() != null) return;
         for (var topic : state.topics()) host.option(topic.label(), () -> request(Action.START, topic.conversation(), topic.id(), 0, true), pending || !topic.available());

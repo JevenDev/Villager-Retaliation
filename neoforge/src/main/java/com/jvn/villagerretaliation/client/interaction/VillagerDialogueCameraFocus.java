@@ -22,6 +22,7 @@ public final class VillagerDialogueCameraFocus {
     private static final double CAMERA_MAX_ZOOM_AMOUNT = 0.45D;
 
     private static final ToucanCameraTurnSmoother TURN_SMOOTHER = new ToucanCameraTurnSmoother(CAMERA_TURN_FIRST_FRAME_DELTA_TICKS);
+    private static double lastAuthoredZoom = Double.NaN;
 
     private VillagerDialogueCameraFocus() {
     }
@@ -48,24 +49,30 @@ public final class VillagerDialogueCameraFocus {
     private static double distanceAdjustedZoomAmount(ViewportEvent event) {
         double zoomAmount = dialogueCameraZoomAmount();
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || !ClientVillagerConversationState.active()) {
-            return zoomAmount;
-        }
-
-        Entity villager = minecraft.level.getEntity(ClientVillagerConversationState.focusedVillagerEntityId());
-        if (villager == null || !villager.isAlive()) {
-            return zoomAmount;
-        }
-
+        if (!ClientVillagerConversationState.active())
+            return Double.isNaN(lastAuthoredZoom) ? zoomAmount : Math.min(zoomAmount, lastAuthoredZoom);
+        var cue = minecraft.screen instanceof VillagerInteractionScreen screen ? screen.campaignCameraCue() : null;
+        if (cue == null) lastAuthoredZoom = Double.NaN;
+        if (minecraft.level == null) return zoomAmount;
+        Entity target = cameraTarget(minecraft);
+        if (cue != null && (zoomAmount <= 0 || target == null)) return rememberAuthoredZoom(0);
+        if (target == null || !target.isAlive()) return zoomAmount;
         double distance = event.getCamera().getPosition().distanceTo(
-                ToucanCameraTargetPoints.focusPoint(villager, (float) event.getPartialTick()));
-        return ToucanCameraFov.distanceAdjustedZoomAmount(
-                zoomAmount,
-                distance,
-                CAMERA_DISTANCE_ZOOM_START,
-                CAMERA_DISTANCE_ZOOM_END,
-                CAMERA_DISTANCE_ZOOM_BONUS,
-                CAMERA_MAX_ZOOM_AMOUNT);
+                ToucanCameraTargetPoints.focusPoint(target, (float) event.getPartialTick()));
+        double adjusted = ToucanCameraFov.distanceAdjustedZoomAmount(zoomAmount, distance, CAMERA_DISTANCE_ZOOM_START,
+                CAMERA_DISTANCE_ZOOM_END, CAMERA_DISTANCE_ZOOM_BONUS, CAMERA_MAX_ZOOM_AMOUNT);
+        return cue == null ? adjusted : rememberAuthoredZoom(cue.zoom() == null ? adjusted : Math.min(adjusted, cue.zoom()));
+    }
+
+    private static double rememberAuthoredZoom(double amount) {
+        lastAuthoredZoom = amount;
+        return amount;
+    }
+
+    private static Entity cameraTarget(Minecraft minecraft) {
+        if (minecraft.screen instanceof VillagerInteractionScreen screen && screen.campaignCameraCue() != null)
+            return screen.campaignCameraTarget();
+        return minecraft.level == null ? null : minecraft.level.getEntity(ClientVillagerConversationState.focusedVillagerEntityId());
     }
 
     private static double dialogueCameraZoomAmount() {
@@ -94,7 +101,7 @@ public final class VillagerDialogueCameraFocus {
             return;
         }
 
-        Entity villager = minecraft.level.getEntity(ClientVillagerConversationState.focusedVillagerEntityId());
+        Entity villager = cameraTarget(minecraft);
         if (villager == null || !villager.isAlive()) {
             resetCameraTurn();
             return;

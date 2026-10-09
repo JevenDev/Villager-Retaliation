@@ -199,7 +199,11 @@ public final class ConversationPresentationService {
             }
             var parts = splitText(entry.fallback());
             int part = Math.min(textPage, parts.size() - 1);
-            line = new Line(entry.visit() + "/" + entry.exchange(), entry.speaker(), speaker == null ? -1 : speaker.getId(), label(entry.name()), parts.get(part), part, parts.size());
+            var presentation = valid && snapshot.phase() == ConversationSession.Phase.EXCHANGES
+                    ? linePresentation(definition, entry) : ConversationLinePresentation.EMPTY;
+            line = new Line(entry.visit() + "/" + entry.exchange(), entry.speaker(), speaker == null ? -1 : speaker.getId(),
+                    label(entry.name()), parts.get(part), part, parts.size(), presentation.camera(),
+                    presentation.voice(com.jvn.villagerretaliation.util.VillagerLocale.locale(player)));
         }
         Check check = null;
         if (snapshot.phase() == ConversationSession.Phase.CHECK || snapshot.phase() == ConversationSession.Phase.ROLLED) {
@@ -231,6 +235,15 @@ public final class ConversationPresentationService {
                 snapshot.confirmation() == null ? null : snapshot.confirmation().id(), prices.transactions());
         return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), page, pages, List.of(), session,
                 text(issue.isBlank() ? result.diagnostic() : issue));
+    }
+
+    static ConversationLinePresentation linePresentation(ConversationDefinition definition, ConversationSession.Line entry) {
+        var node = definition == null ? null : definition.nodes().get(entry.node());
+        if (node == null) return ConversationLinePresentation.EMPTY;
+        return node.exchanges().stream().filter(exchange -> exchange.id().equals(entry.exchange())
+                        && exchange.speaker().kind() == entry.kind() && exchange.speaker().role().equals(entry.role())
+                        && exchange.textKey().equals(entry.textKey())).findFirst()
+                .map(ConversationDefinition.Exchange::presentation).orElse(ConversationLinePresentation.EMPTY);
     }
 
     static String playerName(ServerPlayer viewer, UUID id) {

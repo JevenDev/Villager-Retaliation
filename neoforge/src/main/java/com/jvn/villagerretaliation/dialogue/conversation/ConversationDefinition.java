@@ -39,8 +39,16 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
         }
     }
 
-    public record Exchange(String id, Speaker speaker, String textKey, List<DialogueCondition> conditions, String pointer) {
-        public Exchange { conditions = List.copyOf(conditions); }
+    public record Exchange(String id, Speaker speaker, String textKey, List<DialogueCondition> conditions,
+            ConversationLinePresentation presentation, String pointer) {
+        public Exchange {
+            conditions = List.copyOf(conditions);
+            java.util.Objects.requireNonNull(presentation);
+        }
+
+        public Exchange(String id, Speaker speaker, String textKey, List<DialogueCondition> conditions, String pointer) {
+            this(id, speaker, textKey, conditions, ConversationLinePresentation.EMPTY, pointer);
+        }
 
         public Exchange(String id, Speaker speaker, String textKey, String pointer) {
             this(id, speaker, textKey, List.of(), pointer);

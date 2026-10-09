@@ -1615,5 +1615,336 @@
       }
     ],
     "pointer": "/nodes/0/responses/0/conditions/0/role"
+  },
+  {
+    "name": "speaker camera uses the player's camera preferences",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "speaker"
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "character camera can cap zoom",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "character",
+          "zoom": 0.45
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "zero camera zoom stays unzoomed",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "speaker",
+          "zoom": 0
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "authored line can release camera focus",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "none"
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "camera target is required",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "zoom": 0.2
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera/target"
+  },
+  {
+    "name": "unknown camera target",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "orbit"
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera/target"
+  },
+  {
+    "name": "camera zoom cannot exceed its bound",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "speaker",
+          "zoom": 0.451
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera/zoom"
+  },
+  {
+    "name": "negative camera zoom",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "speaker",
+          "zoom": -0.1
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera/zoom"
+  },
+  {
+    "name": "camera zoom requires a number",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "speaker",
+          "zoom": "0.2"
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera/zoom"
+  },
+  {
+    "name": "null camera zoom",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "speaker",
+          "zoom": null
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera/zoom"
+  },
+  {
+    "name": "released camera cannot declare zoom",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "none",
+          "zoom": 0.2
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera"
+  },
+  {
+    "name": "unknown camera field",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": {
+          "target": "speaker",
+          "position": 1
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera/position"
+  },
+  {
+    "name": "null camera cue",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/camera",
+        "value": null
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/camera"
+  },
+  {
+    "name": "localized voice references",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": {
+          "en_us": "campaign_fixture:mentor/welcome",
+          "fr_fr": "campaign_fixture:mentor/bienvenue"
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "custom locale voice reference",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": {
+          "tok": "campaign_fixture:mentor/welcome"
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "voice locales are normalized",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": {
+          "en_US": "campaign_fixture:mentor/welcome"
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/voices/en_US"
+  },
+  {
+    "name": "voice locale rejects paths",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": {
+          "../en_us": "campaign_fixture:mentor/welcome"
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/voices/..~1en_us"
+  },
+  {
+    "name": "empty voice map",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": {}
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/voices"
+  },
+  {
+    "name": "voice reference needs a resource identifier",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": {
+          "en_us": "../voice.ogg"
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/voices/en_us"
+  },
+  {
+    "name": "voice reference cannot be null",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": {
+          "en_us": null
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/voices/en_us"
+  },
+  {
+    "name": "voice references require a map",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": []
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/voices"
+  },
+  {
+    "name": "voice locale count is bounded",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/voices",
+        "value": {
+          "locale_0": "campaign_fixture:mentor/welcome",
+          "locale_1": "campaign_fixture:mentor/welcome",
+          "locale_2": "campaign_fixture:mentor/welcome",
+          "locale_3": "campaign_fixture:mentor/welcome",
+          "locale_4": "campaign_fixture:mentor/welcome",
+          "locale_5": "campaign_fixture:mentor/welcome",
+          "locale_6": "campaign_fixture:mentor/welcome",
+          "locale_7": "campaign_fixture:mentor/welcome",
+          "locale_8": "campaign_fixture:mentor/welcome",
+          "locale_9": "campaign_fixture:mentor/welcome",
+          "locale_10": "campaign_fixture:mentor/welcome",
+          "locale_11": "campaign_fixture:mentor/welcome",
+          "locale_12": "campaign_fixture:mentor/welcome",
+          "locale_13": "campaign_fixture:mentor/welcome",
+          "locale_14": "campaign_fixture:mentor/welcome",
+          "locale_15": "campaign_fixture:mentor/welcome",
+          "locale_16": "campaign_fixture:mentor/welcome",
+          "locale_17": "campaign_fixture:mentor/welcome",
+          "locale_18": "campaign_fixture:mentor/welcome",
+          "locale_19": "campaign_fixture:mentor/welcome",
+          "locale_20": "campaign_fixture:mentor/welcome",
+          "locale_21": "campaign_fixture:mentor/welcome",
+          "locale_22": "campaign_fixture:mentor/welcome",
+          "locale_23": "campaign_fixture:mentor/welcome",
+          "locale_24": "campaign_fixture:mentor/welcome",
+          "locale_25": "campaign_fixture:mentor/welcome",
+          "locale_26": "campaign_fixture:mentor/welcome",
+          "locale_27": "campaign_fixture:mentor/welcome",
+          "locale_28": "campaign_fixture:mentor/welcome",
+          "locale_29": "campaign_fixture:mentor/welcome",
+          "locale_30": "campaign_fixture:mentor/welcome",
+          "locale_31": "campaign_fixture:mentor/welcome",
+          "locale_32": "campaign_fixture:mentor/welcome",
+          "locale_33": "campaign_fixture:mentor/welcome",
+          "locale_34": "campaign_fixture:mentor/welcome",
+          "locale_35": "campaign_fixture:mentor/welcome",
+          "locale_36": "campaign_fixture:mentor/welcome",
+          "locale_37": "campaign_fixture:mentor/welcome",
+          "locale_38": "campaign_fixture:mentor/welcome",
+          "locale_39": "campaign_fixture:mentor/welcome",
+          "locale_40": "campaign_fixture:mentor/welcome",
+          "locale_41": "campaign_fixture:mentor/welcome",
+          "locale_42": "campaign_fixture:mentor/welcome",
+          "locale_43": "campaign_fixture:mentor/welcome",
+          "locale_44": "campaign_fixture:mentor/welcome",
+          "locale_45": "campaign_fixture:mentor/welcome",
+          "locale_46": "campaign_fixture:mentor/welcome",
+          "locale_47": "campaign_fixture:mentor/welcome",
+          "locale_48": "campaign_fixture:mentor/welcome",
+          "locale_49": "campaign_fixture:mentor/welcome",
+          "locale_50": "campaign_fixture:mentor/welcome",
+          "locale_51": "campaign_fixture:mentor/welcome",
+          "locale_52": "campaign_fixture:mentor/welcome",
+          "locale_53": "campaign_fixture:mentor/welcome",
+          "locale_54": "campaign_fixture:mentor/welcome",
+          "locale_55": "campaign_fixture:mentor/welcome",
+          "locale_56": "campaign_fixture:mentor/welcome",
+          "locale_57": "campaign_fixture:mentor/welcome",
+          "locale_58": "campaign_fixture:mentor/welcome",
+          "locale_59": "campaign_fixture:mentor/welcome",
+          "locale_60": "campaign_fixture:mentor/welcome",
+          "locale_61": "campaign_fixture:mentor/welcome",
+          "locale_62": "campaign_fixture:mentor/welcome",
+          "locale_63": "campaign_fixture:mentor/welcome",
+          "locale_64": "campaign_fixture:mentor/welcome"
+        }
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/voices"
   }
 ]

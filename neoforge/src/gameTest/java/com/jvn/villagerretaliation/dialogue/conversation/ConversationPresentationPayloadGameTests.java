@@ -335,6 +335,35 @@ public final class ConversationPresentationPayloadGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void optionalPresentationSurvivesTheWireAndPausesWithoutLosingText(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        var line = new Line("1/mentor", host.character, 4, "Mira", "Welcome.", 0, 1,
+                new ConversationLinePresentation.Camera(ConversationLinePresentation.Target.SPEAKER, 0.25D),
+                net.minecraft.resources.ResourceLocation.parse("campaign_fixture:mentor/welcome"));
+        var session = new Session(UUID.randomUUID(), 1, "Guidance", ConversationSession.Phase.EXCHANGES, line,
+                true, false, "Player", List.of(), List.of(), null, "");
+        var payload = new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(), session, "");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            CampaignConversationViewPayload.STREAM_CODEC.encode(buffer, payload);
+            helper.assertValueEqual(CampaignConversationViewPayload.STREAM_CODEC.decode(buffer), payload, "optional camera and voice use a bounded payload");
+        } finally { buffer.release(); }
+        controller.accept(payload);
+        helper.assertValueEqual(controller.presentationLine(), line, "acknowledged speech is available to the renderer");
+        controller.accept(payload);
+        helper.assertValueEqual(host.texts.size(), 1, "polling does not restart the line");
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(), null, "Character unavailable."));
+        helper.assertTrue(controller.presentationLine() == null, "unavailable view pauses optional media");
+        helper.assertValueEqual(controller.session().line().text(), "Welcome.", "text remains readable during the pause");
+        controller.accept(payload);
+        helper.assertValueEqual(controller.presentationLine(), line, "restored view retains the same presentation identity");
+        helper.succeed();
+    }
+
     private static CampaignConversationViewPayload message(CampaignConversationRequestPayload request, UUID id, long revision, String key, String text, boolean control) {
         var line = new Line(key, request.character(), request.entityId(), "Mira", text, 0, 1);
         var session = new Session(id, revision, "Guidance", ConversationSession.Phase.EXCHANGES, line, control, false, "Player", List.of(), List.of(), null, "");

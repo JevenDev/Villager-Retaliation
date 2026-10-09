@@ -16,7 +16,7 @@ public final class QuestJsonSchema {
     private static final Set<String> KEYWORDS = Set.of(
             "$schema", "$id", "$defs", "$ref", "title", "description", "default", "examples",
             "type", "const", "enum", "allOf", "anyOf", "oneOf", "not", "if", "then", "else",
-            "properties", "required", "additionalProperties", "items", "minItems", "maxItems",
+            "properties", "propertyNames", "minProperties", "maxProperties", "required", "additionalProperties", "items", "minItems", "maxItems",
             "uniqueItems", "minLength", "maxLength", "pattern", "minimum", "maximum");
 
     private QuestJsonSchema() {
@@ -51,7 +51,7 @@ public final class QuestJsonSchema {
         for (String key : List.of("allOf", "anyOf", "oneOf")) {
             if (schema.has(key)) for (JsonElement child : schema.getAsJsonArray(key)) checkSchema(child, root, references);
         }
-        for (String key : List.of("not", "if", "then", "else", "items", "additionalProperties")) {
+        for (String key : List.of("not", "if", "then", "else", "items", "additionalProperties", "propertyNames")) {
             if (schema.has(key)) checkSchema(schema.get(key), root, references);
         }
     }
@@ -136,6 +136,12 @@ public final class QuestJsonSchema {
 
     private static void validateObject(JsonObject value, JsonObject schema, JsonObject root,
             String pointer, int depth, Budget budget, List<Issue> issues) {
+        if (schema.has("minProperties") && value.size() < schema.get("minProperties").getAsInt())
+            issues.add(new Issue(pointer, "object requires at least " + schema.get("minProperties") + " fields"));
+        if (schema.has("maxProperties") && value.size() > schema.get("maxProperties").getAsInt()) {
+            issues.add(new Issue(pointer, "object exceeds " + schema.get("maxProperties") + " fields"));
+            return;
+        }
         if (schema.has("required")) for (JsonElement required : schema.getAsJsonArray("required")) {
             if (issues.size() >= MAX_ISSUES) return;
             if (!value.has(required.getAsString())) issues.add(new Issue(child(pointer, required.getAsString()), "required field is missing"));
@@ -143,6 +149,9 @@ public final class QuestJsonSchema {
         JsonObject properties = schema.has("properties") ? schema.getAsJsonObject("properties") : new JsonObject();
         for (var entry : value.entrySet()) {
             if (issues.size() >= MAX_ISSUES) return;
+            if (schema.has("propertyNames"))
+                validate(new com.google.gson.JsonPrimitive(entry.getKey()), schema.get("propertyNames"), root,
+                        child(pointer, entry.getKey()), depth + 1, budget, issues);
             if (properties.has(entry.getKey())) {
                 validate(entry.getValue(), properties.get(entry.getKey()), root, child(pointer, entry.getKey()), depth + 1, budget, issues);
             } else if (schema.has("additionalProperties")) {

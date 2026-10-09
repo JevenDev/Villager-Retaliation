@@ -38,15 +38,27 @@
       },
       "value": [
         {
-          "$use": "campaign_fixture:role_exchange",
-          "args": {
-            "id": "mentor",
+          "id": "mentor",
+          "speaker": {
+            "type": "role",
             "role": {
               "$arg": "role"
-            },
-            "text": {
-              "$arg": "greeting"
             }
+          },
+          "text": {
+            "$use": "campaign_fixture:text",
+            "args": {
+              "key": {
+                "$arg": "greeting"
+              }
+            }
+          },
+          "camera": {
+            "target": "speaker",
+            "zoom": 0.2
+          },
+          "voices": {
+            "en_us": "minecraft:entity.villager.ambient"
           }
         },
         {
@@ -61,6 +73,10 @@
                 "$arg": "question"
               }
             }
+          },
+          "camera": {
+            "target": "character",
+            "zoom": 0
           }
         }
       ]

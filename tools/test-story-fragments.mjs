@@ -117,7 +117,13 @@ assert.deepEqual({ file: welcome.file, pointer: welcome.pointer },
   { file: "content/mentor.json", pointer: "/nodes/0/exchanges/0/$splice/args/greeting" });
 assert(welcome.via.some(entry => entry.file === "content/mentor.json"));
 assert(welcome.via.some(entry => entry.file === "fragments/conversation.json"));
-assert.equal(welcome.via.at(-1).pointer, "/fragments/campaign_fixture:role_exchange/value/text");
+assert.equal(welcome.via.at(-1).pointer, "/fragments/campaign_fixture:opening/value/0/text");
+const camera = authoredLocation(compiled, conversation, "/nodes/0/exchanges/0/camera/zoom");
+assert.deepEqual({ file: camera.file, pointer: camera.pointer },
+  { file: "fragments/conversation.json", pointer: "/fragments/campaign_fixture:opening/value/0/camera/zoom" });
+const voice = authoredLocation(compiled, conversation, "/nodes/0/exchanges/2/voices/en_us");
+assert.deepEqual({ file: voice.file, pointer: voice.pointer },
+  { file: "content/mentor.json", pointer: "/nodes/0/exchanges/1/voices/en_us" });
 assert.equal(new Set(welcome.via.map(entry => entry.file + entry.pointer)).size, welcome.via.length);
 const role = authoredLocation(compiled, campaign, "/characters/0/loss_policy");
 assert.equal(role.file, "fragments/common.json");

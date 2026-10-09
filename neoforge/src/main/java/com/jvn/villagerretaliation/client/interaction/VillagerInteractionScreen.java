@@ -377,6 +377,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final EnumMap<DialoguePage, VillagerInteractionScreenState.OptionListPosition> rememberedPageOptionPositions =
             new EnumMap<>(DialoguePage.class);
     private final CampaignConversationScreenController campaignConversation = new CampaignConversationScreenController(new CampaignConversationHost());
+    private final CampaignConversationMedia campaignMedia = new CampaignConversationMedia();
     private DialoguePage page = DialoguePage.ROOT;
     private com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload campaignConfirmation;
     private DialoguePage campaignReturnPage = DialoguePage.ROOT;
@@ -649,6 +650,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         if (!this.forcedDialogue && !this.clipboardMenu && !this.closingWithAnimation) this.campaignConversation.tick();
+        var campaignSession = this.campaignConversation.session();
+        this.campaignMedia.update(campaignSession == null ? null : campaignSession.id(), campaignPresentationLine());
         this.giftLimitFeedback.tick();
         tickSkillsProfileKeepAlive();
         updateDialogueMouthAnimation();
@@ -1021,6 +1024,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void removed() {
+        this.campaignMedia.stop();
         clearDialogueMouthAnimation();
         if (this.openingChat) {
             this.openingChat = false;
@@ -4786,7 +4790,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void maybePlayDialogueBlip() {
-        if (this.dialogueTextAnimationSkipped || this.villagerDialogueText.isBlank()
+        if (this.dialogueTextAnimationSkipped || this.villagerDialogueText.isBlank() || this.campaignMedia.voicedLine()
                 || !VillagerRetaliationConfig.ENABLE_DIALOGUE_BLIP_AUDIO.get()) {
             return;
         }
@@ -6228,6 +6232,29 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 || page == DialoguePage.DUEL_LOADOUT
                 || page == DialoguePage.DUEL_WAGER
                 || page == DialoguePage.DUEL_CONFIRM;
+    }
+
+    private com.jvn.villagerretaliation.network.CampaignConversationViewPayload.Line campaignPresentationLine() {
+        return this.page == DialoguePage.CAMPAIGN_CONVERSATION && !this.forcedDialogue && !this.closingWithAnimation
+                ? this.campaignConversation.presentationLine() : null;
+    }
+
+    com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera campaignCameraCue() {
+        var line = campaignPresentationLine();
+        return line == null ? null : line.camera();
+    }
+
+    Entity campaignCameraTarget() {
+        var cue = campaignCameraCue();
+        if (cue == null || cue.target() == com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target.NONE) return null;
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return null;
+        var target = cue.target() == com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target.SPEAKER
+                ? dialogueSpeakerEntity() : minecraft.level.getEntity(this.villagerEntityId);
+        if (target == null || target == minecraft.player || !target.isAlive() || target.isRemoved()) return null;
+        if (cue.target() == com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target.CHARACTER
+                && !target.getUUID().equals(this.campaignConversation.characterId())) return null;
+        return target;
     }
 
     private Entity dialogueSpeakerEntity() {

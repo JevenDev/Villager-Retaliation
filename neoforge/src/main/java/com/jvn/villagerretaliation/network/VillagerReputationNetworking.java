@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "100";
+    private static final String PROTOCOL_VERSION = "101";
 
     private VillagerReputationNetworking() {
     }

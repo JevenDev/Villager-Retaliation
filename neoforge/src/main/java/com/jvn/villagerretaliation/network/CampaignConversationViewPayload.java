@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationSession;
+import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation;
+import net.minecraft.resources.ResourceLocation;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationCheckModifier;
 import com.jvn.villagerretaliation.skill.player.PlayerSocialSkill;
 import com.jvn.villagerretaliation.skill.player.SocialProgressionSchema;
@@ -37,8 +39,17 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
     public record Member(UUID id, String name) {
         public Member { if (id == null) throw new IllegalArgumentException("Missing conversation member"); bounded(name, MAX_LABEL_LENGTH); }
     }
-    public record Line(String key, UUID speaker, int entityId, String name, String text, int part, int parts) {
-        public Line { if (part < 0 || parts < 1 || part >= parts) throw new IllegalArgumentException("Invalid conversation text page"); bounded(key, 512); bounded(name, MAX_LABEL_LENGTH); bounded(text, MAX_TEXT_LENGTH); }
+    public record Line(String key, UUID speaker, int entityId, String name, String text, int part, int parts,
+            ConversationLinePresentation.Camera camera, ResourceLocation voice) {
+        public Line {
+            if (part < 0 || parts < 1 || part >= parts) throw new IllegalArgumentException("Invalid conversation text page");
+            bounded(key, 512); bounded(name, MAX_LABEL_LENGTH); bounded(text, MAX_TEXT_LENGTH);
+            if (voice != null) bounded(voice.toString(), 256);
+        }
+
+        public Line(String key, UUID speaker, int entityId, String name, String text, int part, int parts) {
+            this(key, speaker, entityId, name, text, part, parts, null, null);
+        }
     }
     public record Modifier(String id, String label, int amount, boolean applied) {
         public Modifier {
@@ -166,6 +177,14 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             if (line.speaker() != null) buffer.writeUUID(line.speaker());
             buffer.writeVarInt(line.entityId()); buffer.writeUtf(line.name(), MAX_LABEL_LENGTH); buffer.writeUtf(line.text(), MAX_TEXT_LENGTH);
             buffer.writeVarInt(line.part()); buffer.writeVarInt(line.parts());
+            buffer.writeBoolean(line.camera() != null);
+            if (line.camera() != null) {
+                buffer.writeEnum(line.camera().target());
+                buffer.writeBoolean(line.camera().zoom() != null);
+                if (line.camera().zoom() != null) buffer.writeDouble(line.camera().zoom());
+            }
+            buffer.writeBoolean(line.voice() != null);
+            if (line.voice() != null) buffer.writeUtf(line.voice().toString(), 256);
         }
         buffer.writeBoolean(value.canControl()); buffer.writeBoolean(value.canTakeControl()); buffer.writeUtf(value.controller(), MAX_LABEL_LENGTH);
         buffer.writeVarInt(value.handover().size());
@@ -207,8 +226,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         UUID id = buffer.readUUID(); long revision = buffer.readVarLong(); String title = buffer.readUtf(MAX_LABEL_LENGTH);
         var phase = buffer.readEnum(ConversationSession.Phase.class);
         Line line = null;
-        if (buffer.readBoolean()) line = new Line(buffer.readUtf(512), buffer.readBoolean() ? buffer.readUUID() : null,
-                buffer.readVarInt(), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readUtf(MAX_TEXT_LENGTH), buffer.readVarInt(), buffer.readVarInt());
+        if (buffer.readBoolean()) line = readLine(buffer);
         boolean control = buffer.readBoolean(); boolean take = buffer.readBoolean(); String controller = buffer.readUtf(MAX_LABEL_LENGTH);
         var members = new ArrayList<Member>();
         for (int count = count(buffer, 32); count > 0; count--) members.add(new Member(buffer.readUUID(), buffer.readUtf(MAX_LABEL_LENGTH)));
@@ -226,6 +244,20 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
                 buffer.readUUID(), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readUtf(256), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readEnum(TransactionState.class), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH)));
         return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, outcome, confirmation, transactions);
+    }
+
+    private static Line readLine(RegistryFriendlyByteBuf buffer) {
+        String key = buffer.readUtf(512);
+        UUID speaker = buffer.readBoolean() ? buffer.readUUID() : null;
+        int entity = buffer.readVarInt();
+        String name = buffer.readUtf(MAX_LABEL_LENGTH);
+        String text = buffer.readUtf(MAX_TEXT_LENGTH);
+        int part = buffer.readVarInt();
+        int parts = buffer.readVarInt();
+        var camera = buffer.readBoolean() ? new ConversationLinePresentation.Camera(
+                buffer.readEnum(ConversationLinePresentation.Target.class), buffer.readBoolean() ? buffer.readDouble() : null) : null;
+        var voice = buffer.readBoolean() ? ResourceLocation.parse(buffer.readUtf(256)) : null;
+        return new Line(key, speaker, entity, name, text, part, parts, camera, voice);
     }
 
     private static List<Modifier> readModifiers(RegistryFriendlyByteBuf buffer) {

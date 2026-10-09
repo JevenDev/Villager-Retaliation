@@ -40,6 +40,12 @@
           },
           "text": {
             "key": "#conversation.pause"
+          },
+          "camera": {
+            "target": "none"
+          },
+          "voices": {
+            "en_us": "campaign_fixture:missing_voice"
           }
         }
       ],

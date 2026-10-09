@@ -37,6 +37,7 @@ public final class CampaignConversationClientSmoke {
     private static int ticks;
     private static int die;
     private static java.util.UUID confirmation;
+    private static net.minecraft.client.resources.sounds.SoundInstance heardVoice;
 
     private CampaignConversationClientSmoke() { }
 
@@ -55,6 +56,9 @@ public final class CampaignConversationClientSmoke {
             minecraft.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
             minecraft.options.guiScale().set(2); minecraft.resizeDisplay();
             VillagerRetaliationConfig.DIALOGUE_TEXT_SPEED.set(DialogueTextSpeed.MEDIUM);
+            VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.set(true);
+            VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.set(true);
+            VillagerRetaliationConfig.NORMAL_DIALOGUE_CAMERA_ZOOM_AMOUNT.set(0.35D);
             preparing = server.submit(() -> {
                 try { return CampaignConversationClientFixture.prepareBargaining(server.getPlayerList().getPlayer(playerId)); }
                 catch (IOException exception) { throw new UncheckedIOException(exception); }
@@ -70,6 +74,7 @@ public final class CampaignConversationClientSmoke {
             var controller = controller(screen);
             var session = controller.session();
             if (session == null) return;
+            if (phase == 2 && session.phase() == ConversationSession.Phase.EXCHANGES && ticks >= 2) verifyMentorMedia(screen);
             if (phase == 2 && confirmation == null && session.phase() == ConversationSession.Phase.CONFIRMATION && ++ticks >= 20) {
                 require(checkTextIsImmediate(screen), "shared consequences are immediately readable");
                 confirmation = session.confirmation();
@@ -90,8 +95,16 @@ public final class CampaignConversationClientSmoke {
                 require(session.line().speaker().equals(fixture.character()), "mentor portrait belongs to the saved speaker");
                 capture("mentor"); choose(screen, localized("continue")); ticks = 0; phase = 3;
             } else if (phase == 3 && session.line().speaker() != null && session.line().speaker().equals(playerId) && ++ticks >= 35) {
+                require(screen.campaignCameraTarget() != null && screen.campaignCameraTarget().getUUID().equals(fixture.character()),
+                        "player speech uses its authored character camera target");
+                require(cameraFov() == 70.0D, "authored zero zoom leaves the configured field of view unchanged");
+                require(voice(screen) == null, "advancing stops the previous recording");
                 capture("player-speaker"); choose(screen, localized("continue")); ticks = 0; phase = 4;
             } else if (phase == 4 && session.line().speaker() == null && ++ticks >= 35) {
+                require(screen.campaignCameraCue() != null && screen.campaignCameraTarget() == null && cameraFov() == 70.0D,
+                        "authored narration releases camera focus and zoom");
+                require(session.line().voice() != null && voice(screen) == null, "an absent optional sound leaves playback idle");
+                require(dialogueText(screen).equals(session.line().text()), "missing voice keeps the complete dialogue text");
                 capture("narrator"); choose(screen, localized("continue")); ticks = 0; phase = 5;
             } else if (phase == 5 && session.phase() == ConversationSession.Phase.RESPONSES && ++ticks >= 10) {
                 capture("responses"); choose(screen, session.responses().getFirst().label()); ticks = 0; phase = 6;
@@ -172,6 +185,43 @@ public final class CampaignConversationClientSmoke {
             phase = 12;
             minecraft.stop();
         }
+    }
+
+    private static void verifyMentorMedia(VillagerInteractionScreen screen) {
+        require(screen.campaignCameraTarget() != null && screen.campaignCameraTarget().getUUID().equals(fixture.character()),
+                "camera focus uses the acknowledged speaker identity");
+        var currentVoice = voice(screen);
+        require(currentVoice != null && currentVoice.getSource() == net.minecraft.sounds.SoundSource.VOICE,
+                "authored recording uses the player's voice volume setting");
+        if (heardVoice == null) heardVoice = currentVoice;
+        else require(heardVoice == currentVoice, "presentation polls never restart the recording");
+        if (ticks < 20) return;
+        double zoomed = cameraFov();
+        require(zoomed >= 56.0D && zoomed < 70.0D, "authored zoom is bounded by the exchange's cap");
+        VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.set(false);
+        require(cameraFov() == 70.0D, "camera accessibility preference overrides authored cues");
+        VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.set(true);
+        VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.set(false);
+        require(cameraFov() == 70.0D, "ordinary camera preference also applies to campaign speech");
+        VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.set(true);
+    }
+
+    private static double cameraFov() {
+        var minecraft = Minecraft.getInstance();
+        var event = new net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov(
+                minecraft.gameRenderer, minecraft.gameRenderer.getMainCamera(), 0, 70, true);
+        VillagerDialogueCameraFocus.onComputeFov(event);
+        return event.getFOV();
+    }
+
+    private static net.minecraft.client.resources.sounds.SoundInstance voice(VillagerInteractionScreen screen) {
+        try {
+            var owner = VillagerInteractionScreen.class.getDeclaredField("campaignMedia");
+            owner.setAccessible(true);
+            var field = CampaignConversationMedia.class.getDeclaredField("voice");
+            field.setAccessible(true);
+            return (net.minecraft.client.resources.sounds.SoundInstance) field.get(owner.get(screen));
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Conversation voice is unavailable", exception); }
     }
 
     private static String dialogueText(VillagerInteractionScreen screen) {

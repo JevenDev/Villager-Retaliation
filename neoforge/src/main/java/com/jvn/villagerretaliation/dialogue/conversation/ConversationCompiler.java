@@ -97,7 +97,8 @@ public final class ConversationCompiler {
                 String exchangeId = string(exchange, "id");
                 put(exchanges, exchangeId, new ConversationDefinition.Exchange(exchangeId,
                         new ConversationDefinition.Speaker(ConversationDefinition.SpeakerKind.valueOf(string(speaker, "type").toUpperCase(Locale.ROOT)),
-                                string(speaker, "role")), text(exchange, "text", location), conditions(exchange, location), location), location);
+                                string(speaker, "role")), text(exchange, "text", location), conditions(exchange, location),
+                        ConversationLinePresentation.read(exchange), location), location);
             }
             Map<String, ConversationDefinition.Response> responses = new LinkedHashMap<>();
             JsonArray choices = array(value, "responses");

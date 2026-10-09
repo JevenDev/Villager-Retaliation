@@ -1270,6 +1270,59 @@
           },
           "minItems": 0,
           "maxItems": 1024
+        },
+        "camera": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target"
+          ],
+          "properties": {
+            "target": {
+              "type": "string",
+              "enum": [
+                "speaker",
+                "character",
+                "none"
+              ]
+            },
+            "zoom": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 0.45,
+              "description": "Caps the configured dialogue zoom for this exchange."
+            }
+          },
+          "if": {
+            "properties": {
+              "target": {
+                "const": "none"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "zoom"
+              ]
+            }
+          }
+        },
+        "voices": {
+          "description": "Optional sound event IDs by locale, falling back to en_us when no matching voice is declared.",
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 64,
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{1,32}$(?![\\s\\S])"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          }
         }
       }
     },
