@@ -142,6 +142,57 @@ public final class OrdinaryConversationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "ordinary_conversations")
+    public static void ordinaryCastRetainsIdentityAndReservesEveryParticipant(GameTestHelper helper) throws IOException {
+        try (var fixture = new CampaignConversationGameTests.Fixture(helper)) {
+            fixture.graph.add("characters", JsonParser.parseString("{\"witness\":{\"tag\":\"conversation_witness\",\"radius\":16}}"));
+            var witness = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+            witness.setNoAi(true);
+            witness.addTag("conversation_witness");
+            fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject().getAsJsonArray("exchanges")
+                    .get(0).getAsJsonObject().getAsJsonObject("speaker").addProperty("role", "witness");
+            install(fixture);
+            fixture.base.mode("legacy");
+            var player = fixture.player();
+            var result = fixture.start(player);
+            helper.assertTrue(result.diagnostic().isBlank(), "ordinary cast starts: " + result.diagnostic());
+            helper.assertValueEqual(result.session().transcript().getFirst().speaker(), witness.getUUID(), "authored role speaks");
+            helper.assertTrue(ConversationService.isCharacterReserved(witness), "secondary speaker is reserved before effects");
+            UUID id = result.session().identity().id();
+            fixture.storage.reload();
+            result = ConversationService.view(player, id);
+            helper.assertValueEqual(result.session().speakers().get("witness").entity(), witness.getUUID(), "binding survives reload");
+            witness.discard();
+            var replacement = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+            replacement.addTag("conversation_witness");
+            helper.assertValueEqual(ConversationService.view(player, id).session().speakers().get("witness").entity(),
+                    witness.getUUID(), "a matching replacement cannot impersonate the original");
+            result = fixture.intent(player, result, ConversationSession.Intent.CANCEL, "");
+            helper.assertFalse(ConversationService.isCharacterReserved(fixture.mentor), "cancellation releases the whole cast");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "ordinary_conversations")
+    public static void ambiguousOrdinaryCastCannotStartOrApplyEffects(GameTestHelper helper) throws IOException {
+        try (var fixture = new CampaignConversationGameTests.Fixture(helper)) {
+            fixture.graph.add("characters", JsonParser.parseString("{\"witness\":{\"tag\":\"conversation_witness\",\"radius\":16}}"));
+            install(fixture, true);
+            fixture.base.mode("legacy");
+            var player = fixture.player();
+            int experience = player.totalExperience;
+            var missing = ConversationService.start(player, ID, "guidance", UUID.randomUUID(), fixture.mentor);
+            helper.assertTrue(missing.session() == null && !missing.diagnostic().isBlank(), "missing cast blocks before saving");
+            helper.spawn(EntityType.VILLAGER, 2, 1, 2).addTag("conversation_witness");
+            helper.spawn(EntityType.VILLAGER, 3, 1, 2).addTag("conversation_witness");
+            var ambiguous = ConversationService.start(player, ID, "guidance", UUID.randomUUID(), fixture.mentor);
+            helper.assertTrue(ambiguous.session() == null && !ambiguous.diagnostic().isBlank(), "ambiguous cast is rejected");
+            helper.assertValueEqual(player.totalExperience, experience, "no effects were applied");
+            helper.assertFalse(ConversationService.isCharacterReserved(fixture.mentor), "failed casting leaves no reservation");
+        }
+        helper.succeed();
+    }
+
     private static void install(CampaignConversationGameTests.Fixture fixture) throws IOException {
         install(fixture, false);
     }
@@ -153,6 +204,7 @@ public final class OrdinaryConversationGameTests {
         quest.add("stages", JsonParser.parseString("[{\"id\":\"visit\",\"objectives\":[]}]"));
         var graph = fixture.graph.deepCopy();
         graph.remove("campaign");
+        if (fixture.graph.has("characters")) graph.add("characters", fixture.graph.get("characters").deepCopy());
         graph.addProperty("character", "provider");
         graph.addProperty("quest", "campaign_fixture:characters");
         if (effects) graph.getAsJsonArray("nodes").get(0).getAsJsonObject().add("effects", JsonParser.parseString(
@@ -160,7 +212,7 @@ public final class OrdinaryConversationGameTests {
                 + "{\"id\":\"gift\",\"action\":{\"type\":\"experience\",\"amount\":7,\"required\":true}}]"));
         for (var raw : graph.getAsJsonArray("nodes")) for (var exchange : raw.getAsJsonObject().getAsJsonArray("exchanges")) {
             var speaker = exchange.getAsJsonObject().getAsJsonObject("speaker");
-            if (speaker.get("type").getAsString().equals("role")) speaker.addProperty("role", "provider");
+            if (speaker.get("type").getAsString().equals("role") && speaker.get("role").getAsString().equals("mentor")) speaker.addProperty("role", "provider");
         }
         var locale = CampaignCharacterTestFixture.resource("quests/campaign_fixture/characters/locales/en_us.json");
         String root = "quests/campaign_fixture/characters/";

@@ -97,7 +97,8 @@ public final class ConversationCompiler {
                 String exchangeId = string(exchange, "id");
                 put(exchanges, exchangeId, new ConversationDefinition.Exchange(exchangeId,
                         new ConversationDefinition.Speaker(ConversationDefinition.SpeakerKind.valueOf(string(speaker, "type").toUpperCase(Locale.ROOT)),
-                                string(speaker, "role")), text(exchange, "text", location), conditions(exchange, location),
+                                string(speaker, "role"), speaker.has("player") ? ConversationDefinition.PlayerActor.valueOf(
+                                        string(speaker, "player").toUpperCase(Locale.ROOT)) : ConversationDefinition.PlayerActor.INITIATOR), text(exchange, "text", location), conditions(exchange, location),
                         ConversationLinePresentation.read(exchange), location), location);
             }
             Map<String, ConversationDefinition.Response> responses = new LinkedHashMap<>();
@@ -115,17 +116,25 @@ public final class ConversationCompiler {
             put(nodes, key, new ConversationDefinition.Node(key, new ArrayList<>(exchanges.values()), effects(resolved, pointer),
                     responses, string(value, "next"), string(value, "outcome"), pointer), pointer);
         }
+        Map<String, ConversationDefinition.Cast> characters = new LinkedHashMap<>();
+        if (root.has("characters")) for (var entry : root.getAsJsonObject("characters").entrySet()) {
+            var cast = entry.getValue().getAsJsonObject();
+            characters.put(entry.getKey(), new ConversationDefinition.Cast(string(cast, "tag"),
+                    cast.has("radius") ? cast.get("radius").getAsInt() : 16));
+        }
         var definition = new ConversationDefinition(id, root.get("revision").getAsInt(), QuestBundleFingerprints.definition(root),
                 root.has("campaign") ? ResourceLocation.parse(string(root, "campaign")) : null, string(root, "character"), quest, text(root, "title", ""),
-                topics, nodes, checks, outcomes, bundle.owner(), source, compatibilityFingerprint(root));
+                topics, nodes, checks, outcomes, bundle.owner(), source, compatibilityFingerprint(root), characters);
+        if (characters.containsKey("provider")) error("/characters/provider", "the provider role is already bound");
+        if (definition.campaign() != null && !characters.isEmpty()) error("/characters", "campaign conversations use campaign character bindings");
         validateGraph(definition);
         if (definition.campaign() == null) {
             if (quest == null) error("/quest", "ordinary conversations require a quest provider");
             if (!definition.character().equals("provider")) error("/character", "ordinary conversations use the provider character");
             for (var node : definition.nodes().values()) {
                 for (var exchange : node.exchanges()) if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE
-                        && !exchange.speaker().role().equals("provider"))
-                    error(exchange.pointer() + "/speaker/role", "ordinary conversations can only cast their quest provider");
+                        && !exchange.speaker().role().equals("provider") && !characters.containsKey(exchange.speaker().role()))
+                    error(exchange.pointer() + "/speaker/role", "unknown ordinary conversation character");
                 var effects = new ArrayList<>(node.effects());
                 node.responses().values().forEach(response -> effects.addAll(response.effects()));
                 for (var effect : effects) if (effect.action().kind().name().startsWith("CAMPAIGN_"))

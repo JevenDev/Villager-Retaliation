@@ -112,7 +112,7 @@ public final class CampaignConversationGameTests {
             result = fixture.intent(leader, result, ConversationSession.Intent.HAND_OVER, listener.getUUID().toString());
             helper.assertValueEqual(result.session().controller(), listener.getUUID(), "leader explicitly transfers control");
             result = fixture.intent(listener, result, ConversationSession.Intent.ADVANCE, "");
-            helper.assertValueEqual(result.session().transcript().getLast().speaker(), listener.getUUID(), "new player exchange records the new speaker");
+            helper.assertValueEqual(result.session().transcript().getLast().speaker(), leader.getUUID(), "default player speech remains with the initiator after handover");
             helper.assertValueEqual(result.session().transcript().getFirst().speaker(), fixture.mentor.getUUID(), "earlier speakers remain unchanged");
             fixture.storage.reload();
             PartyService.setAdminPrivileges(leader, listener.getUUID(), false);

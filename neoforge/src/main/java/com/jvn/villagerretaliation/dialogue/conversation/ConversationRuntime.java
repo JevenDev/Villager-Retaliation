@@ -89,8 +89,15 @@ final class ConversationRuntime {
         String name = "";
         String role = exchange.speaker().role();
         if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.PLAYER) {
-            speaker = player.getUUID();
-            name = player.getName().getString();
+            speaker = switch (exchange.speaker().player()) {
+                case INITIATOR -> session.identity.owner();
+                case CHOICE_MAKER -> session.choices.isEmpty() ? session.identity.owner() : session.choices.getLast().player();
+                case CONTROLLER -> session.controller;
+            };
+            var actor = player.server.getPlayerList().getPlayer(speaker);
+            ConversationService.require(actor != null, "The player speaking this line must return before the conversation can continue.");
+            name = actor.getName().getString();
+            player = actor;
         } else if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE) {
             var speakerEntity = ConversationBinding.speaker(player, session, role);
             var prior = session.speakers.get(role);

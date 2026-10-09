@@ -23,6 +23,30 @@ public final class CampaignConversationExchangeGameTests {
     private CampaignConversationExchangeGameTests() { }
 
     @GameTest(template = "empty", batch = "conversation_exchanges")
+    public static void playerSpeakerPoliciesSurviveControlHandover(GameTestHelper helper) throws IOException {
+        for (String policy : List.of("initiator", "choice_maker", "controller")) {
+            try (var fixture = fixture(helper)) {
+                line(fixture, 1).getAsJsonObject("speaker").addProperty("player", policy);
+                fixture.install(fixture.graph);
+                var leader = fixture.player();
+                var member = fixture.player();
+                fixture.party(leader, member);
+                PartyService.setAdminPrivileges(leader, member.getUUID(), true);
+                var result = fixture.start(leader);
+                result = fixture.intent(member, result, ConversationSession.Intent.JOIN, "");
+                result = fixture.intent(leader, result, ConversationSession.Intent.HAND_OVER, member.getUUID().toString());
+                fixture.storage.reload();
+                result = ConversationService.view(member, result.session().identity().id());
+                result = fixture.intent(member, result, ConversationSession.Intent.ADVANCE, "");
+                helper.assertTrue(result.diagnostic().isBlank(), "policy resolves: " + result.diagnostic());
+                helper.assertValueEqual(result.session().transcript().getLast().speaker(),
+                        policy.equals("controller") ? member.getUUID() : leader.getUUID(), "explicit " + policy + " attribution");
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_exchanges")
     public static void skippedLinesDoNotCastSpeakersOrReappearAfterReload(GameTestHelper helper) throws IOException {
         try (var fixture = fixture(helper)) {
             var first = line(fixture, 0);

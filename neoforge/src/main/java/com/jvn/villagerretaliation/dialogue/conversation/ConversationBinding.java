@@ -59,12 +59,28 @@ public final class ConversationBinding {
         return provider;
     }
 
+    static void bindCast(ServerPlayer player, ConversationDefinition definition, Villager provider, ConversationSession session) {
+        for (var entry : definition.characters().entrySet()) {
+            var candidates = player.serverLevel().getEntitiesOfClass(Villager.class,
+                    provider.getBoundingBox().inflate(entry.getValue().radius()),
+                    entity -> entity.isAlive() && !entity.getUUID().equals(provider.getUUID()) && entity.getTags().contains(entry.getValue().tag()));
+            require(candidates.size() == 1, "The character " + entry.getKey() + " requires exactly one nearby villager tagged " + entry.getValue().tag() + ".");
+            var target = candidates.getFirst();
+            require(session.speakers.values().stream().noneMatch(value -> value.entity().equals(target.getUUID())), "Each conversation role requires a different villager.");
+            require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(target)
+                    && ConversationCharacters.active(player.server, ConversationSavedData.get(player.serverLevel()), target.getUUID()) == null,
+                    "The character " + entry.getKey() + " is already in a conversation.");
+            session.speakers.put(entry.getKey(), new ConversationSession.Speaker(entry.getKey(), target.getUUID(),
+                    target.level().dimension().location(), target.getName().getString()));
+        }
+    }
+
     static Villager speaker(ServerPlayer player, ConversationSession session, String role) {
         var prior = session.speakers.get(role);
         if (session.identity.campaign() == null) {
-            require(role.equals("provider") && prior != null, "Ordinary conversations can only speak through their saved provider.");
+            require(prior != null, "This conversation character has no saved binding.");
             var entity = player.serverLevel().getEntity(prior.entity());
-            require(entity instanceof Villager && entity.isAlive(), "Return to the saved quest provider to continue.");
+            require(entity instanceof Villager && entity.isAlive(), "Return to the saved character " + role + " to continue.");
             return (Villager) entity;
         }
         var resolved = CampaignCharacterService.resolve(player.server, session.identity.campaign(), role);

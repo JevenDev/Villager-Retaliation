@@ -15,7 +15,16 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
         ResourceLocation campaign, String character, ResourceLocation quest, String titleKey,
         Map<String, Topic> topics, Map<String, Node> nodes, Map<String, Check> checks,
         Map<String, Outcome> outcomes, QuestBundlePath.Owner owner, QuestBundleTransactions.DefinitionSource source,
-        String compatibilityFingerprint) {
+        String compatibilityFingerprint, Map<String, Cast> characters) {
+    public ConversationDefinition(ResourceLocation id, int revision, String fingerprint,
+            ResourceLocation campaign, String character, ResourceLocation quest, String titleKey,
+            Map<String, Topic> topics, Map<String, Node> nodes, Map<String, Check> checks,
+            Map<String, Outcome> outcomes, QuestBundlePath.Owner owner, QuestBundleTransactions.DefinitionSource source,
+            String compatibilityFingerprint) {
+        this(id, revision, fingerprint, campaign, character, quest, titleKey, topics, nodes, checks, outcomes,
+                owner, source, compatibilityFingerprint, Map.of());
+    }
+
     public ConversationDefinition(ResourceLocation id, int revision, String fingerprint,
             ResourceLocation campaign, String character, ResourceLocation quest, String titleKey,
             Map<String, Topic> topics, Map<String, Node> nodes, Map<String, Check> checks,
@@ -28,6 +37,7 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
         nodes = ordered(nodes);
         checks = ordered(checks);
         outcomes = ordered(outcomes);
+        characters = ordered(characters);
     }
 
     private static <T> Map<String, T> ordered(Map<String, T> values) {
@@ -63,7 +73,12 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
         }
     }
 
-    public record Speaker(SpeakerKind kind, String role) {
+    public record Cast(String tag, int radius) { }
+
+    public enum PlayerActor { INITIATOR, CHOICE_MAKER, CONTROLLER }
+
+    public record Speaker(SpeakerKind kind, String role, PlayerActor player) {
+        public Speaker(SpeakerKind kind, String role) { this(kind, role, PlayerActor.INITIATOR); }
     }
 
     public enum SpeakerKind { ROLE, PLAYER, NARRATOR }

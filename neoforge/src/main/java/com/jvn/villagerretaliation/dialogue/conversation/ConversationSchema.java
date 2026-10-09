@@ -19,7 +19,8 @@ public final class ConversationSchema {
         JsonObject definitions = new JsonObject();
         for (String name : List.of("condition", "action", "localized_reference")) definitions.add(name, shared.get(name));
         definitions.add("effect", object(List.of("id", "action"), "id", id(), "action", ref("action")));
-        JsonObject speaker = object(List.of("type"), "type", enumeration("role", "player", "narrator"), "role", id());
+        JsonObject speaker = object(List.of("type"), "type", enumeration("role", "player", "narrator"), "role", id(),
+                "player", enumeration("initiator", "choice_maker", "controller"));
         JsonObject role = object(List.of("type"), "type", enumeration("role"));
         role.addProperty("additionalProperties", true);
         speaker.add("if", role);
@@ -29,6 +30,15 @@ public final class ConversationSchema {
         JsonObject forbiddenRole = new JsonObject();
         forbiddenRole.add("not", requiredRole);
         speaker.add("else", forbiddenRole);
+        var actorRule = new JsonObject();
+        actorRule.add("if", object(List.of("player"), "player", enumeration("initiator", "choice_maker", "controller")));
+        actorRule.getAsJsonObject("if").addProperty("additionalProperties", true);
+        var actorType = new JsonObject();
+        var actorProperties = new JsonObject();
+        actorProperties.add("type", enumeration("player"));
+        actorType.add("properties", actorProperties);
+        actorRule.add("then", actorType);
+        speaker.add("allOf", singleton(actorRule));
         definitions.add("speaker", speaker);
         definitions.add("exchange", object(List.of("id", "speaker", "text"),
                 "id", id(), "speaker", ref("speaker"), "text", ref("localized_reference"), "conditions", array(ref("condition"), 0),
@@ -68,9 +78,15 @@ public final class ConversationSchema {
         check.add("then", bargaining);
         definitions.add("check", check);
         definitions.add("outcome", object(List.of("id", "label"), "id", id(), "label", ref("localized_reference")));
+        var radius = integer(1);
+        radius.addProperty("maximum", 64);
+        var cast = type("object");
+        cast.add("additionalProperties", object(List.of("tag"), "tag", text("^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"), "radius", radius));
+        cast.add("propertyNames", id());
+        cast.addProperty("maxProperties", 16);
         JsonObject root = object(List.of("schema", "id", "revision", "character", "title", "topics", "nodes", "outcomes"),
                 "schema", enumeration(SCHEMA_ID), "id", resource(), "revision", integer(1),
-                "campaign", resource(), "character", id(), "quest", resource(), "title", ref("localized_reference"),
+                "campaign", resource(), "character", id(), "characters", cast, "quest", resource(), "title", ref("localized_reference"),
                 "topics", array(ref("topic"), 1), "nodes", array(ref("node"), 1),
                 "checks", array(ref("check"), 0), "outcomes", array(ref("outcome"), 1));
         root.add("anyOf", exclusive("campaign", "quest"));
@@ -83,6 +99,12 @@ public final class ConversationSchema {
 
     public static List<QuestJsonSchema.Issue> validate(JsonElement input) {
         return QuestJsonSchema.validate(input, export());
+    }
+
+    private static JsonArray singleton(JsonObject value) {
+        var result = new JsonArray();
+        result.add(value);
+        return result;
     }
 
     private static JsonObject object(List<String> required, Object... fields) {

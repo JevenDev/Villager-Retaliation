@@ -68,6 +68,7 @@ public final class ConversationService {
             var session = new ConversationSession(identity, player.getUUID(), questRun(player, definition.quest()), topic.start(),
                     new ConversationSession.Speaker(definition.character(), character.getUUID(), identity.dimension(), character.getName().getString()));
             session.compatibilityFingerprint = definition.compatibilityFingerprint();
+            ConversationBinding.bindCast(player, definition, character, session);
             data.write(player.serverLevel(), 0, session);
             ConversationRuntime.drive(player, request);
             return view(player, request);

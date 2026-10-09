@@ -82,7 +82,7 @@ public final class CampaignConversationPresentationGameTests {
             listener = send(member, fixture, memberView, Action.VIEW, listener, "", "", 0, 0);
             helper.assertTrue(listener.session().canControl(), "new controller receives control");
             listener = send(member, fixture, memberView, Action.ADVANCE, listener, "", "", 0, 0);
-            helper.assertValueEqual(listener.session().line().speaker(), member.getUUID(), "player speaker changes after handover");
+            helper.assertValueEqual(listener.session().line().speaker(), leader.getUUID(), "default player speaker remains the initiator after handover");
         }
         helper.succeed();
     }

@@ -41,6 +41,36 @@
       "maxLength": 256,
       "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
     },
+    "characters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tag"
+        ],
+        "properties": {
+          "tag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+          },
+          "radius": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          }
+        }
+      },
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+      },
+      "maxProperties": 16
+    },
     "quest": {
       "type": "string",
       "minLength": 1,
@@ -1223,6 +1253,14 @@
           "minLength": 1,
           "maxLength": 256,
           "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "player": {
+          "type": "string",
+          "enum": [
+            "initiator",
+            "choice_maker",
+            "controller"
+          ]
         }
       },
       "if": {
@@ -1251,7 +1289,38 @@
             "role"
           ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "player"
+            ],
+            "properties": {
+              "player": {
+                "type": "string",
+                "enum": [
+                  "initiator",
+                  "choice_maker",
+                  "controller"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player"
+                ]
+              }
+            }
+          }
+        }
+      ]
     },
     "exchange": {
       "type": "object",
