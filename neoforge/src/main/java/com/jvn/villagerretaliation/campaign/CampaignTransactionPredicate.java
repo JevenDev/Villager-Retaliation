@@ -43,25 +43,29 @@ public record CampaignTransactionPredicate(ResourceLocation campaign, ResourceLo
     }
 
     public Evaluation evaluate(DialogueContext context) {
-        if (context == null || context.player() == null) return new Evaluation(false, "Campaign transactions require a player.");
-        String issue = CampaignQuestAccess.contentIssue(context.player().server, quest, campaign);
+        return evaluate(context == null ? null : context.level(), context == null || context.player() == null ? null : context.player().getUUID());
+    }
+
+    public Evaluation evaluate(net.minecraft.server.level.ServerLevel level, java.util.UUID playerId) {
+        if (level == null || playerId == null) return new Evaluation(false, "Campaign transactions require a player.");
+        String issue = CampaignQuestAccess.contentIssue(level.getServer(), quest, campaign);
         if (!issue.isBlank()) return new Evaluation(false, issue);
-        var content = CampaignResources.current(context.player().server).campaigns().get(campaign).definition();
+        var content = CampaignResources.current(level.getServer()).campaigns().get(campaign).definition();
         var definition = content.transactions().get(transaction);
         if (definition == null || !definition.quest().equals(quest)) return new Evaluation(false, "Unknown transaction for this campaign quest.");
-        var data = CampaignTransactionSavedData.get(context.level());
+        var data = CampaignTransactionSavedData.get(level);
         if (!data.diagnostic().isBlank()) return new Evaluation(false, data.diagnostic());
-        var instance = CampaignSavedData.get(context.level()).instances().get(campaign);
-        var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), quest);
+        var instance = CampaignSavedData.get(level).instances().get(campaign);
+        var progress = VillagerQuestSavedData.get(level).get(playerId, quest);
         if (instance == null || progress == null || progress.questRunId() == null) return new Evaluation(false, "");
-        var owner = VillagerQuestResources.quest(context.player().server, quest).orElseThrow();
-        issue = CampaignQuestAccess.contentIssue(context.level(), owner, progress);
+        var owner = VillagerQuestResources.quest(level.getServer(), quest).orElseThrow();
+        issue = CampaignQuestAccess.contentIssue(level, owner, progress);
         if (!issue.isBlank()) return new Evaluation(false, issue);
-        var key = new CampaignTransaction.Key(campaign, instance.instanceId(), context.player().getUUID(), quest, progress.questRunId(), transaction);
+        var key = new CampaignTransaction.Key(campaign, instance.instanceId(), playerId, quest, progress.questRunId(), transaction);
         var receipt = data.receipts().get(key.operation());
         if (!data.issue(key.operation()).isBlank()) return new Evaluation(false, data.issue(key.operation()));
         if (receipt == null && definition.bargainedCount() != null) {
-            var conversations = ConversationSavedData.get(context.level());
+            var conversations = ConversationSavedData.get(level);
             if (!conversations.diagnostic().isBlank()) return new Evaluation(false, conversations.diagnostic());
             if (conversations.hasTransaction(key.operation())) return new Evaluation(false, "Restore the missing transaction referenced by this player's saved conversation.");
         }

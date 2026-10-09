@@ -41,17 +41,22 @@ public record CampaignCharacterPredicate(ResourceLocation campaign, String role,
     }
 
     public Evaluation evaluate(DialogueContext context) {
-        if (context == null || context.level() == null) return new Evaluation(false, "Campaign character context is unavailable.");
-        var result = state == State.REPLACED ? CampaignBindingQueries.originalCharacter(context.level().getServer(), campaign, role)
-                : CampaignBindingQueries.character(context.level().getServer(), campaign, role);
+        return evaluate(context == null ? null : context.level(), context == null ? null : context.villager());
+    }
+
+    public Evaluation evaluate(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.Villager speaker) {
+        if (level == null) return new Evaluation(false, "Campaign character context is unavailable.");
+        if (state == State.SPEAKER && speaker == null) return new Evaluation(false, "Campaign speaker needs a live dialogue context.");
+        var result = state == State.REPLACED ? CampaignBindingQueries.originalCharacter(level.getServer(), campaign, role)
+                : CampaignBindingQueries.character(level.getServer(), campaign, role);
         if (!result.diagnostic().isBlank()) return new Evaluation(false, result.diagnostic());
         boolean matches = switch (state) {
             case BOUND -> result.binding() != null;
             case AVAILABLE -> result.available();
             case DOWNED -> result.entity() != null && VillagerDownedService.isDowned(result.entity());
             case LOST -> result.binding() != null && result.binding().lost();
-            case SPEAKER -> result.available() && result.entity() == context.villager();
-            case REPLACED -> result.binding() != null && java.util.Optional.ofNullable(CampaignCharacterSavedData.get(context.level())
+            case SPEAKER -> result.available() && result.entity() == speaker;
+            case REPLACED -> result.binding() != null && java.util.Optional.ofNullable(CampaignCharacterSavedData.get(level)
                     .replacements().get(result.binding().key())).map(CampaignCharacterReplacement::committed).orElse(false);
         };
         return new Evaluation(matches, "");

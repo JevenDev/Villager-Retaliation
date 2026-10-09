@@ -44,13 +44,17 @@ public record CampaignLocationPredicate(ResourceLocation campaign, String locati
     }
 
     public Evaluation evaluate(DialogueContext context) {
-        if (context == null || context.level() == null || context.player() == null) return new Evaluation(false, "Campaign location needs a live player context.");
-        var result = CampaignBindingQueries.location(context.level().getServer(), campaign, location);
+        return evaluate(context == null ? null : context.level(), context == null ? null : context.player());
+    }
+
+    public Evaluation evaluate(net.minecraft.server.level.ServerLevel level, net.minecraft.server.level.ServerPlayer player) {
+        if (level == null || player == null) return new Evaluation(false, "Campaign location needs a live player context.");
+        var result = CampaignBindingQueries.location(level.getServer(), campaign, location);
         if (!result.diagnostic().isBlank()) return new Evaluation(false, result.diagnostic());
         var binding = result.binding();
         if (binding == null) return new Evaluation(false, "Campaign location has not been bound yet. Resolve its authored destination before continuing.");
-        boolean matches = binding.dimension().equals(context.player().level().dimension().location())
-                && binding.position().distToCenterSqr(context.player().position()) <= (double) radius * radius;
+        boolean matches = binding.dimension().equals(player.level().dimension().location())
+                && binding.position().distToCenterSqr(player.position()) <= (double) radius * radius;
         return new Evaluation(matches, "");
     }
 

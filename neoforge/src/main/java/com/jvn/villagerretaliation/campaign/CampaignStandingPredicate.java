@@ -26,8 +26,12 @@ public record CampaignStandingPredicate(ResourceLocation campaign, Scope scope, 
                 numeric ? object.get("value").getAsInt() : null, numeric ? "" : object.get("reaction").getAsString());
     }
     public Evaluation evaluate(DialogueContext context) {
-        if (context == null || context.player() == null) return new Evaluation(false, "Campaign standing requires a player.");
-        var result = CampaignStandingService.read(context.player().server, campaign, context.player().getUUID(), scope, subject);
+        return evaluate(context == null ? null : context.level(), context == null || context.player() == null ? null : context.player().getUUID());
+    }
+
+    public Evaluation evaluate(net.minecraft.server.level.ServerLevel level, java.util.UUID playerId) {
+        if (level == null || playerId == null) return new Evaluation(false, "Campaign standing requires a player.");
+        var result = CampaignStandingService.read(level.getServer(), campaign, playerId, scope, subject);
         if (!result.diagnostic().isBlank()) return new Evaluation(false, result.diagnostic());
         if (value == null) {
             if (!result.definition().reactions().containsKey(reaction)) return new Evaluation(false, "Unknown standing reaction: " + reaction);

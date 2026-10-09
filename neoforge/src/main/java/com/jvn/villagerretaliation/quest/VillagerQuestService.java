@@ -3598,7 +3598,31 @@ public final class VillagerQuestService {
         }
         if (condition instanceof DialogueCondition.CampaignEvidence evidence) {
             var result = evidence.reference().evaluate(level, player);
-            return result.diagnostic().isBlank() ? result.matches() ? ConditionMatch.MET : ConditionMatch.UNMET : ConditionMatch.UNKNOWN;
+            return campaignConditionState(result.matches(), result.diagnostic());
+        }
+        if (condition instanceof DialogueCondition.CampaignFact fact) {
+            var result = fact.reference().evaluate(level, player.getUUID());
+            return campaignConditionState(result.matches(), result.diagnostic());
+        }
+        if (condition instanceof DialogueCondition.CampaignOutcome outcome) {
+            var result = outcome.reference().evaluate(level, player.getUUID());
+            return campaignConditionState(result.matches(), result.diagnostic());
+        }
+        if (condition instanceof DialogueCondition.CampaignStanding standing) {
+            var result = standing.reference().evaluate(level, player.getUUID());
+            return campaignConditionState(result.matches(), result.diagnostic());
+        }
+        if (condition instanceof DialogueCondition.CampaignTransaction transaction) {
+            var result = transaction.reference().evaluate(level, player.getUUID());
+            return campaignConditionState(result.matches(), result.diagnostic());
+        }
+        if (condition instanceof DialogueCondition.CampaignCharacter character) {
+            var result = character.reference().evaluate(level, null);
+            return campaignConditionState(result.matches(), result.diagnostic());
+        }
+        if (condition instanceof DialogueCondition.CampaignLocation location) {
+            var result = location.reference().evaluate(level, player);
+            return campaignConditionState(result.matches(), result.diagnostic());
         }
         if (condition instanceof DialogueCondition.Reputation reputation) {
             return reputationStateWithoutLiveContext(player, level, progress, reputation);
@@ -3642,6 +3666,13 @@ public final class VillagerQuestService {
             return time.times().contains(savedTimeOfDay(level)) ? ConditionMatch.MET : ConditionMatch.UNMET;
         }
         return ConditionMatch.UNKNOWN;
+    }
+
+    private static ConditionMatch campaignConditionState(boolean matches, String diagnostic) {
+        if (!diagnostic.isBlank()) {
+            return ConditionMatch.UNKNOWN;
+        }
+        return matches ? ConditionMatch.MET : ConditionMatch.UNMET;
     }
 
     private static ConditionMatch questConditionStateWithoutLiveContext(
