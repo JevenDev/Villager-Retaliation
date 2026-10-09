@@ -15,7 +15,7 @@ public final class QuestDefinitionMigration {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime) {
-        if (definition == null || progress == null) {
+        if (definition == null || progress == null || progress.completionPending()) {
             return Result.unchanged();
         }
         int authoredRevision = definition.revision().number();

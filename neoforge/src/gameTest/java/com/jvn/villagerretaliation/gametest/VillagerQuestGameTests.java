@@ -6435,6 +6435,81 @@ public final class VillagerQuestGameTests {
                 """).getAsJsonObject();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "quest_reward_recovery")
+    public static void partialRewardsResumeAcrossReloadBeforeCompletionOrPartyClaim(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var root = runtimeQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:reward_recovery_fixture");
+        root.getAsJsonObject("rewards").addProperty("loot_table", "villagerretaliation:quest/bread_delivery");
+        var envelope = QuestResourceEnvelope.read(VillagerRetaliation.id("quests/reward_recovery_fixture.json"), root).orElseThrow();
+        var parsed = QuestV2Parser.parse(envelope).orElseThrow();
+        var compiled = QuestV2Compiler.compile(parsed, envelope).orElseThrow();
+        var definition = compiled.asQuestDefinition();
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        var linkedPlayer = helper.makeMockServerPlayerInLevel();
+        var priorData = VillagerQuestSavedData.get(level);
+        var storage = level.getServer().overworld().getDataStorage();
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled), QuestDialogueCompiler.compile(parsed, envelope));
+            var complete = QuestContentCatalogs.current(level.getServer());
+            var data = new VillagerQuestSavedData();
+            storage.set("villagerretaliation_quests", data);
+            var progress = data.getOrCreate(player.getUUID(), compiled.id());
+            progress.start(villager.getUUID(), level.dimension(), null, level.getGameTime());
+            progress.beginRun(player.getUUID(), compiled.id(), null);
+            progress.beginCompletion(definition.rewards());
+            QuestContentCatalogs.installForTests(level.getServer(), withoutRewards(complete, complete.generation() + 1), null);
+            int experience = player.totalExperience;
+            var failed = com.jvn.villagerretaliation.quest.runtime.QuestRewardService.award(
+                    VillagerInteractionService.createDialogueContext(level, player, villager), definition, progress, Map.of());
+            helper.assertFalse(failed.success(), "missing loot stops reward delivery");
+            helper.assertValueEqual(player.totalExperience, experience + 7, "earlier XP was delivered");
+            helper.assertTrue(progress.completionPending(), "submitted completion remains retryable");
+            helper.assertValueEqual(progress.completionCount(), 0, "failed reward does not complete the quest");
+            helper.assertFalse(com.jvn.villagerretaliation.quest.runtime.QuestStateMachine.abandon(progress, 10, false).dirty(),
+                    "abandonment cannot erase submitted rewards");
+            helper.assertFalse(com.jvn.villagerretaliation.quest.runtime.QuestStateMachine.start(progress, villager.getUUID(), level.dimension(), null, 10, true).dirty(),
+                    "forced restart cannot erase submitted rewards");
+            data = VillagerQuestSavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
+            storage.set("villagerretaliation_quests", data);
+            progress = data.get(player.getUUID(), compiled.id());
+            helper.assertValueEqual(progress.rewardDelivery().nextAction(), 4, "reload preserves the first undelivered reward");
+            QuestContentCatalogs.installForTests(level.getServer(), complete, null);
+            var context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            var resumed = VillagerQuestService.performAction(context, compiled.id(), VillagerActionDefinition.QuestAction.TURN_IN).orElseThrow();
+            helper.assertValueEqual(resumed.status(), "completed", "saved submission skips the original unmet objective on retry");
+            helper.assertValueEqual(player.totalExperience, experience + 7, "retry does not repeat XP");
+            VillagerQuestService.performAction(context, compiled.id(), VillagerActionDefinition.QuestAction.TURN_IN);
+            helper.assertValueEqual(progress.completionCount(), 1, "repeated completion is inert");
+
+            VillagerQuestService.setClientEffectsSuppressedForTests(linkedPlayer, true);
+            var linked = data.getOrCreate(linkedPlayer.getUUID(), compiled.id());
+            linked.start(villager.getUUID(), level.dimension(), null, 0);
+            linked.complete(1, false);
+            linked.markPendingPartyReward();
+            QuestContentCatalogs.installForTests(level.getServer(), withoutRewards(complete, complete.generation() + 2), null);
+            var linkedContext = VillagerInteractionService.createDialogueContext(level, linkedPlayer, villager);
+            var linkedFailure = com.jvn.villagerretaliation.quest.runtime.QuestRewardService.award(linkedContext, definition, linked, Map.of());
+            helper.assertFalse(linkedFailure.success(), "linked delivery stops on missing loot");
+            linkedPlayer.tickCount = 0;
+            VillagerQuestService.onPlayerTick(linkedPlayer);
+            helper.assertTrue(linked.pendingPartyReward() && !linked.partyRewardClaimed(), "failed party delivery retains the unclaimed reward");
+            QuestContentCatalogs.installForTests(level.getServer(), complete, null);
+            VillagerQuestService.onPlayerTick(linkedPlayer);
+            helper.assertTrue(linked.partyRewardClaimed(), "restored party reward is claimed after delivery");
+            helper.assertValueEqual(linkedPlayer.totalExperience, 7, "party retry does not repeat XP");
+            helper.succeed();
+        } finally {
+            storage.set("villagerretaliation_quests", priorData);
+            VillagerQuestResources.clearCache();
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            VillagerQuestService.setClientEffectsSuppressedForTests(linkedPlayer, false);
+        }
+    }
+
     private static JsonObject runtimeQuestV2Fixture() {
         return JsonParser.parseString("""
                 {

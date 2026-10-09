@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest;
 import com.mojang.logging.LogUtils;
 import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
 import com.jvn.villagerretaliation.quest.runtime.QuestActionCheckpoint;
+import com.jvn.villagerretaliation.quest.runtime.QuestRewardDelivery;
 import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
@@ -40,7 +41,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 10;
+    public static final int CURRENT_DATA_VERSION = 11;
     public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
     public static final int MAX_CHOICE_HISTORY = 256;
     public static final int MAX_COMPLETION_HISTORY = 128;
@@ -246,7 +247,8 @@ public class VillagerQuestSavedData extends SavedData {
             return 0;
         }
         List<Map.Entry<ResourceLocation, QuestProgress>> terminalEntries = playerEntries.entrySet().stream()
-                .filter(entry -> entry.getValue() != null && entry.getValue().terminal())
+                .filter(entry -> entry.getValue() != null && entry.getValue().terminal()
+                        && !entry.getValue().pendingPartyReward())
                 .sorted(Comparator
                         .comparingLong((Map.Entry<ResourceLocation, QuestProgress> entry) ->
                                 entry.getValue().lastActivityGameTime())
@@ -622,6 +624,8 @@ public class VillagerQuestSavedData extends SavedData {
         private boolean hasProof;
         private boolean pendingPartyReward;
         private boolean partyRewardClaimed;
+        private boolean completionPending;
+        private QuestRewardDelivery rewardDelivery;
         private UUID partyQuestInstanceId;
         private UUID questRunId;
         private String issuerName = "";
@@ -683,6 +687,10 @@ public class VillagerQuestSavedData extends SavedData {
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
             progress.pendingPartyReward = tag.getBoolean(TAG_PENDING_PARTY_REWARD);
             progress.partyRewardClaimed = tag.getBoolean(TAG_PARTY_REWARD_CLAIMED);
+            progress.completionPending = tag.getBoolean("CompletionPending");
+            if (tag.contains("RewardDelivery", Tag.TAG_COMPOUND)) {
+                progress.rewardDelivery = QuestRewardDelivery.load(tag.getCompound("RewardDelivery"));
+            }
             if (tag.hasUUID(TAG_PARTY_QUEST_INSTANCE)) {
                 progress.partyQuestInstanceId = tag.getUUID(TAG_PARTY_QUEST_INSTANCE);
             }
@@ -831,6 +839,8 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putBoolean(TAG_HAS_PROOF, this.hasProof);
             tag.putBoolean(TAG_PENDING_PARTY_REWARD, this.pendingPartyReward);
             tag.putBoolean(TAG_PARTY_REWARD_CLAIMED, this.partyRewardClaimed);
+            tag.putBoolean("CompletionPending", this.completionPending);
+            if (this.rewardDelivery != null) tag.put("RewardDelivery", this.rewardDelivery.save());
             if (this.partyQuestInstanceId != null) {
                 tag.putUUID(TAG_PARTY_QUEST_INSTANCE, this.partyQuestInstanceId);
             }
@@ -1020,6 +1030,17 @@ public class VillagerQuestSavedData extends SavedData {
 
         public boolean hasProof() {
             return this.hasProof;
+        }
+
+        public boolean completionPending() { return this.completionPending; }
+
+        public QuestRewardDelivery rewardDelivery() { return this.rewardDelivery; }
+
+        public void recordRewardDelivery(QuestRewardDelivery delivery) { this.rewardDelivery = delivery; }
+
+        public void beginCompletion(QuestDefinition.Rewards rewards) {
+            this.completionPending = true;
+            if (this.rewardDelivery == null) this.rewardDelivery = new QuestRewardDelivery(rewards, 0);
         }
 
         public boolean pendingPartyReward() {
@@ -1223,6 +1244,8 @@ public class VillagerQuestSavedData extends SavedData {
             this.hasProof = false;
             this.pendingPartyReward = false;
             this.partyRewardClaimed = false;
+            this.completionPending = false;
+            this.rewardDelivery = null;
             this.partyQuestInstanceId = null;
             this.questRunId = null;
             this.consumedReason = "";
@@ -1333,6 +1356,7 @@ public class VillagerQuestSavedData extends SavedData {
         }
 
         public void complete(long gameTime, boolean consume) {
+            this.completionPending = false;
             this.state = consume ? QuestState.CONSUMED : QuestState.COMPLETED;
             this.completedGameTime = gameTime;
             this.completionCount = saturatingIncrement(this.completionCount);

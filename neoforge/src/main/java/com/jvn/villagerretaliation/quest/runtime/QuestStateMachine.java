@@ -33,6 +33,9 @@ public final class QuestStateMachine {
         if (progress == null) {
             return blocked(null, "missing_progress");
         }
+        if (progress.completionPending() || progress.pendingPartyReward()) {
+            return blocked(progress, "quest_rewards_pending");
+        }
         if (!forceRestart && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
             return blocked(progress, "quest_already_active");
         }
@@ -55,7 +58,7 @@ public final class QuestStateMachine {
             VillagerQuestSavedData.QuestProgress progress,
             String stage) {
         String normalized = normalize(stage);
-        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE || progress.completionPending()) {
             return blocked(progress, "quest_not_active");
         }
         if (normalized.isBlank()) {
@@ -83,7 +86,7 @@ public final class QuestStateMachine {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             String reason) {
-        if (!active(progress)) {
+        if (!active(progress) || progress.completionPending()) {
             return blocked(progress, "quest_not_active");
         }
         String normalized = normalizeCode(reason, "unspecified_failure");
@@ -95,7 +98,7 @@ public final class QuestStateMachine {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
-        if (!active(progress)) {
+        if (!active(progress) || progress.completionPending()) {
             return blocked(progress, "quest_not_active");
         }
         return mutate(progress, LifecycleEvent.ABANDONED, "", () -> progress.abandon(gameTime, consume),
@@ -106,7 +109,7 @@ public final class QuestStateMachine {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
-        if (!active(progress)) {
+        if (!active(progress) || progress.completionPending()) {
             return blocked(progress, "quest_not_active");
         }
         return mutate(progress, LifecycleEvent.EXPIRED, "", () -> progress.expire(gameTime, consume),
@@ -118,6 +121,9 @@ public final class QuestStateMachine {
             String reason) {
         if (progress == null) {
             return blocked(null, "missing_progress");
+        }
+        if (progress.completionPending() || progress.pendingPartyReward()) {
+            return blocked(progress, "quest_rewards_pending");
         }
         if (progress.state() == VillagerQuestSavedData.QuestState.CONSUMED) {
             return blocked(progress, "quest_already_consumed");
