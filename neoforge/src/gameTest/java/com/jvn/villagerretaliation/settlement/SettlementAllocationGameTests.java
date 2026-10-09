@@ -214,6 +214,25 @@ public final class SettlementAllocationGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_allocation")
     public static void acquisitionWaitsForPlanningAndRejectsAnOutdatedPriority(GameTestHelper helper) {
+        withIsolatedSettlementState(helper, () -> assertScheduledAcquisition(helper));
+    }
+
+    private static void withIsolatedSettlementState(GameTestHelper helper, Runnable test) {
+        var level = helper.getLevel();
+        var storage = level.getServer().overworld().getDataStorage();
+        var priorSettlements = SettlementSavedData.get(level);
+        var priorVillages = com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(level);
+        try {
+            storage.set("villagerretaliation_settlements", new SettlementSavedData());
+            storage.set("villagerretaliation_village_allegiances", new com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData());
+            test.run();
+        } finally {
+            storage.set("villagerretaliation_settlements", priorSettlements);
+            storage.set("villagerretaliation_village_allegiances", priorVillages);
+        }
+    }
+
+    private static void assertScheduledAcquisition(GameTestHelper helper) {
         var level = helper.getLevel();
         var town = town(helper);
         var depot = town.depots().values().iterator().next();
@@ -571,6 +590,10 @@ public final class SettlementAllocationGameTests {
     }
 
     private static void contestedCrafting(GameTestHelper helper, boolean urgentFirst) {
+        withIsolatedSettlementState(helper, () -> assertContestedCrafting(helper, urgentFirst));
+    }
+
+    private static void assertContestedCrafting(GameTestHelper helper, boolean urgentFirst) {
         var level = helper.getLevel();
         var town = town(helper);
         var depot = town.depots().values().iterator().next();

@@ -2015,6 +2015,7 @@ public final class VillagerQuestGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "choose_horizon_response_commit")
     public static void builtInChooseTheHorizonBranchesRoundTripResponseHistory(GameTestHelper helper) {
         DatapackDiagnostics.clear();
+        com.jvn.villagerretaliation.scene.SceneResources.clearCache();
         VillagerQuestResources.clearCache();
         DialogueTreeResources.clearCache();
         ServerLevel level = helper.getLevel();
@@ -2056,6 +2057,7 @@ public final class VillagerQuestGameTests {
         } finally {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
             villager.discard();
+            com.jvn.villagerretaliation.scene.SceneResources.clearCache();
             DialogueTreeService.clearRuntimeState();
             DialogueTreeResources.clearCache();
             VillagerQuestResources.clearCache();

@@ -62,6 +62,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.GameTestInfo;
+import net.minecraft.gametest.framework.GameTestListener;
+import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
@@ -1340,41 +1343,41 @@ public final class SceneRegistryGameTests {
                 timedOut.outcome(),
                 com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.FAIL,
                 "movement timeout failure transition");
-        helper.getLevel().getChunk(target.getX() >> 4, target.getZ() >> 4);
         UUID villagerId = villager.getUUID();
         villager.discard();
-        Villager reloadedVillager = EntityType.VILLAGER.create(helper.getLevel());
-        helper.assertTrue(reloadedVillager != null, "reloaded villager should create");
-        reloadedVillager.setUUID(villagerId);
-        reloadedVillager.moveTo(target.getX() + .5, target.getY(), target.getZ() + .5, 0, 0);
-        helper.assertTrue(
-                helper.getLevel().addFreshEntity(reloadedVillager),
-                "reloaded actor should return in the destination chunk");
         SceneInstance loaded = SceneInstance.load(instance.save());
-        helper.runAfterDelay(
-                1,
-                () -> {
-                    var arrived =
-                            executor.reconcile(
-                                    new SceneExecutionContext(
-                                            helper.getLevel().getServer(),
-                                            repository,
-                                            loaded,
-                                            definition,
-                                            step,
-                                            loaded.stepRecords().get("move"),
-                                            2L,
-                                            false));
-                    helper.assertTrue(
-                            arrived.outcome()
-                                    == com.jvn.villagerretaliation.scene.runtime.SceneStepResult
-                                            .Outcome.APPLIED,
-                            "movement arrival after chunk return: "
-                                    + arrived.code()
-                                    + " / "
-                                    + arrived.diagnostic());
-                    helper.succeed();
-                });
+        var targetChunk = new net.minecraft.world.level.ChunkPos(target);
+        var chunks = helper.getLevel().getChunkSource();
+        chunks.addRegionTicket(net.minecraft.server.level.TicketType.FORCED, targetChunk, 0, targetChunk);
+        helper.getLevel().getChunk(targetChunk.x, targetChunk.z);
+        Runnable cleanup = () -> {
+            var live = helper.getLevel().getEntity(villagerId);
+            if (live != null) live.discard();
+            chunks.removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, targetChunk, 0, targetChunk);
+        };
+        helper.testInfo.addListener(new GameTestListener() {
+            @Override public void testStructureLoaded(GameTestInfo test) { }
+            @Override public void testPassed(GameTestInfo test, GameTestRunner runner) { cleanup.run(); }
+            @Override public void testFailed(GameTestInfo test, GameTestRunner runner) { cleanup.run(); }
+            @Override public void testAddedForRerun(GameTestInfo original, GameTestInfo rerun, GameTestRunner runner) { }
+        });
+        helper.startSequence().thenWaitUntil(() -> helper.assertTrue(
+                helper.getLevel().areEntitiesLoaded(targetChunk.toLong()),
+                "destination entity storage should load before restoring its actor"))
+                .thenExecute(() -> {
+                    Villager reloadedVillager = EntityType.VILLAGER.create(helper.getLevel());
+                    helper.assertTrue(reloadedVillager != null, "reloaded villager should create");
+                    reloadedVillager.setUUID(villagerId);
+                    reloadedVillager.setNoAi(true);
+                    reloadedVillager.moveTo(target.getX() + .5, target.getY(), target.getZ() + .5, 0, 0);
+                    helper.assertTrue(helper.getLevel().addFreshEntity(reloadedVillager),
+                            "reloaded actor should return in the destination chunk");
+                    var arrived = executor.reconcile(new SceneExecutionContext(
+                            helper.getLevel().getServer(), repository, loaded, definition, step,
+                            loaded.stepRecords().get("move"), 2L, false));
+                    helper.assertTrue(arrived.outcome() == com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED,
+                            "movement arrival after chunk return: " + arrived.code() + " / " + arrived.diagnostic());
+                }).thenSucceed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200, batch = "isolated_encounterreloadownsonlyitsmobsandcleanuphonorspolicy")

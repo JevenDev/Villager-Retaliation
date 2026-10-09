@@ -4498,6 +4498,7 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).is(Blocks.STONE),
                 "return tick should not mine or reject the valid target before navigating back");
 
+        var completionPosition = new java.util.concurrent.atomic.AtomicReference<BlockPos>();
         helper.startSequence()
                 .thenExecuteFor(360, () -> {
                     if (!level.getBlockState(helper.absolutePos(targetRel)).isAir()) {
@@ -4505,6 +4506,7 @@ public final class VillagerWorkerGameTests {
                         if (Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), 10L) == 0L) {
                             worker.tick(level, villager, hirer, context);
                         }
+                        if (level.getBlockState(helper.absolutePos(targetRel)).isAir()) completionPosition.set(villager.blockPosition());
                     }
                 })
                 .thenExecute(() -> {
@@ -4516,8 +4518,8 @@ public final class VillagerWorkerGameTests {
                                     + ", target=" + finalState.targetPos());
                     helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COBBLESTONE)),
                             "returned excavation should store mined drops as output");
-                    helper.assertTrue(context.isInsideWorkArea(villager.blockPosition()),
-                            "miner should finish the recovered excavation inside the work area");
+                    helper.assertTrue(completionPosition.get() != null && context.isInsideWorkArea(completionPosition.get()),
+                            "miner should finish the recovered excavation inside the work area: " + completionPosition.get());
                     villager.discard();
                 })
                 .thenSucceed();
