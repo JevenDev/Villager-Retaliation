@@ -34,7 +34,8 @@ public final class ConversationSchema {
                 "id", id(), "speaker", ref("speaker"), "text", ref("localized_reference"), "conditions", array(ref("condition"), 0),
                 "camera", ConversationLinePresentation.cameraSchema(), "voices", ConversationLinePresentation.voicesSchema()));
         JsonObject response = object(List.of("id", "label"), "id", id(), "label", ref("localized_reference"),
-                "conditions", array(ref("condition"), 0), "effects", array(ref("effect"), 0), "next", id(), "check", id());
+                "conditions", array(ref("condition"), 0), "effects", array(ref("effect"), 0), "next", id(), "check", id(),
+                "unavailable", ref("localized_reference"));
         response.add("oneOf", exclusive("next", "check"));
         definitions.add("response", response);
         JsonObject node = object(List.of("id"), "id", id(), "exchanges", array(ref("exchange"), 0),

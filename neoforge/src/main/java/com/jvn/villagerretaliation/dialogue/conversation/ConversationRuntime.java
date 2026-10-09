@@ -113,7 +113,7 @@ final class ConversationRuntime {
         String text = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
                 ConversationService.text(player, exchange.textKey()), replacements);
         session.transcript.add(new ConversationSession.Line(session.node, session.visit, exchange.id(), exchange.speaker().kind(),
-                role, speaker, name, exchange.textKey(), text));
+                role, speaker, name, exchange.textKey(), text, replacements, true));
     }
 
     private static boolean executeEffect(ServerPlayer controller, ConversationSavedData data, ConversationSession session,

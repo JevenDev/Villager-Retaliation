@@ -25,6 +25,12 @@ final class ConversationSessionCodec {
         tag.putString("Conversation", identity.conversation().toString());
         tag.putInt("DefinitionRevision", identity.definitionRevision());
         tag.putString("Fingerprint", identity.fingerprint());
+        tag.putInt("ContentRevision", session.contentRevision);
+        tag.putString("ContentFingerprint", session.contentFingerprint);
+        tag.putString("CompatibilityFingerprint", session.compatibilityFingerprint);
+        var recovery = new ListTag();
+        session.recoveryHistory.forEach(entry -> recovery.add(net.minecraft.nbt.StringTag.valueOf(entry)));
+        tag.put("RecoveryHistory", recovery);
         tag.putString("Campaign", identity.campaign().toString());
         tag.putUUID("CampaignInstance", identity.campaignInstance());
         tag.putString("CampaignFingerprint", identity.campaignFingerprint());
@@ -82,6 +88,8 @@ final class ConversationSessionCodec {
             value.putString("Name", line.name());
             value.putString("TextKey", line.textKey());
             value.putString("Fallback", line.fallback());
+            value.put("Replacements", strings(line.replacements()));
+            value.putBoolean("Localized", line.localized());
             lines.add(value);
         });
         tag.put("Transcript", lines);
@@ -98,6 +106,9 @@ final class ConversationSessionCodec {
             value.putUUID("Player", choice.player());
             value.put("Participants", players(choice.participants()));
             value.putLong("ChosenAt", choice.chosenAt());
+            value.putString("LabelKey", choice.labelKey());
+            value.putString("Fallback", choice.fallback());
+            value.put("Replacements", strings(choice.replacements()));
             choices.add(value);
         });
         tag.put("Choices", choices);
@@ -145,6 +156,12 @@ final class ConversationSessionCodec {
         require(identity.definitionRevision() > 0, "invalid conversation definition revision");
         var session = new ConversationSession(identity, identity.owner(), optionalId(tag, "QuestRun"), text(tag, "Node"),
                 new ConversationSession.Speaker(identity.characterRole(), identity.character(), identity.dimension(), ""));
+        session.contentRevision = tag.contains("ContentRevision") ? integer(tag, "ContentRevision") : identity.definitionRevision();
+        session.contentFingerprint = tag.contains("ContentFingerprint") ? text(tag, "ContentFingerprint") : identity.fingerprint();
+        session.compatibilityFingerprint = string(tag, "CompatibilityFingerprint");
+        if (tag.contains("RecoveryHistory")) for (var entry : tag.getList("RecoveryHistory", Tag.TAG_STRING))
+            session.recoveryHistory.add(entry.getAsString());
+        require(session.contentRevision > 0, "invalid accepted conversation revision");
         session.controller = optionalId(tag, "Controller");
         session.actingPlayer = uuid(tag, "ActingPlayer");
         session.revision = number(tag, "Revision");
@@ -208,7 +225,8 @@ final class ConversationSessionCodec {
             var value = (CompoundTag) raw;
             var line = new ConversationSession.Line(text(value, "Node"), number(value, "Visit"), text(value, "Exchange"),
                     ConversationDefinition.SpeakerKind.valueOf(text(value, "Kind")), string(value, "Role"), optionalId(value, "Speaker"),
-                    string(value, "Name"), text(value, "TextKey"), text(value, "Fallback"));
+                    string(value, "Name"), text(value, "TextKey"), text(value, "Fallback"),
+                    value.contains("Replacements") ? strings(compound(value, "Replacements")) : Map.of(), value.getBoolean("Localized"));
             require(line.visit() > 0 && line.visit() <= session.visit && lines.add(line.visit() + "/" + line.exchange()), "duplicate or invalid conversation exchange");
             require(line.kind() == ConversationDefinition.SpeakerKind.NARRATOR ? line.speaker() == null : line.speaker() != null, "invalid saved exchange speaker");
             session.transcript.add(line);
@@ -221,7 +239,9 @@ final class ConversationSessionCodec {
         for (var raw : list(tag, "Choices")) {
             var value = (CompoundTag) raw;
             var choice = new ConversationSession.Choice(uuid(value, "Request"), text(value, "Node"), number(value, "Visit"),
-                    text(value, "Response"), uuid(value, "Player"), players(list(value, "Participants")), number(value, "ChosenAt"));
+                    text(value, "Response"), uuid(value, "Player"), players(list(value, "Participants")), number(value, "ChosenAt"),
+                    string(value, "LabelKey"), value.contains("Fallback") ? string(value, "Fallback") : text(value, "Response"),
+                    value.contains("Replacements") ? strings(compound(value, "Replacements")) : Map.of());
             require(choice.visit() > 0 && choice.visit() <= session.visit && choiceVisits.add(choice.visit())
                     && choice.participants().contains(choice.player()) && session.participants.containsAll(choice.participants()), "invalid saved conversation choice");
             session.choices.add(choice);

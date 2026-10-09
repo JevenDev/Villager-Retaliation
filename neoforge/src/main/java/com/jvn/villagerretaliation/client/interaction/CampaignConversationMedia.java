@@ -33,6 +33,13 @@ final class CampaignConversationMedia {
 
     boolean voicedLine() { return voicedLine; }
 
+    boolean playing() { return voice != null && Minecraft.getInstance().getSoundManager().isActive(voice); }
+
+    void replay(UUID session, CampaignConversationViewPayload.Line line) {
+        heard = "";
+        update(session, line);
+    }
+
     void stop() {
         if (voice != null) Minecraft.getInstance().getSoundManager().stop(voice);
         voice = null;

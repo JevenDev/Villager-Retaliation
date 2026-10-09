@@ -19,21 +19,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.resources.ResourceLocation;
 
 public final class DialogueTreeService {
     private static final String ENTRY_OPTION_PREFIX = "dt:";
     private static final String RESPONSE_OPTION_PREFIX = "dr:";
     public static final String LEAVE_OPTION_ID = "dt:leave";
-    private static final long SESSION_TTL_TICKS = 20L * 60L * 5L;
-    private static final Map<SessionKey, Session> SESSIONS = new ConcurrentHashMap<>();
 
     private DialogueTreeService() {
     }
 
     public static void clearRuntimeState() {
-        SESSIONS.clear();
+        // sessions now belong to each world's saved data
     }
 
     public static String entryOptionId(ResourceLocation treeId, String entryId) {
@@ -47,26 +44,20 @@ public final class DialogueTreeService {
     public static Optional<List<DialogueOptionDefinition>> activeOptions(DialogueContext context) {
         if (SceneContinuationService.hasPendingDialogue(context)) return Optional.of(List.of());
         SessionKey key = key(context);
-        Session session = SESSIONS.get(key);
+        Session session = sessions(context).get(key);
         if (session == null) {
-            return Optional.empty();
-        }
-        if (session.expired(context.level().getGameTime())) {
-            SESSIONS.remove(key);
             return Optional.empty();
         }
 
         DialogueTreeDefinition tree = DialogueTreeResources
                 .tree(context.level().getServer(), context.locale(), session.treeId())
                 .orElse(null);
-        if (tree == null || !tree.matches(context)) {
-            SESSIONS.remove(key);
-            return Optional.empty();
-        }
+        if (tree == null || !tree.matches(context)) return Optional.of(List.of());
 
         DialogueTreeDefinition.Node node = tree.node(session.nodeId()).orElse(null);
-        if (node == null || node.end() || !node.matches(context)) {
-            SESSIONS.remove(key);
+        if (node == null || !node.matches(context)) return Optional.of(List.of());
+        if (node.end()) {
+            sessions(context).remove(key);
             return Optional.empty();
         }
 
@@ -77,11 +68,6 @@ public final class DialogueTreeService {
                         .thenComparing(DialogueTreeDefinition.Response::id))
                 .map(response -> response.toOption(context, tree.id(), tree.metadata()))
                 .toList();
-        if (options.isEmpty()) {
-            SESSIONS.remove(key);
-            return Optional.empty();
-        }
-        SESSIONS.put(key, session.touch(context.level().getGameTime()));
         return Optional.of(options);
     }
 
@@ -113,8 +99,8 @@ public final class DialogueTreeService {
             return entry != null && entry.matches(context, VillagerDialogueService.moodFor(context)) && node != null && node.matches(context)
                     ? new SelectionPreview(null, node.actions()) : new SelectionPreview(null, List.of());
         }
-        Session session = SESSIONS.get(key(context));
-        if (session == null || session.expired(context.level().getGameTime()) || !tree.id().equals(session.treeId())) {
+        Session session = sessions(context).get(key(context));
+        if (session == null || !tree.id().equals(session.treeId())) {
             return new SelectionPreview(null, List.of());
         }
         var node = tree.node(session.nodeId()).orElse(null);
@@ -135,7 +121,7 @@ public final class DialogueTreeService {
     }
 
     public static boolean leaveActiveSession(DialogueContext context) {
-        return SESSIONS.remove(key(context)) != null;
+        return sessions(context).remove(key(context)) != null;
     }
 
     public static Optional<VillagerDialogueService.DialogueResult> startEntry(
@@ -170,24 +156,20 @@ public final class DialogueTreeService {
             ResourceLocation treeId,
             String responseId) {
         SessionKey key = key(context);
-        Session session = SESSIONS.get(key);
+        Session session = sessions(context).get(key);
         if (session == null || !treeId.equals(session.treeId())) {
-            return Optional.empty();
-        }
-        if (session.expired(context.level().getGameTime())) {
-            SESSIONS.remove(key);
             return Optional.empty();
         }
 
         if (SceneContinuationService.hasPendingDialogue(context)) return Optional.empty();
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) {
-            SESSIONS.remove(key);
+            sessions(context).remove(key);
             return Optional.empty();
         }
         DialogueTreeDefinition.Node node = tree.node(session.nodeId()).orElse(null);
         if (node == null || !node.matches(context)) {
-            SESSIONS.remove(key);
+            sessions(context).remove(key);
             return Optional.empty();
         }
         DialogueTreeDefinition.Response response = node.responses().stream()
@@ -206,7 +188,7 @@ public final class DialogueTreeService {
         String responseLine = resolve(responseTemplate, context, responseActionText.replacements());
         String leadingText = firstNonBlank(responseLine, responseActionText.text());
         if (!responseActionText.outcome().success()) {
-            SESSIONS.remove(key);
+            sessions(context).remove(key);
             return Optional.of(result(lineId(tree.id(), node.id(), response.id()),
                     responseActionText.outcome().suspended() ? leadingText : responseActionText.text()));
         }
@@ -214,7 +196,7 @@ public final class DialogueTreeService {
             return Optional.of(enterNode(context, tree, response.next(), leadingText, responseActionText.replacements()));
         }
 
-        SESSIONS.remove(key);
+        sessions(context).remove(key);
         return Optional.of(result(
                 lineId(tree.id(), node.id(), response.id()),
                 firstNonBlank(leadingText, "")
@@ -235,7 +217,7 @@ public final class DialogueTreeService {
             String leadingText, Map<String, String> inheritedReplacements, boolean forced) {
         DialogueTreeDefinition.Node node = tree.node(nodeId).orElse(null);
         if (node == null || !node.matches(context)) {
-            SESSIONS.remove(key(context));
+            sessions(context).remove(key(context));
             return new EntryResult(Optional.of(result(lineId(tree.id(), nodeId, "missing"), leadingText)),
                     ActionResult.unavailable("dialogue node unavailable", Set.of(), VillagerActionResult.EMPTY));
         }
@@ -244,7 +226,7 @@ public final class DialogueTreeService {
                 tree.id() + "/node/" + node.id(),
                 new SceneContinuation.DialogueResume(tree.id(), node.id(), false, leadingText, forced));
         if (!actionText.outcome().success()) {
-            SESSIONS.remove(key(context));
+            sessions(context).remove(key(context));
             return new EntryResult(Optional.of(result(actionText.lineId(), firstNonBlank(actionText.text(), leadingText))),
                     actionText.outcome());
         }
@@ -257,10 +239,10 @@ public final class DialogueTreeService {
             Map<String, String> replacements, String actionLineId) {
         String nodeLine = resolve(node.selectLine(context), context, replacements);
         String text = firstNonBlank(leadingText, nodeLine);
-        if (!node.end() && node.responses().stream().anyMatch(response -> response.matches(context))) {
-            SESSIONS.put(key(context), new Session(UUID.randomUUID(), tree.id(), node.id(), context.level().getGameTime(), replacements));
+        if (!node.end()) {
+            sessions(context).put(key(context), new Session(UUID.randomUUID(), tree.id(), node.id(), context.level().getGameTime(), replacements));
         } else {
-            SESSIONS.remove(key(context));
+            sessions(context).remove(key(context));
         }
         String resultLineId = actionLineId.isBlank() ? lineId(tree.id(), node.id(), "") : actionLineId;
         return result(resultLineId, text);
@@ -355,30 +337,27 @@ public final class DialogueTreeService {
         return builder.toString();
     }
 
+    private static DialogueTreeSessionSavedData sessions(DialogueContext context) {
+        return DialogueTreeSessionSavedData.get(context.level());
+    }
+
     private static SessionKey key(DialogueContext context) {
         return new SessionKey(context.player().getUUID(), context.villager().getUUID());
     }
 
-    private record SessionKey(UUID playerId, UUID villagerId) {
+    record SessionKey(UUID playerId, UUID villagerId) {
     }
 
-    private record Session(
+    record Session(
             UUID id,
             ResourceLocation treeId,
             String nodeId,
             long lastTouchedGameTime,
             Map<String, String> replacements) {
-        private Session {
+        Session {
             replacements = replacements == null ? Map.of() : Map.copyOf(replacements);
         }
 
-        private boolean expired(long gameTime) {
-            return gameTime - this.lastTouchedGameTime > SESSION_TTL_TICKS;
-        }
-
-        private Session touch(long gameTime) {
-            return new Session(this.id, this.treeId, this.nodeId, gameTime, this.replacements);
-        }
     }
 
     private record ActionText(String lineId, String text, Map<String, String> replacements, ActionResult outcome) {

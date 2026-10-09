@@ -1370,6 +1370,9 @@
           "minLength": 1,
           "maxLength": 256,
           "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "unavailable": {
+          "$ref": "#/$defs/localized_reference"
         }
       },
       "oneOf": [

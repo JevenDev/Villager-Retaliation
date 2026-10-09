@@ -71,6 +71,7 @@ public final class ConversationService {
                     text(player, definition.titleKey()), topicId, player.serverLevel().getGameTime());
             var session = new ConversationSession(identity, player.getUUID(), questRun(player, definition.quest()), topic.start(),
                     new ConversationSession.Speaker(definition.character(), character.entity().getUUID(), identity.dimension(), character.entity().getName().getString()));
+            session.compatibilityFingerprint = definition.compatibilityFingerprint();
             data.write(player.serverLevel(), 0, session);
             ConversationRuntime.drive(player, request);
             return view(player, request);
@@ -97,9 +98,16 @@ public final class ConversationService {
                 require(prior.equals(request), "Conversation request identity was already used for another intent.");
                 return view(player, sessionId);
             }
-            if (intent != ConversationSession.Intent.RELEASE_CONTROL) session = ConversationCharacters.reconcile(player.server, data, session);
+            boolean recovery = intent == ConversationSession.Intent.CANCEL || intent == ConversationSession.Intent.MIGRATE;
+            if (intent != ConversationSession.Intent.RELEASE_CONTROL && !recovery) session = ConversationCharacters.reconcile(player.server, data, session);
             require(session.revision == revision, "The conversation changed. Refresh before choosing again.");
             require(session.active(), "This conversation has already reached its outcome.");
+            if (recovery) {
+                ConversationRecovery.apply(player, session, intent);
+                session.requests.put(requestId, request);
+                save(player, data, session);
+                return view(player, sessionId);
+            }
             if (intent == ConversationSession.Intent.RELEASE_CONTROL) {
                 require(player.getUUID().equals(session.controller), "Only the current controller can release this conversation.");
                 session.controller = null;
@@ -202,10 +210,17 @@ public final class ConversationService {
                     responses.add(new Response(response.id(),
                             com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
                                     text(player, response.labelKey()), session.replacements),
-                            authorized && conditions(context, response.conditions())));
+                            authorized && conditions(context, response.conditions()),
+                            !authorized ? "An authorized controller must be present."
+                                    : conditions(context, response.conditions()) ? ""
+                                    : response.unavailableKey().isEmpty()
+                                            ? com.jvn.villagerretaliation.dialogue.DialogueAvailability.reason(context, response.conditions())
+                                            : text(player, response.unavailableKey())));
                 }
             }
             issue = session.controller == null ? "The conversation is paused until an authorized member takes control." : session.diagnostic;
+            if (session.phase == ConversationSession.Phase.RESPONSES && responses.stream().noneMatch(Response::available))
+                issue = "Waiting for an available response. Meet the response requirements, return with another controller, or cancel this conversation.";
         } catch (Unavailable | ConversationSavedData.Conflict | IOException exception) { issue = exception.getMessage(); }
         return new Result(session.snapshot(), List.copyOf(responses), issue.isBlank() ? data.socialIssue(sessionId) : issue);
     }
@@ -215,8 +230,14 @@ public final class ConversationService {
         session.actingPlayer = player.getUUID();
         session.questRun = questRun(player, session.identity.quest());
         captureDecisionParticipants(player, session, request);
+        var authored = definition(player.server, session).nodes().get(session.node).responses().get(response);
+        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character(player, session));
+        var replacements = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.merge(
+                com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), session.replacements);
+        String label = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
+                text(player, authored.labelKey()), replacements);
         session.choices.add(new ConversationSession.Choice(request, session.node, session.visit, response, player.getUUID(),
-                session.decisionParticipants.participants(), player.serverLevel().getGameTime()));
+                session.decisionParticipants.participants(), player.serverLevel().getGameTime(), authored.labelKey(), label, replacements));
         session.phase = ConversationSession.Phase.RESPONSE_EFFECTS;
         session.effect = 0;
     }
@@ -280,8 +301,8 @@ public final class ConversationService {
         require(CampaignWorldModeSavedData.get(server.overworld()).mode() == CampaignWorldMode.CAMPAIGN, "This conversation requires Campaign Mode.");
         var definition = ConversationResources.conversation(server, session.identity.conversation()).orElse(null);
         require(definition != null, "Conversation content is missing. Its saved history is retained.");
-        require(definition.revision() == session.identity.definitionRevision() && definition.fingerprint().equals(session.identity.fingerprint()),
-                "Conversation content changed. Restore its saved revision before continuing.");
+        require(definition.revision() == session.contentRevision && definition.fingerprint().equals(session.contentFingerprint),
+                "Conversation content changed. Migrate compatible wording or restore its saved revision before continuing.");
         var content = CampaignResources.current(server).campaigns().get(session.identity.campaign());
         require(content != null, "Campaign content is missing. Its saved conversation is retained.");
         var campaigns = CampaignSavedData.get(server.overworld());
@@ -433,6 +454,8 @@ public final class ConversationService {
 
     static void require(boolean value, String message) { if (!value) throw new Unavailable(message); }
     static final class Unavailable extends RuntimeException { Unavailable(String message) { super(message); } }
-    public record Response(String id, String label, boolean available) { }
+    public record Response(String id, String label, boolean available, String reason) {
+        public Response(String id, String label, boolean available) { this(id, label, available, ""); }
+    }
     public record Result(ConversationSession.Snapshot session, List<Response> responses, String diagnostic) { }
 }

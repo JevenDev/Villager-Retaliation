@@ -15,6 +15,10 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class ConversationSession {
     final Identity identity;
+    int contentRevision;
+    String contentFingerprint;
+    String compatibilityFingerprint = "";
+    final List<String> recoveryHistory = new ArrayList<>();
     long revision;
     long visit;
     String node;
@@ -49,6 +53,8 @@ public final class ConversationSession {
 
     ConversationSession(Identity identity, UUID controller, UUID questRun, String node, Speaker character) {
         this.identity = identity;
+        this.contentRevision = identity.definitionRevision();
+        this.contentFingerprint = identity.fingerprint();
         this.controller = controller;
         this.actingPlayer = controller;
         this.questRun = questRun;
@@ -62,6 +68,10 @@ public final class ConversationSession {
 
     ConversationSession(ConversationSession source) {
         identity = source.identity;
+        contentRevision = source.contentRevision;
+        contentFingerprint = source.contentFingerprint;
+        compatibilityFingerprint = source.compatibilityFingerprint;
+        recoveryHistory.addAll(source.recoveryHistory);
         revision = source.revision;
         visit = source.visit;
         node = source.node;
@@ -97,7 +107,7 @@ public final class ConversationSession {
 
     public Identity identity() { return identity; }
     public long revision() { return revision; }
-    public boolean active() { return phase != Phase.COMPLETE; }
+    public boolean active() { return phase != Phase.COMPLETE && phase != Phase.CANCELLED; }
     boolean hasPendingSocialAwards() {
         return checks.values().stream().anyMatch(check -> check.social() != null && !socialAwards.contains(check.id()));
     }
@@ -113,9 +123,9 @@ public final class ConversationSession {
         return Collections.unmodifiableMap(new LinkedHashMap<>(values));
     }
 
-    public enum Phase { NODE_EFFECTS, EXCHANGES, RESPONSES, RESPONSE_EFFECTS, CHECK, ROLLED, COMPLETE, CONFIRMATION }
+    public enum Phase { NODE_EFFECTS, EXCHANGES, RESPONSES, RESPONSE_EFFECTS, CHECK, ROLLED, COMPLETE, CONFIRMATION, CANCELLED }
     public enum ReceiptState { PREPARED, RESOLVED }
-    public enum Intent { ADVANCE, CHOOSE, ROLL, RESUME, JOIN, TAKE_CONTROL, HAND_OVER, RELEASE_CONTROL, CONFIRM, DECLINE }
+    public enum Intent { ADVANCE, CHOOSE, ROLL, RESUME, JOIN, TAKE_CONTROL, HAND_OVER, RELEASE_CONTROL, CONFIRM, DECLINE, CANCEL, MIGRATE }
 
     public record Identity(UUID id, ResourceLocation conversation, int definitionRevision, String fingerprint,
             ResourceLocation campaign, UUID campaignInstance, String campaignFingerprint,
@@ -125,11 +135,21 @@ public final class ConversationSession {
     public record Speaker(String role, UUID entity, ResourceLocation dimension, String name) { }
 
     public record Line(String node, long visit, String exchange, ConversationDefinition.SpeakerKind kind,
-            String role, UUID speaker, String name, String textKey, String fallback) { }
+            String role, UUID speaker, String name, String textKey, String fallback, Map<String, String> replacements,
+            boolean localized) {
+        public Line { replacements = Map.copyOf(replacements); }
+        public Line(String node, long visit, String exchange, ConversationDefinition.SpeakerKind kind,
+                String role, UUID speaker, String name, String textKey, String fallback) {
+            this(node, visit, exchange, kind, role, speaker, name, textKey, fallback, Map.of(), false);
+        }
+    }
 
     public record Choice(UUID request, String node, long visit, String response, UUID player,
-            Set<UUID> participants, long chosenAt) {
-        public Choice { participants = Set.copyOf(participants); }
+            Set<UUID> participants, long chosenAt, String labelKey, String fallback, Map<String, String> replacements) {
+        public Choice { participants = Set.copyOf(participants); replacements = Map.copyOf(replacements); }
+        public Choice(UUID request, String node, long visit, String response, UUID player, Set<UUID> participants, long chosenAt) {
+            this(request, node, visit, response, player, participants, chosenAt, "", response, Map.of());
+        }
     }
 
     public record Check(UUID request, String id, int die, int difficulty, int modifier, int total,

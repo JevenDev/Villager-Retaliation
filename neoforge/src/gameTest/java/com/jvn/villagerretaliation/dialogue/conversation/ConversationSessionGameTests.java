@@ -589,6 +589,24 @@ public final class ConversationSessionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void localizedLineSnapshotsAndRecoveryProofSurviveReload(GameTestHelper helper) throws IOException {
+        try (var disk = new Disk()) {
+            var data = disk.open();
+            var session = session(UUID.randomUUID());
+            session.compatibilityFingerprint = "logic-v1";
+            session.transcript.add(new ConversationSession.Line("welcome", 1, "greet", ConversationDefinition.SpeakerKind.NARRATOR,
+                    "", null, "", "fixture.welcome", "Welcome, Alex.", Map.of("player", "Alex"), true));
+            session.recoveryHistory.add("accepted revision 1");
+            data.write(null, 0, session);
+            var restored = disk.reload().session(session.identity.id());
+            helper.assertValueEqual(restored.transcript, session.transcript, "substitutions are captured per line");
+            helper.assertValueEqual(restored.compatibilityFingerprint, session.compatibilityFingerprint, "migration proof survives reload");
+            helper.assertValueEqual(restored.recoveryHistory, session.recoveryHistory, "audit history survives reload");
+        }
+        helper.succeed();
+    }
+
     private static ConversationSession session(UUID character) {
         UUID player = UUID.randomUUID();
         var id = ResourceLocation.parse("campaign_fixture:mentor_conversation");

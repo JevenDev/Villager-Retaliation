@@ -276,6 +276,57 @@ public final class CampaignConversationPresentationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_presentation")
+    public static void historyReadsRetainSessionRevisionAndIncludeChoices(GameTestHelper helper) throws IOException {
+        try (var fixture = new CampaignConversationGameTests.Fixture(helper)) {
+            var player = fixture.player();
+            UUID view = UUID.randomUUID();
+            var topics = send(player, fixture, view, Action.TOPICS, null, "", "", 0, 0);
+            var topic = topics.topics().getFirst();
+            var current = send(player, fixture, view, Action.START, null, topic.conversation(), topic.id(), 0, 0);
+            while (current.session().phase() == ConversationSession.Phase.EXCHANGES)
+                current = send(player, fixture, view, Action.ADVANCE, current, "", "", 0, 0);
+            current = send(player, fixture, view, Action.CHOOSE, current, "", "leave", 0, 0);
+            long revision = current.session().revision();
+            var history = send(player, fixture, view, Action.HISTORY, current, "", "", 0, 0);
+            helper.assertValueEqual(history.session().revision(), revision, "history reading cannot execute effects");
+            helper.assertTrue(history.session().history().entries().size() >= 4, "history contains exchanges and the chosen response");
+            var restored = send(player, fixture, view, Action.VIEW, history, "", "", 0, 0);
+            helper.assertTrue(restored.session().history() == null, "returning restores the live presentation");
+            helper.assertValueEqual(restored.session().revision(), revision, "history navigation preserves revision");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_presentation")
+    public static void listenersResolveTextInTheirOwnLocaleWithCapturedSubstitutions(GameTestHelper helper) throws IOException {
+        try (var fixture = new CampaignConversationGameTests.Fixture(helper)) {
+            var owner = fixture.player();
+            var listener = fixture.player();
+            fixture.party(owner, listener);
+            var prior = listener.clientInformation();
+            listener.updateOptions(new net.minecraft.server.level.ClientInformation("fr_fr", prior.viewDistance(), prior.chatVisibility(),
+                    prior.chatColors(), prior.modelCustomisation(), prior.mainHand(), prior.textFilteringEnabled(), prior.allowsListing()));
+            var started = fixture.start(owner);
+            var line = started.session().transcript().getFirst();
+            var catalog = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.current(fixture.base.server);
+            var localized = catalog.localization().overlay("fr_fr", java.util.Map.of(line.textKey(),
+                    new com.google.gson.JsonPrimitive("Bonjour, {player}.")));
+            var translated = new com.jvn.villagerretaliation.quest.content.QuestContentCatalog(catalog.generation() + 1,
+                    catalog.compiledQuestCatalog(), catalog.dialogueCatalog(), catalog.quests(), catalog.objectiveEventQuestIds(),
+                    catalog.factQuestIds(), catalog.memoryEventQuestIds(), catalog.exclusiveGroupQuestIds(), catalog.triggerEventQuestIds(),
+                    catalog.scenes(), catalog.encounters(), catalog.pools(), catalog.bundles(), localized, catalog.rewards(),
+                    catalog.conversations(), catalog.socialProgressions());
+            com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.installForTests(fixture.base.server, translated, fixture.base.report);
+            var presented = send(listener, fixture, UUID.randomUUID(), Action.TOPICS, null, "", "", 0, 0);
+            helper.assertValueEqual(presented.session().line().text(), "Bonjour, " + owner.getName().getString() + ".",
+                    "listener language uses the original speaking player's captured placeholders");
+            helper.assertValueEqual(ConversationService.view(owner, started.session().identity().id()).session().transcript().getFirst(), line,
+                    "listener translation does not rewrite the historical record");
+        }
+        helper.succeed();
+    }
+
     private static CampaignConversationViewPayload send(ServerPlayer player, CampaignConversationGameTests.Fixture fixture,
             UUID view, Action action, CampaignConversationViewPayload prior, String conversation, String argument, int page, int textPage) {
         return ConversationPresentationService.respond(player, packet(fixture, view, action, prior, conversation, argument, page, textPage));

@@ -3332,6 +3332,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void renderOptions(GuiGraphics graphics, int mouseX, int mouseY, int top) {
         VillagerInteractionOptionList.render(this.optionListContext, graphics, mouseX, mouseY);
+        int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
+        if (hovered >= 0 && hovered < this.options.size() && !this.options.get(hovered).reason().isBlank())
+            renderInteractionTooltip(graphics, List.of(Component.literal(this.options.get(hovered).reason())), mouseX, mouseY);
     }
 
     private void renderProfilePage(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -6262,7 +6265,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (level == null) return null;
         var session = this.campaignConversation.session();
         if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) return level.getEntity(this.villagerEntityId);
-        if (session.check() != null || session.line() == null || session.line().speaker() == null) return null;
+        if (session.history() != null || session.check() != null || session.line() == null || session.line().speaker() == null) return null;
         var entity = level.getEntity(session.line().entityId());
         return entity != null && entity.getUUID().equals(session.line().speaker()) ? entity : null;
     }
@@ -6270,6 +6273,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private String campaignSpeakerName() {
         var session = this.campaignConversation.session();
         if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) return this.villagerName;
+        if (session.history() != null) return translate("conversation.history");
         if (session.confirmation() != null) return translate("conversation.confirmation");
         if (session.check() != null) return translate("conversation.check");
         return session.line() == null || session.line().name().isBlank() ? session.title() : session.line().name();
@@ -6284,6 +6288,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         @Override public long now() { return Util.getMillis(); }
         @Override public boolean animateChecks() { return !dialogueTextSpeed().instant() && CampaignDieRenderer.available(); }
+        @Override public boolean textRead() { return isDialogueTextAnimationComplete() && confirmationTextRead(); }
+        @Override public boolean voicePlaying() { return campaignMedia.playing(); }
+        @Override public void replayVoice() {
+            var session = campaignConversation.session();
+            campaignMedia.replay(session == null ? null : session.id(), campaignPresentationLine());
+        }
         @Override public boolean confirmationTextRead() {
             return dialogueLineScroll >= maxInteractionDialogueLineScroll(wrappedInteractionDialogueLines(villagerDialogueText));
         }
@@ -6298,6 +6308,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
         @Override public void send(com.jvn.villagerretaliation.network.CampaignConversationRequestPayload payload) { sendToServer(payload); }
         @Override public void option(String label, Runnable action, boolean locked) { options.add(DialogueOption.enabled(label, action, locked)); }
+        @Override public void option(String label, Runnable action, boolean locked, String reason) {
+            options.add(new DialogueOption(label, action, locked, false, false, reason));
+        }
         @Override public void updated(boolean session, String text) {
             if (session && page != DialoguePage.CAMPAIGN_CONVERSATION && page != DialoguePage.CAMPAIGN_CONFIRMATION) openPage(DialoguePage.CAMPAIGN_CONVERSATION);
             else if (page == DialoguePage.CAMPAIGN_CONVERSATION || page == DialoguePage.TALK) rebuildOptionsKeepingListPosition();
@@ -6385,7 +6398,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private record DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked) {
+    private record DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked, String reason) {
+        private DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked) {
+            this(label, action, locked, checkbox, checked, "");
+        }
         static DialogueOption enabled(String label, Runnable action) {
             return enabled(label, action, false);
         }

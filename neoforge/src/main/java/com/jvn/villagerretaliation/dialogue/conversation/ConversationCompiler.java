@@ -109,16 +109,39 @@ public final class ConversationCompiler {
                 String responseId = string(response, "id");
                 put(responses, responseId, new ConversationDefinition.Response(responseId, text(response, "label", location),
                         conditions(response, location), effects(resolvedResponse, location),
-                        string(response, "next"), string(response, "check"), location), location);
+                        string(response, "next"), string(response, "check"), location,
+                        response.has("unavailable") ? text(response, "unavailable", location) : ""), location);
             }
             put(nodes, key, new ConversationDefinition.Node(key, new ArrayList<>(exchanges.values()), effects(resolved, pointer),
                     responses, string(value, "next"), string(value, "outcome"), pointer), pointer);
         }
         var definition = new ConversationDefinition(id, root.get("revision").getAsInt(), QuestBundleFingerprints.definition(root),
                 ResourceLocation.parse(string(root, "campaign")), string(root, "character"), quest, text(root, "title", ""),
-                topics, nodes, checks, outcomes, bundle.owner(), source);
+                topics, nodes, checks, outcomes, bundle.owner(), source, compatibilityFingerprint(root));
         validateGraph(definition);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
+    }
+
+    static String compatibilityFingerprint(JsonObject definition) {
+        var logic = definition.deepCopy();
+        logic.remove("revision");
+        logic.remove("title");
+        for (var entry : array(logic, "topics")) entry.getAsJsonObject().remove("label");
+        for (var entry : array(logic, "outcomes")) entry.getAsJsonObject().remove("label");
+        for (var entry : array(logic, "checks")) for (var modifier : array(entry.getAsJsonObject(), "modifiers"))
+            modifier.getAsJsonObject().remove("label");
+        for (var entry : array(logic, "nodes")) {
+            var node = entry.getAsJsonObject();
+            for (var line : array(node, "exchanges")) {
+                var value = line.getAsJsonObject();
+                for (String field : List.of("text", "camera", "voices")) value.remove(field);
+            }
+            for (var response : array(node, "responses")) {
+                response.getAsJsonObject().remove("label");
+                response.getAsJsonObject().remove("unavailable");
+            }
+        }
+        return QuestBundleFingerprints.definition(logic);
     }
 
     private List<ConversationDefinition.Modifier> modifiers(JsonObject check, String pointer) {
@@ -199,7 +222,7 @@ public final class ConversationCompiler {
             for (int index = 0; index < value.getAsJsonArray().size(); index++) validateText(value.getAsJsonArray().get(index), pointer + "/" + index);
         } else if (value.isJsonObject()) {
             for (var entry : value.getAsJsonObject().entrySet()) {
-                if (Set.of("title", "label", "text").contains(entry.getKey())) text(value.getAsJsonObject(), entry.getKey(), pointer);
+                if (Set.of("title", "label", "text", "unavailable").contains(entry.getKey())) text(value.getAsJsonObject(), entry.getKey(), pointer);
                 else validateText(entry.getValue(), pointer + "/" + entry.getKey().replace("~", "~0").replace("/", "~1"));
             }
         }

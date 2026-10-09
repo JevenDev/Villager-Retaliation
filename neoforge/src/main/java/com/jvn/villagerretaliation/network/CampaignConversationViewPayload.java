@@ -30,11 +30,22 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         bounded(diagnostic, MAX_TEXT_LENGTH);
     }
 
-    public record Topic(String conversation, String id, String label, boolean available) {
-        public Topic { bounded(conversation, 256); bounded(id, 256); bounded(label, MAX_LABEL_LENGTH); }
+    public enum TopicGroup { NEW_BUSINESS, CURRENT_OBJECTIVES, REPORTING_BACK, FOLLOW_UPS, GENERAL }
+
+    public record Topic(String conversation, String id, String label, boolean available, TopicGroup group) {
+        public Topic { bounded(conversation, 256); bounded(id, 256); bounded(label, MAX_LABEL_LENGTH); java.util.Objects.requireNonNull(group); }
+        public Topic(String conversation, String id, String label, boolean available) { this(conversation, id, label, available, TopicGroup.GENERAL); }
     }
-    public record Response(String id, String label, boolean available) {
-        public Response { bounded(id, 256); bounded(label, MAX_LABEL_LENGTH); }
+    public record Response(String id, String label, boolean available, String reason) {
+        public Response { bounded(id, 256); bounded(label, MAX_LABEL_LENGTH); bounded(reason, MAX_LABEL_LENGTH); }
+        public Response(String id, String label, boolean available) { this(id, label, available, ""); }
+    }
+    public record History(int page, int pages, List<String> entries) {
+        public History {
+            entries = List.copyOf(entries);
+            if (page < 0 || pages < 1 || page >= pages || entries.size() > 8) throw new IllegalArgumentException("Invalid conversation history page");
+            entries.forEach(entry -> bounded(entry, MAX_TEXT_LENGTH));
+        }
     }
     public record Member(UUID id, String name) {
         public Member { if (id == null) throw new IllegalArgumentException("Missing conversation member"); bounded(name, MAX_LABEL_LENGTH); }
@@ -115,7 +126,14 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
 
     public record Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
             boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
-            List<Response> responses, Check check, String outcome, UUID confirmation, List<Transaction> transactions) {
+            List<Response> responses, Check check, String outcome, UUID confirmation, List<Transaction> transactions,
+            boolean canCancel, boolean canMigrate, History history) {
+        public Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
+                boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
+                List<Response> responses, Check check, String outcome, UUID confirmation, List<Transaction> transactions) {
+            this(id, revision, title, phase, line, canControl, canTakeControl, controller, handover, responses, check, outcome,
+                    confirmation, transactions, false, false, null);
+        }
         public Session {
             handover = List.copyOf(handover);
             responses = List.copyOf(responses);
@@ -150,7 +168,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         buffer.writeVarInt(value.topics().size());
         for (var topic : value.topics()) {
             buffer.writeUtf(topic.conversation(), 256); buffer.writeUtf(topic.id(), 256);
-            buffer.writeUtf(topic.label(), MAX_LABEL_LENGTH); buffer.writeBoolean(topic.available());
+            buffer.writeUtf(topic.label(), MAX_LABEL_LENGTH); buffer.writeBoolean(topic.available()); buffer.writeEnum(topic.group());
         }
         buffer.writeBoolean(value.session() != null);
         if (value.session() != null) writeSession(buffer, value.session());
@@ -162,7 +180,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         int page = buffer.readVarInt(); int pages = buffer.readVarInt();
         var topics = new ArrayList<Topic>();
         for (int count = count(buffer, PAGE_SIZE); count > 0; count--) {
-            topics.add(new Topic(buffer.readUtf(256), buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean()));
+            topics.add(new Topic(buffer.readUtf(256), buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean(), buffer.readEnum(TopicGroup.class)));
         }
         var session = buffer.readBoolean() ? readSession(buffer) : null;
         return new CampaignConversationViewPayload(view, entity, character, page, pages, topics, session, buffer.readUtf(MAX_TEXT_LENGTH));
@@ -191,7 +209,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         for (var member : value.handover()) { buffer.writeUUID(member.id()); buffer.writeUtf(member.name(), MAX_LABEL_LENGTH); }
         buffer.writeVarInt(value.responses().size());
         for (var response : value.responses()) {
-            buffer.writeUtf(response.id(), 256); buffer.writeUtf(response.label(), MAX_LABEL_LENGTH); buffer.writeBoolean(response.available());
+            buffer.writeUtf(response.id(), 256); buffer.writeUtf(response.label(), MAX_LABEL_LENGTH); buffer.writeBoolean(response.available()); buffer.writeUtf(response.reason(), MAX_LABEL_LENGTH);
         }
         buffer.writeBoolean(value.check() != null);
         if (value.check() != null) {
@@ -212,6 +230,13 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         buffer.writeUtf(value.outcome(), MAX_LABEL_LENGTH);
         buffer.writeBoolean(value.confirmation() != null);
         if (value.confirmation() != null) buffer.writeUUID(value.confirmation());
+        buffer.writeBoolean(value.canCancel()); buffer.writeBoolean(value.canMigrate());
+        buffer.writeBoolean(value.history() != null);
+        if (value.history() != null) {
+            buffer.writeVarInt(value.history().page()); buffer.writeVarInt(value.history().pages());
+            buffer.writeVarInt(value.history().entries().size());
+            for (String entry : value.history().entries()) buffer.writeUtf(entry, MAX_TEXT_LENGTH);
+        }
         buffer.writeVarInt(value.transactions().size());
         for (var transaction : value.transactions()) {
             buffer.writeUtf(transaction.quest(), 256); buffer.writeUtf(transaction.id(), 256);
@@ -231,19 +256,28 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         var members = new ArrayList<Member>();
         for (int count = count(buffer, 32); count > 0; count--) members.add(new Member(buffer.readUUID(), buffer.readUtf(MAX_LABEL_LENGTH)));
         var responses = new ArrayList<Response>();
-        for (int count = count(buffer, PAGE_SIZE); count > 0; count--) responses.add(new Response(buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean()));
+        for (int count = count(buffer, PAGE_SIZE); count > 0; count--) responses.add(new Response(buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH)));
         Check check = null;
         if (buffer.readBoolean()) check = new Check(buffer.readUtf(256), buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(),
                 buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readBoolean() ? buffer.readEnum(PlayerSocialSkill.class) : null,
                 buffer.readVarInt(), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH), readModifiers(buffer));
         String outcome = buffer.readUtf(MAX_LABEL_LENGTH);
         UUID confirmation = buffer.readBoolean() ? buffer.readUUID() : null;
+        boolean canCancel = buffer.readBoolean(); boolean canMigrate = buffer.readBoolean();
+        History history = null;
+        if (buffer.readBoolean()) {
+            int historyPage = buffer.readVarInt(); int historyPages = buffer.readVarInt();
+            var entries = new ArrayList<String>();
+            for (int count = count(buffer, 8); count > 0; count--) entries.add(buffer.readUtf(MAX_TEXT_LENGTH));
+            history = new History(historyPage, historyPages, entries);
+        }
         var transactions = new ArrayList<Transaction>();
         for (int count = count(buffer, MAX_TRANSACTIONS); count > 0; count--) transactions.add(new Transaction(
                 buffer.readUtf(256), buffer.readUtf(256), buffer.readUtf(256), buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH),
                 buffer.readUUID(), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readUtf(256), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readEnum(TransactionState.class), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH)));
-        return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, outcome, confirmation, transactions);
+        return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, outcome, confirmation, transactions,
+                canCancel, canMigrate, history);
     }
 
     private static Line readLine(RegistryFriendlyByteBuf buffer) {

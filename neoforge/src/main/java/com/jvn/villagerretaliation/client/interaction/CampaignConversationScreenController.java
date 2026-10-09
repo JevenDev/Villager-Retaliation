@@ -16,6 +16,9 @@ public final class CampaignConversationScreenController {
     private boolean pending;
     private String displayed = "";
     private String displayedLine = "";
+    private boolean autoAdvance;
+    private boolean confirmingCancellation;
+    private long lineShownAt;
 
     public CampaignConversationScreenController(Host host) { this.host = host; }
 
@@ -23,7 +26,18 @@ public final class CampaignConversationScreenController {
         if (dieAnimation.tick(host.now())) refreshPresentation();
         if (character == null) character = host.character();
         if (character == null || host.now() < pendingUntil || lastPoll >= 0L && host.now() - lastPoll < 1000L) return;
-        request(session() == null ? Action.TOPICS : Action.VIEW, "", "", state == null ? 0 : state.page(), false);
+        var session = session();
+        if (autoAdvance && !pending && session != null && session.canControl() && session.history() == null
+                && state.diagnostic().isBlank() && session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.EXCHANGES
+                && session.line() != null && session.line().part() + 1 == session.line().parts()
+                && host.now() - lineShownAt >= Math.max(1200L, session.line().voice() == null
+                        ? Math.min(30000L, session.line().text().codePointCount(0, session.line().text().length()) * 45L) : 1200L)
+                && host.textRead() && !host.voicePlaying()) {
+            request(Action.ADVANCE, "", "", 0, true);
+            return;
+        }
+        request(session == null ? Action.TOPICS : session.history() == null ? Action.VIEW : Action.HISTORY,
+                "", "", session != null && session.history() != null ? session.history().page() : state == null ? 0 : state.page(), false);
     }
 
     public boolean accept(CampaignConversationViewPayload payload) {
@@ -32,7 +46,8 @@ public final class CampaignConversationScreenController {
         if (session() != null && payload.session() == null && !payload.diagnostic().isBlank()) {
             var prior = session();
             var unavailable = new CampaignConversationViewPayload.Session(prior.id(), prior.revision(), prior.title(), prior.phase(), prior.line(),
-                    false, false, prior.controller(), java.util.List.of(), prior.responses(), prior.check(), prior.outcome(), prior.confirmation(), prior.transactions());
+                    false, false, prior.controller(), java.util.List.of(), prior.responses(), prior.check(), prior.outcome(), prior.confirmation(), prior.transactions(),
+                    false, false, prior.history());
             payload = new CampaignConversationViewPayload(payload.viewId(), payload.entityId(), payload.character(), state.page(), state.pageCount(),
                     java.util.List.of(), unavailable, payload.diagnostic());
         }
@@ -48,6 +63,7 @@ public final class CampaignConversationScreenController {
         String text = presentationText();
         String line = session() == null || session().line() == null ? "" : session().id() + "/" + session().line().key();
         boolean changed = !text.equals(displayed) || !line.equals(displayedLine);
+        if (!line.equals(displayedLine)) { lineShownAt = host.now(); confirmingCancellation = false; }
         displayedLine = line;
         displayed = text;
         host.updated(session() != null, changed && !text.isBlank() ? text : null);
@@ -63,20 +79,34 @@ public final class CampaignConversationScreenController {
 
     public CampaignConversationViewPayload.Line presentationLine() {
         var session = session();
-        return session != null && state.diagnostic().isBlank()
+        return session != null && session.history() == null && state.diagnostic().isBlank()
                 && session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.EXCHANGES
                 ? session.line() : null;
     }
 
     public void addTopics() {
         if (state == null || session() != null) return;
-        for (var topic : state.topics()) host.option(topic.label(), () -> request(Action.START, topic.conversation(), topic.id(), 0, true), pending || !topic.available());
+        CampaignConversationViewPayload.TopicGroup group = null;
+        for (var topic : state.topics()) {
+            if (topic.group() != group) {
+                group = topic.group();
+                host.option(host.translate("conversation.group." + group.name().toLowerCase(java.util.Locale.ROOT)), () -> { }, true);
+            }
+            host.option(topic.label(), () -> request(Action.START, topic.conversation(), topic.id(), 0, true), pending || !topic.available());
+        }
         addPages(Action.TOPICS);
     }
 
     public void addSessionOptions() {
         var session = session();
         if (session == null) return;
+        if (session.history() != null) {
+            var history = session.history();
+            if (history.page() > 0) host.option(host.translate("conversation.previous"), () -> request(Action.HISTORY, "", "", history.page() - 1, false), pending);
+            if (history.page() + 1 < history.pages()) host.option(host.translate("conversation.next"), () -> request(Action.HISTORY, "", "", history.page() + 1, false), pending);
+            host.option(host.translate("conversation.back"), () -> request(Action.VIEW, "", "", 0, false), pending);
+            return;
+        }
         if (pending) host.option(host.translate("conversation.waiting"), () -> { }, true);
         else {
             switch (session.phase()) {
@@ -87,7 +117,7 @@ public final class CampaignConversationScreenController {
                 }
                 case RESPONSES -> {
                     for (var response : session.responses()) host.option(response.label(), () -> request(Action.CHOOSE, "", response.id(), 0, true),
-                            !session.canControl() || !response.available());
+                            !session.canControl() || !response.available(), response.reason());
                     addPages(Action.VIEW);
                 }
                 case NODE_EFFECTS, RESPONSE_EFFECTS -> { if (session.canControl()) intent("conversation.retry", Action.RESUME, ""); }
@@ -101,7 +131,7 @@ public final class CampaignConversationScreenController {
                         intent("conversation.decline", Action.DECLINE, session.confirmation().toString());
                     }
                 }
-                case COMPLETE -> { }
+                case COMPLETE, CANCELLED -> { }
             }
             if (dieAnimation.playing()) host.option(host.translate("conversation.skip_roll"), this::skipDieAnimation, false);
             if (session.canTakeControl()) intent("conversation.take_control", Action.TAKE_CONTROL, "");
@@ -114,8 +144,25 @@ public final class CampaignConversationScreenController {
             if (line.part() > 0) host.option(host.translate("conversation.previous_text"), () -> textPage(line.part() - 1), pending);
             if (line.part() + 1 < line.parts()) host.option(host.translate("conversation.more_text"), () -> textPage(line.part() + 1), pending);
         }
-        host.option(host.translate(session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.COMPLETE
-                ? "conversation.done" : "conversation.leave"), host::close, false);
+        host.option(host.translate("conversation.history"), () -> request(Action.HISTORY, "", "", 0, false), pending);
+        if (session.canMigrate()) intent("conversation.migrate", Action.MIGRATE, "");
+        if (session.canCancel()) {
+            if (confirmingCancellation) {
+                intent("conversation.cancel_confirm", Action.CANCEL, "");
+                host.option(host.translate("conversation.cancel_keep"), () -> { confirmingCancellation = false; host.updated(true, null); }, pending);
+            } else host.option(host.translate("conversation.cancel"), () -> { confirmingCancellation = true; host.updated(true, null); }, pending);
+        }
+        if (presentationLine() != null) {
+            if (presentationLine().voice() != null) host.option(host.translate("conversation.replay"), host::replayVoice, pending);
+            if (session.canControl()) host.option(host.translate(autoAdvance ? "conversation.auto_on" : "conversation.auto_off"), () -> {
+                autoAdvance = !autoAdvance;
+                lineShownAt = host.now();
+                host.updated(true, null);
+            }, pending);
+        }
+        boolean terminal = session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.COMPLETE
+                || session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.CANCELLED;
+        host.option(host.translate(terminal ? "conversation.done" : "conversation.leave"), host::close, false);
     }
 
     private void intent(String label, Action action, String argument) {
@@ -152,6 +199,9 @@ public final class CampaignConversationScreenController {
     private String presentationText() {
         if (state == null) return "";
         var session = session();
+        if (session != null && session.history() != null)
+            return host.translate("conversation.history_page", session.history().page() + 1, session.history().pages())
+                    + "\n\n" + String.join("\n\n", session.history().entries());
         var text = new StringBuilder();
         if (session != null) {
             if (session.line() != null && session.check() == null) text.append(session.line().text());
@@ -227,12 +277,16 @@ public final class CampaignConversationScreenController {
         UUID character();
         long now();
         default boolean animateChecks() { return true; }
+        default boolean textRead() { return true; }
+        default boolean voicePlaying() { return false; }
+        default void replayVoice() { }
         default boolean confirmationTextRead() { return true; }
         default void readConfirmationText() { }
         default String itemName(String item) { return item; }
         String translate(String key, Object... arguments);
         void send(CampaignConversationRequestPayload payload);
         void option(String label, Runnable action, boolean locked);
+        default void option(String label, Runnable action, boolean locked, String reason) { option(label, action, locked); }
         void updated(boolean session, String text);
         void close();
     }

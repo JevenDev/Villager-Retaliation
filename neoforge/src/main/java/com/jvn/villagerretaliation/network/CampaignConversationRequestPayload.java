@@ -46,7 +46,7 @@ public record CampaignConversationRequestPayload(UUID viewId, UUID requestId, in
                 buffer.readUtf(256), buffer.readUtf(256), buffer.readVarInt(), buffer.readVarInt());
     }
 
-    public enum Action { TOPICS, START, VIEW, CLOSE, ADVANCE, CHOOSE, ROLL, RESUME, TAKE_CONTROL, HAND_OVER, CONFIRM, DECLINE }
+    public enum Action { TOPICS, START, VIEW, CLOSE, ADVANCE, CHOOSE, ROLL, RESUME, TAKE_CONTROL, HAND_OVER, CONFIRM, DECLINE, CANCEL, MIGRATE, HISTORY }
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }

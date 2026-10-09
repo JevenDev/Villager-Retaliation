@@ -21,7 +21,7 @@ export function materializeConversationAction(value, context) {
   if (Array.isArray(value)) return value.map(entry => materializeConversationAction(entry, context));
   if (!object(value)) return value;
   return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key,
-    ["title", "label", "text"].includes(key) ? localizedConversationText(entry, context) : materializeConversationAction(entry, context)]));
+    ["title", "label", "text", "unavailable"].includes(key) ? localizedConversationText(entry, context) : materializeConversationAction(entry, context)]));
 }
 
 export function validateConversation(root, schema, context) {
@@ -32,7 +32,7 @@ export function validateConversation(root, schema, context) {
   const visitText = (value, pointer = "") => {
     if (Array.isArray(value)) value.forEach((entry, index) => visitText(entry, child(pointer, index)));
     else if (object(value)) for (const [key, entry] of Object.entries(value)) {
-      if (["title", "label", "text"].includes(key)) {
+      if (["title", "label", "text", "unavailable"].includes(key)) {
         if (localizedConversationText(entry, context) === null) issue(child(pointer, key), "English localization must contain one nonblank text value");
       } else visitText(entry, child(pointer, key));
     }

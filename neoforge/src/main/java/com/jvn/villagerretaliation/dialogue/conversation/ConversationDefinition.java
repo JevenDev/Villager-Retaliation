@@ -14,7 +14,15 @@ import net.minecraft.resources.ResourceLocation;
 public record ConversationDefinition(ResourceLocation id, int revision, String fingerprint,
         ResourceLocation campaign, String character, ResourceLocation quest, String titleKey,
         Map<String, Topic> topics, Map<String, Node> nodes, Map<String, Check> checks,
-        Map<String, Outcome> outcomes, QuestBundlePath.Owner owner, QuestBundleTransactions.DefinitionSource source) {
+        Map<String, Outcome> outcomes, QuestBundlePath.Owner owner, QuestBundleTransactions.DefinitionSource source,
+        String compatibilityFingerprint) {
+    public ConversationDefinition(ResourceLocation id, int revision, String fingerprint,
+            ResourceLocation campaign, String character, ResourceLocation quest, String titleKey,
+            Map<String, Topic> topics, Map<String, Node> nodes, Map<String, Check> checks,
+            Map<String, Outcome> outcomes, QuestBundlePath.Owner owner, QuestBundleTransactions.DefinitionSource source) {
+        this(id, revision, fingerprint, campaign, character, quest, titleKey, topics, nodes, checks, outcomes, owner, source, fingerprint);
+    }
+
     public ConversationDefinition {
         topics = ordered(topics);
         nodes = ordered(nodes);
@@ -61,7 +69,11 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
     public enum SpeakerKind { ROLE, PLAYER, NARRATOR }
 
     public record Response(String id, String labelKey, List<DialogueCondition> conditions, List<Effect> effects,
-            String next, String check, String pointer) {
+            String next, String check, String pointer, String unavailableKey) {
+        public Response(String id, String labelKey, List<DialogueCondition> conditions, List<Effect> effects,
+                String next, String check, String pointer) {
+            this(id, labelKey, conditions, effects, next, check, pointer, "");
+        }
         public Response {
             conditions = List.copyOf(conditions);
             effects = List.copyOf(effects);

@@ -184,6 +184,73 @@ public final class CampaignConversationExchangeGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_exchanges")
+    public static void unavailableChoicesWaitAndRecoverWithoutLosingHistory(GameTestHelper helper) throws IOException {
+        try (var fixture = fixture(helper)) {
+            var node = fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject();
+            for (var response : node.getAsJsonArray("responses")) guard(response.getAsJsonObject(), "promise");
+            fixture.install(fixture.graph);
+            var player = fixture.player();
+            var result = fixture.start(player);
+            while (result.session().phase() == ConversationSession.Phase.EXCHANGES)
+                result = fixture.intent(player, result, ConversationSession.Intent.ADVANCE, "");
+            helper.assertTrue(result.responses().stream().noneMatch(ConversationService.Response::available), "all choices wait for their requirements");
+            helper.assertTrue(result.diagnostic().contains("Waiting"), "waiting has an explicit recovery explanation");
+            var history = result.session().transcript();
+            fact(fixture, player, true);
+            fixture.storage.reload();
+            result = ConversationService.view(player, result.session().identity().id());
+            helper.assertTrue(result.responses().stream().allMatch(ConversationService.Response::available), "changed facts enable choices");
+            helper.assertValueEqual(result.session().transcript(), history, "refresh does not replay lines or effects");
+            result = fixture.intent(player, result, ConversationSession.Intent.CHOOSE, "leave");
+            while (result.session().phase() == ConversationSession.Phase.EXCHANGES)
+                result = fixture.intent(player, result, ConversationSession.Intent.ADVANCE, "");
+            helper.assertValueEqual(result.session().phase(), ConversationSession.Phase.COMPLETE, "recovered choice completes normally");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_exchanges")
+    public static void cancellationReleasesSpeakersAndRetainsSavedHistory(GameTestHelper helper) throws IOException {
+        try (var fixture = fixture(helper)) {
+            var player = fixture.player();
+            var result = fixture.start(player);
+            var history = result.session().transcript();
+            result = fixture.intent(player, result, ConversationSession.Intent.CANCEL, "");
+            helper.assertValueEqual(result.session().phase(), ConversationSession.Phase.CANCELLED, "cancellation is terminal");
+            fixture.storage.reload();
+            result = ConversationService.view(player, result.session().identity().id());
+            helper.assertValueEqual(result.session().transcript(), history, "cancellation retains transcript");
+            helper.assertFalse(ConversationService.isCharacterReserved(fixture.mentor), "cancelled session releases speaker");
+            helper.assertTrue(fixture.start(player).session() != null, "another conversation can begin");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_exchanges")
+    public static void explicitMigrationAcceptsPresentationAndRejectsGameplayChanges(GameTestHelper helper) throws IOException {
+        try (var fixture = fixture(helper)) {
+            var player = fixture.player();
+            var result = fixture.start(player);
+            var history = result.session().transcript();
+            fixture.graph.addProperty("revision", fixture.graph.get("revision").getAsInt() + 1);
+            line(fixture, 0).add("camera", JsonParser.parseString("{\"target\":\"none\"}"));
+            fixture.install(fixture.graph);
+            helper.assertFalse(ConversationService.view(player, result.session().identity().id()).diagnostic().isBlank(), "changed content needs explicit migration");
+            result = fixture.intent(player, result, ConversationSession.Intent.MIGRATE, "");
+            helper.assertTrue(result.diagnostic().isBlank(), "compatible presentation migration resumes");
+            helper.assertValueEqual(result.session().transcript(), history, "migration retains acknowledged history");
+            fixture.storage.reload();
+            helper.assertTrue(ConversationService.view(player, result.session().identity().id()).diagnostic().isBlank(), "accepted content survives reload");
+            guard(line(fixture, 0), "promise");
+            fixture.install(fixture.graph);
+            var denied = fixture.intent(player, result, ConversationSession.Intent.MIGRATE, "");
+            helper.assertFalse(denied.diagnostic().isBlank(), "changed eligibility cannot be migrated as presentation");
+            helper.assertValueEqual(denied.session().revision(), result.session().revision(), "rejected migration does not write");
+        }
+        helper.succeed();
+    }
+
     private static CampaignConversationGameTests.Fixture fixture(GameTestHelper helper) throws IOException {
         return new CampaignConversationGameTests.Fixture(helper, false, false, false, campaign -> {
             campaign.add("facts", JsonParser.parseString("[{\"id\":\"promise\",\"scope\":\"player\",\"kind\":\"tag\"}]"));

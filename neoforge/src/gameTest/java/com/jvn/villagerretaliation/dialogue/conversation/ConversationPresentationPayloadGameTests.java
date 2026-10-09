@@ -370,6 +370,56 @@ public final class ConversationPresentationPayloadGameTests {
         return new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), session, "");
     }
 
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void historyAndRecoveryControlsPreserveWireBoundsAndStopAdvancement(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        var base = message(request, UUID.randomUUID(), 1, "1/mentor", "Welcome.", true);
+        var prior = base.session();
+        var state = new Session(prior.id(), prior.revision(), prior.title(), prior.phase(), prior.line(), true, false, "Player",
+                List.of(), List.of(new Response("wait", "Ask again", false, "Discover the ledger first.")), null, "", null, List.of(),
+                true, true, new History(0, 2, List.of("Mira: Welcome.", "Player: I will help.")));
+        var payload = new CampaignConversationViewPayload(request.viewId(), 4, request.character(), 0, 1, List.of(), state, "");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            CampaignConversationViewPayload.STREAM_CODEC.encode(buffer, payload);
+            helper.assertValueEqual(CampaignConversationViewPayload.STREAM_CODEC.decode(buffer), payload, "history, reasons and recovery permissions survive the wire");
+        } finally { buffer.release(); }
+        controller.accept(payload);
+        controller.addSessionOptions();
+        helper.assertTrue(controller.presentationLine() == null, "history cannot move the camera or play a live voice");
+        helper.assertFalse(host.options.stream().anyMatch(option -> option.label().equals("conversation.continue")), "history cannot advance the conversation");
+        helper.assertTrue(host.texts.getLast().contains("I will help"), "history includes player choices");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void automaticAdvancementWaitsForReadingAndVoiceCompletion(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        controller.accept(message(request, UUID.randomUUID(), 1, "1/mentor", "Welcome.", true));
+        controller.addSessionOptions();
+        host.options.stream().filter(option -> option.label().equals("conversation.auto_off")).findFirst().orElseThrow().action().run();
+        host.read = false;
+        host.now = 2000;
+        controller.tick();
+        helper.assertValueEqual(host.sent.getLast().action(), Action.VIEW, "unread text pauses automatic advancement");
+        host.read = true;
+        host.playing = true;
+        host.now = 4000;
+        controller.tick();
+        helper.assertValueEqual(host.sent.getLast().action(), Action.VIEW, "a playing voice pauses automatic advancement");
+        host.playing = false;
+        host.now = 6000;
+        controller.tick();
+        helper.assertValueEqual(host.sent.getLast().action(), Action.ADVANCE, "read text and finished voice advance once");
+        helper.succeed();
+    }
+
     private static final class Host implements CampaignConversationScreenController.Host {
         final UUID character = UUID.randomUUID();
         final List<CampaignConversationRequestPayload> sent = new ArrayList<>();
@@ -377,6 +427,9 @@ public final class ConversationPresentationPayloadGameTests {
         final List<String> texts = new ArrayList<>();
         long now;
         boolean read = true;
+        boolean playing;
+        @Override public boolean textRead() { return read; }
+        @Override public boolean voicePlaying() { return playing; }
         @Override public boolean confirmationTextRead() { return read; }
         @Override public void readConfirmationText() { read = true; }
         @Override public int entityId() { return 4; }

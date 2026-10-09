@@ -50,7 +50,8 @@ public final class ConversationPresentationService {
     public static void handle(ServerPlayer player, CampaignConversationRequestPayload request) {
         if (!player.server.isSameThread()) throw new IllegalStateException("Conversation presentation requires the server thread");
         boolean presentation = request.action() == CampaignConversationRequestPayload.Action.TOPICS
-                || request.action() == CampaignConversationRequestPayload.Action.VIEW;
+                || request.action() == CampaignConversationRequestPayload.Action.VIEW
+                || request.action() == CampaignConversationRequestPayload.Action.HISTORY;
         if (request.action() != CampaignConversationRequestPayload.Action.CLOSE
                 && !ServerboundRequestLimiter.tryAcquire(player, presentation ? PRESENTATION_REQUEST : CampaignConversationRequestPayload.TYPE.id(), 2L)) return;
         var result = respond(player, request);
@@ -117,7 +118,8 @@ public final class ConversationPresentationService {
         viewer.page = request.page();
         viewer.textPage = request.textPage();
         String issue = "";
-        if (request.action() != CampaignConversationRequestPayload.Action.VIEW) {
+        viewer.historyPage = request.action() == CampaignConversationRequestPayload.Action.HISTORY ? request.page() : -1;
+        if (request.action() != CampaignConversationRequestPayload.Action.VIEW && request.action() != CampaignConversationRequestPayload.Action.HISTORY) {
             var result = ConversationService.request(player, request.session(), request.revision(), request.requestId(),
                     ConversationSession.Intent.valueOf(request.action().name()), request.argument());
             issue = result.diagnostic();
@@ -139,10 +141,12 @@ public final class ConversationPresentationService {
                             && CampaignCharacterService.matchesBoundCharacter(player.server, value.campaign(), value.character(), character.getUUID()))
                     .sorted(java.util.Comparator.comparing(value -> value.id().toString())).toList()) {
                 for (var topic : definition.topics().values()) if (ConversationService.conditions(context, topic.conditions())) {
-                    topics.add(new Topic(definition.id().toString(), topic.id(), label(ConversationService.text(player, topic.labelKey())), CampaignAuthority.canControl(player)));
+                    topics.add(new Topic(definition.id().toString(), topic.id(), label(ConversationService.text(player, topic.labelKey())),
+                            CampaignAuthority.canControl(player), topicGroup(context, definition.quest())));
                 }
             }
         }
+        topics.sort(java.util.Comparator.comparing(Topic::group));
         int pages = pages(topics.size());
         page = Math.min(page, pages - 1);
         return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), page, pages, slice(topics, page), null, text(issue));
@@ -160,7 +164,7 @@ public final class ConversationPresentationService {
         ConversationDefinition definition = null;
         try { definition = ConversationService.definition(player.server, saved); }
         catch (ConversationService.Unavailable unavailable) { valid = false; }
-        boolean active = snapshot.phase() != ConversationSession.Phase.COMPLETE;
+        boolean active = saved.active();
         boolean authority = CampaignAuthority.canControl(player) && ConversationService.member(player, saved);
         boolean control = valid && active && authority && player.getUUID().equals(snapshot.controller()) && !VillagerConversationService.isConversing(primary);
         var controller = snapshot.controller() == null ? null : player.server.getPlayerList().getPlayer(snapshot.controller());
@@ -197,7 +201,7 @@ public final class ConversationPresentationService {
                 viewer.textPage = 0;
                 textPage = 0;
             }
-            var parts = splitText(entry.fallback());
+            var parts = splitText(ConversationText.text(player, entry));
             int part = Math.min(textPage, parts.size() - 1);
             var presentation = valid && snapshot.phase() == ConversationSession.Phase.EXCHANGES
                     ? linePresentation(definition, entry) : ConversationLinePresentation.EMPTY;
@@ -221,20 +225,54 @@ public final class ConversationPresentationService {
         }
         String outcome = snapshot.outcome();
         if (definition != null && definition.outcomes().containsKey(outcome)) outcome = ConversationService.text(player, definition.outcomes().get(outcome).labelKey());
-        var responses = result.responses().stream().map(response -> new Response(response.id(), label(response.label()), response.available())).toList();
+        var responses = result.responses().stream().map(response -> new Response(response.id(), label(response.label()), response.available(), label(response.reason()))).toList();
         int pages = pages(responses.size());
         page = Math.min(page, pages - 1);
         var visible = slice(responses, page);
         var prices = ConversationTransactionPresentation.view(player, saved, definition, visible);
         if (prices.blocked()) { control = false; handover.clear(); }
         visible = visible.stream().map(response -> new Response(response.id(), response.label(),
-                response.available() && !prices.unavailableResponses().contains(response.id()))).toList();
+                response.available() && !prices.unavailableResponses().contains(response.id()),
+                prices.unavailableResponses().contains(response.id()) ? label(prices.diagnostic().isBlank()
+                        ? "This transaction is not currently available." : prices.diagnostic()) : response.reason())).toList();
         if (!prices.diagnostic().isBlank()) issue = issue.isBlank() ? prices.diagnostic() : issue + "\n" + prices.diagnostic();
         var session = new Session(id, snapshot.revision(), label(snapshot.identity().title()), snapshot.phase(), line, control, takeover,
                 controller == null ? "" : label(controller.getName().getString()), handover, visible, check, label(outcome),
-                snapshot.confirmation() == null ? null : snapshot.confirmation().id(), prices.transactions());
+                snapshot.confirmation() == null ? null : snapshot.confirmation().id(), prices.transactions(),
+                ConversationRecovery.canControl(player, saved), ConversationRecovery.canMigrate(player, saved), history(player, saved));
         return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), page, pages, List.of(), session,
                 text(issue.isBlank() ? result.diagnostic() : issue));
+    }
+
+    private static TopicGroup topicGroup(com.jvn.villagerretaliation.dialogue.DialogueContext context, ResourceLocation quest) {
+        if (quest == null) return TopicGroup.GENERAL;
+        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(context, quest, java.util.Set.of("ready")))
+            return TopicGroup.REPORTING_BACK;
+        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(context, quest, java.util.Set.of("active")))
+            return TopicGroup.CURRENT_OBJECTIVES;
+        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(context, quest, java.util.Set.of("completed")))
+            return TopicGroup.FOLLOW_UPS;
+        return TopicGroup.NEW_BUSINESS;
+    }
+
+    private static History history(ServerPlayer player, ConversationSession saved) {
+        var viewer = viewers(player.server).get(player.getUUID());
+        if (viewer == null || viewer.historyPage < 0) return null;
+        var entries = new ArrayList<String>();
+        var visits = new java.util.TreeSet<Long>();
+        saved.transcript.forEach(line -> visits.add(line.visit()));
+        saved.choices.forEach(choice -> visits.add(choice.visit()));
+        for (long visit : visits) {
+            for (var line : saved.transcript) if (line.visit() == visit)
+                entries.addAll(splitText((line.name().isBlank() ? "" : line.name() + ": ") + ConversationText.text(player, line)));
+            for (var choice : saved.choices) if (choice.visit() == visit)
+                entries.addAll(splitText(playerName(player, choice.player()) + ": " + ConversationText.resolve(player,
+                        choice.labelKey(), choice.fallback(), choice.replacements(), !choice.labelKey().isEmpty())));
+        }
+        int pages = Math.max(1, (entries.size() + 7) / 8);
+        int page = Math.min(viewer.historyPage, pages - 1);
+        int start = page * 8;
+        return new History(page, pages, entries.subList(start, Math.min(entries.size(), start + 8)));
     }
 
     static ConversationLinePresentation linePresentation(ConversationDefinition definition, ConversationSession.Line entry) {
@@ -326,6 +364,7 @@ public final class ConversationPresentationService {
         final UUID session;
         int page;
         int textPage;
+        int historyPage = -1;
         String lineKey = "";
         long touched;
         CampaignConversationViewPayload last;
