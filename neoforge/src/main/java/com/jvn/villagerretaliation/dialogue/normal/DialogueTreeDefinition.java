@@ -140,9 +140,16 @@ public record DialogueTreeDefinition(
             List<VillagerActionDefinition> actions,
             List<DialogueCondition> conditions,
             List<Response> responses,
-            boolean end
+            boolean end,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges
     ) {
+        public Node(String id, List<String> lines, List<DialogueTextVariant> textVariants,
+                List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, List<Response> responses, boolean end) {
+            this(id, lines, textVariants, actions, conditions, responses, end, List.of());
+        }
+
         public Node {
+            exchanges = List.copyOf(exchanges);
             id = id == null || id.isBlank() ? "start" : id;
             lines = lines == null ? List.of() : List.copyOf(lines);
             textVariants = textVariants == null || textVariants.isEmpty()
@@ -190,9 +197,17 @@ public record DialogueTreeDefinition(
             List<DialogueCondition> conditions,
             boolean end,
             int order,
-            int priority
+            int priority,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges
     ) {
+        public Response(String id, String label, String labelKey, DialogueEntryMetadata metadata, String next,
+                DialogueRequestType requestType, List<String> lines, List<DialogueTextVariant> textVariants,
+                List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, boolean end, int order, int priority) {
+            this(id, label, labelKey, metadata, next, requestType, lines, textVariants, actions, conditions, end, order, priority, List.of());
+        }
+
         public Response {
+            exchanges = List.copyOf(exchanges);
             id = id == null || id.isBlank() ? "response" : id;
             label = label == null ? "" : label;
             labelKey = labelKey == null ? "" : labelKey;

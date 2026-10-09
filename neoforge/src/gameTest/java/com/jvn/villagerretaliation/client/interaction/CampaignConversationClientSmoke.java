@@ -73,7 +73,7 @@ public final class CampaignConversationClientSmoke {
         } else if (minecraft.screen instanceof VillagerInteractionScreen screen) {
             var controller = controller(screen);
             var session = controller.session();
-            if (session == null) return;
+            if (session == null && phase < 20) return;
             if (phase == 2 && session.phase() == ConversationSession.Phase.EXCHANGES && ticks >= 2) verifyMentorMedia(screen);
             if (phase == 2 && confirmation == null && session.phase() == ConversationSession.Phase.CONFIRMATION && ++ticks >= 20) {
                 require(checkTextIsImmediate(screen), "shared consequences are immediately readable");
@@ -155,8 +155,35 @@ public final class CampaignConversationClientSmoke {
                 require(session.canTakeControl(), "closed controller resumes explicitly");
                 require(session.transactions().getFirst().price() == (session.check().success() ? 5 : 8), "reopening preserves the agreed price");
                 capture("reopened-check");
+                choose(screen, localized("leave")); ticks = 0; phase = 23;
+            } else if (phase == 24) {
+                verification.join();
+                beginOrdinaryExchanges(screen);
+                ticks = 0; phase = 20;
+            } else if (phase == 20 && ++ticks >= 10) {
+                require(dialogueText(screen).equals("The road is open."), "ordinary NPC exchange is visible");
+                verifyOrdinarySpeaker(screen, minecraft.level.getEntity(fixture.entity()).getName().getString(), fixture.character());
+                capture("ordinary-npc-speech");
+                choose(screen, localized("continue"));
+                require(dialogueText(screen).equals("Then I will take that road."), "player line follows the NPC");
+                ticks = 0; phase = 21;
+            } else if (phase == 21 && ++ticks >= 10) {
+                verifyOrdinarySpeaker(screen, minecraft.player.getName().getString(), minecraft.player.getUUID());
+                capture("ordinary-player-speech");
+                choose(screen, localized("continue"));
+                require(dialogueText(screen).equals("The map is folded away."), "narration follows the player");
+                ticks = 0; phase = 22;
+            } else if (phase == 22 && ++ticks >= 10) {
+                verifyOrdinarySpeaker(screen, I18n.get("villagerretaliation.gui.dialogue.narrator"), null);
+                capture("ordinary-narrator-speech");
+                choose(screen, localized("continue"));
                 minecraft.setScreen(new DieFacesScreen()); ticks = 0; phase = 11;
             }
+        } else if (phase == 23 && minecraft.screen == null) {
+            verification = server.submit(() -> require(com.jvn.villagerretaliation.interaction.VillagerInteractionService.openForcedDialogue(
+                    server.getPlayerList().getPlayer(playerId), (Villager) server.overworld().getEntity(fixture.character()), "", List.of(), false),
+                    "ordinary exchange fixture opens after the rich conversation closes"));
+            phase = 24;
         } else if (phase == 13 && minecraft.screen == null) {
             verification = server.submit(() -> {
                 var player = server.getPlayerList().getPlayer(playerId);
@@ -188,6 +215,45 @@ public final class CampaignConversationClientSmoke {
             phase = 12;
             minecraft.stop();
         }
+    }
+
+    private static void verifyOrdinarySpeaker(VillagerInteractionScreen screen, String name, java.util.UUID identity) {
+        try {
+            var label = VillagerInteractionScreen.class.getDeclaredMethod("campaignSpeakerName");
+            label.setAccessible(true);
+            require(label.invoke(screen).equals(name), "ordinary speech shows its speaker name");
+            var portrait = VillagerInteractionScreen.class.getDeclaredMethod("dialogueSpeakerEntity");
+            portrait.setAccessible(true);
+            var entity = (net.minecraft.world.entity.Entity) portrait.invoke(screen);
+            require(identity == null ? entity == null : entity != null && entity.getUUID().equals(identity), "ordinary speech uses the matching portrait");
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Ordinary dialogue speaker is unavailable", exception); }
+    }
+
+    private static void beginOrdinaryExchanges(VillagerInteractionScreen screen) {
+        try {
+            var page = VillagerInteractionScreen.class.getDeclaredField("page");
+            page.setAccessible(true);
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            var talk = Enum.valueOf((Class<? extends Enum>) page.getType(), "TALK");
+            page.set(screen, talk);
+            var minecraft = Minecraft.getInstance();
+            var npc = minecraft.level.getEntity(fixture.entity());
+            VillagerRetaliationConfig.DIALOGUE_TEXT_SPEED.set(DialogueTextSpeed.INSTANT);
+            screen.acceptDialogueExchanges(List.of(
+                    new com.jvn.villagerretaliation.dialogue.DialogueSpeech(npc.getUUID(), npc.getId(), npc.getName().getString(),
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse("The road is open.",
+                                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE)),
+                    new com.jvn.villagerretaliation.dialogue.DialogueSpeech(minecraft.player.getUUID(), minecraft.player.getId(), minecraft.player.getName().getString(),
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse("Then I will take that road.",
+                                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE)),
+                    new com.jvn.villagerretaliation.dialogue.DialogueSpeech(null, -1, "",
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse("The map is folded away.",
+                                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE))));
+            screen.closeFromServer(true);
+            var closing = VillagerInteractionScreen.class.getDeclaredField("closingFromServer");
+            closing.setAccessible(true);
+            require(!closing.getBoolean(screen), "server close waits for the remaining exchanges");
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Ordinary dialogue presentation is unavailable", exception); }
     }
 
     private static void verifyMentorMedia(VillagerInteractionScreen screen) {

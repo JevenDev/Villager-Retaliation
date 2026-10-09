@@ -236,6 +236,15 @@ public final class SceneContinuation {
             dialogue.putBoolean("RunActions", dialogueResume.runActions());
             dialogue.putString("LeadingText", dialogueResume.leadingText());
             dialogue.putBoolean("Forced", dialogueResume.forced());
+            var exchanges = new ListTag();
+            for (var exchange : dialogueResume.exchanges()) {
+                var line = new CompoundTag();
+                line.putString("Speaker", exchange.speaker().name());
+                line.putString("Text", exchange.text());
+                line.putString("TextKey", exchange.textKey());
+                exchanges.add(line);
+            }
+            dialogue.put("Exchanges", exchanges);
             tag.put("DialogueResume", dialogue);
         }
         ListTag actionTags = new ListTag();
@@ -360,7 +369,8 @@ public final class SceneContinuation {
         CompoundTag dialogue = tag.getCompound("DialogueResume");
         ResourceLocation treeId = NbtDataUtil.readResourceLocation(dialogue, "Tree").orElse(null);
         if (treeId != null) value.dialogueResume = new DialogueResume(treeId,
-                dialogue.getString("Node"), dialogue.getBoolean("RunActions"), dialogue.getString("LeadingText"), dialogue.getBoolean("Forced"));
+                dialogue.getString("Node"), dialogue.getBoolean("RunActions"), dialogue.getString("LeadingText"), dialogue.getBoolean("Forced"),
+                loadExchanges(dialogue));
         return value;
     }
 
@@ -471,7 +481,27 @@ public final class SceneContinuation {
         }
     }
 
-    public record DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText, boolean forced) {
+    private static List<com.jvn.villagerretaliation.dialogue.DialogueExchange> loadExchanges(CompoundTag tag) {
+        var lines = tag.getList("Exchanges", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        if (lines.size() > 64) throw new IllegalArgumentException("Too many saved dialogue exchanges");
+        var result = new ArrayList<com.jvn.villagerretaliation.dialogue.DialogueExchange>();
+        for (var raw : lines) {
+            var line = (CompoundTag) raw;
+            result.add(new com.jvn.villagerretaliation.dialogue.DialogueExchange(
+                    com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.valueOf(line.getString("Speaker")),
+                    line.getString("Text"), line.getString("TextKey")));
+        }
+        return List.copyOf(result);
+    }
+
+    public record DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText, boolean forced,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges) {
+        public DialogueResume {
+            exchanges = List.copyOf(exchanges);
+        }
+        public DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText, boolean forced) {
+            this(treeId, nodeId, runActions, leadingText, forced, List.of());
+        }
         public DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText) {
             this(treeId, nodeId, runActions, leadingText, false);
         }

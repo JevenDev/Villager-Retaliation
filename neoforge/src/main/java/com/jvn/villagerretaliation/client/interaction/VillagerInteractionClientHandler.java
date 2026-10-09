@@ -235,10 +235,15 @@ public final class VillagerInteractionClientHandler {
         Minecraft minecraft = Minecraft.getInstance();
         VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
         if (screen != null) {
-            screen.acceptVillagerDialogue(payload.text(), payload.textSegments());
+            if (payload.exchanges().isEmpty()) screen.acceptVillagerDialogue(payload.text(), payload.textSegments());
+            else screen.acceptDialogueExchanges(payload.exchanges());
             return;
         }
-        pushVillagerChatMessage(minecraft, payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
+        if (payload.exchanges().isEmpty()) {
+            pushVillagerChatMessage(minecraft, payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
+        } else for (var line : payload.exchanges()) {
+            pushVillagerChatMessage(minecraft, payload.entityId(), line.text(), line.speaker() == null ? gui("dialogue.narrator") : line.name(), line.segments());
+        }
     }
 
     public static void acceptRecruitmentResult(RecruitmentResultPayload payload) {
@@ -253,7 +258,7 @@ public final class VillagerInteractionClientHandler {
         Minecraft minecraft = Minecraft.getInstance();
         VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
         if (screen != null) {
-            screen.closeFromServer();
+            screen.closeFromServer(payload.finishExchanges());
         }
         ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
         resetVillagerChatGroup(payload.entityId());

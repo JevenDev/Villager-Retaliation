@@ -185,7 +185,7 @@ public final class DialogueTreeService {
         ActionText responseActionText = executeActions(context, response.actions(), session.replacements(),
                 tree.id() + "/" + node.id() + "/response/" + response.id(),
                 new SceneContinuation.DialogueResume(tree.id(), response.end() ? "" : response.next(),
-                        true, responseTemplate, VillagerConversationService.isForced(context.player(), context.villager())));
+                        true, responseTemplate, VillagerConversationService.isForced(context.player(), context.villager()), response.exchanges()));
         String responseLine = resolve(responseTemplate, context, responseActionText.replacements());
         String leadingText = firstNonBlank(responseLine, responseActionText.text());
         if (!responseActionText.outcome().success()) {
@@ -194,28 +194,23 @@ public final class DialogueTreeService {
                     responseActionText.outcome().suspended() ? leadingText : responseActionText.text()));
         }
         if (!response.end() && !response.next().isBlank()) {
-            return Optional.of(enterNode(context, tree, response.next(), leadingText, responseActionText.replacements()));
+            return enterNodeResult(context, tree, response.next(), leadingText, responseActionText.replacements(),
+                    VillagerConversationService.isForced(context.player(), context.villager()), response.exchanges()).dialogue();
         }
 
         sessions(context).remove(key);
-        return Optional.of(result(
-                lineId(tree.id(), node.id(), response.id()),
-                firstNonBlank(leadingText, "")
-        ));
-    }
-
-    private static VillagerDialogueService.DialogueResult enterNode(
-            DialogueContext context,
-            DialogueTreeDefinition tree,
-            String nodeId,
-            String leadingText,
-            Map<String, String> inheritedReplacements) {
-        return enterNodeResult(context, tree, nodeId, leadingText, inheritedReplacements,
-                VillagerConversationService.isForced(context.player(), context.villager())).dialogue().orElseThrow();
+        return Optional.of(withExchanges(result(lineId(tree.id(), node.id(), response.id()), leadingText),
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(response.exchanges(), context, responseActionText.replacements())));
     }
 
     private static EntryResult enterNodeResult(DialogueContext context, DialogueTreeDefinition tree, String nodeId,
             String leadingText, Map<String, String> inheritedReplacements, boolean forced) {
+        return enterNodeResult(context, tree, nodeId, leadingText, inheritedReplacements, forced, List.of());
+    }
+
+    private static EntryResult enterNodeResult(DialogueContext context, DialogueTreeDefinition tree, String nodeId,
+            String leadingText, Map<String, String> inheritedReplacements, boolean forced,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> leadingExchanges) {
         DialogueTreeDefinition.Node node = tree.node(nodeId).orElse(null);
         if (node == null || !node.matches(context)) {
             sessions(context).remove(key(context));
@@ -225,19 +220,20 @@ public final class DialogueTreeService {
 
         ActionText actionText = executeActions(context, node.actions(), inheritedReplacements,
                 tree.id() + "/node/" + node.id(),
-                new SceneContinuation.DialogueResume(tree.id(), node.id(), false, leadingText, forced));
+                new SceneContinuation.DialogueResume(tree.id(), node.id(), false, leadingText, forced, leadingExchanges));
         if (!actionText.outcome().success()) {
             sessions(context).remove(key(context));
             return new EntryResult(Optional.of(result(actionText.lineId(), firstNonBlank(actionText.text(), leadingText))),
                     actionText.outcome());
         }
         return new EntryResult(Optional.of(presentNode(context, tree, node, firstNonBlank(leadingText, actionText.text()),
-                actionText.replacements(), actionText.lineId())), actionText.outcome());
+                actionText.replacements(), actionText.lineId(), leadingExchanges)), actionText.outcome());
     }
 
     private static VillagerDialogueService.DialogueResult presentNode(DialogueContext context,
             DialogueTreeDefinition tree, DialogueTreeDefinition.Node node, String leadingText,
-            Map<String, String> replacements, String actionLineId) {
+            Map<String, String> replacements, String actionLineId,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> leadingExchanges) {
         String nodeLine = resolve(node.selectLine(context), context, replacements);
         String text = firstNonBlank(leadingText, nodeLine);
         if (!node.end()) {
@@ -246,7 +242,12 @@ public final class DialogueTreeService {
             sessions(context).remove(key(context));
         }
         String resultLineId = actionLineId.isBlank() ? lineId(tree.id(), node.id(), "") : actionLineId;
-        return result(resultLineId, text);
+        var exchanges = new java.util.ArrayList<>(com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(leadingExchanges, context, replacements));
+        if (!node.exchanges().isEmpty()) {
+            if (exchanges.isEmpty() && !leadingText.isBlank()) exchanges.add(npcSpeech(context, leadingText));
+            exchanges.addAll(com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(node.exchanges(), context, replacements));
+        } else if (!exchanges.isEmpty() && !nodeLine.isBlank()) exchanges.add(npcSpeech(context, nodeLine));
+        return withExchanges(result(resultLineId, text), exchanges);
     }
 
     public static void resumeAfterActions(DialogueContext context, SceneContinuation.DialogueResume resume,
@@ -254,31 +255,42 @@ public final class DialogueTreeService {
         if (!sessions(context).diagnostic().isBlank()) return;
         DialogueTreeDefinition tree = DialogueTreeResources.tree(
                 context.level().getServer(), context.locale(), resume.treeId()).orElse(null);
-        if (tree == null || !tree.matches(context) || resume.nodeId().isBlank()) return;
+        if (tree == null || !tree.matches(context)) return;
+        if (resume.nodeId().isBlank()) {
+            var exchanges = com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(resume.exchanges(), context, replacements);
+            if (!exchanges.isEmpty()) VillagerInteractionService.sendDialogueExchanges(context.player(), context.villager(), exchanges);
+            else if (!resume.leadingText().isBlank()) VillagerInteractionService.sendPersonalVillagerChat(
+                    context.player(), context.villager(), resolve(resume.leadingText(), context, replacements));
+            if (resume.forced()) VillagerConversationService.endForPlayer(context.player(), true, !exchanges.isEmpty());
+            return;
+        }
         DialogueTreeDefinition.Node node = tree.node(resume.nodeId()).orElse(null);
         if (node == null || !node.matches(context)) return;
         String leading = resolve(resume.leadingText(), context, replacements);
         VillagerDialogueService.DialogueResult result;
         if (resume.runActions()) {
-            EntryResult entry = enterNodeResult(context, tree, node.id(), leading, replacements, resume.forced());
+            EntryResult entry = enterNodeResult(context, tree, node.id(), leading, replacements, resume.forced(), resume.exchanges());
             if (!entry.outcome().success()) return;
             result = entry.dialogue().orElseThrow();
         } else {
-            result = presentNode(context, tree, node, leading, replacements, "");
+            result = presentNode(context, tree, node, leading, replacements, "", resume.exchanges());
         }
         if (resume.forced()) {
             List<DialogueOptionDefinition> options = activeOptions(context).orElse(List.of());
             if (options.isEmpty()) {
-                if (!result.text().isBlank()) VillagerInteractionService.sendVillagerNotice(context.player(), context.villager(), result.text());
+                if (result.exchanges().isEmpty() && !result.text().isBlank())
+                    VillagerInteractionService.sendVillagerNotice(context.player(), context.villager(), result.text());
             } else if (!VillagerInteractionService.openForcedDialogue(context.player(), context.villager(), result.text(),
                     options, options.stream().anyMatch(DialogueOptionDefinition::forceCameraTowardsVillager))) {
                 leaveActiveSession(context);
             }
+            if (!result.exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(context.player(), context.villager(), result.exchanges());
+            if (options.isEmpty()) VillagerConversationService.endForPlayer(context.player(), true, !result.exchanges().isEmpty());
         } else if (VillagerConversationService.validate(context.player(), context.villager())
                 && !VillagerConversationService.isForced(context.player(), context.villager())) {
             VillagerInteractionScreenOpener.refreshNormal(context.player(), context.villager());
-            VillagerInteractionService.sendPersonalVillagerChat(
-                    context.player(), context.villager(), result.text(), result.textSegments());
+            if (!result.exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(context.player(), context.villager(), result.exchanges());
+            else VillagerInteractionService.sendPersonalVillagerChat(context.player(), context.villager(), result.text(), result.textSegments());
         }
     }
 
@@ -313,6 +325,18 @@ public final class DialogueTreeService {
                 template,
                 DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements)
         );
+    }
+
+    private static com.jvn.villagerretaliation.dialogue.DialogueSpeech npcSpeech(DialogueContext context, String text) {
+        return new com.jvn.villagerretaliation.dialogue.DialogueSpeech(context.villager().getUUID(), context.villager().getId(),
+                com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString(), DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+    }
+
+    private static VillagerDialogueService.DialogueResult withExchanges(VillagerDialogueService.DialogueResult result,
+            List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+        if (exchanges.isEmpty()) return result;
+        var first = exchanges.getFirst();
+        return new VillagerDialogueService.DialogueResult(result.lineId(), first.text(), result.textEffects(), first.segments(), exchanges);
     }
 
     private static VillagerDialogueService.DialogueResult result(String lineId, String text) {

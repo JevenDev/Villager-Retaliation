@@ -11,7 +11,17 @@ public record VillagerInteractionNoticePayload(
         int entityId,
         String text,
         String speakerLabel,
-        List<DialogueTextSegment> textSegments) implements CustomPacketPayload {
+        List<DialogueTextSegment> textSegments,
+        List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) implements CustomPacketPayload {
+    public VillagerInteractionNoticePayload {
+        exchanges = List.copyOf(exchanges);
+        if (exchanges.size() > com.jvn.villagerretaliation.dialogue.DialogueSpeech.MAX_EXCHANGES) throw new IllegalArgumentException("Too many dialogue exchanges");
+    }
+
+    public VillagerInteractionNoticePayload(int entityId, String text, String speakerLabel, List<DialogueTextSegment> textSegments) {
+        this(entityId, text, speakerLabel, textSegments, List.of());
+    }
+
     public static final Type<VillagerInteractionNoticePayload> TYPE = VillagerPayloads.type("villager_interaction_notice");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerInteractionNoticePayload> STREAM_CODEC =
             VillagerPayloads.codec(VillagerInteractionNoticePayload::encode, VillagerInteractionNoticePayload::decode);
@@ -35,6 +45,7 @@ public record VillagerInteractionNoticePayload(
         buffer.writeUtf(segmentedText, 512);
         buffer.writeUtf(truncate(payload.speakerLabel(), 128), 128);
         DialogueTextSegment.writeList(buffer, textSegments);
+        com.jvn.villagerretaliation.dialogue.DialogueSpeech.writeList(buffer, payload.exchanges());
     }
 
     private static VillagerInteractionNoticePayload decode(RegistryFriendlyByteBuf buffer) {
@@ -42,7 +53,8 @@ public record VillagerInteractionNoticePayload(
                 buffer.readVarInt(),
                 buffer.readUtf(512),
                 buffer.readUtf(128),
-                DialogueTextSegment.readList(buffer)
+                DialogueTextSegment.readList(buffer),
+                com.jvn.villagerretaliation.dialogue.DialogueSpeech.readList(buffer)
         );
     }
 

@@ -24,6 +24,49 @@ public final class QuestDialogueCompilationGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_dialogue_compile")
+    public static void embeddedQuestExchangesKeepSpeakerAndResponseText(GameTestHelper helper) {
+        var id = VillagerRetaliation.id("speaker_quest");
+        var raw = json("""
+                {"schema":"villagerretaliation:quest/v2","id":"villagerretaliation:speaker_quest",
+                 "metadata":{"title":"Speakers","description":"A conversation","questline":"fixtures"},
+                 "provider":{"type":"villagerretaliation:villager"},"entry_stage":"offer",
+                 "stages":[{"id":"offer","objectives":[],"dialogue":{"offer":{"exchanges":[
+                   {"speaker":{"type":"role","role":"provider"},"text":"Can you help?"}],
+                   "responses":[{"id":"accept","label":"Accept","end":true,"exchanges":[
+                     {"speaker":{"type":"player"},"text":"I will help you."}]}]}}}]}
+                """);
+        var envelope = QuestResourceEnvelope.read(id, raw).orElseThrow();
+        var resource = QuestV2Parser.parse(envelope).orElseThrow();
+        var tree = QuestDialogueCompiler.compile(resource, envelope).tree(QuestDialogueCompiler.treeId(id)).orElseThrow();
+        var node = tree.nodes().values().stream().filter(value -> !value.exchanges().isEmpty()).findFirst().orElseThrow();
+        helper.assertValueEqual(node.exchanges().getFirst().text(), "Can you help?", "embedded scene preserves the NPC line");
+        helper.assertValueEqual(node.responses().getFirst().exchanges().getFirst().speaker(),
+                com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.PLAYER, "response is player speech");
+        helper.assertValueEqual(node.responses().getFirst().label(), "Accept", "button label is independent of spoken text");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_dialogue_compile")
+    public static void localizedExchangeVariantsKeepTheirRuntimeKey(GameTestHelper helper) {
+        var id = VillagerRetaliation.id("localized_exchange");
+        var source = json("""
+                {"exchanges":[{"speaker":{"type":"role","role":"provider"},"text":{"key":"#opening"}}]}
+                """);
+        var variants = JsonParser.parseString("[\"First version.\",\"Second version.\"]");
+        var bundle = new com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.EffectiveBundle(
+                com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath.Owner.shared("fixture"), id, "fixture",
+                Map.of(com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath.Kind.QUEST, Map.of(id, source)), Map.of(),
+                new com.jvn.villagerretaliation.quest.content.bundle.QuestLocaleCatalog(Map.of("en_us", Map.of("fixture.opening", variants))), java.util.Set.of());
+        var materialized = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleRuntimeMaterializer.materialize(bundle);
+        helper.assertTrue(materialized.errors().isEmpty(), "localized exchange materializes");
+        var exchanges = com.jvn.villagerretaliation.dialogue.DialogueExchange.read(materialized.quest());
+        helper.assertValueEqual(exchanges.getFirst().text(), "First version.", "fallback is a single valid string");
+        helper.assertValueEqual(exchanges.getFirst().textKey(), "fixture.opening", "runtime selection retains all localized variants");
+        helper.assertValueEqual(bundle.locales().payload("en_us", "fixture.opening").orElseThrow(), variants, "locale alternatives remain intact");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_dialogue_compile")
     public static void typedDialogueMatchesLegacyBoundary(GameTestHelper helper) {
         var location = VillagerRetaliation.id("quests/dialogue_parity.json");
         var raw = json("""

@@ -47,6 +47,78 @@ public final class CampaignConversationExchangeGameTests {
     }
 
     @GameTest(template = "empty", batch = "conversation_exchanges")
+    public static void choiceMakerRemainsTheSpeakerAfterAnotherHandover(GameTestHelper helper) throws IOException {
+        try (var fixture = fixture(helper)) {
+            var declined = fixture.graph.getAsJsonArray("nodes").get(2).getAsJsonObject().getAsJsonArray("exchanges");
+            var reply = line(fixture, 1).deepCopy();
+            reply.addProperty("id", "chosen_player");
+            reply.getAsJsonObject("speaker").addProperty("player", "choice_maker");
+            declined.add(reply);
+            fixture.install(fixture.graph);
+            var leader = fixture.player();
+            var member = fixture.player();
+            fixture.party(leader, member);
+            PartyService.setAdminPrivileges(leader, member.getUUID(), true);
+            var result = fixture.start(leader);
+            result = fixture.intent(member, result, ConversationSession.Intent.JOIN, "");
+            result = fixture.intent(leader, result, ConversationSession.Intent.HAND_OVER, member.getUUID().toString());
+            while (result.session().phase() == ConversationSession.Phase.EXCHANGES)
+                result = fixture.intent(member, result, ConversationSession.Intent.ADVANCE, "");
+            result = fixture.intent(member, result, ConversationSession.Intent.CHOOSE, "leave");
+            helper.assertTrue(result.diagnostic().isBlank(), "member makes the choice: " + result.diagnostic());
+            result = fixture.intent(member, result, ConversationSession.Intent.HAND_OVER, leader.getUUID().toString());
+            fixture.storage.reload();
+            result = ConversationService.view(leader, result.session().identity().id());
+            result = fixture.intent(leader, result, ConversationSession.Intent.ADVANCE, "");
+            helper.assertTrue(result.diagnostic().isBlank(), "leader advances the chosen reply: " + result.diagnostic());
+            helper.assertValueEqual(result.session().transcript().getLast().speaker(), member.getUUID(), "choice maker remains distinct from controller and initiator");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_exchanges")
+    public static void sceneExchangesKeepOneDeliveryReceiptAcrossReload(GameTestHelper helper) throws IOException {
+        try (var fixture = fixture(helper)) {
+            var player = fixture.player();
+            var definition = CampaignConversationSceneHandoverGameTests.scene(fixture, """
+                    {"schema":"villagerretaliation:scene/v1","id":"campaign_fixture:character_greeting","entry_step":"speak","actors":[],"steps":[
+                      {"id":"speak","type":"villagerretaliation:dialogue","data":{"exchanges":[
+                        {"speaker":{"type":"role","role":"provider"},"text":"Follow this road."},
+                        {"speaker":{"type":"player"},"text":"I will."},
+                        {"speaker":{"type":"narrator"},"text":"The journey begins."}]},"next":"done"},
+                      {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                    """);
+            var binding = com.jvn.villagerretaliation.scene.actor.SceneActorBinding.entity("provider",
+                    net.minecraft.resources.ResourceLocation.parse("villagerretaliation:villager"), fixture.mentor.getUUID(),
+                    net.minecraft.resources.ResourceLocation.parse("villagerretaliation:villager"), player.serverLevel().dimension().location(),
+                    fixture.mentor.blockPosition(), "Provider", true);
+            var data = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.get(player.serverLevel());
+            var scene = data.start(definition, "dialogue_receipt",
+                    new com.jvn.villagerretaliation.scene.runtime.SceneOwner(
+                            com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER, player.getUUID(), null, null, ""),
+                    null, java.util.Set.of(player.getUUID()), java.util.Map.of("provider", binding), 0L).instance();
+            var step = definition.steps().get("speak");
+            var executor = com.jvn.villagerretaliation.api.scene.SceneStepExecutors.get(step.type()).orElseThrow();
+            var execution = new com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext(fixture.base.server, data, scene,
+                    definition, step, scene.currentRecord(step.type()), player.serverLevel().getGameTime(), true);
+            helper.assertValueEqual(executor.apply(execution).outcome(),
+                    com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED, "speaker sequence delivers");
+            helper.assertValueEqual(scene.receipts().size(), 1, "one durable delivery covers the full sequence");
+            var restored = com.jvn.villagerretaliation.scene.persistence.SceneSavedData.load(
+                    data.save(new net.minecraft.nbt.CompoundTag(), player.registryAccess()), player.registryAccess());
+            var saved = restored.get(scene.id()).orElseThrow();
+            execution = new com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext(fixture.base.server, restored, saved,
+                    definition, step, saved.currentRecord(step.type()), player.serverLevel().getGameTime(), false);
+            helper.assertValueEqual(executor.reconcile(execution).outcome(),
+                    com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED, "saved delivery reconciles");
+            helper.assertValueEqual(saved.receipts().size(), 1, "reload cannot create another delivery");
+            helper.assertValueEqual(saved.receipts().values().iterator().next().state(),
+                    com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt.ReceiptState.COMPLETED, "delivery remains completed");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_exchanges")
     public static void skippedLinesDoNotCastSpeakersOrReappearAfterReload(GameTestHelper helper) throws IOException {
         try (var fixture = fixture(helper)) {
             var first = line(fixture, 0);

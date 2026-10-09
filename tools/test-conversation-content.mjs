@@ -60,6 +60,15 @@ for (const node of ordinary.nodes) for (const exchange of node.exchanges ?? []) 
   if (exchange.speaker.type === "role") exchange.speaker.role = "provider";
 }
 assert.deepEqual(validateConversation(ordinary, schema, { ...context, campaign: undefined }), [], "ordinary provider uses the shared conversation schema");
+const cast = structuredClone(ordinary);
+cast.characters = { witness: { tag: "conversation_witness", radius: 16 } };
+cast.nodes[0].exchanges[0].speaker.role = "witness";
+assert.deepEqual(validateConversation(cast, schema, { ...context, campaign: undefined }), [], "ordinary conversations can bind local characters");
+const playerPolicy = structuredClone(ordinary);
+playerPolicy.nodes[0].exchanges[1].speaker.player = "choice_maker";
+assert.deepEqual(validateConversation(playerPolicy, schema, { ...context, campaign: undefined }), [], "player attribution is explicit");
+playerPolicy.nodes[0].exchanges[0].speaker.player = "controller";
+assert(validateConversation(playerPolicy, schema, context).length > 0, "NPC speakers cannot claim player attribution");
 const invalidOrdinary = structuredClone(ordinary);
 invalidOrdinary.nodes[0].exchanges[0].speaker.role = "mentor";
 assert(validateConversation(invalidOrdinary, schema, { ...context, campaign: undefined }).some(issue => issue.pointer.endsWith("/speaker/role")),

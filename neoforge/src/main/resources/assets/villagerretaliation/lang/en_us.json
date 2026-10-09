@@ -3614,6 +3614,7 @@
   "villagerretaliation.gui.production.supply.incoming": "Supplies are on their way.",
   "villagerretaliation.gui.production.supply.unavailable": "Inspect the configured storage or station.",
   "villagerretaliation.gui.conversation.waiting": "Waiting for the conversation...",
+  "villagerretaliation.gui.dialogue.narrator": "Narrator",
   "villagerretaliation.gui.conversation.continue": "Continue",
   "villagerretaliation.gui.conversation.saved_roll": "Show saved roll",
   "villagerretaliation.gui.conversation.check": "D20 check",

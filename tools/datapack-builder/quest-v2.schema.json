@@ -729,6 +729,92 @@
             "$ref": "#/$defs/scene"
           }
         },
+        "exchanges": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "speaker",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "speaker": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "role",
+                      "player",
+                      "narrator"
+                    ]
+                  },
+                  "role": {
+                    "const": "provider"
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "role"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "role"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "role"
+                    ]
+                  }
+                }
+              },
+              "text": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "key"
+                    ],
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256
+                      }
+                    }
+                  }
+                ]
+              },
+              "text_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            }
+          }
+        },
         "responses": {
           "type": "array",
           "items": {
@@ -1696,6 +1782,92 @@
             }
           ]
         },
+        "exchanges": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "speaker",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "speaker": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "role",
+                      "player",
+                      "narrator"
+                    ]
+                  },
+                  "role": {
+                    "const": "provider"
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "role"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "role"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "role"
+                    ]
+                  }
+                }
+              },
+              "text": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "key"
+                    ],
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256
+                      }
+                    }
+                  }
+                ]
+              },
+              "text_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            }
+          }
+        },
         "responses": {
           "type": "array",
           "items": {
@@ -1786,6 +1958,92 @@
               "$ref": "#/$defs/localized_reference"
             }
           ]
+        },
+        "exchanges": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "speaker",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "speaker": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "role",
+                      "player",
+                      "narrator"
+                    ]
+                  },
+                  "role": {
+                    "const": "provider"
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "role"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "role"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "role"
+                    ]
+                  }
+                }
+              },
+              "text": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "key"
+                    ],
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256
+                      }
+                    }
+                  }
+                ]
+              },
+              "text_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            }
+          }
         },
         "responses": {
           "type": "array",
@@ -1882,6 +2140,92 @@
               "$ref": "#/$defs/localized_reference"
             }
           ]
+        },
+        "exchanges": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "speaker",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "speaker": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "role",
+                      "player",
+                      "narrator"
+                    ]
+                  },
+                  "role": {
+                    "const": "provider"
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "role"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "role"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "role"
+                    ]
+                  }
+                }
+              },
+              "text": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "key"
+                    ],
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256
+                      }
+                    }
+                  }
+                ]
+              },
+              "text_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            }
+          }
         },
         "conditions": {
           "type": "array",

@@ -217,7 +217,7 @@ public record QuestV2Resource(
         }
 
         public boolean hasInlineContent() {
-            return !this.lines.isEmpty() || !this.textKey.isBlank() || !this.responses.isEmpty();
+            return !this.lines.isEmpty() || !this.textKey.isBlank() || !this.responses.isEmpty() || this.data.has("exchanges");
         }
     }
 

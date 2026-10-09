@@ -3168,6 +3168,25 @@ public final class VillagerInteractionService {
         broadcastVillagerChat(level, villager, text, speakerLabel, configuredVillagerChatBroadcastRadius());
     }
 
+    public static void sendDialogueExchanges(ServerPlayer player, Villager provider,
+            List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+        sendDialogueExchanges(player, provider, exchanges, VillagerRetaliationConfig.SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS.get()
+                ? configuredVillagerChatBroadcastRadius() : 0);
+    }
+
+    public static void sendDialogueExchanges(ServerPlayer player, Villager provider,
+            List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, double radius) {
+        if (exchanges.isEmpty()) return;
+        var first = exchanges.getFirst();
+        trySendToPlayer(player, new VillagerInteractionNoticePayload(provider == null ? -1 : provider.getId(), first.text(), first.name(), first.segments(), exchanges));
+        if (provider != null && radius > 0) {
+            for (var nearby : player.serverLevel().players()) {
+                if (nearby == player || nearby.distanceToSqr(provider) > radius * radius) continue;
+                trySendToPlayer(nearby, new VillagerInteractionNoticePayload(provider.getId(), first.text(), first.name(), first.segments(), exchanges));
+            }
+        }
+    }
+
     public static void sendPersonalVillagerChat(ServerPlayer player, Villager villager, String text) {
         sendPersonalVillagerChat(player, villager, text, DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
     }

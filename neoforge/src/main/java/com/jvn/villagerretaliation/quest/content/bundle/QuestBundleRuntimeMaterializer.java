@@ -135,6 +135,7 @@ public final class QuestBundleRuntimeMaterializer {
     }
 
     private static JsonElement legacyPayload(String field, JsonElement payload) {
+        if (payload.isJsonArray() && "text".equals(field)) return firstText(payload.getAsJsonArray());
         if (!payload.isJsonObject()) {
             return payload.deepCopy();
         }

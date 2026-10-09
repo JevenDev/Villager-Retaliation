@@ -4,7 +4,11 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record VillagerConversationEndedPayload(int entityId, String goodbyeText) implements CustomPacketPayload {
+public record VillagerConversationEndedPayload(int entityId, String goodbyeText, boolean finishExchanges) implements CustomPacketPayload {
+    public VillagerConversationEndedPayload(int entityId, String goodbyeText) {
+        this(entityId, goodbyeText, false);
+    }
+
     public static final Type<VillagerConversationEndedPayload> TYPE = VillagerPayloads.type("villager_conversation_ended");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerConversationEndedPayload> STREAM_CODEC =
             VillagerPayloads.codec(VillagerConversationEndedPayload::encode, VillagerConversationEndedPayload::decode);
@@ -12,10 +16,11 @@ public record VillagerConversationEndedPayload(int entityId, String goodbyeText)
     private static void encode(RegistryFriendlyByteBuf buffer, VillagerConversationEndedPayload payload) {
         buffer.writeVarInt(payload.entityId());
         buffer.writeUtf(payload.goodbyeText(), 512);
+        buffer.writeBoolean(payload.finishExchanges());
     }
 
     private static VillagerConversationEndedPayload decode(RegistryFriendlyByteBuf buffer) {
-        return new VillagerConversationEndedPayload(buffer.readVarInt(), buffer.readUtf(512));
+        return new VillagerConversationEndedPayload(buffer.readVarInt(), buffer.readUtf(512), buffer.readBoolean());
     }
 
     @Override

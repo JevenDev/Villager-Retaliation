@@ -434,6 +434,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private DialoguePage replacementTransitionPreviousPage;
     private int replacementTransitionPreviousTop;
     private Button giftButton;
+    private boolean closeAfterDialogueExchanges;
+    private com.jvn.villagerretaliation.dialogue.DialogueSpeech dialogueSpeech;
+    private final java.util.ArrayDeque<com.jvn.villagerretaliation.dialogue.DialogueSpeech> dialogueExchanges = new java.util.ArrayDeque<>();
     private String villagerDialogueText = "";
     private List<DialogueTextSegment> villagerDialogueTextSegments = List.of();
     private int dialogueLineScroll;
@@ -724,7 +727,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         VillagerInteractionUiAnimation.completeAnimation();
     }
 
-    public void closeFromServer() {
+    public void closeFromServer(boolean finishExchanges) {
+        if (finishExchanges && this.dialogueSpeech != null) {
+            this.closeAfterDialogueExchanges = true;
+            rebuildOptionsKeepingListPosition();
+            return;
+        }
+        this.dialogueSpeech = null;
+        this.dialogueExchanges.clear();
+        this.closeAfterDialogueExchanges = false;
         this.closingFromServer = true;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen != this) {
@@ -735,6 +746,32 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments) {
+        clearDialogueMouthAnimation();
+        this.dialogueSpeech = null;
+        this.closeAfterDialogueExchanges = false;
+        this.dialogueExchanges.clear();
+        setDialogueText(text, textSegments);
+    }
+
+    @Override
+    public void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+        if (exchanges.isEmpty()) return;
+        this.closeAfterDialogueExchanges = false;
+        this.dialogueExchanges.clear();
+        this.dialogueExchanges.addAll(exchanges);
+        this.dialogueTextAnimationSkipped = true;
+        showNextDialogueExchange();
+    }
+
+    private void showNextDialogueExchange() {
+        if (trySkipDialogueTextAnimation()) return;
+        clearDialogueMouthAnimation();
+        this.dialogueSpeech = this.dialogueExchanges.removeFirst();
+        setDialogueText(this.dialogueSpeech.text(), this.dialogueSpeech.segments());
+        rebuildOptionsKeepingListPosition();
+    }
+
+    private void setDialogueText(String text, List<DialogueTextSegment> textSegments) {
         if (text == null || text.isBlank()) {
             return;
         }
@@ -759,6 +796,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         target.acceptVillagerDialogue(this.villagerDialogueText, this.villagerDialogueTextSegments);
+        target.dialogueSpeech = this.dialogueSpeech;
+        target.closeAfterDialogueExchanges = this.closeAfterDialogueExchanges;
+        target.dialogueExchanges.addAll(this.dialogueExchanges);
+        if (!target.dialogueExchanges.isEmpty() || target.closeAfterDialogueExchanges) target.rebuildOptionsKeepingListPosition();
     }
 
     @Override
@@ -1214,7 +1255,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void rebuildOptions() {
         this.options.clear();
         this.optionLayoutVersion++;
-        if (this.page == DialoguePage.CAMPAIGN_CONVERSATION) {
+        if (!this.dialogueExchanges.isEmpty()) {
+            addOption("conversation.continue", this::showNextDialogueExchange);
+        } else if (this.closeAfterDialogueExchanges) {
+            addOption("conversation.continue", () -> {
+                if (trySkipDialogueTextAnimation()) return;
+                this.dialogueSpeech = null;
+                this.closeAfterDialogueExchanges = false;
+                closeFromServer();
+            });
+        } else if (this.page == DialoguePage.CAMPAIGN_CONVERSATION) {
             this.campaignConversation.addSessionOptions();
         } else if (this.page == DialoguePage.CAMPAIGN_CONFIRMATION) {
             if (this.awaitingCampaignConfirmation) {
@@ -6264,7 +6314,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         var level = Minecraft.getInstance().level;
         if (level == null) return null;
         var session = this.campaignConversation.session();
-        if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) return level.getEntity(this.villagerEntityId);
+        if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) {
+            if (this.dialogueSpeech == null) return level.getEntity(this.villagerEntityId);
+            var speaker = level.getEntity(this.dialogueSpeech.entityId());
+            return speaker != null && speaker.getUUID().equals(this.dialogueSpeech.speaker()) ? speaker : null;
+        }
         if (session.history() != null || session.check() != null || session.line() == null || session.line().speaker() == null) return null;
         var entity = level.getEntity(session.line().entityId());
         return entity != null && entity.getUUID().equals(session.line().speaker()) ? entity : null;
@@ -6272,7 +6326,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private String campaignSpeakerName() {
         var session = this.campaignConversation.session();
-        if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) return this.villagerName;
+        if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null)
+            return this.dialogueSpeech == null ? this.villagerName : this.dialogueSpeech.speaker() == null ? translate("dialogue.narrator") : this.dialogueSpeech.name();
         if (session.history() != null) return translate("conversation.history");
         if (session.confirmation() != null) return translate("conversation.confirmation");
         if (session.check() != null) return translate("conversation.check");

@@ -122,9 +122,13 @@ public final class VillagerConversationService {
     }
 
     public static void endForPlayer(ServerPlayer player, boolean notifyClient) {
+        endForPlayer(player, notifyClient, false);
+    }
+
+    public static void endForPlayer(ServerPlayer player, boolean notifyClient, boolean finishExchanges) {
         VillagerConversationSession session = SESSIONS_BY_PLAYER.get(player.getUUID());
         if (session != null) {
-            end(player, session, notifyClient);
+            end(player, session, notifyClient, finishExchanges);
         }
     }
 
@@ -200,13 +204,17 @@ public final class VillagerConversationService {
     }
 
     private static void end(ServerPlayer player, VillagerConversationSession session, boolean notifyClient) {
+        end(player, session, notifyClient, false);
+    }
+
+    private static void end(ServerPlayer player, VillagerConversationSession session, boolean notifyClient, boolean finishExchanges) {
         session.deactivate();
         SESSIONS_BY_PLAYER.remove(player.getUUID());
         PLAYER_BY_VILLAGER.remove(session.villagerId());
         if (notifyClient) {
             try {
                 PacketDistributor.sendToPlayer(
-                        player, new VillagerConversationEndedPayload(session.villagerEntityId(), ""));
+                        player, new VillagerConversationEndedPayload(session.villagerEntityId(), "", finishExchanges));
             } catch (UnsupportedOperationException ignored) {
                 // GameTest mock players and unnegotiated connections cannot accept custom client payloads.
             }

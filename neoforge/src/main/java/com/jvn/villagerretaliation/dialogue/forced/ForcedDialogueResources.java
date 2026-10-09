@@ -46,7 +46,7 @@ public final class ForcedDialogueResources {
     private static final Set<String> ROOT_KEYS = Set.of(
             "entries", "notifications", "messages", "openings", "closings", "pacify",
             "metadata", "conditions", "availability", "available_when",
-            "id", "trigger", "event", "line", "lines", "priority", "weight", "chance", "witness_radius",
+            "id", "trigger", "event", "line", "lines", "exchanges", "priority", "weight", "chance", "witness_radius",
             "replace", "remove", "message_prefix", "text_prefix", "line_key", "line_keys", "text_key", "text_keys",
             "witness_profession", "witness_professions", "professions",
             "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",
@@ -71,7 +71,7 @@ public final class ForcedDialogueResources {
     private static final Set<String> OPTION_KEYS = Set.of(
             "id", "label", "label_key", "message_prefix", "text_prefix", "response", "responses", "response_key", "response_keys", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items",
-            "conditions",
+            "conditions", "exchanges",
             "follow_up", "requires_high_knowledge", "requires_high_guts", "requires_high_proficiency", "requires_high_kindness", "requires_high_charm",
             "min_knowledge", "max_knowledge", "min_guts", "max_guts", "min_proficiency", "max_proficiency",
             "min_kindness", "max_kindness", "min_charm", "max_charm");
@@ -295,7 +295,7 @@ public final class ForcedDialogueResources {
         }
     }
 
-    private static Optional<ForcedDialogueDefinition> readEntry(
+    static Optional<ForcedDialogueDefinition> readEntry(
             ResourceLocation location,
             JsonObject entry,
             int index,
@@ -305,6 +305,12 @@ public final class ForcedDialogueResources {
             String rootMessagePrefix) {
         DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue", entryContext(entry, index), entry, ENTRY_KEYS);
         DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext(entry, index), entry);
+        try {
+            validateExchanges(entry);
+        } catch (IllegalArgumentException exception) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "forced dialogue", exception.getMessage());
+            return Optional.empty();
+        }
         ResourceLocation entryQuestId = defaultQuestId(location, entry, defaultQuestId);
         Optional<ForcedDialogueTrigger> trigger = readEnum(entry, "trigger", ForcedDialogueTrigger.class);
         if (trigger.isEmpty()) {
@@ -409,7 +415,8 @@ public final class ForcedDialogueResources {
     private static ForcedDialogueOutput readOutput(JsonObject entry) {
         JsonElement element = entry.get("output");
         if (element == null || !element.isJsonObject()) {
-            return ForcedDialogueOutput.forcedDialogue();
+            return new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D, false,
+                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(entry));
         }
         JsonObject output = element.getAsJsonObject();
         ForcedDialogueOutputMode mode = readEnum(output, "mode", ForcedDialogueOutputMode.class)
@@ -418,7 +425,8 @@ public final class ForcedDialogueResources {
         return new ForcedDialogueOutput(
                 mode,
                 radius > 0.0D ? radius : 0.0D,
-                readBoolean(output, "look_at_player")
+                readBoolean(output, "look_at_player"),
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(entry)
         );
     }
 
@@ -485,7 +493,16 @@ public final class ForcedDialogueResources {
                 || readBoolean(entry, "requires_matching_trade_item");
     }
 
+    private static void validateExchanges(JsonElement value) {
+        if (value.isJsonObject()) {
+            com.jvn.villagerretaliation.dialogue.DialogueExchange.read(value.getAsJsonObject());
+            for (var child : value.getAsJsonObject().entrySet()) validateExchanges(child.getValue());
+        } else if (value.isJsonArray()) for (var child : value.getAsJsonArray()) validateExchanges(child);
+    }
+
     private static List<LocalizedText> readLines(JsonObject entry, String messagePrefix) {
+        var exchanges = com.jvn.villagerretaliation.dialogue.DialogueExchange.read(entry);
+        if (!exchanges.isEmpty()) return List.of(new LocalizedText(exchanges.getFirst().text(), exchanges.getFirst().textKey()));
         List<LocalizedText> rich = readLocalizedObjects(entry.get("variants"), messagePrefix + ".line");
         if (rich.isEmpty()) {
             rich = readLocalizedObjects(entry.get("lines"), messagePrefix + ".line");
@@ -771,7 +788,8 @@ public final class ForcedDialogueResources {
                 VillagerReputationCondition.read(option),
                 readSocialAttributeCondition(option),
                 DialogueCondition.readList(location, context, option, defaultQuestId),
-                readFollowUp(option, defaultQuestId, messagePrefix)
+                readFollowUp(option, defaultQuestId, messagePrefix),
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(option)
         );
     }
 
@@ -793,7 +811,8 @@ public final class ForcedDialogueResources {
                 .filter(candidate -> candidate.id().equals(leaveOptionId))
                 .findFirst()
                 .orElse(leaveOption);
-        return new ForcedDialogueFollowUp(readLines(followUp, messagePrefix), options, leaveOption, List.of(leaveOption));
+        return new ForcedDialogueFollowUp(readLines(followUp, messagePrefix), options, leaveOption, List.of(leaveOption),
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(followUp));
     }
 
     private static ForcedDialogueStolenItemReturn readStolenItemReturn(JsonObject option, String messagePrefix) {
@@ -1277,9 +1296,13 @@ public final class ForcedDialogueResources {
     public record ForcedDialogueOutput(
             ForcedDialogueOutputMode mode,
             double radius,
-            boolean lookAtPlayer) {
-        private static ForcedDialogueOutput forcedDialogue() {
-            return new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D, false);
+            boolean lookAtPlayer,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges) {
+        public ForcedDialogueOutput {
+            exchanges = List.copyOf(exchanges);
+        }
+        public ForcedDialogueOutput(ForcedDialogueOutputMode mode, double radius, boolean lookAtPlayer) {
+            this(mode, radius, lookAtPlayer, List.of());
         }
     }
 
@@ -1297,7 +1320,19 @@ public final class ForcedDialogueResources {
             VillagerReputationCondition reputationCondition,
             SocialAttributeCondition socialAttributeCondition,
             List<DialogueCondition> conditions,
-            ForcedDialogueFollowUp followUp) {
+            ForcedDialogueFollowUp followUp,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges) {
+        public ForcedDialogueOption {
+            exchanges = List.copyOf(exchanges);
+        }
+        public ForcedDialogueOption(String id, LocalizedText label, List<LocalizedText> responses, int reputationDelta,
+                boolean aggro, double aggroChance, boolean endConversation, int order, ForcedDialogueStolenItemReturn stolenItemReturn,
+                ForcedDialogueItemPayment itemPayment, VillagerReputationCondition reputationCondition,
+                SocialAttributeCondition socialAttributeCondition, List<DialogueCondition> conditions, ForcedDialogueFollowUp followUp) {
+            this(id, label, responses, reputationDelta, aggro, aggroChance, endConversation, order, stolenItemReturn, itemPayment,
+                    reputationCondition, socialAttributeCondition, conditions, followUp, List.of());
+        }
+
         public LocalizedText selectResponse(RandomSource random) {
             return ForcedDialogueResources.selectResponse(this.responses, random);
         }
@@ -1307,7 +1342,15 @@ public final class ForcedDialogueResources {
             List<LocalizedText> lines,
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
-            List<ForcedDialogueOption> leaveOptions) {
+            List<ForcedDialogueOption> leaveOptions,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges) {
+        public ForcedDialogueFollowUp {
+            exchanges = List.copyOf(exchanges);
+        }
+        public ForcedDialogueFollowUp(List<LocalizedText> lines, List<ForcedDialogueOption> options,
+                ForcedDialogueOption leaveOption, List<ForcedDialogueOption> leaveOptions) {
+            this(lines, options, leaveOption, leaveOptions, List.of());
+        }
         private static final ForcedDialogueFollowUp EMPTY =
                 new ForcedDialogueFollowUp(List.of(), List.of(), null, List.of());
 

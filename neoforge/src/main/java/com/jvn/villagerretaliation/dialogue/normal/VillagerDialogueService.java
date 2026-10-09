@@ -1080,7 +1080,16 @@ public final class VillagerDialogueService {
             String lineId,
             String text,
             DialogueTextEffects textEffects,
-            List<DialogueTextSegment> textSegments) {
+            List<DialogueTextSegment> textSegments,
+            List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+        public DialogueResult {
+            exchanges = List.copyOf(exchanges);
+        }
+
+        public DialogueResult(String lineId, String text, DialogueTextEffects textEffects, List<DialogueTextSegment> textSegments) {
+            this(lineId, text, textEffects, textSegments, List.of());
+        }
+
         public DialogueResult(String lineId, String text) {
             this(lineId, text, DialogueTextEffects.NONE, DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
         }

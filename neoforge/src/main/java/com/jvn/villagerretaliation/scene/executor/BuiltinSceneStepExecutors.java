@@ -274,8 +274,17 @@ public final class BuiltinSceneStepExecutors {
                         if (missing.outcome() != SceneStepResult.Outcome.SKIP) return missing;
                     }
             String text = string(c, "text", "");
-            if (text.isBlank())
+            var exchanges = com.jvn.villagerretaliation.dialogue.DialogueExchange.read(c.step().parameters());
+            if (text.isBlank() && exchanges.isEmpty())
                 return SceneStepResult.fail("dialogue_text_missing", "dialogue text is empty");
+            var dialogue = exchanges.isEmpty() ? null : context(c);
+            var provider = firstVillager(c);
+            var speakingPlayer = dialogue != null ? dialogue.player() : c.instance().owner().playerId() == null ? null
+                    : c.server().getPlayerList().getPlayer(c.instance().owner().playerId());
+            if (exchanges.stream().anyMatch(line -> line.speaker() == com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.ROLE) && provider == null)
+                return actorUnavailable(c, "dialogue provider is unavailable");
+            if (exchanges.stream().anyMatch(line -> line.speaker() == com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.PLAYER) && speakingPlayer == null)
+                return actorUnavailable(c, "dialogue player is unavailable");
             List<UUID> recipients = new ArrayList<>(c.instance().participants());
             if (recipients.isEmpty() && c.instance().owner().playerId() != null)
                 recipients.add(c.instance().owner().playerId());
@@ -297,7 +306,28 @@ public final class BuiltinSceneStepExecutors {
                                 c,
                                 "dialogue/" + id,
                                 SceneOperationReceipt.Kind.DIALOGUE_DELIVERY,
-                                () -> player.sendSystemMessage(Component.literal(text)),
+                                () -> {
+                                    if (exchanges.isEmpty()) player.sendSystemMessage(Component.literal(text));
+                                    else {
+                                        var replacements = new java.util.LinkedHashMap<String, String>();
+                                        if (dialogue != null) replacements.putAll(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(dialogue));
+                                        if (speakingPlayer != null) replacements.put("player", speakingPlayer.getName().getString());
+                                        var lines = exchanges.stream().map(exchange -> {
+                                            Entity speaker = switch (exchange.speaker()) {
+                                                case ROLE -> provider;
+                                                case PLAYER -> speakingPlayer;
+                                                case NARRATOR -> null;
+                                            };
+                                            String line = com.jvn.villagerretaliation.dialogue.conversation.ConversationText.resolve(
+                                                    player, exchange.textKey(), exchange.text(), replacements, true);
+                                            return new com.jvn.villagerretaliation.dialogue.DialogueSpeech(speaker == null ? null : speaker.getUUID(),
+                                                    speaker == null ? -1 : speaker.getId(), speaker == null ? "" : com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(speaker).getString(),
+                                                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(line,
+                                                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE));
+                                        }).toList();
+                                        VillagerInteractionService.sendDialogueExchanges(player, provider, lines, 0);
+                                    }
+                                },
                                 "recipient=" + id);
                 if (applied.status() == SceneReceiptGuard.Status.AMBIGUOUS_PREPARED)
                     return SceneStepResult.block(

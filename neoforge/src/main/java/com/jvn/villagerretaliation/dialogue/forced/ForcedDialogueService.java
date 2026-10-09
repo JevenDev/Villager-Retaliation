@@ -485,12 +485,12 @@ public final class ForcedDialogueService {
                 level.getServer(),
                 level.getRandom(),
                 VillagerLocale.locale(player));
-        if (!VillagerInteractionService.openForcedDialogue(
+        if (!openDialogue(
                 player,
                 villager,
                 line,
                 forcedOptions(definition, level, villager, player),
-                true)) {
+                true, definition, context)) {
             return false;
         }
         FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
@@ -535,12 +535,12 @@ public final class ForcedDialogueService {
                 replacements);
         ForcedDialogueDefinition definition = tradeRefreshDefinition(line, options);
         ForcedDialogueContext context = tradeRefreshContext(level, villager, player, replacements);
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 villager,
                 line,
                 forcedOptions(definition, level, villager, player),
-                true)) {
+                true, definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     villager.getUUID(),
                     definition,
@@ -597,12 +597,12 @@ public final class ForcedDialogueService {
         }
         ForcedDialogueDefinition definition = tradeRefreshDefinition(line, optionDefinition.get());
         ForcedDialogueContext context = tradeRefreshContext(level, villager, player, replacements);
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 villager,
                 line,
                 forcedOptions(definition, level, villager, player),
-                true)) {
+                true, definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     villager.getUUID(),
                     definition,
@@ -696,12 +696,12 @@ public final class ForcedDialogueService {
 
         ForcedDialogueDefinition definition = tradeRefreshDefinition(line, optionDefinition.get());
         ForcedDialogueContext context = tradeRefreshContext(level, villager, player, replacements);
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 villager,
                 line,
                 forcedOptions(definition, level, villager, player),
-                true)) {
+                true, definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     villager.getUUID(),
                     definition,
@@ -935,26 +935,36 @@ public final class ForcedDialogueService {
                 && tryAdvanceDynamicForcedDialogueGroup(player, villager, session)) {
             return true;
         }
+        boolean responseReplaced = false;
         LocalizedText responseText = option.selectResponse(player.serverLevel().getRandom());
         LocalizedText stolenItemReturnResponse = stolenItemReturn.selectSuccessResponse(player.serverLevel().getRandom());
         if (returnedStolenItems && !stolenItemReturnResponse.isBlank()) {
             responseText = stolenItemReturnResponse;
+            responseReplaced = true;
         }
         LocalizedText itemPaymentResponse = itemPayment.selectSuccessResponse(player.serverLevel().getRandom());
         if (!itemPayment.isEmpty() && !itemPaymentResponse.isBlank()) {
             responseText = itemPaymentResponse;
+            responseReplaced = true;
         }
         String response = ForcedDialogueResources.resolveTemplate(
                 responseText,
                 session.context(),
                 sessionResponseReplacements(session, itemPayment.removal().replacements()));
-        if (!response.isBlank()) {
-            VillagerInteractionService.broadcastForcedVillagerChat(
-                    player.serverLevel(),
-                    villager,
-                    response,
-                    VillagerInteractionService.villagerSpeakerLabel(villager)
-            );
+        var exchanges = resolveForcedExchanges(player, villager, option.exchanges(), session.context(),
+                sessionResponseReplacements(session, itemPayment.removal().replacements()));
+        if (responseReplaced && !exchanges.isEmpty()) exchanges = com.jvn.villagerretaliation.dialogue.DialogueSpeech.replaceSpeakerReply(
+                exchanges, new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
+                        VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(response,
+                                com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE)));
+        if (exchanges.isEmpty() && !option.followUp().exchanges().isEmpty() && !response.isBlank())
+            exchanges = List.of(new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
+                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(response,
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE)));
+        if (option.followUp().isEmpty() || aggro || exchanges.isEmpty()) {
+            if (!exchanges.isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager, exchanges);
+            else if (!response.isBlank()) VillagerInteractionService.broadcastForcedVillagerChat(
+                    player.serverLevel(), villager, response, VillagerInteractionService.villagerSpeakerLabel(villager));
         }
         if (isTradeRefreshSurpriseOption(session, option)) {
             FORCED_SESSIONS.remove(player.getUUID());
@@ -981,12 +991,12 @@ public final class ForcedDialogueService {
             return true;
         }
         if (!option.followUp().isEmpty() && !aggro) {
-            openFollowUp(player, villager, session, option);
+            openFollowUp(player, villager, session, option, exchanges);
             return true;
         }
         if (option.endConversation() || forceEndConversation) {
             FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
+            VillagerConversationService.endForPlayer(player, true, !aggro && !exchanges.isEmpty());
         } else {
             VillagerInteractionService.sendForcedDialogueReputation(
                     player,
@@ -1029,7 +1039,7 @@ public final class ForcedDialogueService {
             ServerPlayer player,
             Villager villager,
             ForcedDialogueSession session,
-            ForcedDialogueOption option) {
+            ForcedDialogueOption option, List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> leadingExchanges) {
         ForcedDialogueFollowUp followUp = option.followUp();
         String line = ForcedDialogueResources.resolveTemplate(
                 followUp.selectLine(player.serverLevel().getRandom()),
@@ -1041,16 +1051,17 @@ public final class ForcedDialogueService {
                     session.context(),
                     option.itemPayment().removal().replacements());
         }
-        openGeneratedOptionSet(
-                player,
-                villager,
-                session,
-                ForcedDialogueRuntime.definitionWithOptions(
-                        session.definition().id() + "." + option.id() + ".follow_up",
-                        session.definition(),
-                        line,
-                        followUp.options(),
-                        followUp.leaveOption()));
+        var exchanges = new ArrayList<>(leadingExchanges);
+        exchanges.addAll(resolveForcedExchanges(player, villager, followUp.exchanges(), session.context(),
+                option.itemPayment().removal().replacements()));
+        if (!exchanges.isEmpty() && followUp.exchanges().isEmpty() && !line.isBlank())
+            exchanges.add(new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
+                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(line,
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE)));
+        openGeneratedOptionSet(player, villager, session, ForcedDialogueRuntime.definitionWithOptions(
+                session.definition().id() + "." + option.id() + ".follow_up", session.definition(),
+                exchanges.isEmpty() ? line : "", followUp.options(), followUp.leaveOption()));
+        if (!exchanges.isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager, exchanges);
     }
 
     private static void openGeneratedOptionSet(
@@ -1236,7 +1247,7 @@ public final class ForcedDialogueService {
                 option.reputationCondition(),
                 option.socialAttributeCondition(),
                 option.conditions(),
-                option.followUp());
+                option.followUp(), option.exchanges());
     }
 
     private static Optional<VillagerSpecialOrderService.QueueResult> specialOrderSelectionBlocker(
@@ -1953,12 +1964,12 @@ public final class ForcedDialogueService {
 
         FORCED_SESSIONS.remove(player.getUUID());
         VillagerConversationService.endForPlayer(player, false);
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 witness,
                 line,
                 forcedOptions(definition, level, witness, player, session),
-                definition.forceCameraTowardsVillager())) {
+                definition.forceCameraTowardsVillager(), definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     witness.getUUID(),
                     definition,
@@ -2529,6 +2540,41 @@ public final class ForcedDialogueService {
         return definition.id().equals(normalized) || definition.source().toString().equals(normalized);
     }
 
+    static List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> resolveForcedExchanges(
+            ServerPlayer player, Villager villager, List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
+            ForcedDialogueContext context, Map<String, String> replacements) {
+        return exchanges.stream().map(exchange -> {
+            Entity speaker = switch (exchange.speaker()) {
+                case ROLE -> villager;
+                case PLAYER -> {
+                    if (player == null) throw new IllegalArgumentException("Player dialogue requires a participating player");
+                    yield player;
+                }
+                case NARRATOR -> null;
+            };
+            String text = ForcedDialogueResources.resolveTemplate(new LocalizedText(exchange.text(), exchange.textKey()), context, replacements);
+            return new com.jvn.villagerretaliation.dialogue.DialogueSpeech(speaker == null ? null : speaker.getUUID(),
+                    speaker == null ? -1 : speaker.getId(), speaker == null ? "" : VillagerPresetNameRegistry.resolveDisplayName(speaker).getString(),
+                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(text,
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE));
+        }).toList();
+    }
+
+    private static void sendDefinitionNotice(ServerPlayer player, Villager villager, ForcedDialogueDefinition definition,
+            ForcedDialogueContext context, String line) {
+        if (!definition.output().exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager,
+                resolveForcedExchanges(player, villager, definition.output().exchanges(), context, Map.of()));
+        else if (!line.isBlank()) VillagerInteractionService.sendVillagerNotice(player, villager, line);
+    }
+
+    private static boolean openDialogue(ServerPlayer player, Villager villager, String line, List<DialogueOptionDefinition> options,
+            boolean camera, ForcedDialogueDefinition definition, ForcedDialogueContext context) {
+        if (!VillagerInteractionService.openForcedDialogue(player, villager, line, options, camera)) return false;
+        if (!definition.output().exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager,
+                resolveForcedExchanges(player, villager, definition.output().exchanges(), context, Map.of()));
+        return true;
+    }
+
     private static boolean triggerQuestDialogue(
             ServerLevel level,
             Villager villager,
@@ -2550,12 +2596,12 @@ public final class ForcedDialogueService {
                 context,
                 safeReplacements);
         if (ForcedDialogueTriggerGates.isChatOutput(definition)) {
-            broadcastDataDrivenChat(level, villager, player, definition, line);
+            broadcastDataDrivenChat(level, villager, player, definition, line, context, safeReplacements);
             return true;
         }
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+                sendDefinitionNotice(player, villager, definition, context, line);
             }
             if (isRoyaltyFor(level, villager, player)) {
                 sendRoyaltyAggroBypassNotice(player, villager);
@@ -2566,7 +2612,7 @@ public final class ForcedDialogueService {
         }
         if (!definition.initiateDialogue()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+                sendDefinitionNotice(player, villager, definition, context, line);
             }
             return true;
         }
@@ -2589,15 +2635,15 @@ public final class ForcedDialogueService {
                 List.of(),
                 isRoyaltyFor(level, villager, player)
         );
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 villager,
                 line,
                 forcedOptions(definition, level, villager, player, session),
-                definition.forceCameraTowardsVillager())) {
+                definition.forceCameraTowardsVillager(), definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), session);
         } else if (!line.isBlank()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            sendDefinitionNotice(player, villager, definition, context, line);
         }
         return true;
     }
@@ -2631,9 +2677,8 @@ public final class ForcedDialogueService {
         List<DialogueOptionDefinition> options = DialogueTreeService.activeOptions(context).orElse(List.of());
         if (options.isEmpty()) {
             String text = result.get().text();
-            if (!text.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, villager, text);
-            }
+            if (!result.get().exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager, result.get().exchanges());
+            else if (!text.isBlank()) VillagerInteractionService.sendVillagerNotice(player, villager, text);
             return ActionResult.success(VillagerActionResult.success(), Set.of());
         }
         if (VillagerInteractionService.openForcedDialogue(
@@ -2642,6 +2687,7 @@ public final class ForcedDialogueService {
                 result.get().text(),
                 options,
                 options.stream().anyMatch(DialogueOptionDefinition::forceCameraTowardsVillager))) {
+            if (!result.get().exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager, result.get().exchanges());
             return ActionResult.success(VillagerActionResult.success(), Set.of());
         }
         DialogueTreeService.leaveActiveSession(context);
@@ -2850,7 +2896,7 @@ public final class ForcedDialogueService {
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
             broadcastDataDrivenChat(
-                    level, villager, target instanceof ServerPlayer player ? player : null, definition, line);
+                    level, villager, target instanceof ServerPlayer player ? player : null, definition, line, context, Map.of());
         }
         return true;
     }
@@ -2945,12 +2991,12 @@ public final class ForcedDialogueService {
                 session.definition(),
                 allowed ? containerVouchAllowOptions() : containerWitnessInterjectionOptions(session.definition()));
         ForcedDialogueContext interjectionContext = containerWitnessContext(level, villager, player, session);
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 villager,
                 line,
                 forcedOptions(definition, level, villager, player, session),
-                definition.forceCameraTowardsVillager())) {
+                definition.forceCameraTowardsVillager(), definition, interjectionContext)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     villager.getUUID(),
                     definition,
@@ -2969,7 +3015,7 @@ public final class ForcedDialogueService {
                     session.disabledOptionIds(),
                     session.royaltyAggroBypass()));
         } else if (!line.isBlank()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            sendDefinitionNotice(player, villager, definition, interjectionContext, line);
         }
         return true;
     }
@@ -3124,7 +3170,7 @@ public final class ForcedDialogueService {
         );
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
-            broadcastDataDrivenChat(level, witness, player, definition, line);
+            broadcastDataDrivenChat(level, witness, player, definition, line, context, Map.of());
             markContainerTheftCooldown(level, player, snapshot, definition);
         }
         return true;
@@ -3200,7 +3246,7 @@ public final class ForcedDialogueService {
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, witness, line);
+                sendDefinitionNotice(player, witness, definition, context, line);
             }
             if (royaltyAggroBypass) {
                 sendRoyaltyAggroBypassNotice(player, witness);
@@ -3214,18 +3260,18 @@ public final class ForcedDialogueService {
 
         if (!definition.initiateDialogue()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, witness, line);
+                sendDefinitionNotice(player, witness, definition, context, line);
             }
             markContainerTheftCooldown(level, player, snapshot, definition);
             return true;
         }
 
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 witness,
                 line,
                 forcedOptions(definition, level, witness, player),
-                definition.forceCameraTowardsVillager())) {
+                definition.forceCameraTowardsVillager(), definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     witness.getUUID(),
                     definition,
@@ -3247,7 +3293,7 @@ public final class ForcedDialogueService {
             markContainerTheftCooldown(level, player, snapshot, definition);
         } else {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, witness, line);
+                sendDefinitionNotice(player, witness, definition, context, line);
             }
             markContainerTheftCooldown(level, player, snapshot, definition);
         }
@@ -3301,7 +3347,7 @@ public final class ForcedDialogueService {
         ForcedDialogueContext context = playerItemProximityContext(villager, player, replacements);
         String line = resolvePlayerItemProximityLine(level, villager, definition, context, replacements);
         if (!line.isBlank()) {
-            broadcastDataDrivenChat(level, villager, player, definition, line);
+            broadcastDataDrivenChat(level, villager, player, definition, line, context, replacements);
         }
         return true;
     }
@@ -3325,7 +3371,7 @@ public final class ForcedDialogueService {
         String line = resolvePlayerItemProximityLine(level, villager, definition, context, replacements);
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+                sendDefinitionNotice(player, villager, definition, context, line);
             }
             if (isRoyaltyFor(level, villager, player)) {
                 sendRoyaltyAggroBypassNotice(player, villager);
@@ -3337,17 +3383,17 @@ public final class ForcedDialogueService {
 
         if (!definition.initiateDialogue()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+                sendDefinitionNotice(player, villager, definition, context, line);
             }
             return true;
         }
 
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 villager,
                 line,
                 forcedOptions(definition, level, villager, player),
-                definition.forceCameraTowardsVillager())) {
+                definition.forceCameraTowardsVillager(), definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     villager.getUUID(),
                     definition,
@@ -3367,7 +3413,7 @@ public final class ForcedDialogueService {
                     isRoyaltyFor(level, villager, player)
             ));
         } else if (!line.isBlank()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            sendDefinitionNotice(player, villager, definition, context, line);
         }
         return true;
     }
@@ -3515,7 +3561,7 @@ public final class ForcedDialogueService {
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+                sendDefinitionNotice(player, villager, definition, context, line);
             }
             VillagerRetaliationHandler.forceAngerSilently(villager, player);
             return true;
@@ -3523,17 +3569,17 @@ public final class ForcedDialogueService {
 
         if (!definition.initiateDialogue()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+                sendDefinitionNotice(player, villager, definition, context, line);
             }
             return true;
         }
 
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 villager,
                 line,
                 forcedOptions(definition, level, villager, player),
-                definition.forceCameraTowardsVillager())) {
+                definition.forceCameraTowardsVillager(), definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     villager.getUUID(),
                     definition,
@@ -3544,7 +3590,7 @@ public final class ForcedDialogueService {
                     level.getGameTime()
             ));
         } else if (!line.isBlank()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            sendDefinitionNotice(player, villager, definition, context, line);
         }
         return true;
     }
@@ -3598,7 +3644,7 @@ public final class ForcedDialogueService {
                 replacements);
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, witness, line);
+                sendDefinitionNotice(player, witness, definition, context, line);
             }
             if (isRoyaltyFor(level, witness, player)) {
                 sendRoyaltyAggroBypassNotice(player, witness);
@@ -3610,18 +3656,18 @@ public final class ForcedDialogueService {
 
         if (!definition.initiateDialogue()) {
             if (!line.isBlank()) {
-                VillagerInteractionService.sendVillagerNotice(player, witness, line);
+                sendDefinitionNotice(player, witness, definition, context, line);
             }
             return true;
         }
 
         boolean royaltyAggroBypass = isRoyaltyFor(level, witness, player);
-        if (VillagerInteractionService.openForcedDialogue(
+        if (openDialogue(
                 player,
                 witness,
                 line,
                 forcedOptions(definition, level, witness, player),
-                definition.forceCameraTowardsVillager())) {
+                definition.forceCameraTowardsVillager(), definition, context)) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     witness.getUUID(),
                     definition,
@@ -3641,7 +3687,7 @@ public final class ForcedDialogueService {
                     royaltyAggroBypass
             ));
         } else if (!line.isBlank()) {
-            VillagerInteractionService.sendVillagerNotice(player, witness, line);
+            sendDefinitionNotice(player, witness, definition, context, line);
         }
         return true;
     }
@@ -3700,7 +3746,7 @@ public final class ForcedDialogueService {
         );
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
-            broadcastDataDrivenChat(level, villager, player, definition, line);
+            broadcastDataDrivenChat(level, villager, player, definition, line, context, Map.of());
         }
         return true;
     }
@@ -3710,11 +3756,24 @@ public final class ForcedDialogueService {
             Villager villager,
             ServerPlayer player,
             ForcedDialogueDefinition definition,
-            String line) {
-        if (line == null || line.isBlank()) return;
-        if (player != null && definition.output().lookAtPlayer()) {
-            VillagerInWorldDialogueFocusService.requestFocus(villager, player);
+            String line, ForcedDialogueContext context, Map<String, String> replacements) {
+        if (player != null && definition.output().lookAtPlayer()) VillagerInWorldDialogueFocusService.requestFocus(villager, player);
+        if (!definition.output().exchanges().isEmpty()) {
+            if (player == null && definition.output().exchanges().stream().anyMatch(exchange ->
+                    exchange.speaker() == com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.PLAYER)) {
+                com.jvn.villagerretaliation.util.DatapackDiagnostics.warnInvalidDialogueCondition(definition.source(), "forced dialogue",
+                        "player exchanges require a participating player for this trigger");
+                return;
+            }
+            var exchanges = resolveForcedExchanges(player, villager, definition.output().exchanges(), context, replacements);
+            if (player != null) VillagerInteractionService.sendDialogueExchanges(player, villager, exchanges, outputRadius(definition));
+            else for (var viewer : level.players()) {
+                if (viewer.distanceToSqr(villager) <= outputRadius(definition) * outputRadius(definition))
+                    VillagerInteractionService.sendDialogueExchanges(viewer, villager, exchanges, 0);
+            }
+            return;
         }
+        if (line == null || line.isBlank()) return;
         VillagerInteractionService.broadcastForcedVillagerChat(
                 level, villager, line, VillagerInteractionService.villagerSpeakerLabel(villager),
                 outputRadius(definition));

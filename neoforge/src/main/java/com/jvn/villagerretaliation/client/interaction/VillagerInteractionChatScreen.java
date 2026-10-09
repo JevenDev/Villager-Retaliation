@@ -134,8 +134,13 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     }
 
     @Override
-    public void closeFromServer() {
-        this.interactionScreen.closeFromServer();
+    public void closeFromServer(boolean finishExchanges) {
+        this.interactionScreen.closeFromServer(finishExchanges);
+    }
+
+    @Override
+    public void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+        this.interactionScreen.acceptDialogueExchanges(exchanges);
     }
 
     @Override

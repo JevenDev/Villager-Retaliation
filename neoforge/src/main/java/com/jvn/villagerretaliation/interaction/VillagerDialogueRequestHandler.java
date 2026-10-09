@@ -57,7 +57,9 @@ public final class VillagerDialogueRequestHandler {
             ForcedDialogueService.openSpecialOrderStatusDialogue(player, villager);
             return;
         }
-        if (VillagerConversationService.isForced(player, villager) && !ForcedDialogueService.hasSession(player, villager)) {
+        DialogueContext context = VillagerInteractionService.createDialogueContext(target.level(), player, villager);
+        boolean forcedTree = VillagerConversationService.isForced(player, villager) && !ForcedDialogueService.hasSession(player, villager);
+        if (forcedTree && DialogueTreeService.activeOptions(context).isEmpty()) {
             VillagerConversationService.endForPlayer(player, true);
             return;
         }
@@ -72,13 +74,15 @@ public final class VillagerDialogueRequestHandler {
             return;
         }
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
-        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
         if (DialogueTreeService.LEAVE_OPTION_ID.equals(optionId)) {
             DialogueTreeService.leaveActiveSession(context);
-            VillagerInteractionService.sendDialogueReputation(player, villager, level);
+            if (forcedTree) VillagerConversationService.endForPlayer(player, true);
+            else VillagerInteractionService.sendDialogueReputation(player, villager, level);
             return;
         }
-        DialogueOptionDefinition dialogueOption = VillagerDialogueResources.dialogueOption(context, optionId).orElse(null);
+        DialogueOptionDefinition dialogueOption = (forcedTree
+                ? DialogueTreeService.activeOptions(context).orElse(List.of()).stream().filter(option -> option.id().equals(optionId)).findFirst()
+                : VillagerDialogueResources.dialogueOption(context, optionId)).orElse(null);
         if (dialogueOption == null) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.unknown_dialogue_option");
             VillagerInteractionService.sendDialogueReputation(player, villager, level);
@@ -139,17 +143,25 @@ public final class VillagerDialogueRequestHandler {
         responseText = DialogueTextSegment.plainText(responseSegments);
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         claimTrackerReports(level, villager, player, requestType);
-        VillagerInteractionService.sendDialogueReputation(
-                player,
-                villager,
-                level,
-                requestType,
-                reputationEffect,
-                dialogueOption.forceCameraTowardsVillager()
-        );
-        VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText, responseSegments);
+        if (forcedTree) VillagerInteractionService.sendForcedDialogueReputation(player, villager,
+                DialogueTreeService.activeOptions(context).orElse(List.of()), dialogueOption.forceCameraTowardsVillager());
+        else VillagerInteractionService.sendDialogueReputation(player, villager, level, requestType, reputationEffect,
+                dialogueOption.forceCameraTowardsVillager());
+        if (!result.exchanges().isEmpty()) {
+            var paymentReplacements = itemPaymentResult.replacements();
+            var exchanges = result.exchanges().stream().map(line -> new com.jvn.villagerretaliation.dialogue.DialogueSpeech(
+                    line.speaker(), line.entityId(), line.name(), resolveTemplate(line.segments(), paymentReplacements))).toList();
+            if (responseTextReplaced) exchanges = com.jvn.villagerretaliation.dialogue.DialogueSpeech.replaceSpeakerReply(exchanges,
+                    new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
+                            com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), responseSegments));
+            VillagerInteractionService.sendDialogueExchanges(player, villager, exchanges);
+        } else {
+            VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText, responseSegments);
+        }
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
+        } else if (forcedTree && DialogueTreeService.activeOptions(context).isEmpty()) {
+            VillagerConversationService.endForPlayer(player, true, !result.exchanges().isEmpty());
         }
     }
 

@@ -910,6 +910,9 @@ public final class SceneSchema {
         properties.add("type", registeredIds(VillagerRetaliationRegistries.SCENE_STEPS));
         properties.add("actors", array(patternedText("^[a-z][a-z0-9_.-]{0,63}$"), 0));
         var data = map();
+        var dialogueFields = new JsonObject();
+        dialogueFields.add("exchanges", com.jvn.villagerretaliation.dialogue.DialogueExchange.schema());
+        data.add("properties", dialogueFields);
         var fieldRules = new JsonArray();
         fieldRules.add(com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.reference());
         fieldRules.add(com.jvn.villagerretaliation.campaign.CampaignEvidenceFields.reference());

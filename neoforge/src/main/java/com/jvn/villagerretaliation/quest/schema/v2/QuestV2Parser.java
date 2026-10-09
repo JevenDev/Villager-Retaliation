@@ -1557,7 +1557,7 @@ public final class QuestV2Parser {
 
     private static boolean hasInlineSceneContent(JsonObject object) {
         return object != null
-                && (object.has("lines")
+                && (object.has("exchanges") || object.has("lines")
                         || object.has("text")
                         || object.has("text_key")
                         || object.has("responses"));

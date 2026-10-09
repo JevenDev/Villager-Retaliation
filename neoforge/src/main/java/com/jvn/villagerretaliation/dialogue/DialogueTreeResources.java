@@ -191,7 +191,13 @@ public final class DialogueTreeResources {
             }
             return;
         }
-        DialogueTreeDefinition definition = readTree(location, root, fallbackId);
+        DialogueTreeDefinition definition;
+        try {
+            definition = readTree(location, root, fallbackId);
+        } catch (IllegalArgumentException exception) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", exception.getMessage());
+            return;
+        }
         if (definition == null) {
             return;
         }
@@ -354,7 +360,8 @@ public final class DialogueTreeResources {
                 VillagerActionDefinition.readList(location, context, node, nodeQuestId),
                 DialogueCondition.readList(location, context, node, nodeQuestId),
                 readResponses(location, context, node, nodeQuestId, treeId),
-                DatapackJsonReader.readBoolean(node, "end", false)
+                DatapackJsonReader.readBoolean(node, "end", false),
+                DialogueExchange.read(node)
         );
     }
 
@@ -410,7 +417,8 @@ public final class DialogueTreeResources {
                         DialogueCondition.readList(location, responseContext, response, responseQuestId),
                         DatapackJsonReader.readBoolean(response, "end", false),
                         DatapackJsonReader.readInt(response, "order", index),
-                        DatapackJsonReader.readInt(response, "priority", 0)
+                        DatapackJsonReader.readInt(response, "priority", 0),
+                        DialogueExchange.read(response)
                 ));
             }
             index++;

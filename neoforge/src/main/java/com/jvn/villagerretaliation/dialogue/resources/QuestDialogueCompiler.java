@@ -225,7 +225,8 @@ public final class QuestDialogueCompiler {
             nodes.putIfAbsent(nodeId, new DialogueTreeDefinition.Node(nodeId, lines,
                     textVariants(treeId + "/node/" + nodeId, lines, "", DialogueEntryMetadata.EMPTY),
                     List.of(), List.of(), compileResponses(resource, stage.id(), stage.responses(), stage,
-                            responsesSource, stageResponsesEntryId(stage.id())), false));
+                            responsesSource, stageResponsesEntryId(stage.id())), false,
+                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(stage.data())));
             addEntry(resource, stage.id(), entryId, titleCase(stage.id()), nodeId, responsesSource, null, entries);
             putBinding(
                     bindings,
@@ -257,7 +258,8 @@ public final class QuestDialogueCompiler {
                 DialogueCondition.readList(sceneSource.resource(), sceneSource.jsonPointer(), scene.data(), resource.id()),
                 compileResponses(resource, stageId, scene.responses(), stage, sceneSource.child("responses"),
                         stageSceneEntryId(stageId, scene.id())),
-                DatapackJsonReader.readBoolean(scene.data(), "end", false)));
+                DatapackJsonReader.readBoolean(scene.data(), "end", false),
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(scene.data())));
     }
 
     private static List<DialogueTreeDefinition.Response> compileResponses(
@@ -285,7 +287,8 @@ public final class QuestDialogueCompiler {
                     DialogueCondition.readList(source.resource(), responseSource.jsonPointer(), response.data(), resource.id()),
                     DatapackJsonReader.readBoolean(response.data(), "end", false),
                     DatapackJsonReader.readInt(response.data(), "order", index),
-                    DatapackJsonReader.readInt(response.data(), "priority", 0)));
+                    DatapackJsonReader.readInt(response.data(), "priority", 0),
+                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(response.data())));
         }
         return List.copyOf(result);
     }

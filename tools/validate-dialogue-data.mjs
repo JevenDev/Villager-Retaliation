@@ -541,8 +541,8 @@ const dialogueTreeEntryKeys = new Set([
   "force_camera_towards_villager",
   "order"
 ]);
-const dialogueTreeNodeKeys = new Set(["id", "lines", "text", "metadata", "actions", "conditions", "responses", "end"]);
-const dialogueTreeResponseKeys = new Set(["id", "label", "metadata", "next", "request", "lines", "text", "actions", "conditions", "end", "order"]);
+const dialogueTreeNodeKeys = new Set(["id", "lines", "text", "exchanges", "metadata", "actions", "conditions", "responses", "end"]);
+const dialogueTreeResponseKeys = new Set(["id", "label", "metadata", "next", "request", "lines", "text", "exchanges", "actions", "conditions", "end", "order"]);
 const dialogueRequestTypes = new Set([
   "greeting",
   "question",
@@ -2563,7 +2563,7 @@ function checkQuestV2DialogueSlot(file, slot, pointer, location, questId, slotId
   checkQuestV2OptionalString(file, slot, pointer, location, "request");
   checkQuestV2OptionalBoolean(file, slot, pointer, location, "show_for_babies");
   checkQuestV2OptionalInteger(file, slot, pointer, location, "order");
-  const hasInline = hasAnyKey(slot, ["text", "text_key", "lines", "responses"]);
+  const hasInline = hasAnyKey(slot, ["text", "text_key", "lines", "exchanges", "responses"]);
   if (hasInline && scene) {
     questV2Error(file, pointer, location, "dialogue slot cannot mix inline scene content with scene_ref.", "Use either inline content or a bundled scene reference.");
   }
@@ -2601,6 +2601,7 @@ function checkQuestV2InlineScene(file, scene, pointer, location, questId, fallba
     return "";
   }
   checkQuestV2UnknownKeys(file, scene, pointer, location, questV2SceneKeys);
+  checkDialogueExchanges(file, scene, location);
   if (hasAnyKey(scene, ["external", "external_scene", "external_entry"])) {
     questV2Error(file, pointer, location,
       "external dialogue references are unsupported in beta.13 quest bundles.",
@@ -2617,7 +2618,7 @@ function checkQuestV2InlineScene(file, scene, pointer, location, questId, fallba
   checkQuestV2OptionalString(file, scene, pointer, location, "text_key");
   checkQuestV2Conditions(file, scene.conditions, `${pointer}/conditions`, `${location}.conditions`, questId, "quest module v2 scene");
   checkQuestV2Actions(file, scene.actions, `${pointer}/actions`, `${location}.actions`, questId);
-  const hasInline = hasAnyKey(scene, ["text", "text_key", "lines", "responses"]);
+  const hasInline = hasAnyKey(scene, ["text", "text_key", "lines", "exchanges", "responses"]);
   const hasSceneRef = Object.hasOwn(scene, "scene_ref");
   if (hasSceneRef && !isResourceLocation(stringValue(scene.scene_ref))) {
     questV2Error(file, pointer + "/scene_ref", location + ".scene_ref",
@@ -2647,6 +2648,7 @@ function checkQuestV2Responses(file, responses, pointer, location, questId, tran
       continue;
     }
     checkQuestV2UnknownKeys(file, response, responsePointer, responseLocation, questV2ResponseKeys);
+    checkDialogueExchanges(file, response, responseLocation);
     const id = stringValue(response.id);
     checkQuestV2Id(file, id, `${responsePointer}/id`, `${responseLocation}.id`, "response id");
     if (id) {
@@ -4733,7 +4735,16 @@ function checkDialogueTreeEntryFields(file, entry, location) {
   checkOptionalInteger(file, entry, location, "order");
 }
 
+function checkDialogueExchanges(file, value, location) {
+  if (value.exchanges === undefined) return;
+  const schema = questV2Schema.$defs.scene.properties.exchanges;
+  for (const issue of validateConversationSchema(value.exchanges, schema)) {
+    errors.push(`${relative(file)}: ${location}.exchanges${issue.pointer}: ${issue.message}`);
+  }
+}
+
 function checkDialogueTreeNodeFields(file, node, location) {
+  checkDialogueExchanges(file, node, location);
   checkOptionalString(file, node, location, "id");
   checkStringList(file, node, location, ["lines"], "dialogue tree node line");
   checkOptionalString(file, node, location, "text");
@@ -4741,6 +4752,7 @@ function checkDialogueTreeNodeFields(file, node, location) {
 }
 
 function checkDialogueTreeResponseFields(file, response, location) {
+  checkDialogueExchanges(file, response, location);
   checkOptionalString(file, response, location, "id");
   checkOptionalString(file, response, location, "label");
   checkOptionalString(file, response, location, "next");
@@ -5227,6 +5239,7 @@ function checkQuestFactAction(file, action, location, type, defaultQuestId = "")
 }
 
 function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "") {
+  if (entry && typeof entry === "object") checkDialogueExchanges(file, entry, location);
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
     return;
   }
@@ -5303,6 +5316,7 @@ function checkForcedDialogueOption(file, option, location, defaultQuestId = "", 
   if (!option || typeof option !== "object" || Array.isArray(option)) {
     return;
   }
+  checkDialogueExchanges(file, option, location);
   checkOptionalString(file, option, location, "message_prefix");
   checkOptionalString(file, option, location, "text_prefix");
   checkOptionalString(file, option, location, "label_key");

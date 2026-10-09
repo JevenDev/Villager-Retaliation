@@ -32,9 +32,13 @@ interface VillagerInteractionSessionScreen {
 
     void replaceFromServer();
 
-    void closeFromServer();
+    default void closeFromServer() { closeFromServer(false); }
+
+    void closeFromServer(boolean finishExchanges);
 
     void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments);
+
+    void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges);
 
     void copyCurrentDialogueTo(VillagerInteractionScreen target);
 
