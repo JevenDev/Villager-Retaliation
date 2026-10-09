@@ -25,9 +25,11 @@ public final class CampaignScenarioGameTests {
 
     @GameTestGenerator
     public static Collection<TestFunction> scenarios() throws IOException {
-        net.minecraft.gametest.framework.StructureUtils.testStructuresDir = System.getProperty("villagerretaliation.gameteststructures");
         String source = System.getProperty("villagerretaliation.campaignScenarioPack", "");
+        if (source.isBlank() && net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) return List.of();
         CampaignScenarioPack.require(!source.isBlank(), "Campaign scenario pack path is missing");
+        String structures = System.getProperty("villagerretaliation.gameteststructures");
+        if (structures != null) net.minecraft.gametest.framework.StructureUtils.testStructuresDir = structures;
         var pack = CampaignScenarioPack.read(Path.of(source));
         String selected = System.getProperty("villagerretaliation.campaignScenario", "");
         var scenarios = pack.scenarios.stream().filter(value -> selected.isBlank() || value.id().toString().equals(selected)).toList();
