@@ -149,9 +149,11 @@ public final class CampaignDefinitionParser {
         }
         CampaignDefinition definition = new CampaignDefinition(resource(root, "id"), root.get("revision").getAsInt(),
                 QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, locations, characters, evidence,
-                CampaignLocationVariant.read(source, array(root, "location_variants"), diagnostics), source);
+                CampaignLocationVariant.read(source, array(root, "location_variants"), diagnostics),
+                CampaignFixtureEntry.read(source, array(root, "fixture_entries"), diagnostics), source);
         validateReferences(definition, diagnostics);
         CampaignLocationVariant.validate(definition, diagnostics);
+        CampaignFixtureEntry.validate(definition, diagnostics);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
     }
 
@@ -175,6 +177,10 @@ public final class CampaignDefinitionParser {
         }
         for (var reward : definition.rewards().values()) {
             requireCampaignOwner(definition, quests, reward.quest(), reward.pointer() + "/quest", diagnostics);
+        }
+        for (var entry : definition.fixtureEntries().values()) {
+            for (var effect : entry.effects()) if (effect instanceof CampaignFixtureEntry.CompleteQuest completion)
+                requireCampaignOwner(definition, quests, completion.quest(), completion.pointer() + "/quest", diagnostics);
         }
         for (var questId : definition.questBundles()) {
             var quest = quests.compiledQuest(questId).orElse(null);

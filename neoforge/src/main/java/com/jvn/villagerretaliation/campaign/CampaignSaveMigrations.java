@@ -36,6 +36,14 @@ final class CampaignSaveMigrations {
             }
             tag.putInt("DataVersion", 3);
         }
+        if (tag.getInt("DataVersion") == 3) {
+            for (Tag raw : CampaignStateCodec.list(tag, "Campaigns", Tag.TAG_COMPOUND)) {
+                var campaign = (CompoundTag) raw;
+                CampaignStateCodec.require(!campaign.contains("FixtureEntries"), "unexpected fixture audit in a version 3 save");
+                campaign.put("FixtureEntries", new ListTag());
+            }
+            tag.putInt("DataVersion", 4);
+        }
         return tag;
     }
 }

@@ -205,6 +205,7 @@ public final class CampaignFactGameTests {
             var old = data.save(new CompoundTag(), helper.getLevel().registryAccess());
             old.putInt("DataVersion", 2);
             old.getList("Campaigns", Tag.TAG_COMPOUND).getCompound(0).remove("Facts");
+            old.getList("Campaigns", Tag.TAG_COMPOUND).getCompound(0).remove("FixtureEntries");
             var restored = CampaignSavedData.load(old, disk.directory);
             helper.assertTrue(restored.diagnostic().isBlank(), "version two migrates");
             helper.assertValueEqual(restored.instances().get(CAMPAIGN), before, "migration preserves identity, outcomes, and personal progress");

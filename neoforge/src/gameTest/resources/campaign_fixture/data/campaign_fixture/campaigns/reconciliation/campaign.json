@@ -75,6 +75,71 @@
       }
     }
   ],
+  "fixture_entries": [
+    {
+      "id": "opening",
+      "chapter": "decision",
+      "effects": []
+    },
+    {
+      "id": "dragon_after_admission",
+      "chapter": "dragon",
+      "effects": [
+        {
+          "id": "resolve_decision",
+          "type": "world_outcome",
+          "milestone": "decision",
+          "outcome": "admitted"
+        },
+        {
+          "id": "complete_decision",
+          "type": "complete_milestone",
+          "milestone": "decision",
+          "outcome": "admitted"
+        },
+        {
+          "id": "complete_introduction",
+          "type": "complete_quest",
+          "quest": "campaign_fixture:decision"
+        },
+        {
+          "id": "remember_decision",
+          "type": "set_fact",
+          "fact": "learned_decision",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "dragon_after_refusal",
+      "chapter": "dragon",
+      "effects": [
+        {
+          "id": "resolve_decision",
+          "type": "world_outcome",
+          "milestone": "decision",
+          "outcome": "refused"
+        },
+        {
+          "id": "complete_decision",
+          "type": "complete_milestone",
+          "milestone": "decision",
+          "outcome": "refused"
+        },
+        {
+          "id": "complete_introduction",
+          "type": "complete_quest",
+          "quest": "campaign_fixture:decision"
+        },
+        {
+          "id": "remember_decision",
+          "type": "set_fact",
+          "fact": "learned_decision",
+          "value": "true"
+        }
+      ]
+    }
+  ],
   "facts": [
     {
       "id": "learned_decision",

@@ -36,7 +36,7 @@ export function validateCampaign(root, schema, context = {}) {
   const locations = index(root.locations ?? [], "/locations");
   const evidence = index(root.evidence ?? [], "/evidence");
   const variants = index(root.location_variants ?? [], "/location_variants");
-  index(root.facts ?? [], "/facts");
+  const facts = index(root.facts ?? [], "/facts");
   const rewards = index(root.rewards ?? [], "/rewards");
   const outcomes = new Map();
   for (const milestone of milestones.values()) outcomes.set(milestone.id, index(milestone.outcomes, milestone.pointer + "/outcomes"));
@@ -156,6 +156,69 @@ export function validateCampaign(root, schema, context = {}) {
       if (!irreversible(milestone)) issue(pointer + "/observe", "external world observations require an irreversible milestone");
       if (!outcomes.get(milestone.id).has(observation.outcome)) issue(pointer + "/observe/outcome", "observed outcome does not exist");
       if (observation.event === "villagerretaliation:campaign_character_lost" && !characters.has(observation.character)) issue(pointer + "/observe/character", "unknown campaign character " + observation.character);
+    }
+  }
+  const fixtures = index(root.fixture_entries ?? [], "/fixture_entries");
+  for (const fixture of fixtures.values()) {
+    const chapter = chapters.get(fixture.chapter);
+    if (!chapter) issue(fixture.pointer + "/chapter", "unknown fixture chapter " + fixture.chapter);
+    const ids = new Set();
+    const world = new Map();
+    const completedMilestones = new Map();
+    const completedQuests = new Set();
+    const changedFacts = new Set();
+    const outcome = effect => {
+      const milestone = milestones.get(effect.milestone);
+      if (!milestone) issue(effect.pointer + "/milestone", "unknown fixture milestone " + effect.milestone);
+      else if (!outcomes.get(effect.milestone).has(effect.outcome)) issue(effect.pointer + "/outcome", "unknown fixture outcome " + effect.outcome);
+      return milestone;
+    };
+    for (const [at, raw] of fixture.effects.entries()) {
+      const effect = { ...raw, pointer: fixture.pointer + "/effects/" + at };
+      if (ids.has(effect.id)) issue(effect.pointer + "/id", "duplicate fixture effect " + effect.id);
+      ids.add(effect.id);
+      if (effect.type === "world_outcome") {
+        const milestone = outcome(effect);
+        if (milestone && !irreversible(milestone)) issue(effect.pointer + "/milestone", "fixture world outcome requires an irreversible milestone");
+        if (world.has(effect.milestone)) issue(effect.pointer + "/milestone", "duplicate fixture world milestone " + effect.milestone);
+        else world.set(effect.milestone, effect.outcome);
+      } else if (effect.type === "complete_milestone") {
+        const milestone = outcome(effect);
+        if (milestone && irreversible(milestone) && world.get(effect.milestone) !== effect.outcome) {
+          issue(effect.pointer + "/outcome", "fixture personal completion requires an earlier matching world outcome effect");
+        }
+        if (completedMilestones.has(effect.milestone)) issue(effect.pointer + "/milestone", "duplicate fixture personal milestone " + effect.milestone);
+        else completedMilestones.set(effect.milestone, effect.outcome);
+      } else if (effect.type === "complete_quest") {
+        bundle(effect.quest, effect.pointer + "/quest", true);
+        if (completedQuests.has(effect.quest)) issue(effect.pointer + "/quest", "duplicate fixture quest " + effect.quest);
+        completedQuests.add(effect.quest);
+        if ([...milestones.values()].some(milestone => milestone.quest === effect.quest && !completedMilestones.has(milestone.id))) {
+          issue(effect.pointer + "/quest", "complete the quest's personal milestones earlier in the fixture");
+        }
+      } else if (effect.type === "set_fact") {
+        const fact = facts.get(effect.fact);
+        if (!fact) issue(effect.pointer + "/fact", "unknown fixture fact " + effect.fact);
+        else if (fact.kind === "tag" && !["true", "false"].includes(effect.value)) issue(effect.pointer + "/value", "Campaign tags require true or false.");
+        else if (fact.kind === "counter") {
+          const canonical = /^(?:0|[1-9][0-9]*|-[1-9][0-9]*)$(?![\s\S])/.test(effect.value);
+          if (!canonical || BigInt(effect.value) < -9223372036854775808n || BigInt(effect.value) > 9223372036854775807n) {
+            issue(effect.pointer + "/value", "Campaign counters require a signed 64-bit integer.");
+          }
+        }
+        if (changedFacts.has(effect.fact)) issue(effect.pointer + "/fact", "duplicate fixture fact " + effect.fact);
+        changedFacts.add(effect.fact);
+      }
+    }
+    for (const [at, prerequisite] of (chapter?.prerequisites ?? []).entries()) {
+      let satisfied;
+      if (prerequisite.chapter) {
+        const prior = chapters.get(prerequisite.chapter);
+        satisfied = prior && prior.quests.every(quest => completedQuests.has(quest))
+          && [...milestones.values()].filter(milestone => milestone.chapter === prior.id).every(milestone => completedMilestones.has(milestone.id));
+      } else satisfied = completedMilestones.has(prerequisite.milestone)
+        && (!prerequisite.outcome || prerequisite.outcome === completedMilestones.get(prerequisite.milestone));
+      if (!satisfied) issue(fixture.pointer + "/effects", "fixture effects do not satisfy chapter prerequisite at " + chapter.pointer + "/prerequisites/" + at);
     }
   }
   for (const reward of rewards.values()) {

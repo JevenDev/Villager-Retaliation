@@ -97,7 +97,11 @@ public final class CampaignAuthoringGameTests {
         for (int index = 0; index < tokens.length - 1; index++) target = target.isJsonArray()
                 ? target.getAsJsonArray().get(Integer.parseInt(tokens[index])) : target.getAsJsonObject().get(tokens[index].replace("~1", "/").replace("~0", "~"));
         String key = tokens[tokens.length - 1].replace("~1", "/").replace("~0", "~");
-        if (patch.has("remove")) target.getAsJsonObject().remove(key);
+        if (target.isJsonArray()) {
+            int index = Integer.parseInt(key);
+            if (patch.has("remove")) target.getAsJsonArray().remove(index);
+            else target.getAsJsonArray().set(index, patch.get("value").deepCopy());
+        } else if (patch.has("remove")) target.getAsJsonObject().remove(key);
         else target.getAsJsonObject().add(key, patch.get("value").deepCopy());
     }
 

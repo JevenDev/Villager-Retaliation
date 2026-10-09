@@ -78,6 +78,23 @@ final class CampaignReferenceCollector {
                 ref(node, key(OUTCOME, id, prerequisite.milestone(), prerequisite.outcome()), REQUIRES, where.child("outcome"));
             }
         }
+        for (var entryPoint : definition.fixtureEntries().values()) {
+            var at = new Source(source.resource(), source.pack(), entryPoint.pointer());
+            var node = declare(FIXTURE, id, at, entryPoint.id());
+            ref(owner, node, INCLUDES, at);
+            ref(node, key(CHAPTER, id, entryPoint.chapter()), STARTS, at.child("chapter"));
+            for (var effect : entryPoint.effects()) {
+                var where = new Source(source.resource(), source.pack(), effect.pointer());
+                if (effect instanceof CampaignFixtureEntry.WorldOutcome outcome)
+                    outcome(node, id, outcome.milestone(), outcome.outcome(), COMMITS, where);
+                else if (effect instanceof CampaignFixtureEntry.CompleteMilestone completion)
+                    outcome(node, id, completion.milestone(), completion.outcome(), WRITES, where);
+                else if (effect instanceof CampaignFixtureEntry.CompleteQuest completion)
+                    ref(node, key(QUEST, completion.quest()), WRITES, where.child("quest"));
+                else if (effect instanceof CampaignFixtureEntry.SetFact fact)
+                    ref(node, key(FACT, id, fact.fact()), WRITES, where.child("fact"));
+            }
+        }
         for (var milestone : definition.milestones().values()) {
             var at = new Source(source.resource(), source.pack(), milestone.pointer());
             var node = declare(MILESTONE, id, at, milestone.id());

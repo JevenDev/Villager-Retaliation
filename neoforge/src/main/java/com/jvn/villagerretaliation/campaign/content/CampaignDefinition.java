@@ -10,7 +10,8 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
         List<ResourceLocation> questBundles, Map<String, Chapter> chapters, Map<String, Milestone> milestones,
         Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards,
         Map<String, CampaignLocationDefinition> locations, Map<String, CampaignCharacterDefinition> characters,
-        Map<String, CampaignEvidenceDefinition> evidence, Map<String, CampaignLocationVariant> locationVariants, ResourceLocation source) {
+        Map<String, CampaignEvidenceDefinition> evidence, Map<String, CampaignLocationVariant> locationVariants,
+        Map<String, CampaignFixtureEntry> fixtureEntries, ResourceLocation source) {
     public CampaignDefinition {
         questBundles = List.copyOf(questBundles);
         chapters = ordered(chapters);
@@ -21,6 +22,7 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
         characters = ordered(characters);
         evidence = ordered(evidence);
         locationVariants = ordered(locationVariants);
+        fixtureEntries = ordered(fixtureEntries);
     }
 
     public CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,
@@ -54,6 +56,15 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
             Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards, Map<String, CampaignLocationDefinition> locations,
             Map<String, CampaignCharacterDefinition> characters, Map<String, CampaignEvidenceDefinition> evidence, ResourceLocation source) {
         this(id, revision, fingerprint, titleKey, localizationPrefix, questBundles, chapters, milestones, facts, rewards, locations, characters, evidence, Map.of(), source);
+    }
+
+    public CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,
+            List<ResourceLocation> questBundles, Map<String, Chapter> chapters, Map<String, Milestone> milestones,
+            Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards, Map<String, CampaignLocationDefinition> locations,
+            Map<String, CampaignCharacterDefinition> characters, Map<String, CampaignEvidenceDefinition> evidence,
+            Map<String, CampaignLocationVariant> locationVariants, ResourceLocation source) {
+        this(id, revision, fingerprint, titleKey, localizationPrefix, questBundles, chapters, milestones, facts, rewards, locations,
+                characters, evidence, locationVariants, Map.of(), source);
     }
 
     private static <T> Map<String, T> ordered(Map<String, T> values) {

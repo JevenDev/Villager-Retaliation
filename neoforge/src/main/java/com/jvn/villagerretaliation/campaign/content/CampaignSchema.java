@@ -107,7 +107,8 @@ public final class CampaignSchema {
                 "quest_bundles", array(text(RESOURCE_ID), 1), "chapters", array(chapter, 1),
                 "milestones", array(milestone, 0), "facts", array(fact, 0), "rewards", array(reward, 0),
                 "locations", array(location, 0), "characters", array(character, 0), "evidence", array(evidence, 0),
-                "location_variants", array(CampaignLocationVariant.schema(), 0));
+                "location_variants", array(CampaignLocationVariant.schema(), 0),
+                "fixture_entries", array(CampaignFixtureEntry.schema(), 0));
         root.addProperty("$schema", "https://json-schema.org/draft/2020-12/schema");
         root.addProperty("$id", "https://villagerretaliation.dev/schema/campaign-v1.schema.json");
         root.addProperty("title", "Villager Retaliation Campaign v1");

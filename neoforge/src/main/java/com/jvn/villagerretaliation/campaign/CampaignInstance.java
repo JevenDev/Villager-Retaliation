@@ -9,16 +9,23 @@ import net.minecraft.resources.ResourceLocation;
 
 public record CampaignInstance(ResourceLocation campaignId, UUID instanceId, int definitionRevision, String fingerprint,
         String title, long createdAt, long worldRevision, Map<String, OutcomeCommit> outcomes,
-        Map<UUID, PlayerRecord> players, CampaignFacts facts) {
+        Map<UUID, PlayerRecord> players, CampaignFacts facts, Map<UUID, CampaignFixtureReceipt> fixtureEntries) {
     public CampaignInstance {
         outcomes = Collections.unmodifiableMap(new LinkedHashMap<>(outcomes));
         players = Collections.unmodifiableMap(new LinkedHashMap<>(players));
+        fixtureEntries = Collections.unmodifiableMap(new LinkedHashMap<>(fixtureEntries));
     }
 
     public CampaignInstance(ResourceLocation campaignId, UUID instanceId, int definitionRevision, String fingerprint,
             String title, long createdAt, long worldRevision, Map<String, OutcomeCommit> outcomes,
             Map<UUID, PlayerRecord> players) {
         this(campaignId, instanceId, definitionRevision, fingerprint, title, createdAt, worldRevision, outcomes, players, CampaignFacts.empty());
+    }
+
+    public CampaignInstance(ResourceLocation campaignId, UUID instanceId, int definitionRevision, String fingerprint,
+            String title, long createdAt, long worldRevision, Map<String, OutcomeCommit> outcomes,
+            Map<UUID, PlayerRecord> players, CampaignFacts facts) {
+        this(campaignId, instanceId, definitionRevision, fingerprint, title, createdAt, worldRevision, outcomes, players, facts, Map.of());
     }
 
     public record OutcomeCommit(UUID operationId, String milestone, String outcome, String title,
@@ -52,5 +59,5 @@ public record CampaignInstance(ResourceLocation campaignId, UUID instanceId, int
 
     public enum Route { ORIGINAL, CATCH_UP }
 
-    public enum Origin { PLAYER_DECISION, WORLD_OBSERVATION }
+    public enum Origin { PLAYER_DECISION, WORLD_OBSERVATION, OPERATOR_FIXTURE }
 }

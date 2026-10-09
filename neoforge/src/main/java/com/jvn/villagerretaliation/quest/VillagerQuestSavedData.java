@@ -200,6 +200,8 @@ public class VillagerQuestSavedData extends SavedData {
 
     public boolean campaignPersistencePending() { return this.campaignPersistencePending; }
 
+    public boolean futureVersion() { return this.futureVersionData != null; }
+
     public void requireCampaignPersistence() {
         this.campaignPersistencePending = true;
         setDirty();

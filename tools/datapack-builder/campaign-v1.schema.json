@@ -867,6 +867,182 @@
       },
       "minItems": 0,
       "maxItems": 1024
+    },
+    "fixture_entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "chapter",
+          "effects"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "chapter": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "type",
+                    "milestone",
+                    "outcome"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    },
+                    "type": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])",
+                      "const": "world_outcome"
+                    },
+                    "milestone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    },
+                    "outcome": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "type",
+                    "milestone",
+                    "outcome"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    },
+                    "type": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])",
+                      "const": "complete_milestone"
+                    },
+                    "milestone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    },
+                    "outcome": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "type",
+                    "quest"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    },
+                    "type": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])",
+                      "const": "complete_quest"
+                    },
+                    "quest": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "type",
+                    "fact",
+                    "value"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    },
+                    "type": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])",
+                      "const": "set_fact"
+                    },
+                    "fact": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                    },
+                    "value": {
+                      "type": "string",
+                      "maxLength": 4096
+                    }
+                  }
+                }
+              ]
+            },
+            "minItems": 0,
+            "maxItems": 1024
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",

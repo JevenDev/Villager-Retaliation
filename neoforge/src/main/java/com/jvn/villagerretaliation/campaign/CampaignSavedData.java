@@ -27,7 +27,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class CampaignSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 3;
+    public static final int CURRENT_DATA_VERSION = 4;
     static final String DATA_NAME = "villagerretaliation_campaigns";
     private final Path directory;
     private Map<ResourceLocation, CampaignInstance> instances = Map.of();
@@ -93,7 +93,8 @@ public final class CampaignSavedData extends SavedData {
         }
         if (current == null) return "";
         var cached = checkedFacts.get(definition.id());
-        if (cached != null && cached.definition() == definition && cached.facts() == current.facts()) return cached.diagnostic();
+        if (cached != null && cached.definition() == definition && cached.facts() == current.facts()
+                && cached.fixtures() == current.fixtureEntries()) return cached.diagnostic();
         String issue = "";
         for (var receipt : current.facts().receipts().values()) {
             var fact = definition.facts().get(receipt.fact());
@@ -102,8 +103,34 @@ public final class CampaignSavedData extends SavedData {
                 break;
             }
         }
-        checkedFacts.put(definition.id(), new FactCompatibility(definition, current.facts(), issue));
+        if (issue.isBlank()) for (var receipt : current.fixtureEntries().values()) {
+            issue = receipt.definitionIssue(definition);
+            if (!issue.isBlank()) break;
+        }
+        checkedFacts.put(definition.id(), new FactCompatibility(definition, current.facts(), current.fixtureEntries(), issue));
         return issue;
+    }
+
+    public synchronized UUID fixtureToken(CampaignDefinition definition) {
+        var current = instances.get(definition.id());
+        return UUID.nameUUIDFromBytes(("fixture/" + definition.id() + "/" + definition.fingerprint() + "/"
+                + (current == null ? "unstarted" : CampaignStateCodec.save(current))).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    synchronized CampaignFixtureReceipt enterFixture(CampaignContentCatalog.Entry content, CampaignFixtureService.Request request, long gameTime) throws IOException {
+        String issue = compatibility(content.definition());
+        if (!issue.isBlank()) throw new IOException(issue);
+        CampaignStateCodec.require(content.definition().id().equals(request.campaign()), "Fixture request names another campaign.");
+        var current = instances.get(request.campaign());
+        var prior = current == null ? null : current.fixtureEntries().get(request.operation());
+        if (prior != null) {
+            CampaignStateCodec.require(prior.matches(request), "Fixture operation already belongs to another request.");
+            return prior;
+        }
+        CampaignStateCodec.require(fixtureToken(content.definition()).equals(request.expected()), "Campaign state changed. Inspect the fixture again before entering.");
+        var candidate = CampaignFixtureSetup.prepare(content, current, request, gameTime);
+        persist(candidate);
+        return candidate.fixtureEntries().get(request.operation());
     }
 
     synchronized CampaignInstance open(CampaignContentCatalog.Entry content, long gameTime) throws IOException {
@@ -127,14 +154,14 @@ public final class CampaignSavedData extends SavedData {
                 issue.isBlank() ? "Campaign instance has not started" : issue);
         var prior = current.outcomes().get(milestoneId);
         if (prior != null) return result(Status.ALREADY_COMMITTED, current, prior, "");
-        if (operationId == null || current.facts().receipts().containsKey(operationId) || current.outcomes().values().stream().anyMatch(value -> value.operationId().equals(operationId))) {
+        if (operationId == null || CampaignFixtureReceipt.reserves(current, operationId) || current.facts().receipts().containsKey(operationId) || current.outcomes().values().stream().anyMatch(value -> value.operationId().equals(operationId))) {
             return result(Status.INVALID_REQUEST, current, null, "Outcome operation id is missing or already belongs to another milestone");
         }
         var milestone = definition.milestones().get(milestoneId);
         if (milestone == null || !milestone.irreversible() || !milestone.outcomes().containsKey(outcomeId)) {
             return result(Status.INVALID_REQUEST, current, null, "Shared outcome must name an authored irreversible milestone outcome");
         }
-        if (origin == null || participants == null || participants.stream().anyMatch(java.util.Objects::isNull)
+        if (origin == null || origin == CampaignInstance.Origin.OPERATOR_FIXTURE || participants == null || participants.stream().anyMatch(java.util.Objects::isNull)
                 || origin == CampaignInstance.Origin.WORLD_OBSERVATION && (!participants.isEmpty()
                         || milestone.observation() == null || !milestone.observation().outcome().equals(outcomeId))) {
             return result(Status.INVALID_REQUEST, current, null, "World observations cannot grant participation or select an unauthored outcome");
@@ -224,7 +251,7 @@ public final class CampaignSavedData extends SavedData {
                 || !worldOutcome.operationId().equals(progress.worldOperation()))) {
             return progressResult(Status.UNAVAILABLE, entry, "Personal completion must follow the authoritative world outcome");
         }
-        if (current.facts().receipts().containsKey(completionOperation)
+        if (CampaignFixtureReceipt.reserves(current, completionOperation) || current.facts().receipts().containsKey(completionOperation)
                 || player.milestones().values().stream().anyMatch(value -> completionOperation.equals(value.completionOperation()))) {
             return progressResult(Status.INVALID_REQUEST, entry, "Completion operation already belongs to another milestone");
         }
@@ -278,7 +305,7 @@ public final class CampaignSavedData extends SavedData {
             return new FactResult(same ? Status.ALREADY_SATISFIED : Status.INVALID_REQUEST, value, prior,
                     same ? "" : "This story fact operation already belongs to a different change.");
         }
-        if (current.outcomes().values().stream().anyMatch(outcome -> outcome.operationId().equals(operation))
+        if (CampaignFixtureReceipt.reserves(current, operation) || current.outcomes().values().stream().anyMatch(outcome -> outcome.operationId().equals(operation))
                 || current.players().values().stream().flatMap(player -> player.milestones().values().stream())
                         .anyMatch(progress -> operation.equals(progress.completionOperation()))) {
             return new FactResult(Status.INVALID_REQUEST, value, null, "This operation already belongs to a campaign outcome or milestone.");
@@ -306,9 +333,9 @@ public final class CampaignSavedData extends SavedData {
                 player.discoveredOutcomes(), player.milestones(), player.completedQuests()));
         var next = new CampaignInstance(current.campaignId(), current.instanceId(), current.definitionRevision(), current.fingerprint(),
                 current.title(), current.createdAt(), shared ? receipt.revision() : current.worldRevision(), current.outcomes(), players,
-                current.facts().apply(receipt));
+                current.facts().apply(receipt), current.fixtureEntries());
         persist(next);
-        checkedFacts.put(definition.id(), new FactCompatibility(definition, next.facts(), ""));
+        checkedFacts.put(definition.id(), new FactCompatibility(definition, next.facts(), next.fixtureEntries(), ""));
         return new FactResult(Status.APPLIED, result, receipt, "");
     }
 
@@ -339,7 +366,7 @@ public final class CampaignSavedData extends SavedData {
     private static CampaignInstance replace(CampaignInstance current, long revision,
             Map<String, CampaignInstance.OutcomeCommit> outcomes, Map<UUID, CampaignInstance.PlayerRecord> players) {
         return new CampaignInstance(current.campaignId(), current.instanceId(), current.definitionRevision(), current.fingerprint(),
-                current.title(), current.createdAt(), revision, outcomes, players, current.facts());
+                current.title(), current.createdAt(), revision, outcomes, players, current.facts(), current.fixtureEntries());
     }
 
     private void persist(CampaignInstance replacement) throws IOException {
@@ -386,7 +413,7 @@ public final class CampaignSavedData extends SavedData {
         return new CommitResult(status, instance == null ? -1L : instance.worldRevision(), outcome, diagnostic);
     }
 
-    private record FactCompatibility(CampaignDefinition definition, CampaignFacts facts, String diagnostic) {
+    private record FactCompatibility(CampaignDefinition definition, CampaignFacts facts, Map<UUID, CampaignFixtureReceipt> fixtures, String diagnostic) {
     }
 
     public enum Status { APPLIED, ALREADY_SATISFIED, ALREADY_COMMITTED, STALE, UNAVAILABLE, INVALID_REQUEST }

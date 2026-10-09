@@ -68,6 +68,9 @@ final class CampaignStateCodec {
         });
         tag.put("Players", players);
         tag.put("Facts", CampaignFactCodec.save(instance.facts()));
+        var fixtures = new ListTag();
+        instance.fixtureEntries().values().forEach(receipt -> fixtures.add(receipt.save()));
+        tag.put("FixtureEntries", fixtures);
         return tag;
     }
 
@@ -154,8 +157,15 @@ final class CampaignStateCodec {
         require(tag.contains("Facts", Tag.TAG_COMPOUND), "missing story facts");
         var facts = CampaignFactCodec.load(tag.getCompound("Facts"), worldRevision, revisions, operations, players);
         require(worldRevision == revisions.size(), "world revision does not match committed outcomes and facts");
-        return new CampaignInstance(campaign, tag.getUUID("Instance"), tag.getInt("DefinitionRevision"),
-                text(tag, "Fingerprint"), text(tag, "Title"), number(tag, "CreatedAt"), worldRevision, outcomes, players, facts);
+        var fixtures = new LinkedHashMap<UUID, CampaignFixtureReceipt>();
+        for (Tag raw : list(tag, "FixtureEntries", Tag.TAG_COMPOUND)) {
+            var receipt = CampaignFixtureReceipt.load((CompoundTag) raw);
+            require(fixtures.putIfAbsent(receipt.operation(), receipt) == null, "duplicate fixture entry audit");
+        }
+        var instance = new CampaignInstance(campaign, tag.getUUID("Instance"), tag.getInt("DefinitionRevision"),
+                text(tag, "Fingerprint"), text(tag, "Title"), number(tag, "CreatedAt"), worldRevision, outcomes, players, facts, fixtures);
+        CampaignFixtureReceipt.validate(instance, operations);
+        return instance;
     }
 
     static ListTag list(CompoundTag tag, String key, int elementType) {

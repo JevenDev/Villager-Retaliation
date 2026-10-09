@@ -353,6 +353,10 @@
             "outcome": "admitted"
           }
         ]
+      },
+      {
+        "path": "/fixture_entries",
+        "remove": true
       }
     ]
   },
@@ -724,6 +728,221 @@
       {
         "path": "/location_variants/0/cells/0/placed",
         "value": "minecraft:stone{bad}"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture chapter must exist",
+    "pointer": "/fixture_entries/1/chapter",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/chapter",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture effects keep stable unique ids",
+    "pointer": "/fixture_entries/1/effects/1/id",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects/1/id",
+        "value": "resolve_decision"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture entry ids are unique",
+    "pointer": "/fixture_entries/2/id",
+    "patches": [
+      {
+        "path": "/fixture_entries/2/id",
+        "value": "opening"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture world milestone must exist",
+    "pointer": "/fixture_entries/1/effects/0/milestone",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects/0/milestone",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture outcome must exist",
+    "pointer": "/fixture_entries/1/effects/0/outcome",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects/0/outcome",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture personal outcome follows shared outcome",
+    "pointer": "/fixture_entries/1/effects/1/outcome",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects/1/outcome",
+        "value": "refused"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture effects preserve required order",
+    "pointer": "/fixture_entries/1/effects/0/outcome",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects",
+        "value": [
+          {
+            "id": "complete_decision",
+            "type": "complete_milestone",
+            "milestone": "decision",
+            "outcome": "admitted"
+          },
+          {
+            "id": "resolve_decision",
+            "type": "world_outcome",
+            "milestone": "decision",
+            "outcome": "admitted"
+          },
+          {
+            "id": "complete_introduction",
+            "type": "complete_quest",
+            "quest": "campaign_fixture:decision"
+          },
+          {
+            "id": "remember_decision",
+            "type": "set_fact",
+            "fact": "learned_decision",
+            "value": "true"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture quest completion follows its milestones",
+    "pointer": "/fixture_entries/1/effects/1/quest",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects",
+        "value": [
+          {
+            "id": "resolve_decision",
+            "type": "world_outcome",
+            "milestone": "decision",
+            "outcome": "admitted"
+          },
+          {
+            "id": "complete_introduction",
+            "type": "complete_quest",
+            "quest": "campaign_fixture:decision"
+          },
+          {
+            "id": "complete_decision",
+            "type": "complete_milestone",
+            "milestone": "decision",
+            "outcome": "admitted"
+          },
+          {
+            "id": "remember_decision",
+            "type": "set_fact",
+            "fact": "learned_decision",
+            "value": "true"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture chapter prerequisites need explicit setup",
+    "pointer": "/fixture_entries/1/effects",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects",
+        "value": [
+          {
+            "id": "resolve_decision",
+            "type": "world_outcome",
+            "milestone": "decision",
+            "outcome": "admitted"
+          },
+          {
+            "id": "complete_decision",
+            "type": "complete_milestone",
+            "milestone": "decision",
+            "outcome": "admitted"
+          },
+          {
+            "id": "remember_decision",
+            "type": "set_fact",
+            "fact": "learned_decision",
+            "value": "true"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture fact must exist",
+    "pointer": "/fixture_entries/1/effects/3/fact",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects/3/fact",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture fact values follow their kind",
+    "pointer": "/fixture_entries/1/effects/3/value",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects/3/value",
+        "value": "yes"
+      }
+    ]
+  },
+  {
+    "fixture": "reconciliation",
+    "valid": false,
+    "name": "fixture setup cannot grant participation",
+    "pointer": "/fixture_entries/1/effects/0/type",
+    "patches": [
+      {
+        "path": "/fixture_entries/1/effects/0",
+        "value": {
+          "id": "credit",
+          "type": "participation",
+          "milestone": "decision"
+        }
       }
     ]
   }

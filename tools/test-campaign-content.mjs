@@ -25,8 +25,10 @@ for (const entry of cases) {
   for (const patch of entry.patches) {
     const keys = patch.path.slice(1).split("/").map(key => key.replaceAll("~1", "/").replaceAll("~0", "~"));
     const target = keys.slice(0, -1).reduce((value, key) => value[key], definition);
-    if (patch.remove) delete target[keys.at(-1)];
-    else target[keys.at(-1)] = structuredClone(patch.value);
+    if (patch.remove) {
+      if (Array.isArray(target)) target.splice(Number(keys.at(-1)), 1);
+      else delete target[keys.at(-1)];
+    } else target[keys.at(-1)] = structuredClone(patch.value);
   }
   const issues = validateCampaign(definition, schema, entry.catalog ? { quests } : {});
   if (entry.valid) assert.deepEqual(issues, [], entry.name);

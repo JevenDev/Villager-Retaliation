@@ -64,6 +64,20 @@
       }
     }
   ],
+  "fixture_entries": [
+    {
+      "id": "sealed_arrival",
+      "chapter": "arrival",
+      "effects": [
+        {
+          "id": "seal_gate",
+          "type": "world_outcome",
+          "milestone": "gate",
+          "outcome": "sealed"
+        }
+      ]
+    }
+  ],
   "locations": [
     {
       "id": "home",

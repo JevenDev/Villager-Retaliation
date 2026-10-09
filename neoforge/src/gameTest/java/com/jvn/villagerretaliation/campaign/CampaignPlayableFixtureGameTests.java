@@ -244,22 +244,22 @@ public final class CampaignPlayableFixtureGameTests {
         }
     }
 
-    private static final class Fixture implements AutoCloseable {
+    static final class Fixture implements AutoCloseable {
         private final GameTestHelper helper;
-        private final MinecraftServer server;
+        final MinecraftServer server;
         private final QuestContentCatalog previous;
         private final QuestContentLoadReport report;
         private final CampaignSavedData previousData;
         private final CampaignRewardSavedData previousRewards;
         private final VillagerQuestSavedData previousQuests;
-        private final QuestContentCatalog catalog;
-        private final CampaignContentCatalog.Entry content;
-        private final Path directory;
-        private CampaignSavedData data;
-        private final Villager villager;
+        final QuestContentCatalog catalog;
+        final CampaignContentCatalog.Entry content;
+        final Path directory;
+        CampaignSavedData data;
+        final Villager villager;
         private final List<ServerPlayer> players = new ArrayList<>();
 
-        private Fixture(GameTestHelper helper) throws IOException {
+        Fixture(GameTestHelper helper) throws IOException {
             this.helper = helper;
             this.server = helper.getLevel().getServer();
             this.previous = QuestContentCatalogs.current(server);
@@ -296,14 +296,14 @@ public final class CampaignPlayableFixtureGameTests {
             server.overworld().getDataStorage().set(CampaignRewardSavedData.DATA_NAME, CampaignRewardSavedData.load(new CompoundTag(), directory));
         }
 
-        private ServerPlayer player() {
+        ServerPlayer player() {
             var player = helper.makeMockServerPlayerInLevel();
             player.setPos(villager.getX() + 1, villager.getY(), villager.getZ());
             players.add(player);
             return player;
         }
 
-        private String select(ServerPlayer player, String quest, String stage, String slot, int index) {
+        String select(ServerPlayer player, String quest, String stage, String slot, int index) {
             players.forEach(value -> VillagerConversationService.endForPlayer(value, false));
             helper.assertTrue(VillagerConversationService.start(player, villager), "fixture conversation starts");
             var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager);
@@ -318,7 +318,7 @@ public final class CampaignPlayableFixtureGameTests {
             return options.get(index).id();
         }
 
-        private void finishDecision(ServerPlayer player, int index) {
+        void finishDecision(ServerPlayer player, int index) {
             select(player, "decision", "choose", "offer", 0);
             helper.assertTrue(progress(player, "decision") != null, "acceptance creates personal quest progress");
             select(player, "decision", "choose", "reminder", index);
@@ -337,11 +337,11 @@ public final class CampaignPlayableFixtureGameTests {
             helper.assertValueEqual(progress(player, quest).completionCount(), 1, "catch-up dialogue completes the quest once");
         }
 
-        private VillagerQuestSavedData.QuestProgress progress(ServerPlayer player, String quest) {
+        VillagerQuestSavedData.QuestProgress progress(ServerPlayer player, String quest) {
             return VillagerQuestSavedData.get(helper.getLevel()).get(player.getUUID(), id(quest));
         }
 
-        private void reload() {
+        void reload() {
             data = CampaignSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()), directory);
             server.overworld().getDataStorage().set(CampaignSavedData.DATA_NAME, data);
             var rewards = CampaignRewardSavedData.get(helper.getLevel());
@@ -354,6 +354,7 @@ public final class CampaignPlayableFixtureGameTests {
 
         @Override
         public void close() throws IOException {
+            villager.discard();
             for (var player : players) {
                 VillagerConversationService.endForPlayer(player, false);
                 CampaignQuestAcceptanceService.onLogout(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent(player));

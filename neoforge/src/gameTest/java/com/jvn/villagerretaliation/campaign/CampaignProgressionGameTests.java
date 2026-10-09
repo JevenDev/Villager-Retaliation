@@ -210,6 +210,7 @@ public final class CampaignProgressionGameTests {
             var old = data.save(new CompoundTag(), helper.getLevel().registryAccess());
             old.putInt("DataVersion", 1);
             old.getList("Campaigns", Tag.TAG_COMPOUND).getCompound(0).remove("Facts");
+            old.getList("Campaigns", Tag.TAG_COMPOUND).getCompound(0).remove("FixtureEntries");
             var priorPlayer = old.getList("Campaigns", Tag.TAG_COMPOUND).getCompound(0).getList("Players", Tag.TAG_COMPOUND).getCompound(0);
             priorPlayer.remove("Milestones");
             priorPlayer.remove("CompletedQuests");
