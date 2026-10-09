@@ -19,7 +19,7 @@ public record ConversationObjectiveEvidence(UUID player, ResourceLocation quest,
     }
 
     static void capture(ServerPlayer controller, ConversationSession session) {
-        if (session.transcript.isEmpty()) return;
+        if (session.identity.campaign() == null || session.transcript.isEmpty()) return;
         var line = session.transcript.getLast();
         if (line.visit() != session.visit || !line.node().equals(session.node) || line.kind() != ConversationDefinition.SpeakerKind.ROLE) return;
         var quests = VillagerQuestSavedData.get(controller.serverLevel());

@@ -5,8 +5,6 @@ import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
-import com.jvn.villagerretaliation.campaign.CampaignAuthority;
-import com.jvn.villagerretaliation.campaign.CampaignCharacterService;
 import com.jvn.villagerretaliation.campaign.CampaignRewardRecovery;
 import com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -34,7 +32,7 @@ final class ConversationRuntime {
             var session = ConversationCharacters.reconcile(player.server, data, data.session(id));
             if (session == null || !session.active()) return;
             ConversationService.require(player.getUUID().equals(session.controller) && ConversationService.member(player, session)
-                    && CampaignAuthority.canControl(player), "An authorized controller must resume this conversation.");
+                    && ConversationService.canControl(player, session), "An authorized controller must resume this conversation.");
             var definition = ConversationService.definition(player.server, session);
             var character = ConversationService.character(player, session);
             ConversationService.require(ConversationService.near(player, character), "Return to the conversation to continue.");
@@ -94,18 +92,17 @@ final class ConversationRuntime {
             speaker = player.getUUID();
             name = player.getName().getString();
         } else if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE) {
-            var resolved = CampaignCharacterService.resolve(player.server, session.identity.campaign(), role);
-            ConversationService.require(resolved.available(), resolved.diagnostic());
+            var speakerEntity = ConversationBinding.speaker(player, session, role);
             var prior = session.speakers.get(role);
-            ConversationService.require(prior == null || prior.entity().equals(resolved.entity().getUUID()), "A saved conversation speaker was replaced. Restore its identity or repair this session.");
-            speaker = resolved.entity().getUUID();
-            name = resolved.entity().getName().getString();
+            ConversationService.require(prior == null || prior.entity().equals(speakerEntity.getUUID()), "A saved conversation speaker was replaced. Restore its identity or repair this session.");
+            speaker = speakerEntity.getUUID();
+            name = speakerEntity.getName().getString();
             UUID owner = ConversationCharacters.active(player.server, ConversationSavedData.get(player.serverLevel()), speaker);
             ConversationService.require(owner == null || owner.equals(session.identity.id()), "This speaker is taking part in another conversation. Resume when it finishes.");
-            ConversationService.require(resolved.entity().level() == player.serverLevel(), "This speaker is in another dimension. Resume at its location.");
-            ConversationService.require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(resolved.entity()),
+            ConversationService.require(speakerEntity.level() == player.serverLevel(), "This speaker is in another dimension. Resume at its location.");
+            ConversationService.require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(speakerEntity),
                     "This speaker is taking part in an ordinary conversation. Resume when it finishes.");
-            session.speakers.putIfAbsent(role, new ConversationSession.Speaker(role, speaker, resolved.entity().level().dimension().location(), name));
+            session.speakers.putIfAbsent(role, new ConversationSession.Speaker(role, speaker, speakerEntity.level().dimension().location(), name));
         }
         var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
         var replacements = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.merge(
@@ -160,7 +157,7 @@ final class ConversationRuntime {
         UUID run = receipt == null ? ConversationService.questRun(controller.server, actorId, action.questId()) : receipt.questRun();
         ConversationService.require(run == null || run.equals(ConversationService.questRun(controller.server, actorId, action.questId())), "The effect's original quest run changed.");
         ConversationService.require(!sharedOutcome || run != null, "The deciding player's original quest run is unavailable.");
-        String authority = CampaignAuthority.controlIssue(controller, actorId);
+        String authority = ConversationService.controlIssue(controller, actorId, session.identity);
         ConversationService.require(authority.isBlank(), authority);
         var context = VillagerInteractionService.createDialogueContext(actor.serverLevel(), actor, character);
         var controllerContext = VillagerInteractionService.createDialogueContext(controller.serverLevel(), controller, character);
@@ -176,10 +173,11 @@ final class ConversationRuntime {
         var participants = session.decisionParticipants == null ? new net.minecraft.nbt.CompoundTag() : session.decisionParticipants.save();
         var outcomeActor = sharedOutcome ? new com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor(actorId, run) : null;
         UUID sessionId = session.identity.id();
+        var identity = session.identity;
         CampaignQuestAcceptanceService.withConsent(session.consent, () -> applied[0] =
                 ConversationSceneExecution.withEffect(sessionId, key,
                         () -> com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
-                                () -> CampaignAuthority.withController(controller, actorId,
+                                () -> ConversationService.withController(controller, actorId, identity,
                                         () -> VillagerActionRegistry.execute(context, action, replacements, outcomeActor)))));
         var outcome = applied[0];
         if (outcome.suspended() && outcome.suspensionId() == null) outcome = ActionResult.failed("Suspended effect has no persistent dependency.", outcome.capabilities());

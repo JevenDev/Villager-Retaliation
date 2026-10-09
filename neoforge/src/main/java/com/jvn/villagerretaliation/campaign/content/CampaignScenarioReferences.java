@@ -96,7 +96,7 @@ final class CampaignScenarioReferences {
                 }
             } else if (step instanceof StartConversation start) {
                 var conversation = catalog.quests().conversations().get(start.conversation());
-                if (conversation == null || !conversation.campaign().equals(campaign.id()))
+                if (conversation == null || !campaign.id().equals(conversation.campaign()))
                     issue(scenario, issues, at + "/conversation", "conversation does not belong to this campaign");
                 else {
                     sessions.put(start.session(), conversation);

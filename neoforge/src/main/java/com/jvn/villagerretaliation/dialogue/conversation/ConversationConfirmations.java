@@ -19,6 +19,7 @@ final class ConversationConfirmations {
                 effects.stream().map(ConversationDefinition.Effect::action).toList());
         ConversationService.require(prepared.diagnostic().isBlank(), prepared.diagnostic());
         if (prepared.confirmation() == null) return false;
+        ConversationService.require(session.identity.campaign() != null, "Campaign consequences require a campaign conversation.");
         session.confirmation = prepared.confirmation();
         session.pendingChoice = choice;
         session.phase = ConversationSession.Phase.CONFIRMATION;

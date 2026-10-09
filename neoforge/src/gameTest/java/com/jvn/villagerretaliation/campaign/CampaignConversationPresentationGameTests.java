@@ -317,8 +317,12 @@ public final class CampaignConversationPresentationGameTests {
                     catalog.factQuestIds(), catalog.memoryEventQuestIds(), catalog.exclusiveGroupQuestIds(), catalog.triggerEventQuestIds(),
                     catalog.scenes(), catalog.encounters(), catalog.pools(), catalog.bundles(), localized, catalog.rewards(),
                     catalog.conversations(), catalog.socialProgressions());
+            var campaigns = com.jvn.villagerretaliation.campaign.content.CampaignResources.current(fixture.base.server).campaigns();
             com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.installForTests(fixture.base.server, translated, fixture.base.report);
+            com.jvn.villagerretaliation.campaign.content.CampaignResources.installForTests(fixture.base.server,
+                    new com.jvn.villagerretaliation.campaign.content.CampaignContentCatalog(translated, campaigns, java.util.List.of()));
             var presented = send(listener, fixture, UUID.randomUUID(), Action.TOPICS, null, "", "", 0, 0);
+            helper.assertTrue(presented.session() != null, "listener opens localized session: " + presented.diagnostic());
             helper.assertValueEqual(presented.session().line().text(), "Bonjour, " + owner.getName().getString() + ".",
                     "listener language uses the original speaking player's captured placeholders");
             helper.assertValueEqual(ConversationService.view(owner, started.session().identity().id()).session().transcript().getFirst(), line,

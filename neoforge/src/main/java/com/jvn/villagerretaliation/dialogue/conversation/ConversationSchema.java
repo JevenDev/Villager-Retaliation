@@ -68,11 +68,12 @@ public final class ConversationSchema {
         check.add("then", bargaining);
         definitions.add("check", check);
         definitions.add("outcome", object(List.of("id", "label"), "id", id(), "label", ref("localized_reference")));
-        JsonObject root = object(List.of("schema", "id", "revision", "campaign", "character", "title", "topics", "nodes", "outcomes"),
+        JsonObject root = object(List.of("schema", "id", "revision", "character", "title", "topics", "nodes", "outcomes"),
                 "schema", enumeration(SCHEMA_ID), "id", resource(), "revision", integer(1),
                 "campaign", resource(), "character", id(), "quest", resource(), "title", ref("localized_reference"),
                 "topics", array(ref("topic"), 1), "nodes", array(ref("node"), 1),
                 "checks", array(ref("check"), 0), "outcomes", array(ref("outcome"), 1));
+        root.add("anyOf", exclusive("campaign", "quest"));
         root.addProperty("$schema", "https://json-schema.org/draft/2020-12/schema");
         root.addProperty("$id", "https://villagerretaliation.dev/schema/conversation-v1.schema.json");
         root.addProperty("title", "Villager Retaliation Conversation v1");

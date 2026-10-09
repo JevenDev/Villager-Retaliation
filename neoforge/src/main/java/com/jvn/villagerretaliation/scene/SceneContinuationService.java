@@ -495,7 +495,7 @@ public final class SceneContinuationService {
                     com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.withConsent(continuation.campaignConsent(), () -> {
                         var evidence = participants[0] == null ? continuation.decisionParticipants() : participants[0].save();
                         applied[0] = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(evidence,
-                                () -> com.jvn.villagerretaliation.campaign.CampaignAuthority.withController(authority.controller(), continuation.playerId(),
+                                () -> authority.withController(
                                         () -> ConversationSceneExecution.withContinuation(continuation,
                                                 () -> com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(actionContext[0], action, replacements, actor))));
                         continuation.campaignConsent(com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.captureConsent());

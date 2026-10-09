@@ -342,7 +342,7 @@ public final class BuiltinSceneStepExecutors {
         com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService.withConsent(execution.instance().campaignConsent(),
                 () -> result[0] = com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
                         () -> authority == null ? apply.get()
-                                : com.jvn.villagerretaliation.campaign.CampaignAuthority.withController(authority.controller(), authority.actor(), apply)));
+                                : authority.withController(apply)));
         return result[0];
     }
 

@@ -66,7 +66,7 @@ public final class CampaignStateInspection {
             locationViews.add(new Location(alias, saved, query.diagnostic()));
         }
         var sessions = conversations.snapshots().values().stream()
-                .filter(session -> session.identity().campaign().equals(campaign)).toList();
+                .filter(session -> campaign.equals(session.identity().campaign())).toList();
         var transactions = CampaignTransactionInspection.inspect(server, campaign);
         diagnostics.addAll(transactions.diagnostics());
         return new Snapshot(campaign, mode.mode(), mode.selectionSource(), status, definition, instance,

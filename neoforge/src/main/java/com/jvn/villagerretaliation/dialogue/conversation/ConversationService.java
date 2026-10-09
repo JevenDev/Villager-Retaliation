@@ -1,11 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
 import com.jvn.villagerretaliation.campaign.CampaignAuthority;
-import com.jvn.villagerretaliation.campaign.CampaignCharacterService;
 import com.jvn.villagerretaliation.campaign.CampaignSavedData;
-import com.jvn.villagerretaliation.campaign.CampaignWorldMode;
-import com.jvn.villagerretaliation.campaign.CampaignWorldModeSavedData;
-import com.jvn.villagerretaliation.campaign.content.CampaignResources;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -28,6 +24,10 @@ public final class ConversationService {
     private ConversationService() { }
 
     public static Result start(ServerPlayer player, ResourceLocation conversation, String topicId, UUID request) {
+        return start(player, conversation, topicId, request, null);
+    }
+
+    public static Result start(ServerPlayer player, ResourceLocation conversation, String topicId, UUID request, Villager provider) {
         if (!player.server.isSameThread()) return new Result(null, List.of(), "Conversation requests require the server thread.");
         var data = ConversationSavedData.get(player.serverLevel());
         try {
@@ -38,39 +38,35 @@ public final class ConversationService {
                 require(existing.identity.conversation().equals(conversation) && existing.identity.topic().equals(topicId) && member(player, existing), "Conversation request belongs to another session.");
                 return view(player, request);
             }
-            require(CampaignAuthority.canControl(player), CampaignAuthority.controlIssue(player));
             var definition = ConversationResources.conversation(player.server, conversation).orElse(null);
             require(definition != null, "Conversation content is unavailable. Restore its datapack.");
-            require(CampaignWorldModeSavedData.get(player.serverLevel()).mode() == CampaignWorldMode.CAMPAIGN, "This conversation requires Campaign Mode.");
-            var content = CampaignResources.current(player.server).campaigns().get(definition.campaign());
-            require(content != null, "Campaign content is unavailable. Restore its datapack.");
-            String compatibility = CampaignSavedData.get(player.serverLevel()).compatibility(content.definition());
-            require(compatibility.isBlank(), compatibility);
-            var character = CampaignCharacterService.resolve(player.server, definition.campaign(), definition.character());
-            require(character.available(), character.diagnostic());
-            require(near(player, character.entity()), "Return to this character to begin the conversation.");
-            UUID active = ConversationCharacters.active(player.server, data, character.entity().getUUID());
+            require(definition.campaign() == null || CampaignAuthority.canControl(player), CampaignAuthority.controlIssue(player));
+            ConversationBinding.validateCampaign(player.server, definition.campaign(), null, "");
+            var character = ConversationBinding.resolve(player, definition, provider);
+            require(near(player, character), "Return to this character to begin the conversation.");
+            UUID active = ConversationCharacters.active(player.server, data, character.getUUID());
             if (active != null) {
                 var session = data.session(active);
                 require(session != null && session.identity.conversation().equals(conversation) && member(player, session),
                         "This character is already taking part in another conversation.");
                 return view(player, active);
             }
-            require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character.entity()),
+            require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character),
                     "This character is already taking part in an ordinary conversation.");
             var topic = definition.topics().get(topicId);
             require(topic != null, "Unknown conversation topic.");
-            var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character.entity());
+            var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character);
             require(conditions(context, topic.conditions()), "This topic is not currently available.");
-            var instance = CampaignSavedData.get(player.serverLevel()).instances().get(definition.campaign());
-            require(instance != null, "Campaign instance is unavailable.");
-            UUID party = PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).map(value -> value.id()).orElse(null);
+            var instance = definition.campaign() == null ? null : CampaignSavedData.get(player.serverLevel()).instances().get(definition.campaign());
+            require(definition.campaign() == null || instance != null, "Campaign instance is unavailable.");
+            UUID party = definition.campaign() == null ? null
+                    : PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).map(value -> value.id()).orElse(null);
             var identity = new ConversationSession.Identity(request, definition.id(), definition.revision(), definition.fingerprint(),
-                    definition.campaign(), instance.instanceId(), instance.fingerprint(), definition.quest(), definition.character(),
-                    character.entity().getUUID(), character.entity().level().dimension().location(), player.getUUID(), party,
+                    definition.campaign(), instance == null ? null : instance.instanceId(), instance == null ? "" : instance.fingerprint(), definition.quest(), definition.character(),
+                    character.getUUID(), character.level().dimension().location(), player.getUUID(), party,
                     text(player, definition.titleKey()), topicId, player.serverLevel().getGameTime());
             var session = new ConversationSession(identity, player.getUUID(), questRun(player, definition.quest()), topic.start(),
-                    new ConversationSession.Speaker(definition.character(), character.entity().getUUID(), identity.dimension(), character.entity().getName().getString()));
+                    new ConversationSession.Speaker(definition.character(), character.getUUID(), identity.dimension(), character.getName().getString()));
             session.compatibilityFingerprint = definition.compatibilityFingerprint();
             data.write(player.serverLevel(), 0, session);
             ConversationRuntime.drive(player, request);
@@ -125,7 +121,7 @@ public final class ConversationService {
                 changeController(player, session, intent, argument);
             } else {
                 require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character), "Wait for the current interruption to finish.");
-                require(player.getUUID().equals(session.controller) && CampaignAuthority.canControl(player), "An authorized controller must advance this conversation.");
+                require(player.getUUID().equals(session.controller) && canControl(player, session), "An authorized controller must advance this conversation.");
                 var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character);
                 switch (intent) {
                     case ADVANCE -> advance(player, session, definition);
@@ -204,7 +200,7 @@ public final class ConversationService {
             require(near(player, character), "Return to the conversation to continue.");
             if (session.phase == ConversationSession.Phase.RESPONSES) {
                 var controller = player.getUUID().equals(session.controller) ? player : session.controller == null ? null : player.server.getPlayerList().getPlayer(session.controller);
-                boolean authorized = controller != null && member(controller, session) && CampaignAuthority.canControl(controller) && near(controller, character);
+                boolean authorized = controller != null && member(controller, session) && canControl(controller, session) && near(controller, character);
                 var context = authorized ? VillagerInteractionService.createDialogueContext(controller.serverLevel(), controller, character) : null;
                 for (var response : definition.nodes().get(session.node).responses().values()) {
                     responses.add(new Response(response.id(),
@@ -237,7 +233,7 @@ public final class ConversationService {
         String label = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
                 text(player, authored.labelKey()), replacements);
         session.choices.add(new ConversationSession.Choice(request, session.node, session.visit, response, player.getUUID(),
-                session.decisionParticipants.participants(), player.serverLevel().getGameTime(), authored.labelKey(), label, replacements));
+                presentParticipants(player, session), player.serverLevel().getGameTime(), authored.labelKey(), label, replacements));
         session.phase = ConversationSession.Phase.RESPONSE_EFFECTS;
         session.effect = 0;
     }
@@ -273,18 +269,18 @@ public final class ConversationService {
     }
 
     private static void changeController(ServerPlayer player, ConversationSession session, ConversationSession.Intent intent, String argument) {
-        require(CampaignAuthority.canControl(player), CampaignAuthority.controlIssue(player));
+        require(canControl(player, session), controlIssue(player, player.getUUID(), session.identity));
         ServerPlayer next = player;
         if (intent == ConversationSession.Intent.HAND_OVER) {
             require(player.getUUID().equals(session.controller), "Only the current controller can hand over this conversation.");
             UUID target;
             try { target = UUID.fromString(argument); } catch (IllegalArgumentException exception) { throw new Unavailable("Choose a valid player for the handover."); }
             next = player.server.getPlayerList().getPlayer(target);
-            require(next != null && member(next, session) && CampaignAuthority.canControl(next) && near(next, character(player, session)),
+            require(next != null && member(next, session) && canControl(next, session) && near(next, character(player, session)),
                     "The new controller must be an authorized member present at the conversation.");
         } else if (session.controller != null && !session.controller.equals(player.getUUID())) {
             var current = session.controller == null ? null : player.server.getPlayerList().getPlayer(session.controller);
-            require(current == null || !member(current, session) || !CampaignAuthority.canControl(current) || !near(current, character(player, session)),
+            require(current == null || !member(current, session) || !canControl(current, session) || !near(current, character(player, session)),
                     "The current controller must hand over the conversation explicitly.");
         }
         if (session.confirmation != null && !next.getUUID().equals(session.actingPlayer)
@@ -298,35 +294,41 @@ public final class ConversationService {
     }
 
     static ConversationDefinition definition(MinecraftServer server, ConversationSession session) {
-        require(CampaignWorldModeSavedData.get(server.overworld()).mode() == CampaignWorldMode.CAMPAIGN, "This conversation requires Campaign Mode.");
         var definition = ConversationResources.conversation(server, session.identity.conversation()).orElse(null);
         require(definition != null, "Conversation content is missing. Its saved history is retained.");
         require(definition.revision() == session.contentRevision && definition.fingerprint().equals(session.contentFingerprint),
                 "Conversation content changed. Migrate compatible wording or restore its saved revision before continuing.");
-        var content = CampaignResources.current(server).campaigns().get(session.identity.campaign());
-        require(content != null, "Campaign content is missing. Its saved conversation is retained.");
-        var campaigns = CampaignSavedData.get(server.overworld());
-        String issue = campaigns.compatibility(content.definition());
-        require(issue.isBlank(), issue);
-        var instance = campaigns.instances().get(session.identity.campaign());
-        require(instance != null && instance.instanceId().equals(session.identity.campaignInstance())
-                && instance.fingerprint().equals(session.identity.campaignFingerprint()), "Restore the original campaign instance before continuing this conversation.");
+        ConversationBinding.validateCampaign(server, session.identity.campaign(), session.identity.campaignInstance(), session.identity.campaignFingerprint());
+        require(java.util.Objects.equals(definition.campaign(), session.identity.campaign()), "The conversation's campaign ownership changed.");
         require(definition.nodes().containsKey(session.node), "Saved conversation node is unavailable.");
         ConversationBargaining.validate(server, session, definition);
         return definition;
     }
 
     static Villager character(ServerPlayer player, ConversationSession session) {
-        var resolved = CampaignCharacterService.resolve(player.server, session.identity.campaign(), session.identity.characterRole());
-        require(resolved.available(), resolved.diagnostic());
-        var speaker = session.speakers.get(session.identity.characterRole());
-        require(speaker != null && resolved.entity().getUUID().equals(speaker.entity()), "The conversation is waiting for its repaired character binding to be saved.");
-        return resolved.entity();
+        return ConversationBinding.speaker(player, session, session.identity.characterRole());
     }
 
     static boolean member(ServerPlayer player, ConversationSession session) {
         if (session.identity.party() == null) return session.identity.owner().equals(player.getUUID());
         return PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).filter(party -> party.id().equals(session.identity.party())).isPresent();
+    }
+
+    static boolean canControl(ServerPlayer player, ConversationSession session) {
+        return player != null && (session.identity.campaign() == null
+                ? session.identity.owner().equals(player.getUUID()) : CampaignAuthority.canControl(player));
+    }
+
+    static String controlIssue(ServerPlayer controller, UUID actor, ConversationSession.Identity identity) {
+        if (identity.campaign() != null) return CampaignAuthority.controlIssue(controller, actor);
+        return controller != null && identity.owner().equals(controller.getUUID()) && identity.owner().equals(actor)
+                ? "" : "Only the owner can control this ordinary quest conversation.";
+    }
+
+    static <T> T withController(ServerPlayer controller, UUID actor, ConversationSession.Identity identity, java.util.function.Supplier<T> work) {
+        String issue = controlIssue(controller, actor, identity);
+        require(issue.isBlank(), issue);
+        return identity.campaign() == null ? work.get() : CampaignAuthority.withController(controller, actor, work);
     }
 
     static boolean near(ServerPlayer player, Villager character) {
@@ -352,6 +354,7 @@ public final class ConversationService {
     }
 
     static void captureDecisionParticipants(ServerPlayer player, ConversationSession session, UUID decision) {
+        if (session.identity.campaign() == null) return;
         session.decisionParticipants = new com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants(
                 session.identity.id(), decision, session.identity.campaign(), session.identity.campaignInstance(),
                 player.getUUID(), presentParticipants(player, session));
@@ -406,7 +409,7 @@ public final class ConversationService {
         if (characters.bindings().containsKey(candidate.key())) return "";
         for (var session : data.activeSessions()) {
             var speaker = session.speakers.get(candidate.role());
-            if (session.identity.campaign().equals(candidate.campaign()) && session.identity.campaignInstance().equals(candidate.instance())
+            if (candidate.campaign().equals(session.identity.campaign()) && session.identity.campaignInstance().equals(candidate.instance())
                     && speaker != null && !speaker.entity().equals(candidate.entityId()))
                 return "Restore the original character " + speaker.entity() + " for conversation " + session.identity.id() + " before reassigning its missing binding.";
         }
@@ -420,8 +423,7 @@ public final class ConversationService {
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
         var server = event.getServer();
-        if (server.overworld().getGameTime() % 20L != 0
-                || CampaignWorldModeSavedData.get(server.overworld()).mode() != CampaignWorldMode.CAMPAIGN) return;
+        if (server.overworld().getGameTime() % 20L != 0) return;
         maintain(server);
     }
 
@@ -433,7 +435,7 @@ public final class ConversationService {
             var session = data.session(id);
             if (session.controller == null || !data.issue(id).isBlank()) continue;
             var player = server.getPlayerList().getPlayer(session.controller);
-            if (player == null || !member(player, session) || !CampaignAuthority.canControl(player)) {
+            if (player == null || !member(player, session) || !canControl(player, session)) {
                 pause(server, data, id, session.controller, "Controller is unavailable or no longer has permission.");
                 continue;
             }

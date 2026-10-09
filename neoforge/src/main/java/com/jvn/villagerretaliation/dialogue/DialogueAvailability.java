@@ -13,8 +13,12 @@ public final class DialogueAvailability {
             if (condition instanceof DialogueCondition.AllOf all) return reason(context, all.conditions());
             if (condition instanceof DialogueCondition.AnyOf) return "Meet at least one of this response's requirements.";
             if (condition instanceof DialogueCondition.Reputation reputation) {
-                if (reputation.minReputation() != null) return "Requires reputation of at least " + reputation.minReputation() + ".";
-                if (reputation.maxReputation() != null) return "Requires reputation of at most " + reputation.maxReputation() + ".";
+                if (!reputation.levels().isEmpty() && !reputation.levels().contains(context.reputationLevel()))
+                    return "Requires a different level of trust.";
+                if (reputation.minReputation() != null && context.reputation() < reputation.minReputation())
+                    return "Requires reputation of at least " + reputation.minReputation() + ".";
+                if (reputation.maxReputation() != null && context.reputation() > reputation.maxReputation())
+                    return "Requires reputation of at most " + reputation.maxReputation() + ".";
                 return "Requires a different level of trust.";
             }
             if (condition instanceof DialogueCondition.PlayerItem) return "Requires the requested item.";

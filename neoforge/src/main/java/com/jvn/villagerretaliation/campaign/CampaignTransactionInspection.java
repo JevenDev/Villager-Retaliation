@@ -43,7 +43,7 @@ public final class CampaignTransactionInspection {
             rows.add(new Entry(receipt, !pending.containsKey(receipt.operation()), issues));
         });
         for (var session : ConversationSavedData.get(server.overworld()).snapshots().values()) {
-            if (!session.identity().campaign().equals(campaign)) continue;
+            if (!campaign.equals(session.identity().campaign())) continue;
             session.transactionChecks().forEach((check, operation) -> {
                 if (!receipts.containsKey(operation)) diagnostics.add("Conversation " + session.identity().id() + ", check " + check
                         + " references missing transaction " + operation + ". Restore matching transaction data.");

@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
-import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import net.minecraft.server.level.ServerPlayer;
 
 public final class ConversationRecovery {
@@ -14,11 +13,11 @@ public final class ConversationRecovery {
     }
 
     public static boolean canControl(ServerPlayer player, ConversationSession session) {
-        if (!ConversationService.member(player, session) || !CampaignAuthority.canControl(player) || !safe(session)) return false;
+        if (!ConversationService.member(player, session) || !ConversationService.canControl(player, session) || !safe(session)) return false;
         if (session.controller == null || session.controller.equals(player.getUUID())) return true;
         var controller = player.server.getPlayerList().getPlayer(session.controller);
         var primary = ConversationCharacters.primary(player, session);
-        return controller == null || !ConversationService.member(controller, session) || !CampaignAuthority.canControl(controller)
+        return controller == null || !ConversationService.member(controller, session) || !ConversationService.canControl(controller, session)
                 || primary != null && !ConversationService.near(controller, primary);
     }
 

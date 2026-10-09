@@ -192,6 +192,13 @@ public final class ConversationSavedData extends SavedData {
         return active.values().stream().filter(ConversationSession::active).map(ConversationSession::new).toList();
     }
 
+    synchronized java.util.List<ConversationSession> finishedSessions(UUID character) {
+        return sessions.values().stream().filter(session -> !session.active()
+                        && session.speakers.values().stream().anyMatch(speaker -> speaker.entity().equals(character)))
+                .sorted(java.util.Comparator.comparingLong((ConversationSession session) -> session.identity.createdAt()).reversed()
+                        .thenComparing(session -> session.identity.id())).map(ConversationSession::new).toList();
+    }
+
     private synchronized UUID activeRole(RoleKey role) {
         for (var session : pending.values())
             if (session.active() && role.matches(session)) return session.identity.id();
@@ -202,7 +209,7 @@ public final class ConversationSavedData extends SavedData {
 
     private record RoleKey(net.minecraft.resources.ResourceLocation campaign, UUID instance, String role) {
         boolean matches(ConversationSession session) {
-            return session.identity.campaign().equals(campaign) && session.identity.campaignInstance().equals(instance) && session.speakers.containsKey(role);
+            return campaign != null && campaign.equals(session.identity.campaign()) && instance.equals(session.identity.campaignInstance()) && session.speakers.containsKey(role);
         }
     }
 
@@ -228,7 +235,8 @@ public final class ConversationSavedData extends SavedData {
         }
         for (var speaker : candidate.speakers.values()) {
             UUID owner = activeCharacter(speaker.entity());
-            UUID roleOwner = activeRole(new RoleKey(candidate.identity.campaign(), candidate.identity.campaignInstance(), speaker.role()));
+            UUID roleOwner = candidate.identity.campaign() == null ? null
+                    : activeRole(new RoleKey(candidate.identity.campaign(), candidate.identity.campaignInstance(), speaker.role()));
             if (candidate.active() && (owner != null && !owner.equals(candidate.identity.id())
                     || roleOwner != null && !roleOwner.equals(candidate.identity.id()))) {
                 throw new Conflict("This character is already taking part in another conversation.");
@@ -304,9 +312,11 @@ public final class ConversationSavedData extends SavedData {
             for (var speaker : session.speakers.values()) {
                 var prior = result.putIfAbsent(speaker.entity(), session.identity.id());
                 ConversationSessionCodec.require(prior == null || prior.equals(session.identity.id()), "character is locked by multiple conversations");
-                var role = new RoleKey(session.identity.campaign(), session.identity.campaignInstance(), speaker.role());
-                var priorRole = roles.putIfAbsent(role, session.identity.id());
-                ConversationSessionCodec.require(priorRole == null || priorRole.equals(session.identity.id()), "campaign role is locked by multiple conversations");
+                if (session.identity.campaign() != null) {
+                    var role = new RoleKey(session.identity.campaign(), session.identity.campaignInstance(), speaker.role());
+                    var priorRole = roles.putIfAbsent(role, session.identity.id());
+                    ConversationSessionCodec.require(priorRole == null || priorRole.equals(session.identity.id()), "campaign role is locked by multiple conversations");
+                }
             }
         }
         return Map.copyOf(result);

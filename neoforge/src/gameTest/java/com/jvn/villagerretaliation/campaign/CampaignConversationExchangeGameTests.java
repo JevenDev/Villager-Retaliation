@@ -196,6 +196,11 @@ public final class CampaignConversationExchangeGameTests {
                 result = fixture.intent(player, result, ConversationSession.Intent.ADVANCE, "");
             helper.assertTrue(result.responses().stream().noneMatch(ConversationService.Response::available), "all choices wait for their requirements");
             helper.assertTrue(result.diagnostic().contains("Waiting"), "waiting has an explicit recovery explanation");
+            var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, fixture.mentor);
+            var reputation = new com.jvn.villagerretaliation.dialogue.DialogueCondition.Reputation(java.util.Set.of(),
+                    context.reputation() - 2, context.reputation() - 1);
+            helper.assertTrue(com.jvn.villagerretaliation.dialogue.DialogueAvailability.reason(context, List.of(reputation)).contains("at most"),
+                    "blocked reason identifies the failing reputation bound");
             var history = result.session().transcript();
             fact(fixture, player, true);
             fixture.storage.reload();

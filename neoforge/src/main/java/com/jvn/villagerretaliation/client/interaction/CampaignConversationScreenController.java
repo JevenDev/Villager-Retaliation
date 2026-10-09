@@ -92,7 +92,10 @@ public final class CampaignConversationScreenController {
                 group = topic.group();
                 host.option(host.translate("conversation.group." + group.name().toLowerCase(java.util.Locale.ROOT)), () -> { }, true);
             }
-            host.option(topic.label(), () -> request(Action.START, topic.conversation(), topic.id(), 0, true), pending || !topic.available());
+            host.option(topic.label(), () -> {
+                if (topic.group() == CampaignConversationViewPayload.TopicGroup.HISTORY) openHistory(UUID.fromString(topic.id()));
+                else request(Action.START, topic.conversation(), topic.id(), 0, true);
+            }, pending || !topic.available());
         }
         addPages(Action.TOPICS);
     }
@@ -104,7 +107,9 @@ public final class CampaignConversationScreenController {
             var history = session.history();
             if (history.page() > 0) host.option(host.translate("conversation.previous"), () -> request(Action.HISTORY, "", "", history.page() - 1, false), pending);
             if (history.page() + 1 < history.pages()) host.option(host.translate("conversation.next"), () -> request(Action.HISTORY, "", "", history.page() + 1, false), pending);
-            host.option(host.translate("conversation.back"), () -> request(Action.VIEW, "", "", 0, false), pending);
+            boolean finished = session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.COMPLETE
+                    || session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.CANCELLED;
+            host.option(host.translate("conversation.back"), () -> request(finished ? Action.TOPICS : Action.VIEW, "", "", 0, false), pending);
             return;
         }
         if (pending) host.option(host.translate("conversation.waiting"), () -> { }, true);
@@ -190,6 +195,15 @@ public final class CampaignConversationScreenController {
         host.send(new CampaignConversationRequestPayload(view, UUID.randomUUID(), host.entityId(), character, action,
                 session == null ? null : session.id(), session == null ? 0 : session.revision(), conversation, argument, page, textPage));
         if (wait) host.updated(session != null, null);
+    }
+
+    private void openHistory(UUID session) {
+        lastPoll = host.now();
+        pending = true;
+        pendingUntil = host.now() + 1500L;
+        host.send(new CampaignConversationRequestPayload(view, UUID.randomUUID(), host.entityId(), character, Action.HISTORY,
+                session, 0, "", "", 0, 0));
+        host.updated(false, null);
     }
 
     public void close() {

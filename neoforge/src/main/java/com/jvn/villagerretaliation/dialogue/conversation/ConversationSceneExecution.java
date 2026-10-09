@@ -1,9 +1,9 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
-import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants;
 import com.jvn.villagerretaliation.campaign.CampaignSceneApproval;
+import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
@@ -134,13 +134,13 @@ public final class ConversationSceneExecution {
                     "The suspended action's participation record belongs to another decision.");
             var controller = session.controller == null ? null : server.getPlayerList().getPlayer(session.controller);
             ConversationService.require(controller != null && ConversationService.member(controller, session), "The suspended action is waiting for an authorized conversation controller.");
-            String issue = CampaignAuthority.controlIssue(controller, actor);
+            String issue = ConversationService.controlIssue(controller, actor, session.identity);
             ConversationService.require(issue.isBlank(), issue);
             var character = ConversationService.character(controller, session);
             ConversationService.require(ConversationService.near(controller, character), "The controller must return to the conversation before its scene continues.");
             ConversationService.require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character),
                     "The conversation scene is waiting for its interruption to finish.");
-            return new Access(controller, actor, "");
+            return new Access(controller, actor, "", session.identity.campaign() != null);
         } catch (ConversationService.Unavailable | IllegalArgumentException exception) {
             return new Access(null, null, exception.getMessage());
         }
@@ -167,7 +167,17 @@ public final class ConversationSceneExecution {
                 : VillagerInteractionService.createDialogueContext(actor.serverLevel(), actor, approved.villager());
     }
 
-    public record Access(ServerPlayer controller, UUID actor, String diagnostic) { }
+    public record Access(ServerPlayer controller, UUID actor, String diagnostic, boolean campaign) {
+        public Access(ServerPlayer controller, UUID actor, String diagnostic) { this(controller, actor, diagnostic, true); }
+
+        public <T> T withController(java.util.function.Supplier<T> work) {
+            if (!diagnostic.isBlank() || controller == null || actor == null)
+                throw new IllegalArgumentException("Conversation scene authority is unavailable.");
+            if (campaign) return CampaignAuthority.withController(controller, actor, work);
+            if (!controller.getUUID().equals(actor)) throw new IllegalArgumentException("Ordinary conversation scenes belong to their deciding player.");
+            return work.get();
+        }
+    }
 
     record Source(UUID session, String effect) {
         CompoundTag save() {

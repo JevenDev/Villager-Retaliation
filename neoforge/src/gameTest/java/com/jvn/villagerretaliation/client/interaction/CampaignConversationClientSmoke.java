@@ -93,6 +93,9 @@ public final class CampaignConversationClientSmoke {
                 capture("outcome-details"); choose(screen, localized("confirm")); ticks = 0;
             } else if (phase == 2 && session.phase() == ConversationSession.Phase.EXCHANGES && ++ticks >= 35) {
                 require(session.line().speaker().equals(fixture.character()), "mentor portrait belongs to the saved speaker");
+                var originalVoice = voice(screen);
+                choose(screen, localized("replay"));
+                require(voice(screen) != null && voice(screen) != originalVoice, "replay starts the authored recording again");
                 capture("mentor"); choose(screen, localized("continue")); ticks = 0; phase = 3;
             } else if (phase == 3 && session.line().speaker() != null && session.line().speaker().equals(playerId) && ++ticks >= 35) {
                 require(screen.campaignCameraTarget() != null && screen.campaignCameraTarget().getUUID().equals(fixture.character()),

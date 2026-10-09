@@ -52,6 +52,19 @@ const cli = file => spawnSync(process.execPath, [path.join(root, "tools/validate
 const valid = cli(path.join(fixtureRoot, conversationPath));
 assert.equal(valid.status, 0, valid.stdout + valid.stderr);
 
+const ordinary = structuredClone(conversation);
+delete ordinary.campaign;
+ordinary.character = "provider";
+ordinary.quest = quest.id;
+for (const node of ordinary.nodes) for (const exchange of node.exchanges ?? []) {
+  if (exchange.speaker.type === "role") exchange.speaker.role = "provider";
+}
+assert.deepEqual(validateConversation(ordinary, schema, { ...context, campaign: undefined }), [], "ordinary provider uses the shared conversation schema");
+const invalidOrdinary = structuredClone(ordinary);
+invalidOrdinary.nodes[0].exchanges[0].speaker.role = "mentor";
+assert(validateConversation(invalidOrdinary, schema, { ...context, campaign: undefined }).some(issue => issue.pointer.endsWith("/speaker/role")),
+  "ordinary conversation cannot cast a campaign role");
+
 const temporary = await mkdtemp(path.join(os.tmpdir(), "conversation-content-"));
 const writeJson = async (relative, value) => {
   const file = path.join(temporary, relative);

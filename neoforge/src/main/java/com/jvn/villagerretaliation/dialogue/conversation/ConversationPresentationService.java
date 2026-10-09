@@ -95,11 +95,11 @@ public final class ConversationPresentationService {
         }
         if (request.action() == CampaignConversationRequestPayload.Action.START) {
             var definition = ConversationResources.conversation(player.server, ResourceLocation.tryParse(request.conversation())).orElse(null);
-            if (definition == null || !CampaignCharacterService.matchesBoundCharacter(player.server, definition.campaign(), definition.character(), character.getUUID())) {
+            if (definition == null || !ConversationBinding.matches(player, definition, character)) {
                 return failure(request, "This topic does not belong to this character.");
             }
             VillagerConversationService.endForPlayer(player, false);
-            var result = ConversationService.start(player, definition.id(), request.argument(), request.requestId());
+            var result = ConversationService.start(player, definition.id(), request.argument(), request.requestId(), character);
             if (result.session() == null) {
                 var data = ConversationSavedData.get(player.serverLevel());
                 if (request.requestId().equals(ConversationCharacters.active(player.server, data, character.getUUID()))) attach(player, request, request.requestId());
@@ -108,6 +108,14 @@ public final class ConversationPresentationService {
             }
             attach(player, request, result.session().identity().id());
             return session(player, character, request.viewId(), result.session().identity().id(), 0, 0, result.diagnostic());
+        }
+        if (request.action() == CampaignConversationRequestPayload.Action.HISTORY && viewer.session == null) {
+            var archived = ConversationSavedData.get(player.serverLevel()).session(request.session());
+            if (archived == null || archived.active() || !ConversationService.member(player, archived)
+                    || archived.speakers.values().stream().noneMatch(speaker -> speaker.entity().equals(character.getUUID())))
+                return failure(request, "This conversation history is unavailable.");
+            attach(player, request, archived.identity.id());
+            viewer = viewers.get(player.getUUID());
         }
         if (!java.util.Objects.equals(viewer.session, request.session())) return failure(request, "This screen belongs to a different conversation.");
         var saved = ConversationSavedData.get(player.serverLevel()).session(request.session());
@@ -137,7 +145,7 @@ public final class ConversationPresentationService {
             var content = CampaignResources.current(player.server).campaigns().get(binding.campaign());
             boolean compatible = content != null && CampaignSavedData.get(player.serverLevel()).compatibility(content.definition()).isBlank();
             if (compatible) for (var definition : QuestContentCatalogs.current(player.server).conversations().values().stream()
-                    .filter(value -> value.campaign().equals(binding.campaign())
+                    .filter(value -> binding.campaign().equals(value.campaign())
                             && CampaignCharacterService.matchesBoundCharacter(player.server, value.campaign(), value.character(), character.getUUID()))
                     .sorted(java.util.Comparator.comparing(value -> value.id().toString())).toList()) {
                 for (var topic : definition.topics().values()) if (ConversationService.conditions(context, topic.conditions())) {
@@ -146,6 +154,17 @@ public final class ConversationPresentationService {
                 }
             }
         }
+        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character);
+        for (var definition : QuestContentCatalogs.current(player.server).conversations().values().stream()
+                .filter(value -> value.campaign() == null && ConversationBinding.matches(player, value, character))
+                .sorted(java.util.Comparator.comparing(value -> value.id().toString())).toList()) {
+            for (var topic : definition.topics().values()) if (ConversationService.conditions(context, topic.conditions()))
+                topics.add(new Topic(definition.id().toString(), topic.id(), label(ConversationService.text(player, topic.labelKey())),
+                        true, topicGroup(context, definition.quest())));
+        }
+        for (var saved : ConversationSavedData.get(player.serverLevel()).finishedSessions(character.getUUID()))
+            if (ConversationService.member(player, saved)) topics.add(new Topic(saved.identity.conversation().toString(),
+                    saved.identity.id().toString(), label(saved.identity.title()), true, TopicGroup.HISTORY));
         topics.sort(java.util.Comparator.comparing(Topic::group));
         int pages = pages(topics.size());
         page = Math.min(page, pages - 1);
@@ -160,22 +179,23 @@ public final class ConversationPresentationService {
         var primary = ConversationCharacters.primary(player, saved);
         boolean valid = ConversationSavedData.get(player.serverLevel()).issue(id).isBlank() && primary != null
                 && ConversationService.near(player, primary)
-                && CampaignCharacterService.matchesBoundCharacter(player.server, saved.identity.campaign(), saved.identity.characterRole(), primary.getUUID());
+                && (saved.identity.campaign() == null || CampaignCharacterService.matchesBoundCharacter(player.server,
+                        saved.identity.campaign(), saved.identity.characterRole(), primary.getUUID()));
         ConversationDefinition definition = null;
         try { definition = ConversationService.definition(player.server, saved); }
         catch (ConversationService.Unavailable unavailable) { valid = false; }
         boolean active = saved.active();
-        boolean authority = CampaignAuthority.canControl(player) && ConversationService.member(player, saved);
+        boolean authority = ConversationService.canControl(player, saved) && ConversationService.member(player, saved);
         boolean control = valid && active && authority && player.getUUID().equals(snapshot.controller()) && !VillagerConversationService.isConversing(primary);
         var controller = snapshot.controller() == null ? null : player.server.getPlayerList().getPlayer(snapshot.controller());
         boolean takeover = valid && active && authority && !control && (controller == null || !ConversationService.member(controller, saved)
-                || !CampaignAuthority.canControl(controller) || !ConversationService.near(controller, primary));
+                || !ConversationService.canControl(controller, saved) || !ConversationService.near(controller, primary));
         var handover = new ArrayList<Member>();
         if (control) PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).ifPresent(party -> {
             for (UUID member : party.playerIds()) {
                 var target = player.server.getPlayerList().getPlayer(member);
                 if (target != null && !target.getUUID().equals(player.getUUID()) && ConversationService.member(target, saved)
-                        && CampaignAuthority.canControl(target) && ConversationService.near(target, primary)) handover.add(new Member(member, label(target.getName().getString())));
+                        && ConversationService.canControl(target, saved) && ConversationService.near(target, primary)) handover.add(new Member(member, label(target.getName().getString())));
             }
         });
         handover.sort(java.util.Comparator.comparing(Member::name).thenComparing(member -> member.id().toString()));
@@ -259,16 +279,13 @@ public final class ConversationPresentationService {
         var viewer = viewers(player.server).get(player.getUUID());
         if (viewer == null || viewer.historyPage < 0) return null;
         var entries = new ArrayList<String>();
-        var visits = new java.util.TreeSet<Long>();
-        saved.transcript.forEach(line -> visits.add(line.visit()));
-        saved.choices.forEach(choice -> visits.add(choice.visit()));
-        for (long visit : visits) {
-            for (var line : saved.transcript) if (line.visit() == visit)
-                entries.addAll(splitText((line.name().isBlank() ? "" : line.name() + ": ") + ConversationText.text(player, line)));
-            for (var choice : saved.choices) if (choice.visit() == visit)
-                entries.addAll(splitText(playerName(player, choice.player()) + ": " + ConversationText.resolve(player,
+        var visits = new java.util.TreeMap<Long, List<String>>();
+        for (var line : saved.transcript) visits.computeIfAbsent(line.visit(), ignored -> new ArrayList<>())
+                .addAll(splitText((line.name().isBlank() ? "" : line.name() + ": ") + ConversationText.text(player, line)));
+        for (var choice : saved.choices) visits.computeIfAbsent(choice.visit(), ignored -> new ArrayList<>())
+                .addAll(splitText(playerName(player, choice.player()) + ": " + ConversationText.resolve(player,
                         choice.labelKey(), choice.fallback(), choice.replacements(), !choice.labelKey().isEmpty())));
-        }
+        visits.values().forEach(entries::addAll);
         int pages = Math.max(1, (entries.size() + 7) / 8);
         int page = Math.min(viewer.historyPage, pages - 1);
         int start = page * 8;

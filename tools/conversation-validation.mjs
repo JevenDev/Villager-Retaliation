@@ -38,6 +38,21 @@ export function validateConversation(root, schema, context) {
     }
   };
   visitText(root);
+  if (!root.campaign) {
+    if (root.character !== "provider") issue("/character", "ordinary conversations use the provider character");
+    const ordinary = (value, pointer = "") => {
+      if (Array.isArray(value)) value.forEach((entry, index) => ordinary(entry, child(pointer, index)));
+      else if (object(value)) {
+        if (value.speaker?.type === "role" && value.speaker.role !== "provider")
+          issue(child(child(pointer, "speaker"), "role"), "ordinary conversations can only cast their quest provider");
+        if (value.action?.type?.replace("villagerretaliation:", "").startsWith("campaign_"))
+          issue(child(pointer, "action"), "campaign actions require a campaign conversation");
+        if (value.transaction) issue(child(pointer, "transaction"), "campaign bargaining requires a campaign conversation");
+        for (const [key, entry] of Object.entries(value)) ordinary(entry, child(pointer, key));
+      }
+    };
+    ordinary(root);
+  }
   const index = (entries, pointer) => {
     const values = new Map();
     for (const [position, entry] of entries.entries()) {

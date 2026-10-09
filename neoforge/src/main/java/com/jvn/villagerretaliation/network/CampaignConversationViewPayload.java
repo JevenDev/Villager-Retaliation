@@ -30,7 +30,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         bounded(diagnostic, MAX_TEXT_LENGTH);
     }
 
-    public enum TopicGroup { NEW_BUSINESS, CURRENT_OBJECTIVES, REPORTING_BACK, FOLLOW_UPS, GENERAL }
+    public enum TopicGroup { NEW_BUSINESS, CURRENT_OBJECTIVES, REPORTING_BACK, FOLLOW_UPS, GENERAL, HISTORY }
 
     public record Topic(String conversation, String id, String label, boolean available, TopicGroup group) {
         public Topic { bounded(conversation, 256); bounded(id, 256); bounded(label, MAX_LABEL_LENGTH); java.util.Objects.requireNonNull(group); }

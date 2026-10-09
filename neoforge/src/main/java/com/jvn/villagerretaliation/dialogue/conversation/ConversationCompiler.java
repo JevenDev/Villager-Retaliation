@@ -116,9 +116,24 @@ public final class ConversationCompiler {
                     responses, string(value, "next"), string(value, "outcome"), pointer), pointer);
         }
         var definition = new ConversationDefinition(id, root.get("revision").getAsInt(), QuestBundleFingerprints.definition(root),
-                ResourceLocation.parse(string(root, "campaign")), string(root, "character"), quest, text(root, "title", ""),
+                root.has("campaign") ? ResourceLocation.parse(string(root, "campaign")) : null, string(root, "character"), quest, text(root, "title", ""),
                 topics, nodes, checks, outcomes, bundle.owner(), source, compatibilityFingerprint(root));
         validateGraph(definition);
+        if (definition.campaign() == null) {
+            if (quest == null) error("/quest", "ordinary conversations require a quest provider");
+            if (!definition.character().equals("provider")) error("/character", "ordinary conversations use the provider character");
+            for (var node : definition.nodes().values()) {
+                for (var exchange : node.exchanges()) if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE
+                        && !exchange.speaker().role().equals("provider"))
+                    error(exchange.pointer() + "/speaker/role", "ordinary conversations can only cast their quest provider");
+                var effects = new ArrayList<>(node.effects());
+                node.responses().values().forEach(response -> effects.addAll(response.effects()));
+                for (var effect : effects) if (effect.action().kind().name().startsWith("CAMPAIGN_"))
+                    error(effect.pointer() + "/action", "campaign actions require a campaign conversation");
+            }
+            for (var check : definition.checks().values()) if (!check.transaction().isEmpty())
+                error(check.pointer() + "/transaction", "campaign bargaining requires a campaign conversation");
+        }
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
     }
 

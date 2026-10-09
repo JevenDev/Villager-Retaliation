@@ -15,10 +15,12 @@ final class ConversationCharacters {
     private ConversationCharacters() { }
 
     static ConversationSession reconcile(MinecraftServer server, ConversationSavedData data, ConversationSession current) throws IOException {
-        if (current == null || !current.active()) return current;
+        if (current == null || !current.active() || current.identity.campaign() == null) return current;
         ConversationService.require(data.issue(current.identity.id()).isBlank(), data.issue(current.identity.id()));
         ConversationService.definition(server, current);
         var candidate = new ConversationSession(current);
+        boolean proofMissing = candidate.compatibilityFingerprint.isEmpty();
+        if (proofMissing) candidate.compatibilityFingerprint = ConversationService.definition(server, current).compatibilityFingerprint();
         var changed = new HashSet<UUID>();
         for (var prior : current.speakers.values()) {
             var resolved = CampaignBindingQueries.character(server, current.identity.campaign(), prior.role());
@@ -34,7 +36,7 @@ final class ConversationCharacters {
             candidate.speakerHistory.add(new ConversationSpeakerHistory.Entry(prior, next, authorization, current.revision + 1, server.overworld().getGameTime()));
             changed.add(prior.entity());
         }
-        if (changed.isEmpty()) return current;
+        if (changed.isEmpty() && !proofMissing) return current;
         if (candidate.confirmation != null && changed.contains(candidate.confirmation.consent().providerId())) ConversationConfirmations.discard(candidate);
         if (candidate.nestedDecision != null && candidate.nestedDecision.state() == ConversationNestedDecision.State.PENDING
                 && changed.contains(candidate.nestedDecision.confirmation().consent().providerId())) {

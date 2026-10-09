@@ -37,7 +37,8 @@ public final class ConversationPresentationPayloadGameTests {
             helper.assertValueEqual(CampaignConversationRequestPayload.STREAM_CODEC.decode(buffer), request, "intent identifies its view, character, session, and revision");
             buffer.clear();
             var topics = new CampaignConversationViewPayload(view, 4, character, 1, 3,
-                    List.of(new Topic("campaign_fixture:mentor_conversation", "guidance", "Ask for guidance", true)), null, "");
+                    List.of(new Topic("campaign_fixture:mentor_conversation", "guidance", "Ask for guidance", true),
+                            new Topic("campaign_fixture:mentor_conversation", session.toString(), "Earlier guidance", true, TopicGroup.HISTORY)), null, "");
             CampaignConversationViewPayload.STREAM_CODEC.encode(buffer, topics);
             helper.assertValueEqual(CampaignConversationViewPayload.STREAM_CODEC.decode(buffer), topics, "topic page survives the wire");
         } finally { buffer.release(); }
@@ -417,6 +418,29 @@ public final class ConversationPresentationPayloadGameTests {
         host.now = 6000;
         controller.tick();
         helper.assertValueEqual(host.sent.getLast().action(), Action.ADVANCE, "read text and finished voice advance once");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void completedHistoryTopicsOpenReadOnlyPagesAndReturnToTopics(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        UUID archived = UUID.randomUUID();
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, request.character(), 0, 1,
+                List.of(new Topic("fixture:lore", archived.toString(), "Earlier guidance", true, TopicGroup.HISTORY)), null, ""));
+        controller.addTopics();
+        host.options.stream().filter(option -> option.label().equals("Earlier guidance")).findFirst().orElseThrow().action().run();
+        helper.assertValueEqual(host.sent.getLast().action(), Action.HISTORY, "archived topic requests read-only history");
+        helper.assertValueEqual(host.sent.getLast().session(), archived, "archived topic selects the saved session identity");
+        var saved = new Session(archived, 7, "Guidance", ConversationSession.Phase.COMPLETE, null, false, false, "",
+                List.of(), List.of(), null, "farewell", null, List.of(), false, false, new History(0, 1, List.of("Mira: Farewell.")));
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, request.character(), 0, 1, List.of(), saved, ""));
+        host.options.clear();
+        controller.addSessionOptions();
+        host.options.stream().filter(option -> option.label().equals("conversation.back")).findFirst().orElseThrow().action().run();
+        helper.assertValueEqual(host.sent.getLast().action(), Action.TOPICS, "finished history returns to the provider's topics");
         helper.succeed();
     }
 

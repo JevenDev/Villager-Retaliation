@@ -42,7 +42,7 @@ public final class DialogueTreeService {
     }
 
     public static Optional<List<DialogueOptionDefinition>> activeOptions(DialogueContext context) {
-        if (SceneContinuationService.hasPendingDialogue(context)) return Optional.of(List.of());
+        if (!sessions(context).diagnostic().isBlank() || SceneContinuationService.hasPendingDialogue(context)) return Optional.of(List.of());
         SessionKey key = key(context);
         Session session = sessions(context).get(key);
         if (session == null) {
@@ -52,10 +52,10 @@ public final class DialogueTreeService {
         DialogueTreeDefinition tree = DialogueTreeResources
                 .tree(context.level().getServer(), context.locale(), session.treeId())
                 .orElse(null);
-        if (tree == null || !tree.matches(context)) return Optional.of(List.of());
+        if (tree == null || !tree.matches(context)) return Optional.empty();
 
         DialogueTreeDefinition.Node node = tree.node(session.nodeId()).orElse(null);
-        if (node == null || !node.matches(context)) return Optional.of(List.of());
+        if (node == null || !node.matches(context)) return Optional.empty();
         if (node.end()) {
             sessions(context).remove(key);
             return Optional.empty();
@@ -68,7 +68,7 @@ public final class DialogueTreeService {
                         .thenComparing(DialogueTreeDefinition.Response::id))
                 .map(response -> response.toOption(context, tree.id(), tree.metadata()))
                 .toList();
-        return Optional.of(options);
+        return options.isEmpty() ? Optional.empty() : Optional.of(options);
     }
 
     public static Optional<VillagerDialogueService.DialogueResult> handleDialogueOption(
@@ -141,6 +141,7 @@ public final class DialogueTreeService {
 
     public static EntryResult startEntryResult(DialogueContext context, ResourceLocation treeId, String entryId,
             Map<String, String> inheritedReplacements, boolean forced) {
+        if (!sessions(context).diagnostic().isBlank()) return unavailableEntry(sessions(context).diagnostic());
         if (SceneContinuationService.hasPendingDialogue(context)) return unavailableEntry("dialogue actions are still pending");
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) return unavailableEntry("dialogue tree unavailable");
@@ -250,6 +251,7 @@ public final class DialogueTreeService {
 
     public static void resumeAfterActions(DialogueContext context, SceneContinuation.DialogueResume resume,
             Map<String, String> replacements) {
+        if (!sessions(context).diagnostic().isBlank()) return;
         DialogueTreeDefinition tree = DialogueTreeResources.tree(
                 context.level().getServer(), context.locale(), resume.treeId()).orElse(null);
         if (tree == null || !tree.matches(context) || resume.nodeId().isBlank()) return;

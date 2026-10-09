@@ -1289,7 +1289,7 @@ async function checkConversationFile(file, data, indexReferences = false) {
     return;
   }
   Object.assign(context.messages, messages);
-  if (!context.campaign) errors.push(`${relative(file)}: /campaign: campaign content is unavailable: ${data.campaign}.`);
+  if (data.campaign && !context.campaign) errors.push(`${relative(file)}: /campaign: campaign content is unavailable: ${data.campaign}.`);
   context.campaigns = new Map(resources.filter(entry => entry.data?.schema === "villagerretaliation:campaign/v1").map(entry => [entry.data.id, entry.data]));
   context.quests = new Map(resources.filter(entry => isQuestModuleV2(entry.data)).map(entry => [entry.data.id, entry.data]));
   const issues = validateConversation(data, conversationSchema, context);

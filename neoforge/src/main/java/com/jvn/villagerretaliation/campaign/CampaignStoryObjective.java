@@ -95,7 +95,7 @@ public sealed interface CampaignStoryObjective {
             var conversation = catalog.conversations().get(speak.conversation());
             if (conversation == null) issues.put("conversation", "Conversation is missing or invalid: " + speak.conversation());
             else {
-                if (!conversation.campaign().equals(campaign.id())) issues.put("conversation", "Conversation belongs to another campaign.");
+                if (!campaign.id().equals(conversation.campaign())) issues.put("conversation", "Conversation belongs to another campaign.");
                 if (!conversation.owner().shared() && !quest.equals(conversation.quest())) issues.put("conversation", "Private conversation belongs to another quest bundle.");
                 var node = conversation.nodes().get(speak.node());
                 if (node == null) issues.put("node", "Unknown conversation node: " + speak.node());

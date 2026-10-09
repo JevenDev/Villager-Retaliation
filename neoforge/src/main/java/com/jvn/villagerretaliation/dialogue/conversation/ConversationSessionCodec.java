@@ -31,8 +31,8 @@ final class ConversationSessionCodec {
         var recovery = new ListTag();
         session.recoveryHistory.forEach(entry -> recovery.add(net.minecraft.nbt.StringTag.valueOf(entry)));
         tag.put("RecoveryHistory", recovery);
-        tag.putString("Campaign", identity.campaign().toString());
-        tag.putUUID("CampaignInstance", identity.campaignInstance());
+        if (identity.campaign() != null) tag.putString("Campaign", identity.campaign().toString());
+        if (identity.campaignInstance() != null) tag.putUUID("CampaignInstance", identity.campaignInstance());
         tag.putString("CampaignFingerprint", identity.campaignFingerprint());
         if (identity.quest() != null) tag.putString("Quest", identity.quest().toString());
         tag.putString("CharacterRole", identity.characterRole());
@@ -150,10 +150,13 @@ final class ConversationSessionCodec {
 
     static ConversationSession load(CompoundTag tag) {
         var identity = new ConversationSession.Identity(uuid(tag, "Id"), resource(tag, "Conversation"), integer(tag, "DefinitionRevision"),
-                text(tag, "Fingerprint"), resource(tag, "Campaign"), uuid(tag, "CampaignInstance"), text(tag, "CampaignFingerprint"),
+                text(tag, "Fingerprint"), optionalResource(tag, "Campaign"), optionalId(tag, "CampaignInstance"), string(tag, "CampaignFingerprint"),
                 optionalResource(tag, "Quest"), text(tag, "CharacterRole"), uuid(tag, "Character"), resource(tag, "Dimension"),
                 uuid(tag, "Owner"), optionalId(tag, "Party"), text(tag, "Title"), text(tag, "Topic"), number(tag, "CreatedAt"));
         require(identity.definitionRevision() > 0, "invalid conversation definition revision");
+        require(identity.campaign() == null ? identity.campaignInstance() == null && identity.campaignFingerprint().isEmpty()
+                        && identity.quest() != null && identity.characterRole().equals("provider")
+                : identity.campaignInstance() != null && !identity.campaignFingerprint().isEmpty(), "invalid conversation binding identity");
         var session = new ConversationSession(identity, identity.owner(), optionalId(tag, "QuestRun"), text(tag, "Node"),
                 new ConversationSession.Speaker(identity.characterRole(), identity.character(), identity.dimension(), ""));
         session.contentRevision = tag.contains("ContentRevision") ? integer(tag, "ContentRevision") : identity.definitionRevision();

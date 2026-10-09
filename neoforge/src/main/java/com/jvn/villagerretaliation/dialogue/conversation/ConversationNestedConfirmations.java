@@ -103,6 +103,7 @@ public final class ConversationNestedConfirmations {
         var prepared = CampaignQuestAcceptanceService.prepareRemainingAction(context, authority.actor(), origin.action(), consent);
         if (!prepared.diagnostic().isBlank()) return new Gate("", unavailable(origin.action(), prepared.diagnostic()), false);
         if (prepared.confirmation() == null) return Gate.PASS;
+        require(session.identity.campaign() != null, "Campaign consequences require a campaign conversation.");
         require(session.phase == ConversationSession.Phase.NODE_EFFECTS || session.phase == ConversationSession.Phase.RESPONSE_EFFECTS,
                 "The conversation no longer owns this interrupted action.");
         session.nestedDecision = new ConversationNestedDecision(origin, session.phase, prepared.confirmation(),

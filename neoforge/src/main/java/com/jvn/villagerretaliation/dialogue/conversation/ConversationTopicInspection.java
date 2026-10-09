@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.entity.npc.Villager;
 
 public final class ConversationTopicInspection {
     private ConversationTopicInspection() { }
@@ -28,28 +29,39 @@ public final class ConversationTopicInspection {
         if (declared == null) return report.block("topic", "Unknown conversation topic.");
         var player = server.getPlayerList().getPlayer(playerId);
         if (player == null) report.gates.add(new Gate("player", GateState.UNKNOWN, "Player is offline. Live permissions, distance, and conditions cannot be evaluated."));
-        else report.gate("authority", CampaignAuthority.canControl(player), CampaignAuthority.controlIssue(player));
-        report.gate("mode", CampaignWorldModeSavedData.get(server.overworld()).mode() == CampaignWorldMode.CAMPAIGN,
-                "This conversation requires Campaign Mode.");
-        var campaign = CampaignResources.current(server).campaigns().get(definition.campaign());
-        if (campaign == null) return report.block("campaign", "Campaign content is missing or invalid. Saved history is retained.");
-        var campaigns = CampaignSavedData.get(server.overworld());
-        String compatibility = campaigns.compatibility(campaign.definition());
-        if (!compatibility.isBlank()) return report.block("campaign", compatibility);
+        else report.gate("authority", definition.campaign() == null || CampaignAuthority.canControl(player), CampaignAuthority.controlIssue(player));
         var data = ConversationSavedData.get(server.overworld());
         if (!data.diagnostic().isBlank()) return report.block("storage", data.diagnostic());
-        var character = CampaignBindingQueries.character(server, definition.campaign(), definition.character());
-        if (!character.diagnostic().isBlank()) return report.block("character", character.diagnostic());
-        if (character.binding() == null) {
-            report.gates.add(new Gate("character", GateState.UNKNOWN,
-                    "Role " + definition.character() + " has no saved binding. Starting may cast or spawn its authored actor."));
-            return report.finish(Status.NEEDS_BINDING);
+        Villager provider;
+        if (definition.campaign() == null) {
+            if (player == null) {
+                report.gates.add(new Gate("provider", GateState.UNKNOWN, "Load the player near a matching quest provider to inspect this topic."));
+                return report.finish(Status.UNKNOWN);
+            }
+            try { provider = ConversationBinding.resolve(player, definition, null); }
+            catch (ConversationService.Unavailable exception) { return report.block("provider", exception.getMessage()); }
+        } else {
+            report.gate("mode", CampaignWorldModeSavedData.get(server.overworld()).mode() == CampaignWorldMode.CAMPAIGN,
+                    "This conversation requires Campaign Mode.");
+            var campaign = CampaignResources.current(server).campaigns().get(definition.campaign());
+            if (campaign == null) return report.block("campaign", "Campaign content is missing or invalid. Saved history is retained.");
+            var campaigns = CampaignSavedData.get(server.overworld());
+            String compatibility = campaigns.compatibility(campaign.definition());
+            if (!compatibility.isBlank()) return report.block("campaign", compatibility);
+            var character = CampaignBindingQueries.character(server, definition.campaign(), definition.character());
+            if (!character.diagnostic().isBlank()) return report.block("character", character.diagnostic());
+            if (character.binding() == null) {
+                report.gates.add(new Gate("character", GateState.UNKNOWN,
+                        "Role " + definition.character() + " has no saved binding. Starting may cast or spawn its authored actor."));
+                return report.finish(Status.NEEDS_BINDING);
+            }
+            if (character.binding().lost()) return report.block("character", "This role has a recorded loss. Inspect its authored loss policy.");
+            if (character.entity() == null) return report.block("character", "The bound character is unloaded. Its identity is retained and no death is inferred.");
+            if (!character.available()) return report.block("character", "The bound character is downed. Conversation is paused.");
+            provider = character.entity();
         }
-        if (character.binding().lost()) return report.block("character", "This role has a recorded loss. Inspect its authored loss policy.");
-        if (character.entity() == null) return report.block("character", "The bound character is unloaded. Its identity is retained and no death is inferred.");
-        if (!character.available()) return report.block("character", "The bound character is downed. Conversation is paused.");
-        if (player != null) report.gate("presence", ConversationService.near(player, character.entity()), "Return to this character to begin or continue.");
-        UUID active = ConversationCharacters.active(server, data, character.entity().getUUID());
+        if (player != null) report.gate("presence", ConversationService.near(player, provider), "Return to this character to begin or continue.");
+        UUID active = ConversationCharacters.active(server, data, provider.getUUID());
         if (active != null) {
             var session = data.session(active);
             report.session = session == null ? null : session.snapshot();
@@ -65,26 +77,26 @@ public final class ConversationTopicInspection {
             } catch (ConversationService.Unavailable exception) {
                 return report.block("session", exception.getMessage());
             }
-            if (!session.speakers.get(session.identity.characterRole()).entity().equals(character.entity().getUUID())) {
+            if (!session.speakers.get(session.identity.characterRole()).entity().equals(provider.getUUID())) {
                 return report.block("session", "The saved conversation will reconcile its authorized character repair when reopened.");
             }
             report.gates.add(new Gate("session", GateState.PASS,
                     "Opening returns saved topic " + session.identity.topic() + " at node " + session.node + ". Entry conditions are not reapplied."));
             var controller = session.controller == null ? null : server.getPlayerList().getPlayer(session.controller);
             boolean controlling = controller != null && ConversationService.member(controller, session)
-                    && CampaignAuthority.canControl(controller) && ConversationService.near(controller, character.entity());
+                    && ConversationService.canControl(controller, session) && ConversationService.near(controller, provider);
             report.gates.add(new Gate("controller", GateState.PASS, !controlling
                     ? "An authorized member present at the character must take control to continue."
                     : controller.getUUID().equals(playerId) ? "This player controls the saved conversation."
                     : "The current controller must hand over explicitly before this player can advance."));
-            report.gate("interruption", !VillagerConversationService.isConversing(character.entity()), "Wait for the current interruption to finish.");
+            report.gate("interruption", !VillagerConversationService.isConversing(provider), "Wait for the current interruption to finish.");
             if (!session.diagnostic.isBlank()) report.gates.add(new Gate("continuation", GateState.BLOCKED, session.diagnostic));
             return report.finish(Status.EXISTING_SESSION);
         }
-        report.gate("ordinary_conversation", !VillagerConversationService.isConversing(character.entity()),
+        report.gate("ordinary_conversation", !VillagerConversationService.isConversing(provider),
                 "This character is already taking part in an ordinary conversation.");
-        if (!declared.conditions().isEmpty() && player != null && player.serverLevel() == character.entity().level()) {
-            report.context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character.entity());
+        if (!declared.conditions().isEmpty() && player != null && player.serverLevel() == provider.level()) {
+            report.context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
         }
         report.evaluate = true;
         return report.finish(Status.AVAILABLE);

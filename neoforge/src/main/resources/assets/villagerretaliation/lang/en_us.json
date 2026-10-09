@@ -3645,6 +3645,7 @@
   "villagerretaliation.gui.conversation.group.reporting_back": "Reporting back",
   "villagerretaliation.gui.conversation.group.follow_ups": "Follow-ups",
   "villagerretaliation.gui.conversation.group.general": "Other topics",
+  "villagerretaliation.gui.conversation.group.history": "Previous conversations",
   "villagerretaliation.gui.conversation.previous_text": "Previous text",
   "villagerretaliation.gui.conversation.more_text": "Read more",
   "villagerretaliation.gui.conversation.previous": "Previous options",

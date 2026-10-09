@@ -5,7 +5,6 @@
     "schema",
     "id",
     "revision",
-    "campaign",
     "character",
     "title",
     "topics",
@@ -84,6 +83,18 @@
       "maxItems": 1024
     }
   },
+  "anyOf": [
+    {
+      "required": [
+        "campaign"
+      ]
+    },
+    {
+      "required": [
+        "quest"
+      ]
+    }
+  ],
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://villagerretaliation.dev/schema/conversation-v1.schema.json",
   "title": "Villager Retaliation Conversation v1",
