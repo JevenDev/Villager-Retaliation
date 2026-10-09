@@ -13,12 +13,23 @@ public final class ConversationRecovery {
     }
 
     public static boolean canControl(ServerPlayer player, ConversationSession session) {
-        if (!ConversationService.member(player, session) || !ConversationService.canControl(player, session) || !safe(session)) return false;
+        return safe(session) && authorizedController(player, session);
+    }
+
+    public static boolean canCancel(ServerPlayer player, ConversationSession session) {
+        return session.active() && session.nestedDecision == null
+                && session.receipts.values().stream().noneMatch(receipt ->
+                        receipt.state() == ConversationSession.ReceiptState.PREPARED || receipt.result().suspended())
+                && authorizedController(player, session);
+    }
+
+    private static boolean authorizedController(ServerPlayer player, ConversationSession session) {
+        if (!ConversationService.member(player, session) || !ConversationService.canControl(player, session)) return false;
         if (session.controller == null || session.controller.equals(player.getUUID())) return true;
         var controller = player.server.getPlayerList().getPlayer(session.controller);
         var primary = ConversationCharacters.primary(player, session);
         return controller == null || !ConversationService.member(controller, session) || !ConversationService.canControl(controller, session)
-                || primary != null && !ConversationService.near(controller, primary);
+                || primary == null || !ConversationService.near(controller, primary);
     }
 
     public static boolean canMigrate(ServerPlayer player, ConversationSession session) {
@@ -29,7 +40,8 @@ public final class ConversationRecovery {
     }
 
     static void apply(ServerPlayer player, ConversationSession session, ConversationSession.Intent intent) {
-        ConversationService.require(canControl(player, session), "Finish pending effects and obtain conversation control before recovery.");
+        ConversationService.require(intent == ConversationSession.Intent.CANCEL ? canCancel(player, session) : canControl(player, session),
+                "An effect still has an uncertain result or a running dependency. Finish it and obtain conversation control before recovery.");
         if (intent == ConversationSession.Intent.MIGRATE) {
             ConversationService.require(canMigrate(player, session), "Conversation gameplay changed. Restore the saved content before resuming.");
             var definition = ConversationResources.conversation(player.server, session.identity.conversation()).orElseThrow();

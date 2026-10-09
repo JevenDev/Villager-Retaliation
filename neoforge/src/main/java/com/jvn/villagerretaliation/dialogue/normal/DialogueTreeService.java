@@ -42,7 +42,7 @@ public final class DialogueTreeService {
     }
 
     public static Optional<List<DialogueOptionDefinition>> activeOptions(DialogueContext context) {
-        if (!sessions(context).diagnostic().isBlank() || SceneContinuationService.hasPendingDialogue(context)) return Optional.of(List.of());
+        if (!sessions(context).diagnostic(key(context)).isBlank() || SceneContinuationService.hasPendingDialogue(context)) return Optional.of(List.of());
         SessionKey key = key(context);
         Session session = sessions(context).get(key);
         if (session == null) {
@@ -141,7 +141,7 @@ public final class DialogueTreeService {
 
     public static EntryResult startEntryResult(DialogueContext context, ResourceLocation treeId, String entryId,
             Map<String, String> inheritedReplacements, boolean forced) {
-        if (!sessions(context).diagnostic().isBlank()) return unavailableEntry(sessions(context).diagnostic());
+        if (!sessions(context).diagnostic(key(context)).isBlank()) return unavailableEntry(sessions(context).diagnostic(key(context)));
         if (SceneContinuationService.hasPendingDialogue(context)) return unavailableEntry("dialogue actions are still pending");
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) return unavailableEntry("dialogue tree unavailable");
@@ -252,7 +252,7 @@ public final class DialogueTreeService {
 
     public static void resumeAfterActions(DialogueContext context, SceneContinuation.DialogueResume resume,
             Map<String, String> replacements) {
-        if (!sessions(context).diagnostic().isBlank()) return;
+        if (!sessions(context).diagnostic(key(context)).isBlank()) return;
         DialogueTreeDefinition tree = DialogueTreeResources.tree(
                 context.level().getServer(), context.locale(), resume.treeId()).orElse(null);
         if (tree == null || !tree.matches(context)) return;

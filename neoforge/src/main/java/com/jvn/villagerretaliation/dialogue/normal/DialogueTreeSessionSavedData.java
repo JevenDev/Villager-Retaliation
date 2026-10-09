@@ -15,6 +15,8 @@ import net.minecraft.world.level.storage.LevelResource;
 public final class DialogueTreeSessionSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_dialogue_trees";
     private final Map<DialogueTreeService.SessionKey, DialogueTreeService.Session> sessions = new LinkedHashMap<>();
+    private final ListTag quarantined = new ListTag();
+    private final Map<DialogueTreeService.SessionKey, String> issues = new LinkedHashMap<>();
     private CompoundTag preserved;
     private String diagnostic = "";
 
@@ -37,23 +39,36 @@ public final class DialogueTreeSessionSavedData extends SavedData {
                 throw new IllegalArgumentException("Unsupported dialogue tree save version");
             if (!tag.contains("Sessions", Tag.TAG_LIST) || tag.getList("Sessions", Tag.TAG_COMPOUND).size() != ((ListTag) tag.get("Sessions")).size())
                 throw new IllegalArgumentException("Invalid saved dialogue tree sessions");
+            var originals = new LinkedHashMap<DialogueTreeService.SessionKey, CompoundTag>();
             for (var raw : tag.getList("Sessions", Tag.TAG_COMPOUND)) {
                 var value = (CompoundTag) raw;
-                if (!value.hasUUID("Player") || !value.hasUUID("Villager") || !value.hasUUID("Id")
-                        || ResourceLocation.tryParse(value.getString("Tree")) == null || value.getString("Node").isBlank()
-                        || !value.contains("Touched", Tag.TAG_LONG) || value.getLong("Touched") < 0
-                        || !value.contains("Replacements", Tag.TAG_COMPOUND))
-                    throw new IllegalArgumentException("Invalid saved dialogue tree session");
-                var key = new DialogueTreeService.SessionKey(value.getUUID("Player"), value.getUUID("Villager"));
-                var replacements = new LinkedHashMap<String, String>();
-                var saved = value.getCompound("Replacements");
-                for (String name : saved.getAllKeys()) {
-                    if (!saved.contains(name, Tag.TAG_STRING)) throw new IllegalArgumentException("Invalid saved dialogue replacement");
-                    replacements.put(name, saved.getString(name));
+                var key = value.hasUUID("Player") && value.hasUUID("Villager")
+                        ? new DialogueTreeService.SessionKey(value.getUUID("Player"), value.getUUID("Villager")) : null;
+                try {
+                    if (key != null && (originals.containsKey(key) || data.issues.containsKey(key))) {
+                        var prior = originals.remove(key);
+                        if (prior != null) data.quarantined.add(prior.copy());
+                        data.sessions.remove(key);
+                        throw new IllegalArgumentException("Duplicate saved dialogue tree session");
+                    }
+                    if (key == null || !value.hasUUID("Id")
+                            || ResourceLocation.tryParse(value.getString("Tree")) == null || value.getString("Node").isBlank()
+                            || !value.contains("Touched", Tag.TAG_LONG) || value.getLong("Touched") < 0
+                            || !value.contains("Replacements", Tag.TAG_COMPOUND))
+                        throw new IllegalArgumentException("Invalid saved dialogue tree session");
+                    var replacements = new LinkedHashMap<String, String>();
+                    var saved = value.getCompound("Replacements");
+                    for (String name : saved.getAllKeys()) {
+                        if (!saved.contains(name, Tag.TAG_STRING)) throw new IllegalArgumentException("Invalid saved dialogue replacement");
+                        replacements.put(name, saved.getString(name));
+                    }
+                    data.sessions.put(key, new DialogueTreeService.Session(value.getUUID("Id"), ResourceLocation.parse(value.getString("Tree")),
+                            value.getString("Node"), value.getLong("Touched"), replacements));
+                    originals.put(key, value);
+                } catch (IllegalArgumentException exception) {
+                    data.quarantined.add(value.copy());
+                    if (key != null) data.issues.put(key, exception.getMessage() + ". Restore this conversation from a known-good backup.");
                 }
-                var session = new DialogueTreeService.Session(value.getUUID("Id"), ResourceLocation.parse(value.getString("Tree")),
-                        value.getString("Node"), value.getLong("Touched"), replacements);
-                if (data.sessions.putIfAbsent(key, session) != null) throw new IllegalArgumentException("Duplicate saved dialogue tree session");
             }
         } catch (IllegalArgumentException exception) {
             data.sessions.clear();
@@ -65,16 +80,20 @@ public final class DialogueTreeSessionSavedData extends SavedData {
 
     String diagnostic() { return diagnostic; }
 
+    String diagnostic(DialogueTreeService.SessionKey key) {
+        return diagnostic.isBlank() ? issues.getOrDefault(key, "") : diagnostic;
+    }
+
     DialogueTreeService.Session get(DialogueTreeService.SessionKey key) { return sessions.get(key); }
 
     void put(DialogueTreeService.SessionKey key, DialogueTreeService.Session session) {
-        if (!diagnostic.isBlank()) throw new IllegalStateException(diagnostic);
+        if (!diagnostic(key).isBlank()) throw new IllegalStateException(diagnostic(key));
         sessions.put(key, session);
         setDirty();
     }
 
     DialogueTreeService.Session remove(DialogueTreeService.SessionKey key) {
-        if (!diagnostic.isBlank()) return null;
+        if (!diagnostic(key).isBlank()) return null;
         var removed = sessions.remove(key);
         if (removed != null) setDirty();
         return removed;
@@ -99,6 +118,7 @@ public final class DialogueTreeSessionSavedData extends SavedData {
             value.put("Replacements", replacements);
             entries.add(value);
         });
+        quarantined.forEach(raw -> entries.add(raw.copy()));
         tag.put("Sessions", entries);
         return tag;
     }

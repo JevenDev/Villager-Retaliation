@@ -259,7 +259,7 @@ public final class ConversationPresentationService {
         var session = new Session(id, snapshot.revision(), label(snapshot.identity().title()), snapshot.phase(), line, control, takeover,
                 controller == null ? "" : label(controller.getName().getString()), handover, visible, check, label(outcome),
                 snapshot.confirmation() == null ? null : snapshot.confirmation().id(), prices.transactions(),
-                ConversationRecovery.canControl(player, saved), ConversationRecovery.canMigrate(player, saved), history(player, saved));
+                ConversationRecovery.canCancel(player, saved), ConversationRecovery.canMigrate(player, saved), history(player, saved));
         return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), page, pages, List.of(), session,
                 text(issue.isBlank() ? result.diagnostic() : issue));
     }

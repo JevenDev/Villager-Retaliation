@@ -607,6 +607,50 @@ public final class ConversationSessionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void cancelledInterruptedEffectsRetainReceiptsAndReleaseSpeakers(GameTestHelper helper) throws IOException {
+        try (var disk = new Disk()) {
+            var player = helper.makeMockServerPlayerInLevel();
+            var source = session(UUID.randomUUID());
+            var original = source.identity;
+            var identity = new ConversationSession.Identity(original.id(), original.conversation(), 1, "graph-v1",
+                    null, null, "", ResourceLocation.parse("fixture:quest"), "provider", original.character(), original.dimension(),
+                    player.getUUID(), null, "A conversation", "guidance", 0);
+            var session = new ConversationSession(identity, player.getUUID(), UUID.randomUUID(), "welcome",
+                    new ConversationSession.Speaker("provider", identity.character(), identity.dimension(), "Mira"));
+            session.phase = ConversationSession.Phase.RESPONSE_EFFECTS;
+            session.response = "agree";
+            session.actingPlayer = UUID.randomUUID();
+            session.participants.add(session.actingPlayer);
+            var completed = new ConversationSession.Receipt("1/response/agree/xp", session.actingPlayer, session.questRun, action(),
+                    ConversationSession.ReceiptState.RESOLVED, ActionResult.success(VillagerActionResult.success(), VillagerActionRegistry.capabilities(action())));
+            var unavailable = new ConversationSession.Receipt("1/response/agree/next", session.actingPlayer, session.questRun, action(),
+                    ConversationSession.ReceiptState.RESOLVED, ActionResult.unavailable("Original quest run changed", VillagerActionRegistry.capabilities(action()), VillagerActionResult.EMPTY));
+            session.receipts.put(completed.key(), completed);
+            session.receipts.put(unavailable.key(), unavailable);
+            var data = disk.open();
+            data.write(null, 0, session);
+            helper.assertTrue(ConversationRecovery.canCancel(player, session), "known effects allow cancellation without the original actor, run or speaker");
+            helper.assertFalse(ConversationRecovery.canControl(player, session), "pending effects still block content migration");
+            ConversationRecovery.apply(player, session, ConversationSession.Intent.CANCEL);
+            session.revision++;
+            data.write(null, 1, session);
+            var restored = disk.reload();
+            helper.assertTrue(restored.diagnostic().isBlank(), "cancelled session remains valid: " + restored.diagnostic());
+            helper.assertValueEqual(restored.session(identity.id()).phase, ConversationSession.Phase.CANCELLED, "cancellation survives reload");
+            helper.assertValueEqual(restored.session(identity.id()).receipts, session.receipts, "cancellation retains every effect receipt");
+            helper.assertTrue(restored.activeCharacter(identity.character()) == null, "cancellation releases the character lock");
+            session.phase = ConversationSession.Phase.RESPONSE_EFFECTS;
+            session.receipts.put(unavailable.key(), new ConversationSession.Receipt(unavailable.key(), unavailable.actor(), unavailable.questRun(),
+                    unavailable.action(), ConversationSession.ReceiptState.PREPARED, unavailable.result()));
+            helper.assertFalse(ConversationRecovery.canCancel(player, session), "unknown effect results still prevent cancellation");
+            session.receipts.put(unavailable.key(), new ConversationSession.Receipt(unavailable.key(), unavailable.actor(), unavailable.questRun(),
+                    unavailable.action(), ConversationSession.ReceiptState.RESOLVED, ActionResult.suspended(UUID.randomUUID(), java.util.Set.of())));
+            helper.assertFalse(ConversationRecovery.canCancel(player, session), "running dependencies still prevent cancellation");
+        }
+        helper.succeed();
+    }
+
     private static ConversationSession session(UUID character) {
         UUID player = UUID.randomUUID();
         var id = ResourceLocation.parse("campaign_fixture:mentor_conversation");
