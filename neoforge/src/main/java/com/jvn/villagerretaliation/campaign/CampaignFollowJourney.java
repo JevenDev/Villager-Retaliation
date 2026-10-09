@@ -50,6 +50,12 @@ public record CampaignFollowJourney(Key key, ResourceLocation campaign, UUID ins
                 dimension, destination, followDistance, arrivalDistance, start, position, distance, startedAt, observedAt, State.CANCELLED, participants);
     }
 
+    CampaignFollowJourney retargeted(BlockPos target) {
+        CampaignStateCodec.require(state == State.ACTIVE, "resolved journey cannot be retargeted");
+        return new CampaignFollowJourney(key, campaign, instance, fingerprint, definition, definitionHash, role, location, actor,
+                dimension, target, followDistance, arrivalDistance, start, position, distance, startedAt, observedAt, state, participants);
+    }
+
     public boolean sameIdentity(CampaignFollowJourney other) {
         return other != null && key.equals(other.key) && campaign.equals(other.campaign) && instance.equals(other.instance)
                 && fingerprint.equals(other.fingerprint) && definition.equals(other.definition) && definitionHash.equals(other.definitionHash)

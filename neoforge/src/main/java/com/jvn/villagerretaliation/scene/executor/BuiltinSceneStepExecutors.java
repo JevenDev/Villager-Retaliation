@@ -167,6 +167,11 @@ public final class BuiltinSceneStepExecutors {
                 return actorUnavailable(c, "moving actor is unavailable or unloaded");
             String reservation = com.jvn.villagerretaliation.campaign.CampaignFollowService.movementIssue(c, actor);
             if (!reservation.isBlank()) return SceneStepResult.waitUntil(c.gameTime() + 20, reservation);
+            var repaired = com.jvn.villagerretaliation.campaign.CampaignMovementRepairs.reconcile(c);
+            if (repaired.outcome() != SceneStepResult.Outcome.READY) {
+                if (actor instanceof Mob mob) mob.getNavigation().stop();
+                return repaired;
+            }
             Destination target = durableDestination(c);
             if (target == null)
                 return SceneStepResult.block(

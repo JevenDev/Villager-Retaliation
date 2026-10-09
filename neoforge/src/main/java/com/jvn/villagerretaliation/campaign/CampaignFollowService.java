@@ -28,10 +28,7 @@ public final class CampaignFollowService {
         if (!data.diagnostic().isBlank()) return waitFor(context, data.diagnostic());
         var key = key(context);
         var existing = data.journeys().get(key);
-        if (existing != null) {
-            String issue = identityIssue(context, resolved, existing);
-            return issue.isBlank() ? SceneStepResult.ready() : SceneStepResult.block("follow_identity_changed", issue);
-        }
+        if (existing != null) return retarget(context, resolved, existing, data);
         try {
             for (var other : data.journeys().values()) {
                 if (other.state() != CampaignFollowJourney.State.ACTIVE || !other.actor().equals(resolved.guide().getUUID())) continue;
@@ -76,6 +73,24 @@ public final class CampaignFollowService {
         }
     }
 
+    static SceneStepResult refreshDestination(SceneExecutionContext context) {
+        var resolved = resolve(context);
+        if (!resolved.available()) return waitFor(context, resolved.diagnostic());
+        var data = CampaignFollowSavedData.get(context.server().overworld());
+        if (!data.diagnostic().isBlank()) return waitFor(context, data.diagnostic());
+        var journey = data.journeys().get(key(context));
+        return journey == null ? SceneStepResult.block("follow_record_missing", "The prepared journey record is missing. Restore its campaign save.")
+                : retarget(context, resolved, journey, data);
+    }
+
+    private static SceneStepResult retarget(SceneExecutionContext context, Binding binding, CampaignFollowJourney journey, CampaignFollowSavedData data) {
+        String issue = identityIssue(context, binding, journey);
+        if (!issue.isBlank()) return SceneStepResult.block("follow_identity_changed", issue);
+        try { data.retarget(journey, binding.destination(), CampaignLocationSavedData.get(context.server().overworld())); }
+        catch (IOException exception) { return waitFor(context, "The repaired journey destination is waiting for world storage."); }
+        return SceneStepResult.ready();
+    }
+
     public static SceneStepResult observe(SceneExecutionContext context) {
         var resolved = resolve(context);
         if (!resolved.available()) return waitFor(context, resolved.diagnostic());
@@ -85,6 +100,8 @@ public final class CampaignFollowService {
         if (journey == null) return SceneStepResult.block("follow_record_missing", "The prepared journey record is missing. Restore its campaign save.");
         String issue = identityIssue(context, resolved, journey);
         if (!issue.isBlank()) return SceneStepResult.block("follow_identity_changed", issue);
+        try { journey = data.retarget(journey, resolved.destination(), CampaignLocationSavedData.get(context.server().overworld())); }
+        catch (IOException exception) { return waitFor(context, "The repaired journey destination is waiting for world storage."); }
         if (journey.state() == CampaignFollowJourney.State.COMPLETED) return SceneStepResult.applied();
         if (journey.state() == CampaignFollowJourney.State.CANCELLED)
             return SceneStepResult.fail("follow_cancelled", "This journey was cancelled. Start its authored alternate path.");
@@ -251,7 +268,9 @@ public final class CampaignFollowService {
                 && journey.fingerprint().equals(instance.fingerprint()) && journey.definition().equals(context.definition().id())
                 && journey.definitionHash().equals(context.definition().definitionHash()) && journey.actor().equals(binding.guide().getUUID())
                 && journey.role().equals(binding.role()) && journey.location().equals(binding.location())
-                && journey.dimension().equals(binding.destination().dimension()) && journey.destination().equals(binding.destination().position())
+                && journey.dimension().equals(binding.destination().dimension())
+                && (journey.destination().equals(binding.destination().position()) || !CampaignLocationSavedData.get(context.server().overworld())
+                        .authorization(binding.destination(), journey.dimension(), journey.destination()).isEmpty())
                 && journey.followDistance() == context.step().follow().followDistance() && journey.arrivalDistance() == context.step().follow().arrivalDistance()
                 ? "" : "The saved journey no longer matches its campaign, scene, character or destination. Restore compatible content and bindings.";
     }

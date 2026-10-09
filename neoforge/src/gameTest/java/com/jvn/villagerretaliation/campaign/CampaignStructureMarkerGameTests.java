@@ -177,7 +177,7 @@ public final class CampaignStructureMarkerGameTests {
         helper.succeed();
     }
 
-    private static final class StructureFixture implements AutoCloseable {
+    static final class StructureFixture implements AutoCloseable {
         final GameTestHelper helper;
         final BlockPos origin;
         final LevelChunk chunk;

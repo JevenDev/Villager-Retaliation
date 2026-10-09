@@ -34,6 +34,7 @@ final class CampaignCommands {
     static LiteralArgumentBuilder<CommandSourceStack> root() {
         return literal("campaign").requires(source -> source.hasPermission(2))
                 .then(CampaignReferenceCommands.root())
+                .then(CampaignBindingCommands.root())
                 .then(literal("state").then(campaign().executes(context -> state(context, 1))
                         .then(argument("page", IntegerArgumentType.integer(1)).executes(context -> state(context, page(context))))))
                 .then(literal("player").then(campaign().then(player().executes(context -> playerState(context, 1))

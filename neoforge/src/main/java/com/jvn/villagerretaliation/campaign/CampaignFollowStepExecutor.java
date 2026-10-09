@@ -24,6 +24,8 @@ public final class CampaignFollowStepExecutor implements SceneStepExecutor {
         var result = existing ? SceneStepResult.ready() : movement.prepare(context);
         if (result.outcome() != SceneStepResult.Outcome.READY) return stopped(context, result);
         if (!existing) context.record().putDurableValue("follow_pause_ticks", Long.toString(pausedTicks(context)));
+        var repaired = CampaignMovementRepairs.reconcile(context);
+        if (repaired.outcome() != SceneStepResult.Outcome.READY) return stopped(context, repaired);
         var movementIssue = movementIssue(context);
         if (!movementIssue.isBlank()) return stopped(context, SceneStepResult.block("follow_preparation_changed", movementIssue));
         context.repository().changed();
@@ -36,8 +38,8 @@ public final class CampaignFollowStepExecutor implements SceneStepExecutor {
     }
 
     @Override public SceneStepResult apply(SceneExecutionContext context) {
-        var movementIssue = movementIssue(context);
-        if (!movementIssue.isBlank()) return stopped(context, SceneStepResult.block("follow_preparation_changed", movementIssue));
+        var ready = movementReady(context);
+        if (ready.outcome() != SceneStepResult.Outcome.READY) return stopped(context, ready);
         var observed = CampaignFollowService.observe(context);
         if (observed.outcome() != SceneStepResult.Outcome.READY) return stopped(context, observed);
         var deadline = context.record().durableValues().get("deadline");
@@ -64,6 +66,8 @@ public final class CampaignFollowStepExecutor implements SceneStepExecutor {
     @Override public SceneStepResult reconcile(SceneExecutionContext context) { return apply(context); }
 
     @Override public SceneStepResult verify(SceneExecutionContext context) {
+        var ready = movementReady(context);
+        if (ready.outcome() != SceneStepResult.Outcome.READY) return stopped(context, ready);
         var result = CampaignFollowService.observe(context);
         return result.outcome() == SceneStepResult.Outcome.APPLIED ? SceneStepResult.complete() : stopped(context, result);
     }
@@ -71,6 +75,15 @@ public final class CampaignFollowStepExecutor implements SceneStepExecutor {
     @Override public SceneStepResult cancel(SceneExecutionContext context) { return CampaignFollowService.cancel(context); }
 
     @Override public SceneStepResult cleanup(SceneExecutionContext context) { return CampaignFollowService.cancel(context); }
+
+    private static SceneStepResult movementReady(SceneExecutionContext context) {
+        var refreshed = CampaignFollowService.refreshDestination(context);
+        if (refreshed.outcome() != SceneStepResult.Outcome.READY) return refreshed;
+        var repaired = CampaignMovementRepairs.reconcile(context);
+        if (repaired.outcome() != SceneStepResult.Outcome.READY) return repaired;
+        String issue = movementIssue(context);
+        return issue.isBlank() ? SceneStepResult.ready() : SceneStepResult.block("follow_preparation_changed", issue);
+    }
 
     private static String movementIssue(SceneExecutionContext context) {
         var journey = CampaignFollowSavedData.get(context.server().overworld()).journeys()

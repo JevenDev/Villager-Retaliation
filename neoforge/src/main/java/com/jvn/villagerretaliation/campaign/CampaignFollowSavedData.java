@@ -74,6 +74,23 @@ public final class CampaignFollowSavedData extends SavedData {
         CampaignStateCodec.require(prior == null || candidate.observedAt() >= prior.observedAt() && candidate.distance() >= prior.distance()
                 && candidate.participants().entrySet().stream().allMatch(entry -> entry.getValue().distance() >= prior.participants().get(entry.getKey()).distance()),
                 "follow journey observations moved backwards");
+        persist(candidate);
+    }
+
+    synchronized CampaignFollowJourney retarget(CampaignFollowJourney prior, CampaignLocationBinding location, CampaignLocationSavedData locations) throws IOException {
+        if (!diagnostic.isBlank()) throw new IOException(diagnostic);
+        CampaignStateCodec.require(prior.equals(journeys.get(prior.key())), "follow journey changed before location repair");
+        if (prior.destination().equals(location.position()) || prior.state() != CampaignFollowJourney.State.ACTIVE) return prior;
+        CampaignStateCodec.require(prior.campaign().equals(location.campaign()) && prior.instance().equals(location.instance())
+                && prior.fingerprint().equals(location.fingerprint()) && prior.location().equals(location.alias())
+                && prior.dimension().equals(location.dimension())
+                && !locations.authorization(location, prior.dimension(), prior.destination()).isEmpty(), "follow destination has no campaign repair authorization");
+        var candidate = prior.retargeted(location.position());
+        persist(candidate);
+        return candidate;
+    }
+
+    private void persist(CampaignFollowJourney candidate) throws IOException {
         var next = new LinkedHashMap<>(journeys);
         next.put(candidate.key(), candidate);
         validate(next);

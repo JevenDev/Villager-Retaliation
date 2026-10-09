@@ -63,6 +63,7 @@ public final class CampaignQuestReconciliation {
             boolean changed = quests.campaignPersistencePending();
             if (changed) quests.persistCampaignProgress(level);
             changed |= CampaignQuestCharacters.reconcile(player, quest, progress);
+            changed |= CampaignQuestLocations.reconcile(player, quest, progress);
             if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) return changed;
             var instance = CampaignSavedData.get(level).instances().get(quest.campaign());
             var personal = instance == null ? null : instance.players().get(player.getUUID());

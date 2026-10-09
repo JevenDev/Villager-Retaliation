@@ -77,8 +77,11 @@ public final class CampaignLocationVariants {
         var resolved = CampaignLocationService.resolve(server, receipt.campaign(), variant.location());
         if (!resolved.available()) return diagnose(data, receipt, resolved.diagnostic());
         var binding = resolved.binding();
-        if (receipt.binding() != null && !receipt.binding().equals(binding))
-            return diagnose(data, receipt, "The saved location binding changed. Restore its original campaign location data.");
+        if (receipt.binding() != null && !receipt.binding().equals(binding)) {
+            if (!receipt.binding().sameOwner(binding) || !CampaignLocationSavedData.get(server.overworld()).knows(receipt.binding()))
+                return diagnose(data, receipt, "The saved location binding changed without a repair audit. Restore its original campaign location data.");
+            binding = receipt.binding();
+        }
         var level = server.getLevel(ResourceKey.create(Registries.DIMENSION, binding.dimension()));
         if (level == null) return diagnose(data, receipt, "The campaign location dimension is unavailable.");
         if (receipt.binding() == null) {
