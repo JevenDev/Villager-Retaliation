@@ -47,6 +47,14 @@ public final class SceneResources {
         QuestContentCatalogs.invalidate();
     }
 
+    public static AutoCloseable preserveTestOverride() {
+        TestOverride prior = testOverride;
+        return () -> {
+            testOverride = prior;
+            QuestContentCatalogs.invalidate();
+        };
+    }
+
     public static boolean hasTestOverride(MinecraftServer server) {
         return server != null && testOverride.server() == server;
     }
@@ -94,19 +102,21 @@ public final class SceneResources {
             MinecraftServer server,
             QuestBundleTransactions.Result bundles,
             EncounterResources.ContentSnapshot encounters) {
+        TestOverride override = testOverride;
+        return override.server() == server ? override.snapshot() : compileBundles(bundles, encounters);
+    }
+
+    public static ContentSnapshot compileBundles(
+            QuestBundleTransactions.Result bundles,
+            EncounterResources.ContentSnapshot encounters) {
         Set<ResourceLocation> encounterTemplates = encounters.templates().values().stream()
                 .map(template -> template.id()).collect(Collectors.toUnmodifiableSet());
-        return load(server, bundles, encounterTemplates);
+        return load(bundles, encounterTemplates);
     }
 
     private static ContentSnapshot load(
-            MinecraftServer server,
             QuestBundleTransactions.Result bundles,
             Set<ResourceLocation> encounterTemplates) {
-        TestOverride override = testOverride;
-        if (override.server() == server) {
-            return override.snapshot();
-        }
         Map<ResourceLocation, CompiledScene> scenes = new LinkedHashMap<>();
         Map<ResourceLocation, List<SceneDiagnostic>> diagnostics = new LinkedHashMap<>();
         if (bundles != null) {

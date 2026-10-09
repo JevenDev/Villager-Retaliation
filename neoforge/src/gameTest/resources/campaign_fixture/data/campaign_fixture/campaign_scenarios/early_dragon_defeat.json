@@ -1,0 +1,128 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:early_dragon_defeat",
+  "campaign": "campaign_fixture:reconciliation",
+  "players": [
+    "first"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [],
+  "steps": [
+    {
+      "id": "early_defeat",
+      "type": "world_event",
+      "event": "minecraft:ender_dragon_defeated"
+    },
+    {
+      "id": "unplayed_world_event",
+      "type": "assert_campaign",
+      "outcomes": 1,
+      "rewards": 0
+    },
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "first_decision_offer",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "first_decision_reminder",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "reminder",
+      "response": "refused"
+    },
+    {
+      "id": "first_decision_turn_in",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "report",
+      "slot": "turn_in",
+      "response": "finish_report"
+    },
+    {
+      "id": "first_decision_leave",
+      "type": "interrupt",
+      "player": "first",
+      "actor": "guide",
+      "active": false
+    },
+    {
+      "id": "first_dragon_catch_up_offer",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:dragon_catch_up",
+      "stage": "catch_up",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "first_dragon_catch_up_reminder",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:dragon_catch_up",
+      "stage": "catch_up",
+      "slot": "reminder",
+      "response": "learn_dragon"
+    },
+    {
+      "id": "first_dragon_catch_up_turn_in",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:dragon_catch_up",
+      "stage": "catch_up_report",
+      "slot": "turn_in",
+      "response": "finish_catch_up_report"
+    },
+    {
+      "id": "first_dragon_catch_up_leave",
+      "type": "interrupt",
+      "player": "first",
+      "actor": "guide",
+      "active": false
+    },
+    {
+      "id": "catch_up_reward_only",
+      "type": "assert_player",
+      "player": "first",
+      "experience": 45,
+      "participation": [
+        "decision"
+      ]
+    },
+    {
+      "id": "observed_origin",
+      "type": "assert_outcome",
+      "milestone": "dragon",
+      "outcome": "defeated",
+      "origin": "world_observation"
+    }
+  ]
+}

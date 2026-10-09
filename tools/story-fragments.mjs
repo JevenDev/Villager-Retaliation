@@ -31,6 +31,7 @@ export function resourceKind(file) {
   if (!match || file.split("/").some(part => part === "." || part === "..")) return null;
   const rest = match[2];
   if (rest.startsWith("quests/") && rest.split("/")[1] !== "_shared" && rest.split("/")[2] === "_shared") return null;
+  if (/^campaign_scenarios\/[a-z0-9_./-]+\.json$/.test(rest)) return "scenario";
   if (/^campaigns\/(?:[a-z0-9_.-]+\/)+campaign\.json$/.test(rest)) return "campaign";
   if (/^campaigns\/(?:[a-z0-9_.-]+\/)+locales\/[a-z0-9_-]+\.json$/.test(rest)) return "locale";
   if (/^quests\/(?!_shared\/)[a-z0-9_.-]+\/[a-z0-9_.-]+\/quest\.json$/.test(rest)) return "quest";

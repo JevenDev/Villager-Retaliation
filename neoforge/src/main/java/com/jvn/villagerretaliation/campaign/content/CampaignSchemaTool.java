@@ -15,5 +15,8 @@ public final class CampaignSchemaTool {
         var gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
         Files.writeString(output, gson.toJson(CampaignSchema.export()) + System.lineSeparator(), StandardCharsets.UTF_8);
         System.out.println("Wrote campaign schema to " + output.toAbsolutePath());
+        Path scenarios = output.resolveSibling("campaign-scenario-v1.schema.json");
+        Files.writeString(scenarios, gson.toJson(CampaignScenarioSchema.export()) + System.lineSeparator(), StandardCharsets.UTF_8);
+        System.out.println("Wrote campaign scenario schema to " + scenarios.toAbsolutePath());
     }
 }

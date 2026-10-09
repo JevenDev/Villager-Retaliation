@@ -1,0 +1,848 @@
+[
+  {
+    "name": "accept campaign_fixture:admitted_catch_up",
+    "fixture": "admitted_catch_up",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:refused_catch_up",
+    "fixture": "refused_catch_up",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:dragon_reconciliation",
+    "fixture": "dragon_reconciliation",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:early_dragon_defeat",
+    "fixture": "early_dragon_defeat",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:conversation_failure",
+    "fixture": "conversation_failure",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:conversation_success",
+    "fixture": "conversation_success",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:conversation_multiplayer",
+    "fixture": "conversation_multiplayer",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:competing_decisions",
+    "fixture": "competing_decisions",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:fixture_save_recovery",
+    "fixture": "fixture_save_recovery",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:conversation_save_recovery",
+    "fixture": "conversation_save_recovery",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "reject unsupported scenario version",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/schema",
+    "patches": [
+      {
+        "path": "/schema",
+        "value": "villagerretaliation:campaign_scenario/v2"
+      }
+    ]
+  },
+  {
+    "name": "reject unknown root field",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/unknown",
+    "patches": [
+      {
+        "path": "/unknown",
+        "value": true
+      }
+    ]
+  },
+  {
+    "name": "reject missing players",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/players",
+    "patches": [
+      {
+        "path": "/players",
+        "value": []
+      }
+    ]
+  },
+  {
+    "name": "reject duplicate player aliases",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/players/1",
+    "patches": [
+      {
+        "path": "/players",
+        "value": [
+          "first",
+          "first"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "reject duplicate actor aliases",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/actors/1/id",
+    "patches": [
+      {
+        "path": "/actors",
+        "value": [
+          {
+            "id": "guide",
+            "role": "mentor",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "guide",
+            "role": "mentor",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "reject duplicate campaign roles",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/actors/1/role",
+    "patches": [
+      {
+        "path": "/actors",
+        "value": [
+          {
+            "id": "guide",
+            "role": "mentor",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "id": "other",
+            "role": "mentor",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "reject duplicate location aliases",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/locations/1/alias",
+    "patches": [
+      {
+        "path": "/locations",
+        "value": [
+          {
+            "alias": "home",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          {
+            "alias": "home",
+            "position": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "reject actor outside bounded region",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/actors/0/position/x",
+    "patches": [
+      {
+        "path": "/actors/0/position/x",
+        "value": 33
+      }
+    ]
+  },
+  {
+    "name": "reject duplicate step identities",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/4/id",
+    "patches": [
+      {
+        "path": "/steps/4/id",
+        "value": "start"
+      }
+    ]
+  },
+  {
+    "name": "reject undeclared player",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/0/player",
+    "patches": [
+      {
+        "path": "/steps/0/player",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject undeclared party member",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/2/member",
+    "patches": [
+      {
+        "path": "/steps/2/member",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject undeclared handover member",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/9/argument",
+    "patches": [
+      {
+        "path": "/steps/9/argument",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject undeclared actor",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/18/actor",
+    "patches": [
+      {
+        "path": "/steps/18/actor",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject unknown controller assertion",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/11/controller",
+    "patches": [
+      {
+        "path": "/steps/11/controller",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject advance before session exists",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/4/session",
+    "patches": [
+      {
+        "path": "/steps/4/session",
+        "value": "future"
+      }
+    ]
+  },
+  {
+    "name": "reject duplicate session",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/4/session",
+    "patches": [
+      {
+        "path": "/steps/4",
+        "value": {
+          "id": "second_start",
+          "type": "conversation_start",
+          "player": "first",
+          "session": "talk",
+          "conversation": "campaign_fixture:mentor_conversation",
+          "topic": "guidance"
+        }
+      }
+    ]
+  },
+  {
+    "name": "reject checkpoint for future conversation",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/5/target",
+    "patches": [
+      {
+        "path": "/steps/5/target",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject campaign checkpoint with target",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/7/target",
+    "patches": [
+      {
+        "path": "/steps/7/target",
+        "value": "first"
+      }
+    ]
+  },
+  {
+    "name": "reject reference to non-checkpoint",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/7/checkpoint",
+    "patches": [
+      {
+        "path": "/steps/7/checkpoint",
+        "value": "start"
+      }
+    ]
+  },
+  {
+    "name": "reject roll seed on an advance",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/10/seed",
+    "patches": [
+      {
+        "path": "/steps/10/seed",
+        "value": 2
+      }
+    ]
+  },
+  {
+    "name": "reject advance with response argument",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/10/argument",
+    "patches": [
+      {
+        "path": "/steps/10/argument",
+        "value": "leave"
+      }
+    ]
+  },
+  {
+    "name": "reject choose without argument",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/30/argument",
+    "patches": [
+      {
+        "path": "/steps/30",
+        "value": {
+          "id": "leave",
+          "type": "conversation_intent",
+          "player": "first",
+          "session": "talk",
+          "intent": "choose"
+        }
+      }
+    ]
+  },
+  {
+    "name": "reject revision from another scope",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/10/revision_from",
+    "patches": [
+      {
+        "path": "/steps/10/revision_from",
+        "value": "start"
+      }
+    ]
+  },
+  {
+    "name": "reject replay of future request",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/8/request",
+    "patches": [
+      {
+        "path": "/steps/8/request",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject replay of checkpoint",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/8/request",
+    "patches": [
+      {
+        "path": "/steps/8/request",
+        "value": "completed_before_retry"
+      }
+    ]
+  },
+  {
+    "name": "reject invented quest acceptance",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/8/accepted",
+    "patches": [
+      {
+        "path": "/steps/8/accepted",
+        "value": false
+      }
+    ]
+  },
+  {
+    "name": "reject selection without prompt",
+    "fixture": "competing_decisions",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/6/prompt",
+    "patches": [
+      {
+        "path": "/steps/6/prompt",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject vacuous campaign assertion",
+    "fixture": "competing_decisions",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps/20",
+    "patches": [
+      {
+        "path": "/steps/20",
+        "value": {
+          "id": "one_outcome",
+          "type": "assert_campaign"
+        }
+      }
+    ]
+  },
+  {
+    "name": "reject excessive wait time",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": false,
+    "pointer": "/steps",
+    "patches": [
+      {
+        "path": "/steps",
+        "value": [
+          {
+            "id": "wait_0",
+            "type": "wait",
+            "ticks": 1200
+          },
+          {
+            "id": "wait_1",
+            "type": "wait",
+            "ticks": 1200
+          },
+          {
+            "id": "wait_2",
+            "type": "wait",
+            "ticks": 1200
+          },
+          {
+            "id": "wait_3",
+            "type": "wait",
+            "ticks": 1200
+          },
+          {
+            "id": "wait_4",
+            "type": "wait",
+            "ticks": 1200
+          },
+          {
+            "id": "wait_5",
+            "type": "wait",
+            "ticks": 1200
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "reject unavailable campaign",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/campaign",
+    "patches": [
+      {
+        "path": "/campaign",
+        "value": "campaign_fixture:missing"
+      }
+    ]
+  },
+  {
+    "name": "reject unavailable character role",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/actors/0/role",
+    "patches": [
+      {
+        "path": "/actors/0/role",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject unavailable location",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/locations/0/alias",
+    "patches": [
+      {
+        "path": "/locations/0/alias",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject foreign quest",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/1/quest",
+    "patches": [
+      {
+        "path": "/steps/1/quest",
+        "value": "campaign_fixture:characters"
+      }
+    ]
+  },
+  {
+    "name": "reject missing quest slot",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/1/slot",
+    "patches": [
+      {
+        "path": "/steps/1/stage",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing quest response",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/1/response",
+    "patches": [
+      {
+        "path": "/steps/1/response",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing selected response",
+    "fixture": "competing_decisions",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/6/response",
+    "patches": [
+      {
+        "path": "/steps/6/response",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject foreign conversation",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/3/conversation",
+    "patches": [
+      {
+        "path": "/steps/3/conversation",
+        "value": "campaign_fixture:missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing topic",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/3/topic",
+    "patches": [
+      {
+        "path": "/steps/3/topic",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing conversation response",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/30/argument",
+    "patches": [
+      {
+        "path": "/steps/30/argument",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing conversation outcome",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/32/outcome",
+    "patches": [
+      {
+        "path": "/steps/32/outcome",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing conversation node",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/32/node",
+    "patches": [
+      {
+        "path": "/steps/32/node",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing resolved check",
+    "fixture": "conversation_success",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/7/check",
+    "patches": [
+      {
+        "path": "/steps/7/check",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject unavailable fixture entry",
+    "fixture": "fixture_save_recovery",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/2/entry",
+    "patches": [
+      {
+        "path": "/steps/2/entry",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing irreversible milestone",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/5/milestone",
+    "patches": [
+      {
+        "path": "/steps/5/milestone",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject missing milestone outcome",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/5/outcome",
+    "patches": [
+      {
+        "path": "/steps/5/outcome",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "reject duplicate participation",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/6/participation/1",
+    "patches": [
+      {
+        "path": "/steps/6/participation",
+        "value": [
+          "decision",
+          "decision"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "reject missing participation milestone",
+    "fixture": "admitted_catch_up",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/6/participation/0",
+    "patches": [
+      {
+        "path": "/steps/6/participation",
+        "value": [
+          "missing"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "reject unobserved world event",
+    "fixture": "conversation_multiplayer",
+    "valid": false,
+    "catalog": true,
+    "pointer": "/steps/0/event",
+    "patches": [
+      {
+        "path": "/steps",
+        "value": [
+          {
+            "id": "event",
+            "type": "world_event",
+            "event": "minecraft:ender_dragon_defeated"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "accept stale revision checkpoint",
+    "fixture": "conversation_multiplayer",
+    "valid": true,
+    "catalog": true,
+    "patches": [
+      {
+        "path": "/steps/10/revision_from",
+        "value": "before_denied_advance"
+      }
+    ]
+  },
+  {
+    "name": "accept existing quest stage identifiers",
+    "fixture": "admitted_catch_up",
+    "valid": true,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/1/stage",
+        "value": "Chapter:Opening"
+      }
+    ]
+  },
+  {
+    "name": "accept existing quest response identifiers",
+    "fixture": "admitted_catch_up",
+    "valid": true,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/1/response",
+        "value": "Accept:Quest"
+      }
+    ]
+  }
+]

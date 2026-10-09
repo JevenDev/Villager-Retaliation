@@ -1,0 +1,128 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:impact_confirmation_replay",
+  "campaign": "campaign_fixture:reconciliation",
+  "players": [
+    "first"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [],
+  "steps": [
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "first_decision_offer",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "offer",
+      "response": "accept",
+      "confirm": false
+    },
+    {
+      "id": "before_decline",
+      "type": "checkpoint",
+      "scope": "campaign"
+    },
+    {
+      "id": "decline",
+      "type": "quest_confirmation",
+      "player": "first",
+      "accept": false
+    },
+    {
+      "id": "decline_preserves_state",
+      "type": "assert_same",
+      "checkpoint": "before_decline"
+    },
+    {
+      "id": "first_decision_offer_again",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "offer",
+      "response": "accept",
+      "confirm": false
+    },
+    {
+      "id": "stale_decline",
+      "type": "replay",
+      "request": "decline"
+    },
+    {
+      "id": "accept",
+      "type": "quest_confirmation",
+      "player": "first",
+      "accept": true
+    },
+    {
+      "id": "accepted_quest",
+      "type": "assert_quest",
+      "player": "first",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "completions": 0
+    },
+    {
+      "id": "first_decision_reminder",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "reminder",
+      "response": "admitted"
+    },
+    {
+      "id": "first_decision_turn_in",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "report",
+      "slot": "turn_in",
+      "response": "finish_report"
+    },
+    {
+      "id": "completed",
+      "type": "checkpoint",
+      "scope": "campaign"
+    },
+    {
+      "id": "stale_accept",
+      "type": "replay",
+      "request": "accept"
+    },
+    {
+      "id": "accept_once",
+      "type": "assert_same",
+      "checkpoint": "completed"
+    },
+    {
+      "id": "reward_once",
+      "type": "assert_player",
+      "player": "first",
+      "experience": 40,
+      "participation": [
+        "decision"
+      ]
+    }
+  ]
+}

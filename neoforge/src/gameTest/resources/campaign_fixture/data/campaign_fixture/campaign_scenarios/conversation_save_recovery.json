@@ -1,0 +1,124 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:conversation_save_recovery",
+  "campaign": "campaign_fixture:characters",
+  "players": [
+    "first"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "role": "mentor",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "home",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "start",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "talk",
+      "conversation": "campaign_fixture:mentor_conversation",
+      "topic": "guidance"
+    },
+    {
+      "id": "before_advance",
+      "type": "checkpoint",
+      "scope": "conversation",
+      "target": "talk"
+    },
+    {
+      "id": "block_writes",
+      "type": "storage",
+      "store": "conversation",
+      "available": false
+    },
+    {
+      "id": "advance",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance",
+      "accepted": false
+    },
+    {
+      "id": "failed_write_unchanged",
+      "type": "assert_same",
+      "checkpoint": "before_advance"
+    },
+    {
+      "id": "restore_writes",
+      "type": "storage",
+      "store": "conversation",
+      "available": true
+    },
+    {
+      "id": "retry_advance",
+      "type": "replay",
+      "request": "advance"
+    },
+    {
+      "id": "narration",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "responses",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "leave",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "choose",
+      "argument": "leave"
+    },
+    {
+      "id": "finish",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "finished",
+      "type": "assert_conversation",
+      "session": "talk",
+      "phase": "complete",
+      "outcome": "guidance_declined",
+      "choices": 1,
+      "checks": 0,
+      "receipts": 0
+    }
+  ]
+}

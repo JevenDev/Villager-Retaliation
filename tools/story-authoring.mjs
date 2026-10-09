@@ -10,7 +10,7 @@ import { validateContentSchema } from "./content-schema-validation.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const { createZip } = createRequire(import.meta.url)("./quest-builder/zip-utils.js");
 const schemas = new Map(await Promise.all(Object.entries({
-  quest: "quest-v2", campaign: "campaign-v1", conversation: "conversation-v1", scene: "scene-v1",
+  quest: "quest-v2", campaign: "campaign-v1", conversation: "conversation-v1", scenario: "campaign-scenario-v1", scene: "scene-v1",
   encounter: "encounter-v1", reward: "quest-reward-v1", pool: "quest-pool-v1", locale: "quest-locale-v1"
 }).map(async ([kind, name]) => [kind, JSON.parse(await readFile(path.join(root, "tools/datapack-builder", name + ".schema.json"), "utf8"))])));
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -128,8 +128,8 @@ export async function validateStory(compiled) {
   if (errors.length) return { errors, warnings: [] };
   const directory = await mkdtemp(path.join(os.tmpdir(), "story-validation-"));
   try {
-    const files = { quests: [], conversations: [], campaigns: [] };
-    const fields = { quest: "quests", conversation: "conversations", campaign: "campaigns" };
+    const files = { quests: [], conversations: [], campaigns: [], scenarios: [] };
+    const fields = { quest: "quests", conversation: "conversations", campaign: "campaigns", scenario: "scenarios" };
     for (const [file, value] of compiled.outputs) {
       const absolute = path.join(directory, file);
       await mkdir(path.dirname(absolute), { recursive: true });

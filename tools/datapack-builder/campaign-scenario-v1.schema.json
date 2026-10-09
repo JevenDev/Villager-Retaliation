@@ -1,0 +1,1172 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "campaign",
+    "players",
+    "steps"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "enum": [
+        "villagerretaliation:campaign_scenario/v1"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+    },
+    "campaign": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+    },
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+      },
+      "minItems": 1,
+      "maxItems": 16
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "position"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "position": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer",
+                "minimum": -32,
+                "maximum": 32
+              },
+              "y": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 32
+              },
+              "z": {
+                "type": "integer",
+                "minimum": -32,
+                "maximum": 32
+              }
+            }
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "alias",
+          "position"
+        ],
+        "properties": {
+          "alias": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "position": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer",
+                "minimum": -32,
+                "maximum": 32
+              },
+              "y": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 32
+              },
+              "z": {
+                "type": "integer",
+                "minimum": -32,
+                "maximum": 32
+              }
+            }
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "action"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "connect",
+                  "disconnect"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "leader",
+              "member"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "party"
+                ]
+              },
+              "leader": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "member": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "admin": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "leader",
+              "member",
+              "enabled"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "privilege"
+                ]
+              },
+              "leader": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "member": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "enabled": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "actor",
+              "quest",
+              "stage",
+              "slot"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "quest_prompt"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "actor": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "quest": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "stage": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+              },
+              "slot": {
+                "type": "string",
+                "enum": [
+                  "offer",
+                  "reminder",
+                  "turn_in"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "prompt",
+              "response"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "quest_select"
+                ]
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "response": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+              },
+              "confirm": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "actor",
+              "quest",
+              "stage",
+              "slot",
+              "response"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "quest_response"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "actor": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "quest": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "stage": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+              },
+              "slot": {
+                "type": "string",
+                "enum": [
+                  "offer",
+                  "reminder",
+                  "turn_in"
+                ]
+              },
+              "response": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+              },
+              "confirm": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "accept"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "quest_confirmation"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "accept": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "session",
+              "conversation",
+              "topic"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "conversation_start"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "session": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "conversation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "topic": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "accepted": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "session",
+              "intent"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "conversation_intent"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "session": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "intent": {
+                "type": "string",
+                "enum": [
+                  "advance",
+                  "choose",
+                  "roll",
+                  "resume",
+                  "join",
+                  "take_control",
+                  "hand_over",
+                  "release_control",
+                  "confirm",
+                  "decline"
+                ]
+              },
+              "argument": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "revision_from": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "seed": {
+                "type": "integer",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "accepted": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "request"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "replay"
+                ]
+              },
+              "request": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "accepted": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "actor",
+              "active"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "interrupt"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "actor": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "active": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "entry"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "fixture_entry"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "entry": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "accepted": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "event"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "world_event"
+                ]
+              },
+              "event": {
+                "type": "string",
+                "enum": [
+                  "minecraft:ender_dragon_defeated"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "store",
+              "available"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "storage"
+                ]
+              },
+              "store": {
+                "type": "string",
+                "enum": [
+                  "campaign",
+                  "conversation"
+                ]
+              },
+              "available": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "reload"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "ticks"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "wait"
+                ]
+              },
+              "ticks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1200
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "scope"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "checkpoint"
+                ]
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "campaign",
+                  "conversation",
+                  "player"
+                ]
+              },
+              "target": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "checkpoint"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_same"
+                ]
+              },
+              "checkpoint": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "milestone",
+              "outcome"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_outcome"
+                ]
+              },
+              "milestone": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "outcome": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "player_decision",
+                  "world_observation",
+                  "operator_fixture"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_player"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "experience": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "participation": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+                },
+                "minItems": 0,
+                "maxItems": 1024
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "quest"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_quest"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "quest": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "stage": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+              },
+              "completions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "session"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_conversation"
+                ]
+              },
+              "session": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "node": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "phase": {
+                "type": "string",
+                "enum": [
+                  "node_effects",
+                  "exchanges",
+                  "responses",
+                  "response_effects",
+                  "check",
+                  "rolled",
+                  "complete",
+                  "confirmation"
+                ]
+              },
+              "controller": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "outcome": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "choices": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1024
+              },
+              "checks": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1024
+              },
+              "receipts": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65536
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "session",
+              "check"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_check"
+                ]
+              },
+              "session": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "check": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "die": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              },
+              "success": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_campaign"
+                ]
+              },
+              "outcomes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1024
+              },
+              "audits": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1024
+              },
+              "rewards": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65536
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 1024
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/campaign-scenario-v1.schema.json",
+  "title": "Villager Retaliation Campaign Scenario v1"
+}

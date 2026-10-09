@@ -1,0 +1,250 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:conversation_multiplayer",
+  "campaign": "campaign_fixture:characters",
+  "players": [
+    "first",
+    "listener"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "role": "mentor",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "home",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "listener_connect",
+      "type": "player",
+      "player": "listener",
+      "action": "connect"
+    },
+    {
+      "id": "create_party",
+      "type": "party",
+      "leader": "first",
+      "member": "listener",
+      "admin": false
+    },
+    {
+      "id": "start",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "talk",
+      "conversation": "campaign_fixture:mentor_conversation",
+      "topic": "guidance"
+    },
+    {
+      "id": "join",
+      "type": "conversation_intent",
+      "player": "listener",
+      "session": "talk",
+      "intent": "join"
+    },
+    {
+      "id": "before_denied_advance",
+      "type": "checkpoint",
+      "scope": "conversation",
+      "target": "talk"
+    },
+    {
+      "id": "denied_advance",
+      "type": "conversation_intent",
+      "player": "listener",
+      "session": "talk",
+      "intent": "advance",
+      "accepted": false
+    },
+    {
+      "id": "listener_cannot_advance",
+      "type": "assert_same",
+      "checkpoint": "before_denied_advance"
+    },
+    {
+      "id": "grant_control",
+      "type": "privilege",
+      "leader": "first",
+      "member": "listener",
+      "enabled": true
+    },
+    {
+      "id": "handover",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "hand_over",
+      "argument": "listener"
+    },
+    {
+      "id": "listener_advance",
+      "type": "conversation_intent",
+      "player": "listener",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "new_controller",
+      "type": "assert_conversation",
+      "session": "talk",
+      "controller": "listener"
+    },
+    {
+      "id": "before_reload",
+      "type": "checkpoint",
+      "scope": "conversation",
+      "target": "talk"
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "preserve_speakers",
+      "type": "assert_same",
+      "checkpoint": "before_reload"
+    },
+    {
+      "id": "revoke_control",
+      "type": "privilege",
+      "leader": "first",
+      "member": "listener",
+      "enabled": false
+    },
+    {
+      "id": "revoked_advance",
+      "type": "conversation_intent",
+      "player": "listener",
+      "session": "talk",
+      "intent": "advance",
+      "accepted": false
+    },
+    {
+      "id": "retake_control",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "take_control"
+    },
+    {
+      "id": "interrupt",
+      "type": "interrupt",
+      "player": "first",
+      "actor": "guide",
+      "active": true
+    },
+    {
+      "id": "wait_for_interrupt",
+      "type": "wait",
+      "ticks": 2
+    },
+    {
+      "id": "interrupted_node",
+      "type": "checkpoint",
+      "scope": "conversation",
+      "target": "talk"
+    },
+    {
+      "id": "interrupted_advance",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance",
+      "accepted": false
+    },
+    {
+      "id": "interruption_preserves_node",
+      "type": "assert_same",
+      "checkpoint": "interrupted_node"
+    },
+    {
+      "id": "end_interruption",
+      "type": "interrupt",
+      "player": "first",
+      "actor": "guide",
+      "active": false
+    },
+    {
+      "id": "narration",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "responses",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "disconnect",
+      "type": "player",
+      "player": "first",
+      "action": "disconnect"
+    },
+    {
+      "id": "reload_offline",
+      "type": "reload"
+    },
+    {
+      "id": "reconnect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "resume_control",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "take_control"
+    },
+    {
+      "id": "leave",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "choose",
+      "argument": "leave"
+    },
+    {
+      "id": "finish",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "finished",
+      "type": "assert_conversation",
+      "session": "talk",
+      "phase": "complete",
+      "outcome": "guidance_declined",
+      "choices": 1,
+      "checks": 0,
+      "receipts": 0
+    }
+  ]
+}

@@ -100,6 +100,14 @@ public final class VillagerQuestResources {
         QuestContentCatalogs.invalidate();
     }
 
+    public static AutoCloseable preserveTestOverride() {
+        CachedQuests prior = testOverride;
+        return () -> {
+            testOverride = prior;
+            QuestContentCatalogs.invalidate();
+        };
+    }
+
     public static boolean hasTestOverride(MinecraftServer server) {
         return server != null && testOverride.server() == server;
     }
@@ -243,7 +251,17 @@ public final class VillagerQuestResources {
     public static ContentSnapshot snapshotForCatalog(
             MinecraftServer server,
             QuestBundleTransactions.Result bundles) {
-        CachedQuests snapshot = loadCache(server, bundles);
+        VillagerRetaliationRegistries.freezeForDatapackCompilation();
+        CachedQuests override = testOverride;
+        return override.server() == server ? snapshot(override) : compileBundles(server, bundles);
+    }
+
+    public static ContentSnapshot compileBundles(MinecraftServer server, QuestBundleTransactions.Result bundles) {
+        VillagerRetaliationRegistries.freezeForDatapackCompilation();
+        return snapshot(compileCache(server, bundles));
+    }
+
+    private static ContentSnapshot snapshot(CachedQuests snapshot) {
         return new ContentSnapshot(
                 snapshot.compiledCatalog(),
                 snapshot.dialogueCatalog(),
@@ -263,14 +281,9 @@ public final class VillagerQuestResources {
                 && QuestContentCatalogs.current(server).questIdsForObjectiveEvent(kind).contains(id);
     }
 
-    private static CachedQuests loadCache(
+    private static CachedQuests compileCache(
             MinecraftServer server,
             QuestBundleTransactions.Result bundles) {
-        VillagerRetaliationRegistries.freezeForDatapackCompilation();
-        CachedQuests override = testOverride;
-        if (override.server() == server) {
-            return override;
-        }
         LoadedQuestCatalog catalog = read(server, bundles);
         Map<ResourceLocation, QuestDefinition> quests = catalog.questDefinitions();
         return new CachedQuests(

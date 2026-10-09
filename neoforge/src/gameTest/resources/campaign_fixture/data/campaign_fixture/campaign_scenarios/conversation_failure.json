@@ -1,0 +1,158 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:conversation_failure",
+  "campaign": "campaign_fixture:characters",
+  "players": [
+    "first"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "role": "mentor",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "home",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "start",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "talk",
+      "conversation": "campaign_fixture:mentor_conversation",
+      "topic": "guidance"
+    },
+    {
+      "id": "exchange_1",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "exchange_2",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "exchange_3",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "appeal",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "choose",
+      "argument": "appeal"
+    },
+    {
+      "id": "roll",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "roll",
+      "seed": 0
+    },
+    {
+      "id": "saved_roll",
+      "type": "assert_check",
+      "session": "talk",
+      "check": "convince",
+      "die": 1,
+      "success": false
+    },
+    {
+      "id": "roll_before_reload",
+      "type": "checkpoint",
+      "scope": "conversation",
+      "target": "talk"
+    },
+    {
+      "id": "reload_roll",
+      "type": "reload"
+    },
+    {
+      "id": "replay_roll",
+      "type": "replay",
+      "request": "roll"
+    },
+    {
+      "id": "reroll",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "roll",
+      "accepted": false
+    },
+    {
+      "id": "roll_unchanged",
+      "type": "assert_same",
+      "checkpoint": "roll_before_reload"
+    },
+    {
+      "id": "show_branch",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "finish_exchange",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "finished",
+      "type": "assert_conversation",
+      "session": "talk",
+      "node": "declined",
+      "phase": "complete",
+      "outcome": "guidance_declined",
+      "choices": 1,
+      "checks": 1,
+      "receipts": 0
+    },
+    {
+      "id": "finished_before_reload",
+      "type": "checkpoint",
+      "scope": "conversation",
+      "target": "talk"
+    },
+    {
+      "id": "reload_finished",
+      "type": "reload"
+    },
+    {
+      "id": "finished_unchanged",
+      "type": "assert_same",
+      "checkpoint": "finished_before_reload"
+    }
+  ]
+}

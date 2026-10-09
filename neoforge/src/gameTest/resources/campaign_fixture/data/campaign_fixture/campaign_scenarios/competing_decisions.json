@@ -1,0 +1,192 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:competing_decisions",
+  "campaign": "campaign_fixture:reconciliation",
+  "players": [
+    "first",
+    "second"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    },
+    {
+      "id": "other",
+      "position": {
+        "x": 4,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [],
+  "steps": [
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "first_decision_offer",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "first_decision_prompt",
+      "type": "quest_prompt",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "reminder"
+    },
+    {
+      "id": "second_connect",
+      "type": "player",
+      "player": "second",
+      "action": "connect"
+    },
+    {
+      "id": "second_decision_offer",
+      "type": "quest_response",
+      "player": "second",
+      "actor": "other",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "second_decision_prompt",
+      "type": "quest_prompt",
+      "player": "second",
+      "actor": "other",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "reminder"
+    },
+    {
+      "id": "winning_choice",
+      "type": "quest_select",
+      "prompt": "first_decision_prompt",
+      "response": "admitted"
+    },
+    {
+      "id": "losing_choice",
+      "type": "quest_select",
+      "prompt": "second_decision_prompt",
+      "response": "refused"
+    },
+    {
+      "id": "winner",
+      "type": "assert_outcome",
+      "milestone": "decision",
+      "outcome": "admitted",
+      "origin": "player_decision"
+    },
+    {
+      "id": "participant",
+      "type": "assert_player",
+      "player": "first",
+      "participation": [
+        "decision"
+      ]
+    },
+    {
+      "id": "nonparticipant",
+      "type": "assert_player",
+      "player": "second",
+      "participation": []
+    },
+    {
+      "id": "first_decision_turn_in",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "report",
+      "slot": "turn_in",
+      "response": "finish_report"
+    },
+    {
+      "id": "first_leave",
+      "type": "interrupt",
+      "player": "first",
+      "actor": "guide",
+      "active": false
+    },
+    {
+      "id": "second_decision_catch_up_offer",
+      "type": "quest_response",
+      "player": "second",
+      "actor": "other",
+      "quest": "campaign_fixture:decision_catch_up",
+      "stage": "catch_up",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "second_decision_catch_up_reminder",
+      "type": "quest_response",
+      "player": "second",
+      "actor": "other",
+      "quest": "campaign_fixture:decision_catch_up",
+      "stage": "catch_up",
+      "slot": "reminder",
+      "response": "learn_admitted"
+    },
+    {
+      "id": "second_decision_catch_up_turn_in",
+      "type": "quest_response",
+      "player": "second",
+      "actor": "other",
+      "quest": "campaign_fixture:decision_catch_up",
+      "stage": "catch_up_report",
+      "slot": "turn_in",
+      "response": "finish_catch_up_report"
+    },
+    {
+      "id": "second_decision_catch_up_leave",
+      "type": "interrupt",
+      "player": "second",
+      "actor": "other",
+      "active": false
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "winner_reward",
+      "type": "assert_player",
+      "player": "first",
+      "experience": 40,
+      "participation": [
+        "decision"
+      ]
+    },
+    {
+      "id": "catch_up_reward",
+      "type": "assert_player",
+      "player": "second",
+      "experience": 5,
+      "participation": []
+    },
+    {
+      "id": "one_outcome",
+      "type": "assert_campaign",
+      "outcomes": 1
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:admitted_catch_up",
+  "campaign": "campaign_fixture:reconciliation",
+  "players": [
+    "first",
+    "late"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [],
+  "steps": [
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "first_decision_offer",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "first_decision_reminder",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "choose",
+      "slot": "reminder",
+      "response": "admitted"
+    },
+    {
+      "id": "first_decision_turn_in",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision",
+      "stage": "report",
+      "slot": "turn_in",
+      "response": "finish_report"
+    },
+    {
+      "id": "first_decision_leave",
+      "type": "interrupt",
+      "player": "first",
+      "actor": "guide",
+      "active": false
+    },
+    {
+      "id": "world_choice",
+      "type": "assert_outcome",
+      "milestone": "decision",
+      "outcome": "admitted",
+      "origin": "player_decision"
+    },
+    {
+      "id": "participant_reward",
+      "type": "assert_player",
+      "player": "first",
+      "experience": 40,
+      "participation": [
+        "decision"
+      ]
+    },
+    {
+      "id": "completed_before_retry",
+      "type": "checkpoint",
+      "scope": "campaign"
+    },
+    {
+      "id": "retry_report",
+      "type": "replay",
+      "request": "first_decision_turn_in"
+    },
+    {
+      "id": "report_applied_once",
+      "type": "assert_same",
+      "checkpoint": "completed_before_retry"
+    },
+    {
+      "id": "reload_world",
+      "type": "reload"
+    },
+    {
+      "id": "late_connect",
+      "type": "player",
+      "player": "late",
+      "action": "connect"
+    },
+    {
+      "id": "late_decision_catch_up_offer",
+      "type": "quest_response",
+      "player": "late",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision_catch_up",
+      "stage": "catch_up",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "late_decision_catch_up_reminder",
+      "type": "quest_response",
+      "player": "late",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision_catch_up",
+      "stage": "catch_up",
+      "slot": "reminder",
+      "response": "learn_admitted"
+    },
+    {
+      "id": "late_decision_catch_up_turn_in",
+      "type": "quest_response",
+      "player": "late",
+      "actor": "guide",
+      "quest": "campaign_fixture:decision_catch_up",
+      "stage": "catch_up_report",
+      "slot": "turn_in",
+      "response": "finish_catch_up_report"
+    },
+    {
+      "id": "late_decision_catch_up_leave",
+      "type": "interrupt",
+      "player": "late",
+      "actor": "guide",
+      "active": false
+    },
+    {
+      "id": "late_personal_reward",
+      "type": "assert_player",
+      "player": "late",
+      "experience": 5,
+      "participation": []
+    },
+    {
+      "id": "late_completion",
+      "type": "assert_quest",
+      "player": "late",
+      "quest": "campaign_fixture:decision_catch_up",
+      "completions": 1
+    },
+    {
+      "id": "late_dragon_offer",
+      "type": "quest_response",
+      "player": "late",
+      "actor": "guide",
+      "quest": "campaign_fixture:dragon",
+      "stage": "watch",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "next_chapter_available",
+      "type": "assert_quest",
+      "player": "late",
+      "quest": "campaign_fixture:dragon",
+      "stage": "watch",
+      "completions": 0
+    }
+  ]
+}

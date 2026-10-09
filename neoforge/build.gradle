@@ -35,6 +35,8 @@ sourceSets.main.resources {
 }
 
 def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
+def campaignScenarioPack = rootProject.file(providers.gradleProperty('campaignScenarioPack').orElse('neoforge/src/gameTest/resources/campaign_fixture').get())
+def campaignScenarioReports = layout.buildDirectory.dir("campaign-scenario-reports/${System.currentTimeMillis()}")
 def campaignConversationMultiplayerDirectory = layout.buildDirectory.dir("campaign-conversation-multiplayer/${System.currentTimeMillis()}")
 def campaignConversationClientSmokeDirectory = layout.buildDirectory.dir("campaign-conversation-client-smoke/${System.currentTimeMillis()}")
 
@@ -140,12 +142,29 @@ neoForge {
             programArgument '--nogui'
         }
 
+        campaignScenarioServer {
+            type = 'gameTestServer'
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(layout.buildDirectory.dir('campaign-scenario-run'))
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'campaign_scenarios'
+            systemProperty 'villagerretaliation.gametestOriginSeed', gameTestOriginSeed.get()
+            systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
+            systemProperty 'villagerretaliation.campaignScenarioPack', campaignScenarioPack.absolutePath
+            systemProperty 'villagerretaliation.campaignScenario', providers.gradleProperty('campaignScenario').orElse('').get()
+            systemProperty 'villagerretaliation.campaignScenarioRepeats', providers.gradleProperty('campaignScenarioRepeats').orElse('2').get()
+            systemProperty 'villagerretaliation.campaignScenarioReports', campaignScenarioReports.get().asFile.absolutePath
+        }
+
         gameTestServer {
             type = 'gameTestServer'
             sourceSet = sourceSets.gameTest
             gameDirectory.set(layout.buildDirectory.dir('gametest-run'))
             systemProperty 'villagerretaliation.gametestOriginSeed', gameTestOriginSeed.get()
             systemProperty 'neoforge.enabledGameTestNamespaces', providers.gradleProperty('gameTestNamespaces').orElse('').get()
+            systemProperty 'villagerretaliation.campaignScenarioPack', campaignScenarioPack.absolutePath
+            systemProperty 'villagerretaliation.campaignScenario', providers.gradleProperty('campaignScenario').orElse('').get()
+            systemProperty 'villagerretaliation.campaignScenarioRepeats', providers.gradleProperty('campaignScenarioRepeats').orElse('1').get()
+            systemProperty 'villagerretaliation.campaignScenarioReports', campaignScenarioReports.get().asFile.absolutePath
             systemProperty 'villagerretaliation.villageLifeProfile', providers.gradleProperty('villageLifeProfile').orElse('false').get()
             systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
         }
@@ -344,6 +363,36 @@ tasks.named('runSettlementMultiplayerHost') {
 tasks.named('runGameTestServer') {
     doFirst {
         delete(layout.buildDirectory.dir('gametest-run/world'))
+    }
+}
+
+tasks.named('runCampaignScenarioServer') {
+    doFirst {
+        delete(layout.buildDirectory.dir('campaign-scenario-run/world'))
+        copy {
+            from campaignScenarioPack
+            into layout.buildDirectory.dir('campaign-scenario-run/world/datapacks/campaign_scenarios')
+        }
+    }
+}
+
+tasks.register('campaignScenarios') {
+    group = 'verification'
+    description = 'Replays authored campaign scenarios in an isolated GameTest world. Supports campaignScenarioPack, campaignScenario, and campaignScenarioRepeats.'
+    dependsOn tasks.named('runCampaignScenarioServer')
+    doLast {
+        def selection = providers.gradleProperty('campaignScenario').orElse('').get()
+        def repeats = providers.gradleProperty('campaignScenarioRepeats').orElse('2').get().toInteger()
+        def json = new groovy.json.JsonSlurper()
+        def scenarios = fileTree(campaignScenarioPack) { include 'data/*/campaign_scenarios/**/*.json' }.files
+                .collect { json.parse(it).id }.findAll { selection.isBlank() || it == selection }
+        def reports = fileTree(campaignScenarioReports) { include '**/*.json' }.files.collect { json.parse(it) }
+        if (scenarios.isEmpty() || reports.size() != scenarios.size() * repeats || reports.any { it.passed != true }
+                || scenarios.any { id -> (1..repeats).any { repetition ->
+                    reports.count { it.scenario == id && it.repetition == repetition } != 1
+                } }) {
+            throw new GradleException("Campaign scenarios did not all pass. Inspect ${campaignScenarioReports.get().asFile}")
+        }
     }
 }
 

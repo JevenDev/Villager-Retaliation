@@ -1,0 +1,101 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:fixture_save_recovery",
+  "campaign": "campaign_fixture:reconciliation",
+  "players": [
+    "first"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [],
+  "steps": [
+    {
+      "id": "before_setup",
+      "type": "checkpoint",
+      "scope": "campaign"
+    },
+    {
+      "id": "block_writes",
+      "type": "storage",
+      "store": "campaign",
+      "available": false
+    },
+    {
+      "id": "enter_dragon",
+      "type": "fixture_entry",
+      "player": "first",
+      "entry": "dragon_after_admission",
+      "accepted": false
+    },
+    {
+      "id": "failed_write_unchanged",
+      "type": "assert_same",
+      "checkpoint": "before_setup"
+    },
+    {
+      "id": "restore_writes",
+      "type": "storage",
+      "store": "campaign",
+      "available": true
+    },
+    {
+      "id": "retry_entry",
+      "type": "replay",
+      "request": "enter_dragon"
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "repeat_entry",
+      "type": "replay",
+      "request": "enter_dragon"
+    },
+    {
+      "id": "one_entry",
+      "type": "assert_campaign",
+      "outcomes": 1,
+      "audits": 1,
+      "rewards": 0
+    },
+    {
+      "id": "no_participation",
+      "type": "assert_player",
+      "player": "first",
+      "participation": []
+    },
+    {
+      "id": "first_connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "first_dragon_offer",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:dragon",
+      "stage": "watch",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "chapter_available",
+      "type": "assert_quest",
+      "player": "first",
+      "quest": "campaign_fixture:dragon",
+      "stage": "watch",
+      "completions": 0
+    }
+  ]
+}

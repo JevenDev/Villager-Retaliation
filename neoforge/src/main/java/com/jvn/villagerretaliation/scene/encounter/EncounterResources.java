@@ -65,6 +65,14 @@ public final class EncounterResources {
         QuestContentCatalogs.invalidate();
     }
 
+    public static AutoCloseable preserveTestOverride() {
+        TestOverride prior = testOverride;
+        return () -> {
+            testOverride = prior;
+            QuestContentCatalogs.invalidate();
+        };
+    }
+
     public static boolean hasTestOverride(MinecraftServer server) {
         return server != null && testOverride.server() == server;
     }
@@ -117,14 +125,21 @@ public final class EncounterResources {
             MinecraftServer server,
             QuestBundleTransactions.Result bundles,
             QuestRewardCatalog rewards) {
-        return load(server, bundles, rewards);
+        return load(server, bundles, rewards, testOverride);
+    }
+
+    public static ContentSnapshot compileBundles(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles,
+            QuestRewardCatalog rewards) {
+        return load(server, bundles, rewards, TestOverride.empty());
     }
 
     private static ContentSnapshot load(
             MinecraftServer server,
             QuestBundleTransactions.Result bundles,
-            QuestRewardCatalog rewards) {
-        TestOverride override = testOverride;
+            QuestRewardCatalog rewards,
+            TestOverride override) {
         Map<ResourceLocation, EncounterTemplate> templates = new LinkedHashMap<>();
         Map<ResourceLocation, List<String>> diagnostics = new LinkedHashMap<>();
         if (bundles != null) {

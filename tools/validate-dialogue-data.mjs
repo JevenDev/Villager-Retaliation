@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateConversation, validateConversationSchema, materializeConversationAction } from "./conversation-validation.mjs";
 import { campaignDataRoot, validateCampaignPack } from "./campaign-pack-validation.mjs";
+import { scenarioPath, scenarioContext, validateCampaignScenario } from "./campaign-scenario-validation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
@@ -18,7 +19,8 @@ const roots = {
   notifications: "neoforge/src/main/resources/data/villagerretaliation/notifications/en_us",
   quests: "neoforge/src/main/resources/data/villagerretaliation/quests",
   skillTrades: "neoforge/src/main/resources/data/villagerretaliation/skill_trades",
-  campaigns: "neoforge/src/main/resources/data/villagerretaliation/campaigns"
+  campaigns: "neoforge/src/main/resources/data/villagerretaliation/campaigns",
+  scenarios: "neoforge/src/main/resources/data/villagerretaliation/campaign_scenarios"
 };
 
 const legacyLineFields = new Set([
@@ -963,6 +965,7 @@ const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
 const questObjectiveTypes = questV2RegistryIndex.objectives.values;
 const conversationSchema = await parseJson(path.join(root, "tools/datapack-builder/conversation-v1.schema.json"));
 const campaignSchema = await parseJson(path.join(root, "tools/datapack-builder/campaign-v1.schema.json"));
+const scenarioSchema = await parseJson(path.join(root, "tools/datapack-builder/campaign-scenario-v1.schema.json"));
 const sceneSchema = await parseJson(path.join(root, "tools/datapack-builder/scene-v1.schema.json"));
 
 if (cli.help) {
@@ -970,7 +973,7 @@ if (cli.help) {
   process.exit(0);
 }
 
-if (cli.fileLists.length > 0 || cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0 || cli.campaignFiles.length > 0) {
+if (cli.fileLists.length > 0 || cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0 || cli.campaignFiles.length > 0 || cli.scenarioFiles.length > 0) {
   if (cli.questFiles.length > 0) await validateQuestFiles(cli.questFiles);
   if (cli.skillTradeFiles.length > 0) await validateSkillTradeFiles(cli.skillTradeFiles);
   if (cli.conversationFiles.length > 0) {
@@ -985,6 +988,13 @@ if (cli.fileLists.length > 0 || cli.questFiles.length > 0 || cli.skillTradeFiles
     for (const file of cli.campaignFiles) {
       const data = await parseJson(file);
       if (data !== undefined) await checkCampaignFile(file, data);
+    }
+  }
+  if (cli.scenarioFiles.length > 0) {
+    if (cli.questFiles.length === 0 && cli.conversationFiles.length === 0 && cli.campaignFiles.length === 0) await indexBuiltInReferenceData();
+    for (const file of cli.scenarioFiles) {
+      const data = await parseJson(file);
+      if (data !== undefined) await checkScenarioFile(file, data);
     }
   }
 } else {
@@ -1011,7 +1021,8 @@ function parseValidatorArgs(args) {
     questFiles: [],
     skillTradeFiles: [],
     conversationFiles: [],
-    campaignFiles: []
+    campaignFiles: [],
+    scenarioFiles: []
   };
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
@@ -1044,6 +1055,10 @@ function parseValidatorArgs(args) {
       const file = args[++index];
       if (!file) errors.push("tools/validate-dialogue-data.mjs: --campaign requires a JSON file path.");
       else parsed.campaignFiles.push(path.resolve(file));
+    } else if (arg === "--scenario" || arg === "--scenario-file") {
+      const file = args[++index];
+      if (!file) errors.push("tools/validate-dialogue-data.mjs: --scenario requires a JSON file path.");
+      else parsed.scenarioFiles.push(path.resolve(file));
     } else if (arg.startsWith("--")) {
       errors.push(`tools/validate-dialogue-data.mjs: unsupported option "${arg}".`);
     } else {
@@ -1054,13 +1069,13 @@ function parseValidatorArgs(args) {
 }
 
 async function readValidatorFileLists(cli) {
-  const fields = { quests: "questFiles", conversations: "conversationFiles", campaigns: "campaignFiles" };
+  const fields = { quests: "questFiles", conversations: "conversationFiles", campaigns: "campaignFiles", scenarios: "scenarioFiles" };
   for (const file of cli.fileLists) {
     const data = await parseJson(file);
     if (!data || typeof data !== "object" || Array.isArray(data) || Object.keys(data).some(key => !Object.hasOwn(fields, key))
         || Object.values(data).some(entries => !Array.isArray(entries) || entries.length > 4096
           || entries.some(entry => typeof entry !== "string" || !entry.trim()))) {
-      errors.push(relative(file) + ": file list must contain quests, conversations, or campaigns arrays of JSON file paths.");
+      errors.push(relative(file) + ": file list must contain quests, conversations, campaigns, or scenarios arrays of JSON file paths.");
       continue;
     }
     for (const [key, entries] of Object.entries(data)) {
@@ -1072,11 +1087,11 @@ async function readValidatorFileLists(cli) {
 
 function printValidatorHelp() {
   console.log([
-    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--json] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...] [--campaign path/to/campaign.json ...]",
+    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--json] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...] [--campaign path/to/campaign.json ...] [--scenario path/to/scenario.json ...]",
     "",
     "Without file arguments, validates the checked-in built-in datapack dialogue and quest data.",
-    "With --quest, --skill-trade, --conversation, or --campaign, validates the supplied resources and their authored references.",
-    "--file-list accepts JSON with quests, conversations, and campaigns arrays. Paths are relative to that file.",
+    "With --quest, --skill-trade, --conversation, --campaign, or --scenario, validates the supplied resources and their authored references.",
+    "--file-list accepts JSON with quests, conversations, campaigns, and scenarios arrays. Paths are relative to that file.",
     "--json emits errors and warnings as JSON."
   ].join("\n"));
 }
@@ -1086,6 +1101,10 @@ async function validateBuiltInData() {
     for (const file of await jsonFiles(path.join(root, relativeRoot))) {
       const data = await parseJson(file);
       if (data === undefined) {
+        continue;
+      }
+      if (kind === "scenarios") {
+        await checkScenarioFile(file, data);
         continue;
       }
       if (kind === "campaigns") {
@@ -1273,6 +1292,27 @@ async function checkConversationFile(file, data, indexReferences = false) {
       checkQuestV2Conditions(file, response.conditions, `${pointer}/conditions`, `${pointer}/conditions`, questId, "conversation response");
       checkEffects(response.effects, `${pointer}/effects`);
     }
+  }
+}
+
+async function checkScenarioFile(file, data) {
+  if (!scenarioSchema) return;
+  const issues = validateCampaignScenario(data, scenarioSchema);
+  for (const issue of issues) errors.push(relative(file) + ": " + (issue.pointer || "/") + ": " + issue.message + ".");
+  if (issues.length) return;
+  const location = scenarioPath(file);
+  if (!location) {
+    errors.push(relative(file) + ": scenario must belong to data/<namespace>/campaign_scenarios/<name>.json.");
+    return;
+  }
+  if (data.id !== location.id) errors.push(relative(file) + ": /id: scenario ID must match its resource path.");
+  const resources = await conversationDatapack(location.dataRoot);
+  const campaign = resources.find(resource => resource.data.schema === "villagerretaliation:campaign/v1" && resource.data.id === data.campaign);
+  const before = errors.length;
+  if (campaign) await checkCampaignFile(campaign.file, campaign.data);
+  if (errors.length !== before) return;
+  for (const issue of validateCampaignScenario(data, scenarioSchema, scenarioContext(resources))) {
+    errors.push(relative(file) + ": " + (issue.pointer || "/") + ": " + issue.message + ".");
   }
 }
 
