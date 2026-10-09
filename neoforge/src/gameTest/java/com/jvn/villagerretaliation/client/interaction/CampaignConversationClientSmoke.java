@@ -108,6 +108,10 @@ public final class CampaignConversationClientSmoke {
                 ticks = 0; phase = 8;
             } else if (phase == 8 && ++ticks >= 30) {
                 require(session.check().die() == die, "skip preserves the saved result");
+                require(session.check().skill() == com.jvn.villagerretaliation.skill.player.PlayerSocialSkill.PERSUASION
+                        && session.check().modifier() == 2 && session.check().total() == die + 2, "social result retains the authored bonus");
+                require(session.check().experienceAwarded() && session.check().rewardExperience() == 10, "screen acknowledges the authored experience");
+                require(session.check().experiencePlayer().equals(minecraft.player.getGameProfile().getName()), "screen names the player who earned experience");
                 require(checkTextIsImmediate(screen), "skip reveals the complete saved result immediately");
                 capture("die-result"); choose(screen, localized("leave")); ticks = 0; phase = 9;
             } else if (phase == 10 && verification.isDone() && session.check() != null && session.check().resolved() && ++ticks >= 25) {
@@ -132,6 +136,9 @@ public final class CampaignConversationClientSmoke {
                 var saved = ConversationService.view(player, fixture.session()).session();
                 require(saved != null && saved.controller() == null && saved.checks().get("convince").die() == die, "server retained the roll and released control");
                 require(player.totalExperience == 20, "confirmed quest and outcome effects each apply once");
+                var social = com.jvn.villagerretaliation.skill.player.PlayerSocialProgressionSavedData.get(player.serverLevel());
+                require(social.experience(playerId, com.jvn.villagerretaliation.skill.player.PlayerSocialSkill.PERSUASION) == 20
+                        && social.receipts().size() == 2, "social experience includes training and one resolved check");
                 var campaign = com.jvn.villagerretaliation.campaign.CampaignSavedData.get(player.serverLevel()).instances()
                         .get(net.minecraft.resources.ResourceLocation.parse("campaign_fixture:characters"));
                 require(campaign.outcomes().get("decision").outcome().equals("help"), "confirmed decision commits before the check");

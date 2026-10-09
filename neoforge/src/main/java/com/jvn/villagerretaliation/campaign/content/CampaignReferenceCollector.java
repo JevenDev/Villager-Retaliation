@@ -30,6 +30,16 @@ final class CampaignReferenceCollector {
         content.campaigns().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> campaign(entry.getValue()));
         content.quests().compiledQuests().stream().sorted(java.util.Comparator.comparing(CompiledQuest::id)).forEach(this::quest);
         content.quests().conversations().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> conversation(entry.getValue()));
+        content.quests().socialProgressions().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+            var definition = entry.getValue();
+            var at = new Source(definition.source().resource(), definition.source().pack(), "");
+            var owner = declare(SOCIAL_PROGRESSION, definition.id(), at);
+            int index = 0;
+            for (var skill : definition.skills().keySet()) {
+                var where = at.child("skills", Integer.toString(index++));
+                ref(owner, declare(SOCIAL_SKILL, definition.id(), where, skill.id()), INCLUDES, where);
+            }
+        });
         scenes();
         var nodes = new LinkedHashMap<Key, Node>();
         declarations.forEach((key, sources) -> nodes.put(key, new Node(key, List.copyOf(sources))));
@@ -232,6 +242,12 @@ final class CampaignReferenceCollector {
         var owner = declare(CONVERSATION, definition.id(), at);
         ref(owner, key(CHARACTER, definition.campaign(), definition.character()), SPEAKS, at.child("character"));
         if (!definition.owner().shared()) ref(key(QUEST, definition.quest()), owner, INCLUDES, at);
+        for (var check : definition.checks().values()) {
+            if (check.social() == null) continue;
+            var where = new Source(at.resource(), at.pack(), check.pointer()).child("social");
+            ref(owner, key(SOCIAL_PROGRESSION, check.social().progression()), REQUIRES, where.child("progression"));
+            ref(owner, key(SOCIAL_SKILL, check.social().progression(), check.social().skill().id()), READS, where.child("skill"));
+        }
         for (var topic : definition.topics().values()) conditions(owner, topic.conditions(),
                 new Source(at.resource(), at.pack(), topic.pointer()));
         for (var node : definition.nodes().values()) {

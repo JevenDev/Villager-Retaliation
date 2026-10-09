@@ -1,0 +1,80 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "skills"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "enum": [
+        "villagerretaliation:social_progression/v1"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])",
+      "maxLength": 256
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "levels"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "persuasion",
+              "intimidation",
+              "deception",
+              "insight"
+            ]
+          },
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "experience",
+                "bonus"
+              ],
+              "properties": {
+                "experience": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "bonus": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 20
+                }
+              }
+            },
+            "minItems": 1,
+            "maxItems": 1024
+          }
+        }
+      },
+      "minItems": 4,
+      "maxItems": 4
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/social-progression-v1.schema.json",
+  "title": "Villager Retaliation Social Progression v1"
+}

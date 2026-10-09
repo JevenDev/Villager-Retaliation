@@ -15,6 +15,10 @@ public final class ConversationSchemaTool {
         Files.createDirectories(output.toAbsolutePath().getParent());
         var gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
         Files.writeString(output, gson.toJson(ConversationSchema.export()) + System.lineSeparator(), StandardCharsets.UTF_8);
+        Path progression = output.resolveSibling("social-progression-v1.schema.json");
+        Files.writeString(progression, gson.toJson(com.jvn.villagerretaliation.skill.player.SocialProgressionSchema.export())
+                + System.lineSeparator(), StandardCharsets.UTF_8);
         System.out.println("Wrote conversation schema to " + output.toAbsolutePath());
+        System.out.println("Wrote social progression schema to " + progression.toAbsolutePath());
     }
 }

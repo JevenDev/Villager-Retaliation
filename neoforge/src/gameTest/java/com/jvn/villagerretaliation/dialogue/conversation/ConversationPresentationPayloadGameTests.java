@@ -189,6 +189,46 @@ public final class ConversationPresentationPayloadGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void socialResultsPreserveTheSavedTotalAndAwardStatusDuringAnimation(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        UUID id = UUID.randomUUID();
+        var skill = com.jvn.villagerretaliation.skill.player.PlayerSocialSkill.PERSUASION;
+        var check = new Check("convince", 10, true, 8, true, 4, 12, skill, 10, false, "Alex");
+        var session = new Session(id, 2, "Guidance", ConversationSession.Phase.ROLLED, null, true, false, "Player", List.of(), List.of(), check, "");
+        var payload = new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), session, "");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            CampaignConversationViewPayload.STREAM_CODEC.encode(buffer, payload);
+            helper.assertValueEqual(CampaignConversationViewPayload.STREAM_CODEC.decode(buffer), payload, "wire retains the skill, bonus, total and pending award");
+        } finally { buffer.release(); }
+        var unresolved = new Session(id, 1, "Guidance", ConversationSession.Phase.CHECK, null, true, false, "Player", List.of(), List.of(),
+                new Check("convince", 10, false, 0, false, 0, 0, skill, 10, false), "");
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), unresolved, ""));
+        controller.accept(payload);
+        helper.assertTrue(controller.dieAnimating(), "saved social result starts animation");
+        helper.assertTrue(host.texts.getLast().contains("conversation.social_check"), "skill remains readable during animation");
+        int sent = host.sent.size();
+        controller.skipDieAnimation();
+        helper.assertValueEqual(host.sent.size(), sent, "skip sends no roll or reward request");
+        helper.assertTrue(host.texts.getLast().contains("conversation.social_result") && host.texts.getLast().contains("12")
+                && host.texts.getLast().contains("conversation.social_experience_pending"), "fallback shows saved total and pending award");
+        var awarded = new Check("convince", 10, true, 8, true, 4, 12, skill, 10, true, "Alex");
+        var updated = new Session(id, 3, "Guidance", ConversationSession.Phase.ROLLED, null, true, false, "Player", List.of(), List.of(), awarded, "");
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), updated, ""));
+        helper.assertFalse(controller.dieAnimating(), "award acknowledgment does not replay the animation");
+        helper.assertTrue(host.texts.getLast().contains("conversation.social_experience[Alex, 10,")
+                && !host.texts.getLast().contains("social_experience_pending"), "awarded experience replaces the pending notice");
+        try { new Check("convince", 10, true, 8, true, 4, 13, skill, 10, true); helper.fail("invalid total must be rejected"); }
+        catch (IllegalArgumentException expected) { }
+        try { new Check("convince", 10, true, 1, true, 20, 21, skill, 10, true); helper.fail("natural one still fails with a bonus"); }
+        catch (IllegalArgumentException expected) { }
+        helper.succeed();
+    }
+
     private static CampaignConversationViewPayload message(CampaignConversationRequestPayload request, UUID id, long revision, String key, String text, boolean control) {
         var line = new Line(key, request.character(), request.entityId(), "Mira", text, 0, 1);
         var session = new Session(id, revision, "Guidance", ConversationSession.Phase.EXCHANGES, line, control, false, "Player", List.of(), List.of(), null, "");

@@ -73,7 +73,7 @@ public final class ConversationCompiler {
             String key = string(value, "id");
             put(checks, key, new ConversationDefinition.Check(key,
                     value.has("difficulty") ? value.get("difficulty").getAsInt() : ConversationSchema.DEFAULT_DIFFICULTY,
-                    string(value, "success"), string(value, "failure"), pointer), pointer);
+                    string(value, "success"), string(value, "failure"), social(value), pointer), pointer);
         }
         entries = array(root, "outcomes");
         for (int index = 0; index < entries.size(); index++) {
@@ -118,6 +118,14 @@ public final class ConversationCompiler {
                 topics, nodes, checks, outcomes, bundle.owner(), source);
         validateGraph(definition);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
+    }
+
+    private static ConversationDefinition.Social social(JsonObject check) {
+        if (!check.has("social")) return null;
+        var social = check.getAsJsonObject("social");
+        return new ConversationDefinition.Social(ResourceLocation.parse(string(social, "progression")),
+                com.jvn.villagerretaliation.skill.player.PlayerSocialSkill.parse(string(social, "skill")),
+                social.has("experience") ? social.get("experience").getAsInt() : 0);
     }
 
     private List<DialogueCondition> conditions(JsonObject value, String pointer) {

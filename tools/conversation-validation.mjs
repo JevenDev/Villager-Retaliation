@@ -58,6 +58,7 @@ export function validateConversation(root, schema, context) {
   for (const check of checks.values()) {
     require(nodes, check.success, `${check.pointer}/success`, "node");
     require(nodes, check.failure, `${check.pointer}/failure`, "node");
+    if (check.social) require(context.progressions ?? new Map(), check.social.progression, `${check.pointer}/social/progression`, "social progression");
   }
   if (context.campaign && (!Array.isArray(context.campaign.characters) || !Array.isArray(context.campaign.quest_bundles))) {
     issue("/campaign", "referenced campaign has invalid character or quest declarations");

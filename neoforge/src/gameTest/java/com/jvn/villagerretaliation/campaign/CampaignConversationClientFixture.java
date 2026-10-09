@@ -13,6 +13,12 @@ import com.jvn.villagerretaliation.quest.content.bundle.QuestLocaleCatalog;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
 import com.jvn.villagerretaliation.scene.compiler.SceneCompiler;
 import com.jvn.villagerretaliation.scene.compiler.SceneParser;
+import com.jvn.villagerretaliation.skill.player.PlayerSocialAward;
+import com.jvn.villagerretaliation.skill.player.PlayerSocialProgressionSavedData;
+import com.jvn.villagerretaliation.skill.player.PlayerSocialSkill;
+import com.jvn.villagerretaliation.skill.player.SocialCheckBreakdown;
+import com.jvn.villagerretaliation.skill.player.SocialProgressionResources;
+import com.jvn.villagerretaliation.skill.player.SocialProgressionTestData;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +43,7 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
         }
         player.connection.teleport(2.5, 1, 3.5, 135, 0);
         var resources = new ArrayList<QuestBundleTransactions.RawResource>();
+        resources.add(QuestBundleTransactions.RawResource.valid(0, "campaign_fixture", id(SocialProgressionTestData.PATH), SocialProgressionTestData.profile()));
         for (String file : List.of("quest.json", "locales/en_us.json", "scenes/character_greeting.json", "conversations/mentor.json")) {
             String path = "quests/campaign_fixture/characters/" + file;
             var raw = CampaignCharacterTestFixture.resource(path);
@@ -45,6 +52,8 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
                 stage.remove("on_enter");
                 stage.add("objectives", com.google.gson.JsonParser.parseString("[{\"id\":\"decide\",\"type\":\"choice\"}]"));
             } else if (file.equals("conversations/mentor.json")) {
+                var social = SocialProgressionTestData.resource("quests/campaign_fixture/characters/conversations/social_mentor.json");
+                raw.add("checks", social.getAsJsonArray("checks").deepCopy());
                 var node = raw.getAsJsonArray("nodes").get(0).getAsJsonObject();
                 node.add("effects", com.google.gson.JsonParser.parseString("""
                         [{"id":"before_acceptance","action":{"type":"experience","amount":7}},
@@ -64,12 +73,14 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
         var sceneId = id("character_greeting");
         var scene = SceneCompiler.compile(SceneParser.parse(sceneId, CampaignCharacterTestFixture.resource("quests/campaign_fixture/characters/scenes/character_greeting.json")).resource());
         require(scene.scene() != null, "client fixture scene compiles");
-        var conversations = ConversationResources.compile(bundles, Set.of(sceneId), quests.quests().keySet());
+        var progressions = SocialProgressionResources.compile(bundles);
+        require(progressions.diagnostics().isEmpty(), "client fixture progression compiles");
+        var conversations = ConversationResources.compile(bundles, Set.of(sceneId), quests.quests().keySet(), progressions.definitions());
         require(conversations.diagnostics().values().stream().allMatch(List::isEmpty), "client fixture conversations compile: " + conversations.diagnostics());
         var prior = QuestContentCatalogs.current(player.server);
         var catalog = new QuestContentCatalog(prior.generation() + 1, quests.compiledCatalog(), quests.dialogueCatalog(), quests.quests(),
                 quests.objectiveEventQuestIds(), quests.factQuestIds(), quests.memoryEventQuestIds(), quests.exclusiveGroupQuestIds(), quests.triggerEventQuestIds(),
-                Map.of(sceneId, scene.scene()), Map.of(), List.of(), bundles.bundles(), bundles.localization(), QuestRewardCatalog.fromBundles(bundles.bundles()), conversations.conversations());
+                Map.of(sceneId, scene.scene()), Map.of(), List.of(), bundles.bundles(), bundles.localization(), QuestRewardCatalog.fromBundles(bundles.bundles()), conversations.conversations(), progressions.definitions());
         QuestContentCatalogs.installForTests(player.server, catalog, QuestContentCatalogs.loadReport(player.server));
         var campaign = CampaignCharacterTestFixture.resource("campaigns/characters/campaign.json");
         campaign.add("milestones", com.google.gson.JsonParser.parseString("""
@@ -96,6 +107,8 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
         level.addFreshEntity(mentor);
         var binding = CampaignCharacterService.resolve(player.server, id("characters"), "mentor");
         require(binding.available() && binding.entity() == mentor, "fixture character binds");
+        PlayerSocialProgressionSavedData.get(level).grant(new PlayerSocialAward(UUID.randomUUID(), "training", UUID.randomUUID(), player.getUUID(),
+                SocialCheckBreakdown.capture(progressions.definitions().get(SocialProgressionTestData.ID), PlayerSocialSkill.PERSUASION, 0, 10)));
         var started = ConversationService.start(player, id("mentor_conversation"), "guidance", UUID.randomUUID());
         require(started.session() != null, "fixture conversation starts: " + started.diagnostic());
         return new CampaignConversationClientFixture(started.session().identity().id(), mentor.getUUID(), mentor.getId());

@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationSession;
+import com.jvn.villagerretaliation.skill.player.PlayerSocialSkill;
+import com.jvn.villagerretaliation.skill.player.SocialProgressionSchema;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,12 +38,27 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
     public record Line(String key, UUID speaker, int entityId, String name, String text, int part, int parts) {
         public Line { if (part < 0 || parts < 1 || part >= parts) throw new IllegalArgumentException("Invalid conversation text page"); bounded(key, 512); bounded(name, MAX_LABEL_LENGTH); bounded(text, MAX_TEXT_LENGTH); }
     }
-    public record Check(String id, int difficulty, boolean resolved, int die, boolean success) {
+    public record Check(String id, int difficulty, boolean resolved, int die, boolean success,
+            int modifier, int total, PlayerSocialSkill skill, int rewardExperience, boolean experienceAwarded, String experiencePlayer) {
         public Check {
             bounded(id, 256);
-            if (difficulty < 0 || (resolved ? die < 1 || die > 20 || success != (die == 20 || die != 1 && die >= difficulty) : die != 0 || success)) {
+            bounded(experiencePlayer, MAX_LABEL_LENGTH);
+            if (difficulty < 0 || modifier < 0 || modifier > SocialProgressionSchema.MAX_BONUS || rewardExperience < 0
+                    || skill == null && (modifier != 0 || rewardExperience != 0 || experienceAwarded)
+                    || (resolved ? die < 1 || die > 20 || total != die + modifier
+                            || success != (die == 20 || die != 1 && total >= difficulty)
+                            : die != 0 || total != 0 || modifier != 0 || success || experienceAwarded)) {
                 throw new IllegalArgumentException("Invalid conversation check presentation");
             }
+        }
+
+        public Check(String id, int difficulty, boolean resolved, int die, boolean success,
+                int modifier, int total, PlayerSocialSkill skill, int rewardExperience, boolean experienceAwarded) {
+            this(id, difficulty, resolved, die, success, modifier, total, skill, rewardExperience, experienceAwarded, "");
+        }
+
+        public Check(String id, int difficulty, boolean resolved, int die, boolean success) {
+            this(id, difficulty, resolved, die, success, 0, die, null, 0, false, "");
         }
     }
     public record Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
@@ -113,6 +130,11 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             var check = value.check();
             buffer.writeUtf(check.id(), 256); buffer.writeVarInt(check.difficulty()); buffer.writeBoolean(check.resolved());
             buffer.writeVarInt(check.die()); buffer.writeBoolean(check.success());
+            buffer.writeVarInt(check.modifier()); buffer.writeVarInt(check.total());
+            buffer.writeBoolean(check.skill() != null);
+            if (check.skill() != null) buffer.writeEnum(check.skill());
+            buffer.writeVarInt(check.rewardExperience()); buffer.writeBoolean(check.experienceAwarded());
+            buffer.writeUtf(check.experiencePlayer(), MAX_LABEL_LENGTH);
         }
         buffer.writeUtf(value.outcome(), MAX_LABEL_LENGTH);
         buffer.writeBoolean(value.confirmation() != null);
@@ -130,7 +152,10 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         for (int count = count(buffer, 32); count > 0; count--) members.add(new Member(buffer.readUUID(), buffer.readUtf(MAX_LABEL_LENGTH)));
         var responses = new ArrayList<Response>();
         for (int count = count(buffer, PAGE_SIZE); count > 0; count--) responses.add(new Response(buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean()));
-        Check check = buffer.readBoolean() ? new Check(buffer.readUtf(256), buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readBoolean()) : null;
+        Check check = null;
+        if (buffer.readBoolean()) check = new Check(buffer.readUtf(256), buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(),
+                buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readBoolean() ? buffer.readEnum(PlayerSocialSkill.class) : null,
+                buffer.readVarInt(), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH));
         return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean() ? buffer.readUUID() : null);
     }
 

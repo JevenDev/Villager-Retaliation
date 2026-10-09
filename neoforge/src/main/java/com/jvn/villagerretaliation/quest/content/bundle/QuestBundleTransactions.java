@@ -432,6 +432,7 @@ public final class QuestBundleTransactions {
             case "encounter", "encounter_id", "template" -> QuestBundlePath.Kind.ENCOUNTER;
             case "reward", "reward_id", "loot_table" -> QuestBundlePath.Kind.REWARD;
             case "pool", "pool_id" -> QuestBundlePath.Kind.POOL;
+            case "progression" -> QuestBundlePath.Kind.SOCIAL_PROGRESSION;
             default -> null;
         };
     }

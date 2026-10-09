@@ -45,7 +45,8 @@ public final class ConversationSchema {
         JsonObject difficulty = integer(0);
         difficulty.addProperty("default", DEFAULT_DIFFICULTY);
         definitions.add("check", object(List.of("id", "success", "failure"), "id", id(),
-                "difficulty", difficulty, "success", id(), "failure", id()));
+                "difficulty", difficulty, "success", id(), "failure", id(),
+                "social", com.jvn.villagerretaliation.skill.player.SocialProgressionSchema.check()));
         definitions.add("outcome", object(List.of("id", "label"), "id", id(), "label", ref("localized_reference")));
         JsonObject root = object(List.of("schema", "id", "revision", "campaign", "character", "title", "topics", "nodes", "outcomes"),
                 "schema", enumeration(SCHEMA_ID), "id", resource(), "revision", integer(1),

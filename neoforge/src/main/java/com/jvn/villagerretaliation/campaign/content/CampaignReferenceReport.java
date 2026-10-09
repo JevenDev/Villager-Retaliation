@@ -54,7 +54,7 @@ public record CampaignReferenceReport(long generation, Map<Key, Node> nodes, Lis
 
     public enum Kind {
         CAMPAIGN, CHAPTER, MILESTONE, OUTCOME, CHARACTER, LOCATION, FACT, REWARD, EVIDENCE, VARIANT,
-        QUEST, CONVERSATION, SCENE, FIXTURE
+        QUEST, CONVERSATION, SCENE, FIXTURE, SOCIAL_PROGRESSION, SOCIAL_SKILL
     }
 
     public enum Direction { DEPENDENCIES, DEPENDENTS }

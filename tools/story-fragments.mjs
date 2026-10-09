@@ -35,9 +35,9 @@ export function resourceKind(file) {
   if (/^campaigns\/(?:[a-z0-9_.-]+\/)+campaign\.json$/.test(rest)) return "campaign";
   if (/^campaigns\/(?:[a-z0-9_.-]+\/)+locales\/[a-z0-9_-]+\.json$/.test(rest)) return "locale";
   if (/^quests\/(?!_shared\/)[a-z0-9_.-]+\/[a-z0-9_.-]+\/quest\.json$/.test(rest)) return "quest";
-  const bundle = /^quests\/(?:_shared|[a-z0-9_.-]+\/[a-z0-9_.-]+)\/(locales|conversations|scenes|encounters|rewards|pools)\/[a-z0-9_.-]+\.json$/.exec(rest);
-  if (!bundle || bundle[1] === "pools" && !rest.startsWith("quests/_shared/")) return null;
-  return ({ locales: "locale", conversations: "conversation", scenes: "scene", encounters: "encounter", rewards: "reward", pools: "pool" })[bundle[1]];
+  const bundle = /^quests\/(?:_shared|[a-z0-9_.-]+\/[a-z0-9_.-]+)\/(locales|conversations|scenes|encounters|rewards|pools|social_progression)\/[a-z0-9_.-]+\.json$/.exec(rest);
+  if (!bundle || ["pools", "social_progression"].includes(bundle[1]) && !rest.startsWith("quests/_shared/")) return null;
+  return ({ locales: "locale", conversations: "conversation", scenes: "scene", encounters: "encounter", rewards: "reward", pools: "pool", social_progression: "social_progression" })[bundle[1]];
 }
 
 export function compileStory(manifestFile, sources, options = {}) {

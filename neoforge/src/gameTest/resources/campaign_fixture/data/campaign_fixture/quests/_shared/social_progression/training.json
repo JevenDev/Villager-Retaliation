@@ -1,0 +1,75 @@
+{
+  "schema": "villagerretaliation:social_progression/v1",
+  "id": "campaign_fixture:social_training",
+  "revision": 1,
+  "skills": [
+    {
+      "id": "persuasion",
+      "levels": [
+        {
+          "experience": 0,
+          "bonus": 0
+        },
+        {
+          "experience": 10,
+          "bonus": 2
+        },
+        {
+          "experience": 30,
+          "bonus": 4
+        }
+      ]
+    },
+    {
+      "id": "intimidation",
+      "levels": [
+        {
+          "experience": 0,
+          "bonus": 0
+        },
+        {
+          "experience": 10,
+          "bonus": 2
+        },
+        {
+          "experience": 30,
+          "bonus": 4
+        }
+      ]
+    },
+    {
+      "id": "deception",
+      "levels": [
+        {
+          "experience": 0,
+          "bonus": 0
+        },
+        {
+          "experience": 10,
+          "bonus": 2
+        },
+        {
+          "experience": 30,
+          "bonus": 4
+        }
+      ]
+    },
+    {
+      "id": "insight",
+      "levels": [
+        {
+          "experience": 0,
+          "bonus": 0
+        },
+        {
+          "experience": 10,
+          "bonus": 2
+        },
+        {
+          "experience": 30,
+          "bonus": 4
+        }
+      ]
+    }
+  ]
+}

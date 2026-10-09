@@ -240,6 +240,8 @@ public final class CampaignConversationMultiplayerAcceptance {
             require(session.check() != null && session.check().resolved()
                     && session.check().die() == Integer.parseInt(read("saved-die.txt")), "reconnecting restores the exact saved d20");
             require(!control.dieAnimating(), "reconnecting does not animate a new roll");
+            require(session.check().experienceAwarded() && session.check().experiencePlayer().equals(minecraft.player.getGameProfile().getName()),
+                    "reconnecting shows who earned the saved social experience");
             if (step == 0 && session.canTakeControl() && presentationTicks >= 20) {
                 capture("peer-reconnected");
                 choose(screen, localized("take_control"));
@@ -341,6 +343,11 @@ public final class CampaignConversationMultiplayerAcceptance {
         require(saved.receipts().size() == savedReceipts && saved.choices().size() == 1, "reconnect and duplicate requests do not repeat choices or effects");
         require(outcome(host.server).equals(savedOutcome), "the committed world outcome remains identical");
         require(host.totalExperience == 20 && (peer == null || peer.totalExperience == 0), "rewards are not duplicated or redirected");
+        var social = com.jvn.villagerretaliation.skill.player.PlayerSocialProgressionSavedData.get(host.serverLevel());
+        var persuasion = com.jvn.villagerretaliation.skill.player.PlayerSocialSkill.PERSUASION;
+        require(social.experience(leader, persuasion) == 10 && social.experience(peerId, persuasion) == 10 && social.receipts().size() == 2,
+                "personal social experience stays with the roller and is never duplicated");
+        require(saved.socialAwards().contains("convince"), "the resolved check retains its experience acknowledgment");
     }
 
     private static ConversationSession.Snapshot snapshot(ServerPlayer player) { return ConversationService.view(player, fixture.session()).session(); }

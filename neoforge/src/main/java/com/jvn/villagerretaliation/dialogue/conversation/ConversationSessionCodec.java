@@ -114,9 +114,13 @@ final class ConversationSessionCodec {
             value.putString("Destination", check.destination());
             value.putUUID("Player", check.player());
             value.putLong("RolledAt", check.rolledAt());
+            if (check.social() != null) value.put("Social", check.social().save());
             checks.add(value);
         });
         tag.put("Checks", checks);
+        var socialAwards = new CompoundTag();
+        session.socialAwards.forEach(id -> socialAwards.putBoolean(id, true));
+        tag.put("SocialAwards", socialAwards);
         var receipts = new ListTag();
         session.receipts.values().forEach(receipt -> {
             var value = new CompoundTag();
@@ -236,8 +240,15 @@ final class ConversationSessionCodec {
         for (var raw : list(tag, "Checks")) {
             var value = (CompoundTag) raw;
             var check = new ConversationSession.Check(uuid(value, "Request"), text(value, "Id"), integer(value, "Die"), integer(value, "Difficulty"),
-                    integer(value, "Modifier"), integer(value, "Total"), bool(value, "Success"), text(value, "Destination"), uuid(value, "Player"), number(value, "RolledAt"));
+                    integer(value, "Modifier"), integer(value, "Total"), bool(value, "Success"), text(value, "Destination"), uuid(value, "Player"), number(value, "RolledAt"),
+                    value.contains("Social") ? com.jvn.villagerretaliation.skill.player.SocialCheckBreakdown.load(compound(value, "Social")) : null);
             require(session.participants.contains(check.player()) && session.checks.putIfAbsent(check.id(), check) == null, "duplicate or invalid conversation check");
+        }
+        var socialAwards = compound(tag, "SocialAwards");
+        for (var id : socialAwards.getAllKeys()) {
+            require(bool(socialAwards, id) && session.checks.containsKey(id) && session.checks.get(id).social() != null,
+                    "social experience receipt has no resolved social check");
+            session.socialAwards.add(id);
         }
         for (var raw : list(tag, "Receipts")) {
             var value = (CompoundTag) raw;

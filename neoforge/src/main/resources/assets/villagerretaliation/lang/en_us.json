@@ -3637,5 +3637,13 @@
   "villagerretaliation.gui.conversation.result": "D20: %s against difficulty %s. %s",
   "villagerretaliation.gui.conversation.success": "Success",
   "villagerretaliation.gui.conversation.failure": "Failure",
-  "villagerretaliation.gui.conversation.difficulty": "Difficulty: %s"
+  "villagerretaliation.gui.conversation.difficulty": "Difficulty: %s",
+  "villagerretaliation.gui.conversation.skill.persuasion": "Persuasion",
+  "villagerretaliation.gui.conversation.skill.intimidation": "Intimidation",
+  "villagerretaliation.gui.conversation.skill.deception": "Deception",
+  "villagerretaliation.gui.conversation.skill.insight": "Insight",
+  "villagerretaliation.gui.conversation.social_check": "%s check",
+  "villagerretaliation.gui.conversation.social_result": "%s: d20 %s + %s = %s against difficulty %s. %s",
+  "villagerretaliation.gui.conversation.social_experience": "%s gained %s %s experience.",
+  "villagerretaliation.gui.conversation.social_experience_pending": "%s: +%s %s experience waiting to save"
 }

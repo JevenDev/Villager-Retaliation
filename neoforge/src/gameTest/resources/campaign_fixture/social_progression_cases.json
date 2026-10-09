@@ -1,0 +1,768 @@
+[
+  {
+    "name": "default_profile",
+    "target": "profile",
+    "patches": [],
+    "valid": true
+  },
+  {
+    "name": "skill_order",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills",
+        "value": [
+          {
+            "id": "insight",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "deception",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "intimidation",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "persuasion",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "maximum_values",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/2",
+        "value": {
+          "experience": 2147483647,
+          "bonus": 20
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "equal_bonuses",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/2/bonus",
+        "value": 2
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "future_schema",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/schema",
+        "value": "villagerretaliation:social_progression/v2"
+      }
+    ],
+    "valid": false,
+    "pointer": "/schema"
+  },
+  {
+    "name": "unknown_field",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/hidden",
+        "value": true
+      }
+    ],
+    "valid": false,
+    "pointer": "/hidden"
+  },
+  {
+    "name": "zero_revision",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/revision",
+        "value": 0
+      }
+    ],
+    "valid": false,
+    "pointer": "/revision"
+  },
+  {
+    "name": "fractional_revision",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/revision",
+        "value": 1.5
+      }
+    ],
+    "valid": false,
+    "pointer": "/revision"
+  },
+  {
+    "name": "invalid_id",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/id",
+        "value": "NoNamespace"
+      }
+    ],
+    "valid": false,
+    "pointer": "/id"
+  },
+  {
+    "name": "trailing_id_newline",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/id",
+        "value": "campaign_fixture:social_training\n"
+      }
+    ],
+    "valid": false,
+    "pointer": "/id"
+  },
+  {
+    "name": "missing_skill",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills",
+        "value": [
+          {
+            "id": "intimidation",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "deception",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "insight",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills"
+  },
+  {
+    "name": "extra_skill",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills",
+        "value": [
+          {
+            "id": "persuasion",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "intimidation",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "deception",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "insight",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          },
+          {
+            "id": "persuasion",
+            "levels": [
+              {
+                "experience": 0,
+                "bonus": 0
+              },
+              {
+                "experience": 10,
+                "bonus": 2
+              },
+              {
+                "experience": 30,
+                "bonus": 4
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills"
+  },
+  {
+    "name": "duplicate_skill",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/1/id",
+        "value": "persuasion"
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/1/id"
+  },
+  {
+    "name": "unknown_skill",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/1/id",
+        "value": "bargaining"
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/1/id"
+  },
+  {
+    "name": "unknown_level_field",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/0/modifier",
+        "value": 1
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/0/modifier"
+  },
+  {
+    "name": "empty_levels",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels",
+        "value": []
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels"
+  },
+  {
+    "name": "negative_threshold",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/0/experience",
+        "value": -1
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/0/experience"
+  },
+  {
+    "name": "nonzero_start",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/0/experience",
+        "value": 1
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/0/experience"
+  },
+  {
+    "name": "duplicate_threshold",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/1/experience",
+        "value": 0
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/1/experience"
+  },
+  {
+    "name": "decreasing_threshold",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/2/experience",
+        "value": 5
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/2/experience"
+  },
+  {
+    "name": "fractional_threshold",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/1/experience",
+        "value": 10.5
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/1/experience"
+  },
+  {
+    "name": "overflow_threshold",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/2/experience",
+        "value": 2147483648
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/2/experience"
+  },
+  {
+    "name": "decreasing_bonus",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/2/bonus",
+        "value": 1
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/2/bonus"
+  },
+  {
+    "name": "negative_bonus",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/1/bonus",
+        "value": -1
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/1/bonus"
+  },
+  {
+    "name": "oversized_bonus",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/1/bonus",
+        "value": 21
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/1/bonus"
+  },
+  {
+    "name": "fractional_bonus",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels/1/bonus",
+        "value": 0.5
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels/1/bonus"
+  },
+  {
+    "name": "missing_levels",
+    "target": "profile",
+    "patches": [
+      {
+        "path": "/skills/0/levels",
+        "remove": true
+      }
+    ],
+    "valid": false,
+    "pointer": "/skills/0/levels"
+  },
+  {
+    "name": "check_persuasion",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "persuasion",
+          "experience": 10
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "check_intimidation",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "intimidation",
+          "experience": 10
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "check_deception",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "deception",
+          "experience": 10
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "check_insight",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "insight",
+          "experience": 10
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "zero_reward",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "persuasion",
+          "experience": 0
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "maximum_reward",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "persuasion",
+          "experience": 2147483647
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "omitted_reward",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "insight"
+        }
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "unknown_profile",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:missing",
+          "skill": "persuasion",
+          "experience": 10
+        }
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social/progression"
+  },
+  {
+    "name": "check_unknown_skill",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "bargaining",
+          "experience": 10
+        }
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social/skill"
+  },
+  {
+    "name": "check_missing_skill",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training"
+        }
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social/skill"
+  },
+  {
+    "name": "check_missing_profile",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "skill": "persuasion"
+        }
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social/progression"
+  },
+  {
+    "name": "negative_reward",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "persuasion",
+          "experience": -1
+        }
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social/experience"
+  },
+  {
+    "name": "fractional_reward",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "persuasion",
+          "experience": 1.5
+        }
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social/experience"
+  },
+  {
+    "name": "overflow_reward",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "persuasion",
+          "experience": 2147483648
+        }
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social/experience"
+  },
+  {
+    "name": "unknown_check_field",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": {
+          "progression": "campaign_fixture:social_training",
+          "skill": "persuasion",
+          "experience": 10,
+          "bonus": 10
+        }
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social/bonus"
+  },
+  {
+    "name": "null_social",
+    "target": "conversation",
+    "patches": [
+      {
+        "path": "/checks/0/social",
+        "value": null
+      }
+    ],
+    "valid": false,
+    "pointer": "/checks/0/social"
+  }
+]

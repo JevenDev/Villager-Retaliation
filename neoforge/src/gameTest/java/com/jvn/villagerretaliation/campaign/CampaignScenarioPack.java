@@ -104,11 +104,13 @@ final class CampaignScenarioPack {
                 "Scenario scenes: " + scenes.diagnostics());
         var quests = VillagerQuestResources.compileBundles(server, bundles);
         var pools = QuestPoolResources.snapshotForCatalog(server, bundles);
-        var conversations = ConversationResources.compile(bundles, scenes.scenes().keySet(), quests.quests().keySet());
+        var progressions = com.jvn.villagerretaliation.skill.player.SocialProgressionResources.compile(bundles);
+        require(progressions.diagnostics().isEmpty(), "Scenario social progression: " + progressions.diagnostics());
+        var conversations = ConversationResources.compile(bundles, scenes.scenes().keySet(), quests.quests().keySet(), progressions.definitions());
         require(conversations.diagnostics().isEmpty(), "Scenario conversations: " + conversations.diagnostics());
         var catalog = new QuestContentCatalog(generation, quests.compiledCatalog(), quests.dialogueCatalog(), quests.quests(),
                 quests.objectiveEventQuestIds(), quests.factQuestIds(), quests.memoryEventQuestIds(), quests.exclusiveGroupQuestIds(), quests.triggerEventQuestIds(),
-                scenes.scenes(), encounters.templates(), pools.pools(), bundles.bundles(), bundles.localization(), rewards, conversations.conversations());
+                scenes.scenes(), encounters.templates(), pools.pools(), bundles.bundles(), bundles.localization(), rewards, conversations.conversations(), progressions.definitions());
         var campaignResources = new LinkedHashMap<ResourceLocation, JsonObject>();
         for (var resource : DatapackResourceLoader.jsonResources(server, "campaigns")) {
             var value = DatapackResourceLoader.readObject(resource.location(), "scenario campaign", resource.resource());

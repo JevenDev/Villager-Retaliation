@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.quest.content.QuestContentLoadReport;
 import com.jvn.villagerretaliation.scene.SceneOperatorService;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
+import com.jvn.villagerretaliation.skill.player.PlayerSocialProgressionSavedData;
 import com.mojang.authlib.GameProfile;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.io.IOException;
@@ -104,6 +105,7 @@ final class CampaignScenarioFixture implements AutoCloseable {
         slot(CampaignFollowSavedData.DATA_NAME, () -> CampaignFollowSavedData.get(helper.getLevel()), tag -> CampaignFollowSavedData.load(tag, directory));
         slot(CampaignEvidenceSavedData.DATA_NAME, () -> CampaignEvidenceSavedData.get(helper.getLevel()), tag -> CampaignEvidenceSavedData.load(tag, directory));
         slot(CampaignVariantSavedData.DATA_NAME, () -> CampaignVariantSavedData.get(helper.getLevel()), tag -> CampaignVariantSavedData.load(tag, directory));
+        slot(PlayerSocialProgressionSavedData.DATA_NAME, () -> PlayerSocialProgressionSavedData.get(helper.getLevel()), tag -> PlayerSocialProgressionSavedData.load(tag, directory));
         slot("villagerretaliation_quests", () -> VillagerQuestSavedData.get(helper.getLevel()), tag -> VillagerQuestSavedData.load(tag, helper.getLevel().registryAccess()));
         slot("villagerretaliation_parties", () -> PartySavedData.get(helper.getLevel()), tag -> PartySavedData.load(tag, helper.getLevel().registryAccess()));
         slot("villagerretaliation_scenes", () -> SceneSavedData.get(helper.getLevel()), tag -> SceneSavedData.load(tag, helper.getLevel().registryAccess()));

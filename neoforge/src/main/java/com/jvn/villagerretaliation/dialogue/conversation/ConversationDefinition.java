@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue.conversation;
 
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.skill.player.PlayerSocialSkill;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import java.util.Collections;
@@ -57,7 +58,16 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
     public record Effect(String id, VillagerActionDefinition action, String pointer) {
     }
 
-    public record Check(String id, int difficulty, String success, String failure, String pointer) {
+    public record Check(String id, int difficulty, String success, String failure, Social social, String pointer) {
+        public Check(String id, int difficulty, String success, String failure, String pointer) {
+            this(id, difficulty, success, failure, null, pointer);
+        }
+    }
+
+    public record Social(ResourceLocation progression, PlayerSocialSkill skill, int experience) {
+        public Social {
+            if (progression == null || skill == null || experience < 0) throw new IllegalArgumentException("Invalid authored social check");
+        }
     }
 
     public record Outcome(String id, String labelKey, String pointer) {

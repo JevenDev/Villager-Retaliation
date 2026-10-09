@@ -1152,6 +1152,35 @@
           "minLength": 1,
           "maxLength": 256,
           "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
+        "social": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "progression",
+            "skill"
+          ],
+          "properties": {
+            "progression": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])",
+              "maxLength": 256
+            },
+            "skill": {
+              "type": "string",
+              "enum": [
+                "persuasion",
+                "intimidation",
+                "deception",
+                "insight"
+              ]
+            },
+            "experience": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          }
         }
       }
     },

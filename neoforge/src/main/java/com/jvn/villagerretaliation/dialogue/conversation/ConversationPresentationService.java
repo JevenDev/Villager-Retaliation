@@ -204,8 +204,15 @@ public final class ConversationPresentationService {
         Check check = null;
         if (snapshot.phase() == ConversationSession.Phase.CHECK || snapshot.phase() == ConversationSession.Phase.ROLLED) {
             var rolled = snapshot.checks().get(snapshot.check());
-            if (rolled != null) check = new Check(rolled.id(), rolled.difficulty(), true, rolled.die(), rolled.success());
-            else if (definition != null && definition.checks().containsKey(snapshot.check())) check = new Check(snapshot.check(), definition.checks().get(snapshot.check()).difficulty(), false, 0, false);
+            if (rolled != null) check = new Check(rolled.id(), rolled.difficulty(), true, rolled.die(), rolled.success(),
+                    rolled.modifier(), rolled.total(), rolled.social() == null ? null : rolled.social().skill(),
+                    rolled.social() == null ? 0 : rolled.social().rewardExperience(), snapshot.socialAwards().contains(rolled.id()),
+                    rolled.social() == null ? "" : playerName(player, rolled.player()));
+            else if (definition != null && definition.checks().containsKey(snapshot.check())) {
+                var authored = definition.checks().get(snapshot.check());
+                check = new Check(snapshot.check(), authored.difficulty(), false, 0, false, 0, 0,
+                        authored.social() == null ? null : authored.social().skill(), authored.social() == null ? 0 : authored.social().experience(), false);
+            }
         }
         String outcome = snapshot.outcome();
         if (definition != null && definition.outcomes().containsKey(outcome)) outcome = ConversationService.text(player, definition.outcomes().get(outcome).labelKey());
@@ -216,6 +223,13 @@ public final class ConversationPresentationService {
                 controller == null ? "" : label(controller.getName().getString()), handover, slice(responses, page), check, label(outcome), snapshot.confirmation() == null ? null : snapshot.confirmation().id());
         return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), page, pages, List.of(), session,
                 text(issue.isBlank() ? result.diagnostic() : issue));
+    }
+
+    private static String playerName(ServerPlayer viewer, UUID id) {
+        var player = viewer.server.getPlayerList().getPlayer(id);
+        if (player != null) return label(player.getGameProfile().getName());
+        var cache = viewer.server.getProfileCache();
+        return label(cache == null ? id.toString() : cache.get(id).map(com.mojang.authlib.GameProfile::getName).orElse(id.toString()));
     }
 
     private static void attach(ServerPlayer player, CampaignConversationRequestPayload request, UUID session) {

@@ -444,6 +444,94 @@ public final class ConversationSessionGameTests {
 
     private static CompoundTag first(CompoundTag tag) { return tag.getList("Sessions", 10).getCompound(0); }
 
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void socialChecksFreezeBonusesAndKeepNaturalRollRules(GameTestHelper helper) throws IOException {
+        var progression = com.jvn.villagerretaliation.skill.player.SocialProgressionTestData.definition();
+        var skill = com.jvn.villagerretaliation.skill.player.PlayerSocialSkill.PERSUASION;
+        var social = com.jvn.villagerretaliation.skill.player.SocialCheckBreakdown.capture(progression, skill, 30, 10);
+        for (int difficulty : List.of(0, 10, 20, 25)) for (int die = 1; die <= 20; die++) {
+            var definition = new ConversationDefinition.Check("convince", difficulty, "yes", "no",
+                    new ConversationDefinition.Social(progression.id(), skill, 10), "");
+            var result = ConversationSession.Check.roll(UUID.randomUUID(), definition, die, UUID.randomUUID(), 0, social);
+            boolean expected = die == 20 || die != 1 && die + 4 >= difficulty;
+            helper.assertValueEqual(result.success(), expected, "saved social bonus and natural rolls " + difficulty + "/" + die);
+            helper.assertValueEqual(result.total(), die + 4, "total uses the captured bonus");
+            helper.assertValueEqual(result.destination(), expected ? "yes" : "no", "branch follows the saved total");
+        }
+        try {
+            new ConversationSession.Check(UUID.randomUUID(), "convince", 8, 10, 0, 8, false, "no", UUID.randomUUID(), 0, social);
+            helper.fail("a modifier cannot disagree with its saved social breakdown");
+        } catch (IllegalArgumentException expected) { }
+        try (var disk = new Disk()) {
+            var session = session(UUID.randomUUID());
+            var data = disk.open();
+            data.write(null, 0, session);
+            session.revision++;
+            UUID roll = UUID.randomUUID();
+            session.phase = ConversationSession.Phase.ROLLED;
+            session.check = "convince";
+            session.requests.put(roll, new ConversationSession.Request(session.controller, 1, ConversationSession.Intent.ROLL, ""));
+            session.checks.put("convince", ConversationSession.Check.roll(roll, new ConversationDefinition.Check("convince", 10, "yes", "no",
+                    new ConversationDefinition.Social(progression.id(), skill, 10), ""), 8, session.controller, 1, social));
+            data.write(null, 1, session);
+            var restored = disk.reload();
+            helper.assertValueEqual(restored.session(session.identity.id()).checks, session.checks, "full social breakdown survives reload");
+            helper.assertTrue(restored.hasPendingSocialAwards(session.controller), "unacknowledged experience survives reload");
+            session.phase = ConversationSession.Phase.COMPLETE;
+            session.outcome = "finished";
+            session.revision++;
+            restored.write(null, 2, session);
+            restored = disk.reload();
+            helper.assertTrue(restored.maintenanceBatch().isEmpty(), "completed conversation releases ordinary maintenance");
+            helper.assertValueEqual(restored.socialAwardBatch(), List.of(session.identity.id()), "completed conversation keeps its award delivery");
+            var saved = disk.read();
+            for (Consumer<CompoundTag> corrupt : List.<Consumer<CompoundTag>>of(
+                    tag -> tag.putInt("DataVersion", 8),
+                    tag -> first(tag).getList("Checks", 10).getCompound(0).putInt("Modifier", 0),
+                    tag -> first(tag).getList("Checks", 10).getCompound(0).getCompound("Social").putString("Progression", "BAD RESOURCE"),
+                    tag -> first(tag).getCompound("SocialAwards").putBoolean("missing_check", true),
+                    tag -> first(tag).getCompound("SocialAwards").putInt("convince", 1))) {
+                var broken = saved.copy();
+                corrupt.accept(broken);
+                var dormant = ConversationSavedData.load(broken, disk.directory);
+                helper.assertFalse(dormant.diagnostic().isBlank(), "inconsistent saved social check stays dormant");
+                helper.assertValueEqual(dormant.save(new CompoundTag(), helper.getLevel().registryAccess()), broken, "broken social history stays repairable");
+            }
+            session.socialAwards.add("convince");
+            session.revision++;
+            restored.write(null, 3, session);
+            helper.assertTrue(disk.reload().socialAwardBatch().isEmpty(), "acknowledged history needs no more award delivery");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void oldConversationVersionsRetainZeroModifiers(GameTestHelper helper) throws IOException {
+        try (var disk = new Disk()) {
+            var session = session(UUID.randomUUID());
+            var data = disk.open();
+            data.write(null, 0, session);
+            session.revision++;
+            UUID roll = UUID.randomUUID();
+            session.phase = ConversationSession.Phase.ROLLED;
+            session.check = "convince";
+            session.requests.put(roll, new ConversationSession.Request(session.controller, 1, ConversationSession.Intent.ROLL, ""));
+            session.checks.put("convince", ConversationSession.Check.roll(roll,
+                    new ConversationDefinition.Check("convince", 10, "yes", "no", ""), 12, session.controller, 1));
+            data.write(null, 1, session);
+            for (int version = 1; version <= 8; version++) {
+                var legacy = disk.read();
+                legacy.putInt("DataVersion", version);
+                first(legacy).remove("SocialAwards");
+                var migrated = ConversationSavedData.load(legacy, disk.directory);
+                helper.assertTrue(migrated.diagnostic().isBlank(), "legacy version " + version + " remains readable: " + migrated.diagnostic());
+                helper.assertValueEqual(migrated.session(session.identity.id()).checks, session.checks, "legacy result retains zero modifiers");
+                helper.assertTrue(migrated.socialAwardBatch().isEmpty(), "legacy checks invent no social rewards");
+            }
+        }
+        helper.succeed();
+    }
+
     private static ConversationSession session(UUID character) {
         UUID player = UUID.randomUUID();
         var id = ResourceLocation.parse("campaign_fixture:mentor_conversation");

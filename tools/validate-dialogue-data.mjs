@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { validateConversation, validateConversationSchema, materializeConversationAction } from "./conversation-validation.mjs";
 import { campaignDataRoot, validateCampaignPack } from "./campaign-pack-validation.mjs";
 import { scenarioPath, scenarioContext, validateCampaignScenario } from "./campaign-scenario-validation.mjs";
+import { socialProgressionPath, validateSocialProgression, collectSocialProgressions } from "./social-progression-validation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
@@ -900,6 +901,7 @@ const errors = [];
 const warnings = [];
 const questDefinitions = new Map();
 const conversationDatapacks = new Map();
+const socialProgressionDatapacks = new Map();
 const campaignDatapacks = new Map();
 const checkedCampaigns = new Set();
 const dialogueTreeDefinitions = new Map();
@@ -964,6 +966,7 @@ validateSkillTradeSchema(skillTradeSchema);
 const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
 const questObjectiveTypes = questV2RegistryIndex.objectives.values;
 const conversationSchema = await parseJson(path.join(root, "tools/datapack-builder/conversation-v1.schema.json"));
+const socialProgressionSchema = await parseJson(path.join(root, "tools/datapack-builder/social-progression-v1.schema.json"));
 const campaignSchema = await parseJson(path.join(root, "tools/datapack-builder/campaign-v1.schema.json"));
 const scenarioSchema = await parseJson(path.join(root, "tools/datapack-builder/campaign-scenario-v1.schema.json"));
 const sceneSchema = await parseJson(path.join(root, "tools/datapack-builder/scene-v1.schema.json"));
@@ -973,8 +976,12 @@ if (cli.help) {
   process.exit(0);
 }
 
-if (cli.fileLists.length > 0 || cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0 || cli.campaignFiles.length > 0 || cli.scenarioFiles.length > 0) {
+if (cli.fileLists.length > 0 || cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0 || cli.conversationFiles.length > 0 || cli.campaignFiles.length > 0 || cli.scenarioFiles.length > 0 || cli.socialProgressionFiles.length > 0) {
   if (cli.questFiles.length > 0) await validateQuestFiles(cli.questFiles);
+  for (const file of cli.socialProgressionFiles) {
+    const data = await parseJson(file);
+    if (data !== undefined) await checkSocialProgressionFile(file, data);
+  }
   if (cli.skillTradeFiles.length > 0) await validateSkillTradeFiles(cli.skillTradeFiles);
   if (cli.conversationFiles.length > 0) {
     if (cli.questFiles.length === 0) await indexBuiltInReferenceData();
@@ -1022,7 +1029,8 @@ function parseValidatorArgs(args) {
     skillTradeFiles: [],
     conversationFiles: [],
     campaignFiles: [],
-    scenarioFiles: []
+    scenarioFiles: [],
+    socialProgressionFiles: []
   };
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
@@ -1055,6 +1063,10 @@ function parseValidatorArgs(args) {
       const file = args[++index];
       if (!file) errors.push("tools/validate-dialogue-data.mjs: --campaign requires a JSON file path.");
       else parsed.campaignFiles.push(path.resolve(file));
+    } else if (arg === "--social-progression") {
+      const file = args[++index];
+      if (!file) errors.push("tools/validate-dialogue-data.mjs: --social-progression requires a JSON file path.");
+      else parsed.socialProgressionFiles.push(path.resolve(file));
     } else if (arg === "--scenario" || arg === "--scenario-file") {
       const file = args[++index];
       if (!file) errors.push("tools/validate-dialogue-data.mjs: --scenario requires a JSON file path.");
@@ -1069,13 +1081,13 @@ function parseValidatorArgs(args) {
 }
 
 async function readValidatorFileLists(cli) {
-  const fields = { quests: "questFiles", conversations: "conversationFiles", campaigns: "campaignFiles", scenarios: "scenarioFiles" };
+  const fields = { quests: "questFiles", conversations: "conversationFiles", campaigns: "campaignFiles", scenarios: "scenarioFiles", social_progressions: "socialProgressionFiles" };
   for (const file of cli.fileLists) {
     const data = await parseJson(file);
     if (!data || typeof data !== "object" || Array.isArray(data) || Object.keys(data).some(key => !Object.hasOwn(fields, key))
         || Object.values(data).some(entries => !Array.isArray(entries) || entries.length > 4096
           || entries.some(entry => typeof entry !== "string" || !entry.trim()))) {
-      errors.push(relative(file) + ": file list must contain quests, conversations, campaigns, or scenarios arrays of JSON file paths.");
+      errors.push(relative(file) + ": file list must contain quests, conversations, campaigns, scenarios, or social_progressions arrays of JSON file paths.");
       continue;
     }
     for (const [key, entries] of Object.entries(data)) {
@@ -1087,11 +1099,11 @@ async function readValidatorFileLists(cli) {
 
 function printValidatorHelp() {
   console.log([
-    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--json] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...] [--campaign path/to/campaign.json ...] [--scenario path/to/scenario.json ...]",
+    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--json] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...] [--conversation path/to/file.json ...] [--campaign path/to/campaign.json ...] [--scenario path/to/scenario.json ...] [--social-progression path/to/profile.json ...]",
     "",
     "Without file arguments, validates the checked-in built-in datapack dialogue and quest data.",
-    "With --quest, --skill-trade, --conversation, --campaign, or --scenario, validates the supplied resources and their authored references.",
-    "--file-list accepts JSON with quests, conversations, campaigns, and scenarios arrays. Paths are relative to that file.",
+    "With --quest, --skill-trade, --conversation, --campaign, --scenario, or --social-progression, validates the supplied resources and their authored references.",
+    "--file-list accepts JSON with quests, conversations, campaigns, scenarios, and social_progressions arrays. Paths are relative to that file.",
     "--json emits errors and warnings as JSON."
   ].join("\n"));
 }
@@ -1120,6 +1132,8 @@ async function validateBuiltInData() {
           indexQuestBundleLocale(file, data);
         } else if (stringValue(data?.schema) === "villagerretaliation:quest_reward/v1") {
           indexBundledQuestReward(file, data);
+        } else if (stringValue(data?.schema) === "villagerretaliation:social_progression/v1") {
+          await checkSocialProgressionFile(file, data);
         } else if (stringValue(data?.schema) === "villagerretaliation:conversation/v1") {
           await checkConversationFile(file, data);
         } else if (!isQuestBundleCompanion(data)) {
@@ -1195,6 +1209,33 @@ async function conversationDatapack(dataRoot) {
   return conversationDatapacks.get(dataRoot);
 }
 
+async function socialProgressionCatalog(dataRoot) {
+  if (!socialProgressionDatapacks.has(dataRoot)) {
+    const resources = [...await conversationDatapack(dataRoot)];
+    const indexed = new Set(resources.map(resource => path.resolve(resource.file)));
+    for (const file of await jsonFiles(dataRoot)) {
+      if (!socialProgressionPath(file) || indexed.has(path.resolve(file))) continue;
+      const data = await parseJson(file);
+      if (data !== undefined) resources.push({ file, data });
+    }
+    const report = collectSocialProgressions(resources, socialProgressionSchema);
+    for (const issue of report.issues) errors.push(relative(issue.file) + ": " + (issue.pointer || "/") + ": " + issue.message + ".");
+    socialProgressionDatapacks.set(dataRoot, report.progressions);
+  }
+  return socialProgressionDatapacks.get(dataRoot);
+}
+
+async function checkSocialProgressionFile(file, data) {
+  const location = socialProgressionPath(file);
+  if (location) {
+    await socialProgressionCatalog(location.dataRoot);
+    return;
+  }
+  for (const issue of validateSocialProgression(data, socialProgressionSchema))
+    errors.push(relative(file) + ": " + (issue.pointer || "/") + ": " + issue.message + ".");
+  errors.push(relative(file) + ": social progression belongs to quests/_shared/social_progression.");
+}
+
 async function checkConversationFile(file, data, indexReferences = false) {
   if (!conversationSchema) return;
   const structuralIssues = validateConversationSchema(data, conversationSchema);
@@ -1217,6 +1258,7 @@ async function checkConversationFile(file, data, indexReferences = false) {
   }
   const context = { prefix: ownerQuest?.localization_prefix ?? "", quest: ownerQuest?.id, messages: Object.create(null) };
   const dataRoot = path.dirname(namespaceRoot);
+  context.progressions = await socialProgressionCatalog(dataRoot);
   const resources = await conversationDatapack(dataRoot);
   for (const { file: resource, data: definition } of resources) {
     const local = path.relative(dataRoot, resource).replaceAll(path.sep, "/");
@@ -1335,6 +1377,7 @@ async function checkCampaignFile(file, data) {
     }
     resources = campaignDatapacks.get(dataRoot);
   }
+  if (dataRoot) await socialProgressionCatalog(dataRoot);
   if (!campaignSchema || !questV2Schema || !sceneSchema) return;
   const report = validateCampaignPack(file, data, resources, { campaign: campaignSchema, quest: questV2Schema, scene: sceneSchema });
   for (const problem of report.issues) errors.push(relative(problem.file) + ": " + (problem.pointer || "/") + ": " + problem.message + ".");

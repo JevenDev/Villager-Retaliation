@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.skill.player.SocialProgressionDefinition;
+import com.jvn.villagerretaliation.skill.player.SocialProgressionResources;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
@@ -26,6 +28,11 @@ public final class ConversationResources {
     }
 
     public static Snapshot compile(QuestBundleTransactions.Result bundles, Set<ResourceLocation> sceneIds, Set<ResourceLocation> questIds) {
+        return compile(bundles, sceneIds, questIds, SocialProgressionResources.compile(bundles).definitions());
+    }
+
+    public static Snapshot compile(QuestBundleTransactions.Result bundles, Set<ResourceLocation> sceneIds, Set<ResourceLocation> questIds,
+            Map<ResourceLocation, SocialProgressionDefinition> progressions) {
         QuestLocaleCatalog shared = QuestLocaleCatalog.empty();
         for (var bundle : bundles.bundles().values()) if (bundle.owner().shared()) {
             for (String locale : bundle.locales().locales()) shared = shared.overlay(locale, bundle.locales().messages(locale));
@@ -44,6 +51,9 @@ public final class ConversationResources {
                 List<QuestDiagnostic> issues = new ArrayList<>(parsed.diagnostics());
                 if (parsed.valid()) {
                     var definition = parsed.definition();
+                    for (var check : definition.checks().values()) if (check.social() != null && !progressions.containsKey(check.social().progression()))
+                        issues.add(ConversationCompiler.error(definition.source(), check.pointer() + "/social/progression",
+                                "unknown social progression " + check.social().progression()));
                     if (definition.quest() != null && !questIds.contains(definition.quest())) {
                         issues.add(ConversationCompiler.error(definition.source(), "/quest", "unknown quest " + definition.quest()));
                     }

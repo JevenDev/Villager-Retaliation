@@ -148,9 +148,17 @@ public final class CampaignConversationScreenController {
             if (session.line() != null && session.check() == null) text.append(session.line().text());
             if (session.check() != null) {
                 var check = session.check();
+                String skill = check.skill() == null ? "" : host.translate("conversation.skill." + check.skill().id());
+                if (!skill.isBlank() && (!check.resolved() || dieAnimation.playing())) append(text, host.translate("conversation.social_check", skill));
                 append(text, dieAnimation.playing() ? host.translate("conversation.rolling", check.difficulty())
-                        : check.resolved() ? host.translate("conversation.result", check.die(), check.difficulty(), host.translate(check.success() ? "conversation.success" : "conversation.failure"))
+                        : check.resolved() ? skill.isBlank()
+                                ? host.translate("conversation.result", check.die(), check.difficulty(), host.translate(check.success() ? "conversation.success" : "conversation.failure"))
+                                : host.translate("conversation.social_result", skill, check.die(), check.modifier(), check.total(),
+                                        check.difficulty(), host.translate(check.success() ? "conversation.success" : "conversation.failure"))
                         : host.translate("conversation.difficulty", check.difficulty()));
+                if (check.resolved() && !dieAnimation.playing() && check.rewardExperience() > 0)
+                    append(text, host.translate(check.experienceAwarded() ? "conversation.social_experience" : "conversation.social_experience_pending",
+                            check.experiencePlayer(), check.rewardExperience(), skill));
             }
             if (!session.outcome().isBlank()) append(text, session.outcome());
         }

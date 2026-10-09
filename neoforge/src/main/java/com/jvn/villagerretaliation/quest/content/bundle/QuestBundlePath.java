@@ -50,7 +50,7 @@ public record QuestBundlePath(
             }
             Kind kind = Kind.sharedDirectory(parts[1]).orElse(null);
             if (kind == null || parts.length != 3 || !parts[2].endsWith(".json")) {
-                return Classification.error("_shared accepts locales, pools, scenes, conversations, encounters, and rewards JSON");
+                return Classification.error("_shared accepts locales, pools, scenes, conversations, encounters, rewards, and social_progression JSON");
             }
             return Classification.ok(new QuestBundlePath(
                     resource, owner, kind, "", String.join("/", Arrays.copyOfRange(parts, 2, parts.length))));
@@ -89,7 +89,7 @@ public record QuestBundlePath(
     }
 
     public enum Kind {
-        QUEST, LOCALE, SCENE, ENCOUNTER, REWARD, POOL, CONVERSATION;
+        QUEST, LOCALE, SCENE, ENCOUNTER, REWARD, POOL, CONVERSATION, SOCIAL_PROGRESSION;
 
         private static Optional<Kind> sharedDirectory(String value) {
             return switch (value) {
@@ -98,6 +98,7 @@ public record QuestBundlePath(
                 case "encounters" -> Optional.of(ENCOUNTER);
                 case "rewards" -> Optional.of(REWARD);
                 case "pools" -> Optional.of(POOL);
+                case "social_progression" -> Optional.of(SOCIAL_PROGRESSION);
                 default -> Optional.empty();
             };
         }

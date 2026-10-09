@@ -328,7 +328,9 @@ public final class CampaignConversationGameTests {
             install(graph);
         }
 
-        void install(JsonObject graph) {
+        void install(JsonObject graph) { install(graph, Map.of()); }
+
+        void install(JsonObject graph, Map<ResourceLocation, com.jvn.villagerretaliation.skill.player.SocialProgressionDefinition> progressions) {
             var old = base.catalog;
             var original = old.bundles().values().iterator().next();
             var bundle = new QuestBundleTransactions.EffectiveBundle(original.owner(), original.questId(), original.localizationPrefix(),
@@ -341,7 +343,7 @@ public final class CampaignConversationGameTests {
             }
             var catalog = new QuestContentCatalog(old.generation() + 1, old.compiledQuestCatalog(), old.dialogueCatalog(), old.quests(),
                     old.objectiveEventQuestIds(), old.factQuestIds(), old.memoryEventQuestIds(), old.exclusiveGroupQuestIds(), old.triggerEventQuestIds(),
-                    old.scenes(), old.encounters(), old.pools(), old.bundles(), old.localization(), old.rewards(), conversations);
+                    old.scenes(), old.encounters(), old.pools(), old.bundles(), old.localization(), old.rewards(), conversations, progressions);
             var campaigns = CampaignResources.current(base.server).campaigns();
             QuestContentCatalogs.installForTests(base.server, catalog, base.report);
             CampaignResources.installForTests(base.server, new CampaignContentCatalog(catalog, campaigns, List.of()));

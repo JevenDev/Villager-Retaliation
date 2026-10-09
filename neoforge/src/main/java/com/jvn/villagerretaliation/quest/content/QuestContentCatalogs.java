@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.quest.content;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationResources;
+import com.jvn.villagerretaliation.skill.player.SocialProgressionResources;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.content.bundle.BuiltInQuestBundleCompatibility;
@@ -153,8 +154,10 @@ public final class QuestContentCatalogs {
             }
 
             boolean removed = false;
-            for (Map.Entry<QuestBundlePath.Owner, List<String>> invalid
-                    : compiled.invalidOwners().entrySet()) {
+            var invalidProfiles = compiled.socialProgressions().diagnostics().keySet();
+            var ownersToReject = compiled.invalidOwners().entrySet().stream()
+                    .filter(entry -> invalidProfiles.isEmpty() || invalidProfiles.contains(entry.getKey())).toList();
+            for (Map.Entry<QuestBundlePath.Owner, List<String>> invalid : ownersToReject) {
                 RejectedLayer layer = highestStructuralLayer(remaining, invalid.getKey());
                 ResourceLocation source = ownerSource(invalid.getKey());
                 String message = String.join("; ", invalid.getValue());
@@ -224,7 +227,8 @@ public final class QuestContentCatalogs {
         QuestPoolResources.ContentSnapshot pool =
                 QuestPoolResources.snapshotForCatalog(server, bundles);
 
-        var conversations = ConversationResources.compile(bundles, scene.scenes().keySet(), quest.quests().keySet());
+        var socialProgressions = SocialProgressionResources.compile(bundles);
+        var conversations = ConversationResources.compile(bundles, scene.scenes().keySet(), quest.quests().keySet(), socialProgressions.definitions());
         QuestContentCatalog catalog = new QuestContentCatalog(
                 generation,
                 quest.compiledCatalog(),
@@ -241,7 +245,7 @@ public final class QuestContentCatalogs {
                 bundles.bundles(),
                 bundles.localization(),
                 rewards,
-                conversations.conversations());
+                conversations.conversations(), socialProgressions.definitions());
         boolean questOverride = VillagerQuestResources.hasTestOverride(server);
         boolean sceneOverride = SceneResources.hasTestOverride(server);
         boolean encounterOverride = EncounterResources.hasTestOverride(server);
@@ -250,8 +254,9 @@ public final class QuestContentCatalogs {
                 scene,
                 encounter,
                 conversations,
+                socialProgressions,
                 compilationErrors(
-                        bundles, catalog, conversations, questOverride, sceneOverride, encounterOverride),
+                        bundles, catalog, conversations, socialProgressions, questOverride, sceneOverride, encounterOverride),
                 questOverride);
     }
 
@@ -259,11 +264,14 @@ public final class QuestContentCatalogs {
             QuestBundleTransactions.Result bundles,
             QuestContentCatalog catalog,
             ConversationResources.Snapshot conversations,
+            SocialProgressionResources.Snapshot socialProgressions,
             boolean questOverride,
             boolean sceneOverride,
             boolean encounterOverride) {
         Map<QuestBundlePath.Owner, List<String>> errors = new LinkedHashMap<>();
         conversations.diagnostics().forEach((owner, values) -> values.forEach(issue -> error(errors, owner,
+                issue.resourcePath() + issue.jsonPointer() + ": " + issue.message())));
+        socialProgressions.diagnostics().forEach((owner, values) -> values.forEach(issue -> error(errors, owner,
                 issue.resourcePath() + issue.jsonPointer() + ": " + issue.message())));
         Set<ResourceLocation> poolIds = new LinkedHashSet<>();
         catalog.pools().forEach(pool -> poolIds.add(pool.id()));
@@ -283,6 +291,7 @@ public final class QuestContentCatalogs {
                         case QUEST -> questOverride || catalog.quests().containsKey(id);
                         case SCENE -> sceneOverride || catalog.scenes().containsKey(id);
                         case CONVERSATION -> catalog.conversations().containsKey(id);
+                        case SOCIAL_PROGRESSION -> catalog.socialProgressions().containsKey(id);
                         case ENCOUNTER -> encounterOverride || catalog.encounters().containsKey(id);
                         case POOL -> poolIds.contains(id);
                         case REWARD -> catalog.rewards().bundled(id).isPresent();
@@ -404,6 +413,9 @@ public final class QuestContentCatalogs {
         compiled.conversations().diagnostics().values().forEach(entries -> entries.forEach(diagnostic -> report.add(
                 diagnostic.resourceId(), "conversation", QuestContentLoadReport.Severity.ERROR,
                 diagnostic.jsonPointer() + ": " + diagnostic.message())));
+        compiled.socialProgressions().diagnostics().values().forEach(entries -> entries.forEach(diagnostic -> report.add(
+                diagnostic.resourceId(), "social_progression", QuestContentLoadReport.Severity.ERROR,
+                diagnostic.jsonPointer() + ": " + diagnostic.message())));
         bundles.diagnostics().forEach(diagnostic -> report.add(
                 diagnostic.location() == null ? ownerSource(diagnostic.owner()) : diagnostic.location(),
                 "quest_bundle/" + diagnostic.code(),
@@ -429,6 +441,7 @@ public final class QuestContentCatalogs {
             SceneResources.ContentSnapshot scene,
             EncounterResources.ContentSnapshot encounter,
             ConversationResources.Snapshot conversations,
+            SocialProgressionResources.Snapshot socialProgressions,
             Map<QuestBundlePath.Owner, List<String>> invalidOwners,
             boolean questOverride) {
     }

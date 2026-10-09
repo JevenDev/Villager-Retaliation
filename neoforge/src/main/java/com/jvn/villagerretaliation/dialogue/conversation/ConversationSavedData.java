@@ -19,15 +19,17 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class ConversationSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 8;
+    public static final int CURRENT_DATA_VERSION = 9;
     static final String DATA_NAME = "villagerretaliation_conversations";
     private final Path directory;
     private Map<UUID, ConversationSession> sessions = Map.of();
     private Map<UUID, UUID> locks = Map.of();
     private java.util.Set<ConversationObjectiveEvidence.Key> objectiveEvidence = java.util.Set.of();
     private final java.util.ArrayDeque<UUID> maintenance = new java.util.ArrayDeque<>();
+    private final java.util.ArrayDeque<UUID> socialAwardMaintenance = new java.util.ArrayDeque<>();
     private final Map<UUID, ConversationSession> pending = new LinkedHashMap<>();
     private final Map<UUID, String> persistenceIssues = new LinkedHashMap<>();
+    private final Map<UUID, String> socialIssues = new LinkedHashMap<>();
     private String diagnostic = "";
     private CompoundTag preserved;
 
@@ -65,6 +67,13 @@ public final class ConversationSavedData extends SavedData {
                     ConversationSessionCodec.require(!saved.contains("SpeakerHistory") || ConversationSessionCodec.list(saved, "SpeakerHistory").isEmpty(),
                             "legacy conversation data contains speaker repairs");
                     saved.put("SpeakerHistory", new ListTag());
+                }
+                if (version < 9) {
+                    ConversationSessionCodec.require(!saved.contains("SocialAwards") || ConversationSessionCodec.compound(saved, "SocialAwards").isEmpty(),
+                            "legacy conversation data contains social experience receipts");
+                    for (var check : ConversationSessionCodec.list(saved, "Checks"))
+                        ConversationSessionCodec.require(!((CompoundTag) check).contains("Social"), "legacy conversation data contains social modifiers");
+                    saved.put("SocialAwards", new CompoundTag());
                 }
                 var session = ConversationSessionCodec.load(saved);
                 if (version < 3 && (session.phase == ConversationSession.Phase.RESPONSE_EFFECTS
@@ -118,6 +127,24 @@ public final class ConversationSavedData extends SavedData {
         return java.util.List.copyOf(result);
     }
 
+    synchronized java.util.List<UUID> socialAwardBatch() {
+        var result = new java.util.ArrayList<UUID>();
+        for (int count = Math.min(16, socialAwardMaintenance.size()); count > 0; count--) {
+            UUID id = socialAwardMaintenance.removeFirst();
+            result.add(id);
+            socialAwardMaintenance.addLast(id);
+        }
+        return java.util.List.copyOf(result);
+    }
+
+    synchronized boolean hasPendingSocialAwards(UUID player) {
+        return socialAwardMaintenance.stream().anyMatch(id -> {
+            var session = sessions.get(id);
+            return session.checks.values().stream().anyMatch(check -> check.player().equals(player)
+                    && check.social() != null && !session.socialAwards.contains(check.id()));
+        });
+    }
+
     synchronized java.util.List<UUID> controlledBy(UUID player) {
         var ids = new java.util.LinkedHashSet<UUID>();
         maintenance.stream().filter(id -> player.equals(sessions.get(id).controller)).forEach(ids::add);
@@ -162,6 +189,15 @@ public final class ConversationSavedData extends SavedData {
         boolean matches(ConversationSession session) {
             return session.identity.campaign().equals(campaign) && session.identity.campaignInstance().equals(instance) && session.speakers.containsKey(role);
         }
+    }
+
+    synchronized String socialIssue(UUID session) { return socialIssues.getOrDefault(session, ""); }
+
+    synchronized boolean socialIssue(UUID session, String issue) {
+        String prior = socialIssues.getOrDefault(session, "");
+        if (issue.isBlank()) socialIssues.remove(session);
+        else socialIssues.put(session, issue);
+        return !prior.equals(issue);
     }
 
     synchronized String issue(UUID session) {
@@ -226,6 +262,12 @@ public final class ConversationSavedData extends SavedData {
         if (candidate.active()) {
             if (!maintenance.contains(candidate.identity.id())) maintenance.addLast(candidate.identity.id());
         } else maintenance.remove(candidate.identity.id());
+        if (candidate.hasPendingSocialAwards()) {
+            if (!socialAwardMaintenance.contains(candidate.identity.id())) socialAwardMaintenance.addLast(candidate.identity.id());
+        } else {
+            socialAwardMaintenance.remove(candidate.identity.id());
+            socialIssues.remove(candidate.identity.id());
+        }
         setDirty(false);
     }
 
@@ -236,6 +278,8 @@ public final class ConversationSavedData extends SavedData {
         objectiveEvidence = objectiveEvidence(next);
         maintenance.clear();
         next.values().stream().filter(ConversationSession::active).forEach(session -> maintenance.addLast(session.identity.id()));
+        socialAwardMaintenance.clear();
+        next.values().stream().filter(ConversationSession::hasPendingSocialAwards).forEach(session -> socialAwardMaintenance.addLast(session.identity.id()));
     }
 
     private static Map<UUID, UUID> locks(Map<UUID, ConversationSession> sessions) {

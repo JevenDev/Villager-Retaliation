@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue.conversation;
 
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.skill.player.SocialCheckBreakdown;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -40,6 +41,7 @@ public final class ConversationSession {
     final List<Choice> choices = new ArrayList<>();
     final Map<ConversationObjectiveEvidence.Key, ConversationObjectiveEvidence> objectiveEvidence = new LinkedHashMap<>();
     final Map<String, Check> checks = new LinkedHashMap<>();
+    final Set<String> socialAwards = new LinkedHashSet<>();
     final Map<String, Receipt> receipts = new LinkedHashMap<>();
     final Map<UUID, Request> requests = new LinkedHashMap<>();
     final Map<String, String> replacements = new LinkedHashMap<>();
@@ -85,6 +87,7 @@ public final class ConversationSession {
         choices.addAll(source.choices);
         objectiveEvidence.putAll(source.objectiveEvidence);
         checks.putAll(source.checks);
+        socialAwards.addAll(source.socialAwards);
         receipts.putAll(source.receipts);
         requests.putAll(source.requests);
         replacements.putAll(source.replacements);
@@ -93,11 +96,14 @@ public final class ConversationSession {
     public Identity identity() { return identity; }
     public long revision() { return revision; }
     public boolean active() { return phase != Phase.COMPLETE; }
+    boolean hasPendingSocialAwards() {
+        return checks.values().stream().anyMatch(check -> check.social() != null && !socialAwards.contains(check.id()));
+    }
 
     public Snapshot snapshot() {
         return new Snapshot(identity, revision, visit, node, phase, exchange, response, check, outcome,
                 controller, Set.copyOf(participants), ordered(speakers), List.copyOf(transcript),
-                List.copyOf(choices), ordered(checks), ordered(receipts), diagnostic, confirmation != null ? confirmation
+                List.copyOf(choices), ordered(checks), ordered(receipts), Set.copyOf(socialAwards), diagnostic, confirmation != null ? confirmation
                         : nestedDecision != null && nestedDecision.state() == ConversationNestedDecision.State.PENDING ? nestedDecision.confirmation() : null);
     }
 
@@ -125,18 +131,33 @@ public final class ConversationSession {
     }
 
     public record Check(UUID request, String id, int die, int difficulty, int modifier, int total,
-            boolean success, String destination, UUID player, long rolledAt) {
+            boolean success, String destination, UUID player, long rolledAt, SocialCheckBreakdown social) {
         public Check {
-            if (die < 1 || die > 20 || difficulty < 0 || modifier != 0 || total != die
+            if (die < 1 || die > 20 || difficulty < 0 || modifier != (social == null ? 0 : social.bonus()) || total != die + modifier
                     || success != (die == 20 || die != 1 && total >= difficulty)) {
                 throw new IllegalArgumentException("Saved conversation check has an invalid result.");
             }
         }
 
+        public Check(UUID request, String id, int die, int difficulty, int modifier, int total,
+                boolean success, String destination, UUID player, long rolledAt) {
+            this(request, id, die, difficulty, modifier, total, success, destination, player, rolledAt, null);
+        }
+
         static Check roll(UUID request, ConversationDefinition.Check definition, int die, UUID player, long time) {
-            boolean success = die == 20 || die != 1 && die >= definition.difficulty();
-            return new Check(request, definition.id(), die, definition.difficulty(), 0, die, success,
-                    success ? definition.success() : definition.failure(), player, time);
+            return roll(request, definition, die, player, time, null);
+        }
+
+        static Check roll(UUID request, ConversationDefinition.Check definition, int die, UUID player, long time, SocialCheckBreakdown social) {
+            if (definition.social() == null ? social != null : social == null
+                    || !definition.social().progression().equals(social.progression()) || definition.social().skill() != social.skill()
+                    || definition.social().experience() != social.rewardExperience())
+                throw new IllegalArgumentException("The check requires its authored social progression snapshot.");
+            int modifier = social == null ? 0 : social.bonus();
+            int total = die + modifier;
+            boolean success = die == 20 || die != 1 && total >= definition.difficulty();
+            return new Check(request, definition.id(), die, definition.difficulty(), modifier, total, success,
+                    success ? definition.success() : definition.failure(), player, time, social);
         }
     }
 
@@ -148,5 +169,17 @@ public final class ConversationSession {
     public record Snapshot(Identity identity, long revision, long visit, String node, Phase phase,
             int exchange, String response, String check, String outcome, UUID controller,
             Set<UUID> participants, Map<String, Speaker> speakers, List<Line> transcript,
-            List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation) { }
+            List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, Set<String> socialAwards,
+            String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation) {
+        public Snapshot { socialAwards = Set.copyOf(socialAwards); }
+
+        public Snapshot(Identity identity, long revision, long visit, String node, Phase phase,
+                int exchange, String response, String check, String outcome, UUID controller,
+                Set<UUID> participants, Map<String, Speaker> speakers, List<Line> transcript,
+                List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts,
+                String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation) {
+            this(identity, revision, visit, node, phase, exchange, response, check, outcome, controller, participants,
+                    speakers, transcript, choices, checks, receipts, Set.of(), diagnostic, confirmation);
+        }
+    }
 }

@@ -148,8 +148,9 @@ public final class ConversationService {
                         var check = definition.checks().get(session.check);
                         require(check != null, "The authored check is unavailable.");
                         if (!session.checks.containsKey(check.id())) {
+                            var social = ConversationSocialProgression.capture(player, data, check);
                             session.checks.put(check.id(), ConversationSession.Check.roll(requestId, check, player.getRandom().nextInt(20) + 1,
-                                    player.getUUID(), player.serverLevel().getGameTime()));
+                                    player.getUUID(), player.serverLevel().getGameTime(), social));
                         }
                         session.phase = ConversationSession.Phase.ROLLED;
                     }
@@ -161,6 +162,7 @@ public final class ConversationService {
             session.requests.put(requestId, request);
             session.diagnostic = "";
             save(player, data, session);
+            if (intent == ConversationSession.Intent.ROLL) ConversationSocialProgression.deliverOne(player.server, data, sessionId);
             if (intent != ConversationSession.Intent.JOIN && intent != ConversationSession.Intent.HAND_OVER && intent != ConversationSession.Intent.DECLINE) ConversationRuntime.drive(player, sessionId);
             return view(player, sessionId);
         } catch (Unavailable | ConversationSavedData.Conflict | IOException exception) {
@@ -174,7 +176,7 @@ public final class ConversationService {
         if (!data.diagnostic().isBlank()) return new Result(null, List.of(), data.diagnostic());
         var session = data.session(sessionId);
         if (session == null || !member(player, session)) return new Result(null, List.of(), "This conversation belongs to another player or party.");
-        if (!session.active()) return new Result(session.snapshot(), List.of(), data.issue(sessionId));
+        if (!session.active()) return new Result(session.snapshot(), List.of(), data.issue(sessionId).isBlank() ? data.socialIssue(sessionId) : data.issue(sessionId));
         String issue = data.issue(sessionId);
         var responses = new ArrayList<Response>();
         try {
@@ -193,7 +195,7 @@ public final class ConversationService {
             }
             issue = session.controller == null ? "The conversation is paused until an authorized member takes control." : session.diagnostic;
         } catch (Unavailable | ConversationSavedData.Conflict | IOException exception) { issue = exception.getMessage(); }
-        return new Result(session.snapshot(), List.copyOf(responses), issue);
+        return new Result(session.snapshot(), List.copyOf(responses), issue.isBlank() ? data.socialIssue(sessionId) : issue);
     }
 
     static void selectResponse(ServerPlayer player, ConversationSession session, UUID request, String response) {
@@ -395,6 +397,7 @@ public final class ConversationService {
     static void maintain(MinecraftServer server) {
         var data = ConversationSavedData.get(server.overworld());
         data.retryPending(server.overworld());
+        ConversationSocialProgression.retry(server, data);
         for (UUID id : data.maintenanceBatch()) {
             var session = data.session(id);
             if (session.controller == null || !data.issue(id).isBlank()) continue;
