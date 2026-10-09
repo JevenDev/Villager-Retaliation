@@ -37,7 +37,7 @@ public final class CampaignStateInspection {
         var characters = CampaignCharacterSavedData.get(level);
         var locations = CampaignLocationSavedData.get(level);
         var conversations = ConversationSavedData.get(level);
-        for (String issue : List.of(characters.diagnostic(), locations.diagnostic(), conversations.diagnostic())) {
+        for (String issue : List.of(characters.diagnostic(), locations.diagnostic(), conversations.diagnostic(), CampaignStandingSavedData.get(level).diagnostic())) {
             if (!issue.isBlank()) diagnostics.add(issue);
         }
         var roles = new LinkedHashSet<String>();

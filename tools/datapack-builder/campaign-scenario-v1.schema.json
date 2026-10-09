@@ -1159,6 +1159,62 @@
                 "maximum": 65536
               }
             }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "player",
+              "scope",
+              "subject",
+              "value"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_standing"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "character",
+                  "faction"
+                ]
+              },
+              "subject": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "value": {
+                "type": "integer",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "reaction": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              }
+            }
           }
         ]
       },

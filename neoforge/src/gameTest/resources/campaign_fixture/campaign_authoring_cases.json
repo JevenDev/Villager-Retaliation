@@ -945,5 +945,107 @@
         }
       }
     ]
+  },
+  {
+    "name": "authored campaign standings",
+    "fixture": "standing",
+    "valid": true,
+    "patches": []
+  },
+  {
+    "name": "relationship names a role",
+    "fixture": "standing",
+    "valid": false,
+    "pointer": "/relationships/0/id",
+    "patches": [
+      {
+        "path": "/relationships/0/id",
+        "value": "missing"
+      }
+    ]
+  },
+  {
+    "name": "initial standing stays within bounds",
+    "fixture": "standing",
+    "valid": false,
+    "pointer": "/factions/0/initial",
+    "patches": [
+      {
+        "path": "/factions/0/initial",
+        "value": 101
+      }
+    ]
+  },
+  {
+    "name": "maximum follows minimum",
+    "fixture": "standing",
+    "valid": false,
+    "pointer": "/factions/0/maximum",
+    "patches": [
+      {
+        "path": "/factions/0/maximum",
+        "value": -101
+      }
+    ]
+  },
+  {
+    "name": "first reaction covers minimum",
+    "fixture": "standing",
+    "valid": false,
+    "pointer": "/factions/0/reactions/0/minimum",
+    "patches": [
+      {
+        "path": "/factions/0/reactions/0/minimum",
+        "value": -99
+      }
+    ]
+  },
+  {
+    "name": "reactions increase in order",
+    "fixture": "standing",
+    "valid": false,
+    "pointer": "/factions/0/reactions/2/minimum",
+    "patches": [
+      {
+        "path": "/factions/0/reactions/2/minimum",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "name": "reaction remains within range",
+    "fixture": "standing",
+    "valid": false,
+    "pointer": "/factions/0/reactions/2/minimum",
+    "patches": [
+      {
+        "path": "/factions/0/reactions/2/minimum",
+        "value": 101
+      }
+    ]
+  },
+  {
+    "name": "reaction names are unique",
+    "fixture": "standing",
+    "valid": false,
+    "pointer": "/factions/0/reactions/2/id",
+    "patches": [
+      {
+        "path": "/factions/0/reactions/2/id",
+        "value": "neutral"
+      }
+    ]
+  },
+  {
+    "name": "reaction locale is owned",
+    "fixture": "standing",
+    "valid": false,
+    "pointer": "/factions/0/reactions/2/title_key",
+    "patches": [
+      {
+        "path": "/factions/0/reactions/2/title_key",
+        "value": "foreign.title"
+      }
+    ]
   }
 ]

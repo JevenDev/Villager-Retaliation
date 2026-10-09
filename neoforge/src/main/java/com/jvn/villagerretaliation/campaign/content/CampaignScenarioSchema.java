@@ -53,6 +53,8 @@ public final class CampaignScenarioSchema {
                 "checks", integer(0, 1024), "receipts", integer(0, 65536)));
         steps.add(step("assert_check", "session check", "session", local(), "check", local(), "die", integer(1, 20), "success", bool()));
         steps.add(step("assert_campaign", "", "outcomes", integer(0, 1024), "audits", integer(0, 1024), "rewards", integer(0, 65536)));
+        steps.add(step("assert_standing", "player scope subject value", "player", local(), "scope", choices("character", "faction"),
+                "subject", local(), "value", integer(Integer.MIN_VALUE, Integer.MAX_VALUE), "reaction", local()));
         var stepSchema = new JsonObject();
         stepSchema.add("oneOf", steps);
         var position = CampaignSchema.object(List.of("x", "y", "z"),

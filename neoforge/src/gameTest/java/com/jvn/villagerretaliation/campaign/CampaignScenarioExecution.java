@@ -129,6 +129,12 @@ final class CampaignScenarioExecution {
                 if (value.die() >= 0) require(check.die() == value.die(), "Expected die " + value.die() + ", got " + check.die());
                 if (value.success() != null) require(check.success() == value.success(), "Check result differs");
             }
+            case AssertStanding value -> {
+                var reading = CampaignStandingService.read(fixture.server, fixture.scenario.campaign(), fixture.playerId(value.player()), value.scope(), value.subject());
+                require(reading.diagnostic().isBlank(), reading.diagnostic());
+                require(reading.value() == value.value(), "Expected personal standing " + value.value() + ", got " + reading.value());
+                if (!value.reaction().isBlank()) require(reading.reaction().id().equals(value.reaction()), "Standing reaction differs");
+            }
             case AssertCampaign value -> {
                 if (value.outcomes() >= 0) require(fixture.instance().outcomes().size() == value.outcomes(), "World outcome count differs");
                 if (value.audits() >= 0) require(fixture.instance().fixtureEntries().size() == value.audits(), "Fixture audit count differs");

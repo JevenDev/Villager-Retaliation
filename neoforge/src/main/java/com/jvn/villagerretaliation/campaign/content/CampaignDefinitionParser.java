@@ -150,10 +150,13 @@ public final class CampaignDefinitionParser {
         CampaignDefinition definition = new CampaignDefinition(resource(root, "id"), root.get("revision").getAsInt(),
                 QuestBundleFingerprints.definition(root), text(root, "title_key"), text(root, "localization_prefix"), bundles, chapters, milestones, facts, rewards, locations, characters, evidence,
                 CampaignLocationVariant.read(source, array(root, "location_variants"), diagnostics),
-                CampaignFixtureEntry.read(source, array(root, "fixture_entries"), diagnostics), source);
+                CampaignFixtureEntry.read(source, array(root, "fixture_entries"), diagnostics),
+                CampaignStandingDefinition.read(source, array(root, "relationships"), CampaignStandingDefinition.Scope.CHARACTER, diagnostics),
+                CampaignStandingDefinition.read(source, array(root, "factions"), CampaignStandingDefinition.Scope.FACTION, diagnostics), source);
         validateReferences(definition, diagnostics);
         CampaignLocationVariant.validate(definition, diagnostics);
         CampaignFixtureEntry.validate(definition, diagnostics);
+        CampaignStandingDefinition.validate(definition, diagnostics);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
     }
 

@@ -50,6 +50,11 @@ public final class VillagerActionRegistry {
                     aliases(),
                     capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.WORLD_KNOWN)),
             register(
+                    "campaign_standing",
+                    VillagerActionDefinition.Kind.CAMPAIGN_STANDING,
+                    aliases(),
+                    capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.WORLD_KNOWN)),
+            register(
                     "campaign_fact",
                     VillagerActionDefinition.Kind.CAMPAIGN_FACT,
                     aliases(),
@@ -205,6 +210,9 @@ public final class VillagerActionRegistry {
         }
         if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
             return com.jvn.villagerretaliation.campaign.CampaignRewardService.execute(context, action);
+        }
+        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_STANDING) {
+            return com.jvn.villagerretaliation.campaign.CampaignStandingService.execute(context, action);
         }
         if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_FACT) {
             return com.jvn.villagerretaliation.campaign.CampaignFactService.execute(context, action);

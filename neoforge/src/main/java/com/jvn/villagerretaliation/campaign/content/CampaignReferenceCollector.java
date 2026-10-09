@@ -22,6 +22,7 @@ final class CampaignReferenceCollector {
     private final CampaignContentCatalog content;
     private final Map<Key, LinkedHashSet<Source>> declarations = new LinkedHashMap<>();
     private final LinkedHashSet<Reference> references = new LinkedHashSet<>();
+    private final List<com.jvn.villagerretaliation.quest.debug.QuestDiagnostic> standingIssues = new ArrayList<>();
     private final Map<ResourceLocation, LinkedHashSet<ResourceLocation>> sceneCampaigns = new LinkedHashMap<>();
 
     CampaignReferenceCollector(CampaignContentCatalog content) { this.content = content; }
@@ -45,6 +46,8 @@ final class CampaignReferenceCollector {
         declarations.forEach((key, sources) -> nodes.put(key, new Node(key, List.copyOf(sources))));
         return new CampaignReferenceReport(content.quests().generation(), nodes, List.copyOf(references));
     }
+
+    List<com.jvn.villagerretaliation.quest.debug.QuestDiagnostic> standingIssues() { return List.copyOf(standingIssues); }
 
     private Key key(Kind kind, ResourceLocation owner, String... path) {
         if (owner == null || java.util.Arrays.stream(path).anyMatch(value -> value == null || value.isBlank())) return null;
@@ -133,6 +136,17 @@ final class CampaignReferenceCollector {
             ref(node, key(LOCATION, id, character.location()), LOCATED_AT, at.child("location"));
             ref(node, key(CHARACTER, id, character.replacementRole()), REPLACES, at.child("replacement_role"));
         }
+        CampaignStandingDefinition.all(definition).forEach(standing -> {
+            var at = new Source(source.resource(), source.pack(), standing.pointer());
+            var node = declare(standingKind(standing.scope()), id, at, standing.id());
+            ref(owner, node, INCLUDES, at);
+            if (standing.scope() == CampaignStandingDefinition.Scope.CHARACTER)
+                ref(node, key(CHARACTER, id, standing.id()), REQUIRES, at.child("id"));
+            standing.reactions().values().forEach(reaction -> {
+                var where = new Source(source.resource(), source.pack(), reaction.pointer());
+                ref(node, declare(REACTION, id, where, standing.scope().name().toLowerCase(java.util.Locale.ROOT), standing.id(), reaction.id()), INCLUDES, where);
+            });
+        });
         definition.locations().values().forEach(location -> declare(LOCATION, id,
                 new Source(source.resource(), source.pack(), location.pointer()), location.id()));
         definition.facts().values().forEach(fact -> declare(FACT, id,
@@ -255,11 +269,11 @@ final class CampaignReferenceCollector {
                 ref(owner, key(CHARACTER, definition.campaign(), exchange.speaker().role()), SPEAKS,
                         new Source(at.resource(), at.pack(), exchange.pointer()).child("speaker", "role"));
             for (var effect : node.effects()) actions(owner, definition.campaign(), List.of(effect.action()),
-                    new Source(at.resource(), at.pack(), effect.pointer()));
+                    new Source(at.resource(), at.pack(), effect.pointer()).child("action"));
             for (var response : node.responses().values()) {
                 conditions(owner, response.conditions(), new Source(at.resource(), at.pack(), response.pointer()));
                 for (var effect : response.effects()) actions(owner, definition.campaign(), List.of(effect.action()),
-                        new Source(at.resource(), at.pack(), effect.pointer()));
+                        new Source(at.resource(), at.pack(), effect.pointer()).child("action"));
             }
         }
     }
@@ -273,7 +287,7 @@ final class CampaignReferenceCollector {
         for (var action : actions) {
             var targetQuest = content.quests().compiledQuest(action.questId()).orElse(null);
             var context = action.questId() == null ? campaign : targetQuest == null ? null : targetQuest.metadata().campaign();
-            if ((action.campaignOutcome() != null || action.campaignFact() != null || action.campaignReward() != null)
+            if ((action.campaignOutcome() != null || action.campaignFact() != null || action.campaignReward() != null || action.campaignStanding() != null)
                     && (owner.kind() != QUEST || !owner.owner().equals(action.questId())))
                 ref(owner, key(QUEST, action.questId()), REQUIRES, source);
             if (action.kind() == VillagerActionDefinition.Kind.QUEST || action.kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION)
@@ -283,10 +297,19 @@ final class CampaignReferenceCollector {
                 ref(owner, key(FACT, context, action.campaignFact().fact()), WRITES, source);
                 ref(owner, key(MILESTONE, context, action.campaignFact().milestone()), REQUIRES, source);
             }
+            if (action.campaignStanding() != null) {
+                var campaignContent = context == null ? null : content.campaigns().get(context);
+                if (campaignContent == null || !campaignContent.definition().questBundles().contains(action.questId()))
+                    standingIssues.add(CampaignContentCatalog.inPack(CampaignSchema.error(source.resource(), standingField(owner, source, "quest").pointer(),
+                            "standing action requires a quest declared by its campaign"), source.pack()));
+                ref(owner, key(standingKind(action.campaignStanding().scope()), context, action.campaignStanding().subject()), WRITES, standingField(owner, source, "subject"));
+            }
             if (action.campaignReward() != null) ref(owner, key(REWARD, context, action.campaignReward().reward()), GRANTS, source);
             if (action.sceneId() != null) scene(owner, context, action.sceneId(), source);
         }
     }
+
+    private static Kind standingKind(CampaignStandingDefinition.Scope scope) { return scope == CampaignStandingDefinition.Scope.CHARACTER ? RELATIONSHIP : FACTION; }
 
     private void scene(Key owner, ResourceLocation campaign, ResourceLocation scene, Source source) {
         ref(owner, key(SCENE, scene), STARTS, source);
@@ -294,6 +317,7 @@ final class CampaignReferenceCollector {
     }
 
     private void conditions(Key owner, List<DialogueCondition> conditions, Source source) {
+        standingConditions(owner, conditions, source);
         var pending = new ArrayList<>(conditions);
         for (int index = 0; index < pending.size(); index++) {
             var condition = pending.get(index);
@@ -313,6 +337,27 @@ final class CampaignReferenceCollector {
             else if (condition instanceof DialogueCondition.SelectedChoice choice) ref(owner, key(QUEST, choice.questId()), READS, source);
             else if (condition instanceof DialogueCondition.StageHistory stage) ref(owner, key(QUEST, stage.questId()), READS, source);
         }
+    }
+
+    private void standingConditions(Key owner, List<DialogueCondition> conditions, Source source) {
+        for (int index = 0; index < conditions.size(); index++)
+            standingCondition(owner, conditions.get(index), standingField(owner, source, "conditions", Integer.toString(index)));
+    }
+
+    private void standingCondition(Key owner, DialogueCondition condition, Source source) {
+        if (condition instanceof DialogueCondition.AllOf all) standingConditions(owner, all.conditions(), source);
+        else if (condition instanceof DialogueCondition.AnyOf any) standingConditions(owner, any.conditions(), source);
+        else if (condition instanceof DialogueCondition.Not not && not.condition() != null) standingCondition(owner, not.condition(), standingField(owner, source, "condition"));
+        else if (condition instanceof DialogueCondition.CampaignStanding standing) {
+            var query = standing.reference();
+            ref(owner, key(standingKind(query.scope()), query.campaign(), query.subject()), READS, standingField(owner, source, "subject"));
+            if (!query.reaction().isEmpty()) ref(owner, key(REACTION, query.campaign(),
+                    query.scope().name().toLowerCase(java.util.Locale.ROOT), query.subject(), query.reaction()), READS, standingField(owner, source, "reaction"));
+        }
+    }
+
+    private static Source standingField(Key owner, Source source, String... path) {
+        return owner.kind() == CONVERSATION ? source.child(path) : source;
     }
 
     private void scenes() {

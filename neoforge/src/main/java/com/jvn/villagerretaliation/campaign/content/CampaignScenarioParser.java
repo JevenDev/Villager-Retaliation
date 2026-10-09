@@ -67,6 +67,8 @@ public final class CampaignScenarioParser {
                         text(step, "outcome"), integer(step, "choices"), integer(step, "checks"), integer(step, "receipts"), at);
                 case "assert_check" -> new AssertCheck(id, session, text(step, "check"), integer(step, "die"), step.has("success") ? step.get("success").getAsBoolean() : null, at);
                 case "assert_campaign" -> new AssertCampaign(id, integer(step, "outcomes"), integer(step, "audits"), integer(step, "rewards"), at);
+                case "assert_standing" -> new AssertStanding(id, player, kind(CampaignStandingDefinition.Scope.class, step, "scope"),
+                        text(step, "subject"), integer(step, "value"), text(step, "reaction"), at);
                 default -> throw new IllegalArgumentException("Unknown validated scenario step");
             });
         }
@@ -150,6 +152,7 @@ public final class CampaignScenarioParser {
             case Interrupt value -> Map.of("player", value.player());
             case Fixture value -> Map.of("player", value.player());
             case AssertPlayer value -> Map.of("player", value.player());
+            case AssertStanding value -> Map.of("player", value.player());
             case AssertQuest value -> Map.of("player", value.player());
             case AssertConversation value -> value.controller().isBlank() ? Map.of() : Map.of("controller", value.controller());
             default -> Map.of();

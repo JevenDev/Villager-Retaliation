@@ -1,0 +1,254 @@
+[
+  {
+    "name": "typed standing action",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "character",
+      "subject": "mentor",
+      "amount": 20,
+      "operation_id": "help"
+    },
+    "valid": true
+  },
+  {
+    "name": "negative faction change",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "faction",
+      "subject": "wardens",
+      "amount": -20,
+      "operation_id": "help"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject action scope",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "world",
+      "subject": "mentor",
+      "amount": 20,
+      "operation_id": "help"
+    },
+    "valid": false
+  },
+  {
+    "name": "reject action subject",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "character",
+      "subject": "bad id",
+      "amount": 20,
+      "operation_id": "help"
+    },
+    "valid": false
+  },
+  {
+    "name": "reject action amount",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "character",
+      "subject": "mentor",
+      "amount": 1.5,
+      "operation_id": "help"
+    },
+    "valid": false
+  },
+  {
+    "name": "reject action operation_id",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "character",
+      "subject": "mentor",
+      "amount": 20,
+      "operation_id": ""
+    },
+    "valid": false
+  },
+  {
+    "name": "reject action required",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "character",
+      "subject": "mentor",
+      "amount": 20,
+      "operation_id": "help",
+      "required": false
+    },
+    "valid": false
+  },
+  {
+    "name": "require action scope",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "subject": "mentor",
+      "amount": 20,
+      "operation_id": "help"
+    },
+    "valid": false
+  },
+  {
+    "name": "require action subject",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "character",
+      "amount": 20,
+      "operation_id": "help"
+    },
+    "valid": false
+  },
+  {
+    "name": "require action amount",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "character",
+      "subject": "mentor",
+      "operation_id": "help"
+    },
+    "valid": false
+  },
+  {
+    "name": "require action operation_id",
+    "kind": "action",
+    "input": {
+      "type": "campaign_standing",
+      "scope": "character",
+      "subject": "mentor",
+      "amount": 20
+    },
+    "valid": false
+  },
+  {
+    "name": "named reaction",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "character",
+      "subject": "mentor",
+      "reaction": "trusted"
+    },
+    "valid": true
+  },
+  {
+    "name": "numeric standing",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "faction",
+      "subject": "wardens",
+      "value": -20,
+      "comparison": "at_most"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject condition scope",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "world",
+      "subject": "mentor",
+      "reaction": "trusted"
+    },
+    "valid": false
+  },
+  {
+    "name": "reject condition campaign",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "bad namespace",
+      "scope": "character",
+      "subject": "mentor",
+      "reaction": "trusted"
+    },
+    "valid": false
+  },
+  {
+    "name": "reject condition subject",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "character",
+      "subject": "bad id",
+      "reaction": "trusted"
+    },
+    "valid": false
+  },
+  {
+    "name": "reject condition reaction",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "character",
+      "subject": "mentor",
+      "reaction": "bad reaction"
+    },
+    "valid": false
+  },
+  {
+    "name": "reject condition comparison",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "character",
+      "subject": "mentor",
+      "reaction": "trusted",
+      "comparison": "equals"
+    },
+    "valid": false
+  },
+  {
+    "name": "reject condition value",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "character",
+      "subject": "mentor",
+      "reaction": "trusted",
+      "value": 20
+    },
+    "valid": false
+  },
+  {
+    "name": "reject condition unknown",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "character",
+      "subject": "mentor",
+      "reaction": "trusted",
+      "unknown": true
+    },
+    "valid": false
+  },
+  {
+    "name": "require condition alternative",
+    "kind": "condition",
+    "input": {
+      "type": "campaign_standing",
+      "campaign": "campaign_fixture:standing",
+      "scope": "character",
+      "subject": "mentor"
+    },
+    "valid": false
+  }
+]

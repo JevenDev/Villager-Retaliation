@@ -1,0 +1,248 @@
+{
+  "schema": "villagerretaliation:conversation/v1",
+  "id": "campaign_fixture:standing_conversation",
+  "revision": 1,
+  "campaign": "campaign_fixture:standing",
+  "character": "mentor",
+  "title": {
+    "key": "#conversation.title"
+  },
+  "topics": [
+    {
+      "id": "request",
+      "label": {
+        "key": "#conversation.request"
+      },
+      "start": "offer"
+    },
+    {
+      "id": "trusted",
+      "label": {
+        "key": "#conversation.trusted.topic"
+      },
+      "conditions": [
+        {
+          "type": "campaign_standing",
+          "campaign": "campaign_fixture:standing",
+          "scope": "character",
+          "subject": "mentor",
+          "reaction": "trusted"
+        }
+      ],
+      "start": "welcomed"
+    },
+    {
+      "id": "honored",
+      "label": {
+        "key": "#conversation.honored.topic"
+      },
+      "conditions": [
+        {
+          "type": "campaign_standing",
+          "campaign": "campaign_fixture:standing",
+          "scope": "faction",
+          "subject": "wardens",
+          "reaction": "trusted"
+        }
+      ],
+      "start": "recognized"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "offer",
+      "exchanges": [
+        {
+          "id": "request",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#conversation.offer"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "help",
+          "label": {
+            "key": "#conversation.help"
+          },
+          "next": "helped",
+          "effects": [
+            {
+              "id": "mentor_trust",
+              "action": {
+                "type": "campaign_standing",
+                "scope": "character",
+                "subject": "mentor",
+                "amount": 20,
+                "operation_id": "help_mentor",
+                "required": true
+              }
+            },
+            {
+              "id": "warden_standing",
+              "action": {
+                "type": "campaign_standing",
+                "scope": "faction",
+                "subject": "wardens",
+                "amount": 20,
+                "operation_id": "help_wardens",
+                "required": true
+              }
+            },
+            {
+              "id": "record_choice",
+              "action": {
+                "type": "quest_transition",
+                "from_stage": "talk",
+                "scene_path": "conversation/standing/offer",
+                "response_id": "help",
+                "target_stage": "report",
+                "required": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "betray",
+          "label": {
+            "key": "#conversation.betray"
+          },
+          "next": "betrayed",
+          "effects": [
+            {
+              "id": "mentor_trust",
+              "action": {
+                "type": "campaign_standing",
+                "scope": "character",
+                "subject": "mentor",
+                "amount": -20,
+                "operation_id": "betray_mentor",
+                "required": true
+              }
+            },
+            {
+              "id": "warden_standing",
+              "action": {
+                "type": "campaign_standing",
+                "scope": "faction",
+                "subject": "wardens",
+                "amount": -20,
+                "operation_id": "betray_wardens",
+                "required": true
+              }
+            },
+            {
+              "id": "record_choice",
+              "action": {
+                "type": "quest_transition",
+                "from_stage": "talk",
+                "scene_path": "conversation/standing/offer",
+                "response_id": "betray",
+                "target_stage": "report",
+                "required": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "helped",
+      "exchanges": [
+        {
+          "id": "answer",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#conversation.helped"
+          }
+        }
+      ],
+      "effects": [],
+      "outcome": "helped"
+    },
+    {
+      "id": "betrayed",
+      "exchanges": [
+        {
+          "id": "answer",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#conversation.betrayed"
+          }
+        }
+      ],
+      "effects": [],
+      "outcome": "betrayed"
+    },
+    {
+      "id": "welcomed",
+      "exchanges": [
+        {
+          "id": "answer",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#conversation.welcomed"
+          }
+        }
+      ],
+      "effects": [],
+      "outcome": "welcomed"
+    },
+    {
+      "id": "recognized",
+      "exchanges": [
+        {
+          "id": "answer",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#conversation.recognized"
+          }
+        }
+      ],
+      "effects": [],
+      "outcome": "recognized"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "helped",
+      "label": {
+        "key": "#conversation.outcome.helped"
+      }
+    },
+    {
+      "id": "betrayed",
+      "label": {
+        "key": "#conversation.outcome.betrayed"
+      }
+    },
+    {
+      "id": "welcomed",
+      "label": {
+        "key": "#conversation.outcome.welcomed"
+      }
+    },
+    {
+      "id": "recognized",
+      "label": {
+        "key": "#conversation.outcome.recognized"
+      }
+    }
+  ]
+}

@@ -5,7 +5,7 @@ const values = entries => Array.isArray(entries) ? entries : [];
 const named = entries => new Map(values(entries).map(entry => [entry.id, entry]));
 const requests = new Set(["quest_response", "quest_select", "quest_confirmation", "conversation_start", "conversation_intent", "fixture_entry"]);
 const ordinaryRequests = new Set(["quest_response", "quest_select", "quest_confirmation"]);
-const playerSteps = new Set(["player", "quest_prompt", "quest_response", "quest_confirmation", "conversation_start", "conversation_intent", "interrupt", "fixture_entry", "assert_player", "assert_quest"]);
+const playerSteps = new Set(["player", "quest_prompt", "quest_response", "quest_confirmation", "conversation_start", "conversation_intent", "interrupt", "fixture_entry", "assert_player", "assert_quest", "assert_standing"]);
 
 export function scenarioPath(file) {
   const normalized = path.resolve(file).replaceAll(path.sep, "/");
@@ -111,6 +111,13 @@ function validateReferences(root, context, issue) {
       const quest = context.quests.get(step.quest);
       if (!quest || !owned.has(step.quest)) issue(at + "/quest", "quest does not belong to this campaign");
       else if (step.stage && !values(quest.stages).some(value => value.id === step.stage)) issue(at + "/stage", "unknown quest stage");
+    } else if (step.type === "assert_standing") {
+      const standing = values(step.scope === "character" ? campaign.relationships : campaign.factions).find(value => value.id === step.subject);
+      if (!standing) issue(at + "/subject", "unknown campaign standing " + step.subject);
+      else {
+        if (step.value < standing.minimum || step.value > standing.maximum) issue(at + "/value", "standing assertion is outside its authored range");
+        if (step.reaction && !values(standing.reactions).some(value => value.id === step.reaction)) issue(at + "/reaction", "unknown standing reaction " + step.reaction);
+      }
     } else if (step.type === "conversation_start") {
       const conversation = context.conversations.get(step.conversation);
       if (!conversation || conversation.campaign !== campaign.id) issue(at + "/conversation", "conversation does not belong to this campaign");

@@ -1,0 +1,34 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.standing.title": "Campaign fixture: trust and standing",
+    "campaign_fixture.quest.standing.description": "Choose how to treat the mentor and the wardens. Their reactions are personal to each player.",
+    "campaign_fixture.quest.standing.offer.label": "Test personal trust and faction standing",
+    "campaign_fixture.quest.standing.offer.lines": [
+      "Speak with the mentor after accepting this fixture quest."
+    ],
+    "campaign_fixture.quest.standing.accept": "Begin the standing test.",
+    "campaign_fixture.quest.standing.reminder.label": "Continue the standing test",
+    "campaign_fixture.quest.standing.reminder.lines": [
+      "Speak with the mentor. Your choices affect your relationship and your standing with the wardens."
+    ],
+    "campaign_fixture.quest.standing.conversation.title": "The wardens' request",
+    "campaign_fixture.quest.standing.conversation.request": "Discuss the village watch",
+    "campaign_fixture.quest.standing.conversation.trusted.topic": "Ask the mentor for trusted advice",
+    "campaign_fixture.quest.standing.conversation.honored.topic": "Ask how the wardens see me",
+    "campaign_fixture.quest.standing.conversation.offer": "Will you stand with us when the village needs help?",
+    "campaign_fixture.quest.standing.conversation.help": "You can count on my help.",
+    "campaign_fixture.quest.standing.conversation.betray": "Your rivals will hear everything you told me.",
+    "campaign_fixture.quest.standing.conversation.helped": "I appreciate your support. I will tell the wardens they can count on you.",
+    "campaign_fixture.quest.standing.conversation.betrayed": "Then I have misjudged you. The wardens will hear of this.",
+    "campaign_fixture.quest.standing.conversation.welcomed": "You have earned my trust. Let us speak openly.",
+    "campaign_fixture.quest.standing.conversation.recognized": "The wardens speak well of you.",
+    "campaign_fixture.quest.standing.conversation.outcome.helped": "Offered support",
+    "campaign_fixture.quest.standing.conversation.outcome.betrayed": "Betrayed their trust",
+    "campaign_fixture.quest.standing.conversation.outcome.welcomed": "Received trusted advice",
+    "campaign_fixture.quest.standing.conversation.outcome.recognized": "Recognized by the wardens",
+    "campaign_fixture.quest.standing.report.label": "About our agreement",
+    "campaign_fixture.quest.standing.report.lines": "Your decision will be remembered.",
+    "campaign_fixture.quest.standing.finish": "Understood."
+  }
+}

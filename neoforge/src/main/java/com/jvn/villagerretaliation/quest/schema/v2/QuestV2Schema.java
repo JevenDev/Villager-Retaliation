@@ -603,6 +603,7 @@ public final class QuestV2Schema {
         schema.add("properties", properties);
         schema.add("additionalProperties", booleanLiteral(true));
         var rules = new JsonArray();
+        rules.add(typeRule("campaign_standing", com.jvn.villagerretaliation.campaign.CampaignStandingPredicate.schema()));
         rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema()));
         rules.add(typeRule("campaign_outcome", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema()));
         rules.add(typeRule("campaign_character", com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema()));
@@ -655,6 +656,7 @@ public final class QuestV2Schema {
         decision.add("then", com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.schema());
         var rules = new JsonArray();
         rules.add(decision);
+        rules.add(typeRule("campaign_standing", com.jvn.villagerretaliation.campaign.CampaignStandingAction.schema()));
         rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactAction.schema()));
         rules.add(typeRule("campaign_reward", com.jvn.villagerretaliation.campaign.CampaignRewardAction.schema()));
         schema.add("allOf", rules);

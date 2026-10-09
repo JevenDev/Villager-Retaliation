@@ -1290,6 +1290,8 @@ async function checkConversationFile(file, data, indexReferences = false) {
   }
   Object.assign(context.messages, messages);
   if (!context.campaign) errors.push(`${relative(file)}: /campaign: campaign content is unavailable: ${data.campaign}.`);
+  context.campaigns = new Map(resources.filter(entry => entry.data?.schema === "villagerretaliation:campaign/v1").map(entry => [entry.data.id, entry.data]));
+  context.quests = new Map(resources.filter(entry => isQuestModuleV2(entry.data)).map(entry => [entry.data.id, entry.data]));
   const issues = validateConversation(data, conversationSchema, context);
   for (const issue of issues) errors.push(`${relative(file)}: ${issue.pointer || "/"}: ${issue.message}.`);
   if (issues.length) return;
@@ -1302,7 +1304,7 @@ async function checkConversationFile(file, data, indexReferences = false) {
       const action = materializeConversationAction(effect.action, context);
       checkQuestV2Actions(file, [action], actionPointer, actionPointer, questId, { singleAction: true });
       const type = questV2RegistryIndex.actions.canonical.get(action.type ?? action.action);
-      if (["campaign_fact", "campaign_outcome", "campaign_reward"].includes(type) && !action.quest && !action.quest_id && !questId) {
+      if (["campaign_fact", "campaign_outcome", "campaign_reward", "campaign_standing"].includes(type) && !action.quest && !action.quest_id && !questId) {
         errors.push(`${relative(file)}: ${actionPointer}/quest: campaign effect requires an owning quest.`);
       }
       if (type === "start_scene") {

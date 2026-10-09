@@ -1,0 +1,208 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:standing_betray",
+  "campaign": "campaign_fixture:standing",
+  "players": [
+    "first",
+    "second"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "role": "mentor",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "home",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "initial",
+      "type": "assert_standing",
+      "player": "first",
+      "scope": "character",
+      "subject": "mentor",
+      "value": 0,
+      "reaction": "neutral"
+    },
+    {
+      "id": "locked",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "locked",
+      "conversation": "campaign_fixture:standing_conversation",
+      "topic": "trusted",
+      "accepted": false
+    },
+    {
+      "id": "accept",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:standing",
+      "stage": "talk",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "close_offer",
+      "type": "interrupt",
+      "player": "first",
+      "actor": "guide",
+      "active": false
+    },
+    {
+      "id": "start",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "talk",
+      "conversation": "campaign_fixture:standing_conversation",
+      "topic": "request",
+      "accepted": true
+    },
+    {
+      "id": "hear_request",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "choose",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "choose",
+      "argument": "betray"
+    },
+    {
+      "id": "relationship",
+      "type": "assert_standing",
+      "player": "first",
+      "scope": "character",
+      "subject": "mentor",
+      "value": -20,
+      "reaction": "hostile"
+    },
+    {
+      "id": "faction",
+      "type": "assert_standing",
+      "player": "first",
+      "scope": "faction",
+      "subject": "wardens",
+      "value": -20,
+      "reaction": "hostile"
+    },
+    {
+      "id": "absent_player",
+      "type": "assert_standing",
+      "player": "second",
+      "scope": "character",
+      "subject": "mentor",
+      "value": 0,
+      "reaction": "neutral"
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "replay",
+      "type": "replay",
+      "request": "choose"
+    },
+    {
+      "id": "relationship_saved",
+      "type": "assert_standing",
+      "player": "first",
+      "scope": "character",
+      "subject": "mentor",
+      "value": -20,
+      "reaction": "hostile"
+    },
+    {
+      "id": "faction_saved",
+      "type": "assert_standing",
+      "player": "first",
+      "scope": "faction",
+      "subject": "wardens",
+      "value": -20,
+      "reaction": "hostile"
+    },
+    {
+      "id": "finish",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "talk",
+      "intent": "advance"
+    },
+    {
+      "id": "outcome",
+      "type": "assert_conversation",
+      "session": "talk",
+      "phase": "complete",
+      "outcome": "betrayed",
+      "receipts": 3,
+      "choices": 1
+    },
+    {
+      "id": "follow_up",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "follow_up",
+      "conversation": "campaign_fixture:standing_conversation",
+      "topic": "trusted",
+      "accepted": false
+    },
+    {
+      "id": "second_connect",
+      "type": "player",
+      "player": "second",
+      "action": "connect"
+    },
+    {
+      "id": "second_locked",
+      "type": "conversation_start",
+      "player": "second",
+      "session": "second_locked",
+      "conversation": "campaign_fixture:standing_conversation",
+      "topic": "trusted",
+      "accepted": false
+    },
+    {
+      "id": "finish_quest",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:standing",
+      "stage": "report",
+      "slot": "turn_in",
+      "response": "finish"
+    },
+    {
+      "id": "quest_completed",
+      "type": "assert_quest",
+      "player": "first",
+      "quest": "campaign_fixture:standing",
+      "completions": 1
+    }
+  ]
+}

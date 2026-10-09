@@ -65,6 +65,15 @@ final class CampaignScenarioReferences {
                     issue(scenario, issues, at + "/quest", "quest does not belong to this campaign");
                 else if (!assertion.stage().isBlank() && !quest.stagesById().containsKey(assertion.stage()))
                     issue(scenario, issues, at + "/stage", "unknown quest stage");
+            } else if (step instanceof AssertStanding assertion) {
+                var standing = CampaignStandingDefinition.find(campaign, assertion.scope(), assertion.subject());
+                if (standing == null) issue(scenario, issues, at + "/subject", "unknown campaign standing " + assertion.subject());
+                else {
+                    if (assertion.value() < standing.minimum() || assertion.value() > standing.maximum())
+                        issue(scenario, issues, at + "/value", "standing assertion is outside its authored range");
+                    if (!assertion.reaction().isBlank() && !standing.reactions().containsKey(assertion.reaction()))
+                        issue(scenario, issues, at + "/reaction", "unknown standing reaction " + assertion.reaction());
+                }
             } else if (step instanceof StartConversation start) {
                 var conversation = catalog.quests().conversations().get(start.conversation());
                 if (conversation == null || !conversation.campaign().equals(campaign.id()))

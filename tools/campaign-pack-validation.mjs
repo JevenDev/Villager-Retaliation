@@ -1,6 +1,7 @@
 import path from "node:path";
 import { validateContentSchema } from "./content-schema-validation.mjs";
 import { validateCampaign } from "./campaign-validation.mjs";
+import { validateStandingReferences } from "./campaign-standing-validation.mjs";
 
 const normalized = file => path.resolve(file).replaceAll(path.sep, "/");
 const values = entries => Array.isArray(entries) ? entries : [];
@@ -114,6 +115,9 @@ export function validateCampaignPack(file, root, resources, schemas) {
   for (const resource of selectedQuests) {
     if (!validQuests.has(resource.data.id)) continue;
     const quest = resource.data;
+    const context = { campaign: root, quest: quest.id, quests: new Map([...quests].map(([id, entry]) => [id, entry.data])),
+      campaigns: new Map(campaigns.filter(entry => object(entry.data)).map(entry => [entry.data.id, entry.data])) };
+    validateStandingReferences(quest, context).forEach(problem => issue(resource.file, problem.pointer, problem.message));
     const role = quest.provider?.campaign_role;
     if (role && !characters.has(role)) issue(resource.file, "/provider/campaign_role", "unknown campaign character " + role);
     quest.stages.forEach((stage, at) => {

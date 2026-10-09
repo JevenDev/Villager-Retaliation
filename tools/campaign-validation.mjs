@@ -74,6 +74,23 @@ export function validateCampaign(root, schema, context = {}) {
       current = replacement;
     }
   }
+  for (const section of ["relationships", "factions"]) {
+    for (const standing of index(root[section] ?? [], "/" + section).values()) {
+      const pointer = standing.pointer;
+      localized(standing.title_key, pointer + "/title_key");
+      if (section === "relationships" && !characters.has(standing.id)) issue(pointer + "/id", "relationship must name an authored campaign character " + standing.id);
+      if (standing.maximum < standing.minimum) issue(pointer + "/maximum", "standing maximum must not be below its minimum");
+      if (standing.initial < standing.minimum || standing.initial > standing.maximum) issue(pointer + "/initial", "initial standing must be inside its authored range");
+      const reactions = index(standing.reactions, pointer + "/reactions");
+      for (const reaction of reactions.values()) localized(reaction.title_key, reaction.pointer + "/title_key");
+      standing.reactions.forEach((reaction, at) => {
+        const location = pointer + "/reactions/" + at + "/minimum";
+        if (at === 0 && reaction.minimum !== standing.minimum) issue(location, "the first reaction must start at the standing minimum");
+        if (at > 0 && reaction.minimum <= standing.reactions[at - 1].minimum) issue(location, "reaction thresholds must increase in authored order");
+        if (reaction.minimum < standing.minimum || reaction.minimum > standing.maximum) issue(location, "reaction threshold must be inside the standing range");
+      });
+    }
+  }
   for (const item of evidence.values()) {
     localized(item.title_key, item.pointer + "/title_key");
     localized(item.text_key, item.pointer + "/text_key");

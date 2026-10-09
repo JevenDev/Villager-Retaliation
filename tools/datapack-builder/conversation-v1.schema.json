@@ -112,6 +112,7 @@
             "campaign_fact",
             "campaign_location",
             "campaign_outcome",
+            "campaign_standing",
             "choice_selected",
             "dimension",
             "entity_nearby",
@@ -165,6 +166,99 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_standing"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "oneOf": [
+              {
+                "required": [
+                  "value"
+                ],
+                "not": {
+                  "required": [
+                    "reaction"
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "reaction"
+                ],
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "value"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "comparison"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            "required": [
+              "scope",
+              "subject",
+              "campaign"
+            ],
+            "properties": {
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "character",
+                  "faction"
+                ]
+              },
+              "subject": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "type": {
+                "const": "campaign_standing"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "comparison": {
+                "type": "string",
+                "enum": [
+                  "equals",
+                  "not_equals",
+                  "at_least",
+                  "at_most"
+                ]
+              },
+              "value": {
+                "type": "integer",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "reaction": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -597,6 +691,54 @@
           "if": {
             "properties": {
               "type": {
+                "const": "campaign_standing"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "scope",
+              "subject",
+              "amount",
+              "operation_id"
+            ],
+            "properties": {
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "character",
+                  "faction"
+                ]
+              },
+              "subject": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "amount": {
+                "type": "integer",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "operation_id": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "campaign_fact"
               }
             },
@@ -691,6 +833,7 @@
             "campaign_fact",
             "campaign_outcome",
             "campaign_reward",
+            "campaign_standing",
             "clear_tag",
             "counter",
             "dialogue",
@@ -756,6 +899,7 @@
             "campaign_fact",
             "campaign_outcome",
             "campaign_reward",
+            "campaign_standing",
             "cancel",
             "claim",
             "clear_tag",

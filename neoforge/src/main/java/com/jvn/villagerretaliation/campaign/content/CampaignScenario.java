@@ -22,7 +22,7 @@ public record CampaignScenario(ResourceLocation id, ResourceLocation campaign, L
 
     public sealed interface Step permits Player, Party, Privilege, QuestPrompt, QuestSelect, QuestResponse, QuestConfirmation, StartConversation,
             ConversationIntent, Replay, Interrupt, Fixture, WorldEvent, Storage, Reload, Wait, Checkpoint, AssertSame,
-            AssertOutcome, AssertPlayer, AssertQuest, AssertConversation, AssertCheck, AssertCampaign {
+            AssertOutcome, AssertPlayer, AssertQuest, AssertConversation, AssertCheck, AssertCampaign, AssertStanding {
         String id();
         String pointer();
     }
@@ -57,4 +57,6 @@ public record CampaignScenario(ResourceLocation id, ResourceLocation campaign, L
             String outcome, int choices, int checks, int receipts, String pointer) implements Step { }
     public record AssertCheck(String id, String session, String check, int die, Boolean success, String pointer) implements Step { }
     public record AssertCampaign(String id, int outcomes, int audits, int rewards, String pointer) implements Step { }
+    public record AssertStanding(String id, String player, CampaignStandingDefinition.Scope scope, String subject,
+            int value, String reaction, String pointer) implements Step { }
 }

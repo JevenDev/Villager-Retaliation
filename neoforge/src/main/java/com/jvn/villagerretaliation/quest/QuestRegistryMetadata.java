@@ -86,6 +86,7 @@ public final class QuestRegistryMetadata {
             JsonObject entry = descriptorBase(descriptor.id(), descriptor.aliases());
             entry.add("capabilities", enumNames(descriptor.capabilities()));
             entry.addProperty("implementation", descriptor.implementationType().getSimpleName());
+            if (descriptor.id().equals("campaign_standing")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignStandingPredicate.schema());
             if (descriptor.id().equals("campaign_fact")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema());
             if (descriptor.id().equals("campaign_outcome")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema());
             if (descriptor.id().equals("campaign_character")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema());
@@ -102,6 +103,9 @@ public final class QuestRegistryMetadata {
             entry.addProperty("kind", descriptor.kind().name().toLowerCase(java.util.Locale.ROOT));
             if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
                 entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.schema());
+            }
+            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_STANDING) {
+                entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignStandingAction.schema());
             }
             if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_FACT) {
                 entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignFactAction.schema());

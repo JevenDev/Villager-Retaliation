@@ -74,6 +74,7 @@ final class CampaignCommands {
                 ids.addAll(instance.players().keySet());
                 ids.addAll(instance.facts().players().keySet());
             });
+            com.jvn.villagerretaliation.campaign.CampaignStandingSavedData.get(server.overworld()).values().keySet().forEach(key -> ids.add(key.player()));
             return SharedSuggestionProvider.suggest(ids.stream().map(UUID::toString), builder);
         });
     }
@@ -146,6 +147,23 @@ final class CampaignCommands {
         player.chapters().forEach((id, chapter) -> lines.add("Chapter " + id + ": prerequisites satisfied: " + chapter.available()
                 + ", completed: " + chapter.completed() + (chapter.blockers().isEmpty() ? "" : ", " + String.join(", ", chapter.blockers()))));
         if (player.chapters().isEmpty() && report.definition() != null) lines.add("Chapter prerequisites were not evaluated against incompatible or unreadable state.");
+        var standingData = com.jvn.villagerretaliation.campaign.CampaignStandingSavedData.get(context.getSource().getServer().overworld());
+        if (report.definition() != null) com.jvn.villagerretaliation.campaign.content.CampaignStandingDefinition.all(report.definition()).forEach(standing -> {
+            var reading = com.jvn.villagerretaliation.campaign.CampaignStandingService.read(context.getSource().getServer(),
+                    report.campaign(), player.id(), standing.scope(), standing.id());
+            lines.add("Current " + standing.scope() + " standing " + standing.id() + ": " + (reading.diagnostic().isBlank()
+                    ? reading.value() + ", reaction " + reading.reaction().id() : reading.diagnostic()));
+        });
+        standingData.values().forEach((key, value) -> {
+            if (!key.campaign().equals(report.campaign()) || !key.player().equals(player.id())) return;
+            lines.add("Saved " + key.scope() + " standing " + key.subject() + " (" + value.subject().title() + ") = " + value.amount()
+                    + ", revision " + value.revision() + ", instance " + key.instance()
+                    + (key.character() == null ? "" : ", character " + key.character()));
+        });
+        standingData.receipts().values().stream().filter(receipt -> receipt.change().campaign().equals(report.campaign())
+                && receipt.change().player().equals(player.id())).forEach(receipt -> lines.add("Standing operation " + receipt.operation()
+                + ": " + receipt.change().scope() + "/" + receipt.change().subject() + ", " + receipt.before() + " -> " + receipt.after()
+                + ", quest " + receipt.change().quest() + ", run " + receipt.change().questRun()));
         return show(context.getSource(), report.campaign() + " personal progress", lines, page);
     }
 

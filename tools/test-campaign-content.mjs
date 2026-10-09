@@ -47,7 +47,7 @@ const rejected = (result, pattern) => {
   assert.match(result.stderr, pattern);
   assert.doesNotMatch(result.stderr, /TypeError|SyntaxError: Unexpected/);
 };
-for (const name of ["characters", "following", "investigation", "locations", "losses", "reconciliation", "replacements", "spawns", "structures", "variants"]) {
+for (const name of ["characters", "following", "investigation", "locations", "losses", "reconciliation", "replacements", "spawns", "structures", "variants", "standing"]) {
   passed(cli("--campaign", path.join(fixture, data, "campaigns", name, "campaign.json")));
 }
 rejected(cli("--campaign"), /requires a JSON file path/);
@@ -116,10 +116,28 @@ try {
   const conversation = data + "quests/campaign_fixture/characters/conversations/mentor.json";
   await mutate(conversation, value => { value.nodes[0].responses[0].next = "missing"; delete value.nodes[0].responses[0].check; return value; },
     result => rejected(result, /unknown node missing/), characterCampaign);
+  const standingCampaign = data + "campaigns/standing/campaign.json";
+  const standingConversation = data + "quests/campaign_fixture/standing/conversations/standing.json";
+  await mutate(standingConversation, value => { value.topics[1].conditions[0].reaction = "missing"; return value; },
+    result => rejected(result, /\/topics\/1\/conditions\/0\/reaction: unknown standing reaction/), standingCampaign);
+  await mutate(standingConversation, value => { value.nodes[0].responses[0].effects[0].action.subject = "missing"; return value; },
+    result => rejected(result, /\/nodes\/0\/responses\/0\/effects\/0\/action\/subject: unknown campaign standing/), standingCampaign);
+  await mutate(standingConversation, value => { value.nodes[0].responses[0].effects[0].action.quest = "campaign_fixture:missing"; return value; },
+    result => rejected(result, /standing action requires a quest declared by its campaign/), standingCampaign);
+  await mutate(data + "campaigns/standing/locales/en_us.json", value => { delete value.messages["campaign_fixture.campaign.standing.reaction.trusted"]; return value; },
+    result => rejected(result, /English localization is missing/), standingCampaign);
   passed(cli("--campaign", path.join(temporary, campaignPath), "--campaign", path.join(temporary, characterCampaign)));
   passed(cli("--quest", path.join(temporary, questPath), "--campaign", path.join(temporary, campaignPath)));
   passed(cli("--conversation", path.join(temporary, conversation), "--campaign", path.join(temporary, characterCampaign)));
 } finally {
   await rm(temporary, { recursive: true, force: true });
 }
-console.log("Campaign authoring checks passed (" + cases.length + " shared runtime cases, all 10 fixture campaigns, schema defaults, and CLI diagnostics).");
+const standingCases = await readJson(path.join(fixture, "standing_cases.json"));
+const questSchema = await readJson(path.join(root, "tools/datapack-builder/quest-v2.schema.json"));
+for (const test of standingCases) {
+  const quest = await readJson(path.join(fixture, data, "quests/campaign_fixture/standing/quest.json"));
+  if (test.kind === "action") quest.stages[0].on_enter = [test.input];
+  else quest.availability.conditions = [{ type: "not", condition: test.input }];
+  assert.equal(validateContentSchema(quest, questSchema).length === 0, test.valid, test.name);
+}
+console.log("Campaign authoring checks passed (" + cases.length + " campaign cases, " + standingCases.length + " standing field cases, fixture campaigns, and CLI diagnostics).");

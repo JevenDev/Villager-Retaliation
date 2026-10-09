@@ -1,0 +1,14 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.standing.title": "Campaign fixture: personal standing",
+    "campaign_fixture.campaign.standing.chapter": "Earn the mentor's trust",
+    "campaign_fixture.campaign.standing.home": "The mentor's village",
+    "campaign_fixture.campaign.standing.mentor": "Mentor",
+    "campaign_fixture.campaign.standing.relationship": "The mentor's trust",
+    "campaign_fixture.campaign.standing.faction": "Village wardens",
+    "campaign_fixture.campaign.standing.reaction.hostile": "Hostile",
+    "campaign_fixture.campaign.standing.reaction.neutral": "Neutral",
+    "campaign_fixture.campaign.standing.reaction.trusted": "Trusted"
+  }
+}

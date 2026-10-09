@@ -46,6 +46,7 @@ public final class CampaignRewardRecovery {
         if (prepared >= 0 && prepared < continuation.actions().size()) {
             var kind = continuation.actions().get(prepared).kind();
             if (kind != VillagerActionDefinition.Kind.CAMPAIGN_REWARD
+                    && kind != VillagerActionDefinition.Kind.CAMPAIGN_STANDING
                     && kind != VillagerActionDefinition.Kind.CAMPAIGN_FACT
                     && kind != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
                 return "Campaign action " + prepared + " has no saved completion receipt. Inspect its effects before repairing this continuation.";
