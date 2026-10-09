@@ -7,9 +7,21 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import net.minecraft.resources.ResourceLocation;
 
 public final class QuestObjectiveQuery {
     private QuestObjectiveQuery() {
+    }
+
+    public static ResourceLocation resolvedItem(
+            QuestDefinition.Objective objective,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (objective == null) {
+            return null;
+        }
+        return objective.usesRandomItemSelection()
+                ? progress == null ? null : progress.resolvedObjectiveItem(objective.id())
+                : objective.item();
     }
 
     public static List<QuestDefinition.Objective> requiredObjectives(QuestDefinition definition) {
