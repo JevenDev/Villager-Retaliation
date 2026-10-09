@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
@@ -33,8 +34,16 @@ public final class QuestRewardService {
         return resolution.resolved() ? "" : resolution.diagnostic();
     }
 
+    public static ActionResult award(DialogueContext context, QuestDefinition definition, Map<String, String> replacements) {
+        var progress = VillagerQuestSavedData.get(context.level()).getOrCreate(context.player().getUUID(), definition.id());
+        return award(context, definition, progress, replacements);
+    }
+
     public static ActionResult award(DialogueContext context, QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress, Map<String, String> replacements) {
+        if (!progress.rewardDeliveryIssue().isBlank()) {
+            return ActionResult.unavailable(progress.rewardDeliveryIssue(), Set.of(), VillagerActionResult.EMPTY);
+        }
         if (!DELIVERING.add(progress)) {
             return ActionResult.unavailable("Quest reward delivery is already in progress.", Set.of(), VillagerActionResult.EMPTY);
         }
@@ -79,9 +88,9 @@ public final class QuestRewardService {
     }
 
     private static ActionResult remember(DialogueContext context, VillagerActionDefinition action) {
+        var registry = VillageAllegianceRegistrySavedData.get(context.level());
         boolean bucketAvailable = action.memoryScope().includesVillager()
-                || com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(context.level())
-                        .resolveAt(context.level(), context.villager().blockPosition()).isPresent();
+                || registry.resolveAt(context.level(), context.villager().blockPosition()).flatMap(registry::canonical).isPresent();
         if (!bucketAvailable) {
             return ActionResult.unavailable("The quest's village memory is unavailable.", Set.of(), VillagerActionResult.EMPTY);
         }

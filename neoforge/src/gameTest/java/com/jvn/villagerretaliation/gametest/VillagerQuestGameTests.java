@@ -6473,7 +6473,24 @@ public final class VillagerQuestGameTests {
                     "abandonment cannot erase submitted rewards");
             helper.assertFalse(com.jvn.villagerretaliation.quest.runtime.QuestStateMachine.start(progress, villager.getUUID(), level.dimension(), null, 10, true).dirty(),
                     "forced restart cannot erase submitted rewards");
-            data = VillagerQuestSavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
+            var saved = data.save(new CompoundTag(), level.registryAccess());
+            var corrupted = saved.copy();
+            var brokenPlan = corrupted.getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).getCompound("RewardDelivery");
+            brokenPlan.remove("NextAction");
+            var damagedData = VillagerQuestSavedData.load(corrupted, level.registryAccess());
+            var damagedProgress = damagedData.get(player.getUUID(), compiled.id());
+            helper.assertFalse(damagedProgress.rewardDeliveryIssue().isBlank(), "missing reward cursor is unavailable rather than replayed");
+            helper.assertFalse(com.jvn.villagerretaliation.quest.runtime.QuestRewardService.award(
+                    VillagerInteractionService.createDialogueContext(level, player, villager), definition, damagedProgress, Map.of()).success(),
+                    "invalid saved plan cannot redeliver earlier rewards");
+            helper.assertValueEqual(damagedData.save(new CompoundTag(), level.registryAccess()).getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                    .getCompound(0).getCompound("RewardDelivery"), brokenPlan, "invalid reward checkpoint remains recoverable");
+            brokenPlan.putInt("NextAction", 4);
+            brokenPlan.putString("Loot", "invalid loot id");
+            damagedData = VillagerQuestSavedData.load(corrupted, level.registryAccess());
+            helper.assertFalse(damagedData.get(player.getUUID(), compiled.id()).rewardDeliveryIssue().isBlank(),
+                    "malformed reward IDs remain isolated to their quest");
+            data = VillagerQuestSavedData.load(saved, level.registryAccess());
             storage.set("villagerretaliation_quests", data);
             progress = data.get(player.getUUID(), compiled.id());
             helper.assertValueEqual(progress.rewardDelivery().nextAction(), 4, "reload preserves the first undelivered reward");

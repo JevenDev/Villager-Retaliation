@@ -626,6 +626,8 @@ public class VillagerQuestSavedData extends SavedData {
         private boolean partyRewardClaimed;
         private boolean completionPending;
         private QuestRewardDelivery rewardDelivery;
+        private Tag preservedRewardDelivery;
+        private String rewardDeliveryIssue = "";
         private UUID partyQuestInstanceId;
         private UUID questRunId;
         private String issuerName = "";
@@ -688,8 +690,14 @@ public class VillagerQuestSavedData extends SavedData {
             progress.pendingPartyReward = tag.getBoolean(TAG_PENDING_PARTY_REWARD);
             progress.partyRewardClaimed = tag.getBoolean(TAG_PARTY_REWARD_CLAIMED);
             progress.completionPending = tag.getBoolean("CompletionPending");
-            if (tag.contains("RewardDelivery", Tag.TAG_COMPOUND)) {
-                progress.rewardDelivery = QuestRewardDelivery.load(tag.getCompound("RewardDelivery"));
+            if (tag.contains("RewardDelivery")) {
+                try {
+                    if (!tag.contains("RewardDelivery", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid saved reward plan");
+                    progress.rewardDelivery = QuestRewardDelivery.load(tag.getCompound("RewardDelivery"));
+                } catch (IllegalArgumentException exception) {
+                    progress.preservedRewardDelivery = tag.get("RewardDelivery").copy();
+                    progress.rewardDeliveryIssue = exception.getMessage();
+                }
             }
             if (tag.hasUUID(TAG_PARTY_QUEST_INSTANCE)) {
                 progress.partyQuestInstanceId = tag.getUUID(TAG_PARTY_QUEST_INSTANCE);
@@ -840,7 +848,8 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putBoolean(TAG_PENDING_PARTY_REWARD, this.pendingPartyReward);
             tag.putBoolean(TAG_PARTY_REWARD_CLAIMED, this.partyRewardClaimed);
             tag.putBoolean("CompletionPending", this.completionPending);
-            if (this.rewardDelivery != null) tag.put("RewardDelivery", this.rewardDelivery.save());
+            if (this.preservedRewardDelivery != null) tag.put("RewardDelivery", this.preservedRewardDelivery.copy());
+            else if (this.rewardDelivery != null) tag.put("RewardDelivery", this.rewardDelivery.save());
             if (this.partyQuestInstanceId != null) {
                 tag.putUUID(TAG_PARTY_QUEST_INSTANCE, this.partyQuestInstanceId);
             }
@@ -1035,6 +1044,11 @@ public class VillagerQuestSavedData extends SavedData {
         public boolean completionPending() { return this.completionPending; }
 
         public QuestRewardDelivery rewardDelivery() { return this.rewardDelivery; }
+
+        public String rewardDeliveryIssue() {
+            if (!this.rewardDeliveryIssue.isBlank()) return this.rewardDeliveryIssue;
+            return this.completionPending && this.rewardDelivery == null ? "The saved completion has no reward delivery checkpoint." : "";
+        }
 
         public void recordRewardDelivery(QuestRewardDelivery delivery) { this.rewardDelivery = delivery; }
 
@@ -1246,6 +1260,8 @@ public class VillagerQuestSavedData extends SavedData {
             this.partyRewardClaimed = false;
             this.completionPending = false;
             this.rewardDelivery = null;
+            this.preservedRewardDelivery = null;
+            this.rewardDeliveryIssue = "";
             this.partyQuestInstanceId = null;
             this.questRunId = null;
             this.consumedReason = "";
