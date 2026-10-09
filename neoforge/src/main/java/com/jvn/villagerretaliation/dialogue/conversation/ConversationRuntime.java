@@ -57,12 +57,7 @@ final class ConversationRuntime {
             }
             session.consent = new net.minecraft.nbt.CompoundTag();
             if (nodeEffects) {
-                if (node.exchanges().isEmpty()) ConversationService.finishExchanges(session, node);
-                else {
-                    session.phase = ConversationSession.Phase.EXCHANGES;
-                    session.exchange = 0;
-                    appendLine(player, session, node.exchanges().getFirst());
-                }
+                advanceExchange(player, session, node, 0);
             } else if (!response.check().isBlank()) {
                 session.check = response.check();
                 session.phase = ConversationSession.Phase.CHECK;
@@ -72,7 +67,26 @@ final class ConversationRuntime {
         }
     }
 
-    static void appendLine(ServerPlayer player, ConversationSession session, ConversationDefinition.Exchange exchange) {
+    static void advanceExchange(ServerPlayer player, ConversationSession session, ConversationDefinition.Node node, int start) {
+        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
+        for (int index = start; index < node.exchanges().size(); index++) {
+            var exchange = node.exchanges().get(index);
+            boolean enabled = true;
+            for (var condition : exchange.conditions()) {
+                String issue = condition.unavailableReason(context);
+                ConversationService.require(issue.isBlank(), "Conversation line " + exchange.id() + ": " + issue);
+                if (!condition.matches(context)) enabled = false;
+            }
+            if (!enabled) continue;
+            appendLine(player, session, exchange);
+            session.exchange = index;
+            session.phase = ConversationSession.Phase.EXCHANGES;
+            return;
+        }
+        ConversationService.finishExchanges(session, node);
+    }
+
+    private static void appendLine(ServerPlayer player, ConversationSession session, ConversationDefinition.Exchange exchange) {
         UUID speaker = null;
         String name = "";
         String role = exchange.speaker().role();

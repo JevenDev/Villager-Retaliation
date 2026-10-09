@@ -97,7 +97,7 @@ public final class ConversationCompiler {
                 String exchangeId = string(exchange, "id");
                 put(exchanges, exchangeId, new ConversationDefinition.Exchange(exchangeId,
                         new ConversationDefinition.Speaker(ConversationDefinition.SpeakerKind.valueOf(string(speaker, "type").toUpperCase(Locale.ROOT)),
-                                string(speaker, "role")), text(exchange, "text", location), location), location);
+                                string(speaker, "role")), text(exchange, "text", location), conditions(exchange, location), location), location);
             }
             Map<String, ConversationDefinition.Response> responses = new LinkedHashMap<>();
             JsonArray choices = array(value, "responses");
@@ -311,6 +311,7 @@ public final class ConversationCompiler {
             }
         }
         for (var node : conversation.nodes().values()) for (var exchange : node.exchanges()) {
+            transactionConditions(conversation, campaign, exchange.conditions(), exchange.pointer() + "/conditions", issues);
             if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE && !campaign.characters().containsKey(exchange.speaker().role())) {
                 issues.add(error(conversation.source(), exchange.pointer() + "/speaker/role", "unknown campaign character " + exchange.speaker().role()));
             }

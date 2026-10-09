@@ -1438,5 +1438,88 @@
         ]
       }
     ]
+  },
+  {
+    "name": "empty exchange conditions preserve ordinary lines",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/conditions",
+        "value": []
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "conditional exchange uses nested character conditions",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/conditions",
+        "value": [
+          {
+            "type": "not",
+            "condition": {
+              "type": "campaign_character",
+              "campaign": "campaign_fixture:characters",
+              "role": "mentor",
+              "state": "lost"
+            }
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "unknown negated exchange condition",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/conditions",
+        "value": [
+          {
+            "type": "not",
+            "condition": {
+              "type": "not_a_condition"
+            }
+          }
+        ]
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/conditions/0/condition/type"
+  },
+  {
+    "name": "empty conjunction on exchange",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/conditions",
+        "value": [
+          {
+            "type": "all",
+            "conditions": []
+          }
+        ]
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/conditions/0/conditions"
+  },
+  {
+    "name": "exchange conditions reject missing transactions",
+    "patches": [
+      {
+        "path": "/nodes/0/exchanges/0/conditions",
+        "value": [
+          {
+            "type": "not",
+            "condition": {
+              "type": "campaign_transaction",
+              "campaign": "campaign_fixture:characters",
+              "quest": "campaign_fixture:characters",
+              "transaction": "missing",
+              "state": "paid"
+            }
+          }
+        ]
+      }
+    ],
+    "pointer": "/nodes/0/exchanges/0/conditions/0/condition/transaction"
   }
 ]

@@ -1219,6 +1219,14 @@
         },
         "text": {
           "$ref": "#/$defs/localized_reference"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "minItems": 0,
+          "maxItems": 1024
         }
       }
     },

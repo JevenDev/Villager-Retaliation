@@ -31,7 +31,7 @@ public final class ConversationSchema {
         speaker.add("else", forbiddenRole);
         definitions.add("speaker", speaker);
         definitions.add("exchange", object(List.of("id", "speaker", "text"),
-                "id", id(), "speaker", ref("speaker"), "text", ref("localized_reference")));
+                "id", id(), "speaker", ref("speaker"), "text", ref("localized_reference"), "conditions", array(ref("condition"), 0)));
         JsonObject response = object(List.of("id", "label"), "id", id(), "label", ref("localized_reference"),
                 "conditions", array(ref("condition"), 0), "effects", array(ref("effect"), 0), "next", id(), "check", id());
         response.add("oneOf", exclusive("next", "check"));

@@ -228,10 +228,7 @@ public final class ConversationService {
         } else {
             require(session.phase == ConversationSession.Phase.EXCHANGES, "Choose a response or resolve the pending check first.");
             ConversationObjectiveEvidence.capture(player, session);
-            if (session.exchange + 1 < node.exchanges().size()) {
-                session.exchange++;
-                ConversationRuntime.appendLine(player, session, node.exchanges().get(session.exchange));
-            } else finishExchanges(session, node);
+            ConversationRuntime.advanceExchange(player, session, node, session.exchange + 1);
         }
     }
 

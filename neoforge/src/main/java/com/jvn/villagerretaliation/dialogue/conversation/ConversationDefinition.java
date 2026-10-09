@@ -39,7 +39,12 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
         }
     }
 
-    public record Exchange(String id, Speaker speaker, String textKey, String pointer) {
+    public record Exchange(String id, Speaker speaker, String textKey, List<DialogueCondition> conditions, String pointer) {
+        public Exchange { conditions = List.copyOf(conditions); }
+
+        public Exchange(String id, Speaker speaker, String textKey, String pointer) {
+            this(id, speaker, textKey, List.of(), pointer);
+        }
     }
 
     public record Speaker(SpeakerKind kind, String role) {

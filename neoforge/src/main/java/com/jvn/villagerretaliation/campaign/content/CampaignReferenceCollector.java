@@ -280,9 +280,12 @@ final class CampaignReferenceCollector {
         for (var topic : definition.topics().values()) conditions(owner, topic.conditions(),
                 new Source(at.resource(), at.pack(), topic.pointer()));
         for (var node : definition.nodes().values()) {
-            for (var exchange : node.exchanges()) if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE)
-                ref(owner, key(CHARACTER, definition.campaign(), exchange.speaker().role()), SPEAKS,
-                        new Source(at.resource(), at.pack(), exchange.pointer()).child("speaker", "role"));
+            for (var exchange : node.exchanges()) {
+                var where = new Source(at.resource(), at.pack(), exchange.pointer());
+                conditions(owner, exchange.conditions(), where);
+                if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE)
+                    ref(owner, key(CHARACTER, definition.campaign(), exchange.speaker().role()), SPEAKS, where.child("speaker", "role"));
+            }
             for (var effect : node.effects()) actions(owner, definition.campaign(), List.of(effect.action()),
                     new Source(at.resource(), at.pack(), effect.pointer()).child("action"));
             for (var response : node.responses().values()) {
