@@ -27,6 +27,7 @@ public final class CampaignEvidenceSavedData extends SavedData {
     private Map<CampaignEvidenceBinding.Key, CampaignEvidenceBinding> bindings = Map.of();
     private Map<CampaignInvestigationReceipt.Key, CampaignInvestigationReceipt> receipts = Map.of();
     private Map<UUID, CampaignEvidenceBinding.Key> entities = Map.of();
+    private java.util.Set<Discovery> discoveries = java.util.Set.of();
     private String diagnostic = "";
     private CompoundTag preserved;
 
@@ -75,6 +76,12 @@ public final class CampaignEvidenceSavedData extends SavedData {
     public synchronized Map<CampaignInvestigationReceipt.Key, CampaignInvestigationReceipt> receipts() { return receipts; }
     public synchronized CampaignEvidenceBinding.Key owner(UUID entity) { return entities.get(entity); }
     public synchronized boolean investigated(CampaignInvestigationReceipt.Key key) { return diagnostic.isBlank() && receipts.containsKey(key); }
+
+    public synchronized boolean discovered(net.minecraft.resources.ResourceLocation campaign, UUID instance, String fingerprint, UUID player, String evidence) {
+        return diagnostic.isBlank() && discoveries.contains(new Discovery(campaign, instance, fingerprint, player, evidence));
+    }
+
+    private record Discovery(net.minecraft.resources.ResourceLocation campaign, UUID instance, String fingerprint, UUID player, String evidence) { }
 
     synchronized CampaignEvidenceBinding bind(CampaignEvidenceBinding candidate) throws IOException {
         if (!diagnostic.isBlank()) throw new IOException(diagnostic);
@@ -142,6 +149,9 @@ public final class CampaignEvidenceSavedData extends SavedData {
         var entities = new LinkedHashMap<UUID, CampaignEvidenceBinding.Key>();
         bindings.values().forEach(binding -> entities.put(binding.entity(), binding.key()));
         this.entities = Map.copyOf(entities);
+        var discoveries = new java.util.HashSet<Discovery>();
+        for (var key : receipts.keySet()) discoveries.add(new Discovery(key.campaign(), key.instance(), key.fingerprint(), key.player(), key.evidence()));
+        this.discoveries = java.util.Set.copyOf(discoveries);
     }
 
     private static CompoundTag encode(Map<CampaignEvidenceBinding.Key, CampaignEvidenceBinding> bindings,

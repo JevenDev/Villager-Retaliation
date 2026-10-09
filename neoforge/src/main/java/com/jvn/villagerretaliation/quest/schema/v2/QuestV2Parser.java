@@ -1196,6 +1196,10 @@ public final class QuestV2Parser {
                     Set.of(type));
             return;
         }
+        if (canonical.equals("campaign_evidence")) {
+            com.jvn.villagerretaliation.campaign.CampaignEvidencePredicate.issues(object).forEach((field, message) ->
+                    validator.error(pointer + (field.isEmpty() ? "" : "/" + field), message, "Use the campaign evidence condition schema.", Set.of()));
+        }
         if (canonical.equals("campaign_transaction")) {
             com.jvn.villagerretaliation.campaign.CampaignTransactionPredicate.issues(object).forEach((field, message) ->
                     validator.error(pointer + (field.isEmpty() ? "" : "/" + field), message, "Use the campaign transaction condition schema.", Set.of()));

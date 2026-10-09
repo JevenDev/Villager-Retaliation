@@ -127,6 +127,8 @@ public final class SceneCompiler {
                                     "unknown actor alias " + alias));
                 }
             validateEncounterReference(step, availableEncounterTemplates, diagnostics);
+            for (var issue : com.jvn.villagerretaliation.campaign.CampaignEvidenceFields.issues(step.data()))
+                diagnostics.add(error("scene.evidence.invalid", "steps." + step.id() + ".data" + issue.pointer(), issue.message()));
             for (var issue : com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.issues(step.data()))
                 diagnostics.add(error("scene.transaction.invalid", "steps." + step.id() + ".data" + issue.pointer(), issue.message()));
             if (step.type().getPath().equals("quest_transition")) {

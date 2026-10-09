@@ -128,6 +128,38 @@
         "implementation": "Quest"
       },
       {
+        "id": "campaign_evidence",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "CampaignEvidence",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "campaign_evidence"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+            },
+            "evidence": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "campaign",
+            "evidence"
+          ]
+        }
+      },
+      {
         "id": "campaign_transaction",
         "aliases": [],
         "capabilities": [
@@ -2602,6 +2634,20 @@
         }
       },
       {
+        "id": "villagerretaliation:campaign_evidence",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Campaign evidence",
+        "description": "Built-in Campaign evidence type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:campaign_fact",
         "aliases": [],
         "live_capabilities": [],
@@ -3012,6 +3058,7 @@
         "attribute",
         "biome",
         "campaign_character",
+        "campaign_evidence",
         "campaign_fact",
         "campaign_location",
         "campaign_outcome",

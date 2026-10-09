@@ -63,7 +63,7 @@ public final class VillagerRetaliationRegistries {
         }
         for (String id : List.of("all", "any", "not", "reputation", "memory", "family", "relationship",
                 "recruitment_memory", "villager_age", "social_attribute", "skill", "villager_level", "quest",
-                "quest_fact", "campaign_fact", "campaign_outcome", "selected_choice", "stage_history", "mood", "weather", "time")) {
+                "quest_fact", "campaign_fact", "campaign_outcome", "campaign_evidence", "selected_choice", "stage_history", "mood", "weather", "time")) {
             registerSimple(QUEST_CONDITIONS, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
         }
         for (String id : List.of("player_tick", "proximity", "started", "progress", "stage_changed", "completed",

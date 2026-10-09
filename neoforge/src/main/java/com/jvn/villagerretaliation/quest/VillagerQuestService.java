@@ -3596,6 +3596,10 @@ public final class VillagerQuestService {
         if (condition instanceof DialogueCondition.QuestFact fact) {
             return questFactStateWithoutLiveContext(player, level, definition, progress, fact);
         }
+        if (condition instanceof DialogueCondition.CampaignEvidence evidence) {
+            var result = evidence.reference().evaluate(level, player);
+            return result.diagnostic().isBlank() ? result.matches() ? ConditionMatch.MET : ConditionMatch.UNMET : ConditionMatch.UNKNOWN;
+        }
         if (condition instanceof DialogueCondition.Reputation reputation) {
             return reputationStateWithoutLiveContext(player, level, progress, reputation);
         }

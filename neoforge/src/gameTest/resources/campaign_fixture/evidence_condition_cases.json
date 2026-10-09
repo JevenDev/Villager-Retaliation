@@ -1,0 +1,137 @@
+[
+  {
+    "name": "saved personal evidence",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": "ledger"
+    },
+    "valid": true
+  },
+  {
+    "name": "missing campaign",
+    "condition": {
+      "type": "campaign_evidence",
+      "evidence": "ledger"
+    },
+    "pointer": "/campaign"
+  },
+  {
+    "name": "missing evidence",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation"
+    },
+    "pointer": "/evidence"
+  },
+  {
+    "name": "unknown field",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": "ledger",
+      "discovered": true
+    },
+    "pointer": "/discovered"
+  },
+  {
+    "name": "quest scope is not a knowledge scope",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": "ledger",
+      "quest": "campaign_fixture:investigation"
+    },
+    "pointer": "/quest"
+  },
+  {
+    "name": "invalid campaign",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "Invalid:campaign",
+      "evidence": "ledger"
+    },
+    "pointer": "/campaign"
+  },
+  {
+    "name": "non-string campaign",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": 12,
+      "evidence": "ledger"
+    },
+    "pointer": "/campaign"
+  },
+  {
+    "name": "null evidence",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": null
+    },
+    "pointer": "/evidence"
+  },
+  {
+    "name": "empty evidence",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": ""
+    },
+    "pointer": "/evidence"
+  },
+  {
+    "name": "invalid evidence",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": "other ledger"
+    },
+    "pointer": "/evidence"
+  },
+  {
+    "name": "campaign length bound",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "fixture:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence": "ledger"
+    },
+    "pointer": "/campaign"
+  },
+  {
+    "name": "evidence length bound",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "pointer": "/evidence"
+  },
+  {
+    "name": "noncanonical type",
+    "condition": {
+      "type": " Campaign_Evidence ",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": "ledger"
+    },
+    "pointer": "/type"
+  },
+  {
+    "name": "campaign rejects a trailing newline",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation\n",
+      "evidence": "ledger"
+    },
+    "pointer": "/campaign"
+  },
+  {
+    "name": "evidence rejects a trailing newline",
+    "condition": {
+      "type": "campaign_evidence",
+      "campaign": "campaign_fixture:investigation",
+      "evidence": "ledger\n"
+    },
+    "pointer": "/evidence"
+  }
+]

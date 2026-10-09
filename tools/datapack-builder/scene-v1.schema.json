@@ -248,7 +248,14 @@
             "type": "object",
             "title": "Data",
             "additionalProperties": true,
-            "$ref": "#/$defs/campaign_transaction_fields"
+            "allOf": [
+              {
+                "$ref": "#/$defs/campaign_transaction_fields"
+              },
+              {
+                "$ref": "#/$defs/campaign_evidence_fields"
+              }
+            ]
           },
           "next": {
             "type": "string",
@@ -445,6 +452,68 @@
           "minLength": 1
         }
       }
+    },
+    "campaign_evidence_fields": {
+      "allOf": [
+        {
+          "if": {
+            "type": "object"
+          },
+          "then": {
+            "additionalProperties": {
+              "$ref": "#/$defs/campaign_evidence_fields"
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "pattern": "^[\\x00-\\x20]*[cC][aA][mM][pP][aA][iI][gG][nN]_[eE][vV][iI][dD][eE][nN][cC][eE][\\x00-\\x20]*$"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "const": "campaign_evidence"
+                    },
+                    "campaign": {
+                      "type": "string",
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+                    },
+                    "evidence": {
+                      "type": "string",
+                      "maxLength": 256,
+                      "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$(?![\\s\\S])"
+                    }
+                  },
+                  "required": [
+                    "campaign",
+                    "evidence"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "type": "array"
+          },
+          "then": {
+            "items": {
+              "$ref": "#/$defs/campaign_evidence_fields"
+            }
+          }
+        }
+      ]
     },
     "campaign_transaction_fields": {
       "allOf": [

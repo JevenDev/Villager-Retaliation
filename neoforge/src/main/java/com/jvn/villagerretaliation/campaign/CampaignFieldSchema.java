@@ -51,6 +51,46 @@ final class CampaignFieldSchema {
         return field;
     }
 
+    static JsonObject reference(String definition) {
+        var value = new JsonObject();
+        value.addProperty("$ref", "#/$defs/" + definition);
+        return value;
+    }
+
+    static JsonObject nestedDefinition(String definition, Map<String, JsonObject> types) {
+        var rules = new com.google.gson.JsonArray();
+        var object = new JsonObject();
+        object.add("additionalProperties", reference(definition));
+        var values = new com.google.gson.JsonArray();
+        types.forEach((type, schema) -> values.add(typeRule(type, schema)));
+        object.add("allOf", values);
+        rules.add(shapeRule("object", object));
+        var array = new JsonObject(); array.add("items", reference(definition));
+        rules.add(shapeRule("array", array));
+        var result = new JsonObject(); result.add("allOf", rules);
+        return result;
+    }
+
+    private static JsonObject shapeRule(String type, JsonObject consequence) {
+        var condition = new JsonObject(); condition.addProperty("type", type);
+        var rule = new JsonObject(); rule.add("if", condition); rule.add("then", consequence);
+        return rule;
+    }
+
+    private static JsonObject typeRule(String type, JsonObject consequence) {
+        var condition = new JsonObject();
+        var pattern = new StringBuilder("^[\\x00-\\x20]*");
+        for (char letter : type.toCharArray()) pattern.append(Character.isLetter(letter)
+                ? "[" + letter + Character.toUpperCase(letter) + "]" : Character.toString(letter));
+        pattern.append("[\\x00-\\x20]*$");
+        var properties = new JsonObject(); var name = new JsonObject();
+        name.addProperty("type", "string"); name.addProperty("pattern", pattern.toString()); properties.add("type", name);
+        condition.add("properties", properties);
+        var required = new com.google.gson.JsonArray(); required.add("type"); condition.add("required", required);
+        var rule = new JsonObject(); rule.add("if", condition); rule.add("then", consequence);
+        return rule;
+    }
+
     static JsonObject enumeration(String... values) {
         var field = new JsonObject();
         field.addProperty("type", "string");

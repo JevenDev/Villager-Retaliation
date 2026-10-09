@@ -98,6 +98,7 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
                         conversation.source(), "/campaign", "campaign content is unavailable: " + conversation.campaign())));
         diagnostics.addAll(CampaignStandingReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
         diagnostics.addAll(CampaignTransactionReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
+        diagnostics.addAll(CampaignEvidenceReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
         return new CampaignContentCatalog(quests, entries, diagnostics);
     }
 

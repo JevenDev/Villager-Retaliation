@@ -43,6 +43,7 @@ final class CampaignReferenceCollector {
             }
         });
         scenes();
+        evidenceConditions();
         var nodes = new LinkedHashMap<Key, Node>();
         declarations.forEach((key, sources) -> nodes.put(key, new Node(key, List.copyOf(sources))));
         return new CampaignReferenceReport(content.quests().generation(), nodes, List.copyOf(references));
@@ -392,6 +393,28 @@ final class CampaignReferenceCollector {
 
     private static Source standingField(Key owner, Source source, String... path) {
         return owner.kind() == CONVERSATION ? source.child(path) : source;
+    }
+
+    private void evidenceConditions() {
+        for (var bundle : content.quests().bundles().values()) {
+            var definitions = bundle.definitions();
+            for (var kind : List.of(QuestBundlePath.Kind.QUEST, QuestBundlePath.Kind.CONVERSATION, QuestBundlePath.Kind.SCENE)) {
+                for (var entry : definitions.getOrDefault(kind, Map.of()).entrySet()) {
+                    var owner = switch (kind) {
+                        case QUEST -> key(QUEST, entry.getKey());
+                        case CONVERSATION -> key(CONVERSATION, entry.getKey());
+                        case SCENE -> key(SCENE, entry.getKey());
+                        default -> throw new IllegalStateException("Unsupported evidence condition owner.");
+                    };
+                    var location = bundle.source(kind, entry.getKey());
+                    for (var reference : com.jvn.villagerretaliation.campaign.CampaignEvidenceFields.references(entry.getValue())) {
+                        var condition = reference.condition();
+                        ref(owner, key(EVIDENCE, condition.campaign(), condition.evidence()), READS,
+                                new Source(location.resource(), location.pack(), reference.pointer()));
+                    }
+                }
+            }
+        }
     }
 
     private void scenes() {

@@ -36,7 +36,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
-        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact, DialogueCondition.CampaignFact, DialogueCondition.CampaignStanding, DialogueCondition.CampaignTransaction,
+        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact, DialogueCondition.CampaignFact, DialogueCondition.CampaignStanding, DialogueCondition.CampaignTransaction, DialogueCondition.CampaignEvidence,
         DialogueCondition.CampaignOutcome, DialogueCondition.CampaignCharacter, DialogueCondition.CampaignLocation, DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
         DialogueCondition.PlayerItem, DialogueCondition.VillagerEquipment,
         DialogueCondition.Biome, DialogueCondition.Dimension, DialogueCondition.Advancement,
@@ -51,6 +51,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     }
 
     default String unavailableReason(DialogueContext context) {
+        if (this instanceof CampaignEvidence evidence) return evidence.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignTransaction transaction) return transaction.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignStanding standing) return standing.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignFact fact) return fact.reference().evaluate(context).diagnostic();
@@ -1043,6 +1044,19 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                         capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
                         DialogueCondition::readQuest),
                 register(
+                        "campaign_evidence",
+                        CampaignEvidence.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> {
+                            var value = com.jvn.villagerretaliation.campaign.CampaignEvidencePredicate.read(condition);
+                            if (value == null) {
+                                warnInvalid(location, context, "campaign evidence condition does not match its registered schema");
+                                return Optional.empty();
+                            }
+                            return Optional.of(new CampaignEvidence(value));
+                        }),
+                register(
                         "campaign_transaction",
                         CampaignTransaction.class,
                         Set.of(),
@@ -1827,6 +1841,11 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         public int specificityScore() {
             return 8;
         }
+    }
+
+    record CampaignEvidence(com.jvn.villagerretaliation.campaign.CampaignEvidencePredicate reference) implements DialogueCondition {
+        @Override public boolean matches(DialogueContext context) { return reference.evaluate(context).matches(); }
+        @Override public int specificityScore() { return 8; }
     }
 
     record CampaignTransaction(com.jvn.villagerretaliation.campaign.CampaignTransactionPredicate reference) implements DialogueCondition {

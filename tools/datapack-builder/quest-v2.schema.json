@@ -2360,6 +2360,7 @@
             "attribute",
             "biome",
             "campaign_character",
+            "campaign_evidence",
             "campaign_fact",
             "campaign_location",
             "campaign_outcome",
@@ -2418,6 +2419,41 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_evidence"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "campaign_evidence"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$(?![\\s\\S])"
+              }
+            },
+            "required": [
+              "campaign",
+              "evidence"
+            ]
+          }
+        },
         {
           "if": {
             "properties": {

@@ -35,8 +35,13 @@ final class CampaignInvestigationTestFixture implements AutoCloseable {
     final List<Interaction> sources = new ArrayList<>();
 
     CampaignInvestigationTestFixture(GameTestHelper helper) throws IOException {
+        this(helper, quest -> { });
+    }
+
+    CampaignInvestigationTestFixture(GameTestHelper helper, java.util.function.Consumer<com.google.gson.JsonObject> questContent) throws IOException {
         this.helper = helper;
-        base = new CampaignCharacterTestFixture(helper, "investigation", "investigation_greeting");
+        base = new CampaignCharacterTestFixture(helper, "investigation", "investigation_greeting", List.of(),
+                questContent, campaign -> { }, List.of("conversations/ledger.json"));
         priorEvidence = CampaignEvidenceSavedData.get(helper.getLevel());
         priorParties = PartySavedData.get(helper.getLevel());
         base.server.overworld().getDataStorage().set(CampaignEvidenceSavedData.DATA_NAME,
@@ -121,6 +126,8 @@ final class CampaignInvestigationTestFixture implements AutoCloseable {
 
     @Override public void close() throws IOException {
         for (var player : players) {
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationPresentationService.onLogout(
+                    new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent(player));
             VillagerConversationService.endForPlayer(player, false);
             PartyService.leaveParty(player);
             base.server.getPlayerList().remove(player);

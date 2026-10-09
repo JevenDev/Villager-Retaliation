@@ -17,6 +17,16 @@
     "campaign_fixture.quest.investigation.report.lines": [
       "The old watchtower. That gives us somewhere to look."
     ],
-    "campaign_fixture.quest.investigation.finish": "Record what I found."
+    "campaign_fixture.quest.investigation.finish": "Record what I found.",
+    "campaign_fixture.quest.investigation.evidence.title": "The missing shipment",
+    "campaign_fixture.quest.investigation.evidence.topic": "About the missing shipment...",
+    "campaign_fixture.quest.investigation.evidence.discovery": "What did the ledger tell us?",
+    "campaign_fixture.quest.investigation.evidence.question": "You say the shipment went to the watchtower. What did you find?",
+    "campaign_fixture.quest.investigation.evidence.proof": "I read the ledger. Its final entry names the old watchtower.",
+    "campaign_fixture.quest.investigation.evidence.uncertain": "I haven't found the record yet.",
+    "campaign_fixture.quest.investigation.evidence.admission": "Then we have a lead. The ledger places the shipment at the old watchtower.",
+    "campaign_fixture.quest.investigation.evidence.request": "Read the damaged ledger first. We need a record, not a rumor.",
+    "campaign_fixture.quest.investigation.evidence.outcome.proved": "The shipment's destination is supported by evidence.",
+    "campaign_fixture.quest.investigation.evidence.outcome.unproved": "The shipment's destination remains unconfirmed."
   }
 }

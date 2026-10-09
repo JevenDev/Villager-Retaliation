@@ -20,10 +20,6 @@ public final class CampaignTransactionSceneFields {
     }
 
     public static JsonObject definition() {
-        var rules = new JsonArray();
-        var object = new JsonObject();
-        object.add("additionalProperties", reference());
-        var actions = new JsonArray();
         var payment = CampaignPaymentAction.schema();
         var properties = payment.getAsJsonObject("properties");
         properties.add("quest", CampaignFieldSchema.string("[a-z0-9_.-]+:[a-z0-9_./-]+", 256));
@@ -33,14 +29,10 @@ public final class CampaignTransactionSceneFields {
             var owner = new JsonObject(); var required = new JsonArray(); required.add(name); owner.add("required", required); owners.add(owner);
         }
         payment.add("anyOf", owners);
-        actions.add(typeRule("campaign_payment", payment));
-        actions.add(typeRule("campaign_transaction", CampaignTransactionPredicate.schema()));
-        object.add("allOf", actions);
-        rules.add(shapeRule("object", object));
-        var array = new JsonObject(); array.add("items", reference());
-        rules.add(shapeRule("array", array));
-        var result = new JsonObject(); result.add("allOf", rules);
-        return result;
+        var types = new java.util.LinkedHashMap<String, JsonObject>();
+        types.put("campaign_payment", payment);
+        types.put("campaign_transaction", CampaignTransactionPredicate.schema());
+        return CampaignFieldSchema.nestedDefinition(DEFINITION, types);
     }
 
     public static JsonObject schema() {
@@ -50,26 +42,6 @@ public final class CampaignTransactionSceneFields {
     }
 
     public static List<QuestJsonSchema.Issue> issues(JsonObject data) { return QuestJsonSchema.validate(data, schema()); }
-
-    private static JsonObject shapeRule(String type, JsonObject consequence) {
-        var condition = new JsonObject(); condition.addProperty("type", type);
-        var rule = new JsonObject(); rule.add("if", condition); rule.add("then", consequence);
-        return rule;
-    }
-
-    private static JsonObject typeRule(String type, JsonObject consequence) {
-        var condition = new JsonObject();
-        var pattern = new StringBuilder("^[\\x00-\\x20]*");
-        for (char letter : type.toCharArray()) pattern.append(Character.isLetter(letter)
-                ? "[" + letter + Character.toUpperCase(letter) + "]" : Character.toString(letter));
-        pattern.append("[\\x00-\\x20]*$");
-        var properties = new JsonObject(); var name = new JsonObject();
-        name.addProperty("type", "string"); name.addProperty("pattern", pattern.toString()); properties.add("type", name);
-        condition.add("properties", properties);
-        var required = new JsonArray(); required.add("type"); condition.add("required", required);
-        var rule = new JsonObject(); rule.add("if", condition); rule.add("then", consequence);
-        return rule;
-    }
 
     public static List<Reference> references(JsonObject data) {
         if (!issues(data).isEmpty()) return List.of();

@@ -1,0 +1,129 @@
+{
+  "schema": "villagerretaliation:conversation/v1",
+  "id": "campaign_fixture:ledger_challenge",
+  "revision": 1,
+  "campaign": "campaign_fixture:investigation",
+  "character": "mentor",
+  "title": {
+    "key": "#evidence.title"
+  },
+  "topics": [
+    {
+      "id": "shipment",
+      "label": {
+        "key": "#evidence.topic"
+      },
+      "start": "challenge"
+    },
+    {
+      "id": "discovery",
+      "label": {
+        "key": "#evidence.discovery"
+      },
+      "start": "proved",
+      "conditions": [
+        {
+          "type": "campaign_evidence",
+          "campaign": "campaign_fixture:investigation",
+          "evidence": "ledger"
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "challenge",
+      "exchanges": [
+        {
+          "id": "question",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#evidence.question"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "proof",
+          "label": {
+            "key": "#evidence.proof"
+          },
+          "conditions": [
+            {
+              "type": "campaign_evidence",
+              "campaign": "campaign_fixture:investigation",
+              "evidence": "ledger"
+            }
+          ],
+          "next": "proved"
+        },
+        {
+          "id": "uncertain",
+          "label": {
+            "key": "#evidence.uncertain"
+          },
+          "conditions": [
+            {
+              "type": "not",
+              "condition": {
+                "type": "campaign_evidence",
+                "campaign": "campaign_fixture:investigation",
+                "evidence": "ledger"
+              }
+            }
+          ],
+          "next": "unproved"
+        }
+      ]
+    },
+    {
+      "id": "proved",
+      "exchanges": [
+        {
+          "id": "admission",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#evidence.admission"
+          }
+        }
+      ],
+      "outcome": "proved"
+    },
+    {
+      "id": "unproved",
+      "exchanges": [
+        {
+          "id": "request",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#evidence.request"
+          }
+        }
+      ],
+      "outcome": "unproved"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "proved",
+      "label": {
+        "key": "#evidence.outcome.proved"
+      }
+    },
+    {
+      "id": "unproved",
+      "label": {
+        "key": "#evidence.outcome.unproved"
+      }
+    }
+  ]
+}
