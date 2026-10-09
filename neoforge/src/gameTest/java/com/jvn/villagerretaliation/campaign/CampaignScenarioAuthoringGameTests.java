@@ -103,7 +103,7 @@ public final class CampaignScenarioAuthoringGameTests {
         else target.getAsJsonObject().add(key, patch.get("value").deepCopy());
     }
 
-    private static Path projectFile(String name) throws IOException {
+    static Path projectFile(String name) throws IOException {
         var relative = Path.of(name);
         for (int depth = 0; depth <= 3; depth++) {
             if (Files.exists(relative)) return relative;

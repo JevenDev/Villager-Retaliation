@@ -1,0 +1,106 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:promises",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.promises.title",
+  "localization_prefix": "campaign_fixture.campaign.promises.",
+  "quest_bundles": [
+    "campaign_fixture:promises"
+  ],
+  "chapters": [
+    {
+      "id": "arrival",
+      "title_key": "campaign_fixture.campaign.promises.chapter",
+      "quests": [
+        "campaign_fixture:promises"
+      ]
+    }
+  ],
+  "milestones": [],
+  "facts": [
+    {
+      "id": "offered",
+      "scope": "player",
+      "kind": "tag"
+    },
+    {
+      "id": "pledged",
+      "scope": "player",
+      "kind": "tag"
+    },
+    {
+      "id": "kept",
+      "scope": "player",
+      "kind": "tag"
+    },
+    {
+      "id": "broken",
+      "scope": "player",
+      "kind": "tag"
+    }
+  ],
+  "locations": [
+    {
+      "id": "home",
+      "title_key": "campaign_fixture.campaign.promises.home",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    }
+  ],
+  "characters": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.promises.mentor",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "downed"
+    },
+    {
+      "id": "companion",
+      "title_key": "campaign_fixture.campaign.promises.companion",
+      "source": "existing_villager",
+      "location": "home",
+      "search_radius": 32,
+      "loss_policy": "downed"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ledger",
+      "title_key": "campaign_fixture.campaign.promises.ledger",
+      "text_key": "campaign_fixture.campaign.promises.ledger.text",
+      "source": "interaction",
+      "location": "home",
+      "entity_tag": "campaign_fixture:promise_ledger",
+      "search_radius": 8
+    }
+  ],
+  "relationships": [
+    {
+      "id": "mentor",
+      "title_key": "campaign_fixture.campaign.promises.relationship",
+      "minimum": -100,
+      "maximum": 100,
+      "initial": 0,
+      "reactions": [
+        {
+          "id": "distrustful",
+          "title_key": "campaign_fixture.campaign.promises.reaction.distrustful",
+          "minimum": -100
+        },
+        {
+          "id": "neutral",
+          "title_key": "campaign_fixture.campaign.promises.reaction.neutral",
+          "minimum": 0
+        },
+        {
+          "id": "trusted",
+          "title_key": "campaign_fixture.campaign.promises.reaction.trusted",
+          "minimum": 10
+        }
+      ]
+    }
+  ]
+}

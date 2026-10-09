@@ -1,0 +1,539 @@
+{
+  "schema": "villagerretaliation:conversation/v1",
+  "id": "campaign_fixture:promise_conversation",
+  "revision": 1,
+  "campaign": "campaign_fixture:promises",
+  "character": "mentor",
+  "title": {
+    "key": "#conversation.title"
+  },
+  "topics": [
+    {
+      "id": "promise",
+      "label": {
+        "key": "#promise.topic"
+      },
+      "start": "offer",
+      "conditions": [
+        {
+          "type": "not",
+          "condition": {
+            "type": "campaign_fact",
+            "campaign": "campaign_fixture:promises",
+            "fact": "offered",
+            "value": "true"
+          }
+        }
+      ]
+    },
+    {
+      "id": "resolve",
+      "label": {
+        "key": "#resolve.topic"
+      },
+      "start": "report",
+      "conditions": [
+        {
+          "type": "campaign_fact",
+          "campaign": "campaign_fixture:promises",
+          "fact": "pledged",
+          "value": "true"
+        },
+        {
+          "type": "not",
+          "condition": {
+            "type": "any",
+            "conditions": [
+              {
+                "type": "campaign_fact",
+                "campaign": "campaign_fixture:promises",
+                "fact": "kept",
+                "value": "true"
+              },
+              {
+                "type": "campaign_fact",
+                "campaign": "campaign_fixture:promises",
+                "fact": "broken",
+                "value": "true"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "label": {
+        "key": "#memory.topic"
+      },
+      "start": "memory",
+      "conditions": [
+        {
+          "type": "campaign_fact",
+          "campaign": "campaign_fixture:promises",
+          "fact": "offered",
+          "value": "true"
+        },
+        {
+          "type": "any",
+          "conditions": [
+            {
+              "type": "any",
+              "conditions": [
+                {
+                  "type": "campaign_fact",
+                  "campaign": "campaign_fixture:promises",
+                  "fact": "kept",
+                  "value": "true"
+                },
+                {
+                  "type": "campaign_fact",
+                  "campaign": "campaign_fixture:promises",
+                  "fact": "broken",
+                  "value": "true"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "condition": {
+                "type": "campaign_fact",
+                "campaign": "campaign_fixture:promises",
+                "fact": "pledged",
+                "value": "true"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trust",
+      "label": {
+        "key": "#trust.topic"
+      },
+      "start": "trusted",
+      "conditions": [
+        {
+          "type": "campaign_fact",
+          "campaign": "campaign_fixture:promises",
+          "fact": "kept",
+          "value": "true"
+        },
+        {
+          "type": "campaign_standing",
+          "campaign": "campaign_fixture:promises",
+          "scope": "character",
+          "subject": "mentor",
+          "reaction": "trusted"
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "offer",
+      "exchanges": [
+        {
+          "id": "request",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#promise.request"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "promise",
+          "label": {
+            "key": "#promise.accept"
+          },
+          "next": "accepted",
+          "effects": [
+            {
+              "id": "record_offered",
+              "action": {
+                "type": "campaign_fact",
+                "fact": "offered",
+                "value": "true",
+                "operation_id": "promise_offered",
+                "required": true
+              }
+            },
+            {
+              "id": "record_pledged",
+              "action": {
+                "type": "campaign_fact",
+                "fact": "pledged",
+                "value": "true",
+                "operation_id": "promise_pledged",
+                "required": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "label": {
+            "key": "#promise.decline"
+          },
+          "next": "declined",
+          "effects": [
+            {
+              "id": "record_offered",
+              "action": {
+                "type": "campaign_fact",
+                "fact": "offered",
+                "value": "true",
+                "operation_id": "promise_offered",
+                "required": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accepted",
+      "exchanges": [
+        {
+          "id": "accepted",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#promise.accepted"
+          }
+        },
+        {
+          "id": "support",
+          "speaker": {
+            "type": "role",
+            "role": "companion"
+          },
+          "text": {
+            "key": "#companion.accepted"
+          },
+          "conditions": [
+            {
+              "type": "campaign_companion",
+              "campaign": "campaign_fixture:promises",
+              "role": "companion"
+            }
+          ]
+        }
+      ],
+      "outcome": "promised"
+    },
+    {
+      "id": "declined",
+      "exchanges": [
+        {
+          "id": "declined",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#promise.declined"
+          }
+        }
+      ],
+      "outcome": "declined"
+    },
+    {
+      "id": "report",
+      "exchanges": [
+        {
+          "id": "question",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#resolve.question"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "keep",
+          "label": {
+            "key": "#resolve.keep"
+          },
+          "conditions": [
+            {
+              "type": "campaign_evidence",
+              "campaign": "campaign_fixture:promises",
+              "evidence": "ledger"
+            }
+          ],
+          "next": "kept",
+          "effects": [
+            {
+              "id": "record_kept",
+              "action": {
+                "type": "campaign_fact",
+                "fact": "kept",
+                "value": "true",
+                "operation_id": "promise_kept",
+                "required": true
+              }
+            },
+            {
+              "id": "mentor_trust",
+              "action": {
+                "type": "campaign_standing",
+                "scope": "character",
+                "subject": "mentor",
+                "amount": 10,
+                "operation_id": "promise_kept",
+                "required": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "break",
+          "label": {
+            "key": "#resolve.break"
+          },
+          "next": "broken",
+          "effects": [
+            {
+              "id": "record_broken",
+              "action": {
+                "type": "campaign_fact",
+                "fact": "broken",
+                "value": "true",
+                "operation_id": "promise_broken",
+                "required": true
+              }
+            },
+            {
+              "id": "mentor_trust",
+              "action": {
+                "type": "campaign_standing",
+                "scope": "character",
+                "subject": "mentor",
+                "amount": -15,
+                "operation_id": "promise_broken",
+                "required": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kept",
+      "exchanges": [
+        {
+          "id": "thanks",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#resolve.kept"
+          }
+        },
+        {
+          "id": "approval",
+          "speaker": {
+            "type": "role",
+            "role": "companion"
+          },
+          "text": {
+            "key": "#companion.kept"
+          },
+          "conditions": [
+            {
+              "type": "campaign_companion",
+              "campaign": "campaign_fixture:promises",
+              "role": "companion"
+            }
+          ]
+        }
+      ],
+      "outcome": "promise_kept"
+    },
+    {
+      "id": "broken",
+      "exchanges": [
+        {
+          "id": "disappointment",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#resolve.broken"
+          }
+        },
+        {
+          "id": "objection",
+          "speaker": {
+            "type": "role",
+            "role": "companion"
+          },
+          "text": {
+            "key": "#companion.broken"
+          },
+          "conditions": [
+            {
+              "type": "campaign_companion",
+              "campaign": "campaign_fixture:promises",
+              "role": "companion"
+            }
+          ]
+        }
+      ],
+      "outcome": "promise_broken"
+    },
+    {
+      "id": "memory",
+      "exchanges": [
+        {
+          "id": "kept_memory",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#memory.kept"
+          },
+          "conditions": [
+            {
+              "type": "campaign_fact",
+              "campaign": "campaign_fixture:promises",
+              "fact": "kept",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "id": "broken_memory",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#memory.broken"
+          },
+          "conditions": [
+            {
+              "type": "campaign_fact",
+              "campaign": "campaign_fixture:promises",
+              "fact": "broken",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "id": "declined_memory",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#memory.declined"
+          },
+          "conditions": [
+            {
+              "type": "not",
+              "condition": {
+                "type": "campaign_fact",
+                "campaign": "campaign_fixture:promises",
+                "fact": "pledged",
+                "value": "true"
+              }
+            }
+          ]
+        },
+        {
+          "id": "companion_memory",
+          "speaker": {
+            "type": "role",
+            "role": "companion"
+          },
+          "text": {
+            "key": "#companion.memory"
+          },
+          "conditions": [
+            {
+              "type": "campaign_companion",
+              "campaign": "campaign_fixture:promises",
+              "role": "companion"
+            },
+            {
+              "type": "campaign_fact",
+              "campaign": "campaign_fixture:promises",
+              "fact": "kept",
+              "value": "true"
+            }
+          ]
+        }
+      ],
+      "outcome": "remembered"
+    },
+    {
+      "id": "trusted",
+      "exchanges": [
+        {
+          "id": "trust",
+          "speaker": {
+            "type": "role",
+            "role": "mentor"
+          },
+          "text": {
+            "key": "#trust.line"
+          }
+        }
+      ],
+      "outcome": "trusted"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "promised",
+      "label": {
+        "key": "#outcome.promised"
+      }
+    },
+    {
+      "id": "declined",
+      "label": {
+        "key": "#outcome.declined"
+      }
+    },
+    {
+      "id": "promise_kept",
+      "label": {
+        "key": "#outcome.promise_kept"
+      }
+    },
+    {
+      "id": "promise_broken",
+      "label": {
+        "key": "#outcome.promise_broken"
+      }
+    },
+    {
+      "id": "remembered",
+      "label": {
+        "key": "#outcome.remembered"
+      }
+    },
+    {
+      "id": "trusted",
+      "label": {
+        "key": "#outcome.trusted"
+      }
+    }
+  ]
+}

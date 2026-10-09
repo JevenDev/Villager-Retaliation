@@ -1,0 +1,51 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.promises.title": "Campaign fixture: promises",
+    "campaign_fixture.quest.promises.description": "Choose whether to promise a report, inspect the ledger, and return to the mentor.",
+    "campaign_fixture.quest.promises.investigate": "Inspect the damaged ledger near the mentor.",
+    "campaign_fixture.quest.promises.offer.label": "Look into the missing shipment",
+    "campaign_fixture.quest.promises.offer.lines": [
+      "The shipment never reached us. See what the damaged ledger can tell you."
+    ],
+    "campaign_fixture.quest.promises.accept": "I'll take a look.",
+    "campaign_fixture.quest.promises.reminder.label": "Where should I look?",
+    "campaign_fixture.quest.promises.reminder.lines": [
+      "The damaged ledger is still near our village."
+    ],
+    "campaign_fixture.quest.promises.report.label": "Finish the investigation",
+    "campaign_fixture.quest.promises.report.lines": [
+      "Your discovery is recorded. We can follow the trail from here."
+    ],
+    "campaign_fixture.quest.promises.finish": "Finish the investigation.",
+    "campaign_fixture.quest.promises.conversation.title": "A promise and its consequences",
+    "campaign_fixture.quest.promises.promise.topic": "You wanted a report?",
+    "campaign_fixture.quest.promises.promise.request": "If you inspect the ledger, will you promise to tell me what you find?",
+    "campaign_fixture.quest.promises.promise.accept": "I promise to report what I learn.",
+    "campaign_fixture.quest.promises.promise.decline": "I'll look, but I won't make a promise.",
+    "campaign_fixture.quest.promises.promise.accepted": "Then I'll wait for your report.",
+    "campaign_fixture.quest.promises.promise.declined": "Fair enough. I would rather hear that now.",
+    "campaign_fixture.quest.promises.resolve.topic": "About the promise I made...",
+    "campaign_fixture.quest.promises.resolve.question": "Will you keep your word?",
+    "campaign_fixture.quest.promises.resolve.keep": "I read the ledger. The shipment reached the old watchtower.",
+    "campaign_fixture.quest.promises.resolve.break": "I'm breaking my promise. I won't give you a report.",
+    "campaign_fixture.quest.promises.resolve.kept": "You followed through. I'll remember that.",
+    "campaign_fixture.quest.promises.resolve.broken": "You gave me your word. I won't rely on it next time.",
+    "campaign_fixture.quest.promises.memory.topic": "Do you remember our agreement?",
+    "campaign_fixture.quest.promises.memory.kept": "You promised a report, and you brought one. That still matters to me.",
+    "campaign_fixture.quest.promises.memory.broken": "I remember the promise you broke.",
+    "campaign_fixture.quest.promises.memory.declined": "You never promised me a report. I haven't forgotten your honesty.",
+    "campaign_fixture.quest.promises.trust.topic": "Could you trust me with another lead?",
+    "campaign_fixture.quest.promises.trust.line": "Yes. You kept your word when I needed it. I'll bring the next lead to you.",
+    "campaign_fixture.quest.promises.companion.accepted": "Then let's find the ledger together.",
+    "campaign_fixture.quest.promises.companion.kept": "We did what we said we would.",
+    "campaign_fixture.quest.promises.companion.broken": "You gave your word.",
+    "campaign_fixture.quest.promises.companion.memory": "Keeping a promise counts for something.",
+    "campaign_fixture.quest.promises.outcome.promised": "A personal promise was made.",
+    "campaign_fixture.quest.promises.outcome.declined": "The promise was declined.",
+    "campaign_fixture.quest.promises.outcome.promise_kept": "The promise was kept.",
+    "campaign_fixture.quest.promises.outcome.promise_broken": "The promise was broken.",
+    "campaign_fixture.quest.promises.outcome.remembered": "The past choice was remembered.",
+    "campaign_fixture.quest.promises.outcome.trusted": "A later conversation opened through trust."
+  }
+}

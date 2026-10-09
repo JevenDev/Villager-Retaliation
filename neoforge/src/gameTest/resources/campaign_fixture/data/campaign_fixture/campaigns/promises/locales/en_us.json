@@ -1,0 +1,16 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.promises.title": "Campaign fixture: promises",
+    "campaign_fixture.campaign.promises.chapter": "A promise made",
+    "campaign_fixture.campaign.promises.home": "The mentor's village",
+    "campaign_fixture.campaign.promises.mentor": "The mentor",
+    "campaign_fixture.campaign.promises.companion": "A travelling companion",
+    "campaign_fixture.campaign.promises.ledger": "The damaged ledger",
+    "campaign_fixture.campaign.promises.ledger.text": "The final entry records the shipment arriving at the old watchtower.",
+    "campaign_fixture.campaign.promises.relationship": "The mentor's trust",
+    "campaign_fixture.campaign.promises.reaction.distrustful": "Distrustful",
+    "campaign_fixture.campaign.promises.reaction.neutral": "Neutral",
+    "campaign_fixture.campaign.promises.reaction.trusted": "Trusted"
+  }
+}

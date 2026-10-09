@@ -1,0 +1,316 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "campaign": "campaign_fixture:promises",
+  "players": [
+    "first"
+  ],
+  "actors": [
+    {
+      "id": "guide",
+      "role": "mentor",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    },
+    {
+      "id": "traveller",
+      "role": "companion",
+      "position": {
+        "x": 2,
+        "y": 1,
+        "z": 2
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "home",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "id": "campaign_fixture:promise_kept",
+  "steps": [
+    {
+      "id": "ledger",
+      "type": "spawn_evidence",
+      "evidence": "ledger",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 2
+      }
+    },
+    {
+      "id": "connect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "accept",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:promises",
+      "stage": "inspect",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "leave_offer",
+      "type": "interrupt",
+      "player": "first",
+      "actor": "guide",
+      "active": false
+    },
+    {
+      "id": "promise",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "pledge",
+      "conversation": "campaign_fixture:promise_conversation",
+      "topic": "promise"
+    },
+    {
+      "id": "hear_request",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "pledge",
+      "intent": "advance"
+    },
+    {
+      "id": "choose_promise",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "pledge",
+      "intent": "choose",
+      "argument": "promise"
+    },
+    {
+      "id": "finish_pledge",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "pledge",
+      "intent": "advance"
+    },
+    {
+      "id": "saved_pledge",
+      "type": "assert_conversation",
+      "session": "pledge",
+      "node": "accepted",
+      "phase": "complete",
+      "outcome": "promised",
+      "choices": 1,
+      "receipts": 2
+    },
+    {
+      "id": "save_pledge",
+      "type": "reload"
+    },
+    {
+      "id": "cannot_repeat_promise",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "repeat_pledge",
+      "conversation": "campaign_fixture:promise_conversation",
+      "topic": "promise",
+      "accepted": false
+    },
+    {
+      "id": "investigate",
+      "type": "investigate",
+      "player": "first",
+      "source": "ledger",
+      "applied": true
+    },
+    {
+      "id": "personal_discovery",
+      "type": "assert_evidence",
+      "player": "first",
+      "evidence": "ledger",
+      "discovered": true,
+      "receipts": 1
+    },
+    {
+      "id": "quest_progress",
+      "type": "wait",
+      "ticks": 40
+    },
+    {
+      "id": "report_ready",
+      "type": "assert_quest",
+      "player": "first",
+      "quest": "campaign_fixture:promises",
+      "stage": "report"
+    },
+    {
+      "id": "resolve",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "resolution",
+      "conversation": "campaign_fixture:promise_conversation",
+      "topic": "resolve"
+    },
+    {
+      "id": "hear_question",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "resolution",
+      "intent": "advance"
+    },
+    {
+      "id": "choose_resolution",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "resolution",
+      "intent": "choose",
+      "argument": "keep"
+    },
+    {
+      "id": "finish_resolution",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "resolution",
+      "intent": "advance"
+    },
+    {
+      "id": "resolution_saved",
+      "type": "assert_conversation",
+      "session": "resolution",
+      "node": "kept",
+      "phase": "complete",
+      "outcome": "promise_kept",
+      "choices": 1,
+      "receipts": 2
+    },
+    {
+      "id": "before_replay",
+      "type": "checkpoint",
+      "scope": "campaign"
+    },
+    {
+      "id": "replay_resolution",
+      "type": "replay",
+      "request": "choose_resolution",
+      "accepted": true
+    },
+    {
+      "id": "no_duplicate_effects",
+      "type": "assert_same",
+      "checkpoint": "before_replay"
+    },
+    {
+      "id": "personal_trust",
+      "type": "assert_standing",
+      "player": "first",
+      "scope": "character",
+      "subject": "mentor",
+      "value": 10,
+      "reaction": "trusted"
+    },
+    {
+      "id": "disconnect",
+      "type": "player",
+      "player": "first",
+      "action": "disconnect"
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "reconnect",
+      "type": "player",
+      "player": "first",
+      "action": "connect"
+    },
+    {
+      "id": "past_choice",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "memory",
+      "conversation": "campaign_fixture:promise_conversation",
+      "topic": "memory"
+    },
+    {
+      "id": "finish_memory",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "memory",
+      "intent": "advance"
+    },
+    {
+      "id": "remembered",
+      "type": "assert_conversation",
+      "session": "memory",
+      "node": "memory",
+      "phase": "complete",
+      "outcome": "remembered",
+      "choices": 0,
+      "receipts": 0
+    },
+    {
+      "id": "settled_promise",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "settled",
+      "conversation": "campaign_fixture:promise_conversation",
+      "topic": "resolve",
+      "accepted": false
+    },
+    {
+      "id": "trust",
+      "type": "conversation_start",
+      "player": "first",
+      "session": "trust",
+      "conversation": "campaign_fixture:promise_conversation",
+      "topic": "trust"
+    },
+    {
+      "id": "finish_trust",
+      "type": "conversation_intent",
+      "player": "first",
+      "session": "trust",
+      "intent": "advance"
+    },
+    {
+      "id": "trusted",
+      "type": "assert_conversation",
+      "session": "trust",
+      "node": "trusted",
+      "phase": "complete",
+      "outcome": "trusted"
+    },
+    {
+      "id": "finish_quest",
+      "type": "quest_response",
+      "player": "first",
+      "actor": "guide",
+      "quest": "campaign_fixture:promises",
+      "stage": "report",
+      "slot": "turn_in",
+      "response": "finish"
+    },
+    {
+      "id": "completed",
+      "type": "assert_quest",
+      "player": "first",
+      "quest": "campaign_fixture:promises",
+      "completions": 1
+    },
+    {
+      "id": "trust_unchanged",
+      "type": "assert_standing",
+      "player": "first",
+      "scope": "character",
+      "subject": "mentor",
+      "value": 10
+    }
+  ]
+}
