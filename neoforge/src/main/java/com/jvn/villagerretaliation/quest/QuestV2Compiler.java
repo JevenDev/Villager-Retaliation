@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.quest;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
@@ -32,6 +31,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceLocation;
 
 public final class QuestV2Compiler {
+    private static final Set<String> AVAILABILITY_BRANCH_FIELDS = Set.of(
+            "exclusive_group", "exclusive_on", "blocks_on_start", "blocks_on_completion");
+
     private QuestV2Compiler() {
     }
 
@@ -43,12 +45,6 @@ public final class QuestV2Compiler {
             QuestV2Resource resource, QuestResourceEnvelope envelope, HolderLookup.Provider registries) {
         if (resource == null || envelope == null) return Optional.empty();
         QuestSourcePointer source = QuestSourcePointer.from(envelope);
-        JsonObject payloads = new JsonObject();
-        addOffer(payloads, resource);
-        addTarget(payloads, resource);
-        addRules(payloads, resource);
-        JsonObject metadata = new JsonObject();
-        resource.metadata().forEach((key, value) -> metadata.add(key, value.deepCopy()));
         String parentId = firstNonBlank(metadataString(resource, "parent"), resource.availability().prerequisites().isEmpty()
                 ? "" : resource.availability().prerequisites().getFirst().toString());
         ResourceLocation parent = DatapackJsonReader.parseResourceLocation(parentId).orElse(null);
@@ -63,15 +59,15 @@ public final class QuestV2Compiler {
         List<VillagerActionDefinition> globalExit = lifecycleActions(resource, source, "on_stage_exit");
         QuestDefinition.Target target;
         try {
-            target = VillagerQuestResources.readTarget(payloads, registries);
+            target = VillagerQuestResources.readTargetFields(resource.target(), registries);
             for (QuestV2Resource.Stage stage : orderedStages(resource)) {
                 QuestSourcePointer stageSource = source.child("stages", Integer.toString(stageIndexes.get(stage.id())));
                 for (int index = 0; index < stage.objectives().size(); index++) {
                     QuestV2Resource.Objective objective = stage.objectives().get(index);
                     String id = canonicalObjectiveId(stage, objective);
                     if (!objectiveIds.add(id)) throw new IllegalArgumentException("duplicate compiled objective id " + id);
-                    var definition = VillagerQuestResources.readObjective(source.resource(),
-                            objectivePayload(resource, objective, id), objectives.size(), resource.id(), registries);
+                    var definition = VillagerQuestResources.readObjectiveFields(source.resource(),
+                            QuestObjectiveFields.v2(objective, id, objectives.size()), resource.id(), registries);
                     if (definition.isPresent()) objectives.add(new CompiledQuestObjective(id, objectives.size(),
                             definition.get(), stageSource.child("objectives", Integer.toString(index))));
                 }
@@ -102,15 +98,16 @@ public final class QuestV2Compiler {
                         firstNonBlank(metadataString(resource, "title_key"), uiString(resource.ui(), "title_key")),
                         firstNonBlank(metadataString(resource, "description_key"), uiString(resource.ui(), "description_key")),
                         firstNonBlank(metadataString(resource, "questline"), VillagerQuestResources.inferQuestline(source.resource())),
-                        ContentTags.normalizeAll(new LinkedHashSet<>(DatapackJsonReader.readStringList(metadata, "tags"))), parent, DialogueEntryMetadata.EMPTY,
+                        ContentTags.normalizeAll(new LinkedHashSet<>(DatapackJsonReader.readStringValues(resource.metadata().get("tags")))), parent, DialogueEntryMetadata.EMPTY,
                         com.jvn.villagerretaliation.campaign.content.CampaignQuestReference.read(resource.metadata().get("campaign"))),
-                new CompiledQuestProvider(resource.provider().type(), VillagerQuestResources.readOffer(source.resource(), payloads, resource.id()),
+                new CompiledQuestProvider(resource.provider().type(), compileOffer(resource, source),
                         resource.provider().deathProtection(), resource.provider().blocksHiring(), resource.provider().campaignRole()),
-                target, resource.entryStage(), prerequisites, VillagerQuestResources.readRules(source.resource(), payloads, resource.id()),
+                target, resource.entryStage(), prerequisites, compileRules(resource, source),
                 new CompiledQuestUi(compileTracker(resource), QuestDefinition.Dialogue.EMPTY, QuestDefinition.Links.EMPTY),
                 objectives, Map.of(), stages, Map.of(), triggers, Map.of(), QuestTriggerIndex.EMPTY,
                 new CompiledQuestRewards(compileRewards(resource.id(), source, resource.rewards())),
-                DatapackJsonReader.readBoolean(metadata, "show_locked_adventure_hint", true), VillagerQuestResources.readRevision(metadata)));
+                DatapackJsonReader.readBoolean(resource.metadata().get("show_locked_adventure_hint"), true),
+                VillagerQuestResources.readRevision(resource.metadata().get("revision"), optionalObject(resource.metadata().get("migration")))));
     }
 
     private static QuestDefinition.Stage compileStage(QuestV2Resource resource, QuestV2Resource.Stage stage,
@@ -201,11 +198,9 @@ public final class QuestV2Compiler {
             return;
         }
         JsonObject data = event.data();
-        JsonObject conditions = new JsonObject();
-        conditions.add("conditions", jsonObjectArray(event.conditions()));
         Set<String> stages = event.stages().isEmpty() && !ownerStage.isBlank() ? Set.of(ownerStage) : event.stages();
         addTrigger(new QuestDefinition.Trigger(id, type,
-                DialogueCondition.readList(source.resource(), source.jsonPointer(), conditions, questId), actions, stages,
+                DialogueCondition.readObjects(source.resource(), source.jsonPointer(), event.conditions(), questId), actions, stages,
                 DatapackJsonReader.readDurationTicks(data, "cooldown", QuestTriggerRegistry.defaultCooldownTicks(type)),
                 DatapackJsonReader.readDouble(data, "radius", 10.0D), DatapackJsonReader.readBoolean(data, "repeatable", repeatable(actions)),
                 DatapackJsonReader.readInt(data, "priority", 0), DatapackJsonReader.readDouble(data, "chance", 1.0D),
@@ -296,145 +291,70 @@ public final class QuestV2Compiler {
                 null, "", "", Map.of(), Map.of(), null, null, "", false, false));
     }
 
-    private static void addOffer(JsonObject root, QuestV2Resource resource) {
-        JsonObject offer = new JsonObject();
-        JsonObject filters = DatapackJsonReader.readObject(resource.provider().data(), "filters");
-        if (filters != null) {
-            copyIfPresent(filters, offer, "professions");
-            copyIfPresent(filters, offer, "min_villager_level");
-            copyIfPresent(filters, offer, "skills");
-        }
-        copyIfPresent(resource.availability().data(), offer, "weight");
-        copyIfPresent(resource.availability().data(), offer, "selection_weight");
-        JsonArray conditions = jsonObjectArray(resource.availability().conditions());
-        if (conditions.size() > 0) {
-            offer.add("conditions", conditions);
-        }
-        if (offer.size() > 0) {
-            root.add("offer", offer);
-        }
-    }
-
-    private static void addTarget(JsonObject root, QuestV2Resource resource) {
-        if (resource.target().size() > 0) {
-            root.add("target", resource.target().deepCopy());
-        }
-    }
-
-    private static void addRules(JsonObject root, QuestV2Resource resource) {
-        JsonObject rules = new JsonObject();
+    private static QuestDefinition.Offer compileOffer(QuestV2Resource resource, QuestSourcePointer source) {
         JsonObject availability = resource.availability().data();
-        if (availability.has("repeatable")) {
-            copyIfPresent(availability, rules, "repeatable");
-        }
-        copyIfPresent(availability, rules, "cooldown_ticks", "completion_cooldown_ticks");
-        copyIfPresent(availability, rules, "cooldown_days", "completion_cooldown_days");
-        copyIfPresent(availability, rules, "cooldown_seconds", "completion_cooldown_seconds");
-        copyIfPresent(availability, rules, "completion_cooldown");
-        copyIfPresent(availability, rules, "completion_cooldown_ticks");
-        copyIfPresent(availability, rules, "completion_cooldown_days");
-        copyIfPresent(availability, rules, "completion_cooldown_seconds");
-        copyIfPresent(availability, rules, "prerequisite_cooldown");
-        copyIfPresent(availability, rules, "prerequisite_cooldown_ticks");
-        copyIfPresent(availability, rules, "prerequisite_cooldown_days");
-        copyIfPresent(availability, rules, "prerequisite_cooldown_seconds");
-        copyIfPresent(availability, rules, "max_starts");
-        copyIfPresent(availability, rules, "max_completions");
-        copyIfPresent(availability, rules, "max_active_quests");
-        copyIfPresent(availability, rules, "max_active_by_tag");
-        copyIfPresent(availability, rules, "completion_scope");
-        copyIfPresent(availability, rules, "scope");
-        copyIfPresent(availability, rules, "abandonment");
-        copyIfPresent(availability, rules, "abandonment_cooldown");
-        copyIfPresent(availability, rules, "abandonment_cooldown_ticks");
-        copyIfPresent(availability, rules, "abandonment_cooldown_days");
-        copyIfPresent(availability, rules, "abandonment_cooldown_seconds");
-        copyIfPresent(availability, rules, "consume_on_completion");
-        copyIfPresent(availability, rules, "consume_on_abandonment");
-        copyIfPresent(availability, rules, "locked_to_villager");
-        copyIfPresent(availability, rules, "cross_villager_compatible");
-        copyIfPresent(availability, rules, "active");
-        copyIfPresent(availability, rules, "expiration");
-        JsonObject branch = optionalObject(availability.get("branch"));
-        branch = branch == null ? new JsonObject() : branch.deepCopy();
-        copyIfPresent(availability, branch, "exclusive_group");
-        copyIfPresent(availability, branch, "exclusive_on");
-        copyIfPresent(availability, branch, "blocks_on_start");
-        copyIfPresent(availability, branch, "blocks_on_completion");
-        if (branch.size() > 0) {
-            rules.add("branch", branch);
-        }
-        if (rules.size() > 0) {
-            root.add("rules", rules);
-        }
+        return VillagerQuestResources.readOfferFields(source.resource(),
+                DatapackJsonReader.readObject(resource.provider().data(), "filters"),
+                DialogueCondition.readObjects(source.resource(), "quest offer", resource.availability().conditions(), resource.id()),
+                DatapackJsonReader.readInt(availability, "weight", DatapackJsonReader.readInt(availability, "selection_weight", 1)));
     }
 
-    private static JsonObject objectivePayload(
-            QuestV2Resource resource,
-            QuestV2Resource.Objective objective,
-            String canonicalId) {
-        JsonObject canonical = objective.data().deepCopy();
-        canonical.addProperty("id", canonicalId);
-        canonical.addProperty("type", objective.type());
-        if (objective.optional()) {
-            canonical.addProperty("optional", true);
+    private static QuestDefinition.Rules compileRules(QuestV2Resource resource, QuestSourcePointer source) {
+        JsonObject availability = resource.availability().data();
+        JsonObject branch = DatapackJsonReader.readObject(availability, "branch");
+        ResourceLocation group = null;
+        for (String key : List.of("exclusive_group", "group")) {
+            JsonElement value = branchValue(availability, branch, key);
+            if (value != null && value.isJsonPrimitive()) {
+                group = DatapackJsonReader.parseResourceLocation(value.getAsString()).orElse(null);
+                if (group != null) break;
+            }
         }
-        flattenNestedObject(canonical, "target");
-        flattenNestedObject(canonical, "location");
-        addChoiceRuntimeDefault(canonical, objective);
-        addObjectiveTracker(canonical);
-        if ((objective.type().equals("fact") || objective.type().equals("choice")) && !canonical.has("quest")) {
-            canonical.addProperty("quest", resource.id().toString());
-        }
-        return canonical;
+        var branching = new QuestDefinition.Branching(group,
+                QuestDefinition.BranchLockEvent.bySerializedName(branchString(availability, branch, "exclusive_on", "lock_on")),
+                branchResources(availability, branch, "blocks_on_start", "lock_on_start"),
+                branchResources(availability, branch, "blocks", "blocks_on_completion", "blocks_on_complete", "lock_on_completion", "lock_on_complete"));
+        return VillagerQuestResources.readRuleFields(source.resource(), availability, resource.id(),
+                completionCooldown(availability), branching);
     }
 
-    private static void addChoiceRuntimeDefault(JsonObject canonical, QuestV2Resource.Objective objective) {
-        if (!"choice".equals(objective.type()) || hasFactDefinition(canonical)) {
-            return;
+    private static long completionCooldown(JsonObject availability) {
+        for (String unit : List.of("ticks", "days", "seconds")) {
+            String canonical = "completion_cooldown_" + unit;
+            Long value = DatapackJsonReader.readNullableLong(availability,
+                    availability.has(canonical) ? canonical : "cooldown_" + unit);
+            if (value != null) return Math.max(0L, value * switch (unit) {
+                case "days" -> 24000L;
+                case "seconds" -> 20L;
+                default -> 1L;
+            });
         }
-        canonical.addProperty("choice", objective.id());
+        return 0L;
     }
 
-    private static boolean hasFactDefinition(JsonObject object) {
-        return hasAny(
-                object,
-                "tag",
-                "tags",
-                "fact_tag",
-                "quest_tag",
-                "key",
-                "variable",
-                "counter",
-                "fact",
-                "stage",
-                "stages",
-                "value",
-                "values",
-                "choice",
-                "choices",
-                "min",
-                "max");
+    private static JsonElement branchValue(JsonObject availability, JsonObject branch, String key) {
+        JsonObject owner = AVAILABILITY_BRANCH_FIELDS.contains(key) && availability.has(key) ? availability : branch;
+        return owner == null ? null : owner.get(key);
     }
 
-    private static void addObjectiveTracker(JsonObject canonical) {
-        JsonObject tracker = optionalObject(canonical.get("tracker"));
-        if (tracker == null) {
-            tracker = new JsonObject();
-        } else {
-            tracker = tracker.deepCopy();
+    private static String branchString(JsonObject availability, JsonObject branch, String... keys) {
+        for (String key : keys) {
+            JsonElement value = branchValue(availability, branch, key);
+            if (value != null && value.isJsonPrimitive()) {
+                String text = value.getAsString().trim();
+                if (!text.isBlank()) return text;
+            }
         }
-        JsonObject objectiveUi = optionalObject(canonical.get("ui"));
-        putStringIfBlank(tracker, "text", uiString(objectiveUi, "tracker_text"));
-        putStringIfBlank(tracker, "text_key", uiString(objectiveUi, "tracker_text_key"));
-        putStringIfBlank(tracker, "complete_text", uiString(objectiveUi, "tracker_complete_text"));
-        putStringIfBlank(tracker, "complete_text_key", uiString(objectiveUi, "tracker_complete_text_key"));
-        copyIfMissing(objectiveUi, tracker, "show_progress");
-        copyIfMissing(objectiveUi, tracker, "progress");
-        copyIfMissing(objectiveUi, tracker, "metadata");
-        if (tracker.size() > 0) {
-            canonical.add("tracker", tracker);
+        return "";
+    }
+
+    private static Set<ResourceLocation> branchResources(JsonObject availability, JsonObject branch, String... keys) {
+        Set<ResourceLocation> result = new LinkedHashSet<>();
+        for (String key : keys) {
+            for (String value : DatapackJsonReader.readStringValues(branchValue(availability, branch, key)))
+                DatapackJsonReader.parseResourceLocation(value).ifPresent(result::add);
         }
+        return Set.copyOf(result);
     }
 
     private static List<QuestV2Resource.Stage> orderedStages(QuestV2Resource resource) {
@@ -466,59 +386,8 @@ public final class QuestV2Compiler {
         return stage.id() + "." + objective.id();
     }
 
-    private static void addActionObjects(JsonArray target, List<JsonObject> actions) {
-        if (actions == null) {
-            return;
-        }
-        for (JsonObject action : actions) {
-            target.add(action.deepCopy());
-        }
-    }
-
-    private static JsonArray jsonObjectArray(List<JsonObject> objects) {
-        JsonArray array = new JsonArray();
-        addActionObjects(array, objects);
-        return array;
-    }
-
-    private static void flattenNestedObject(JsonObject object, String key) {
-        JsonObject nested = optionalObject(object.get(key));
-        if (nested == null) {
-            return;
-        }
-        for (Map.Entry<String, JsonElement> entry : nested.entrySet()) {
-            object.add(entry.getKey(), entry.getValue().deepCopy());
-        }
-    }
-
     private static JsonObject optionalObject(JsonElement element) {
         return element == null || !element.isJsonObject() ? null : element.getAsJsonObject();
-    }
-
-    private static void copyIfPresent(JsonObject source, JsonObject target, String key) {
-        copyIfPresent(source, target, key, key);
-    }
-
-    private static void copyIfPresent(JsonObject source, JsonObject target, String sourceKey, String targetKey) {
-        if (source != null && source.has(sourceKey)) {
-            target.add(targetKey, source.get(sourceKey).deepCopy());
-        }
-    }
-
-    private static void copyIfMissing(JsonObject source, JsonObject target, String key) {
-        if (source != null && source.has(key) && !target.has(key)) {
-            target.add(key, source.get(key).deepCopy());
-        }
-    }
-
-    private static void putStringIfBlank(JsonObject object, String key, String value) {
-        if (value == null || value.isBlank()) {
-            return;
-        }
-        String existing = DatapackJsonReader.readString(object, key);
-        if (existing.isBlank()) {
-            object.addProperty(key, value);
-        }
     }
 
     private static String metadataString(QuestV2Resource resource, String key) {

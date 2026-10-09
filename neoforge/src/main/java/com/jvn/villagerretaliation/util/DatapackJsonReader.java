@@ -32,31 +32,22 @@ public final class DatapackJsonReader {
 
     public static List<String> readStringList(JsonObject entry, String... keys) {
         List<String> values = new ArrayList<>();
-        for (String key : keys) {
-            JsonElement element = entry.get(key);
-            if (element == null || element.isJsonNull()) {
-                continue;
-            }
-            if (element.isJsonPrimitive()) {
-                String value = element.getAsString().trim();
-                if (!value.isBlank()) {
-                    values.add(value);
-                }
-                continue;
-            }
-            if (!element.isJsonArray()) {
-                continue;
-            }
+        for (String key : keys) values.addAll(readStringValues(entry.get(key)));
+        return List.copyOf(values);
+    }
 
-            for (JsonElement child : element.getAsJsonArray()) {
-                if (!child.isJsonPrimitive()) {
-                    continue;
-                }
-                String value = child.getAsString().trim();
-                if (!value.isBlank()) {
-                    values.add(value);
-                }
-            }
+    public static List<String> readStringValues(JsonElement element) {
+        if (element == null || element.isJsonNull()) return List.of();
+        if (element.isJsonPrimitive()) {
+            String value = element.getAsString().trim();
+            return value.isBlank() ? List.of() : List.of(value);
+        }
+        if (!element.isJsonArray()) return List.of();
+        List<String> values = new ArrayList<>();
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (!child.isJsonPrimitive()) continue;
+            String value = child.getAsString().trim();
+            if (!value.isBlank()) values.add(value);
         }
         return List.copyOf(values);
     }
@@ -91,7 +82,10 @@ public final class DatapackJsonReader {
     }
 
     public static Integer readNullableInt(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
+        return readNullableInt(entry.get(key));
+    }
+
+    public static Integer readNullableInt(JsonElement element) {
         if (element == null || !element.isJsonPrimitive()) {
             return null;
         }

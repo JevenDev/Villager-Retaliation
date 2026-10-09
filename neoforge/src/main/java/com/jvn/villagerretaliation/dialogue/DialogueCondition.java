@@ -120,46 +120,42 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             String context,
             JsonObject entry,
             ResourceLocation defaultQuestId) {
-        List<DialogueCondition> conditions = new ArrayList<>();
-        conditions.addAll(readConditionArray(location, context, entry, "conditions", defaultQuestId));
+        return readFields(location, context, key -> entry == null ? null : entry.get(key), defaultQuestId);
+    }
 
-        JsonObject availability = entry == null ? null : readObject(entry, "availability");
-        if (availability != null) {
-            conditions.addAll(readConditionArray(location, context + " availability", availability, "conditions", defaultQuestId));
+    static List<DialogueCondition> readFields(ResourceLocation location, String context,
+            java.util.function.Function<String, JsonElement> fields, ResourceLocation defaultQuestId) {
+        List<DialogueCondition> conditions = new ArrayList<>();
+        conditions.addAll(readConditionArray(location, context, fields.apply("conditions"), defaultQuestId));
+        JsonElement availability = fields.apply("availability");
+        if (availability != null && availability.isJsonObject()) {
+            conditions.addAll(readConditionArray(location, context + " availability",
+                    availability.getAsJsonObject().get("conditions"), defaultQuestId));
         }
-        JsonObject availableWhen = entry == null ? null : readObject(entry, "available_when");
+        JsonElement availableWhen = fields.apply("available_when");
         if (availableWhen != null) {
-            conditions.addAll(readConditionArray(location, context + " available_when", availableWhen, "conditions", defaultQuestId));
-        } else if (entry != null && entry.has("available_when")) {
-            conditions.addAll(readConditionArray(location, context + " available_when", entry, "available_when", defaultQuestId));
+            conditions.addAll(readConditionArray(location, context + " available_when",
+                    availableWhen.isJsonObject() ? availableWhen.getAsJsonObject().get("conditions") : availableWhen, defaultQuestId));
         }
         return List.copyOf(conditions);
     }
 
-    private static List<DialogueCondition> readConditionArray(
-            ResourceLocation location,
-            String context,
-            JsonObject entry,
-            String key,
-            ResourceLocation defaultQuestId) {
-        if (entry == null) {
-            return List.of();
-        }
-        JsonElement element = entry.get("conditions");
-        if (!"conditions".equals(key)) {
-            element = entry.get(key);
-        }
-        if (element == null || element.isJsonNull()) {
-            return List.of();
-        }
+    private static List<DialogueCondition> readConditionArray(ResourceLocation location, String context,
+            JsonElement element, ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) return List.of();
         if (!element.isJsonArray()) {
             warnInvalid(location, context, "conditions must be an array of condition objects.");
             return List.of(new Invalid("conditions must be an array"));
         }
+        return readObjects(location, context, element.getAsJsonArray(), defaultQuestId);
+    }
 
+    static List<DialogueCondition> readObjects(ResourceLocation location, String context,
+            Iterable<? extends JsonElement> authored, ResourceLocation defaultQuestId) {
+        if (authored == null) return List.of();
         List<DialogueCondition> conditions = new ArrayList<>();
         int index = 0;
-        for (JsonElement child : element.getAsJsonArray()) {
+        for (JsonElement child : authored) {
             read(location, context + " conditions[" + index + "]", child, defaultQuestId).ifPresent(conditions::add);
             index++;
         }

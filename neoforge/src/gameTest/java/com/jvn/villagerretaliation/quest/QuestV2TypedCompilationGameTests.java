@@ -109,6 +109,147 @@ public final class QuestV2TypedCompilationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_typed_quest")
+    public static void availabilityKeepsBranchOverridesAndLifecycleRules(GameTestHelper helper) {
+        var root = fixture();
+        root.add("availability", json("""
+                {"repeatable":true,"locked_to_villager":false,"cross_villager_compatible":true,
+                 "max_starts":5,"max_completions":3,"completion_scope":"world",
+                 "cooldown_ticks":7,"completion_cooldown_days":2,"prerequisite_cooldown_seconds":3,
+                 "abandonment":"cooldown","abandonment_cooldown_seconds":4,
+                 "consume_on_completion":true,"consume_on_abandonment":true,
+                 "max_active_quests":2,"max_active_by_tag":{"story":1},
+                 "active":{"conditions":[{"type":"dimension","dimension":"minecraft:overworld"}],
+                   "hide_when_unmet":true,"pause_progress_when_unmet":false},
+                 "expiration":{"after_seconds":6,"consume":true,"allow_repickup":false,"notify":false},
+                 "exclusive_group":"villagerretaliation:outer","exclusive_on":"completed",
+                 "blocks_on_start":["villagerretaliation:outer_start"],
+                 "branch":{"exclusive_group":"villagerretaliation:inner","exclusive_on":"started",
+                   "blocks_on_start":["villagerretaliation:inner_start"],
+                   "blocks_on_completion":["villagerretaliation:inner_finish"],
+                   "blocks":["villagerretaliation:always_blocked"]}}
+                """));
+        var expected = VillagerQuestResources.readRules(VillagerRetaliation.id("quests/typed_parity.json"), json("""
+                {"rules":{"repeatable":true,"locked_to_villager":false,"cross_villager_compatible":true,
+                 "max_starts":5,"max_completions":3,"completion_scope":"world",
+                 "completion_cooldown_ticks":7,"prerequisite_cooldown_ticks":60,
+                 "abandonment":"cooldown","abandonment_cooldown_ticks":80,
+                 "consume_on_completion":true,"consume_on_abandonment":true,
+                 "max_active_quests":2,"max_active_by_tag":{"story":1},
+                 "active":{"conditions":[{"type":"dimension","dimension":"minecraft:overworld"}],
+                   "hide_when_unmet":true,"pause_progress_when_unmet":false},
+                 "expiration":{"after_ticks":120,"consume":true,"allow_repickup":false,"notify":false},
+                 "branch":{"exclusive_group":"villagerretaliation:outer","exclusive_on":"completed",
+                   "blocks_on_start":["villagerretaliation:outer_start"],
+                   "blocks_on_completion":["villagerretaliation:inner_finish","villagerretaliation:always_blocked"]}}}
+                """), VillagerRetaliation.id("typed_parity"));
+        helper.assertValueEqual(compile(root).rules(), expected, "v2 availability keeps its complete legacy execution contract");
+        var availability = root.getAsJsonObject("availability");
+        availability.addProperty("completion_cooldown_ticks", 9);
+        helper.assertValueEqual(compile(root).rules().completionCooldownTicks(), 9L, "explicit ticks override the tick alias");
+        availability.remove("completion_cooldown_ticks");
+        availability.remove("cooldown_ticks");
+        availability.addProperty("cooldown_days", 3);
+        helper.assertValueEqual(compile(root).rules().completionCooldownTicks(), 48000L, "explicit days override the day alias");
+        availability.remove("completion_cooldown_days");
+        availability.remove("cooldown_days");
+        availability.addProperty("cooldown_seconds", 4);
+        availability.addProperty("completion_cooldown_seconds", 6);
+        helper.assertValueEqual(compile(root).rules().completionCooldownTicks(), 120L, "explicit seconds override the second alias");
+        availability.addProperty("cooldown_ticks", 0);
+        helper.assertValueEqual(compile(root).rules().completionCooldownTicks(), 0L, "zero ticks still override longer-unit values");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_typed_quest")
+    public static void providerFiltersAndTargetsKeepTheirBoundaryContract(GameTestHelper helper) {
+        var root = fixture();
+        root.getAsJsonObject("provider").getAsJsonObject("filters").add("skills", json("{\"farming\":{\"min\":3}}"));
+        root.getAsJsonObject("availability").addProperty("selection_weight", 11);
+        root.getAsJsonObject("availability").add("conditions", JsonParser.parseString("""
+                [{"type":"dimension","dimension":"minecraft:overworld"}]
+                """));
+        root.add("target", json("""
+                {"structure":"minecraft:village_plains","dimension":"minecraft:overworld",
+                 "pieces":["minecraft:plains/houses/plains_small_house_1"],
+                 "search_radius":64,"discovery_radius":12,"proof_item":"minecraft:wheat"}
+                """));
+        var compiled = compile(root);
+        var expected = VillagerQuestResources.readOffer(VillagerRetaliation.id("quests/typed_parity.json"), json("""
+                {"offer":{"professions":["farmer"],"min_villager_level":2,"skills":{"farming":{"min":3}},
+                 "weight":5,"conditions":[{"type":"dimension","dimension":"minecraft:overworld"}]}}
+                """), compiled.id());
+        helper.assertValueEqual(compiled.provider().offer(), expected, "provider filters, authored conditions, and primary weight survive compilation");
+        helper.assertValueEqual(compiled.target(), VillagerQuestResources.readTarget(root,
+                com.jvn.villagerretaliation.util.item.ItemStackPredicateParser.DEFAULT_REGISTRIES),
+                "target selectors and proof predicates keep the legacy boundary contract");
+        root.getAsJsonObject("provider").remove("filters");
+        helper.assertValueEqual(compile(root).provider().offer().conditions(), expected.conditions(), "missing provider filters do not drop availability conditions");
+        helper.assertValueEqual(compile(root).provider().offer().weight(), 5, "missing provider filters do not drop selection weight");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_typed_quest")
+    public static void nestedObjectiveSelectorsAndTrackerDefaultsMatchLegacyFields(GameTestHelper helper) {
+        var root = fixture();
+        root.getAsJsonArray("stages").get(0).getAsJsonObject().getAsJsonArray("objectives").set(0, json("""
+                {"id":"wheat","type":"item_check","item":"minecraft:stone_sword","count":1,
+                 "dimension":"minecraft:overworld","custom_data":{"origin":"root"},
+                 "conditions":[{"type":"dimension","dimension":"minecraft:overworld"}],
+                 "location":{"dimension":"minecraft:the_nether","x":1,"y":70,"z":3},
+                 "target":{"item":"minecraft:iron_sword","count":2,"optional":true,"min_durability":12,
+                   "custom_data":{"origin":"quest"},"components":{"minecraft:custom_name":"\\\"Quest sword\\\""},
+                   "conditions":[{"type":"dimension","dimension":"minecraft:the_end"}],
+                   "location":{"dimension":"minecraft:the_end","x":4,"y":80,"z":8,"radius":9},
+                   "tracker":{"text":"","show_progress":false,"metadata":{"source":"tracker"}}},
+                 "ui":{"tracker_text":"Find {item}","tracker_complete_text":"Found it",
+                   "show_progress":true,"progress":0.3,"metadata":{"source":"ui"}}}
+                """));
+        var before = root.deepCopy();
+        var compiled = compile(root);
+        var expected = VillagerQuestResources.readObjective(VillagerRetaliation.id("quests/typed_parity.json"), json("""
+                {"id":"work.wheat","type":"item_check","item":"minecraft:iron_sword","count":2,"optional":true,
+                 "dimension":"minecraft:the_end","x":4,"y":80,"z":8,"radius":9,"min_durability":12,
+                 "custom_data":{"origin":"quest"},"components":{"minecraft:custom_name":"\\\"Quest sword\\\""},
+                 "conditions":[{"type":"dimension","dimension":"minecraft:the_end"}],
+                 "tracker":{"text":"Find {item}","complete_text":"Found it","show_progress":false,
+                   "progress":0.3,"metadata":{"source":"tracker"}}}
+                """), 1, compiled.id(), com.jvn.villagerretaliation.util.item.ItemStackPredicateParser.DEFAULT_REGISTRIES).orElseThrow();
+        helper.assertValueEqual(compiled.objectivesById().get("work.wheat").definition(), expected,
+                "nested selectors, item predicates, optional flags, and tracker defaults retain their authored precedence");
+        helper.assertValueEqual(root, before, "compilation does not mutate any authored objective or nested predicate");
+        helper.assertValueEqual(compile(root).objectivesById().get("work.wheat").definition(), expected, "repeated objective compilation is stable");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_typed_quest")
+    public static void choiceDefaultsAndNestedCampaignValidationKeepTheirContracts(GameTestHelper helper) {
+        var root = fixture();
+        var choice = root.getAsJsonArray("stages").get(1).getAsJsonObject().getAsJsonArray("objectives").get(0).getAsJsonObject();
+        choice.addProperty("quest_id", "other:story");
+        var initial = compile(root);
+        var objective = initial.objectivesById().get("offer.choose").definition();
+        helper.assertValueEqual(objective.factQuestId(), initial.id(), "v2 fact defaults retain the owning quest before legacy aliases");
+        helper.assertValueEqual(objective.factKey(), "choice", "a bare choice receives its runtime key");
+        helper.assertValueEqual(objective.factValues(), java.util.Set.of("choose"), "a bare choice retains its local authored value");
+        choice.add("target", json("""
+                {"scope":"player","quest":"other:story","key":"verdict","value":"mercy"}
+                """));
+        objective = compile(root).objectivesById().get("offer.choose").definition();
+        helper.assertValueEqual(objective.factQuestId(), net.minecraft.resources.ResourceLocation.parse("other:story"), "explicit nested fact ownership is retained");
+        helper.assertValueEqual(objective.factScope(), QuestFactScope.PLAYER, "explicit personal scope survives compilation");
+        helper.assertValueEqual(objective.factKey(), "verdict", "explicit fact keys suppress the choice default");
+        helper.assertValueEqual(objective.factValues(), java.util.Set.of("mercy"), "explicit values suppress the choice default");
+        choice.add("target", json("""
+                {"story":{"evidence":"ledger"}}
+                """));
+        var envelope = QuestResourceEnvelope.read(VillagerRetaliation.id("quests/typed_parity.json"), root).orElseThrow();
+        var resource = QuestV2Parser.parse(envelope).orElseThrow();
+        helper.assertTrue(QuestV2Compiler.compile(resource, envelope).isEmpty(),
+                "a nested campaign story cannot bypass descriptor validation by using an ordinary objective type");
+        helper.succeed();
+    }
+
     private static CompiledQuest compile(JsonObject root) {
         var envelope = QuestResourceEnvelope.read(VillagerRetaliation.id("quests/typed_parity.json"), root).orElseThrow();
         return QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
