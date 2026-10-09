@@ -19,17 +19,22 @@ const quest = await readJson(path.join(fixtureRoot, ownerPath, "quest.json"));
 const locale = await readJson(path.join(fixtureRoot, ownerPath, "locales/en_us.json"));
 const campaign = await readJson(path.join(fixtureRoot, campaignPath));
 const cases = await readJson(path.join(fixtureRoot, "conversation_cases.json"));
-const context = { prefix: quest.localization_prefix, quest: quest.id, messages: locale.messages, campaign };
+const progression = await readJson(path.join(fixtureRoot, "data/campaign_fixture/quests/_shared/social_progression/training.json"));
+const context = { prefix: quest.localization_prefix, quest: quest.id, messages: locale.messages, campaign,
+  progressions: new Map([[progression.id, progression]]) };
 
 for (const entry of cases) {
   const changed = structuredClone(conversation);
-  for (const patch of entry.patches) {
-    const keys = patch.path.slice(1).split("/").map(key => key.replaceAll("~1", "/").replaceAll("~0", "~"));
-    const parent = keys.slice(0, -1).reduce((value, key) => value[key], changed);
-    if (patch.remove) delete parent[keys.at(-1)];
-    else parent[keys.at(-1)] = structuredClone(patch.value);
+  const changedCampaign = structuredClone(campaign);
+  for (const [target, patches] of [[changed, entry.patches], [changedCampaign, entry.campaign_patches ?? []]]) {
+    for (const patch of patches) {
+      const keys = patch.path.slice(1).split("/").map(key => key.replaceAll("~1", "/").replaceAll("~0", "~"));
+      const parent = keys.slice(0, -1).reduce((value, key) => value[key], target);
+      if (patch.remove) delete parent[keys.at(-1)];
+      else parent[keys.at(-1)] = structuredClone(patch.value);
+    }
   }
-  const issues = validateConversation(changed, schema, context);
+  const issues = validateConversation(changed, schema, { ...context, campaign: changedCampaign });
   if (entry.valid) assert.deepEqual(issues, [], entry.name);
   else assert(issues.some(issue => issue.pointer === entry.pointer), `${entry.name}: ${JSON.stringify(issues)}`);
 }
@@ -37,6 +42,10 @@ for (const name of ["condition", "action", "localized_reference"]) assert.deepEq
 assert.throws(() => validateConversationSchema({}, { properties: { unused: { unsupportedKeyword: true } } }), /Unsupported schema keyword/);
 assert.throws(() => validateConversationSchema({}, { $ref: "#/$defs/missing" }), /Unresolved schema reference/);
 assert.deepEqual(validateConversationSchema({ label: "🎲" }, { properties: { label: { minLength: 1, maxLength: 1 } } }), []);
+for (const malformed of [[null], [3], {}]) {
+  const issues = validateConversation(conversation, schema, { ...context, campaign: { ...campaign, transactions: malformed } });
+  assert(issues.some(issue => issue.pointer === "/campaign"), "malformed transaction declarations produce diagnostics");
+}
 const cyclic = { $defs: { loop: { $ref: "#/$defs/loop" } }, $ref: "#/$defs/loop" };
 assert.match(validateConversationSchema({}, cyclic)[0].message, /validation limit/);
 const cli = file => spawnSync(process.execPath, [path.join(root, "tools/validate-dialogue-data.mjs"), "--quiet", "--conversation", file], { encoding: "utf8", cwd: root });

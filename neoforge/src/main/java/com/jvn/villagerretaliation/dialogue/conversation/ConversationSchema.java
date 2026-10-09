@@ -50,9 +50,21 @@ public final class ConversationSchema {
                 "label", ref("localized_reference"), "amount", amount, "conditions", array(ref("condition"), 0)));
         JsonObject modifiers = array(ref("modifier"), 0);
         modifiers.addProperty("maxItems", ConversationCheckModifier.MAX_COUNT);
-        definitions.add("check", object(List.of("id", "success", "failure"), "id", id(),
-                "difficulty", difficulty, "success", id(), "failure", id(),
-                "social", com.jvn.villagerretaliation.skill.player.SocialProgressionSchema.check(), "modifiers", modifiers));
+        JsonObject check = object(List.of("id", "success", "failure"), "id", id(),
+                "difficulty", difficulty, "success", id(), "failure", id(), "transaction", id(),
+                "social", com.jvn.villagerretaliation.skill.player.SocialProgressionSchema.check(), "modifiers", modifiers);
+        JsonObject transaction = new JsonObject();
+        transaction.add("required", strings("transaction"));
+        check.add("if", transaction);
+        JsonObject persuasion = com.jvn.villagerretaliation.skill.player.SocialProgressionSchema.check();
+        persuasion.getAsJsonObject("properties").add("skill", enumeration("persuasion"));
+        JsonObject bargaining = new JsonObject();
+        bargaining.add("required", strings("social"));
+        JsonObject bargainingFields = new JsonObject();
+        bargainingFields.add("social", persuasion);
+        bargaining.add("properties", bargainingFields);
+        check.add("then", bargaining);
+        definitions.add("check", check);
         definitions.add("outcome", object(List.of("id", "label"), "id", id(), "label", ref("localized_reference")));
         JsonObject root = object(List.of("schema", "id", "revision", "campaign", "character", "title", "topics", "nodes", "outcomes"),
                 "schema", enumeration(SCHEMA_ID), "id", resource(), "revision", integer(1),

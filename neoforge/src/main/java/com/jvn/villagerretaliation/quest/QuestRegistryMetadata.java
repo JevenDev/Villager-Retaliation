@@ -86,6 +86,7 @@ public final class QuestRegistryMetadata {
             JsonObject entry = descriptorBase(descriptor.id(), descriptor.aliases());
             entry.add("capabilities", enumNames(descriptor.capabilities()));
             entry.addProperty("implementation", descriptor.implementationType().getSimpleName());
+            if (descriptor.id().equals("campaign_transaction")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignTransactionPredicate.schema());
             if (descriptor.id().equals("campaign_standing")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignStandingPredicate.schema());
             if (descriptor.id().equals("campaign_fact")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema());
             if (descriptor.id().equals("campaign_outcome")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema());
@@ -109,6 +110,9 @@ public final class QuestRegistryMetadata {
             }
             if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_FACT) {
                 entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignFactAction.schema());
+            }
+            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT) {
+                entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignPaymentAction.schema());
             }
             if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
                 entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignRewardAction.schema());

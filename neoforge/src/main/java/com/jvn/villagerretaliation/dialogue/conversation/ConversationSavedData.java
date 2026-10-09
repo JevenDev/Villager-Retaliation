@@ -19,7 +19,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class ConversationSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 10;
+    public static final int CURRENT_DATA_VERSION = 11;
     static final String DATA_NAME = "villagerretaliation_conversations";
     private final Path directory;
     private Map<UUID, ConversationSession> sessions = Map.of();
@@ -81,6 +81,11 @@ public final class ConversationSavedData extends SavedData {
                             "legacy conversation data contains situational modifiers");
                     check.put("Modifiers", new ListTag());
                 }
+                if (version < 11) {
+                    ConversationSessionCodec.require(!saved.contains("TransactionChecks") || ConversationSessionCodec.compound(saved, "TransactionChecks").isEmpty(),
+                            "legacy conversation data contains transaction receipts");
+                    saved.put("TransactionChecks", new CompoundTag());
+                }
                 var session = ConversationSessionCodec.load(saved);
                 if (version < 3 && (session.phase == ConversationSession.Phase.RESPONSE_EFFECTS
                         || session.phase == ConversationSession.Phase.CHECK || session.phase == ConversationSession.Phase.ROLLED)) {
@@ -106,6 +111,10 @@ public final class ConversationSavedData extends SavedData {
         var result = new LinkedHashMap<UUID, ConversationSession.Snapshot>();
         sessions.forEach((id, session) -> result.put(id, session.snapshot()));
         return java.util.Collections.unmodifiableMap(result);
+    }
+
+    public synchronized boolean hasTransaction(UUID operation) {
+        return sessions.values().stream().anyMatch(session -> session.transactionChecks.containsValue(operation));
     }
 
     public synchronized boolean hasObjectiveEvidence(ConversationObjectiveEvidence.Key key) {

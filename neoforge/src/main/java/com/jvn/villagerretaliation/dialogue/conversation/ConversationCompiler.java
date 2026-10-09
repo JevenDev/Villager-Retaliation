@@ -73,7 +73,7 @@ public final class ConversationCompiler {
             String key = string(value, "id");
             put(checks, key, new ConversationDefinition.Check(key,
                     value.has("difficulty") ? value.get("difficulty").getAsInt() : ConversationSchema.DEFAULT_DIFFICULTY,
-                    string(value, "success"), string(value, "failure"), social(value), modifiers(value, pointer), pointer), pointer);
+                    string(value, "success"), string(value, "failure"), social(value), modifiers(value, pointer), pointer, string(value, "transaction")), pointer);
         }
         entries = array(root, "outcomes");
         for (int index = 0; index < entries.size(); index++) {
@@ -278,12 +278,64 @@ public final class ConversationCompiler {
         if (!campaign.characters().containsKey(conversation.character())) {
             issues.add(error(conversation.source(), "/character", "unknown campaign character " + conversation.character()));
         }
+        for (var topic : conversation.topics().values())
+            transactionConditions(conversation, campaign, topic.conditions(), topic.pointer() + "/conditions", issues);
+        for (var node : conversation.nodes().values()) for (var response : node.responses().values())
+            transactionConditions(conversation, campaign, response.conditions(), response.pointer() + "/conditions", issues);
+        for (var check : conversation.checks().values()) for (var modifier : check.modifiers())
+            transactionConditions(conversation, campaign, modifier.conditions(), modifier.pointer() + "/conditions", issues);
+        Set<String> transactions = new HashSet<>();
+        for (var check : conversation.checks().values()) if (!check.transaction().isEmpty()) {
+            var transaction = campaign.transactions().get(check.transaction());
+            String pointer = check.pointer() + "/transaction";
+            if (transaction == null) issues.add(error(conversation.source(), pointer, "unknown campaign transaction " + check.transaction()));
+            else {
+                if (!transaction.quest().equals(conversation.quest())) issues.add(error(conversation.source(), pointer, "transaction belongs to another quest"));
+                if (!transaction.character().equals(conversation.character())) issues.add(error(conversation.source(), pointer, "transaction belongs to another campaign character"));
+                if (transaction.bargainedCount() == null) issues.add(error(conversation.source(), pointer, "transaction does not declare a bargained price"));
+            }
+            if (!transactions.add(check.transaction())) issues.add(error(conversation.source(), pointer, "transaction already has a bargaining check in this conversation"));
+        }
+        for (var node : conversation.nodes().values()) {
+            var effects = new ArrayList<ConversationDefinition.Effect>(node.effects());
+            node.responses().values().forEach(response -> effects.addAll(response.effects()));
+            for (var effect : effects) if (effect.action().campaignPayment() != null) {
+                var action = effect.action();
+                var transaction = campaign.transactions().get(action.campaignPayment().transaction());
+                String pointer = effect.pointer() + "/action/transaction";
+                if (action.questId() == null || !campaign.questBundles().contains(action.questId()))
+                    issues.add(error(conversation.source(), effect.pointer() + "/action/quest", "transaction requires a quest declared by its campaign"));
+                else if (transaction == null) issues.add(error(conversation.source(), pointer, "unknown campaign transaction " + action.campaignPayment().transaction()));
+                else if (!transaction.quest().equals(action.questId())) issues.add(error(conversation.source(), pointer, "transaction belongs to another quest"));
+                else if (!transaction.character().equals(conversation.character())) issues.add(error(conversation.source(), pointer, "transaction belongs to another campaign character"));
+            }
+        }
         for (var node : conversation.nodes().values()) for (var exchange : node.exchanges()) {
             if (exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE && !campaign.characters().containsKey(exchange.speaker().role())) {
                 issues.add(error(conversation.source(), exchange.pointer() + "/speaker/role", "unknown campaign character " + exchange.speaker().role()));
             }
         }
         return List.copyOf(issues);
+    }
+
+    private static void transactionConditions(ConversationDefinition conversation, CampaignDefinition campaign,
+            List<DialogueCondition> conditions, String pointer, List<QuestDiagnostic> issues) {
+        for (int index = 0; index < conditions.size(); index++)
+            transactionCondition(conversation, campaign, conditions.get(index), pointer + "/" + index, issues);
+    }
+
+    private static void transactionCondition(ConversationDefinition conversation, CampaignDefinition campaign,
+            DialogueCondition condition, String pointer, List<QuestDiagnostic> issues) {
+        if (condition instanceof DialogueCondition.AllOf all) transactionConditions(conversation, campaign, all.conditions(), pointer + "/conditions", issues);
+        else if (condition instanceof DialogueCondition.AnyOf any) transactionConditions(conversation, campaign, any.conditions(), pointer + "/conditions", issues);
+        else if (condition instanceof DialogueCondition.Not not) transactionCondition(conversation, campaign, not.condition(), pointer + "/condition", issues);
+        else if (condition instanceof DialogueCondition.CampaignTransaction query && query.reference().campaign().equals(campaign.id())) {
+            var value = query.reference();
+            var transaction = campaign.transactions().get(value.transaction());
+            if (!campaign.questBundles().contains(value.quest())) issues.add(error(conversation.source(), pointer + "/quest", "transaction requires a quest declared by its campaign"));
+            else if (transaction == null) issues.add(error(conversation.source(), pointer + "/transaction", "unknown campaign transaction " + value.transaction()));
+            else if (!transaction.quest().equals(value.quest())) issues.add(error(conversation.source(), pointer + "/transaction", "transaction belongs to another quest"));
+        }
     }
 
     private void error(String pointer, String message) { diagnostics.add(error(source, pointer, message)); }

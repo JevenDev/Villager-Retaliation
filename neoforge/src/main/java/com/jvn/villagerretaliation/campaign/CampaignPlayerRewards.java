@@ -39,14 +39,22 @@ public final class CampaignPlayerRewards {
         return new Delivery(receipt.operation(), receipt.token(), receipt.player(), receipt.experience(), receipt.items(), receipt.delivered());
     }
 
-    public record Delivery(UUID operation, UUID token, UUID player, int experience, List<CompoundTag> items, boolean delivered) {
+    public record Delivery(UUID operation, UUID token, UUID player, int experience, List<CompoundTag> items,
+            boolean delivered, List<CompoundTag> costs) {
         public Delivery {
-            if (operation == null || token == null || player == null || experience < 0 || items == null || items.size() > 256)
-                throw new IllegalArgumentException("Invalid persistent player reward.");
+            if (operation == null || token == null || player == null || experience < 0 || items == null || items.size() > 256
+                    || costs == null || costs.size() > 256)
+                throw new IllegalArgumentException("Invalid persistent player transaction.");
             items = items.stream().map(CompoundTag::copy).toList();
+            costs = costs.stream().map(CompoundTag::copy).toList();
+        }
+
+        public Delivery(UUID operation, UUID token, UUID player, int experience, List<CompoundTag> items, boolean delivered) {
+            this(operation, token, player, experience, items, delivered, List.of());
         }
 
         @Override public List<CompoundTag> items() { return items.stream().map(CompoundTag::copy).toList(); }
+        @Override public List<CompoundTag> costs() { return costs.stream().map(CompoundTag::copy).toList(); }
     }
 
     private static boolean delivered(ServerPlayer player, Delivery receipt) {
@@ -64,14 +72,25 @@ public final class CampaignPlayerRewards {
         return deliver(player, receipt, directory(player));
     }
 
-    private static boolean deliver(ServerPlayer player, Delivery receipt, Path directory) throws IOException {
+    static boolean deliver(ServerPlayer player, Delivery receipt, Path directory) throws IOException {
         if (!receipt.player().equals(player.getUUID())) throw new IllegalArgumentException("Campaign reward belongs to another player.");
         if (delivered(player, receipt)) return false;
         if (receipt.delivered()) throw new IllegalArgumentException("Player data is older than the delivered campaign reward. Restore a matching player save before continuing.");
         if ((long) player.totalExperience + receipt.experience() > Integer.MAX_VALUE
                 || (long) player.getScore() + receipt.experience() > Integer.MAX_VALUE) throw new IllegalArgumentException("Campaign reward exceeds this player's experience capacity.");
         var originalItems = player.getInventory().items.stream().map(ItemStack::copy).toList();
+        var originalOffhand = player.getInventory().offhand.stream().map(ItemStack::copy).toList();
         var candidate = new ArrayList<>(originalItems.stream().map(ItemStack::copy).toList());
+        var offhand = new ArrayList<>(originalOffhand.stream().map(ItemStack::copy).toList());
+        for (var saved : receipt.costs()) {
+            if (!saved.contains("count", Tag.TAG_INT) || saved.getInt("count") < 1 || saved.getInt("count") > net.minecraft.world.item.Item.ABSOLUTE_MAX_STACK_SIZE)
+                throw new IllegalArgumentException("A saved campaign payment has an invalid item count.");
+            var cost = ItemStack.STRICT_CODEC.parse(player.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), saved)
+                    .result().orElseThrow(() -> new IllegalArgumentException("A saved campaign payment item is unavailable or invalid. Restore its item content before paying."));
+            if (cost.isEmpty()) throw new IllegalArgumentException("A saved campaign payment is empty.");
+            int remaining = remove(candidate, cost, cost.getCount());
+            if (remove(offhand, cost, remaining) != 0) throw new IllegalArgumentException("You do not have the items required for this campaign payment.");
+        }
         for (var saved : receipt.items()) {
             var item = ItemStack.parse(player.registryAccess(), saved).orElseThrow(() -> new IllegalArgumentException("A saved campaign reward item is unavailable. Restore its item content before claiming it."));
             if (item.isEmpty() || !insert(player.getInventory(), candidate, item.copy())) throw new IllegalArgumentException("Make room in your inventory to receive the saved campaign reward.");
@@ -88,6 +107,7 @@ public final class CampaignPlayerRewards {
         boolean saved = false;
         try {
             for (int index = 0; index < candidate.size(); index++) player.getInventory().items.set(index, candidate.get(index));
+            for (int index = 0; index < offhand.size(); index++) player.getInventory().offhand.set(index, offhand.get(index));
             if (receipt.experience() != 0) player.giveExperiencePoints(receipt.experience());
             player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
             persist(player, directory);
@@ -95,6 +115,7 @@ public final class CampaignPlayerRewards {
         } finally {
             if (!saved) {
                 for (int index = 0; index < originalItems.size(); index++) player.getInventory().items.set(index, originalItems.get(index));
+                for (int index = 0; index < originalOffhand.size(); index++) player.getInventory().offhand.set(index, originalOffhand.get(index));
                 player.totalExperience = experience;
                 player.experienceLevel = level;
                 player.experienceProgress = progress;
@@ -107,6 +128,17 @@ public final class CampaignPlayerRewards {
         player.containerMenu.broadcastChanges();
         net.neoforged.neoforge.event.EventHooks.firePlayerSavingEvent(player, directory.toFile(), player.getStringUUID());
         return true;
+    }
+
+    private static int remove(List<ItemStack> inventory, ItemStack cost, int remaining) {
+        for (var stack : inventory) {
+            if (remaining == 0) break;
+            if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, cost)) continue;
+            int removed = Math.min(remaining, stack.getCount());
+            stack.shrink(removed);
+            remaining -= removed;
+        }
+        return remaining;
     }
 
     private static boolean insert(net.minecraft.world.entity.player.Inventory owner, List<ItemStack> inventory, ItemStack reward) {

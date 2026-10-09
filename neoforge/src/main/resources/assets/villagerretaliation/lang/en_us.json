@@ -3648,5 +3648,13 @@
   "villagerretaliation.gui.conversation.modifier_inactive": "%s: not applied",
   "villagerretaliation.gui.conversation.social_result": "%s: d20 %s + %s = %s against difficulty %s. %s",
   "villagerretaliation.gui.conversation.social_experience": "%s gained %s %s experience.",
-  "villagerretaliation.gui.conversation.social_experience_pending": "%s: +%s %s experience waiting to save"
+  "villagerretaliation.gui.conversation.social_experience_pending": "%s: +%s %s experience waiting to save",
+  "villagerretaliation.gui.conversation.transaction_choice": "For \"%s\":",
+  "villagerretaliation.gui.conversation.transaction_buyer": "%s | Buyer: %s",
+  "villagerretaliation.gui.conversation.transaction_quote": "Price: %s %s",
+  "villagerretaliation.gui.conversation.transaction_bargain": "Successful bargain: %s %s",
+  "villagerretaliation.gui.conversation.transaction_agreed": "Agreed price: %s %s",
+  "villagerretaliation.gui.conversation.transaction_possible": "Possible payment: %s %s",
+  "villagerretaliation.gui.conversation.transaction_pending": "Payment awaiting completion: %s %s",
+  "villagerretaliation.gui.conversation.transaction_paid": "Paid: %s %s"
 }

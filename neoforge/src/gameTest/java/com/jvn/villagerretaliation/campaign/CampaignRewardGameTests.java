@@ -343,6 +343,143 @@ public final class CampaignRewardGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "campaign_rewards")
+    public static void itemPaymentAndRewardShareOneDurablePlayerReceipt(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk()) {
+            var player = helper.makeMockServerPlayerInLevel();
+            player.getInventory().items.set(0, new ItemStack(Items.EMERALD, 3));
+            player.getInventory().offhand.set(0, new ItemStack(Items.EMERALD, 2));
+            var original = player.saveWithoutId(new CompoundTag());
+            var payment = payment(player, List.of(new ItemStack(Items.EMERALD, 4)), List.of(new ItemStack(Items.BREAD, 2)), 3);
+            helper.assertTrue(CampaignPlayerRewards.deliver(player, payment, disk.players), "payment and reward apply together");
+            helper.assertValueEqual(player.getInventory().offhand.getFirst().getCount(), 1, "payment uses the remaining offhand currency");
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 1, "the agreed amount is paid");
+            helper.assertValueEqual(player.getInventory().countItem(Items.BREAD), 2, "the item reward arrives once");
+            var selected = CampaignPlayerRewards.loadedOwnerTag(player, original, disk.players);
+            player.getInventory().clearContent();
+            player.getPersistentData().remove(Player.PERSISTED_NBT_TAG);
+            player.load(selected);
+            helper.assertFalse(CampaignPlayerRewards.deliver(player, payment, disk.players), "reload and retry do not charge again");
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 1, "owner recovery preserves the payment");
+            helper.assertValueEqual(player.getInventory().countItem(Items.BREAD), 2, "owner recovery preserves the purchase");
+            helper.assertValueEqual(player.totalExperience, 3, "retry does not repeat experience");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_rewards")
+    public static void purchaseRewardsCannotFundTheirOwnPayment(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk()) {
+            var player = helper.makeMockServerPlayerInLevel();
+            player.getInventory().items.set(0, new ItemStack(Items.EMERALD, 3));
+            var payment = payment(player, List.of(new ItemStack(Items.EMERALD, 4)), List.of(new ItemStack(Items.EMERALD, 4)), 2);
+            var original = player.saveWithoutId(new CompoundTag()).get("Inventory");
+            expectInvalid(helper, () -> CampaignPlayerRewards.deliver(player, payment, disk.players));
+            helper.assertValueEqual(player.saveWithoutId(new CompoundTag()).get("Inventory"), original, "insufficient payment changes no inventory");
+            helper.assertValueEqual(player.totalExperience, 0, "insufficient payment awards no experience");
+            helper.assertTrue(Files.notExists(disk.players), "insufficient payment writes no receipt");
+            player.getInventory().offhand.set(0, new ItemStack(Items.EMERALD));
+            helper.assertTrue(CampaignPlayerRewards.deliver(player, payment, disk.players), "the saved terms can be paid after acquiring the missing item");
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 4, "payment is removed before the reward is inserted");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_rewards")
+    public static void paymentPreservesItemsWithDifferentComponents(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk()) {
+            var player = helper.makeMockServerPlayerInLevel();
+            var keepsake = new ItemStack(Items.EMERALD);
+            keepsake.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Keepsake"));
+            player.getInventory().items.set(0, keepsake);
+            player.getInventory().items.set(1, new ItemStack(Items.EMERALD, 2));
+            var payment = payment(player, List.of(new ItemStack(Items.EMERALD, 3)), List.of(new ItemStack(Items.BREAD)), 0);
+            expectInvalid(helper, () -> CampaignPlayerRewards.deliver(player, payment, disk.players));
+            helper.assertTrue(ItemStack.matches(player.getInventory().items.getFirst(), keepsake), "a differently named item is not currency");
+            player.getInventory().offhand.set(0, new ItemStack(Items.EMERALD));
+            helper.assertTrue(CampaignPlayerRewards.deliver(player, payment, disk.players), "matching ordinary items cover the payment");
+            helper.assertTrue(ItemStack.matches(player.getInventory().items.getFirst(), keepsake), "successful payment also preserves the named item");
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 1, "only the keepsake remains");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_rewards")
+    public static void failedPaymentSaveRestoresBothHandsAndCanRetry(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk()) {
+            var player = helper.makeMockServerPlayerInLevel();
+            player.getInventory().items.set(0, new ItemStack(Items.EMERALD, 3));
+            player.getInventory().offhand.set(0, new ItemStack(Items.EMERALD, 2));
+            player.giveExperiencePoints(5);
+            var inventory = player.saveWithoutId(new CompoundTag()).get("Inventory");
+            var persistent = player.getPersistentData().copy();
+            var payment = payment(player, List.of(new ItemStack(Items.EMERALD, 4)), List.of(new ItemStack(Items.BREAD)), 9);
+            Files.writeString(disk.players, "occupied");
+            expectIo(helper, () -> CampaignPlayerRewards.deliver(player, payment, disk.players));
+            helper.assertValueEqual(player.saveWithoutId(new CompoundTag()).get("Inventory"), inventory, "failed save restores all payment and reward slots");
+            helper.assertValueEqual(player.getPersistentData(), persistent, "failed save leaves no payment receipt");
+            helper.assertValueEqual(player.totalExperience, 5, "failed save restores experience");
+            Files.delete(disk.players);
+            helper.assertTrue(CampaignPlayerRewards.deliver(player, payment, disk.players), "storage recovery permits the original payment");
+            helper.assertFalse(CampaignPlayerRewards.deliver(player, payment, disk.players), "the completed payment cannot repeat");
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 1, "storage retry charges only once");
+            helper.assertValueEqual(player.totalExperience, 14, "storage retry awards only once");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_rewards")
+    public static void unavailablePurchaseSpaceDoesNotTakePayment(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk()) {
+            var player = helper.makeMockServerPlayerInLevel();
+            for (int index = 0; index < player.getInventory().items.size(); index++) player.getInventory().items.set(index, new ItemStack(Items.STONE, 64));
+            player.getInventory().items.set(0, new ItemStack(Items.EMERALD, 2));
+            var payment = payment(player, List.of(new ItemStack(Items.EMERALD)), List.of(new ItemStack(Items.BREAD)), 1);
+            expectInvalid(helper, () -> CampaignPlayerRewards.deliver(player, payment, disk.players));
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 2, "full inventory cannot consume payment");
+            helper.assertValueEqual(player.totalExperience, 0, "full inventory cannot award partial experience");
+            helper.assertTrue(Files.notExists(disk.players), "full inventory writes no receipt");
+            player.getInventory().items.set(1, ItemStack.EMPTY);
+            helper.assertTrue(CampaignPlayerRewards.deliver(player, payment, disk.players), "making room permits the same transaction");
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 1, "the payment is taken after capacity is available");
+            helper.assertValueEqual(player.getInventory().countItem(Items.BREAD), 1, "the purchase is delivered with the payment");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_rewards")
+    public static void malformedPaymentItemsCannotBecomeSmallerDefaultPayments(GameTestHelper helper) throws IOException {
+        try (Disk disk = new Disk()) {
+            var player = helper.makeMockServerPlayerInLevel();
+            player.getInventory().items.set(0, new ItemStack(Items.EMERALD, 8));
+            for (int amount : List.of(-1, 0, 100)) {
+                var cost = (CompoundTag) new ItemStack(Items.EMERALD).save(player.registryAccess());
+                cost.putInt("count", amount);
+                var payment = new CampaignPlayerRewards.Delivery(UUID.randomUUID(), UUID.randomUUID(), player.getUUID(), 0, List.of(), false, List.of(cost));
+                expectInvalid(helper, () -> CampaignPlayerRewards.deliver(player, payment, disk.players));
+            }
+            var missingCount = (CompoundTag) new ItemStack(Items.EMERALD).save(player.registryAccess());
+            missingCount.remove("count");
+            var missing = new CampaignPlayerRewards.Delivery(UUID.randomUUID(), UUID.randomUUID(), player.getUUID(), 0, List.of(), false, List.of(missingCount));
+            expectInvalid(helper, () -> CampaignPlayerRewards.deliver(player, missing, disk.players));
+            var cost = (CompoundTag) new ItemStack(Items.EMERALD, 4).save(player.registryAccess());
+            var payment = new CampaignPlayerRewards.Delivery(UUID.randomUUID(), UUID.randomUUID(), player.getUUID(), 0, List.of(), false, List.of(cost));
+            cost.putInt("count", 1);
+            payment.costs().getFirst().putInt("count", 2);
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 8, "malformed payments take no items");
+            helper.assertTrue(Files.notExists(disk.players), "malformed payments write no receipts");
+            helper.assertTrue(CampaignPlayerRewards.deliver(player, payment, disk.players), "valid captured payment applies");
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 4, "mutating source or returned data cannot reduce the captured cost");
+        }
+        helper.succeed();
+    }
+
+    private static CampaignPlayerRewards.Delivery payment(ServerPlayer player, List<ItemStack> costs, List<ItemStack> items, int experience) {
+        return new CampaignPlayerRewards.Delivery(UUID.randomUUID(), UUID.randomUUID(), player.getUUID(), experience,
+                items.stream().map(item -> (CompoundTag) item.save(player.registryAccess())).toList(), false,
+                costs.stream().map(item -> (CompoundTag) item.save(player.registryAccess())).toList());
+    }
+
     private static CampaignRewardDefinition reward(CampaignRewardDefinition.Scope scope) {
         return new CampaignRewardDefinition("reward", QUEST, scope, scope == CampaignRewardDefinition.Scope.PERSONAL ? "" : "decision", "", 17, null, "/rewards/0");
     }

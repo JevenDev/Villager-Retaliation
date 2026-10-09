@@ -181,6 +181,148 @@
           },
           {
             "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "give_item"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 256
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "player",
+              "item",
+              "count"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_item_count"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2304
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "player",
+              "item",
+              "count"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assert_transaction"
+                ]
+              },
+              "player": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "quest": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "transaction": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "unarranged",
+                  "negotiated",
+                  "payment_pending",
+                  "paid"
+                ]
+              },
+              "price": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 256
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "player",
+              "quest",
+              "transaction",
+              "state"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
             "additionalProperties": false,
             "required": [
               "id",

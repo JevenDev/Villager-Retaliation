@@ -41,6 +41,7 @@ public final class ConversationSession {
     final List<Choice> choices = new ArrayList<>();
     final Map<ConversationObjectiveEvidence.Key, ConversationObjectiveEvidence> objectiveEvidence = new LinkedHashMap<>();
     final Map<String, Check> checks = new LinkedHashMap<>();
+    final Map<String, UUID> transactionChecks = new LinkedHashMap<>();
     final Set<String> socialAwards = new LinkedHashSet<>();
     final Map<String, Receipt> receipts = new LinkedHashMap<>();
     final Map<UUID, Request> requests = new LinkedHashMap<>();
@@ -87,6 +88,7 @@ public final class ConversationSession {
         choices.addAll(source.choices);
         objectiveEvidence.putAll(source.objectiveEvidence);
         checks.putAll(source.checks);
+        transactionChecks.putAll(source.transactionChecks);
         socialAwards.addAll(source.socialAwards);
         receipts.putAll(source.receipts);
         requests.putAll(source.requests);
@@ -104,7 +106,7 @@ public final class ConversationSession {
         return new Snapshot(identity, revision, visit, node, phase, exchange, response, check, outcome,
                 controller, Set.copyOf(participants), ordered(speakers), List.copyOf(transcript),
                 List.copyOf(choices), ordered(checks), ordered(receipts), Set.copyOf(socialAwards), diagnostic, confirmation != null ? confirmation
-                        : nestedDecision != null && nestedDecision.state() == ConversationNestedDecision.State.PENDING ? nestedDecision.confirmation() : null);
+                        : nestedDecision != null && nestedDecision.state() == ConversationNestedDecision.State.PENDING ? nestedDecision.confirmation() : null, ordered(transactionChecks));
     }
 
     private static <K, V> Map<K, V> ordered(Map<K, V> values) {
@@ -191,8 +193,20 @@ public final class ConversationSession {
             int exchange, String response, String check, String outcome, UUID controller,
             Set<UUID> participants, Map<String, Speaker> speakers, List<Line> transcript,
             List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, Set<String> socialAwards,
-            String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation) {
-        public Snapshot { socialAwards = Set.copyOf(socialAwards); }
+            String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation, Map<String, UUID> transactionChecks) {
+        public Snapshot {
+            socialAwards = Set.copyOf(socialAwards);
+            transactionChecks = ordered(transactionChecks);
+        }
+
+        public Snapshot(Identity identity, long revision, long visit, String node, Phase phase,
+                int exchange, String response, String check, String outcome, UUID controller,
+                Set<UUID> participants, Map<String, Speaker> speakers, List<Line> transcript,
+                List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, Set<String> socialAwards,
+                String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation) {
+            this(identity, revision, visit, node, phase, exchange, response, check, outcome, controller, participants,
+                    speakers, transcript, choices, checks, receipts, socialAwards, diagnostic, confirmation, Map.of());
+        }
 
         public Snapshot(Identity identity, long revision, long visit, String node, Phase phase,
                 int exchange, String response, String check, String outcome, UUID controller,

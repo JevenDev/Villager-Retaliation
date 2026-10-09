@@ -50,6 +50,8 @@ public final class CampaignSceneApproval {
     }
 
     public static boolean canRecover(SceneInstance scene, com.jvn.villagerretaliation.action.VillagerActionDefinition action) {
+        if (action.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT)
+            return action.questId() != null && action.campaignPayment() != null;
         if (action.kind() != com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME
                 || scene.campaignConsent().isEmpty()) return false;
         try {

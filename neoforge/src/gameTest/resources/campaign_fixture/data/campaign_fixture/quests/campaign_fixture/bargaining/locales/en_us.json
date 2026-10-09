@@ -1,0 +1,31 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.quest.bargaining.title": "The price of provisions",
+    "campaign_fixture.quest.bargaining.description": "Arrange a personal purchase with the quartermaster.",
+    "campaign_fixture.quest.bargaining.offer.label": "Ask about travel supplies",
+    "campaign_fixture.quest.bargaining.offer.lines": "I have provisions for travelers. We can discuss a price.",
+    "campaign_fixture.quest.bargaining.accept": "Let's discuss the supplies.",
+    "campaign_fixture.quest.bargaining.reminder.label": "Discuss the purchase",
+    "campaign_fixture.quest.bargaining.reminder.lines": "Ask me about the supplies when you are ready to buy or bargain.",
+    "campaign_fixture.quest.bargaining.report.label": "Finish the purchase",
+    "campaign_fixture.quest.bargaining.report.lines": "Your supplies are ready. Safe travels.",
+    "campaign_fixture.quest.bargaining.finish": "Thank you.",
+    "campaign_fixture.quest.bargaining.trade.title": "Travel supplies",
+    "campaign_fixture.quest.bargaining.trade.topic": "Discuss the price of supplies",
+    "campaign_fixture.quest.bargaining.trade.receipt_topic": "Ask about the supplies you bought",
+    "campaign_fixture.quest.bargaining.trade.offer": "You can accept my terms or try to bargain. The choice is yours.",
+    "campaign_fixture.quest.bargaining.trade.buy": "Buy supplies",
+    "campaign_fixture.quest.bargaining.trade.bargain": "Ask for a lower price",
+    "campaign_fixture.quest.bargaining.trade.leave": "Leave the supplies for now",
+    "campaign_fixture.quest.bargaining.trade.discounted": "For you, {campaign_transaction_buyer}, I can make it {campaign_transaction_price} emeralds.",
+    "campaign_fixture.quest.bargaining.trade.firm": "I have to hold to my price, {campaign_transaction_buyer}. That is {campaign_transaction_price} emeralds.",
+    "campaign_fixture.quest.bargaining.trade.pay": "Pay {campaign_transaction_price} emeralds",
+    "campaign_fixture.quest.bargaining.trade.purchased": "Here are your supplies, {campaign_transaction_buyer}. Your payment of {campaign_transaction_price} emeralds is settled.",
+    "campaign_fixture.quest.bargaining.trade.receipt": "You have already collected your supplies. I hope they serve you well.",
+    "campaign_fixture.quest.bargaining.trade.farewell": "Come back if you change your mind.",
+    "campaign_fixture.quest.bargaining.trade.outcome.purchased": "Supplies purchased",
+    "campaign_fixture.quest.bargaining.trade.outcome.already": "Supplies already collected",
+    "campaign_fixture.quest.bargaining.trade.outcome.passed": "Purchase declined"
+  }
+}

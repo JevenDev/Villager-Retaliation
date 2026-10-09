@@ -709,5 +709,734 @@
       }
     ],
     "pointer": "/checks/0/modifiers/0/label"
+  },
+  {
+    "name": "bargaining uses a campaign transaction",
+    "valid": true,
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "supplies"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bargaining requires social progression",
+    "pointer": "/checks/0/social",
+    "patches": [
+      {
+        "path": "/checks/0/transaction",
+        "value": "supplies"
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bargaining requires persuasion",
+    "pointer": "/checks/0/social/skill",
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "deception",
+              "experience": 10
+            },
+            "transaction": "supplies"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bargaining rejects an invalid transaction id",
+    "pointer": "/checks/0/transaction",
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "BAD ID"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bargaining rejects an unknown transaction",
+    "pointer": "/checks/0/transaction",
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "missing"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bargaining requires an authored discounted price",
+    "pointer": "/checks/0/transaction",
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "supplies"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      },
+      {
+        "path": "/transactions/0/bargained_count",
+        "remove": true
+      }
+    ]
+  },
+  {
+    "name": "bargaining requires the transaction seller",
+    "pointer": "/checks/0/transaction",
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "supplies"
+          }
+        ]
+      },
+      {
+        "path": "/character",
+        "value": "other"
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bargaining requires the transaction quest",
+    "pointer": "/checks/0/transaction",
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "supplies"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      },
+      {
+        "path": "/quest_bundles",
+        "value": [
+          "campaign_fixture:characters",
+          "campaign_fixture:other"
+        ]
+      },
+      {
+        "path": "/transactions/0/quest",
+        "value": "campaign_fixture:other"
+      }
+    ]
+  },
+  {
+    "name": "one check owns each conversation transaction",
+    "pointer": "/checks/1/transaction",
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "supplies"
+          },
+          {
+            "id": "second_offer",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "supplies"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bargaining can waive the entire payment",
+    "valid": true,
+    "patches": [
+      {
+        "path": "/checks",
+        "value": [
+          {
+            "id": "convince",
+            "success": "agreed",
+            "failure": "declined",
+            "social": {
+              "progression": "campaign_fixture:social_training",
+              "skill": "persuasion",
+              "experience": 10
+            },
+            "transaction": "supplies"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      },
+      {
+        "path": "/transactions/0/bargained_count",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "name": "campaign payment resolves an authored transaction",
+    "valid": true,
+    "patches": [
+      {
+        "path": "/nodes/1/effects/0/action",
+        "value": {
+          "type": "campaign_payment",
+          "transaction": "supplies"
+        }
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "campaign payment cannot be optional",
+    "valid": false,
+    "pointer": "/nodes/1/effects/0/action/required",
+    "patches": [
+      {
+        "path": "/nodes/1/effects/0/action",
+        "value": {
+          "type": "campaign_payment",
+          "transaction": "supplies",
+          "required": false
+        }
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "campaign payment requires typed transaction fields",
+    "valid": false,
+    "pointer": "/nodes/1/effects/0/action/transaction",
+    "patches": [
+      {
+        "path": "/nodes/1/effects/0/action",
+        "value": {
+          "type": "campaign_payment"
+        }
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "campaign payment rejects unknown transactions",
+    "valid": false,
+    "pointer": "/nodes/1/effects/0/action/transaction",
+    "patches": [
+      {
+        "path": "/nodes/1/effects/0/action",
+        "value": {
+          "type": "campaign_payment",
+          "transaction": "missing"
+        }
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "campaign payment requires campaign quest ownership",
+    "valid": false,
+    "pointer": "/nodes/1/effects/0/action/quest",
+    "patches": [
+      {
+        "path": "/nodes/1/effects/0/action",
+        "value": {
+          "type": "campaign_payment",
+          "transaction": "supplies",
+          "quest": "campaign_fixture:missing"
+        }
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "paid transaction conditions are authored story state",
+    "valid": true,
+    "patches": [
+      {
+        "path": "/topics/0/conditions",
+        "value": [
+          {
+            "type": "campaign_transaction",
+            "campaign": "campaign_fixture:characters",
+            "quest": "campaign_fixture:characters",
+            "transaction": "supplies",
+            "state": "paid"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "transaction conditions reject unknown states",
+    "valid": false,
+    "pointer": "/topics/0/conditions/0/state",
+    "patches": [
+      {
+        "path": "/topics/0/conditions",
+        "value": [
+          {
+            "type": "campaign_transaction",
+            "campaign": "campaign_fixture:characters",
+            "quest": "campaign_fixture:characters",
+            "transaction": "supplies",
+            "state": "done"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "transaction conditions reject missing references",
+    "valid": false,
+    "pointer": "/topics/0/conditions/0/transaction",
+    "patches": [
+      {
+        "path": "/topics/0/conditions",
+        "value": [
+          {
+            "type": "campaign_transaction",
+            "campaign": "campaign_fixture:characters",
+            "quest": "campaign_fixture:characters",
+            "transaction": "missing",
+            "state": "paid"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "transaction conditions require a campaign quest",
+    "valid": false,
+    "pointer": "/topics/0/conditions/0/quest",
+    "patches": [
+      {
+        "path": "/topics/0/conditions",
+        "value": [
+          {
+            "type": "campaign_transaction",
+            "campaign": "campaign_fixture:characters",
+            "quest": "campaign_fixture:missing",
+            "transaction": "supplies",
+            "state": "paid"
+          }
+        ]
+      }
+    ],
+    "campaign_patches": [
+      {
+        "path": "/transactions",
+        "value": [
+          {
+            "id": "supplies",
+            "title_key": "campaign_fixture.campaign.characters.mentor",
+            "quest": "campaign_fixture:characters",
+            "character": "mentor",
+            "payment": {
+              "item": "minecraft:emerald",
+              "count": 8
+            },
+            "bargained_count": 5
+          }
+        ]
+      }
+    ]
   }
 ]

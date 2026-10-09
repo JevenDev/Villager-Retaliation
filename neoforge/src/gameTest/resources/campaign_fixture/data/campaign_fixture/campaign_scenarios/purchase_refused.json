@@ -1,0 +1,133 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:purchase_refused",
+  "campaign": "campaign_fixture:bargaining",
+  "players": [
+    "buyer"
+  ],
+  "actors": [
+    {
+      "id": "seller",
+      "role": "merchant",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "camp",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "buyer_connect",
+      "type": "player",
+      "player": "buyer",
+      "action": "connect"
+    },
+    {
+      "id": "buyer_funds",
+      "type": "give_item",
+      "player": "buyer",
+      "item": "minecraft:emerald",
+      "count": 8
+    },
+    {
+      "id": "buyer_quest",
+      "type": "quest_response",
+      "player": "buyer",
+      "actor": "seller",
+      "quest": "campaign_fixture:bargaining",
+      "stage": "purchase",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "buyer_leave_offer",
+      "type": "interrupt",
+      "player": "buyer",
+      "actor": "seller",
+      "active": false
+    },
+    {
+      "id": "start",
+      "type": "conversation_start",
+      "player": "buyer",
+      "session": "trade",
+      "conversation": "campaign_fixture:merchant_bargaining",
+      "topic": "supplies"
+    },
+    {
+      "id": "offer",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "advance"
+    },
+    {
+      "id": "decline",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "choose",
+      "argument": "leave"
+    },
+    {
+      "id": "farewell",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "advance"
+    },
+    {
+      "id": "no_purchase",
+      "type": "assert_transaction",
+      "player": "buyer",
+      "quest": "campaign_fixture:bargaining",
+      "transaction": "supplies",
+      "state": "unarranged"
+    },
+    {
+      "id": "funds_kept",
+      "type": "assert_item_count",
+      "player": "buyer",
+      "item": "minecraft:emerald",
+      "count": 8
+    },
+    {
+      "id": "no_supplies",
+      "type": "assert_item_count",
+      "player": "buyer",
+      "item": "minecraft:bread",
+      "count": 0
+    },
+    {
+      "id": "quest_waits",
+      "type": "assert_quest",
+      "player": "buyer",
+      "quest": "campaign_fixture:bargaining",
+      "stage": "purchase",
+      "completions": 0
+    },
+    {
+      "id": "reload",
+      "type": "reload"
+    },
+    {
+      "id": "still_unarranged",
+      "type": "assert_transaction",
+      "player": "buyer",
+      "quest": "campaign_fixture:bargaining",
+      "transaction": "supplies",
+      "state": "unarranged"
+    }
+  ]
+}

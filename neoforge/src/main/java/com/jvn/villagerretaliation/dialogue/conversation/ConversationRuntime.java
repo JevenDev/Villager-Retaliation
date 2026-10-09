@@ -224,11 +224,12 @@ final class ConversationRuntime {
         return new VillagerActionDefinition(action.kind(), action.questId(), action.questAction(), action.amount(), action.memoryTag(), action.memoryScope(),
                 action.lootTable(), action.notificationTrigger(), action.text(), action.forcedDialogue(), action.flashTracker(), action.factScope(),
                 action.factTag(), action.factKey(), action.factValue(), action.linesByStatus(), action.lineKeysByStatus(), action.questTransition(),
-                action.sceneId(), operation, action.waitForScene(), action.required(), action.campaignOutcome(), action.campaignFact(), action.campaignReward(), action.campaignStanding());
+                action.sceneId(), operation, action.waitForScene(), action.required(), action.campaignOutcome(), action.campaignFact(), action.campaignReward(), action.campaignStanding(), action.campaignPayment());
     }
 
     private static boolean recoverable(VillagerActionDefinition action) {
-        return action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD
+        return action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT
+                || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD
                 || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_STANDING
                 || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_FACT
                 || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME

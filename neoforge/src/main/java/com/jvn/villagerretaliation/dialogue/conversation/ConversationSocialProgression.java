@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
-import com.jvn.villagerretaliation.skill.player.PlayerSocialAward;
 import com.jvn.villagerretaliation.skill.player.PlayerSocialProgressionSavedData;
 import com.jvn.villagerretaliation.skill.player.SocialCheckBreakdown;
 import com.jvn.villagerretaliation.skill.player.SocialProgressionResources;
@@ -34,7 +33,7 @@ final class ConversationSocialProgression {
         var check = session.checks.values().stream().filter(value -> value.social() != null && !session.socialAwards.contains(value.id())).findFirst().orElse(null);
         if (check == null) { data.socialIssue(id, ""); return; }
         try {
-            PlayerSocialProgressionSavedData.get(server.overworld()).grant(new PlayerSocialAward(id, check.id(), check.request(), check.player(), check.social()));
+            PlayerSocialProgressionSavedData.get(server.overworld()).grant(ConversationBargaining.experienceAward(server, session, check));
             session.socialAwards.add(check.id());
             data.write(server.overworld(), session.revision++, session);
             data.socialIssue(id, "");

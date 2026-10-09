@@ -61,6 +61,8 @@ final class CampaignCommands {
             var server = context.getSource().getServer();
             var ids = new LinkedHashSet<>(CampaignResources.current(server).campaigns().keySet());
             ids.addAll(CampaignSavedData.get(server.overworld()).instances().keySet());
+            com.jvn.villagerretaliation.campaign.CampaignTransactionSavedData.get(server.overworld()).receipts().values()
+                    .forEach(receipt -> ids.add(receipt.terms().key().campaign()));
             return SharedSuggestionProvider.suggestResource(ids, builder);
         });
     }
@@ -75,6 +77,8 @@ final class CampaignCommands {
                 ids.addAll(instance.facts().players().keySet());
             });
             com.jvn.villagerretaliation.campaign.CampaignStandingSavedData.get(server.overworld()).values().keySet().forEach(key -> ids.add(key.player()));
+            com.jvn.villagerretaliation.campaign.CampaignTransactionSavedData.get(server.overworld()).receipts().values()
+                    .forEach(receipt -> ids.add(receipt.terms().key().player()));
             return SharedSuggestionProvider.suggest(ids.stream().map(UUID::toString), builder);
         });
     }
@@ -124,6 +128,7 @@ final class CampaignCommands {
             if (!location.diagnostic().isBlank()) lines.add("Location diagnostic: " + location.diagnostic());
         }
         report.conversations().forEach(session -> session(lines, session));
+        report.transactions().forEach(transaction -> transaction(lines, transaction));
         return show(context.getSource(), report.campaign() + " " + report.status(), lines, page);
     }
 
@@ -164,7 +169,29 @@ final class CampaignCommands {
                 && receipt.change().player().equals(player.id())).forEach(receipt -> lines.add("Standing operation " + receipt.operation()
                 + ": " + receipt.change().scope() + "/" + receipt.change().subject() + ", " + receipt.before() + " -> " + receipt.after()
                 + ", quest " + receipt.change().quest() + ", run " + receipt.change().questRun()));
+        report.transactions().stream().filter(transaction -> transaction.receipt().terms().key().player().equals(player.id()))
+                .forEach(transaction -> transaction(lines, transaction));
         return show(context.getSource(), report.campaign() + " personal progress", lines, page);
+    }
+
+    private static void transaction(List<String> lines, com.jvn.villagerretaliation.campaign.CampaignTransactionInspection.Entry entry) {
+        var receipt = entry.receipt();
+        var terms = receipt.terms();
+        lines.add("Transaction " + terms.key().transaction() + " (" + terms.title() + "): " + receipt.phase()
+                + (entry.persisted() ? "" : ", waiting for storage"));
+        lines.add("Buyer " + terms.key().player() + ", quest " + terms.key().quest() + ", run " + terms.key().questRun());
+        lines.add("Seller " + terms.character() + " = " + terms.seller() + ", " + terms.dimension());
+        lines.add("Payment " + receipt.price() + " " + terms.item() + ", base " + terms.count()
+                + (terms.bargainedCount() == null ? "" : ", successful bargain " + terms.bargainedCount()));
+        lines.add("Operation " + receipt.operation() + ", instance " + terms.key().instance() + ", definition revision " + terms.definitionRevision());
+        if (entry.persisted() && receipt.negotiation() != null) {
+            var negotiation = receipt.negotiation();
+            var check = negotiation.check();
+            lines.add("Bargain " + negotiation.source().conversation() + " / " + check.id() + ", session " + negotiation.source().session()
+                    + ", die " + check.die() + ", modifier " + check.modifier() + ", total " + check.total()
+                    + ", difficulty " + check.difficulty() + ", success: " + check.success());
+        }
+        entry.diagnostics().forEach(issue -> lines.add("Transaction diagnostic: " + issue));
     }
 
     private static int topic(CommandContext<CommandSourceStack> context, int page) {

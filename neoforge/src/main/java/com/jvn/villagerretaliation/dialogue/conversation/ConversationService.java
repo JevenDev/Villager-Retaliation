@@ -125,6 +125,10 @@ public final class ConversationService {
                         require(session.phase == ConversationSession.Phase.RESPONSES, "The conversation is not waiting for a response.");
                         var response = definition.nodes().get(session.node).responses().get(argument);
                         require(response != null && conditions(context, response.conditions()), "This response is no longer available.");
+                        for (var effect : response.effects()) if (effect.action().campaignPayment() != null) {
+                            String paymentIssue = ConversationBargaining.paymentIssue(context, session, effect.action().questId(), effect.action().campaignPayment().transaction());
+                            require(paymentIssue.isBlank(), paymentIssue);
+                        }
                         session.response = response.id();
                         session.actingPlayer = player.getUUID();
                         session.questRun = questRun(player, definition.quest());
@@ -147,7 +151,11 @@ public final class ConversationService {
                         require(session.phase == ConversationSession.Phase.CHECK, "The conversation is not waiting for a check.");
                         var check = definition.checks().get(session.check);
                         require(check != null, "The authored check is unavailable.");
-                        if (!session.checks.containsKey(check.id())) {
+                        if (!check.transaction().isEmpty() && session.checks.containsKey(check.id()))
+                            require(session.checks.get(check.id()).player().equals(session.actingPlayer), "This bargain belongs to another buyer. Begin a separate conversation for your transaction.");
+                        if (!session.checks.containsKey(check.id()) && !check.transaction().isEmpty()) {
+                            ConversationBargaining.roll(player, data, session, check, requestId);
+                        } else if (!session.checks.containsKey(check.id())) {
                             var social = ConversationSocialProgression.capture(player, data, check);
                             var modifiers = ConversationCheckModifier.capture(context, check);
                             session.checks.put(check.id(), ConversationSession.Check.roll(requestId, check, player.getRandom().nextInt(20) + 1,
@@ -191,7 +199,10 @@ public final class ConversationService {
                 boolean authorized = controller != null && member(controller, session) && CampaignAuthority.canControl(controller) && near(controller, character);
                 var context = authorized ? VillagerInteractionService.createDialogueContext(controller.serverLevel(), controller, character) : null;
                 for (var response : definition.nodes().get(session.node).responses().values()) {
-                    responses.add(new Response(response.id(), text(player, response.labelKey()), authorized && conditions(context, response.conditions())));
+                    responses.add(new Response(response.id(),
+                            com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
+                                    text(player, response.labelKey()), session.replacements),
+                            authorized && conditions(context, response.conditions())));
                 }
             }
             issue = session.controller == null ? "The conversation is paused until an authorized member takes control." : session.diagnostic;
@@ -283,6 +294,7 @@ public final class ConversationService {
         require(instance != null && instance.instanceId().equals(session.identity.campaignInstance())
                 && instance.fingerprint().equals(session.identity.campaignFingerprint()), "Restore the original campaign instance before continuing this conversation.");
         require(definition.nodes().containsKey(session.node), "Saved conversation node is unavailable.");
+        ConversationBargaining.validate(server, session, definition);
         return definition;
     }
 

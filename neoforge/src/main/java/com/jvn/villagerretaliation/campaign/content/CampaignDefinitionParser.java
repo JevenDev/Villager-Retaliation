@@ -152,11 +152,13 @@ public final class CampaignDefinitionParser {
                 CampaignLocationVariant.read(source, array(root, "location_variants"), diagnostics),
                 CampaignFixtureEntry.read(source, array(root, "fixture_entries"), diagnostics),
                 CampaignStandingDefinition.read(source, array(root, "relationships"), CampaignStandingDefinition.Scope.CHARACTER, diagnostics),
-                CampaignStandingDefinition.read(source, array(root, "factions"), CampaignStandingDefinition.Scope.FACTION, diagnostics), source);
+                CampaignStandingDefinition.read(source, array(root, "factions"), CampaignStandingDefinition.Scope.FACTION, diagnostics),
+                CampaignTransactionDefinition.read(source, array(root, "transactions"), diagnostics), source);
         validateReferences(definition, diagnostics);
         CampaignLocationVariant.validate(definition, diagnostics);
         CampaignFixtureEntry.validate(definition, diagnostics);
         CampaignStandingDefinition.validate(definition, diagnostics);
+        CampaignTransactionDefinition.validate(definition, diagnostics);
         return new Result(diagnostics.isEmpty() ? definition : null, diagnostics);
     }
 
@@ -180,6 +182,9 @@ public final class CampaignDefinitionParser {
         }
         for (var reward : definition.rewards().values()) {
             requireCampaignOwner(definition, quests, reward.quest(), reward.pointer() + "/quest", diagnostics);
+        }
+        for (var transaction : definition.transactions().values()) {
+            requireCampaignOwner(definition, quests, transaction.quest(), transaction.pointer() + "/quest", diagnostics);
         }
         for (var entry : definition.fixtureEntries().values()) {
             for (var effect : entry.effects()) if (effect instanceof CampaignFixtureEntry.CompleteQuest completion)

@@ -45,7 +45,8 @@ public final class CampaignRewardRecovery {
         int prepared = continuation.preparedRecoveryAction();
         if (prepared >= 0 && prepared < continuation.actions().size()) {
             var kind = continuation.actions().get(prepared).kind();
-            if (kind != VillagerActionDefinition.Kind.CAMPAIGN_REWARD
+            if (kind != VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT
+                    && kind != VillagerActionDefinition.Kind.CAMPAIGN_REWARD
                     && kind != VillagerActionDefinition.Kind.CAMPAIGN_STANDING
                     && kind != VillagerActionDefinition.Kind.CAMPAIGN_FACT
                     && kind != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {

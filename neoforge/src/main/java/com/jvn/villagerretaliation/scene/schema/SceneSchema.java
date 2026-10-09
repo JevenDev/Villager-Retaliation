@@ -35,7 +35,10 @@ public final class SceneSchema {
         properties.add("actors", array(actor(), 0));
         properties.add("steps", array(step(), 1));
         root.add("properties", properties);
-        root.add("$defs", localizedDefinitions());
+        var definitions = localizedDefinitions();
+        definitions.add(com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.DEFINITION,
+                com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.definition());
+        root.add("$defs", definitions);
         return root;
     }
 
@@ -902,7 +905,9 @@ public final class SceneSchema {
         properties.add("id", text());
         properties.add("type", registeredIds(VillagerRetaliationRegistries.SCENE_STEPS));
         properties.add("actors", array(patternedText("^[a-z][a-z0-9_.-]{0,63}$"), 0));
-        properties.add("data", map());
+        var data = map();
+        data.addProperty("$ref", "#/$defs/" + com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.DEFINITION);
+        properties.add("data", data);
         properties.add("next", text());
         properties.add("failure_step", text());
         properties.add("transitions", map());

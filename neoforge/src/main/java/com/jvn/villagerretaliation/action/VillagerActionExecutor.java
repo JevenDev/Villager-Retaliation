@@ -57,6 +57,7 @@ public final class VillagerActionExecutor {
             case TRACKER -> VillagerActionResult.tracker(action.flashTracker());
             case FORCED_DIALOGUE -> executeForcedDialogue(context, action, replacements).legacyResult();
             case QUEST -> executeQuestAction(context, action, replacements);
+            case CAMPAIGN_PAYMENT -> com.jvn.villagerretaliation.campaign.CampaignPaymentService.execute(context, action).legacyResult();
             case CAMPAIGN_REWARD -> com.jvn.villagerretaliation.campaign.CampaignRewardService.execute(context, action).legacyResult();
             case CAMPAIGN_STANDING -> com.jvn.villagerretaliation.campaign.CampaignStandingService.execute(context, action).legacyResult();
             case CAMPAIGN_FACT -> com.jvn.villagerretaliation.campaign.CampaignFactService.execute(context, action).legacyResult();

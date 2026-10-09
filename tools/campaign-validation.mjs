@@ -38,6 +38,7 @@ export function validateCampaign(root, schema, context = {}) {
   const variants = index(root.location_variants ?? [], "/location_variants");
   const facts = index(root.facts ?? [], "/facts");
   const rewards = index(root.rewards ?? [], "/rewards");
+  const transactions = index(root.transactions ?? [], "/transactions");
   const outcomes = new Map();
   for (const milestone of milestones.values()) outcomes.set(milestone.id, index(milestone.outcomes, milestone.pointer + "/outcomes"));
   const bundle = (id, pointer, requireOwner = false) => {
@@ -237,6 +238,15 @@ export function validateCampaign(root, schema, context = {}) {
         && (!prerequisite.outcome || prerequisite.outcome === completedMilestones.get(prerequisite.milestone));
       if (!satisfied) issue(fixture.pointer + "/effects", "fixture effects do not satisfy chapter prerequisite at " + chapter.pointer + "/prerequisites/" + at);
     }
+  }
+  for (const transaction of transactions.values()) {
+    const pointer = transaction.pointer;
+    localized(transaction.title_key, pointer + "/title_key");
+    bundle(transaction.quest, pointer + "/quest", true);
+    if (!characters.has(transaction.character)) issue(pointer + "/character", "unknown transaction character " + transaction.character);
+    if (transaction.payment.item === "minecraft:air") issue(pointer + "/payment/item", "campaign payment cannot use minecraft:air");
+    if (transaction.bargained_count !== undefined && transaction.bargained_count >= transaction.payment.count)
+      issue(pointer + "/bargained_count", "bargained payment must be lower than the original count");
   }
   for (const reward of rewards.values()) {
     const pointer = reward.pointer;

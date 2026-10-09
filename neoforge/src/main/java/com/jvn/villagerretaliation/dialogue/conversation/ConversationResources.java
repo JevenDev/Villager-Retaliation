@@ -90,7 +90,8 @@ public final class ConversationResources {
                 issues.add(ConversationCompiler.error(definition.source(), effect.pointer() + "/action/quest", "unknown quest " + action.questId()));
             }
             if (action.questId() == null && (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_STANDING || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_FACT
-                    || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD)) {
+                    || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD
+                    || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT)) {
                 issues.add(ConversationCompiler.error(definition.source(), effect.pointer() + "/action/quest", "campaign effect requires an owning quest"));
             }
         }

@@ -35,6 +35,14 @@ import net.minecraft.world.level.block.Blocks;
 
 public record CampaignConversationClientFixture(UUID session, UUID character, int entity) {
     public static CampaignConversationClientFixture prepare(ServerPlayer player) throws IOException {
+        return prepare(player, false);
+    }
+
+    public static CampaignConversationClientFixture prepareBargaining(ServerPlayer player) throws IOException {
+        return prepare(player, true);
+    }
+
+    private static CampaignConversationClientFixture prepare(ServerPlayer player, boolean bargaining) throws IOException {
         var level = player.serverLevel();
         level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, player.server);
         level.setDayTime(6000);
@@ -54,6 +62,7 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
             } else if (file.equals("conversations/mentor.json")) {
                 var social = SocialProgressionTestData.resource("quests/campaign_fixture/characters/conversations/context_mentor.json");
                 raw.add("checks", social.getAsJsonArray("checks").deepCopy());
+                if (bargaining) raw.getAsJsonArray("checks").get(0).getAsJsonObject().addProperty("transaction", "supplies");
                 var node = raw.getAsJsonArray("nodes").get(0).getAsJsonObject();
                 node.add("effects", com.google.gson.JsonParser.parseString("""
                         [{"id":"before_acceptance","action":{"type":"experience","amount":7}},
@@ -89,6 +98,10 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
                               {"id":"leave","title_key":"campaign_fixture.campaign.characters.leave"}],
                   "catch_up":{"quest":"campaign_fixture:characters","stage":"report"}}]
                 """));
+        if (bargaining) campaign.add("transactions", com.google.gson.JsonParser.parseString("""
+                [{"id":"supplies","title_key":"campaign_fixture.campaign.characters.supplies","quest":"campaign_fixture:characters",
+                  "character":"mentor","payment":{"item":"minecraft:emerald","count":8},"bargained_count":5}]
+                """));
         var location = campaign.getAsJsonArray("locations").get(0).getAsJsonObject();
         location.addProperty("source", "marker"); location.remove("search_radius");
         var origin = new JsonObject(); origin.addProperty("x", 0); origin.addProperty("y", 1); origin.addProperty("z", 0);
@@ -96,6 +109,7 @@ public record CampaignConversationClientFixture(UUID session, UUID character, in
         var locale = QuestLocaleCatalog.read(CampaignCharacterTestFixture.resource("campaigns/characters/locales/en_us.json"));
         var campaigns = CampaignContentCatalog.compile(catalog, List.of(new CampaignContentCatalog.Source(id("campaigns/characters/campaign.json"), "campaign_fixture",
                 campaign, QuestLocaleCatalog.empty().overlay("en_us", locale.messages()).overlay("en_us", Map.of(
+                        "campaign_fixture.campaign.characters.supplies", new com.google.gson.JsonPrimitive("Travel supplies"),
                         "campaign_fixture.campaign.characters.help", new com.google.gson.JsonPrimitive("The mentor will help the village"),
                         "campaign_fixture.campaign.characters.leave", new com.google.gson.JsonPrimitive("The village must find another guide"))), List.of())));
         require(campaigns.diagnostics().isEmpty(), "client fixture campaign compiles: " + campaigns.diagnostics());

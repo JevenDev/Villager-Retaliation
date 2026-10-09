@@ -113,6 +113,7 @@
             "campaign_location",
             "campaign_outcome",
             "campaign_standing",
+            "campaign_transaction",
             "choice_selected",
             "dimension",
             "entity_nearby",
@@ -166,6 +167,58 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_transaction"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "campaign_transaction"
+              },
+              "campaign": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "quest": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "transaction": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "unarranged",
+                  "negotiated",
+                  "payment_pending",
+                  "paid",
+                  "unpaid"
+                ]
+              }
+            },
+            "required": [
+              "campaign",
+              "quest",
+              "transaction",
+              "state"
+            ]
+          }
+        },
         {
           "if": {
             "properties": {
@@ -819,6 +872,34 @@
               "operation_id"
             ]
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "campaign_payment"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "transaction": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            },
+            "required": [
+              "transaction"
+            ]
+          }
         }
       ],
       "properties": {
@@ -832,6 +913,7 @@
             "branch_transition",
             "campaign_fact",
             "campaign_outcome",
+            "campaign_payment",
             "campaign_reward",
             "campaign_standing",
             "clear_tag",
@@ -898,6 +980,7 @@
             "branch_transition",
             "campaign_fact",
             "campaign_outcome",
+            "campaign_payment",
             "campaign_reward",
             "campaign_standing",
             "cancel",
@@ -1330,6 +1413,12 @@
           "maxLength": 256,
           "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
         },
+        "transaction": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+        },
         "social": {
           "type": "object",
           "additionalProperties": false,
@@ -1366,6 +1455,44 @@
           },
           "minItems": 0,
           "maxItems": 16
+        }
+      },
+      "if": {
+        "required": [
+          "transaction"
+        ]
+      },
+      "then": {
+        "required": [
+          "social"
+        ],
+        "properties": {
+          "social": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "progression",
+              "skill"
+            ],
+            "properties": {
+              "progression": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])",
+                "maxLength": 256
+              },
+              "skill": {
+                "type": "string",
+                "enum": [
+                  "persuasion"
+                ]
+              },
+              "experience": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              }
+            }
+          }
         }
       }
     },

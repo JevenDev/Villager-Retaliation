@@ -52,6 +52,16 @@ public final class ConversationSceneExecution {
         return current == null ? new CompoundTag() : current.save();
     }
 
+    public static String paymentIssue(DialogueContext context, net.minecraft.resources.ResourceLocation quest, String transaction) {
+        var source = CURRENT.get();
+        if (source == null) return "";
+        var data = ConversationSavedData.get(context.level());
+        if (!data.diagnostic().isBlank()) return data.diagnostic();
+        var session = data.session(source.session());
+        if (session == null) return "The payment's conversation is missing. Restore its session before continuing.";
+        return ConversationBargaining.paymentIssue(context, session, quest, transaction);
+    }
+
     public static Access resolve(MinecraftServer server, SceneInstance scene) {
         return resolveScene(server, scene, false);
     }

@@ -57,6 +57,8 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
             quests.conversations().values().stream().filter(conversation -> conversation.campaign().equals(definition.id()))
                     .forEach(conversation -> issues.addAll(com.jvn.villagerretaliation.dialogue.conversation.ConversationCompiler.validateCampaign(conversation, definition)));
             requireText(definition, source.locales(), definition.titleKey(), "/title_key", issues);
+            definition.transactions().values().forEach(transaction -> requireText(definition, source.locales(),
+                    transaction.titleKey(), transaction.pointer() + "/title_key", issues));
             CampaignStandingDefinition.all(definition).forEach(standing -> {
                 requireText(definition, source.locales(), standing.titleKey(), standing.pointer() + "/title_key", issues);
                 standing.reactions().values().forEach(reaction -> requireText(definition, source.locales(),
@@ -95,6 +97,7 @@ public record CampaignContentCatalog(QuestContentCatalog quests, Map<ResourceLoc
                 .forEach(conversation -> diagnostics.add(com.jvn.villagerretaliation.dialogue.conversation.ConversationCompiler.error(
                         conversation.source(), "/campaign", "campaign content is unavailable: " + conversation.campaign())));
         diagnostics.addAll(CampaignStandingReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
+        diagnostics.addAll(CampaignTransactionReferences.validate(new CampaignContentCatalog(quests, entries, List.of())));
         return new CampaignContentCatalog(quests, entries, diagnostics);
     }
 

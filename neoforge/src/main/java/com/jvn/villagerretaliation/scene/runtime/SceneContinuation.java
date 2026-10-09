@@ -256,9 +256,12 @@ public final class SceneContinuation {
         for (Tag raw : tag.getList("Actions", Tag.TAG_COMPOUND)) {
             if (!(raw instanceof CompoundTag action)) continue;
             if (action.getString("Kind").equals("CAMPAIGN_OUTCOME") || action.getString("Kind").equals("CAMPAIGN_FACT")
-                    || action.getString("Kind").equals("CAMPAIGN_REWARD") || action.getString("Kind").equals("CAMPAIGN_STANDING")) {
+                    || action.getString("Kind").equals("CAMPAIGN_REWARD") || action.getString("Kind").equals("CAMPAIGN_STANDING")
+                    || action.getString("Kind").equals("CAMPAIGN_PAYMENT")) {
                 try {
-                    if (action.getString("Kind").equals("CAMPAIGN_STANDING")) {
+                    if (action.getString("Kind").equals("CAMPAIGN_PAYMENT")) {
+                        com.jvn.villagerretaliation.campaign.CampaignPaymentAction.load(action.getCompound("CampaignPayment"));
+                    } else if (action.getString("Kind").equals("CAMPAIGN_STANDING")) {
                         com.jvn.villagerretaliation.campaign.CampaignStandingAction.load(action.getCompound("CampaignStanding"));
                     } else if (action.getString("Kind").equals("CAMPAIGN_REWARD")) {
                         com.jvn.villagerretaliation.campaign.CampaignRewardAction.load(action.getCompound("CampaignReward"));
@@ -272,6 +275,7 @@ public final class SceneContinuation {
                     action.remove("CampaignFact");
                     action.remove("CampaignReward");
                     action.remove("CampaignStanding");
+                    action.remove("CampaignPayment");
                 }
             }
             actions.add(loadAction(action));
@@ -407,6 +411,7 @@ public final class SceneContinuation {
         tag.putString("Operation", action.sceneOperationId());
         tag.putBoolean("Wait", action.waitForScene());
         tag.putBoolean("Required", action.required());
+        if (action.campaignPayment() != null) tag.put("CampaignPayment", action.campaignPayment().save());
         if (action.campaignStanding() != null) tag.put("CampaignStanding", action.campaignStanding().save());
         if (action.campaignReward() != null) tag.put("CampaignReward", action.campaignReward().save());
         if (action.campaignFact() != null) tag.put("CampaignFact", action.campaignFact().save());
@@ -436,7 +441,9 @@ public final class SceneContinuation {
                 tag.contains("CampaignReward", Tag.TAG_COMPOUND)
                         ? com.jvn.villagerretaliation.campaign.CampaignRewardAction.load(tag.getCompound("CampaignReward")) : null,
                 tag.contains("CampaignStanding", Tag.TAG_COMPOUND)
-                        ? com.jvn.villagerretaliation.campaign.CampaignStandingAction.load(tag.getCompound("CampaignStanding")) : null);
+                        ? com.jvn.villagerretaliation.campaign.CampaignStandingAction.load(tag.getCompound("CampaignStanding")) : null,
+                tag.contains("CampaignPayment", Tag.TAG_COMPOUND)
+                        ? com.jvn.villagerretaliation.campaign.CampaignPaymentAction.load(tag.getCompound("CampaignPayment")) : null);
     }
 
     private static Map<String, List<String>> readLineMap(CompoundTag tag, String field) {

@@ -1,6 +1,7 @@
 import { validateContentSchema as validateConversationSchema } from "./content-schema-validation.mjs";
 export { validateConversationSchema };
 import { validateStandingReferences } from "./campaign-standing-validation.mjs";
+import { validateTransactionReferences } from "./campaign-transaction-validation.mjs";
 
 const child = (pointer, key) => `${pointer}/${String(key).replaceAll("~", "~0").replaceAll("/", "~1")}`;
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -62,17 +63,33 @@ export function validateConversation(root, schema, context) {
     require(nodes, check.failure, `${check.pointer}/failure`, "node");
     if (check.social) require(context.progressions ?? new Map(), check.social.progression, `${check.pointer}/social/progression`, "social progression");
   }
-  if (context.campaign && (!Array.isArray(context.campaign.characters) || !Array.isArray(context.campaign.quest_bundles))) {
-    issue("/campaign", "referenced campaign has invalid character or quest declarations");
+  if (context.campaign && (!Array.isArray(context.campaign.characters) || !Array.isArray(context.campaign.quest_bundles)
+      || context.campaign.transactions !== undefined && (!Array.isArray(context.campaign.transactions) || context.campaign.transactions.some(entry => !object(entry))))) {
+    issue("/campaign", "referenced campaign has invalid character, quest, or transaction declarations");
     return issues;
   }
   issues.push(...validateStandingReferences(root, { ...context, quest: root.quest ?? context.quest }));
+  issues.push(...validateTransactionReferences(root, { ...context, quest: root.quest ?? context.quest }));
   const roles = new Set((context.campaign?.characters ?? []).map(role => role?.id));
   if (context.campaign) {
     if (context.campaign.id !== root.campaign) issue("/campaign", "conversation belongs to another campaign");
     if (!roles.has(root.character)) issue("/character", `unknown campaign character ${root.character}`);
     const quest = root.quest ?? context.quest;
     if (quest && !context.campaign.quest_bundles.includes(quest)) issue("/quest", "conversation quest is not declared by its campaign");
+    const transactions = new Map((context.campaign.transactions ?? []).map(entry => [entry.id, entry]));
+    const checked = new Set();
+    for (const check of checks.values()) if (check.transaction) {
+      const transaction = transactions.get(check.transaction);
+      const pointer = `${check.pointer}/transaction`;
+      if (!transaction) issue(pointer, `unknown campaign transaction ${check.transaction}`);
+      else {
+        if (transaction.quest !== quest) issue(pointer, "transaction belongs to another quest");
+        if (transaction.character !== root.character) issue(pointer, "transaction belongs to another campaign character");
+        if (transaction.bargained_count === undefined) issue(pointer, "transaction does not declare a bargained price");
+      }
+      if (checked.has(check.transaction)) issue(pointer, "transaction already has a bargaining check in this conversation");
+      checked.add(check.transaction);
+    }
   }
   for (const node of nodes.values()) {
     const next = new Set();

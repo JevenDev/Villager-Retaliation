@@ -23,6 +23,7 @@ final class CampaignReferenceCollector {
     private final Map<Key, LinkedHashSet<Source>> declarations = new LinkedHashMap<>();
     private final LinkedHashSet<Reference> references = new LinkedHashSet<>();
     private final List<com.jvn.villagerretaliation.quest.debug.QuestDiagnostic> standingIssues = new ArrayList<>();
+    private final List<com.jvn.villagerretaliation.quest.debug.QuestDiagnostic> transactionIssues = new ArrayList<>();
     private final Map<ResourceLocation, LinkedHashSet<ResourceLocation>> sceneCampaigns = new LinkedHashMap<>();
 
     CampaignReferenceCollector(CampaignContentCatalog content) { this.content = content; }
@@ -48,6 +49,8 @@ final class CampaignReferenceCollector {
     }
 
     List<com.jvn.villagerretaliation.quest.debug.QuestDiagnostic> standingIssues() { return List.copyOf(standingIssues); }
+
+    List<com.jvn.villagerretaliation.quest.debug.QuestDiagnostic> transactionIssues() { return List.copyOf(transactionIssues); }
 
     private Key key(Kind kind, ResourceLocation owner, String... path) {
         if (owner == null || java.util.Arrays.stream(path).anyMatch(value -> value == null || value.isBlank())) return null;
@@ -159,6 +162,13 @@ final class CampaignReferenceCollector {
             var at = new Source(source.resource(), source.pack(), variant.pointer());
             ref(declare(VARIANT, id, at, variant.id()), key(LOCATION, id, variant.location()), CHANGES, at.child("location"));
         }
+        for (var transaction : definition.transactions().values()) {
+            var at = new Source(source.resource(), source.pack(), transaction.pointer());
+            var node = declare(TRANSACTION, id, at, transaction.id());
+            ref(owner, node, INCLUDES, at);
+            ref(node, key(QUEST, transaction.quest()), REQUIRES, at.child("quest"));
+            ref(node, key(CHARACTER, id, transaction.character()), REQUIRES, at.child("character"));
+        }
         for (var reward : definition.rewards().values()) {
             var at = new Source(source.resource(), source.pack(), reward.pointer());
             var node = declare(REWARD, id, at, reward.id());
@@ -257,6 +267,8 @@ final class CampaignReferenceCollector {
         ref(owner, key(CHARACTER, definition.campaign(), definition.character()), SPEAKS, at.child("character"));
         if (!definition.owner().shared()) ref(key(QUEST, definition.quest()), owner, INCLUDES, at);
         for (var check : definition.checks().values()) {
+            ref(owner, key(TRANSACTION, definition.campaign(), check.transaction()), READS,
+                    new Source(at.resource(), at.pack(), check.pointer()).child("transaction"));
             for (var modifier : check.modifiers()) conditions(owner, modifier.conditions(),
                     new Source(at.resource(), at.pack(), modifier.pointer()));
             if (check.social() == null) continue;
@@ -289,7 +301,7 @@ final class CampaignReferenceCollector {
         for (var action : actions) {
             var targetQuest = content.quests().compiledQuest(action.questId()).orElse(null);
             var context = action.questId() == null ? campaign : targetQuest == null ? null : targetQuest.metadata().campaign();
-            if ((action.campaignOutcome() != null || action.campaignFact() != null || action.campaignReward() != null || action.campaignStanding() != null)
+            if ((action.campaignOutcome() != null || action.campaignFact() != null || action.campaignReward() != null || action.campaignStanding() != null || action.campaignPayment() != null)
                     && (owner.kind() != QUEST || !owner.owner().equals(action.questId())))
                 ref(owner, key(QUEST, action.questId()), REQUIRES, source);
             if (action.kind() == VillagerActionDefinition.Kind.QUEST || action.kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION)
@@ -306,9 +318,27 @@ final class CampaignReferenceCollector {
                             "standing action requires a quest declared by its campaign"), source.pack()));
                 ref(owner, key(standingKind(action.campaignStanding().scope()), context, action.campaignStanding().subject()), WRITES, standingField(owner, source, "subject"));
             }
+            if (action.campaignPayment() != null) transaction(owner, context, action.questId(), action.campaignPayment().transaction(), WRITES,
+                    standingField(owner, source, "transaction"));
             if (action.campaignReward() != null) ref(owner, key(REWARD, context, action.campaignReward().reward()), GRANTS, source);
             if (action.sceneId() != null) scene(owner, context, action.sceneId(), source);
         }
+    }
+
+    private void transaction(Key owner, ResourceLocation campaign, ResourceLocation quest, String transaction, Relation relation, Source source) {
+        ref(owner, key(TRANSACTION, campaign, transaction), relation, source);
+        ref(owner, key(QUEST, quest), REQUIRES, source);
+        var entry = campaign == null ? null : content.campaigns().get(campaign);
+        var compiled = content.quests().compiledQuest(quest).orElse(null);
+        String issue = "";
+        if (entry == null || compiled == null || !campaign.equals(compiled.metadata().campaign()) || !entry.definition().questBundles().contains(quest))
+            issue = "transaction requires a quest declared by its campaign";
+        else {
+            var definition = entry.definition().transactions().get(transaction);
+            if (definition == null) issue = "unknown campaign transaction " + transaction;
+            else if (!definition.quest().equals(quest)) issue = "transaction belongs to another quest";
+        }
+        if (!issue.isEmpty()) transactionIssues.add(CampaignContentCatalog.inPack(CampaignSchema.error(source.resource(), source.pointer(), issue), source.pack()));
     }
 
     private static Kind standingKind(CampaignStandingDefinition.Scope scope) { return scope == CampaignStandingDefinition.Scope.CHARACTER ? RELATIONSHIP : FACTION; }
@@ -326,6 +356,8 @@ final class CampaignReferenceCollector {
             if (condition instanceof DialogueCondition.AllOf all) pending.addAll(all.conditions());
             else if (condition instanceof DialogueCondition.AnyOf any) pending.addAll(any.conditions());
             else if (condition instanceof DialogueCondition.Not not && not.condition() != null) pending.add(not.condition());
+            else if (condition instanceof DialogueCondition.CampaignTransaction transaction)
+                transaction(owner, transaction.reference().campaign(), transaction.reference().quest(), transaction.reference().transaction(), READS, source);
             else if (condition instanceof DialogueCondition.CampaignFact fact)
                 ref(owner, key(FACT, fact.reference().campaign(), fact.reference().fact()), READS, source);
             else if (condition instanceof DialogueCondition.CampaignOutcome outcome)
@@ -384,6 +416,19 @@ final class CampaignReferenceCollector {
                 break;
             }
             var owner = declare(SCENE, entry.getKey(), origin);
+            var stepOrder = new ArrayList<String>();
+            if (authored != null && authored.has("steps")) authored.getAsJsonArray("steps").forEach(raw ->
+                    stepOrder.add(raw.getAsJsonObject().get("id").getAsString()));
+            for (var step : compiled.steps().values()) {
+                int position = stepOrder.indexOf(step.id());
+                var where = position < 0 ? origin : origin.child("steps", Integer.toString(position), "data");
+                for (var reference : com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields.references(step.parameters())) {
+                    var quest = content.quests().compiledQuest(reference.quest()).orElse(null);
+                    var campaign = reference.payment() ? quest == null ? null : quest.metadata().campaign() : reference.campaign();
+                    transaction(owner, campaign, reference.quest(), reference.transaction(), reference.payment() ? WRITES : READS,
+                            new Source(where.resource(), where.pack(), where.pointer() + reference.pointer()));
+                }
+            }
             var actorOrder = new LinkedHashSet<String>();
             if (authored != null && authored.has("actors")) authored.getAsJsonArray("actors").forEach(raw ->
                     actorOrder.add(raw.getAsJsonObject().get("alias").getAsString()));

@@ -275,6 +275,66 @@ public final class ConversationPresentationPayloadGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void transactionTermsRoundTripAndRejectInvalidPrices(GameTestHelper helper) {
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            var price = new Transaction("campaign_fixture:characters", "supplies", "pay", "", "Travel supplies", UUID.randomUUID(), "Alex",
+                    "minecraft:emerald", 8, 5, 5, TransactionState.NEGOTIATED, false, "");
+            var session = new Session(UUID.randomUUID(), 4, "Supplies", ConversationSession.Phase.RESPONSES, null,
+                    true, false, "Alex", List.of(), List.of(new Response("pay", "Buy supplies", true)), null, "", null, List.of(price));
+            var payload = new CampaignConversationViewPayload(UUID.randomUUID(), 4, UUID.randomUUID(), 0, 1, List.of(), session, "");
+            CampaignConversationViewPayload.STREAM_CODEC.encode(buffer, payload);
+            helper.assertValueEqual(CampaignConversationViewPayload.STREAM_CODEC.decode(buffer), payload, "prices and buyers survive the wire");
+            for (int invalid : new int[] {-1, 0, 7, 9}) {
+                try {
+                    new Transaction(price.quest(), price.id(), "", "", price.title(), price.buyer(), price.buyerName(),
+                            price.item(), 8, 5, invalid, TransactionState.NEGOTIATED, false, "");
+                    helper.fail("price must agree with the quoted or bargained terms");
+                } catch (IllegalArgumentException expected) { }
+            }
+            try {
+                new Session(session.id(), 4, "Supplies", session.phase(), null, true, false, "Alex", List.of(), session.responses(),
+                        null, "", null, java.util.Collections.nCopies(CampaignConversationViewPayload.MAX_TRANSACTIONS + 1, price));
+                helper.fail("oversized transaction lists must be rejected");
+            } catch (IllegalArgumentException expected) { }
+        } finally { buffer.release(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void bargainingPricesRevealAfterTheSavedAnimationAndSurviveUnavailableViews(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        var price = new Transaction("campaign_fixture:characters", "supplies", "", "convince", "Travel supplies", UUID.randomUUID(), "Alex",
+                "minecraft:emerald", 8, 5, 5, TransactionState.NEGOTIATED, false, "");
+        var session = new Session(UUID.randomUUID(), 4, "Supplies", ConversationSession.Phase.ROLLED, null, true, false, "Alex",
+                List.of(), List.of(), new Check("convince", 10, true, 15, true), "", null, List.of(price));
+        var payload = new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), session, "");
+        var quote = new Transaction(price.quest(), price.id(), "", price.check(), price.title(), price.buyer(), price.buyerName(),
+                price.item(), price.basePrice(), price.bargainPrice(), price.basePrice(), TransactionState.QUOTED, false, "");
+        var awaiting = new Session(session.id(), 3, session.title(), ConversationSession.Phase.CHECK, null, true, false, "Alex",
+                List.of(), List.of(), new Check("convince", 10, false, 0, false), "", null, List.of(quote));
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1, List.of(), awaiting, ""));
+        controller.accept(payload);
+        helper.assertTrue(controller.dieAnimating(), "saved bargaining result uses the existing die animation");
+        helper.assertTrue(host.texts.getLast().contains("conversation.transaction_quote[8, minecraft:emerald]")
+                && host.texts.getLast().contains("conversation.transaction_bargain[5, minecraft:emerald]"), "animation preserves the quoted terms");
+        helper.assertFalse(host.texts.getLast().contains("transaction_agreed"), "animation does not reveal its result through the price");
+        controller.skipDieAnimation();
+        helper.assertTrue(host.texts.getLast().contains("conversation.transaction_agreed[5, minecraft:emerald]")
+                && host.texts.getLast().contains("conversation.transaction_buyer[Travel supplies, Alex]"), "skip reveals the agreed price and original buyer");
+        controller.accept(payload);
+        helper.assertFalse(controller.dieAnimating(), "refresh cannot replay the bargaining animation");
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), request.entityId(), request.character(), 0, 1,
+                List.of(), null, "Return to the seller."));
+        helper.assertValueEqual(controller.session().transactions(), List.of(price), "unavailable view keeps readable transaction history");
+        helper.assertFalse(controller.session().canControl(), "retained prices cannot enable stale controls");
+        helper.succeed();
+    }
+
     private static CampaignConversationViewPayload message(CampaignConversationRequestPayload request, UUID id, long revision, String key, String text, boolean control) {
         var line = new Line(key, request.character(), request.entityId(), "Mira", text, 0, 1);
         var session = new Session(id, revision, "Guidance", ConversationSession.Phase.EXCHANGES, line, control, false, "Player", List.of(), List.of(), null, "");

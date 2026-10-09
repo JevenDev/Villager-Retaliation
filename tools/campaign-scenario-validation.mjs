@@ -5,7 +5,7 @@ const values = entries => Array.isArray(entries) ? entries : [];
 const named = entries => new Map(values(entries).map(entry => [entry.id, entry]));
 const requests = new Set(["quest_response", "quest_select", "quest_confirmation", "conversation_start", "conversation_intent", "fixture_entry"]);
 const ordinaryRequests = new Set(["quest_response", "quest_select", "quest_confirmation"]);
-const playerSteps = new Set(["player", "quest_prompt", "quest_response", "quest_confirmation", "conversation_start", "conversation_intent", "interrupt", "fixture_entry", "assert_player", "assert_quest", "assert_standing"]);
+const playerSteps = new Set(["player", "quest_prompt", "quest_response", "quest_confirmation", "conversation_start", "conversation_intent", "interrupt", "fixture_entry", "assert_player", "assert_quest", "assert_standing", "give_item", "assert_item_count", "assert_transaction"]);
 
 export function scenarioPath(file) {
   const normalized = path.resolve(file).replaceAll(path.sep, "/");
@@ -64,6 +64,8 @@ export function validateCampaignScenario(root, schema, context) {
       if (step.seed !== undefined && step.intent !== "roll") issue(at + "/seed", "random seed is only valid for a roll request");
       if (["choose", "hand_over"].includes(step.intent) !== Boolean(step.argument)) issue(at + "/argument", "intent argument is missing or unsupported");
     }
+    if (step.type === "assert_transaction" && step.state === "unarranged" && step.price !== undefined)
+      issue(at + "/price", "an unarranged transaction has no saved price");
     if (step.type === "assert_campaign" && !["outcomes", "audits", "rewards"].some(key => step[key] !== undefined)) issue(at, "campaign assertion must check at least one count");
     if (step.type === "wait") ticks += step.ticks;
     if (prior.has(step.id)) issue(at + "/id", "duplicate scenario step " + step.id);
@@ -111,6 +113,12 @@ function validateReferences(root, context, issue) {
       const quest = context.quests.get(step.quest);
       if (!quest || !owned.has(step.quest)) issue(at + "/quest", "quest does not belong to this campaign");
       else if (step.stage && !values(quest.stages).some(value => value.id === step.stage)) issue(at + "/stage", "unknown quest stage");
+    } else if (step.type === "assert_transaction") {
+      const transaction = values(campaign.transactions).find(value => value.id === step.transaction);
+      if (!owned.has(step.quest)) issue(at + "/quest", "quest does not belong to this campaign");
+      if (!transaction || transaction.quest !== step.quest) issue(at + "/transaction", "unknown transaction for this quest");
+      else if (step.price !== undefined && step.price !== transaction.payment.count && step.price !== transaction.bargained_count)
+        issue(at + "/price", "price does not match the authored transaction");
     } else if (step.type === "assert_standing") {
       const standing = values(step.scope === "character" ? campaign.relationships : campaign.factions).find(value => value.id === step.subject);
       if (!standing) issue(at + "/subject", "unknown campaign standing " + step.subject);

@@ -128,6 +128,55 @@
         "implementation": "Quest"
       },
       {
+        "id": "campaign_transaction",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "CampaignTransaction",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "campaign_transaction"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "quest": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "transaction": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "unarranged",
+                "negotiated",
+                "payment_pending",
+                "paid",
+                "unpaid"
+              ]
+            }
+          },
+          "required": [
+            "campaign",
+            "quest",
+            "transaction",
+            "state"
+          ]
+        }
+      },
+      {
         "id": "campaign_standing",
         "aliases": [],
         "capabilities": [
@@ -618,6 +667,32 @@
           "response_transition"
         ],
         "kind": "quest_transition",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "world_known"
+        ]
+      },
+      {
+        "id": "campaign_payment",
+        "aliases": [],
+        "kind": "campaign_payment",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "transaction": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "required": {
+              "const": true
+            }
+          },
+          "required": [
+            "transaction"
+          ]
+        },
         "capabilities": [
           "player_live",
           "provider_live",
@@ -2259,6 +2334,20 @@
         }
       },
       {
+        "id": "villagerretaliation:campaign_payment",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Campaign payment",
+        "description": "Built-in Campaign payment type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:campaign_reward",
         "aliases": [],
         "live_capabilities": [],
@@ -2927,6 +3016,7 @@
         "campaign_location",
         "campaign_outcome",
         "campaign_standing",
+        "campaign_transaction",
         "choice_selected",
         "dimension",
         "entity_nearby",
@@ -2988,6 +3078,7 @@
         "branch_transition",
         "campaign_fact",
         "campaign_outcome",
+        "campaign_payment",
         "campaign_reward",
         "campaign_standing",
         "clear_tag",

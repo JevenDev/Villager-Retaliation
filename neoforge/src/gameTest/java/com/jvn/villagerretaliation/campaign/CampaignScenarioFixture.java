@@ -98,6 +98,7 @@ final class CampaignScenarioFixture implements AutoCloseable {
         CampaignResources.installForTests(server, new CampaignContentCatalog(compiled.quests(), Map.of(scenario.campaign(), content), List.of()));
         installed = true;
         slot(CampaignSavedData.DATA_NAME, () -> CampaignSavedData.get(helper.getLevel()), tag -> CampaignSavedData.load(tag, directory));
+        slot(CampaignTransactionSavedData.DATA_NAME, () -> CampaignTransactionSavedData.get(helper.getLevel()), tag -> CampaignTransactionSavedData.load(tag, directory));
         slot(CampaignRewardSavedData.DATA_NAME, () -> CampaignRewardSavedData.get(helper.getLevel()), tag -> CampaignRewardSavedData.load(tag, directory));
         slot(CampaignStandingSavedData.DATA_NAME, () -> CampaignStandingSavedData.get(helper.getLevel()), tag -> CampaignStandingSavedData.load(tag, directory));
         slot(CampaignLocationSavedData.DATA_NAME, () -> CampaignLocationSavedData.get(helper.getLevel()), tag -> CampaignLocationSavedData.load(tag, directory));

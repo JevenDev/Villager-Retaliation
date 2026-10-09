@@ -41,6 +41,10 @@ public final class CampaignScenarioParser {
             String id = text(step, "id"), at = "/steps/" + steps.size(), player = text(step, "player"), session = text(step, "session");
             steps.add(switch (text(step, "type")) {
                 case "player" -> new Player(id, player, kind(PlayerAction.class, step, "action"), at);
+                case "give_item" -> new GiveItem(id, player, resource(step, "item"), integer(step, "count"), at);
+                case "assert_item_count" -> new AssertItemCount(id, player, resource(step, "item"), integer(step, "count"), at);
+                case "assert_transaction" -> new AssertTransaction(id, player, resource(step, "quest"), text(step, "transaction"),
+                        kind(TransactionState.class, step, "state"), integer(step, "price"), at);
                 case "party" -> new Party(id, text(step, "leader"), text(step, "member"), bool(step, "admin", false), at);
                 case "privilege" -> new Privilege(id, text(step, "leader"), text(step, "member"), bool(step, "enabled", false), at);
                 case "quest_prompt" -> new QuestPrompt(id, player, text(step, "actor"), resource(step, "quest"), text(step, "stage"), text(step, "slot"), at);
@@ -122,6 +126,8 @@ public final class CampaignScenarioParser {
                 };
                 if (!valid) issue(scenario, issues, at + "/target", "checkpoint target does not match its scope");
             }
+            if (step instanceof AssertTransaction transaction && transaction.state() == TransactionState.UNARRANGED && transaction.price() >= 0)
+                issue(scenario, issues, at + "/price", "an unarranged transaction has no saved price");
             if (step instanceof ConversationIntent intent) {
                 if (!intent.revisionFrom().isBlank() && (!(prior.get(intent.revisionFrom()) instanceof Checkpoint checkpoint)
                         || checkpoint.scope() != Scope.CONVERSATION || !checkpoint.target().equals(intent.session())))
@@ -152,6 +158,9 @@ public final class CampaignScenarioParser {
             case Interrupt value -> Map.of("player", value.player());
             case Fixture value -> Map.of("player", value.player());
             case AssertPlayer value -> Map.of("player", value.player());
+            case GiveItem value -> Map.of("player", value.player());
+            case AssertItemCount value -> Map.of("player", value.player());
+            case AssertTransaction value -> Map.of("player", value.player());
             case AssertStanding value -> Map.of("player", value.player());
             case AssertQuest value -> Map.of("player", value.player());
             case AssertConversation value -> value.controller().isBlank() ? Map.of() : Map.of("controller", value.controller());

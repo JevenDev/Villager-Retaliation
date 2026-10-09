@@ -43,9 +43,13 @@ public final class ConversationContentGameTests {
 
     @GameTest(template = "empty", batch = "conversation_content")
     public static void sharedAuthoringCasesMatchTheRuntimeContract(GameTestHelper helper) throws IOException {
-        var campaign = CampaignDefinitionParser.parse(id("campaigns/characters/campaign.json"), resource("campaigns/characters/campaign.json")).definition();
         for (var entry : read("conversation_cases.json").getAsJsonArray()) {
             var test = entry.getAsJsonObject();
+            var campaignSource = resource("campaigns/characters/campaign.json");
+            if (test.has("campaign_patches")) for (var change : test.getAsJsonArray("campaign_patches")) patch(campaignSource, change.getAsJsonObject());
+            var parsedCampaign = CampaignDefinitionParser.parse(id("campaigns/characters/campaign.json"), campaignSource);
+            helper.assertTrue(parsedCampaign.valid(), "case campaign is structurally valid: " + parsedCampaign.diagnostics());
+            var campaign = parsedCampaign.definition();
             var graph = graph();
             for (var patch : test.getAsJsonArray("patches")) patch(graph, patch.getAsJsonObject());
             var result = ConversationCompiler.compile(bundle(graph), ID);

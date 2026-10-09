@@ -1,0 +1,10 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "campaign_fixture.campaign.bargaining.title": "Campaign fixture: bargaining",
+    "campaign_fixture.campaign.bargaining.chapter": "Buy travel supplies",
+    "campaign_fixture.campaign.bargaining.location": "The quartermaster's village",
+    "campaign_fixture.campaign.bargaining.merchant": "Quartermaster",
+    "campaign_fixture.campaign.bargaining.supplies": "Travel supplies"
+  }
+}

@@ -45,6 +45,11 @@ public final class VillagerActionRegistry {
                     aliases("response_transition", "quest_response_transition", "branch_transition"),
                     capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.WORLD_KNOWN)),
             register(
+                    "campaign_payment",
+                    VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT,
+                    aliases(),
+                    capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.WORLD_KNOWN)),
+            register(
                     "campaign_reward",
                     VillagerActionDefinition.Kind.CAMPAIGN_REWARD,
                     aliases(),
@@ -207,6 +212,9 @@ public final class VillagerActionRegistry {
         }
         if (outcomeActor != null && action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
             return ActionResult.failed("A saved decision actor cannot receive another player's personal effects.", capabilities);
+        }
+        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT) {
+            return com.jvn.villagerretaliation.campaign.CampaignPaymentService.execute(context, action);
         }
         if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
             return com.jvn.villagerretaliation.campaign.CampaignRewardService.execute(context, action);

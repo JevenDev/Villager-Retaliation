@@ -58,12 +58,20 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
     public record Effect(String id, VillagerActionDefinition action, String pointer) {
     }
 
-    public record Check(String id, int difficulty, String success, String failure, Social social, List<Modifier> modifiers, String pointer) {
+    public record Check(String id, int difficulty, String success, String failure, Social social, List<Modifier> modifiers, String pointer, String transaction) {
         public Check {
+            transaction = transaction == null ? "" : transaction;
+            if (!transaction.isEmpty() && (!transaction.matches("[a-z0-9][a-z0-9_./-]*") || transaction.length() > 256
+                    || social == null || social.skill() != PlayerSocialSkill.PERSUASION))
+                throw new IllegalArgumentException("Bargaining requires a transaction and persuasion progression");
             modifiers = List.copyOf(modifiers);
             if (modifiers.size() > ConversationCheckModifier.MAX_COUNT
                     || modifiers.stream().map(Modifier::id).distinct().count() != modifiers.size())
                 throw new IllegalArgumentException("Invalid authored conversation modifiers");
+        }
+
+        public Check(String id, int difficulty, String success, String failure, Social social, List<Modifier> modifiers, String pointer) {
+            this(id, difficulty, success, failure, social, modifiers, pointer, "");
         }
 
         public Check(String id, int difficulty, String success, String failure, Social social, String pointer) {

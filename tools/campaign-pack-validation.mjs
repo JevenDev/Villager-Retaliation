@@ -2,6 +2,7 @@ import path from "node:path";
 import { validateContentSchema } from "./content-schema-validation.mjs";
 import { validateCampaign } from "./campaign-validation.mjs";
 import { validateStandingReferences } from "./campaign-standing-validation.mjs";
+import { validateTransactionReferences } from "./campaign-transaction-validation.mjs";
 
 const normalized = file => path.resolve(file).replaceAll(path.sep, "/");
 const values = entries => Array.isArray(entries) ? entries : [];
@@ -118,6 +119,7 @@ export function validateCampaignPack(file, root, resources, schemas) {
     const context = { campaign: root, quest: quest.id, quests: new Map([...quests].map(([id, entry]) => [id, entry.data])),
       campaigns: new Map(campaigns.filter(entry => object(entry.data)).map(entry => [entry.data.id, entry.data])) };
     validateStandingReferences(quest, context).forEach(problem => issue(resource.file, problem.pointer, problem.message));
+    validateTransactionReferences(quest, context).forEach(problem => issue(resource.file, problem.pointer, problem.message));
     const role = quest.provider?.campaign_role;
     if (role && !characters.has(role)) issue(resource.file, "/provider/campaign_role", "unknown campaign character " + role);
     quest.stages.forEach((stage, at) => {
@@ -165,6 +167,10 @@ export function validateCampaignPack(file, root, resources, schemas) {
     });
   }
   for (const resource of scenes.values()) {
+    validateTransactionReferences(resource.data, {
+      quests: new Map([...quests].map(([id, entry]) => [id, entry.data])),
+      campaigns: new Map(campaigns.filter(entry => object(entry.data)).map(entry => [entry.data.id, entry.data]))
+    }).forEach(problem => issue(resource.file, problem.pointer, problem.message));
     if (!root.quest_bundles.includes(privateOwner(resource))) continue;
     values(resource.data.actors).forEach((actor, at) => {
       const key = actor.binding === undefined ? "source" : "binding";

@@ -102,23 +102,11 @@ final class ConversationSessionCodec {
         });
         tag.put("Choices", choices);
         var checks = new ListTag();
-        session.checks.values().forEach(check -> {
-            var value = new CompoundTag();
-            value.putUUID("Request", check.request());
-            value.putString("Id", check.id());
-            value.putInt("Die", check.die());
-            value.putInt("Difficulty", check.difficulty());
-            value.putInt("Modifier", check.modifier());
-            value.putInt("Total", check.total());
-            value.putBoolean("Success", check.success());
-            value.putString("Destination", check.destination());
-            value.putUUID("Player", check.player());
-            value.putLong("RolledAt", check.rolledAt());
-            if (check.social() != null) value.put("Social", check.social().save());
-            value.put("Modifiers", ConversationCheckModifier.save(check.modifiers()));
-            checks.add(value);
-        });
+        session.checks.values().forEach(check -> checks.add(ConversationCheckCodec.save(check)));
         tag.put("Checks", checks);
+        var transactionChecks = new CompoundTag();
+        session.transactionChecks.forEach(transactionChecks::putUUID);
+        tag.put("TransactionChecks", transactionChecks);
         var socialAwards = new CompoundTag();
         session.socialAwards.forEach(id -> socialAwards.putBoolean(id, true));
         tag.put("SocialAwards", socialAwards);
@@ -239,12 +227,18 @@ final class ConversationSessionCodec {
             session.choices.add(choice);
         }
         for (var raw : list(tag, "Checks")) {
-            var value = (CompoundTag) raw;
-            var check = new ConversationSession.Check(uuid(value, "Request"), text(value, "Id"), integer(value, "Die"), integer(value, "Difficulty"),
-                    integer(value, "Modifier"), integer(value, "Total"), bool(value, "Success"), text(value, "Destination"), uuid(value, "Player"), number(value, "RolledAt"),
-                    value.contains("Social") ? com.jvn.villagerretaliation.skill.player.SocialCheckBreakdown.load(compound(value, "Social")) : null,
-                    ConversationCheckModifier.load(value));
+            var check = ConversationCheckCodec.load((CompoundTag) raw);
             require(session.participants.contains(check.player()) && session.checks.putIfAbsent(check.id(), check) == null, "duplicate or invalid conversation check");
+        }
+        var transactionChecks = compound(tag, "TransactionChecks");
+        var operations = new LinkedHashSet<UUID>();
+        for (var id : transactionChecks.getAllKeys()) {
+            UUID operation = uuid(transactionChecks, id);
+            var check = session.checks.get(id);
+            require(identity.quest() != null && check != null && check.social() != null
+                    && check.social().skill() == com.jvn.villagerretaliation.skill.player.PlayerSocialSkill.PERSUASION && operations.add(operation),
+                    "transaction receipt has no unique resolved persuasion check");
+            session.transactionChecks.put(id, operation);
         }
         var socialAwards = compound(tag, "SocialAwards");
         for (var id : socialAwards.getAllKeys()) {
@@ -316,7 +310,8 @@ final class ConversationSessionCodec {
         }
         session.checks.values().forEach(check -> {
             var request = session.requests.get(check.request());
-            require(request != null && request.intent() == ConversationSession.Intent.ROLL && request.player().equals(check.player())
+            require(request != null && request.intent() == ConversationSession.Intent.ROLL
+                    && (request.player().equals(check.player()) || session.transactionChecks.containsKey(check.id()))
                     && request.argument().isEmpty(), "conversation check does not match its request receipt");
         });
         require(session.phase != ConversationSession.Phase.RESPONSE_EFFECTS || !session.response.isBlank(), "conversation effects have no selected response");

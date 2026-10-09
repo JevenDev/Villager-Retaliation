@@ -65,6 +65,15 @@ final class CampaignScenarioReferences {
                     issue(scenario, issues, at + "/quest", "quest does not belong to this campaign");
                 else if (!assertion.stage().isBlank() && !quest.stagesById().containsKey(assertion.stage()))
                     issue(scenario, issues, at + "/stage", "unknown quest stage");
+            } else if (step instanceof AssertTransaction assertion) {
+                var transaction = campaign.transactions().get(assertion.transaction());
+                if (!campaign.questBundles().contains(assertion.quest()))
+                    issue(scenario, issues, at + "/quest", "quest does not belong to this campaign");
+                if (transaction == null || !transaction.quest().equals(assertion.quest()))
+                    issue(scenario, issues, at + "/transaction", "unknown transaction for this quest");
+                else if (assertion.price() >= 0 && assertion.price() != transaction.count()
+                        && !java.util.Objects.equals(assertion.price(), transaction.bargainedCount()))
+                    issue(scenario, issues, at + "/price", "price does not match the authored transaction");
             } else if (step instanceof AssertStanding assertion) {
                 var standing = CampaignStandingDefinition.find(campaign, assertion.scope(), assertion.subject());
                 if (standing == null) issue(scenario, issues, at + "/subject", "unknown campaign standing " + assertion.subject());

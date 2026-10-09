@@ -19,15 +19,21 @@ public record CampaignScenario(ResourceLocation id, ResourceLocation campaign, L
     public enum Intent { ADVANCE, CHOOSE, ROLL, RESUME, JOIN, TAKE_CONTROL, HAND_OVER, RELEASE_CONTROL, CONFIRM, DECLINE }
     public enum Scope { CAMPAIGN, CONVERSATION, PLAYER }
     public enum StorageKind { CAMPAIGN, CONVERSATION }
+    public enum TransactionState { UNARRANGED, NEGOTIATED, PAYMENT_PENDING, PAID }
 
     public sealed interface Step permits Player, Party, Privilege, QuestPrompt, QuestSelect, QuestResponse, QuestConfirmation, StartConversation,
             ConversationIntent, Replay, Interrupt, Fixture, WorldEvent, Storage, Reload, Wait, Checkpoint, AssertSame,
-            AssertOutcome, AssertPlayer, AssertQuest, AssertConversation, AssertCheck, AssertCampaign, AssertStanding {
+            AssertOutcome, AssertPlayer, AssertQuest, AssertConversation, AssertCheck, AssertCampaign, AssertStanding,
+            GiveItem, AssertItemCount, AssertTransaction {
         String id();
         String pointer();
     }
 
     public record Player(String id, String player, PlayerAction action, String pointer) implements Step { }
+    public record GiveItem(String id, String player, ResourceLocation item, int count, String pointer) implements Step { }
+    public record AssertItemCount(String id, String player, ResourceLocation item, int count, String pointer) implements Step { }
+    public record AssertTransaction(String id, String player, ResourceLocation quest, String transaction,
+            TransactionState state, int price, String pointer) implements Step { }
     public record Party(String id, String leader, String member, boolean admin, String pointer) implements Step { }
     public record Privilege(String id, String leader, String member, boolean enabled, String pointer) implements Step { }
     public record QuestPrompt(String id, String player, String actor, ResourceLocation quest, String stage, String slot, String pointer) implements Step { }

@@ -1,0 +1,24 @@
+{
+  "schema": "villagerretaliation:quest_reward/v1",
+  "id": "campaign_fixture:campaign/travel_supplies",
+  "table": {
+    "type": "minecraft:generic",
+    "pools": [
+      {
+        "rolls": 1,
+        "entries": [
+          {
+            "type": "minecraft:item",
+            "name": "minecraft:bread",
+            "functions": [
+              {
+                "function": "minecraft:set_count",
+                "count": 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -109,7 +109,8 @@ public final class CampaignSchema {
                 "locations", array(location, 0), "characters", array(character, 0), "evidence", array(evidence, 0),
                 "location_variants", array(CampaignLocationVariant.schema(), 0),
                 "fixture_entries", array(CampaignFixtureEntry.schema(), 0),
-                "relationships", array(CampaignStandingDefinition.schema(), 0), "factions", array(CampaignStandingDefinition.schema(), 0));
+                "relationships", array(CampaignStandingDefinition.schema(), 0), "factions", array(CampaignStandingDefinition.schema(), 0),
+                "transactions", array(CampaignTransactionDefinition.schema(), 0));
         root.addProperty("$schema", "https://json-schema.org/draft/2020-12/schema");
         root.addProperty("$id", "https://villagerretaliation.dev/schema/campaign-v1.schema.json");
         root.addProperty("title", "Villager Retaliation Campaign v1");

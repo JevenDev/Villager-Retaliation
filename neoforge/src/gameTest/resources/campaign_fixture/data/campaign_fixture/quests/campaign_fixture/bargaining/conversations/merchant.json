@@ -1,0 +1,321 @@
+{
+  "schema": "villagerretaliation:conversation/v1",
+  "id": "campaign_fixture:merchant_bargaining",
+  "revision": 1,
+  "campaign": "campaign_fixture:bargaining",
+  "character": "merchant",
+  "title": {
+    "key": "#trade.title"
+  },
+  "topics": [
+    {
+      "id": "supplies",
+      "label": {
+        "key": "#trade.topic"
+      },
+      "start": "welcome",
+      "conditions": [
+        {
+          "type": "campaign_transaction",
+          "campaign": "campaign_fixture:bargaining",
+          "quest": "campaign_fixture:bargaining",
+          "transaction": "supplies",
+          "state": "unpaid"
+        }
+      ]
+    },
+    {
+      "id": "receipt",
+      "label": {
+        "key": "#trade.receipt_topic"
+      },
+      "start": "receipt",
+      "conditions": [
+        {
+          "type": "campaign_transaction",
+          "campaign": "campaign_fixture:bargaining",
+          "quest": "campaign_fixture:bargaining",
+          "transaction": "supplies",
+          "state": "paid"
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "welcome",
+      "exchanges": [
+        {
+          "id": "offer",
+          "speaker": {
+            "type": "role",
+            "role": "merchant"
+          },
+          "text": {
+            "key": "#trade.offer"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "buy",
+          "label": {
+            "key": "#trade.buy"
+          },
+          "effects": [
+            {
+              "id": "payment",
+              "action": {
+                "type": "campaign_payment",
+                "transaction": "supplies"
+              }
+            },
+            {
+              "id": "supplies",
+              "action": {
+                "type": "campaign_reward",
+                "reward": "supplies",
+                "operation_id": "supplies_received"
+              }
+            },
+            {
+              "id": "continue_quest",
+              "action": {
+                "type": "quest_transition",
+                "from_stage": "purchase",
+                "scene_path": "conversation/bargaining/purchase",
+                "response_id": "buy",
+                "target_stage": "report",
+                "required": true
+              }
+            }
+          ],
+          "next": "purchased"
+        },
+        {
+          "id": "bargain",
+          "label": {
+            "key": "#trade.bargain"
+          },
+          "conditions": [
+            {
+              "type": "campaign_transaction",
+              "campaign": "campaign_fixture:bargaining",
+              "quest": "campaign_fixture:bargaining",
+              "transaction": "supplies",
+              "state": "unarranged"
+            }
+          ],
+          "check": "supplies_bargain"
+        },
+        {
+          "id": "leave",
+          "label": {
+            "key": "#trade.leave"
+          },
+          "next": "leave"
+        }
+      ]
+    },
+    {
+      "id": "discounted",
+      "exchanges": [
+        {
+          "id": "answer",
+          "speaker": {
+            "type": "role",
+            "role": "merchant"
+          },
+          "text": {
+            "key": "#trade.discounted"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "pay",
+          "label": {
+            "key": "#trade.pay"
+          },
+          "effects": [
+            {
+              "id": "payment",
+              "action": {
+                "type": "campaign_payment",
+                "transaction": "supplies"
+              }
+            },
+            {
+              "id": "supplies",
+              "action": {
+                "type": "campaign_reward",
+                "reward": "supplies",
+                "operation_id": "supplies_received"
+              }
+            },
+            {
+              "id": "continue_quest",
+              "action": {
+                "type": "quest_transition",
+                "from_stage": "purchase",
+                "scene_path": "conversation/bargaining/purchase",
+                "response_id": "pay",
+                "target_stage": "report",
+                "required": true
+              }
+            }
+          ],
+          "next": "purchased"
+        },
+        {
+          "id": "leave",
+          "label": {
+            "key": "#trade.leave"
+          },
+          "next": "leave"
+        }
+      ]
+    },
+    {
+      "id": "firm",
+      "exchanges": [
+        {
+          "id": "answer",
+          "speaker": {
+            "type": "role",
+            "role": "merchant"
+          },
+          "text": {
+            "key": "#trade.firm"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "pay",
+          "label": {
+            "key": "#trade.pay"
+          },
+          "effects": [
+            {
+              "id": "payment",
+              "action": {
+                "type": "campaign_payment",
+                "transaction": "supplies"
+              }
+            },
+            {
+              "id": "supplies",
+              "action": {
+                "type": "campaign_reward",
+                "reward": "supplies",
+                "operation_id": "supplies_received"
+              }
+            },
+            {
+              "id": "continue_quest",
+              "action": {
+                "type": "quest_transition",
+                "from_stage": "purchase",
+                "scene_path": "conversation/bargaining/purchase",
+                "response_id": "pay",
+                "target_stage": "report",
+                "required": true
+              }
+            }
+          ],
+          "next": "purchased"
+        },
+        {
+          "id": "leave",
+          "label": {
+            "key": "#trade.leave"
+          },
+          "next": "leave"
+        }
+      ]
+    },
+    {
+      "id": "purchased",
+      "exchanges": [
+        {
+          "id": "thanks",
+          "speaker": {
+            "type": "role",
+            "role": "merchant"
+          },
+          "text": {
+            "key": "#trade.purchased"
+          }
+        }
+      ],
+      "outcome": "purchased"
+    },
+    {
+      "id": "receipt",
+      "exchanges": [
+        {
+          "id": "remembered",
+          "speaker": {
+            "type": "role",
+            "role": "merchant"
+          },
+          "text": {
+            "key": "#trade.receipt"
+          }
+        }
+      ],
+      "outcome": "already_supplied"
+    },
+    {
+      "id": "leave",
+      "exchanges": [
+        {
+          "id": "farewell",
+          "speaker": {
+            "type": "role",
+            "role": "merchant"
+          },
+          "text": {
+            "key": "#trade.farewell"
+          }
+        }
+      ],
+      "outcome": "passed"
+    }
+  ],
+  "checks": [
+    {
+      "id": "supplies_bargain",
+      "difficulty": 10,
+      "success": "discounted",
+      "failure": "firm",
+      "transaction": "supplies",
+      "social": {
+        "progression": "campaign_fixture:social_training",
+        "skill": "persuasion",
+        "experience": 10
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "purchased",
+      "label": {
+        "key": "#trade.outcome.purchased"
+      }
+    },
+    {
+      "id": "already_supplied",
+      "label": {
+        "key": "#trade.outcome.already"
+      }
+    },
+    {
+      "id": "passed",
+      "label": {
+        "key": "#trade.outcome.passed"
+      }
+    }
+  ]
+}

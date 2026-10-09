@@ -844,5 +844,163 @@
         "value": "Accept:Quest"
       }
     ]
+  },
+  {
+    "name": "accept campaign_fixture:purchase_direct",
+    "fixture": "purchase_direct",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:purchase_bargained",
+    "fixture": "purchase_bargained",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:purchase_full_price",
+    "fixture": "purchase_full_price",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "accept campaign_fixture:purchase_refused",
+    "fixture": "purchase_refused",
+    "valid": true,
+    "catalog": true,
+    "patches": []
+  },
+  {
+    "name": "unknown inventory player",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/1/player",
+        "value": "missing"
+      }
+    ],
+    "pointer": "/steps/1/player"
+  },
+  {
+    "name": "zero scenario grant",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/1/count",
+        "value": 0
+      }
+    ],
+    "pointer": "/steps/1/count"
+  },
+  {
+    "name": "oversized scenario grant",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/1/count",
+        "value": 257
+      }
+    ],
+    "pointer": "/steps/1/count"
+  },
+  {
+    "name": "negative inventory assertion",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/8/count",
+        "value": -1
+      }
+    ],
+    "pointer": "/steps/8/count"
+  },
+  {
+    "name": "invalid inventory resource",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/8/item",
+        "value": "not an id"
+      }
+    ],
+    "pointer": "/steps/8/item"
+  },
+  {
+    "name": "unknown transaction assertion state",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/7/state",
+        "value": "maybe"
+      }
+    ],
+    "pointer": "/steps/7/state"
+  },
+  {
+    "name": "unknown transaction assertion",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": true,
+    "patches": [
+      {
+        "path": "/steps/7/transaction",
+        "value": "missing"
+      }
+    ],
+    "pointer": "/steps/7/transaction"
+  },
+  {
+    "name": "foreign transaction quest",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": true,
+    "patches": [
+      {
+        "path": "/steps/7/quest",
+        "value": "campaign_fixture:decision"
+      }
+    ],
+    "pointer": "/steps/7/quest"
+  },
+  {
+    "name": "unarranged transaction has no price",
+    "fixture": "purchase_refused",
+    "valid": false,
+    "catalog": false,
+    "patches": [
+      {
+        "path": "/steps/8/price",
+        "value": 8
+      }
+    ],
+    "pointer": "/steps/8/price"
+  },
+  {
+    "name": "unauthored transaction price",
+    "fixture": "purchase_direct",
+    "valid": false,
+    "catalog": true,
+    "patches": [
+      {
+        "path": "/steps/7/price",
+        "value": 6
+      }
+    ],
+    "pointer": "/steps/7/price"
   }
 ]

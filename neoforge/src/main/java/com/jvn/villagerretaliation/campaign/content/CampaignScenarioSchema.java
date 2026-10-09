@@ -18,6 +18,10 @@ public final class CampaignScenarioSchema {
         var questSymbol = QuestV2Schema.export().getAsJsonObject("properties").getAsJsonObject("entry_stage");
         var steps = new JsonArray();
         steps.add(step("player", "player action", "player", local(), "action", choices("connect", "disconnect")));
+        steps.add(step("give_item", "player item count", "player", local(), "item", resource(), "count", integer(1, 256)));
+        steps.add(step("assert_item_count", "player item count", "player", local(), "item", resource(), "count", integer(0, 2304)));
+        steps.add(step("assert_transaction", "player quest transaction state", "player", local(), "quest", resource(), "transaction", local(),
+                "state", choices("unarranged", "negotiated", "payment_pending", "paid"), "price", integer(0, 256)));
         steps.add(step("party", "leader member", "leader", local(), "member", local(), "admin", bool()));
         steps.add(step("privilege", "leader member enabled", "leader", local(), "member", local(), "enabled", bool()));
         steps.add(step("quest_prompt", "player actor quest stage slot", "player", local(), "actor", local(), "quest", resource(),

@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID character, int page, int pageCount,
         List<Topic> topics, Session session, String diagnostic) implements CustomPacketPayload {
     public static final int PAGE_SIZE = 32;
+    public static final int MAX_TRANSACTIONS = 128;
     public static final int MAX_TEXT_LENGTH = 8192;
     public static final int MAX_LABEL_LENGTH = 512;
     public static final Type<CampaignConversationViewPayload> TYPE = VillagerPayloads.type("campaign_conversation_view");
@@ -85,18 +86,42 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             this(id, difficulty, resolved, die, success, 0, die, null, 0, false, "", List.of());
         }
     }
+    public enum TransactionState { QUOTED, NEGOTIATED, PAYMENT_PENDING, PAID }
+
+    public record Transaction(String quest, String id, String response, String check, String title, UUID buyer, String buyerName,
+            String item, int basePrice, int bargainPrice, int price, TransactionState state, boolean possible, String diagnostic) {
+        public Transaction {
+            bounded(quest, 256); bounded(id, 256); bounded(response, 256); bounded(check, 256);
+            bounded(title, MAX_LABEL_LENGTH); bounded(buyerName, MAX_LABEL_LENGTH); bounded(item, 256); bounded(diagnostic, MAX_LABEL_LENGTH);
+            if (net.minecraft.resources.ResourceLocation.tryParse(quest) == null || net.minecraft.resources.ResourceLocation.tryParse(item) == null
+                    || !id.matches("[a-z0-9][a-z0-9_./-]*") || buyer == null || state == null
+                    || basePrice < 1 || basePrice > 256 || bargainPrice < -1 || bargainPrice >= basePrice
+                    || price != basePrice && price != bargainPrice || price < 0
+                    || state == TransactionState.QUOTED && price != basePrice)
+                throw new IllegalArgumentException("Invalid conversation transaction presentation");
+        }
+    }
+
     public record Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
             boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
-            List<Response> responses, Check check, String outcome, UUID confirmation) {
+            List<Response> responses, Check check, String outcome, UUID confirmation, List<Transaction> transactions) {
         public Session {
             handover = List.copyOf(handover);
             responses = List.copyOf(responses);
+            transactions = List.copyOf(transactions);
+            if (transactions.size() > MAX_TRANSACTIONS) throw new IllegalArgumentException("Too many conversation transactions");
             if (id == null || revision < 1 || phase == null || handover.size() > 32 || responses.size() > PAGE_SIZE) {
                 throw new IllegalArgumentException("Invalid conversation session presentation");
             }
             if ((phase == ConversationSession.Phase.CONFIRMATION) != (confirmation != null)) throw new IllegalArgumentException("Invalid conversation confirmation presentation");
             bounded(title, MAX_LABEL_LENGTH); bounded(controller, MAX_LABEL_LENGTH); bounded(outcome, MAX_LABEL_LENGTH);
         }
+        public Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
+                boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
+                List<Response> responses, Check check, String outcome, UUID confirmation) {
+            this(id, revision, title, phase, line, canControl, canTakeControl, controller, handover, responses, check, outcome, confirmation, List.of());
+        }
+
         public Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
                 boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
                 List<Response> responses, Check check, String outcome) {
@@ -168,6 +193,14 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         buffer.writeUtf(value.outcome(), MAX_LABEL_LENGTH);
         buffer.writeBoolean(value.confirmation() != null);
         if (value.confirmation() != null) buffer.writeUUID(value.confirmation());
+        buffer.writeVarInt(value.transactions().size());
+        for (var transaction : value.transactions()) {
+            buffer.writeUtf(transaction.quest(), 256); buffer.writeUtf(transaction.id(), 256);
+            buffer.writeUtf(transaction.response(), 256); buffer.writeUtf(transaction.check(), 256); buffer.writeUtf(transaction.title(), MAX_LABEL_LENGTH);
+            buffer.writeUUID(transaction.buyer()); buffer.writeUtf(transaction.buyerName(), MAX_LABEL_LENGTH); buffer.writeUtf(transaction.item(), 256);
+            buffer.writeVarInt(transaction.basePrice()); buffer.writeVarInt(transaction.bargainPrice()); buffer.writeVarInt(transaction.price());
+            buffer.writeEnum(transaction.state()); buffer.writeBoolean(transaction.possible()); buffer.writeUtf(transaction.diagnostic(), MAX_LABEL_LENGTH);
+        }
     }
 
     private static Session readSession(RegistryFriendlyByteBuf buffer) {
@@ -185,7 +218,14 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         if (buffer.readBoolean()) check = new Check(buffer.readUtf(256), buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(),
                 buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readBoolean() ? buffer.readEnum(PlayerSocialSkill.class) : null,
                 buffer.readVarInt(), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH), readModifiers(buffer));
-        return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, buffer.readUtf(MAX_LABEL_LENGTH), buffer.readBoolean() ? buffer.readUUID() : null);
+        String outcome = buffer.readUtf(MAX_LABEL_LENGTH);
+        UUID confirmation = buffer.readBoolean() ? buffer.readUUID() : null;
+        var transactions = new ArrayList<Transaction>();
+        for (int count = count(buffer, MAX_TRANSACTIONS); count > 0; count--) transactions.add(new Transaction(
+                buffer.readUtf(256), buffer.readUtf(256), buffer.readUtf(256), buffer.readUtf(256), buffer.readUtf(MAX_LABEL_LENGTH),
+                buffer.readUUID(), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readUtf(256), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
+                buffer.readEnum(TransactionState.class), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH)));
+        return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, outcome, confirmation, transactions);
     }
 
     private static List<Modifier> readModifiers(RegistryFriendlyByteBuf buffer) {

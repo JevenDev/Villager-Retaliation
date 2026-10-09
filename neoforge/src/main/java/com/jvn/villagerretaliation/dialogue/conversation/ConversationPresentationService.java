@@ -220,13 +220,20 @@ public final class ConversationPresentationService {
         var responses = result.responses().stream().map(response -> new Response(response.id(), label(response.label()), response.available())).toList();
         int pages = pages(responses.size());
         page = Math.min(page, pages - 1);
+        var visible = slice(responses, page);
+        var prices = ConversationTransactionPresentation.view(player, saved, definition, visible);
+        if (prices.blocked()) { control = false; handover.clear(); }
+        visible = visible.stream().map(response -> new Response(response.id(), response.label(),
+                response.available() && !prices.unavailableResponses().contains(response.id()))).toList();
+        if (!prices.diagnostic().isBlank()) issue = issue.isBlank() ? prices.diagnostic() : issue + "\n" + prices.diagnostic();
         var session = new Session(id, snapshot.revision(), label(snapshot.identity().title()), snapshot.phase(), line, control, takeover,
-                controller == null ? "" : label(controller.getName().getString()), handover, slice(responses, page), check, label(outcome), snapshot.confirmation() == null ? null : snapshot.confirmation().id());
+                controller == null ? "" : label(controller.getName().getString()), handover, visible, check, label(outcome),
+                snapshot.confirmation() == null ? null : snapshot.confirmation().id(), prices.transactions());
         return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), page, pages, List.of(), session,
                 text(issue.isBlank() ? result.diagnostic() : issue));
     }
 
-    private static String playerName(ServerPlayer viewer, UUID id) {
+    static String playerName(ServerPlayer viewer, UUID id) {
         var player = viewer.server.getPlayerList().getPlayer(id);
         if (player != null) return label(player.getGameProfile().getName());
         var cache = viewer.server.getProfileCache();

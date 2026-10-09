@@ -56,7 +56,7 @@ public final class CampaignConversationClientSmoke {
             minecraft.options.guiScale().set(2); minecraft.resizeDisplay();
             VillagerRetaliationConfig.DIALOGUE_TEXT_SPEED.set(DialogueTextSpeed.MEDIUM);
             preparing = server.submit(() -> {
-                try { return CampaignConversationClientFixture.prepare(server.getPlayerList().getPlayer(playerId)); }
+                try { return CampaignConversationClientFixture.prepareBargaining(server.getPlayerList().getPlayer(playerId)); }
                 catch (IOException exception) { throw new UncheckedIOException(exception); }
             });
             phase = 1;
@@ -98,9 +98,17 @@ public final class CampaignConversationClientSmoke {
             } else if (phase == 6 && session.phase() == ConversationSession.Phase.CHECK && ++ticks >= 20) {
                 require(!controller.dieAnimating() && !session.check().resolved(), "screen waits for a saved server roll");
                 require(checkTextIsImmediate(screen), "difficulty is readable without waiting for dialogue animation");
+                var quote = session.transactions().getFirst();
+                require(quote.buyer().equals(playerId) && quote.basePrice() == 8 && quote.bargainPrice() == 5
+                        && quote.state() == com.jvn.villagerretaliation.network.CampaignConversationViewPayload.TransactionState.QUOTED,
+                        "check presentation discloses the original buyer and both prices");
+                require(dialogueText(screen).contains(localized("transaction_quote", 8, I18n.get("item.minecraft.emerald"))),
+                        "payment currency uses its localized item name");
                 capture("difficulty"); choose(screen, localized("roll", session.check().difficulty())); ticks = 0; phase = 7;
             } else if (phase == 7 && session.phase() == ConversationSession.Phase.ROLLED && controller.dieProgress() >= 0.25F) {
                 require(controller.dieAnimating(), "acknowledged roll animates");
+                require(!dialogueText(screen).contains(localized("transaction_agreed", session.check().success() ? 5 : 8,
+                        I18n.get("item.minecraft.emerald"))), "price does not reveal the result during animation");
                 capture("die-rolling");
                 die = session.check().die();
                 choose(screen, localized("skip_roll"));
@@ -117,6 +125,11 @@ public final class CampaignConversationClientSmoke {
                 require(session.check().experienceAwarded() && session.check().rewardExperience() == 10, "screen acknowledges the authored experience");
                 require(session.check().experiencePlayer().equals(minecraft.player.getGameProfile().getName()), "screen names the player who earned experience");
                 require(checkTextIsImmediate(screen), "skip reveals the complete saved result immediately");
+                var price = session.transactions().getFirst();
+                require(price.price() == (session.check().success() ? 5 : 8) && price.buyer().equals(playerId),
+                        "saved bargain determines the displayed price");
+                require(dialogueText(screen).contains(localized("transaction_agreed", price.price(), I18n.get("item.minecraft.emerald"))),
+                        "skipping reveals the agreed price as readable text");
                 capture("die-result"); scrollBreakdown(screen); ticks = 0; phase = 16;
             } else if (phase == 16 && ++ticks >= 10) {
                 capture("die-breakdown"); choose(screen, localized("leave")); ticks = 0; phase = 9;
@@ -124,6 +137,7 @@ public final class CampaignConversationClientSmoke {
                 verification.join();
                 require(session.check().die() == die && !controller.dieAnimating(), "reopening shows the same result without replaying animation");
                 require(session.canTakeControl(), "closed controller resumes explicitly");
+                require(session.transactions().getFirst().price() == (session.check().success() ? 5 : 8), "reopening preserves the agreed price");
                 capture("reopened-check");
                 minecraft.setScreen(new DieFacesScreen()); ticks = 0; phase = 11;
             }
@@ -158,6 +172,13 @@ public final class CampaignConversationClientSmoke {
             phase = 12;
             minecraft.stop();
         }
+    }
+
+    private static String dialogueText(VillagerInteractionScreen screen) {
+        try {
+            var field = VillagerInteractionScreen.class.getDeclaredField("villagerDialogueText"); field.setAccessible(true);
+            return (String) field.get(screen);
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Conversation text is unavailable", exception); }
     }
 
     private static void scrollBreakdown(VillagerInteractionScreen screen) {

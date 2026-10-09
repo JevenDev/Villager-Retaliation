@@ -1,0 +1,284 @@
+{
+  "schema": "villagerretaliation:campaign_scenario/v1",
+  "id": "campaign_fixture:purchase_full_price",
+  "campaign": "campaign_fixture:bargaining",
+  "players": [
+    "buyer"
+  ],
+  "actors": [
+    {
+      "id": "seller",
+      "role": "merchant",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "locations": [
+    {
+      "alias": "camp",
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "buyer_connect",
+      "type": "player",
+      "player": "buyer",
+      "action": "connect"
+    },
+    {
+      "id": "buyer_funds",
+      "type": "give_item",
+      "player": "buyer",
+      "item": "minecraft:emerald",
+      "count": 8
+    },
+    {
+      "id": "buyer_quest",
+      "type": "quest_response",
+      "player": "buyer",
+      "actor": "seller",
+      "quest": "campaign_fixture:bargaining",
+      "stage": "purchase",
+      "slot": "offer",
+      "response": "accept"
+    },
+    {
+      "id": "buyer_leave_offer",
+      "type": "interrupt",
+      "player": "buyer",
+      "actor": "seller",
+      "active": false
+    },
+    {
+      "id": "start",
+      "type": "conversation_start",
+      "player": "buyer",
+      "session": "trade",
+      "conversation": "campaign_fixture:merchant_bargaining",
+      "topic": "supplies"
+    },
+    {
+      "id": "offer",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "advance"
+    },
+    {
+      "id": "bargain",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "choose",
+      "argument": "bargain"
+    },
+    {
+      "id": "roll",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "roll",
+      "seed": 0
+    },
+    {
+      "id": "saved_roll",
+      "type": "assert_check",
+      "session": "trade",
+      "check": "supplies_bargain",
+      "die": 1,
+      "success": false
+    },
+    {
+      "id": "saved_price",
+      "type": "assert_transaction",
+      "player": "buyer",
+      "quest": "campaign_fixture:bargaining",
+      "transaction": "supplies",
+      "state": "negotiated",
+      "price": 8
+    },
+    {
+      "id": "before_reload",
+      "type": "checkpoint",
+      "scope": "campaign"
+    },
+    {
+      "id": "reload_roll",
+      "type": "reload"
+    },
+    {
+      "id": "price_unchanged",
+      "type": "assert_same",
+      "checkpoint": "before_reload"
+    },
+    {
+      "id": "repeat_roll",
+      "type": "replay",
+      "request": "roll"
+    },
+    {
+      "id": "reroll",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "roll",
+      "accepted": false
+    },
+    {
+      "id": "result",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "advance"
+    },
+    {
+      "id": "answer",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "advance"
+    },
+    {
+      "id": "purchase",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "choose",
+      "argument": "pay"
+    },
+    {
+      "id": "paid",
+      "type": "assert_transaction",
+      "player": "buyer",
+      "quest": "campaign_fixture:bargaining",
+      "transaction": "supplies",
+      "state": "paid",
+      "price": 8
+    },
+    {
+      "id": "charged",
+      "type": "assert_item_count",
+      "player": "buyer",
+      "item": "minecraft:emerald",
+      "count": 0
+    },
+    {
+      "id": "delivered",
+      "type": "assert_item_count",
+      "player": "buyer",
+      "item": "minecraft:bread",
+      "count": 3
+    },
+    {
+      "id": "quest_continued",
+      "type": "assert_quest",
+      "player": "buyer",
+      "quest": "campaign_fixture:bargaining",
+      "stage": "report",
+      "completions": 0
+    },
+    {
+      "id": "purchase_snapshot",
+      "type": "checkpoint",
+      "scope": "campaign"
+    },
+    {
+      "id": "inventory_snapshot",
+      "type": "checkpoint",
+      "scope": "player",
+      "target": "buyer"
+    },
+    {
+      "id": "duplicate_payment",
+      "type": "replay",
+      "request": "purchase"
+    },
+    {
+      "id": "no_duplicate_payment",
+      "type": "assert_same",
+      "checkpoint": "purchase_snapshot"
+    },
+    {
+      "id": "no_duplicate_delivery",
+      "type": "assert_same",
+      "checkpoint": "inventory_snapshot"
+    },
+    {
+      "id": "thanks",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "trade",
+      "intent": "advance"
+    },
+    {
+      "id": "complete",
+      "type": "assert_conversation",
+      "session": "trade",
+      "node": "purchased",
+      "phase": "complete",
+      "outcome": "purchased"
+    },
+    {
+      "id": "disconnect",
+      "type": "player",
+      "player": "buyer",
+      "action": "disconnect"
+    },
+    {
+      "id": "reload_payment",
+      "type": "reload"
+    },
+    {
+      "id": "reconnect",
+      "type": "player",
+      "player": "buyer",
+      "action": "connect"
+    },
+    {
+      "id": "saved_paid",
+      "type": "assert_transaction",
+      "player": "buyer",
+      "quest": "campaign_fixture:bargaining",
+      "transaction": "supplies",
+      "state": "paid",
+      "price": 8
+    },
+    {
+      "id": "saved_inventory",
+      "type": "assert_item_count",
+      "player": "buyer",
+      "item": "minecraft:bread",
+      "count": 3
+    },
+    {
+      "id": "start_receipt",
+      "type": "conversation_start",
+      "player": "buyer",
+      "session": "receipt",
+      "conversation": "campaign_fixture:merchant_bargaining",
+      "topic": "receipt"
+    },
+    {
+      "id": "receipt_line",
+      "type": "conversation_intent",
+      "player": "buyer",
+      "session": "receipt",
+      "intent": "advance"
+    },
+    {
+      "id": "receipt_keeps_supply",
+      "type": "assert_item_count",
+      "player": "buyer",
+      "item": "minecraft:bread",
+      "count": 3
+    }
+  ]
+}

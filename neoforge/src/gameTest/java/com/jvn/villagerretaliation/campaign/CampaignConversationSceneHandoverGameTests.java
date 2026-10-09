@@ -423,7 +423,7 @@ public final class CampaignConversationSceneHandoverGameTests {
         var campaigns = CampaignResources.current(fixture.base.server).campaigns();
         var catalog = new QuestContentCatalog(old.generation() + 1, old.compiledQuestCatalog(), old.dialogueCatalog(), old.quests(),
                 old.objectiveEventQuestIds(), old.factQuestIds(), old.memoryEventQuestIds(), old.exclusiveGroupQuestIds(), old.triggerEventQuestIds(),
-                scenes, old.encounters(), old.pools(), old.bundles(), old.localization(), old.rewards(), old.conversations());
+                scenes, old.encounters(), old.pools(), old.bundles(), old.localization(), old.rewards(), old.conversations(), old.socialProgressions());
         QuestContentCatalogs.installForTests(fixture.base.server, catalog, fixture.base.report);
         CampaignResources.installForTests(fixture.base.server, new CampaignContentCatalog(catalog, campaigns, List.of()));
         return definition.scene();

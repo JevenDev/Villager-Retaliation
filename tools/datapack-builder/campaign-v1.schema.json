@@ -1201,6 +1201,74 @@
       },
       "minItems": 0,
       "maxItems": 1024
+    },
+    "transactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title_key",
+          "quest",
+          "character",
+          "payment"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "title_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-zA-Z0-9_.:/-]+$(?![\\s\\S])"
+          },
+          "quest": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+          },
+          "character": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9][a-z0-9_./-]*$(?![\\s\\S])"
+          },
+          "payment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "item",
+              "count"
+            ],
+            "properties": {
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 256
+              }
+            }
+          },
+          "bargained_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 256
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",

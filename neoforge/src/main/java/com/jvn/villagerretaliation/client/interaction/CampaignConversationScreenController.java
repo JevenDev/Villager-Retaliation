@@ -32,7 +32,7 @@ public final class CampaignConversationScreenController {
         if (session() != null && payload.session() == null && !payload.diagnostic().isBlank()) {
             var prior = session();
             var unavailable = new CampaignConversationViewPayload.Session(prior.id(), prior.revision(), prior.title(), prior.phase(), prior.line(),
-                    false, false, prior.controller(), java.util.List.of(), prior.responses(), prior.check(), prior.outcome(), prior.confirmation());
+                    false, false, prior.controller(), java.util.List.of(), prior.responses(), prior.check(), prior.outcome(), prior.confirmation(), prior.transactions());
             payload = new CampaignConversationViewPayload(payload.viewId(), payload.entityId(), payload.character(), state.page(), state.pageCount(),
                     java.util.List.of(), unavailable, payload.diagnostic());
         }
@@ -163,9 +163,33 @@ public final class CampaignConversationScreenController {
                     append(text, host.translate(check.experienceAwarded() ? "conversation.social_experience" : "conversation.social_experience_pending",
                             check.experiencePlayer(), check.rewardExperience(), skill));
             }
+            for (var transaction : session.transactions()) append(text, transactionText(session, transaction));
             if (!session.outcome().isBlank()) append(text, session.outcome());
         }
         if (!state.diagnostic().isBlank()) append(text, state.diagnostic());
+        return text.toString();
+    }
+
+    private String transactionText(CampaignConversationViewPayload.Session session, CampaignConversationViewPayload.Transaction transaction) {
+        String item = host.itemName(transaction.item());
+        var text = new StringBuilder();
+        if (!transaction.response().isEmpty()) session.responses().stream().filter(response -> response.id().equals(transaction.response())).findFirst()
+                .ifPresent(response -> text.append(host.translate("conversation.transaction_choice", response.label())).append("\n"));
+        text.append(host.translate("conversation.transaction_buyer", transaction.title(), transaction.buyerName()));
+        boolean revealing = dieAnimation.playing() && session.check() != null && session.check().id().equals(transaction.check());
+        if (transaction.state() == CampaignConversationViewPayload.TransactionState.QUOTED || revealing) {
+            text.append("\n").append(host.translate(transaction.possible() ? "conversation.transaction_possible" : "conversation.transaction_quote",
+                    transaction.basePrice(), item));
+            if (transaction.bargainPrice() >= 0) text.append("\n").append(host.translate("conversation.transaction_bargain", transaction.bargainPrice(), item));
+        } else {
+            String state = switch (transaction.state()) {
+                case PAID -> "conversation.transaction_paid";
+                case PAYMENT_PENDING -> "conversation.transaction_pending";
+                default -> transaction.possible() ? "conversation.transaction_possible" : "conversation.transaction_agreed";
+            };
+            text.append("\n").append(host.translate(state, transaction.price(), item));
+        }
+        if (!transaction.diagnostic().isBlank()) text.append("\n").append(transaction.diagnostic());
         return text.toString();
     }
 
@@ -196,6 +220,7 @@ public final class CampaignConversationScreenController {
         default boolean animateChecks() { return true; }
         default boolean confirmationTextRead() { return true; }
         default void readConfirmationText() { }
+        default String itemName(String item) { return item; }
         String translate(String key, Object... arguments);
         void send(CampaignConversationRequestPayload payload);
         void option(String label, Runnable action, boolean locked);

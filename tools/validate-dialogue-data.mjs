@@ -1304,7 +1304,7 @@ async function checkConversationFile(file, data, indexReferences = false) {
       const action = materializeConversationAction(effect.action, context);
       checkQuestV2Actions(file, [action], actionPointer, actionPointer, questId, { singleAction: true });
       const type = questV2RegistryIndex.actions.canonical.get(action.type ?? action.action);
-      if (["campaign_fact", "campaign_outcome", "campaign_reward", "campaign_standing"].includes(type) && !action.quest && !action.quest_id && !questId) {
+      if (["campaign_fact", "campaign_outcome", "campaign_reward", "campaign_standing", "campaign_payment"].includes(type) && !action.quest && !action.quest_id && !questId) {
         errors.push(`${relative(file)}: ${actionPointer}/quest: campaign effect requires an owning quest.`);
       }
       if (type === "start_scene") {

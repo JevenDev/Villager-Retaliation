@@ -1,0 +1,60 @@
+{
+  "schema": "villagerretaliation:campaign/v1",
+  "id": "campaign_fixture:bargaining",
+  "revision": 1,
+  "title_key": "campaign_fixture.campaign.bargaining.title",
+  "localization_prefix": "campaign_fixture.campaign.bargaining.",
+  "quest_bundles": [
+    "campaign_fixture:bargaining"
+  ],
+  "chapters": [
+    {
+      "id": "supplies",
+      "title_key": "campaign_fixture.campaign.bargaining.chapter",
+      "quests": [
+        "campaign_fixture:bargaining"
+      ]
+    }
+  ],
+  "milestones": [],
+  "locations": [
+    {
+      "id": "camp",
+      "title_key": "campaign_fixture.campaign.bargaining.location",
+      "source": "village",
+      "dimension": "minecraft:overworld",
+      "search_radius": 256
+    }
+  ],
+  "characters": [
+    {
+      "id": "merchant",
+      "title_key": "campaign_fixture.campaign.bargaining.merchant",
+      "source": "existing_villager",
+      "location": "camp",
+      "search_radius": 32,
+      "loss_policy": "downed"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "supplies",
+      "title_key": "campaign_fixture.campaign.bargaining.supplies",
+      "quest": "campaign_fixture:bargaining",
+      "character": "merchant",
+      "payment": {
+        "item": "minecraft:emerald",
+        "count": 8
+      },
+      "bargained_count": 5
+    }
+  ],
+  "rewards": [
+    {
+      "id": "supplies",
+      "quest": "campaign_fixture:bargaining",
+      "scope": "personal",
+      "loot_table": "campaign_fixture:campaign/travel_supplies"
+    }
+  ]
+}

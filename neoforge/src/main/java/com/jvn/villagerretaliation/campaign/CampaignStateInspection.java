@@ -67,8 +67,10 @@ public final class CampaignStateInspection {
         }
         var sessions = conversations.snapshots().values().stream()
                 .filter(session -> session.identity().campaign().equals(campaign)).toList();
+        var transactions = CampaignTransactionInspection.inspect(server, campaign);
+        diagnostics.addAll(transactions.diagnostics());
         return new Snapshot(campaign, mode.mode(), mode.selectionSource(), status, definition, instance,
-                characterViews, locationViews, sessions, diagnostics);
+                characterViews, locationViews, sessions, diagnostics, transactions.transactions());
     }
 
     public enum Status { READY, UNSTARTED, DORMANT, MISSING, INCOMPATIBLE, UNAVAILABLE }
@@ -89,12 +91,20 @@ public final class CampaignStateInspection {
 
     public record Snapshot(ResourceLocation campaign, CampaignWorldMode mode, String selectionSource, Status status,
             CampaignDefinition definition, CampaignInstance instance, List<Character> characters,
-            List<Location> locations, List<ConversationSession.Snapshot> conversations, List<String> diagnostics) {
+            List<Location> locations, List<ConversationSession.Snapshot> conversations, List<String> diagnostics,
+            List<CampaignTransactionInspection.Entry> transactions) {
         public Snapshot {
             characters = List.copyOf(characters);
             locations = List.copyOf(locations);
             conversations = List.copyOf(conversations);
             diagnostics = List.copyOf(diagnostics);
+            transactions = List.copyOf(transactions);
+        }
+
+        public Snapshot(ResourceLocation campaign, CampaignWorldMode mode, String selectionSource, Status status,
+                CampaignDefinition definition, CampaignInstance instance, List<Character> characters,
+                List<Location> locations, List<ConversationSession.Snapshot> conversations, List<String> diagnostics) {
+            this(campaign, mode, selectionSource, status, definition, instance, characters, locations, conversations, diagnostics, List.of());
         }
 
         public Player player(UUID id) {

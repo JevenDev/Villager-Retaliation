@@ -1196,6 +1196,10 @@ public final class QuestV2Parser {
                     Set.of(type));
             return;
         }
+        if (canonical.equals("campaign_transaction")) {
+            com.jvn.villagerretaliation.campaign.CampaignTransactionPredicate.issues(object).forEach((field, message) ->
+                    validator.error(pointer + (field.isEmpty() ? "" : "/" + field), message, "Use the campaign transaction condition schema.", Set.of()));
+        }
         if (canonical.equals("campaign_standing")) {
             com.jvn.villagerretaliation.campaign.CampaignStandingPredicate.issues(object).forEach((field, message) ->
                     validator.error(pointer + (field.isEmpty() ? "" : "/" + field), message, "Use the campaign standing condition schema.", Set.of()));
@@ -1264,6 +1268,11 @@ public final class QuestV2Parser {
                 String actionPointer = pointer + "/" + index;
                 com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.issues(object).forEach((field, message) ->
                         validator.error(actionPointer + "/" + field, message, "Use the campaign outcome action schema.", Set.of()));
+            }
+            if (VillagerActionRegistry.kindBySerializedName(type) == VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT) {
+                String actionPointer = pointer + "/" + index;
+                com.jvn.villagerretaliation.campaign.CampaignPaymentAction.issues(object).forEach((field, message) ->
+                        validator.error(actionPointer + "/" + field, message, "Use the campaign payment action schema.", Set.of()));
             }
             if (VillagerActionRegistry.kindBySerializedName(type) == VillagerActionDefinition.Kind.CAMPAIGN_STANDING) {
                 String actionPointer = pointer + "/" + index;

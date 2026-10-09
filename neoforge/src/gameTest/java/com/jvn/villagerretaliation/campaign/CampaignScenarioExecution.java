@@ -43,6 +43,27 @@ final class CampaignScenarioExecution {
                 else fixture.disconnect(value.player());
                 ConversationTestStorage.maintain(fixture.server);
             }
+            case GiveItem value -> {
+                var stack = new net.minecraft.world.item.ItemStack(item(value.item()), value.count());
+                fixture.player(value.player()).getInventory().add(stack);
+                require(stack.isEmpty(), "Scenario inventory has no space for " + value.count() + " " + value.item());
+            }
+            case AssertItemCount value -> {
+                int count = fixture.player(value.player()).getInventory().countItem(item(value.item()));
+                require(count == value.count(), "Expected " + value.player() + " to hold " + value.count() + " " + value.item() + ", got " + count);
+            }
+            case AssertTransaction value -> {
+                var progress = VillagerQuestSavedData.get(fixture.helper.getLevel()).get(fixture.playerId(value.player()), value.quest());
+                require(progress != null, "Transaction quest has not been started");
+                var key = new CampaignTransaction.Key(fixture.scenario.campaign(), fixture.instance().instanceId(), fixture.playerId(value.player()),
+                        value.quest(), progress.questRunId(), value.transaction());
+                var data = CampaignTransactionSavedData.get(fixture.helper.getLevel());
+                require(data.diagnostic().isBlank(), data.diagnostic());
+                var receipt = data.receipts().get(key.operation());
+                String state = receipt == null ? "UNARRANGED" : receipt.phase().name();
+                require(state.equals(value.state().name()), "Expected transaction " + value.state() + ", got " + state);
+                if (value.price() >= 0) require(receipt != null && receipt.price() == value.price(), "Saved transaction price differs");
+            }
             case Party value -> {
                 var leader = fixture.player(value.leader());
                 var member = fixture.player(value.member());
@@ -92,7 +113,8 @@ final class CampaignScenarioExecution {
             case Checkpoint value -> checkpoints.put(value.id(), new Captured(value.scope(), value.target(), snapshot(value.scope(), value.target())));
             case AssertSame value -> {
                 var captured = checkpoints.get(value.checkpoint());
-                require(captured.state().equals(snapshot(captured.scope(), captured.target())), "State changed since checkpoint " + value.checkpoint());
+                var current = snapshot(captured.scope(), captured.target());
+                require(captured.state().equals(current), "State changed since checkpoint " + value.checkpoint() + difference(captured.state(), current));
             }
             case AssertOutcome value -> {
                 var outcome = fixture.instance().outcomes().get(value.milestone());
@@ -238,10 +260,17 @@ final class CampaignScenarioExecution {
         require(actual == expected, "Expected request " + (expected ? "accepted" : "rejected") + ", got " + (actual ? "accepted" : "rejected") + ": " + lastDiagnostic);
     }
 
+    private static net.minecraft.world.item.Item item(net.minecraft.resources.ResourceLocation id) {
+        var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+        require(item != null && item != net.minecraft.world.item.Items.AIR, "Unknown scenario inventory item " + id);
+        return item;
+    }
+
     private Object snapshot(Scope scope, String target) {
         return switch (scope) {
             case CAMPAIGN -> new CampaignState(fixture.instance(), CampaignRewardSavedData.get(fixture.helper.getLevel()).save(new CompoundTag(), fixture.helper.getLevel().registryAccess()),
-                    VillagerQuestSavedData.get(fixture.helper.getLevel()).save(new CompoundTag(), fixture.helper.getLevel().registryAccess()));
+                    questSnapshot(VillagerQuestSavedData.get(fixture.helper.getLevel()).save(new CompoundTag(), fixture.helper.getLevel().registryAccess())),
+                    CampaignTransactionSavedData.get(fixture.helper.getLevel()).receipts());
             case CONVERSATION -> session(target);
             case PLAYER -> {
                 var quests = new LinkedHashMap<String, CompoundTag>();
@@ -251,14 +280,62 @@ final class CampaignScenarioExecution {
                     if (tag.getUUID("Player").equals(fixture.playerId(target))) quests.put(tag.getString("Quest"), tag.copy());
                 }
                 var player = fixture.lastPlayers.get(target);
-                yield new PlayerState(fixture.instance().players().get(fixture.playerId(target)), player == null ? 0 : player.totalExperience, Map.copyOf(quests));
+                yield new PlayerState(fixture.instance().players().get(fixture.playerId(target)), player == null ? 0 : player.totalExperience, Map.copyOf(quests),
+                        player == null ? new net.minecraft.nbt.ListTag() : player.getInventory().save(new net.minecraft.nbt.ListTag()));
             }
         };
+    }
+
+    static CompoundTag questSnapshot(CompoundTag saved) {
+        var copy = saved.copy();
+        var players = java.util.Comparator.comparing((CompoundTag entry) -> entry.getUUID("Player"));
+        for (String field : java.util.List.of("Entries", "TrackedQuests")) {
+            var values = new java.util.ArrayList<CompoundTag>();
+            for (var entry : copy.getList(field, Tag.TAG_COMPOUND)) values.add((CompoundTag) entry);
+            values.sort(field.equals("Entries") ? players.thenComparing(entry -> entry.getString("Quest")) : players);
+            var ordered = new net.minecraft.nbt.ListTag();
+            values.forEach(ordered::add);
+            copy.put(field, ordered);
+        }
+        return copy;
+    }
+
+    private static String difference(Object before, Object after) {
+        if (before.equals(after)) return "";
+        if (before instanceof CampaignState expected && after instanceof CampaignState actual) {
+            if (!expected.campaign().equals(actual.campaign()))
+                return difference(CampaignStateCodec.save(expected.campaign()), CampaignStateCodec.save(actual.campaign()), "/campaign");
+            if (!expected.rewards().equals(actual.rewards())) return difference(expected.rewards(), actual.rewards(), "/rewards");
+            if (!expected.quests().equals(actual.quests())) return difference(expected.quests(), actual.quests(), "/quests");
+            return " in transaction receipts";
+        }
+        return " in " + before.getClass().getSimpleName();
+    }
+
+    private static String difference(Tag before, Tag after, String pointer) {
+        if (java.util.Objects.equals(before, after)) return "";
+        if (before instanceof CompoundTag expected && after instanceof CompoundTag actual) {
+            var keys = new java.util.TreeSet<>(expected.getAllKeys());
+            keys.addAll(actual.getAllKeys());
+            for (var key : keys) if (!java.util.Objects.equals(expected.get(key), actual.get(key)))
+                return difference(expected.get(key), actual.get(key), pointer + "/" + key);
+        }
+        if (before instanceof net.minecraft.nbt.ListTag expected && after instanceof net.minecraft.nbt.ListTag actual) {
+            if (expected.size() != actual.size()) return " at " + pointer + ": expected " + expected.size() + " entries, got " + actual.size();
+            for (int index = 0; index < expected.size(); index++) if (!expected.get(index).equals(actual.get(index)))
+                return difference(expected.get(index), actual.get(index), pointer + "/" + index);
+        }
+        return " at " + pointer + ": expected " + preview(before) + ", got " + preview(after);
+    }
+
+    private static String preview(Tag value) {
+        String text = String.valueOf(value);
+        return text.length() > 160 ? text.substring(0, 160) + "..." : text;
     }
 
     interface Submitted { boolean run() throws IOException; }
     private record Prompt(String player, String actor, Map<String, String> options) { }
     private record Captured(Scope scope, String target, Object state) { }
-    private record CampaignState(CampaignInstance campaign, CompoundTag rewards, CompoundTag quests) { }
-    private record PlayerState(CampaignInstance.PlayerRecord campaign, int experience, Map<String, CompoundTag> quests) { }
+    private record CampaignState(CampaignInstance campaign, CompoundTag rewards, CompoundTag quests, Map<UUID, CampaignTransaction.Receipt> transactions) { }
+    private record PlayerState(CampaignInstance.PlayerRecord campaign, int experience, Map<String, CompoundTag> quests, net.minecraft.nbt.ListTag inventory) { }
 }

@@ -12,7 +12,7 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
         Map<String, CampaignLocationDefinition> locations, Map<String, CampaignCharacterDefinition> characters,
         Map<String, CampaignEvidenceDefinition> evidence, Map<String, CampaignLocationVariant> locationVariants,
         Map<String, CampaignFixtureEntry> fixtureEntries, Map<String, CampaignStandingDefinition> relationships,
-        Map<String, CampaignStandingDefinition> factions, ResourceLocation source) {
+        Map<String, CampaignStandingDefinition> factions, Map<String, CampaignTransactionDefinition> transactions, ResourceLocation source) {
     public CampaignDefinition {
         questBundles = List.copyOf(questBundles);
         chapters = ordered(chapters);
@@ -26,6 +26,18 @@ public record CampaignDefinition(ResourceLocation id, int revision, String finge
         fixtureEntries = ordered(fixtureEntries);
         relationships = ordered(relationships);
         factions = ordered(factions);
+        transactions = ordered(transactions);
+    }
+
+    public CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,
+            List<ResourceLocation> questBundles, Map<String, Chapter> chapters, Map<String, Milestone> milestones,
+            Map<String, Fact> facts, Map<String, CampaignRewardDefinition> rewards,
+            Map<String, CampaignLocationDefinition> locations, Map<String, CampaignCharacterDefinition> characters,
+            Map<String, CampaignEvidenceDefinition> evidence, Map<String, CampaignLocationVariant> locationVariants,
+            Map<String, CampaignFixtureEntry> fixtureEntries, Map<String, CampaignStandingDefinition> relationships,
+            Map<String, CampaignStandingDefinition> factions, ResourceLocation source) {
+        this(id, revision, fingerprint, titleKey, localizationPrefix, questBundles, chapters, milestones, facts, rewards,
+                locations, characters, evidence, locationVariants, fixtureEntries, relationships, factions, Map.of(), source);
     }
 
     public CampaignDefinition(ResourceLocation id, int revision, String fingerprint, String titleKey, String localizationPrefix,

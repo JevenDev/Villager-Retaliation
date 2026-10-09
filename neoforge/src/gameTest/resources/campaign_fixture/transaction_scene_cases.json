@@ -1,0 +1,259 @@
+[
+  {
+    "name": "normalized payment type",
+    "valid": true,
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": " CAMPAIGN_PAYMENT ",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies"
+        }
+      ]
+    }
+  },
+  {
+    "name": "normalized invalid payment",
+    "pointer": "/actions/0/required",
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": " CAMPAIGN_PAYMENT ",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies",
+          "required": false
+        }
+      ]
+    }
+  },
+  {
+    "name": "noncanonical condition is diagnosed",
+    "pointer": "/conditions/0/type",
+    "data": {
+      "conditions": [
+        {
+          "type": " CAMPAIGN_TRANSACTION ",
+          "campaign": "campaign_fixture:characters",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies",
+          "state": "paid"
+        }
+      ]
+    }
+  },
+  {
+    "name": "explicit quest",
+    "valid": true,
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies"
+        }
+      ]
+    }
+  },
+  {
+    "name": "quest_id alias",
+    "valid": true,
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "quest_id": "campaign_fixture:characters",
+          "transaction": "supplies"
+        }
+      ]
+    }
+  },
+  {
+    "name": "quest wins over alias",
+    "valid": true,
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies",
+          "quest_id": "campaign_fixture:other"
+        }
+      ]
+    }
+  },
+  {
+    "name": "payment is required",
+    "valid": true,
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies",
+          "required": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "optional payment rejected",
+    "pointer": "/actions/0/required",
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies",
+          "required": false
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing transaction",
+    "pointer": "/actions/0/transaction",
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "quest": "campaign_fixture:characters"
+        }
+      ]
+    }
+  },
+  {
+    "name": "invalid transaction id",
+    "pointer": "/actions/0/transaction",
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "quest": "campaign_fixture:characters",
+          "transaction": "bad id"
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing owning quest",
+    "pointer": "/actions/0/quest",
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "transaction": "supplies"
+        }
+      ]
+    }
+  },
+  {
+    "name": "malformed owning quest",
+    "pointer": "/actions/0/quest",
+    "data": {
+      "actions": [
+        {
+          "id": "buy",
+          "type": "campaign_payment",
+          "quest": "Bad Quest",
+          "transaction": "supplies"
+        }
+      ]
+    }
+  },
+  {
+    "name": "transaction state",
+    "valid": true,
+    "data": {
+      "conditions": [
+        {
+          "type": "campaign_transaction",
+          "campaign": "campaign_fixture:characters",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies",
+          "state": "paid"
+        }
+      ]
+    }
+  },
+  {
+    "name": "nested transaction state",
+    "valid": true,
+    "data": {
+      "conditions": [
+        {
+          "type": "all",
+          "conditions": [
+            {
+              "type": "not",
+              "condition": {
+                "type": "campaign_transaction",
+                "campaign": "campaign_fixture:characters",
+                "quest": "campaign_fixture:characters",
+                "transaction": "supplies",
+                "state": "unpaid"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown state",
+    "pointer": "/conditions/0/state",
+    "data": {
+      "conditions": [
+        {
+          "type": "campaign_transaction",
+          "campaign": "campaign_fixture:characters",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies",
+          "state": "settled"
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing campaign",
+    "pointer": "/conditions/0/campaign",
+    "data": {
+      "conditions": [
+        {
+          "type": "campaign_transaction",
+          "quest": "campaign_fixture:characters",
+          "transaction": "supplies",
+          "state": "paid"
+        }
+      ]
+    }
+  },
+  {
+    "name": "ordinary scene values",
+    "valid": true,
+    "data": {
+      "actions": [
+        {
+          "id": "xp",
+          "type": "experience",
+          "amount": 3
+        }
+      ],
+      "nested": [
+        false,
+        null,
+        4,
+        "text"
+      ]
+    }
+  }
+]

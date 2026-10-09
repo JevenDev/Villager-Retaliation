@@ -6265,6 +6265,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             dialogueLineScroll = Math.min(maximum, dialogueLineScroll + interactionDialogueVisibleLineCount());
             rebuildOptionsKeepingListPosition();
         }
+        @Override public String itemName(String item) {
+            return I18n.get(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(item)).getDescriptionId());
+        }
         @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
         @Override public void send(com.jvn.villagerretaliation.network.CampaignConversationRequestPayload payload) { sendToServer(payload); }
         @Override public void option(String label, Runnable action, boolean locked) { options.add(DialogueOption.enabled(label, action, locked)); }
