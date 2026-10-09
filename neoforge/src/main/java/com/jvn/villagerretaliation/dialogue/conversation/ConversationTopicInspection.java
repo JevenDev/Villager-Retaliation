@@ -49,7 +49,7 @@ public final class ConversationTopicInspection {
         if (character.entity() == null) return report.block("character", "The bound character is unloaded. Its identity is retained and no death is inferred.");
         if (!character.available()) return report.block("character", "The bound character is downed. Conversation is paused.");
         if (player != null) report.gate("presence", ConversationService.near(player, character.entity()), "Return to this character to begin or continue.");
-        UUID active = data.activeCharacter(character.entity().getUUID());
+        UUID active = ConversationCharacters.active(server, data, character.entity().getUUID());
         if (active != null) {
             var session = data.session(active);
             report.session = session == null ? null : session.snapshot();
@@ -65,8 +65,8 @@ public final class ConversationTopicInspection {
             } catch (ConversationService.Unavailable exception) {
                 return report.block("session", exception.getMessage());
             }
-            if (!session.identity.character().equals(character.entity().getUUID())) {
-                return report.block("session", "The original conversation character is unavailable. Its history is retained.");
+            if (!session.speakers.get(session.identity.characterRole()).entity().equals(character.entity().getUUID())) {
+                return report.block("session", "The saved conversation will reconcile its authorized character repair when reopened.");
             }
             report.gates.add(new Gate("session", GateState.PASS,
                     "Opening returns saved topic " + session.identity.topic() + " at node " + session.node + ". Entry conditions are not reapplied."));

@@ -88,7 +88,7 @@ public final class ConversationNestedConfirmations {
             var access = CampaignQuestAcceptanceService.resumeAccess(context, authority.actor(), accepted);
             if (!access.allowed()) return access.paused() ? new Gate(access.diagnostic(), null, false)
                     : new Gate("", unavailable(origin.action(), access.diagnostic()), true);
-            consent = merge(context, authority.actor(), consent, accepted);
+            consent = merge(context, authority.actor(), consent, CampaignQuestAcceptanceService.remainingConsent(context, authority.actor(), accepted));
             updateConsent.accept(consent);
             SceneSavedData.get(server.overworld()).changed();
             SceneSavedData.get(server.overworld()).persistCampaignHandoff(server.overworld());
@@ -115,6 +115,7 @@ public final class ConversationNestedConfirmations {
 
     private static CompoundTag merge(DialogueContext context, UUID actor, CompoundTag remaining, CompoundTag accepted) {
         if (remaining.isEmpty()) return accepted;
+        if (accepted.isEmpty()) return remaining;
         var previous = CampaignQuestConsent.load(remaining);
         var next = CampaignQuestConsent.load(accepted);
         require(previous.playerId().equals(actor) && next.playerId().equals(actor)

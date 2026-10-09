@@ -77,6 +77,20 @@ public final class CampaignFollowSavedData extends SavedData {
         persist(candidate);
     }
 
+    synchronized CampaignFollowJourney rebind(CampaignFollowJourney prior, CampaignCharacterBinding character, CampaignCharacterSavedData characters) throws IOException {
+        if (!diagnostic.isBlank()) throw new IOException(diagnostic);
+        CampaignStateCodec.require(prior.equals(journeys.get(prior.key())), "follow journey changed before character repair");
+        if (prior.actor().equals(character.entityId()) || prior.state() != CampaignFollowJourney.State.ACTIVE) return prior;
+        CampaignStateCodec.require(character.equals(characters.bindings().get(character.key())) && !character.lost()
+                && prior.campaign().equals(character.campaign()) && prior.instance().equals(character.instance())
+                && prior.fingerprint().equals(character.fingerprint())
+                && characters.authorizes(new CampaignCharacterBinding.Key(prior.campaign(), prior.role()), prior.actor(), character.entityId()),
+                "follow guide has no saved character replacement or repair authorization");
+        var candidate = prior.rebound(character.entityId());
+        persist(candidate);
+        return candidate;
+    }
+
     synchronized CampaignFollowJourney retarget(CampaignFollowJourney prior, CampaignLocationBinding location, CampaignLocationSavedData locations) throws IOException {
         if (!diagnostic.isBlank()) throw new IOException(diagnostic);
         CampaignStateCodec.require(prior.equals(journeys.get(prior.key())), "follow journey changed before location repair");

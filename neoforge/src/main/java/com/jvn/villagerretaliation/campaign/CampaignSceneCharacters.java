@@ -38,8 +38,10 @@ public final class CampaignSceneCharacters {
             if (prior != null && !entity.getUUID().equals(prior.entityId())) {
                 String reason = CampaignCharacterReplacements.authorization(server, scene.owningCampaignId(), role, prior.entityId(), entity.getUUID());
                 if (reason.isBlank()) return "Scene character has no saved campaign replacement authorization. Repair its binding before resuming.";
-                var rebound = SceneActorBindingService.rebind(actor, prior, binding, SceneActorBindingService.RebindKind.COMPATIBLE,
-                        server.overworld().getGameTime(), reason, "");
+                var operator = CampaignCharacterReplacements.repairOperator(server, scene.owningCampaignId(), role, prior.entityId(), entity.getUUID());
+                var kind = operator == null ? SceneActorBindingService.RebindKind.COMPATIBLE : SceneActorBindingService.RebindKind.OPERATOR;
+                var rebound = SceneActorBindingService.rebind(actor, prior, binding, kind,
+                        server.overworld().getGameTime(), reason, operator == null ? "" : operator.toString());
                 if (!rebound.accepted()) return rebound.diagnostic();
                 scene.replaceBinding(actor.alias(), rebound.binding());
                 data.changed();

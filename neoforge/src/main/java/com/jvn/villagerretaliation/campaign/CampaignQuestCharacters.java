@@ -32,7 +32,7 @@ public final class CampaignQuestCharacters {
         if (role.isBlank()) return false;
         var characters = CampaignCharacterSavedData.get(player.serverLevel());
         var original = characters.bindings().get(new CampaignCharacterBinding.Key(quest.campaign(), role));
-        if (!characters.diagnostic().isBlank() || original == null || !original.lost()) return false;
+        if (!characters.diagnostic().isBlank() || original == null) return false;
         var resolved = CampaignCharacterService.resolve(player.getServer(), quest.campaign(), role);
         if (!resolved.available()) return false;
         String reason = CampaignCharacterReplacements.authorization(player.getServer(), quest.campaign(), role,
@@ -54,6 +54,9 @@ public final class CampaignQuestCharacters {
         var original = CampaignBindingQueries.originalCharacter(server, quest.campaign(), role);
         if (!original.diagnostic().isBlank()) return original.diagnostic();
         if (original.binding() == null) return "Campaign quest provider has no saved character binding. Restore its original campaign character data.";
+        if (!original.binding().entityId().equals(progress.startedVillagerId()) && !CampaignCharacterReplacements.authorization(
+                server, quest.campaign(), role, progress.startedVillagerId(), original.binding().entityId()).isBlank())
+            return "Campaign quest is waiting for its repaired provider binding to be saved.";
         if (!original.binding().lost()
                 || original.binding().lossPolicy() != com.jvn.villagerretaliation.campaign.content.CampaignCharacterDefinition.LossPolicy.REPLACEMENT) return "";
         var active = CampaignBindingQueries.character(server, quest.campaign(), role);

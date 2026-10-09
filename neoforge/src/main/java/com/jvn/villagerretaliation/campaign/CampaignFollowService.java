@@ -86,8 +86,13 @@ public final class CampaignFollowService {
     private static SceneStepResult retarget(SceneExecutionContext context, Binding binding, CampaignFollowJourney journey, CampaignFollowSavedData data) {
         String issue = identityIssue(context, binding, journey);
         if (!issue.isBlank()) return SceneStepResult.block("follow_identity_changed", issue);
-        try { data.retarget(journey, binding.destination(), CampaignLocationSavedData.get(context.server().overworld())); }
-        catch (IOException exception) { return waitFor(context, "The repaired journey destination is waiting for world storage."); }
+        try {
+            var rebound = data.rebind(journey, binding.character(), CampaignCharacterSavedData.get(context.server().overworld()));
+            if (!rebound.actor().equals(journey.actor())) stop(context.server(), journey);
+            data.retarget(rebound, binding.destination(), CampaignLocationSavedData.get(context.server().overworld()));
+        } catch (IOException | IllegalArgumentException exception) {
+            return waitFor(context, "The repaired journey is waiting for its saved guide and destination: " + exception.getMessage());
+        }
         return SceneStepResult.ready();
     }
 
@@ -98,10 +103,9 @@ public final class CampaignFollowService {
         if (!data.diagnostic().isBlank()) return waitFor(context, data.diagnostic());
         var journey = data.journeys().get(key(context));
         if (journey == null) return SceneStepResult.block("follow_record_missing", "The prepared journey record is missing. Restore its campaign save.");
-        String issue = identityIssue(context, resolved, journey);
-        if (!issue.isBlank()) return SceneStepResult.block("follow_identity_changed", issue);
-        try { journey = data.retarget(journey, resolved.destination(), CampaignLocationSavedData.get(context.server().overworld())); }
-        catch (IOException exception) { return waitFor(context, "The repaired journey destination is waiting for world storage."); }
+        var repaired = retarget(context, resolved, journey, data);
+        if (repaired.outcome() != SceneStepResult.Outcome.READY) return repaired;
+        journey = data.journeys().get(key(context));
         if (journey.state() == CampaignFollowJourney.State.COMPLETED) return SceneStepResult.applied();
         if (journey.state() == CampaignFollowJourney.State.CANCELLED)
             return SceneStepResult.fail("follow_cancelled", "This journey was cancelled. Start its authored alternate path.");
@@ -126,7 +130,7 @@ public final class CampaignFollowService {
                     || QuestObjectiveQuery.activeObjectives(quest, progress).stream().noneMatch(objective -> objective.id().equals(participant.objective())
                             && objective.story() instanceof CampaignStoryObjective.Follow follow && matches(context, resolved, follow)))
                 return SceneStepResult.fail("follow_objective_changed", "An enrolled player's original follow objective is no longer active.");
-            issue = CampaignQuestAccess.executionIssue(player.serverLevel(), participant.player(), quest, progress);
+            String issue = CampaignQuestAccess.executionIssue(player.serverLevel(), participant.player(), quest, progress);
             if (!issue.isBlank()) return waitFor(context, issue);
             if (player.position().distanceTo(entry.getValue().position()) > 32)
                 return waitFor(context, "A player moved beyond the observed route. Return to the last recorded part of the journey.");
@@ -259,14 +263,16 @@ public final class CampaignFollowService {
         if (bound == null || !character.entity().getUUID().equals(bound.entityId()) || target == null
                 || !location.binding().dimension().equals(target.lastDimension()) || !location.binding().position().equals(target.lastPosition()))
             return Binding.unavailable("Scene bindings do not match the campaign's guide and destination.");
-        return new Binding(character.entity(), location.binding(), guide.bindingReference(), destination.bindingReference(), "");
+        return new Binding(character.entity(), character.binding(), location.binding(), guide.bindingReference(), destination.bindingReference(), "");
     }
 
     private static String identityIssue(SceneExecutionContext context, Binding binding, CampaignFollowJourney journey) {
         var instance = CampaignSavedData.get(context.server().overworld()).instances().get(context.instance().owningCampaignId());
         return instance != null && journey.campaign().equals(context.instance().owningCampaignId()) && journey.instance().equals(instance.instanceId())
                 && journey.fingerprint().equals(instance.fingerprint()) && journey.definition().equals(context.definition().id())
-                && journey.definitionHash().equals(context.definition().definitionHash()) && journey.actor().equals(binding.guide().getUUID())
+                && journey.definitionHash().equals(context.definition().definitionHash())
+                && (journey.actor().equals(binding.guide().getUUID()) || CampaignCharacterSavedData.get(context.server().overworld())
+                        .authorizes(new CampaignCharacterBinding.Key(journey.campaign(), journey.role()), journey.actor(), binding.guide().getUUID()))
                 && journey.role().equals(binding.role()) && journey.location().equals(binding.location())
                 && journey.dimension().equals(binding.destination().dimension())
                 && (journey.destination().equals(binding.destination().position()) || !CampaignLocationSavedData.get(context.server().overworld())
@@ -289,8 +295,8 @@ public final class CampaignFollowService {
         return new CampaignFollowJourney.Key(context.instance().id(), context.step().id());
     }
 
-    private record Binding(Villager guide, CampaignLocationBinding destination, String role, String location, String diagnostic) {
+    private record Binding(Villager guide, CampaignCharacterBinding character, CampaignLocationBinding destination, String role, String location, String diagnostic) {
         boolean available() { return guide != null && destination != null && diagnostic.isBlank(); }
-        static Binding unavailable(String issue) { return new Binding(null, null, "", "", issue); }
+        static Binding unavailable(String issue) { return new Binding(null, null, null, "", "", issue); }
     }
 }

@@ -162,6 +162,8 @@ public final class CampaignOwnedSpawns {
         }
     }
 
+    static boolean hasOwner(Villager entity) { return entity.getPersistentData().contains(OWNER_KEY); }
+
     static boolean owns(CampaignSpawnReceipt receipt, Villager entity) {
         if (!entity.getUUID().equals(receipt.binding().entityId())) return false;
         var owner = entity.getPersistentData().getCompound(OWNER_KEY);

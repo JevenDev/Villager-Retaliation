@@ -73,14 +73,14 @@ public final class CampaignCharacterReplacementGameTests {
         try (var fixture = new Fixture(helper)) {
             var mentor = fixture.mentor();
             var legacy = fixture.data().save(new CompoundTag(), helper.getLevel().registryAccess());
-            legacy.putInt("DataVersion", 1); legacy.remove("Replacements");
+            legacy.putInt("DataVersion", 1); legacy.remove("Replacements"); legacy.remove("Repairs");
             var legacyBinding = legacy.getList("Bindings", Tag.TAG_COMPOUND).getCompound(0);
             legacyBinding.putString("LossPolicy", "DOWNED");
             var original = CampaignCharacterBinding.load(legacyBinding);
             var migrated = CampaignCharacterSavedData.load(legacy, fixture.base.disk.root);
             helper.assertTrue(migrated.diagnostic().isBlank() && migrated.replacements().isEmpty(), "version one migrates explicitly");
             helper.assertValueEqual(migrated.forEntity(mentor.getUUID()), original, "migration keeps identity and ownership");
-            helper.assertValueEqual(migrated.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), 2, "next save uses version two");
+            helper.assertValueEqual(migrated.save(new CompoundTag(), helper.getLevel().registryAccess()).getInt("DataVersion"), CampaignCharacterSavedData.CURRENT_DATA_VERSION, "next save uses the current version");
             mentor.discard(); fixture.villager(); fixture.base.resolve();
             var valid = fixture.data().save(new CompoundTag(), helper.getLevel().registryAccess());
             for (int mutation = 0; mutation < 8; mutation++) {

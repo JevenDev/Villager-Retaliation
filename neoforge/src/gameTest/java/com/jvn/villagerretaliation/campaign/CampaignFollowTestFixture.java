@@ -58,7 +58,9 @@ final class CampaignFollowTestFixture implements AutoCloseable {
 
     CampaignFollowTestFixture(GameTestHelper helper) throws IOException { this(helper, false); }
 
-    CampaignFollowTestFixture(GameTestHelper helper, boolean partyScene) throws IOException {
+    CampaignFollowTestFixture(GameTestHelper helper, boolean partyScene) throws IOException { this(helper, partyScene, scene -> { }); }
+
+    CampaignFollowTestFixture(GameTestHelper helper, boolean partyScene, java.util.function.Consumer<JsonObject> sceneContent) throws IOException {
         this.helper = helper;
         this.partyScene = partyScene;
         destination = helper.absolutePos(new BlockPos(7, 1, 1));
@@ -70,6 +72,7 @@ final class CampaignFollowTestFixture implements AutoCloseable {
             campaign.getAsJsonArray("locations").get(1).getAsJsonObject().add("origin", origin);
         }, List.of(), scene -> {
             if (partyScene) scene.addProperty("ownership", "party");
+            sceneContent.accept(scene);
         });
         priorJourneys = CampaignFollowSavedData.get(helper.getLevel());
         priorParties = PartySavedData.get(helper.getLevel());

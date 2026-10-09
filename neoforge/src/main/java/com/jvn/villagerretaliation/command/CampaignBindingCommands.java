@@ -27,6 +27,7 @@ final class CampaignBindingCommands {
 
     static LiteralArgumentBuilder<CommandSourceStack> root() {
         return literal("binding").requires(source -> source.hasPermission(2))
+                .then(CampaignCharacterBindingCommands.root())
                 .then(literal("location").then(campaign().then(alias().executes(context -> inspect(context, 1))
                         .then(argument("page", IntegerArgumentType.integer(1)).executes(context -> inspect(context, IntegerArgumentType.getInteger(context, "page"))))
                         .then(literal("repair").then(argument("expected", UuidArgument.uuid())
@@ -68,15 +69,18 @@ final class CampaignBindingCommands {
         return 1;
     }
 
+    static UUID operator(CommandSourceStack source) {
+        return source.getPlayer() == null ? UUID.nameUUIDFromBytes(("operator/" + source.getTextName()).getBytes(StandardCharsets.UTF_8))
+                : source.getPlayer().getUUID();
+    }
+
     private static int repair(CommandContext<CommandSourceStack> context) {
         var source = context.getSource();
-        UUID operator = source.getPlayer() == null ? UUID.nameUUIDFromBytes(("operator/" + source.getTextName()).getBytes(StandardCharsets.UTF_8))
-                : source.getPlayer().getUUID();
         try {
             var request = new CampaignLocationRepairs.Request(ResourceLocationArgument.getId(context, "campaign"),
                     StringArgumentType.getString(context, "location"), source.getLevel().dimension().location(),
                     BlockPosArgument.getBlockPos(context, "position"), UuidArgument.getUuid(context, "expected"), UuidArgument.getUuid(context, "operation"),
-                    operator, StringArgumentType.getString(context, "reason"));
+                    operator(source), StringArgumentType.getString(context, "reason"));
             var result = CampaignLocationRepairs.repair(source.getServer(), request);
             if (!result.accepted()) { source.sendFailure(Component.literal(result.diagnostic())); return 0; }
             source.sendSuccess(() -> Component.literal("Location binding saved at " + result.binding().position().toShortString()

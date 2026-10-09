@@ -62,7 +62,7 @@ public final class CampaignCharacterService {
         var origin = location.binding().position();
         var candidates = level.getEntitiesOfClass(Villager.class, new AABB(origin).inflate(character.searchRadius()),
                 villager -> villager.isAlive() && !villager.isBaby() && !VillagerDownedService.isDowned(villager)
-                        && data.forEntity(villager.getUUID()) == null
+                        && !data.reserved(villager.getUUID()) && !CampaignOwnedSpawns.hasOwner(villager)
                         && (character.profession() == null || character.profession().equals(VillagerProfessionUtil.id(villager.getVillagerData().getProfession())))
                         && villager.blockPosition().distSqr(origin) <= (double) character.searchRadius() * character.searchRadius());
         var selected = candidates.stream().min(Comparator.<Villager>comparingDouble(villager -> villager.blockPosition().distSqr(origin))

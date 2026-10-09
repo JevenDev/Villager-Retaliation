@@ -35,6 +35,7 @@ public final class ConversationSession {
     net.minecraft.nbt.CompoundTag consent = new net.minecraft.nbt.CompoundTag();
     final Set<UUID> participants = new LinkedHashSet<>();
     final Map<String, Speaker> speakers = new LinkedHashMap<>();
+    final List<ConversationSpeakerHistory.Entry> speakerHistory = new ArrayList<>();
     final List<Line> transcript = new ArrayList<>();
     final List<Choice> choices = new ArrayList<>();
     final Map<ConversationObjectiveEvidence.Key, ConversationObjectiveEvidence> objectiveEvidence = new LinkedHashMap<>();
@@ -79,6 +80,7 @@ public final class ConversationSession {
         consent = source.consent.copy();
         participants.addAll(source.participants);
         speakers.putAll(source.speakers);
+        speakerHistory.addAll(source.speakerHistory);
         transcript.addAll(source.transcript);
         choices.addAll(source.choices);
         objectiveEvidence.putAll(source.objectiveEvidence);

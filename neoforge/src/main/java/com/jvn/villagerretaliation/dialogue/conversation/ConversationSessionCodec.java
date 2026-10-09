@@ -69,6 +69,7 @@ final class ConversationSessionCodec {
             speakers.add(value);
         });
         tag.put("Speakers", speakers);
+        tag.put("SpeakerHistory", ConversationSpeakerHistory.save(session));
         var lines = new ListTag();
         session.transcript.forEach(line -> {
             var value = new CompoundTag();
@@ -177,12 +178,11 @@ final class ConversationSessionCodec {
                     && session.nestedDecision.confirmation().consent().playerId().equals(session.actingPlayer)
                     && (nestedPending || session.phase == session.nestedDecision.resumePhase()), "nested confirmation belongs to another actor or execution phase");
         }
-        require(session.confirmation == null || session.confirmation.consent().playerId().equals(session.actingPlayer)
-                && session.confirmation.consent().providerId().equals(identity.character()), "conversation confirmation belongs to another actor");
+
         require(session.pendingChoice == null || session.confirmation != null, "conversation choice has no pending confirmation");
         if (!session.consent.isEmpty()) {
             var consent = com.jvn.villagerretaliation.campaign.CampaignQuestConsent.load(session.consent);
-            require(consent.playerId().equals(session.actingPlayer) && consent.providerId().equals(identity.character())
+            require(consent.playerId().equals(session.actingPlayer)
                     && (session.phase == ConversationSession.Phase.NODE_EFFECTS || session.phase == ConversationSession.Phase.RESPONSE_EFFECTS || nestedPending),
                     "conversation approval belongs to another actor or execution phase");
         }
@@ -204,8 +204,12 @@ final class ConversationSessionCodec {
             var speaker = new ConversationSession.Speaker(text(value, "Role"), uuid(value, "Entity"), resource(value, "Dimension"), text(value, "Name"));
             require(session.speakers.putIfAbsent(speaker.role(), speaker) == null, "duplicate conversation speaker");
         }
-        var character = session.speakers.get(identity.characterRole());
-        require(character != null && character.entity().equals(identity.character()) && character.dimension().equals(identity.dimension()), "conversation character identity changed");
+        ConversationSpeakerHistory.load(tag, session);
+        require(session.confirmation == null || session.confirmation.consent().playerId().equals(session.actingPlayer)
+                && ConversationSpeakerHistory.known(session, identity.characterRole(), session.confirmation.consent().providerId()),
+                "conversation confirmation belongs to another actor");
+        if (!session.consent.isEmpty()) require(ConversationSpeakerHistory.known(session, identity.characterRole(),
+                com.jvn.villagerretaliation.campaign.CampaignQuestConsent.load(session.consent).providerId()), "conversation approval belongs to another character");
         var lines = new LinkedHashSet<String>();
         for (var raw : list(tag, "Transcript")) {
             var value = (CompoundTag) raw;

@@ -63,18 +63,44 @@ public final class CampaignCharacterReplacements {
         var visited = new HashSet<String>();
         var operations = new ArrayList<String>();
         boolean containsPrevious = false;
+        boolean authoredSuccessor = false;
+        UUID incoming = null;
+        var data = CampaignCharacterSavedData.get(server.overworld());
         while (visited.add(role)) {
             var state = CampaignBindingQueries.originalCharacter(server, campaign, role);
             if (!state.diagnostic().isBlank() || state.binding() == null) return "";
-            containsPrevious |= previous.equals(state.binding().entityId());
-            var receipt = CampaignCharacterSavedData.get(server.overworld()).replacements().get(state.binding().key());
-            if (receipt == null) return containsPrevious && replacement.equals(state.binding().entityId()) && !operations.isEmpty()
-                    ? "campaign_replacement:" + String.join("/", operations) : "";
+            UUID current = state.binding().entityId();
+            if (containsPrevious && incoming != null && !incoming.equals(current)) {
+                var repairs = data.authorization(state.binding().key(), incoming, current);
+                if (repairs.isEmpty()) return "";
+                repairs.forEach(repair -> operations.add(repair.operation().toString()));
+            }
+            if (!containsPrevious) {
+                var repairs = data.authorization(state.binding().key(), previous, current);
+                containsPrevious = previous.equals(current) || !repairs.isEmpty();
+                if (containsPrevious) repairs.forEach(repair -> operations.add(repair.operation().toString()));
+            }
+            var receipt = data.replacements().get(state.binding().key());
+            if (receipt == null) return containsPrevious && replacement.equals(current) && !operations.isEmpty()
+                    ? (authoredSuccessor ? "campaign_replacement:" : "campaign_repair:") + String.join("/", operations) : "";
             if (!receipt.committed()) return "";
-            operations.add(receipt.operation().toString());
+            if (containsPrevious) {
+                authoredSuccessor = true;
+                operations.add(receipt.operation().toString());
+            }
+            incoming = receipt.replacementEntity();
             role = receipt.replacementRole();
         }
         return "";
+    }
+
+    static UUID repairOperator(MinecraftServer server, ResourceLocation campaign, String role, UUID previous, UUID replacement) {
+        String authorization = authorization(server, campaign, role, previous, replacement);
+        if (!authorization.startsWith("campaign_repair:")) return null;
+        var operations = authorization.substring("campaign_repair:".length()).split("/");
+        var data = CampaignCharacterSavedData.get(server.overworld());
+        var repair = data.repairs().get(UUID.fromString(operations[operations.length - 1]));
+        return repair == null ? null : repair.operator();
     }
 
     private static CampaignCharacterService.Result unavailable(String issue) { return new CampaignCharacterService.Result(null, null, issue); }

@@ -376,6 +376,47 @@ public final class CampaignConversationNestedConfirmationGameTests {
         return loaded;
     }
 
+    @GameTest(template = "empty", batch = "conversation_nested_confirmations")
+    public static void characterRepairsRefreshReachedDecisionsWithoutReplayingTheirPrefix(GameTestHelper helper) throws IOException {
+        for (boolean continuation : java.util.List.of(false, true)) {
+            try (var fixture = new Fixture(helper, continuation, false)) {
+                var player = fixture.conversation.player();
+                fixture.start(player, null); fixture.reach();
+                var pending = fixture.view(player);
+                helper.assertTrue(pending.session().confirmation() != null, "fixture reaches its nested consequence");
+                var oldConfirmation = pending.session().confirmation();
+                helper.assertValueEqual(player.totalExperience, 5, "prefix effect runs once before repair");
+                var target = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, 2, 1, 1);
+                target.setNoAi(true);
+                try {
+                    var base = fixture.conversation.base;
+                    var characters = CampaignCharacterSavedData.get(helper.getLevel());
+                    var key = new CampaignCharacterBinding.Key(base.campaignId, "mentor");
+                    var repaired = CampaignCharacterRepairs.repair(base.server, new CampaignCharacterRepairs.Request(base.campaignId,
+                            "mentor", target.getUUID(), characters.token(key), UUID.randomUUID(), player.getUUID(), "recover interrupted speaker"));
+                    helper.assertTrue(repaired.accepted(), repaired.diagnostic());
+                    var quest = base.catalog.quest(base.campaignId).orElseThrow();
+                    var progress = VillagerQuestSavedData.get(helper.getLevel()).get(player.getUUID(), quest.id());
+                    CampaignQuestCharacters.reconcile(player, quest, progress);
+                    fixture.run();
+                    var refreshed = fixture.view(player);
+                    helper.assertTrue(refreshed.session().confirmation() != null, "remaining scene or quest action asks again: " + refreshed.diagnostic());
+                    helper.assertFalse(refreshed.session().confirmation().id().equals(oldConfirmation.id()), "old nested confirmation is retired");
+                    helper.assertValueEqual(refreshed.session().confirmation().consent().providerId(), target.getUUID(), "fresh nested approval names current provider");
+                    helper.assertValueEqual(player.totalExperience, 5, "reconciliation does not replay earlier effects");
+                    fixture.reload();
+                    fixture.answer(player, ConversationSession.Intent.CONFIRM);
+                    fixture.run();
+                    helper.assertTrue(fixture.outcome() != null, "approved remaining consequence commits");
+                    helper.assertValueEqual(player.totalExperience, 12, "remaining reward applies once");
+                    fixture.reload(); fixture.run();
+                    helper.assertValueEqual(player.totalExperience, 12, "repaired recovery cannot replay either reward");
+                } finally { target.discard(); }
+            }
+        }
+        helper.succeed();
+    }
+
     private static final class Fixture implements AutoCloseable {
         final GameTestHelper helper;
         final CampaignConversationGameTests.Fixture conversation;

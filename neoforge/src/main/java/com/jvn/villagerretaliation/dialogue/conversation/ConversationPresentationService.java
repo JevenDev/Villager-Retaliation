@@ -37,7 +37,7 @@ public final class ConversationPresentationService {
     private ConversationPresentationService() { }
 
     public static boolean tryOpen(ServerPlayer player, Villager character) {
-        UUID active = ConversationSavedData.get(player.serverLevel()).activeCharacter(character.getUUID());
+        UUID active = ConversationCharacters.active(player.server, ConversationSavedData.get(player.serverLevel()), character.getUUID());
         if (active == null) return false;
         var session = ConversationSavedData.get(player.serverLevel()).session(active);
         if (session == null || !ConversationService.member(player, session) || !ConversationService.near(player, character)
@@ -75,7 +75,7 @@ public final class ConversationPresentationService {
             return failure(request, "Reopen the conversation before choosing again.");
         }
         if (request.action() == CampaignConversationRequestPayload.Action.TOPICS) {
-            UUID active = ConversationSavedData.get(player.serverLevel()).activeCharacter(character.getUUID());
+            UUID active = ConversationCharacters.active(player.server, ConversationSavedData.get(player.serverLevel()), character.getUUID());
             if (active == null) {
                 attach(player, request, null);
                 return topics(player, character, request.viewId(), request.page(), "");
@@ -83,6 +83,8 @@ public final class ConversationPresentationService {
             var data = ConversationSavedData.get(player.serverLevel());
             var session = data.session(active);
             if (session == null || !ConversationService.member(player, session)) return failure(request, "This character is already taking part in another conversation.");
+            ConversationService.view(player, active);
+            session = data.session(active);
             if (!session.participants.contains(player.getUUID()) && session.active()) {
                 var joined = ConversationService.request(player, active, session.revision, request.requestId(), ConversationSession.Intent.JOIN, "");
                 if (joined.session() == null || !joined.session().participants().contains(player.getUUID())) return failure(request, joined.diagnostic());
@@ -99,7 +101,7 @@ public final class ConversationPresentationService {
             var result = ConversationService.start(player, definition.id(), request.argument(), request.requestId());
             if (result.session() == null) {
                 var data = ConversationSavedData.get(player.serverLevel());
-                if (request.requestId().equals(data.activeCharacter(character.getUUID()))) attach(player, request, request.requestId());
+                if (request.requestId().equals(ConversationCharacters.active(player.server, data, character.getUUID()))) attach(player, request, request.requestId());
                 if (!ConversationService.isCharacterReserved(character)) VillagerConversationService.start(player, character);
                 return topics(player, character, request.viewId(), request.page(), result.diagnostic());
             }
@@ -151,7 +153,7 @@ public final class ConversationPresentationService {
         if (result.session() == null) return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), 0, 1, List.of(), null, text(result.diagnostic()));
         var snapshot = result.session();
         var saved = ConversationSavedData.get(player.serverLevel()).session(id);
-        var primary = player.serverLevel().getEntity(saved.identity.character()) instanceof Villager villager ? villager : null;
+        var primary = ConversationCharacters.primary(player, saved);
         boolean valid = ConversationSavedData.get(player.serverLevel()).issue(id).isBlank() && primary != null
                 && ConversationService.near(player, primary)
                 && CampaignCharacterService.matchesBoundCharacter(player.server, saved.identity.campaign(), saved.identity.characterRole(), primary.getUUID());

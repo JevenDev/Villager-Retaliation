@@ -50,6 +50,12 @@ public record CampaignFollowJourney(Key key, ResourceLocation campaign, UUID ins
                 dimension, destination, followDistance, arrivalDistance, start, position, distance, startedAt, observedAt, State.CANCELLED, participants);
     }
 
+    CampaignFollowJourney rebound(UUID actor) {
+        CampaignStateCodec.require(state == State.ACTIVE, "resolved journey cannot change its guide");
+        return new CampaignFollowJourney(key, campaign, instance, fingerprint, definition, definitionHash, role, location, actor,
+                dimension, destination, followDistance, arrivalDistance, start, position, distance, startedAt, observedAt, state, participants);
+    }
+
     CampaignFollowJourney retargeted(BlockPos target) {
         CampaignStateCodec.require(state == State.ACTIVE, "resolved journey cannot be retargeted");
         return new CampaignFollowJourney(key, campaign, instance, fingerprint, definition, definitionHash, role, location, actor,

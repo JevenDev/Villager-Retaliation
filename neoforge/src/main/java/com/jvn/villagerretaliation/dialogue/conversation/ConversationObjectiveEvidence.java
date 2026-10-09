@@ -60,8 +60,7 @@ public record ConversationObjectiveEvidence(UUID player, ResourceLocation quest,
                 ConversationSessionCodec.uuid(tag, "QuestRun"), ConversationSessionCodec.text(tag, "Objective"), ConversationSessionCodec.text(tag, "Node"),
                 ConversationSessionCodec.number(tag, "Visit"), ConversationSessionCodec.text(tag, "Exchange"), ConversationSessionCodec.text(tag, "Role"),
                 ConversationSessionCodec.uuid(tag, "Speaker"));
-        var bound = session.speakers.get(evidence.role);
-        ConversationSessionCodec.require(session.participants.contains(evidence.player) && bound != null && bound.entity().equals(evidence.speaker)
+        ConversationSessionCodec.require(session.participants.contains(evidence.player) && ConversationSpeakerHistory.known(session, evidence.role, evidence.speaker)
                 && session.transcript.stream().anyMatch(line -> line.kind() == ConversationDefinition.SpeakerKind.ROLE && line.visit() == evidence.visit
                         && line.node().equals(evidence.node) && line.exchange().equals(evidence.exchange) && line.role().equals(evidence.role)
                         && evidence.speaker.equals(line.speaker())), "conversation objective evidence has no matching participant or exchange");

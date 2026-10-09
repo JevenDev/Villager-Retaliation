@@ -49,7 +49,7 @@ public final class ConversationService {
             var character = CampaignCharacterService.resolve(player.server, definition.campaign(), definition.character());
             require(character.available(), character.diagnostic());
             require(near(player, character.entity()), "Return to this character to begin the conversation.");
-            UUID active = data.activeCharacter(character.entity().getUUID());
+            UUID active = ConversationCharacters.active(player.server, data, character.entity().getUUID());
             if (active != null) {
                 var session = data.session(active);
                 require(session != null && session.identity.conversation().equals(conversation) && member(player, session),
@@ -97,6 +97,7 @@ public final class ConversationService {
                 require(prior.equals(request), "Conversation request identity was already used for another intent.");
                 return view(player, sessionId);
             }
+            if (intent != ConversationSession.Intent.RELEASE_CONTROL) session = ConversationCharacters.reconcile(player.server, data, session);
             require(session.revision == revision, "The conversation changed. Refresh before choosing again.");
             require(session.active(), "This conversation has already reached its outcome.");
             if (intent == ConversationSession.Intent.RELEASE_CONTROL) {
@@ -178,6 +179,7 @@ public final class ConversationService {
         var responses = new ArrayList<Response>();
         try {
             require(issue.isBlank(), issue);
+            session = ConversationCharacters.reconcile(player.server, data, session);
             var definition = definition(player.server, session);
             var character = character(player, session);
             require(near(player, character), "Return to the conversation to continue.");
@@ -190,7 +192,7 @@ public final class ConversationService {
                 }
             }
             issue = session.controller == null ? "The conversation is paused until an authorized member takes control." : session.diagnostic;
-        } catch (Unavailable exception) { issue = exception.getMessage(); }
+        } catch (Unavailable | ConversationSavedData.Conflict | IOException exception) { issue = exception.getMessage(); }
         return new Result(session.snapshot(), List.copyOf(responses), issue);
     }
 
@@ -284,7 +286,8 @@ public final class ConversationService {
     static Villager character(ServerPlayer player, ConversationSession session) {
         var resolved = CampaignCharacterService.resolve(player.server, session.identity.campaign(), session.identity.characterRole());
         require(resolved.available(), resolved.diagnostic());
-        require(resolved.entity().getUUID().equals(session.identity.character()), "The original conversation character is unavailable. Its history is retained.");
+        var speaker = session.speakers.get(session.identity.characterRole());
+        require(speaker != null && resolved.entity().getUUID().equals(speaker.entity()), "The conversation is waiting for its repaired character binding to be saved.");
         return resolved.entity();
     }
 
@@ -363,9 +366,23 @@ public final class ConversationService {
         pause(player.server, ConversationSavedData.get(player.serverLevel()), id, player.getUUID(), "Controller left the conversation.");
     }
 
+    public static String characterRepairIssue(MinecraftServer server, com.jvn.villagerretaliation.campaign.CampaignCharacterBinding candidate) {
+        var data = ConversationSavedData.get(server.overworld());
+        if (!data.diagnostic().isBlank()) return data.diagnostic();
+        var characters = com.jvn.villagerretaliation.campaign.CampaignCharacterSavedData.get(server.overworld());
+        if (characters.bindings().containsKey(candidate.key())) return "";
+        for (var session : data.activeSessions()) {
+            var speaker = session.speakers.get(candidate.role());
+            if (session.identity.campaign().equals(candidate.campaign()) && session.identity.campaignInstance().equals(candidate.instance())
+                    && speaker != null && !speaker.entity().equals(candidate.entityId()))
+                return "Restore the original character " + speaker.entity() + " for conversation " + session.identity.id() + " before reassigning its missing binding.";
+        }
+        return "";
+    }
+
     public static boolean isCharacterReserved(Villager character) {
         return character.level() instanceof net.minecraft.server.level.ServerLevel level
-                && ConversationSavedData.get(level).activeCharacter(character.getUUID()) != null;
+                && ConversationCharacters.active(level.getServer(), ConversationSavedData.get(level), character.getUUID()) != null;
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {

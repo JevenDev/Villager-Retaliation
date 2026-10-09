@@ -31,7 +31,7 @@ final class ConversationRuntime {
         for (int step = 0; step < MAX_STEPS; step++) {
             ConversationService.require(data.issue(id).isBlank(), data.issue(id));
             ConversationNestedConfirmations.settleSession(player.server, id);
-            var session = data.session(id);
+            var session = ConversationCharacters.reconcile(player.server, data, data.session(id));
             if (session == null || !session.active()) return;
             ConversationService.require(player.getUUID().equals(session.controller) && ConversationService.member(player, session)
                     && CampaignAuthority.canControl(player), "An authorized controller must resume this conversation.");
@@ -86,7 +86,7 @@ final class ConversationRuntime {
             ConversationService.require(prior == null || prior.entity().equals(resolved.entity().getUUID()), "A saved conversation speaker was replaced. Restore its identity or repair this session.");
             speaker = resolved.entity().getUUID();
             name = resolved.entity().getName().getString();
-            UUID owner = ConversationSavedData.get(player.serverLevel()).activeCharacter(speaker);
+            UUID owner = ConversationCharacters.active(player.server, ConversationSavedData.get(player.serverLevel()), speaker);
             ConversationService.require(owner == null || owner.equals(session.identity.id()), "This speaker is taking part in another conversation. Resume when it finishes.");
             ConversationService.require(resolved.entity().level() == player.serverLevel(), "This speaker is in another dimension. Resume at its location.");
             ConversationService.require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(resolved.entity()),
@@ -152,6 +152,7 @@ final class ConversationRuntime {
         var controllerContext = VillagerInteractionService.createDialogueContext(controller.serverLevel(), controller, character);
         var access = CampaignQuestAcceptanceService.resumeAccess(controllerContext, actorId, session.consent);
         ConversationService.require(access.allowed(), access.diagnostic());
+        session.consent = CampaignQuestAcceptanceService.remainingConsent(context, actorId, session.consent);
         receipt = new ConversationSession.Receipt(key, actorId, run, action, ConversationSession.ReceiptState.PREPARED,
                 ActionResult.unavailable("Effect completion has not been saved.", VillagerActionRegistry.capabilities(action), VillagerActionResult.EMPTY));
         session.receipts.put(key, receipt);

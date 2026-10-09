@@ -228,9 +228,12 @@ public final class CampaignConversationGameTests {
             result = fixture.intent(player, result, ConversationSession.Intent.ADVANCE, "");
             helper.assertTrue(result.diagnostic().contains("missing"), "missing graph explains the blocked path");
             helper.assertValueEqual(result.session(), saved, "missing content preserves readable history");
+            result = fixture.intent(player, result, ConversationSession.Intent.RELEASE_CONTROL, "");
+            helper.assertTrue(result.session().controller() == null, "missing content cannot trap controller ownership");
             fixture.storage.reload();
             fixture.install(fixture.graph);
-            result = fixture.intent(player, ConversationService.view(player, id), ConversationSession.Intent.ADVANCE, "");
+            result = fixture.intent(player, ConversationService.view(player, id), ConversationSession.Intent.TAKE_CONTROL, "");
+            result = fixture.intent(player, result, ConversationSession.Intent.ADVANCE, "");
             helper.assertTrue(result.diagnostic().isBlank(), "restored compatible content resumes: " + result.diagnostic());
         }
         helper.succeed();
