@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.end_survey.city_lantern.stage.work.ui.tracker_text": "Survey the marked End City, place 12 End rods, and bring 2 shulker shells.",
-    "quest.end_survey.city_lantern.title": "The Way Home"
+    "quest.end_survey.city_lantern.title": "The Way Home",
+    "quest.end_survey.city_lantern.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.end_survey.city_lantern.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.end_survey.city_lantern.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.end_survey.city_lantern.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.end_survey.city_lantern.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.end_survey.city_lantern.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.end_survey.city_lantern.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.end_survey.city_lantern.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

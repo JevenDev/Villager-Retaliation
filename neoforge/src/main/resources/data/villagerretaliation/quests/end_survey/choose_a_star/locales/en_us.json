@@ -138,6 +138,36 @@
       "That route is not active right now."
     ],
     "quest.end_survey.choose_a_star.stage.city_work.ui.tracker_text": "Reach the city light, clear three shulkers, and bring one shell.",
-    "quest.end_survey.choose_a_star.title": "Choose a Star"
+    "quest.end_survey.choose_a_star.title": "Choose a Star",
+    "quest.end_survey.choose_a_star.dialogue.player.chorus": {
+      "lines": [
+        "I'll follow the chorus."
+      ]
+    },
+    "quest.end_survey.choose_a_star.dialogue.player.city": {
+      "lines": [
+        "I'll follow the city lights."
+      ]
+    },
+    "quest.end_survey.choose_a_star.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.end_survey.choose_a_star.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.end_survey.choose_a_star.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.end_survey.choose_a_star.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

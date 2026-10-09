@@ -112,6 +112,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.village_commissions.ocean_glass.stage.work.ui.tracker_text": "Survey the marked Ocean Monument, then bring 12 prismarine crystals and 1 sea lantern.",
-    "quest.village_commissions.ocean_glass.title": "Light Below"
+    "quest.village_commissions.ocean_glass.title": "Light Below",
+    "quest.village_commissions.ocean_glass.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.village_commissions.ocean_glass.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.village_commissions.ocean_glass.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.village_commissions.ocean_glass.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.village_commissions.ocean_glass.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.village_commissions.ocean_glass.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.village_commissions.ocean_glass.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.village_commissions.ocean_glass.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

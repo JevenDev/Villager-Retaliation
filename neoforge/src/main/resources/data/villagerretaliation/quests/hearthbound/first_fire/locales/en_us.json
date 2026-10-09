@@ -67,6 +67,31 @@
       "Bring everything together. Scattered comfort is still scattered."
     ],
     "quest.hearthbound.first_fire.stage.return.ui.tracker_text": "Return with the hearth supplies.",
-    "quest.hearthbound.first_fire.title": "Kindling"
+    "quest.hearthbound.first_fire.title": "Kindling",
+    "quest.hearthbound.first_fire.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.hearthbound.first_fire.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.hearthbound.first_fire.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.hearthbound.first_fire.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.hearthbound.first_fire.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

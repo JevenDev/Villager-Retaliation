@@ -48,10 +48,32 @@ const lootIds = new Set();
 let stageCount = 0;
 let choiceRouteCount = 0;
 let sceneReferenceCount = 0;
+let npcExchangeCount = 0;
+let playerExchangeCount = 0;
 const sceneQuestIds = new Set();
 
 for (const file of questFiles) {
-  const data = await materialized(file, await readJson(file));
+  const source = await readJson(file);
+  let questNpcCount = 0;
+  let questPlayerCount = 0;
+  walk(source, node => {
+    for (const exchange of node.exchanges || []) {
+      if (exchange.speaker?.type === "role") questNpcCount++;
+      if (exchange.speaker?.type === "player") questPlayerCount++;
+      assert(typeof exchange.text?.key === "string", file, "authored exchange must retain a localization reference");
+    }
+    for (const response of node.responses || []) {
+      assert(response.exchanges?.some(exchange => exchange.speaker?.type === "player"), file,
+        `choice ${response.id} must include a spoken player reply`);
+      if (response.text) assert(response.exchanges?.some(exchange => exchange.speaker?.type === "role"
+        && JSON.stringify(exchange.text) === JSON.stringify(response.text)), file,
+        `choice ${response.id} must retain its existing NPC reply`);
+    }
+  });
+  assert(questNpcCount > 0 && questPlayerCount > 0, file, "quest must include both NPC and player dialogue");
+  npcExchangeCount += questNpcCount;
+  playerExchangeCount += questPlayerCount;
+  const data = await materialized(file, source);
   if (!data || typeof data !== "object") {
     continue;
   }
@@ -136,7 +158,8 @@ if (errors.length > 0) {
     `Built-in quest content passed: ${quests.size} quests, ${stageCount} v2 stages, `
       + `${repeatableCount} repeatables, ${choiceRouteCount} validated choice routes, `
       + `${expectedBranchingQuestlines.size} new branching questlines, `
-      + `${sceneQuestIds.size} quests with persistent scenes across ${sceneReferenceCount} launch points.`
+      + `${sceneQuestIds.size} quests with persistent scenes across ${sceneReferenceCount} launch points, `
+      + `${npcExchangeCount} NPC exchanges and ${playerExchangeCount} player exchanges.`
   );
 }
 

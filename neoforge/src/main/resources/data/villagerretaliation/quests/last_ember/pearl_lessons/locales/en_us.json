@@ -63,6 +63,31 @@
       "This lesson is not ready to open right now."
     ],
     "quest.last_ember.pearl_lessons.stage.study_pearls.ui.tracker_text": "Bring 2 ender pearls and 1 book.",
-    "quest.last_ember.pearl_lessons.title": "Pearls"
+    "quest.last_ember.pearl_lessons.title": "Pearls",
+    "quest.last_ember.pearl_lessons.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.last_ember.pearl_lessons.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.last_ember.pearl_lessons.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.last_ember.pearl_lessons.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.last_ember.pearl_lessons.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

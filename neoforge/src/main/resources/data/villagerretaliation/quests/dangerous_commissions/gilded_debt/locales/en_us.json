@@ -367,6 +367,46 @@
       "lines": [
         "Find the Bastion Remnant near {target_x}, {target_z}."
       ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
     }
   }
 }

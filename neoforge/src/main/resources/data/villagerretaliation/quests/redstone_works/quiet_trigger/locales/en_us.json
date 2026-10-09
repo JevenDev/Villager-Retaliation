@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.redstone_works.quiet_trigger.stage.work.ui.tracker_text": "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor.",
-    "quest.redstone_works.quiet_trigger.title": "The Listening Gate"
+    "quest.redstone_works.quiet_trigger.title": "The Listening Gate",
+    "quest.redstone_works.quiet_trigger.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.redstone_works.quiet_trigger.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.redstone_works.quiet_trigger.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.redstone_works.quiet_trigger.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.redstone_works.quiet_trigger.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.redstone_works.quiet_trigger.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.redstone_works.quiet_trigger.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.redstone_works.quiet_trigger.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

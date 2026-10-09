@@ -86,6 +86,31 @@
       "A road half-marked can be worse than no road at all."
     ],
     "quest.courier_roads.night_run.stage.return.ui.tracker_text": "Return with proof and road markers.",
-    "quest.courier_roads.night_run.title": "The Night Run"
+    "quest.courier_roads.night_run.title": "The Night Run",
+    "quest.courier_roads.night_run.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.courier_roads.night_run.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.courier_roads.night_run.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.courier_roads.night_run.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.courier_roads.night_run.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

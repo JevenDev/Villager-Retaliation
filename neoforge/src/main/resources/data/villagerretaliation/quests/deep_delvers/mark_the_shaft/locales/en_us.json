@@ -132,6 +132,36 @@
       "That route is not active right now."
     ],
     "quest.deep_delvers.mark_the_shaft.stage.timber_work.ui.tracker_text": "Set sixteen log braces and hang four lanterns through the first stretch.",
-    "quest.deep_delvers.mark_the_shaft.title": "Mark the Shaft"
+    "quest.deep_delvers.mark_the_shaft.title": "Mark the Shaft",
+    "quest.deep_delvers.mark_the_shaft.dialogue.player.rail": {
+      "lines": [
+        "I'll lay the rails."
+      ]
+    },
+    "quest.deep_delvers.mark_the_shaft.dialogue.player.timber": {
+      "lines": [
+        "I'll brace the roof."
+      ]
+    },
+    "quest.deep_delvers.mark_the_shaft.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.deep_delvers.mark_the_shaft.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.deep_delvers.mark_the_shaft.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.deep_delvers.mark_the_shaft.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

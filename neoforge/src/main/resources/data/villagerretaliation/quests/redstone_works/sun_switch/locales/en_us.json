@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.redstone_works.sun_switch.stage.work.ui.tracker_text": "Place 8 redstone lamps and bring 2 comparators and 12 quartz.",
-    "quest.redstone_works.sun_switch.title": "Daylight"
+    "quest.redstone_works.sun_switch.title": "Daylight",
+    "quest.redstone_works.sun_switch.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.redstone_works.sun_switch.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.redstone_works.sun_switch.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.redstone_works.sun_switch.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.redstone_works.sun_switch.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.redstone_works.sun_switch.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.redstone_works.sun_switch.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.redstone_works.sun_switch.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

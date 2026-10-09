@@ -83,6 +83,31 @@
       "The jars can wait until the cloth and string are ready."
     ],
     "quest.field_medicine.clean_bandages.stage.seal_jars.ui.tracker_text": "Bring 2 honey bottles and 4 glass bottles.",
-    "quest.field_medicine.clean_bandages.title": "Bandages"
+    "quest.field_medicine.clean_bandages.title": "Bandages",
+    "quest.field_medicine.clean_bandages.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.field_medicine.clean_bandages.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.field_medicine.clean_bandages.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.field_medicine.clean_bandages.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.field_medicine.clean_bandages.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

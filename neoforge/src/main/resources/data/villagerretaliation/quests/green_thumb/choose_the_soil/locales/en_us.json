@@ -132,6 +132,36 @@
       "That route is not active right now."
     ],
     "quest.green_thumb.choose_the_soil.stage.compost_work.ui.tracker_text": "Work the composter five times and bring sixteen bone meal for the first rows.",
-    "quest.green_thumb.choose_the_soil.title": "Choose the Soil"
+    "quest.green_thumb.choose_the_soil.title": "Choose the Soil",
+    "quest.green_thumb.choose_the_soil.dialogue.player.canal": {
+      "lines": [
+        "I'll build the canals."
+      ]
+    },
+    "quest.green_thumb.choose_the_soil.dialogue.player.compost": {
+      "lines": [
+        "I'll feed the soil."
+      ]
+    },
+    "quest.green_thumb.choose_the_soil.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.green_thumb.choose_the_soil.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.green_thumb.choose_the_soil.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.green_thumb.choose_the_soil.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

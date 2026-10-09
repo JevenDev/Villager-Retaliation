@@ -81,6 +81,31 @@
       "The tally waits. Metal is patient in ways people are not."
     ],
     "quest.workshop_oaths.temper_and_tally.stage.return.ui.tracker_text": "Return with the forge stock.",
-    "quest.workshop_oaths.temper_and_tally.title": "Temper"
+    "quest.workshop_oaths.temper_and_tally.title": "Temper",
+    "quest.workshop_oaths.temper_and_tally.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.workshop_oaths.temper_and_tally.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.workshop_oaths.temper_and_tally.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.workshop_oaths.temper_and_tally.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.workshop_oaths.temper_and_tally.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

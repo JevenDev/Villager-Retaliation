@@ -83,6 +83,31 @@
       "The letters cannot be sealed until the satchel is finished."
     ],
     "quest.courier_roads.wax_sealed_route.stage.seal_letters.ui.tracker_text": "Bring 3 honeycomb and carry 1 compass.",
-    "quest.courier_roads.wax_sealed_route.title": "The Courier Packet"
+    "quest.courier_roads.wax_sealed_route.title": "The Courier Packet",
+    "quest.courier_roads.wax_sealed_route.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.courier_roads.wax_sealed_route.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.courier_roads.wax_sealed_route.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.courier_roads.wax_sealed_route.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.courier_roads.wax_sealed_route.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

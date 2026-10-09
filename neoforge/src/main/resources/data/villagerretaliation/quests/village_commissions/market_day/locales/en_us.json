@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.village_commissions.market_day.stage.work.ui.tracker_text": "Complete 4 villager trades.",
-    "quest.village_commissions.market_day.title": "Market Day"
+    "quest.village_commissions.market_day.title": "Market Day",
+    "quest.village_commissions.market_day.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.village_commissions.market_day.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.village_commissions.market_day.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.village_commissions.market_day.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.village_commissions.market_day.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.village_commissions.market_day.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.village_commissions.market_day.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.village_commissions.market_day.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

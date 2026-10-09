@@ -110,6 +110,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.village_commissions.apiary_smoke.stage.work.ui.tracker_text": "Tend 2 hives and bring 6 honeycomb.",
-    "quest.village_commissions.apiary_smoke.title": "Smoke the Hives"
+    "quest.village_commissions.apiary_smoke.title": "Smoke the Hives",
+    "quest.village_commissions.apiary_smoke.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.village_commissions.apiary_smoke.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.village_commissions.apiary_smoke.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.village_commissions.apiary_smoke.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.village_commissions.apiary_smoke.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.village_commissions.apiary_smoke.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.village_commissions.apiary_smoke.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.village_commissions.apiary_smoke.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

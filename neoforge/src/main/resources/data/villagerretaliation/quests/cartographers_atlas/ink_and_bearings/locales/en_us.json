@@ -128,6 +128,56 @@
       "lines": [
         "Ink and Bearings"
       ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.roads": {
+      "lines": [
+        "I'll favor reliable roads."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.wonders": {
+      "lines": [
+        "I'll favor strange wonders."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
     }
   }
 }

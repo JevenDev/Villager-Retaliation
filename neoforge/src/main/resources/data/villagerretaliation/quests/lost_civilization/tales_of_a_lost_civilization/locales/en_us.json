@@ -193,6 +193,46 @@
       "lines": [
         "Reach the Ancient City center near {target_x}, {target_z}."
       ]
+    },
+    "quest.lost_civilization.tales_of_a_lost_civilization.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.lost_civilization.tales_of_a_lost_civilization.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.lost_civilization.tales_of_a_lost_civilization.dialogue.player.directions": {
+      "lines": [
+        "Remind me how to get there."
+      ]
+    },
+    "quest.lost_civilization.tales_of_a_lost_civilization.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.lost_civilization.tales_of_a_lost_civilization.dialogue.player.never_mind": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.lost_civilization.tales_of_a_lost_civilization.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.lost_civilization.tales_of_a_lost_civilization.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.lost_civilization.tales_of_a_lost_civilization.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
     }
   }
 }

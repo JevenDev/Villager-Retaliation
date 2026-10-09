@@ -129,6 +129,36 @@
       "lines": [
         "The Atlas Test"
       ]
+    },
+    "quest.cartographers_atlas.the_atlas_test.dialogue.player.safe": {
+      "lines": [
+        "I'll take the safer road."
+      ]
+    },
+    "quest.cartographers_atlas.the_atlas_test.dialogue.player.risky": {
+      "lines": [
+        "I'll take the risky road."
+      ]
+    },
+    "quest.cartographers_atlas.the_atlas_test.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.cartographers_atlas.the_atlas_test.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.cartographers_atlas.the_atlas_test.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.cartographers_atlas.the_atlas_test.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
     }
   }
 }

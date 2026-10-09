@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.deep_delvers.timber_brace.stage.work.ui.tracker_text": "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string.",
-    "quest.deep_delvers.timber_brace.title": "Timber Brace"
+    "quest.deep_delvers.timber_brace.title": "Timber Brace",
+    "quest.deep_delvers.timber_brace.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.deep_delvers.timber_brace.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.deep_delvers.timber_brace.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.deep_delvers.timber_brace.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.deep_delvers.timber_brace.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.deep_delvers.timber_brace.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.deep_delvers.timber_brace.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.deep_delvers.timber_brace.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

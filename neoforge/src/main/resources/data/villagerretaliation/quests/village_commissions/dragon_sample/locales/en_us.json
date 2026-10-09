@@ -112,6 +112,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.village_commissions.dragon_sample.stage.work.ui.tracker_text": "Defeat 4 Endermen, then bring 4 dragon breath and 32 End stone.",
-    "quest.village_commissions.dragon_sample.title": "Bottled Breath"
+    "quest.village_commissions.dragon_sample.title": "Bottled Breath",
+    "quest.village_commissions.dragon_sample.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.village_commissions.dragon_sample.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.village_commissions.dragon_sample.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.village_commissions.dragon_sample.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.village_commissions.dragon_sample.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.village_commissions.dragon_sample.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.village_commissions.dragon_sample.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.village_commissions.dragon_sample.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

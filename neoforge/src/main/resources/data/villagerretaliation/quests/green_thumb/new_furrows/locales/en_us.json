@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.green_thumb.new_furrows.stage.work.ui.tracker_text": "Bring 24 wheat seeds, an iron hoe, and a water bucket.",
-    "quest.green_thumb.new_furrows.title": "Furrows"
+    "quest.green_thumb.new_furrows.title": "Furrows",
+    "quest.green_thumb.new_furrows.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.green_thumb.new_furrows.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.green_thumb.new_furrows.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.green_thumb.new_furrows.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.green_thumb.new_furrows.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.green_thumb.new_furrows.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.green_thumb.new_furrows.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.green_thumb.new_furrows.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

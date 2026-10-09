@@ -367,6 +367,46 @@
       "lines": [
         "Reach the old road mark near {target_x}, {target_z}."
       ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
     }
   }
 }

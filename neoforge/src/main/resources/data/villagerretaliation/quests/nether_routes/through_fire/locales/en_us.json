@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.nether_routes.through_fire.stage.work.ui.tracker_text": "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
-    "quest.nether_routes.through_fire.title": "Through Fire"
+    "quest.nether_routes.through_fire.title": "Through Fire",
+    "quest.nether_routes.through_fire.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.nether_routes.through_fire.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.nether_routes.through_fire.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.nether_routes.through_fire.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.nether_routes.through_fire.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.nether_routes.through_fire.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.nether_routes.through_fire.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.nether_routes.through_fire.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

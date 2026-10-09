@@ -132,6 +132,36 @@
       "That route is not active right now."
     ],
     "quest.redstone_works.power_the_gate.stage.whisper_work.ui.tracker_text": "Two sculk sensors and sixteen white wool to quiet the wrong footsteps.",
-    "quest.redstone_works.power_the_gate.title": "Power the Gate"
+    "quest.redstone_works.power_the_gate.title": "Power the Gate",
+    "quest.redstone_works.power_the_gate.dialogue.player.sunlight": {
+      "lines": [
+        "I'll follow the sun."
+      ]
+    },
+    "quest.redstone_works.power_the_gate.dialogue.player.whisper": {
+      "lines": [
+        "I'll listen through sculk."
+      ]
+    },
+    "quest.redstone_works.power_the_gate.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.redstone_works.power_the_gate.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.redstone_works.power_the_gate.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.redstone_works.power_the_gate.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

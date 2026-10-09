@@ -102,7 +102,26 @@
               },
               "transition": {
                 "stage": "rail_work"
-              }
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.rail"
+                  }
+                },
+                {
+                  "speaker": {
+                    "type": "role",
+                    "role": "provider"
+                  },
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.rail.text"
+                  }
+                }
+              ]
             },
             {
               "actions": [
@@ -129,17 +148,57 @@
               },
               "transition": {
                 "stage": "timber_work"
-              }
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.timber"
+                  }
+                },
+                {
+                  "speaker": {
+                    "type": "role",
+                    "role": "provider"
+                  },
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.timber.text"
+                  }
+                }
+              ]
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.choose.dialogue.offer.response.decline.label"
               },
-              "scene": "decline"
+              "scene": "decline",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.decline"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.lines"
+              }
+            }
+          ]
         },
         "reminder": {
           "label": {
@@ -157,7 +216,17 @@
                 "key": "#stage.choose.dialogue.reminder.response.details.label"
               },
               "order": -10,
-              "scene": "reminder_details"
+              "scene": "reminder_details",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.details"
+                  }
+                }
+              ]
             },
             {
               "actions": [
@@ -184,7 +253,26 @@
               },
               "transition": {
                 "stage": "rail_work"
-              }
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.rail"
+                  }
+                },
+                {
+                  "speaker": {
+                    "type": "role",
+                    "role": "provider"
+                  },
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.rail.text"
+                  }
+                }
+              ]
             },
             {
               "actions": [
@@ -211,17 +299,57 @@
               },
               "transition": {
                 "stage": "timber_work"
-              }
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.timber"
+                  }
+                },
+                {
+                  "speaker": {
+                    "type": "role",
+                    "role": "provider"
+                  },
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.timber.text"
+                  }
+                }
+              ]
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.choose.dialogue.reminder.response.decline.label"
               },
-              "scene": "decline"
+              "scene": "decline",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.decline"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.lines"
+              }
+            }
+          ]
         }
       },
       "id": "choose",
@@ -268,7 +396,18 @@
           "id": "decline",
           "lines": {
             "key": "#stage.choose.scene.decline.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.choose.scene.decline.lines"
+              }
+            }
+          ]
         }
       ],
       "ui": {
@@ -300,17 +439,48 @@
               "label": {
                 "key": "#stage.rail_work.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details"
+              "scene": "reminder_details",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.details"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.rail_work.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.rail_work.dialogue.reminder.lines"
+              }
+            }
+          ]
         }
       },
       "id": "rail_work",
@@ -372,7 +542,18 @@
           "id": "leave",
           "lines": {
             "key": "#stage.rail_work.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.rail_work.scene.leave.lines"
+              }
+            }
+          ]
         }
       ],
       "ui": {
@@ -400,17 +581,48 @@
               "label": {
                 "key": "#stage.rail_return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_route"
+              "scene": "complete_route",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.complete"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.rail_return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.rail_return.dialogue.turn_in.lines"
+              }
+            }
+          ]
         }
       },
       "id": "rail_return",
@@ -443,7 +655,18 @@
           "id": "leave",
           "lines": {
             "key": "#stage.rail_return.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.rail_return.scene.leave.lines"
+              }
+            }
+          ]
         }
       ],
       "ui": {
@@ -475,17 +698,48 @@
               "label": {
                 "key": "#stage.timber_work.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details"
+              "scene": "reminder_details",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.details"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.timber_work.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.timber_work.dialogue.reminder.lines"
+              }
+            }
+          ]
         }
       },
       "id": "timber_work",
@@ -549,7 +803,18 @@
           "id": "leave",
           "lines": {
             "key": "#stage.timber_work.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.timber_work.scene.leave.lines"
+              }
+            }
+          ]
         }
       ],
       "ui": {
@@ -577,17 +842,48 @@
               "label": {
                 "key": "#stage.timber_return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_route"
+              "scene": "complete_route",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.complete"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.timber_return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.timber_return.dialogue.turn_in.lines"
+              }
+            }
+          ]
         }
       },
       "id": "timber_return",
@@ -620,7 +916,18 @@
           "id": "leave",
           "lines": {
             "key": "#stage.timber_return.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.timber_return.scene.leave.lines"
+              }
+            }
+          ]
         }
       ],
       "ui": {

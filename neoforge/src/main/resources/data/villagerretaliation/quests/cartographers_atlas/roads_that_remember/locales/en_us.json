@@ -104,6 +104,46 @@
       "lines": [
         "Roads That Remember"
       ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.dialogue.player.record": {
+      "lines": [
+        "Let's put this journey in the record."
+      ]
     }
   }
 }

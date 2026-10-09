@@ -134,6 +134,36 @@
       "lines": [
         "Choose the Horizon"
       ]
+    },
+    "quest.cartographers_atlas.choose_the_horizon.dialogue.player.coast": {
+      "lines": [
+        "I'll take the drowned coast."
+      ]
+    },
+    "quest.cartographers_atlas.choose_the_horizon.dialogue.player.dark_roof": {
+      "lines": [
+        "I'll take the dark roof road."
+      ]
+    },
+    "quest.cartographers_atlas.choose_the_horizon.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.cartographers_atlas.choose_the_horizon.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.cartographers_atlas.choose_the_horizon.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.cartographers_atlas.choose_the_horizon.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
     }
   }
 }

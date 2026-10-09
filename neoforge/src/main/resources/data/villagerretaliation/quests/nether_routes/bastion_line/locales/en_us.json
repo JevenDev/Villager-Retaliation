@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.nether_routes.bastion_line.stage.work.ui.tracker_text": "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
-    "quest.nether_routes.bastion_line.title": "Broken Gold"
+    "quest.nether_routes.bastion_line.title": "Broken Gold",
+    "quest.nether_routes.bastion_line.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.nether_routes.bastion_line.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.nether_routes.bastion_line.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.nether_routes.bastion_line.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.nether_routes.bastion_line.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.nether_routes.bastion_line.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.nether_routes.bastion_line.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.nether_routes.bastion_line.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

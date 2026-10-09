@@ -84,6 +84,31 @@
       "lines": [
         "Nether Meridian"
       ]
+    },
+    "quest.cartographers_atlas.nether_meridian.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.cartographers_atlas.nether_meridian.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.cartographers_atlas.nether_meridian.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.cartographers_atlas.nether_meridian.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.cartographers_atlas.nether_meridian.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
     }
   }
 }

@@ -106,6 +106,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.deep_delvers.below_the_bell.stage.work.ui.tracker_text": "Mine 64 stone or deepslate and bring 16 raw iron.",
-    "quest.deep_delvers.below_the_bell.title": "Below the Bell"
+    "quest.deep_delvers.below_the_bell.title": "Below the Bell",
+    "quest.deep_delvers.below_the_bell.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.deep_delvers.below_the_bell.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.deep_delvers.below_the_bell.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.deep_delvers.below_the_bell.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.deep_delvers.below_the_bell.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.deep_delvers.below_the_bell.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.deep_delvers.below_the_bell.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.deep_delvers.below_the_bell.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

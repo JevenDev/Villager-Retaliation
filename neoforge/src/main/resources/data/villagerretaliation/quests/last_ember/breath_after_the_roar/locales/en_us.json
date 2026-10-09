@@ -84,6 +84,31 @@
       "The last page waits. It has earned patience."
     ],
     "quest.last_ember.breath_after_the_roar.stage.return.ui.tracker_text": "Return with the Last Ember proof.",
-    "quest.last_ember.breath_after_the_roar.title": "After the Roar"
+    "quest.last_ember.breath_after_the_roar.title": "After the Roar",
+    "quest.last_ember.breath_after_the_roar.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.last_ember.breath_after_the_roar.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.last_ember.breath_after_the_roar.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.last_ember.breath_after_the_roar.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.last_ember.breath_after_the_roar.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

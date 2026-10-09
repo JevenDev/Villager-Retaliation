@@ -83,6 +83,31 @@
       "Keep the powder sealed. Lessons are better when they do not escape."
     ],
     "quest.last_ember.nether_candle.stage.return.ui.tracker_text": "Return with the Nether candle materials.",
-    "quest.last_ember.nether_candle.title": "The Nether Candle"
+    "quest.last_ember.nether_candle.title": "The Nether Candle",
+    "quest.last_ember.nether_candle.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.last_ember.nether_candle.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.last_ember.nether_candle.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.last_ember.nether_candle.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.last_ember.nether_candle.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

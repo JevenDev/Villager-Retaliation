@@ -83,6 +83,31 @@
       "The rack has gaps. Gaps have consequences."
     ],
     "quest.workshop_oaths.honed_handles.stage.return.ui.tracker_text": "Return with the workshop handle supplies.",
-    "quest.workshop_oaths.honed_handles.title": "Handlework"
+    "quest.workshop_oaths.honed_handles.title": "Handlework",
+    "quest.workshop_oaths.honed_handles.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.workshop_oaths.honed_handles.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.workshop_oaths.honed_handles.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.workshop_oaths.honed_handles.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.workshop_oaths.honed_handles.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

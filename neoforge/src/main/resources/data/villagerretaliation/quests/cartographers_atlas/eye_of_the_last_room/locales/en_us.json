@@ -84,6 +84,31 @@
       "lines": [
         "Stronghold Eye"
       ]
+    },
+    "quest.cartographers_atlas.eye_of_the_last_room.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.cartographers_atlas.eye_of_the_last_room.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.cartographers_atlas.eye_of_the_last_room.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.cartographers_atlas.eye_of_the_last_room.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.cartographers_atlas.eye_of_the_last_room.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
     }
   }
 }

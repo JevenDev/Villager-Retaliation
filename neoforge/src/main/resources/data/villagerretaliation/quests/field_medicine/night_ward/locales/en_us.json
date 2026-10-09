@@ -86,6 +86,31 @@
       "The stronger medicine can wait until the sickroom is clear."
     ],
     "quest.field_medicine.night_ward.stage.strong_medicine.ui.tracker_text": "Bring 1 golden apple and 8 sugar.",
-    "quest.field_medicine.night_ward.title": "The Night Ward"
+    "quest.field_medicine.night_ward.title": "The Night Ward",
+    "quest.field_medicine.night_ward.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.field_medicine.night_ward.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.field_medicine.night_ward.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.field_medicine.night_ward.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.field_medicine.night_ward.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

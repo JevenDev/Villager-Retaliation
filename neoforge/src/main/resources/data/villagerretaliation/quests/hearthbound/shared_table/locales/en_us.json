@@ -67,6 +67,31 @@
       "The table is not ready to ask for more help right now."
     ],
     "quest.hearthbound.shared_table.stage.stock_table.ui.tracker_text": "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket.",
-    "quest.hearthbound.shared_table.title": "Supper for Everyone"
+    "quest.hearthbound.shared_table.title": "Supper for Everyone",
+    "quest.hearthbound.shared_table.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.hearthbound.shared_table.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.hearthbound.shared_table.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.hearthbound.shared_table.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.hearthbound.shared_table.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }

@@ -124,7 +124,26 @@
               },
               "transition": {
                 "stage": "coast_final"
-              }
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.coast"
+                  }
+                },
+                {
+                  "speaker": {
+                    "type": "role",
+                    "role": "provider"
+                  },
+                  "text": {
+                    "key": "#stage.started.dialogue.offer.response.coast.text"
+                  }
+                }
+              ]
             },
             {
               "actions": [
@@ -162,17 +181,57 @@
               },
               "transition": {
                 "stage": "dark_roof_final"
-              }
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.dark_roof"
+                  }
+                },
+                {
+                  "speaker": {
+                    "type": "role",
+                    "role": "provider"
+                  },
+                  "text": {
+                    "key": "#stage.started.dialogue.offer.response.dark_roof.text"
+                  }
+                }
+              ]
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.started.dialogue.offer.response.decline.label"
               },
-              "scene": "decline"
+              "scene": "decline",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.decline"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.started.dialogue.offer.lines"
+              }
+            }
+          ]
         },
         "reminder": {
           "label": {
@@ -190,7 +249,17 @@
                 "key": "#stage.started.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details"
+              "scene": "reminder_details",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.details"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
@@ -198,10 +267,31 @@
                 "key": "#stage.started.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.started.dialogue.reminder.lines"
+              }
+            }
+          ]
         }
       },
       "id": "started",
@@ -248,13 +338,35 @@
           "id": "decline",
           "lines": {
             "key": "#stage.started.scene.decline.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.started.scene.decline.lines"
+              }
+            }
+          ]
         },
         {
           "id": "leave",
           "lines": {
             "key": "#stage.started.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.started.scene.leave.lines"
+              }
+            }
+          ]
         }
       ],
       "ui": {
@@ -288,7 +400,17 @@
                 "key": "#stage.coast_final.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details"
+              "scene": "reminder_details",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.details"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
@@ -296,10 +418,31 @@
                 "key": "#stage.coast_final.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.coast_final.dialogue.reminder.lines"
+              }
+            }
+          ]
         }
       },
       "id": "coast_final",
@@ -361,7 +504,18 @@
           "id": "leave",
           "lines": {
             "key": "#stage.coast_final.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.coast_final.scene.leave.lines"
+              }
+            }
+          ]
         },
         {
           "actions": [
@@ -412,7 +566,17 @@
                 "key": "#stage.dark_roof_final.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details"
+              "scene": "reminder_details",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.details"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
@@ -420,10 +584,31 @@
                 "key": "#stage.dark_roof_final.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.dark_roof_final.dialogue.reminder.lines"
+              }
+            }
+          ]
         }
       },
       "id": "dark_roof_final",
@@ -485,7 +670,18 @@
           "id": "leave",
           "lines": {
             "key": "#stage.dark_roof_final.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.dark_roof_final.scene.leave.lines"
+              }
+            }
+          ]
         },
         {
           "actions": [
@@ -530,17 +726,48 @@
               "label": {
                 "key": "#stage.coast_chosen.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_coast"
+              "scene": "complete_coast",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.complete"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.coast_chosen.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.coast_chosen.dialogue.turn_in.lines"
+              }
+            }
+          ]
         }
       },
       "id": "coast_chosen",
@@ -574,7 +801,18 @@
           "id": "leave",
           "lines": {
             "key": "#stage.coast_chosen.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.coast_chosen.scene.leave.lines"
+              }
+            }
+          ]
         }
       ],
       "ui": {
@@ -602,17 +840,48 @@
               "label": {
                 "key": "#stage.dark_roof_chosen.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_dark_roof"
+              "scene": "complete_dark_roof",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.complete"
+                  }
+                }
+              ]
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.dark_roof_chosen.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave"
+              "scene": "leave",
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#dialogue.player.leave"
+                  }
+                }
+              ]
             }
           ],
-          "show_for_babies": false
+          "show_for_babies": false,
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.dark_roof_chosen.dialogue.turn_in.lines"
+              }
+            }
+          ]
         }
       },
       "id": "dark_roof_chosen",
@@ -646,7 +915,18 @@
           "id": "leave",
           "lines": {
             "key": "#stage.dark_roof_chosen.scene.leave.lines"
-          }
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stage.dark_roof_chosen.scene.leave.lines"
+              }
+            }
+          ]
         }
       ],
       "ui": {

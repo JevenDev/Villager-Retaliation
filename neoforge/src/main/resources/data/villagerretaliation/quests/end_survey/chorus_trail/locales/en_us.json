@@ -108,6 +108,46 @@
       "The village is not ready to put that work in your hands yet."
     ],
     "quest.end_survey.chorus_trail.stage.work.ui.tracker_text": "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone.",
-    "quest.end_survey.chorus_trail.title": "Chorus"
+    "quest.end_survey.chorus_trail.title": "Chorus",
+    "quest.end_survey.chorus_trail.dialogue.player.accept": {
+      "lines": [
+        "I'll take care of it."
+      ]
+    },
+    "quest.end_survey.chorus_trail.dialogue.player.decline": {
+      "lines": [
+        "I can't take this on right now."
+      ]
+    },
+    "quest.end_survey.chorus_trail.dialogue.player.details": {
+      "lines": [
+        "Tell me what I need to do."
+      ]
+    },
+    "quest.end_survey.chorus_trail.dialogue.player.abandon": {
+      "lines": [
+        "I need to talk about leaving this job."
+      ]
+    },
+    "quest.end_survey.chorus_trail.dialogue.player.leave": {
+      "lines": [
+        "That's all for now."
+      ]
+    },
+    "quest.end_survey.chorus_trail.dialogue.player.confirm": {
+      "lines": [
+        "I won't be able to finish this job."
+      ]
+    },
+    "quest.end_survey.chorus_trail.dialogue.player.cancel": {
+      "lines": [
+        "I'll keep working on it."
+      ]
+    },
+    "quest.end_survey.chorus_trail.dialogue.player.complete": {
+      "lines": [
+        "I have what you asked for."
+      ]
+    }
   }
 }
