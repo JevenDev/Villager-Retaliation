@@ -50,6 +50,12 @@ public final class CampaignQuestAcceptanceService {
     private CampaignQuestAcceptanceService() {
     }
 
+    public static boolean beforeDiscovery(DialogueContext context, ResourceLocation quest, Runnable execute) {
+        if (!requiresConfirmation(context, VillagerQuestResources.quest(context.level().getServer(), quest).orElse(null))) return false;
+        return beforeSelection(context, "discovery:" + quest, Set.of(quest), Set.of(quest),
+                () -> com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryService.available(context.player(), quest), execute);
+    }
+
     public static boolean beforeOption(DialogueContext context, DialogueOptionDefinition option) {
         var preview = DialogueTreeService.previewSelection(context, option);
         var actions = new ArrayList<>(preview.actions());
@@ -119,11 +125,12 @@ public final class CampaignQuestAcceptanceService {
         }
         var confirmation = prepared.confirmation();
         if (confirmation == null) return false;
-        UUID sessionId = VillagerConversationService.sessionId(player, context.villager());
-        if (sessionId == null) return true;
+        boolean discovery = optionId.startsWith("discovery:");
+        UUID sessionId = discovery ? null : VillagerConversationService.sessionId(player, context.villager());
+        if (!discovery && sessionId == null) return true;
         var impacts = new LinkedHashMap<ResourceLocation, CampaignQuestAcceptance>();
         confirmation.consent().quests().forEach((id, entry) -> impacts.put(id, entry.acceptance()));
-        var request = new Request(confirmation.id(), 1L, player.getUUID(), context.villager().getUUID(), context.villager().getId(),
+        var request = new Request(confirmation.id(), 1L, player.getUUID(), context.providerId(), discovery ? -1 : context.villager().getId(),
                 sessionId, optionId, confirmation.createdAt(), QuestContentCatalogs.current(player.server), confirmation.snapshots(),
                 impacts, confirmation.consent().decisions(), stillSelected, execute, confirmation.text());
         pending.put(player.getUUID(), request);
@@ -237,7 +244,7 @@ public final class CampaignQuestAcceptanceService {
         }
         var entries = new LinkedHashMap<ResourceLocation, CampaignQuestConsent.Entry>();
         impacts.forEach((id, acceptance) -> entries.put(id, new CampaignQuestConsent.Entry(acceptance, snapshots.get(id))));
-        var consent = new CampaignQuestConsent(actor, context.villager().getUUID(), entries, decisions);
+        var consent = new CampaignQuestConsent(actor, context.providerId(), entries, decisions);
         return new Preparation(new CampaignConfirmation(requestId, now, consent, snapshots, text), "");
     }
 
@@ -267,13 +274,14 @@ public final class CampaignQuestAcceptanceService {
         if (actor.equals(controller.player().getUUID())) return controller;
         var player = controller.player().server.getPlayerList().getPlayer(actor);
         return player == null || player.serverLevel() != controller.level() ? null
+                : controller.villager() == null ? DialogueContext.forPlayer(player)
                 : VillagerInteractionService.createDialogueContext(player.serverLevel(), player, controller.villager());
     }
 
     public record Preparation(CampaignConfirmation confirmation, String diagnostic) { }
 
     public static boolean requiresConfirmation(DialogueContext context, QuestDefinition quest) {
-        if (quest.campaign() == null) return false;
+        if (quest == null || quest.campaign() == null) return false;
         var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), quest.id());
         if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) return false;
         var content = CampaignResources.current(context.level().getServer()).campaigns().get(quest.campaign());
@@ -286,7 +294,7 @@ public final class CampaignQuestAcceptanceService {
     public static CampaignQuestAcceptance approved(DialogueContext context, QuestDefinition quest) {
         var approval = APPROVAL.get();
         if (approval == null || !approval.consent.playerId().equals(context.player().getUUID())
-                || !approval.consent.providerId().equals(context.villager().getUUID()) || !CampaignAuthority.canControl(context.player())) return null;
+                || !Objects.equals(approval.consent.providerId(), context.providerId()) || !CampaignAuthority.canControl(context.player())) return null;
         var accepted = approval.remaining.get(quest.id());
         var entry = approval.consent.quests().get(quest.id());
         if (entry == null || !entry.progress().equals(snapshot(context.player(), quest.id()))) return null;
@@ -317,14 +325,16 @@ public final class CampaignQuestAcceptanceService {
             send(player, request, false, "");
             return;
         }
-        var target = InteractionRequestValidator.requireDialogueConversation(player, request.entityId()).orElse(null);
+        boolean discovery = request.optionId().startsWith("discovery:");
+        var target = discovery ? null : InteractionRequestValidator.requireDialogueConversation(player, request.entityId()).orElse(null);
         String issue = CampaignAuthority.controlIssue(player);
-        if (issue.isBlank() && (target == null || !target.villager().getUUID().equals(request.providerId())
+        if (issue.isBlank() && !discovery && (target == null || !target.villager().getUUID().equals(request.providerId())
                 || !Objects.equals(request.sessionId(), VillagerConversationService.sessionId(player, target.villager())))) {
             issue = "This conversation has changed. Choose the quest again.";
         }
-        if (issue.isBlank()) {
-            var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, target.villager());
+        if (issue.isBlank() && !request.decisions().isEmpty()) {
+            var context = target == null ? DialogueContext.forPlayer(player)
+                    : VillagerInteractionService.createDialogueContext(player.serverLevel(), player, target.villager());
             for (var decision : request.decisions().values()) {
                 issue = CampaignOutcomeService.resumeAccess(context, decision).diagnostic();
                 if (!issue.isBlank()) break;
@@ -383,6 +393,10 @@ public final class CampaignQuestAcceptanceService {
     }
 
     private static void notice(DialogueContext context, String text) {
+        if (context.villager() == null) {
+            context.player().sendSystemMessage(net.minecraft.network.chat.Component.literal(text));
+            return;
+        }
         VillagerInteractionService.sendDialogueReputation(context.player(), context.villager(), context.level());
         VillagerInteractionService.sendPersonalVillagerChat(context.player(), context.villager(), text);
     }
@@ -482,11 +496,12 @@ public final class CampaignQuestAcceptanceService {
         var decisions = new LinkedHashMap<>(consent.decisions());
         decisions.values().removeIf(value -> CampaignOutcomeService.committed(context, value));
         return remaining.isEmpty() && decisions.isEmpty() ? new CompoundTag()
-                : new CampaignQuestConsent(consent.playerId(), context.villager().getUUID(), remaining, decisions).save();
+                : new CampaignQuestConsent(consent.playerId(), context.providerId(), remaining, decisions).save();
     }
 
     private static boolean matchesConsentProvider(DialogueContext context, CampaignQuestConsent consent) {
-        if (consent.providerId().equals(context.villager().getUUID())) return true;
+        if (Objects.equals(consent.providerId(), context.providerId())) return true;
+        if (consent.providerId() == null || context.villager() == null) return false;
         var server = context.level().getServer();
         var replacement = context.villager().getUUID();
         return consent.quests().keySet().stream().allMatch(quest -> CampaignQuestCharacters.canReplaceProvider(server, quest, consent.providerId(), replacement))
@@ -496,7 +511,7 @@ public final class CampaignQuestAcceptanceService {
     static boolean approvedOutcome(DialogueContext context, UUID actor, CampaignOutcomeConsent consent) {
         var approval = APPROVAL.get();
         return approval != null && approval.consent.playerId().equals(actor)
-                && approval.consent.providerId().equals(context.villager().getUUID())
+                && Objects.equals(approval.consent.providerId(), context.providerId())
                 && consent.equals(approval.decisions.get(consent.operationId()));
     }
 

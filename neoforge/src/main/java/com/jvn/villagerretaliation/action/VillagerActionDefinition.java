@@ -44,7 +44,40 @@ public record VillagerActionDefinition(
         com.jvn.villagerretaliation.campaign.CampaignFactAction campaignFact,
         com.jvn.villagerretaliation.campaign.CampaignRewardAction campaignReward,
         com.jvn.villagerretaliation.campaign.CampaignStandingAction campaignStanding,
-        com.jvn.villagerretaliation.campaign.CampaignPaymentAction campaignPayment) {
+        com.jvn.villagerretaliation.campaign.CampaignPaymentAction campaignPayment,
+        com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective follower
+) {
+    public VillagerActionDefinition(
+            Kind kind,
+            ResourceLocation questId,
+            QuestAction questAction,
+            int amount,
+            ResourceLocation memoryTag,
+            VillageEventMemory.MemoryScope memoryScope,
+            ResourceLocation lootTable,
+            String notificationTrigger,
+            String text,
+            String forcedDialogue,
+            boolean flashTracker,
+            QuestFactScope factScope,
+            ResourceLocation factTag,
+            String factKey,
+            String factValue,
+            Map<String, List<String>> linesByStatus,
+            Map<String, List<String>> lineKeysByStatus,
+            CompiledQuestTransition questTransition,
+            ResourceLocation sceneId,
+            String sceneOperationId,
+            boolean waitForScene,
+            boolean required,
+            CampaignOutcomeAction campaignOutcome,
+            com.jvn.villagerretaliation.campaign.CampaignFactAction campaignFact,
+            com.jvn.villagerretaliation.campaign.CampaignRewardAction campaignReward,
+            com.jvn.villagerretaliation.campaign.CampaignStandingAction campaignStanding,
+            com.jvn.villagerretaliation.campaign.CampaignPaymentAction campaignPayment) {
+        this(kind, questId, questAction, amount, memoryTag, memoryScope, lootTable, notificationTrigger, text, forcedDialogue, flashTracker, factScope, factTag, factKey, factValue, linesByStatus, lineKeysByStatus, questTransition, sceneId, sceneOperationId, waitForScene, required, campaignOutcome, campaignFact, campaignReward, campaignStanding, campaignPayment, null);
+    }
+
     public VillagerActionDefinition {
         kind = kind == null ? Kind.NONE : kind;
         required = required || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT;
@@ -284,7 +317,7 @@ public record VillagerActionDefinition(
 
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
-        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind.isQuestFact()) && !hasExplicitQuestId) {
+        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind == Kind.FOLLOWER || kind.isQuestFact()) && !hasExplicitQuestId) {
             questId = defaultQuestId;
         }
         QuestAction questAction = QuestAction.bySerializedName(
@@ -384,7 +417,8 @@ public record VillagerActionDefinition(
                 sceneId,
                 sceneOperationId,
                 waitForScene,
-                required, outcome, campaignFact, campaignReward, campaignStanding, campaignPayment));
+                required, outcome, campaignFact, campaignReward, campaignStanding, campaignPayment,
+                kind == Kind.FOLLOWER ? com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective.parse(location, entry) : null));
     }
 
     private static Kind inferKind(JsonObject entry, ResourceLocation defaultQuestId) {
@@ -512,7 +546,7 @@ public record VillagerActionDefinition(
         boolean valid = switch (kind) {
             case QUEST -> questId != null && questAction != QuestAction.NONE;
             case QUEST_TRANSITION -> questTransition != null && !questTransition.isEmpty();
-            case CAMPAIGN_OUTCOME, CAMPAIGN_FACT, CAMPAIGN_REWARD, CAMPAIGN_STANDING, CAMPAIGN_PAYMENT -> true;
+            case CAMPAIGN_OUTCOME, CAMPAIGN_FACT, CAMPAIGN_REWARD, CAMPAIGN_STANDING, CAMPAIGN_PAYMENT, FOLLOWER -> true;
             case MEMORY -> memoryTag != null;
             case LOOT -> lootTable != null;
             case FORCED_DIALOGUE -> !forcedDialogue.isBlank();
@@ -755,7 +789,8 @@ public record VillagerActionDefinition(
         SET_VARIABLE("set_variable"),
         COUNTER("counter"),
         DRAW_WEAPON("draw_weapon"),
-        START_SCENE("start_scene");
+        START_SCENE("start_scene"),
+        FOLLOWER("follower");
 
         private final String serializedName;
 

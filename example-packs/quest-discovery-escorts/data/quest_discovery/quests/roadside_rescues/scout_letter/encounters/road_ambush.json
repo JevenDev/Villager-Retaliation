@@ -1,0 +1,31 @@
+{
+  "schema": "villagerretaliation:encounter/v1",
+  "id": "quest_discovery:road_ambush",
+  "version": 4,
+  "controller": "villagerretaliation:controlled",
+  "waves": [
+    {
+      "id": "ambushers",
+      "members": [
+        {
+          "entity": "minecraft:zombie",
+          "count": 2
+        }
+      ]
+    }
+  ],
+  "spawn_points": [
+    {
+      "id": "road",
+      "actor": "player",
+      "offset_x": 4,
+      "offset_z": 2
+    }
+  ],
+  "objectives": [
+    {
+      "id": "clear",
+      "type": "all_defeated"
+    }
+  ]
+}

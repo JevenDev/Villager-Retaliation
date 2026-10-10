@@ -28,6 +28,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class QuestObjectiveRegistry {
     private static final List<QuestObjectiveTypeDescriptor<?>> REGISTRATIONS = List.of(
+            register("follower_arrival", QuestDefinition.ObjectiveType.FOLLOWER_ARRIVAL, aliases(),
+                    requirements(QuestObjectiveRequirement.POLLING), new com.jvn.villagerretaliation.quest.follower.QuestFollowerArrivalObjective()),
             register(
                     "structure_visit",
                     QuestDefinition.ObjectiveType.STRUCTURE_VISIT,

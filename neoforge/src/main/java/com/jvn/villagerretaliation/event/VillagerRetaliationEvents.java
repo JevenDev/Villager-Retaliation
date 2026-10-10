@@ -267,6 +267,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
+        com.jvn.villagerretaliation.quest.follower.QuestFollowerService.maintain(event.getServer());
         com.jvn.villagerretaliation.social.VillagerBirthService.finishAcceptedSpawns();
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onServerTick(event.getServer());
         com.jvn.villagerretaliation.duel.DuelService.tick(event.getServer());
@@ -348,6 +349,10 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        if (com.jvn.villagerretaliation.quest.follower.QuestFollowerService.protects(event.getEntity())
+                && event.getAmount() >= event.getEntity().getHealth()) {
+            event.setAmount(Math.max(0, event.getEntity().getHealth() - 1));
+        }
         if (com.jvn.villagerretaliation.scene.encounter.EncounterActorSpawning.blocked(event.getEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -395,6 +400,7 @@ public final class VillagerRetaliationEvents {
         HiredCombatSkillPracticeService.onKill(event);
         EncounterService.onDeath(event.getEntity());
         SceneLifecycleIntegration.onActorDeath(event.getEntity());
+        com.jvn.villagerretaliation.quest.follower.QuestFollowerService.died(event.getEntity());
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
                 .onEntityPermanentlyRemoved(event.getEntity());
         if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
@@ -497,6 +503,7 @@ public final class VillagerRetaliationEvents {
         if (entity instanceof ServerPlayer player) {
             VillagerReputationAdvancements.onPlayerTick(player);
             VillagerRecruitmentService.onPlayerTick(player);
+            com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryService.tick(player);
             VillagerQuestService.onPlayerTick(player);
             ClipboardWorkforceService.onPlayerTick(player);
             HiredDebugPreviewService.onPlayerTick(player);
@@ -549,8 +556,11 @@ public final class VillagerRetaliationEvents {
             if (villager.level() instanceof ServerLevel level) {
                 com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.enforce(level, villager);
             }
+            com.jvn.villagerretaliation.quest.follower.QuestFollowerService.tickMob(villager);
             return;
         }
+        if (entity instanceof net.minecraft.world.entity.Mob escortMob)
+            com.jvn.villagerretaliation.quest.follower.QuestFollowerService.tickMob(escortMob);
         if (entity instanceof AbstractVillager villager
                 && entity instanceof VillagerDataHolder) {
             VillagerNaturalJobArmor.maybeRoll(villager);
@@ -654,6 +664,13 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (event.getHand() == InteractionHand.MAIN_HAND && event.getEntity() instanceof ServerPlayer escortPlayer
+                && (escortPlayer.isShiftKeyDown() || !(event.getTarget() instanceof Villager) && event.getItemStack().isEmpty())
+                && com.jvn.villagerretaliation.quest.follower.QuestFollowerService.interact(escortPlayer, event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+        }
         if (event.getTarget() instanceof ItemFrame frame && frame.level() instanceof ServerLevel level) {
             ContainerFilterResolver.invalidateFrame(level, frame);
         }
@@ -882,6 +899,17 @@ public final class VillagerRetaliationEvents {
             event.setCancellationResult(InteractionResult.CONSUME);
             event.setCanceled(true);
         }
+    }
+
+    public static void onQuestContainerOpen(net.neoforged.neoforge.event.entity.player.PlayerContainerEvent.Open event) {
+        if (event.getEntity() instanceof ServerPlayer player
+                && event.getContainer() instanceof net.minecraft.world.inventory.LecternMenu menu)
+            com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryService.bookOpened(player, menu.getBook());
+    }
+
+    public static void onQuestItemUse(PlayerInteractEvent.RightClickItem event) {
+        if (event.getEntity() instanceof ServerPlayer player)
+            com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryService.use(player, event.getItemStack());
     }
 
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {

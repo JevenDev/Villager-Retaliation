@@ -50,6 +50,7 @@ public final class QuestV2Schema {
         properties.add("localization_prefix", localizationPrefix());
         properties.add("metadata", ref("#/$defs/metadata"));
         properties.add("provider", ref("#/$defs/provider"));
+        properties.add("discovery", com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryDefinition.arraySchema());
         properties.add("availability", ref("#/$defs/availability"));
         properties.add("lifecycle", ref("#/$defs/lifecycle"));
         properties.add("dialogue", objectMap(ref("#/$defs/dialogue_slot")));
@@ -74,6 +75,7 @@ public final class QuestV2Schema {
         defs.add("lifecycle_hook", lifecycleHook());
         defs.add("target", target());
         defs.add("stage", stage());
+        defs.add("follower", com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective.schema());
         defs.add("completion", completion());
         defs.add("predicate", predicate());
         defs.add("bonus", bonus());
@@ -312,6 +314,7 @@ public final class QuestV2Schema {
         properties.add("description", localizedText());
         properties.add("description_key", string());
         properties.add("objectives", arrayOf(ref("#/$defs/objective")));
+        properties.add("followers", arrayOf(ref("#/$defs/follower")));
         properties.add("complete_when", oneOrArray(ref("#/$defs/predicate")));
         properties.add("completion", ref("#/$defs/completion"));
         properties.add("completion_mode", stringEnum(List.of("all", "any", "at_least")));
@@ -666,6 +669,7 @@ public final class QuestV2Schema {
         rules.add(typeRule("campaign_standing", com.jvn.villagerretaliation.campaign.CampaignStandingAction.schema()));
         rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactAction.schema()));
         rules.add(typeRule("campaign_reward", com.jvn.villagerretaliation.campaign.CampaignRewardAction.schema()));
+        rules.add(typeRule("follower", com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective.schema()));
         rules.add(typeRule("campaign_payment", com.jvn.villagerretaliation.campaign.CampaignPaymentAction.schema()));
         schema.add("allOf", rules);
         schema.add("properties", properties);

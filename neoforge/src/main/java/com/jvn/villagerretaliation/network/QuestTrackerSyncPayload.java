@@ -598,6 +598,12 @@ public record QuestTrackerSyncPayload(
                     this.journal);
         }
 
+        public Entry asDiscoveryOffer() {
+            return new Entry(questId, title, objective, description, metadata, progress, showProgress,
+                    "discovered", status, issuer, issuerLocation, questItems, rewardPreviews,
+                    prerequisites, objectiveSteps, questUpdate, true, journal);
+        }
+
         public Entry withQuestAvailable(boolean questAvailable) {
             return new Entry(
                     this.questId,

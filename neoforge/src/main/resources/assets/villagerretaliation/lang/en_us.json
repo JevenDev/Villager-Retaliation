@@ -2177,6 +2177,13 @@
   "villagerretaliation.player_raid.unavailable": "A raid is already active here or one of its participants is occupied.",
   "villagerretaliation.player_raid.victory": "%s has fallen to the player raid.",
 
+  "villagerretaliation.quest.discovery.offer": "Quest discovered: %s. Open your quest journal to accept.",
+  "villagerretaliation.quest.discovery.unavailable": "This discovered quest is currently unavailable.",
+  "villagerretaliation.quest.follower.follow": "[Follow]",
+  "villagerretaliation.quest.follower.wait": "[Wait]",
+  "villagerretaliation.quest.follower.commands": "%s: %s %s",
+  "villagerretaliation.gui.quest_journal.accept": "Accept quest",
+  "villagerretaliation.gui.quest_journal.accept.tooltip": "Accept this discovered quest.",
   "villagerretaliation.gui.quest_journal.abandon": "Abandon quest",
   "villagerretaliation.gui.quest_journal.abandon.tooltip": "Abandon this quest and discard its current progress.",
   "villagerretaliation.gui.quest_journal.abandon.confirm.title": "Abandon quest?",

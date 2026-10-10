@@ -25,6 +25,7 @@ public final class SceneLifecycleIntegration {
 
     public static void onQuestTerminal(
             ServerLevel level, UUID player, ResourceLocation questId, String reason) {
+        com.jvn.villagerretaliation.quest.follower.QuestFollowerService.terminal(level, player, questId);
         SceneSavedData data = SceneSavedData.get(level);
         UUID origin = ORIGINATING_SCENE.get();
         for (SceneInstance scene : data.active()) {

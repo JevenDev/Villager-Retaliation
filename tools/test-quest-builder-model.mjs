@@ -137,6 +137,23 @@ function testWorkedSceneExample() {
   assert.deepEqual(errors, [], errors.map((issue) => `${issue.code}: ${issue.message}`).join("\n"));
 }
 
+function testDiscoveryAndFollowersRoundTrip() {
+  const quest = model.createLinearQuest("escort_pack");
+  quest.provider.type = "villagerretaliation:discovery";
+  quest.discovery = [{ id: "letter", event: "book_opened", mode: "automatic", match: { book: "escort_pack:letter" } }];
+  quest.stages[0].followers = [{ command: "follow", actor: { alias: "companion", type: "villagerretaliation:living_entity", binding_source: "entity_tag", binding: "escort_companion" } }];
+  quest.stages[0].objectives = [model.createObjective("follower_arrival")];
+  delete quest.stages[0].complete_when;
+  assert.deepEqual(model.validateQuest(quest, registryMetadata).filter((issue) => issue.severity === "error"), []);
+  const bundle = model.questBundleFiles(quest);
+  assert.deepEqual(bundle.quest.discovery, quest.discovery);
+  assert.deepEqual(bundle.quest.stages[0].followers, quest.stages[0].followers);
+  assert.deepEqual(bundle.quest.stages[0].objectives[0].match, { actor: "companion" });
+  const project = model.normalizeProject({ ...model.createProject("linear", "escort_pack"), quests: [quest] });
+  assert.deepEqual(project.quests[0].discovery, quest.discovery);
+}
+
+testDiscoveryAndFollowersRoundTrip();
 testLinearTemplate();
 testBranchingTemplate();
 testRenameReferences();

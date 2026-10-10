@@ -57,7 +57,7 @@ public record QuestScopeKey(
             case PLAYER -> player(context.player().getUUID());
             case WORLD -> WORLD;
             case QUEST -> quest(context.player().getUUID(), questId);
-            case VILLAGER -> villager(context.villager().getUUID());
+            case VILLAGER -> villager(context.providerId());
             case VILLAGE -> village(context.villageKey());
         };
     }
@@ -76,7 +76,7 @@ public record QuestScopeKey(
             case PLAYER -> player(context.player().getUUID());
             case PLAYER_WORLD -> playerWorld(context.player().getUUID());
             case WORLD -> WORLD;
-            case VILLAGER -> villager(context.villager().getUUID());
+            case VILLAGER -> villager(context.providerId());
             case VILLAGE -> village(context.villageKey());
         };
     }

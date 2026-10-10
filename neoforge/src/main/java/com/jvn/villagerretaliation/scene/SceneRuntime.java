@@ -191,6 +191,7 @@ public final class SceneRuntime {
                 case OWNER_PLAYER -> playerId;
                 case QUEST_PROVIDER -> providerId;
                 case UUID, PARTY_MEMBER -> parseUuid(actor.bindingReference());
+                case ENTITY_TAG -> taggedEntity(server, playerId, actor);
                 default -> null;
             };
             Entity entity = findEntity(server, entityId);
@@ -212,6 +213,17 @@ public final class SceneRuntime {
             }
         }
         return Map.copyOf(result);
+    }
+
+    private static UUID taggedEntity(MinecraftServer server, UUID playerId, SceneActorDeclaration actor) {
+        var player = server.getPlayerList().getPlayer(playerId);
+        if (player == null) return null;
+        var matches = player.serverLevel().getEntitiesOfClass(Entity.class, player.getBoundingBox().inflate(64),
+                entity -> entity.isAlive() && entity.getTags().contains(actor.bindingReference())
+                        && (!actor.actorType().getPath().equals("villager") || entity instanceof net.minecraft.world.entity.npc.Villager)
+                        && (!actor.filters().containsKey("entity_type") || actor.filters().get("entity_type").equals(
+                                net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString())));
+        return matches.size() == 1 ? matches.getFirst().getUUID() : null;
     }
 
     private static SceneActorBinding markerBinding(SceneActorDeclaration actor) {

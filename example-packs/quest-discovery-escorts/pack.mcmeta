@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "pack_format": 48,
+    "description": "Quest books, journal discoveries, and persistent villager and dog escorts"
+  },
+  "villagerretaliation": {
+    "pack_version": "1.0.0-beta.13"
+  }
+}

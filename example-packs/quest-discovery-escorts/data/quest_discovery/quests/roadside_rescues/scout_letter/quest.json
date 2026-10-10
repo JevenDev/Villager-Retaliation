@@ -1,0 +1,136 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "quest_discovery:scout_letter",
+  "localization_prefix": "quest_discovery.quest.scout_letter",
+  "metadata": {
+    "title": "A Scout in Trouble",
+    "questline": "roadside_rescues"
+  },
+  "provider": {
+    "type": "villagerretaliation:discovery"
+  },
+  "discovery": [
+    {
+      "id": "letter",
+      "event": "book_opened",
+      "mode": "automatic",
+      "match": {
+        "book": "quest_discovery:scout_letter"
+      }
+    }
+  ],
+  "entry_stage": "road",
+  "stages": [
+    {
+      "id": "road",
+      "title": "Escort the scout",
+      "followers": [
+        {
+          "command": "follow",
+          "protected": true,
+          "actor": {
+            "alias": "companion",
+            "type": "villagerretaliation:villager",
+            "binding_source": "entity_tag",
+            "binding": "quest_discovery_scout",
+            "missing_actor_policy": "block",
+            "death_policy": "fail"
+          }
+        }
+      ],
+      "objectives": [
+        {
+          "id": "road",
+          "type": "location_visit",
+          "dimension": "minecraft:overworld",
+          "radius": 3,
+          "location": {
+            "x": 10,
+            "y": 64,
+            "z": 0
+          }
+        }
+      ],
+      "next": "ambush"
+    },
+    {
+      "id": "ambush",
+      "title": "Clear the ambush",
+      "followers": [
+        {
+          "command": "wait",
+          "protected": true,
+          "actor": {
+            "alias": "companion",
+            "type": "villagerretaliation:villager",
+            "binding_source": "entity_tag",
+            "binding": "quest_discovery_scout",
+            "missing_actor_policy": "block",
+            "death_policy": "fail"
+          }
+        }
+      ],
+      "on_enter": [
+        {
+          "type": "start_scene",
+          "scene": "quest_discovery:road_ambush",
+          "operation_id": "road_ambush",
+          "wait_for_result": true
+        },
+        {
+          "type": "set_tag",
+          "scope": "quest",
+          "tag": "road_cleared"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "clear",
+          "type": "fact",
+          "scope": "quest",
+          "tag": "road_cleared"
+        }
+      ],
+      "next": "home"
+    },
+    {
+      "id": "home",
+      "title": "Reunite the scouts",
+      "followers": [
+        {
+          "command": "follow",
+          "protected": true,
+          "actor": {
+            "alias": "companion",
+            "type": "villagerretaliation:villager",
+            "binding_source": "entity_tag",
+            "binding": "quest_discovery_scout",
+            "missing_actor_policy": "block",
+            "death_policy": "fail"
+          }
+        }
+      ],
+      "objectives": [
+        {
+          "id": "arrive",
+          "type": "follower_arrival",
+          "match": {
+            "actor": "companion",
+            "destination_tag": "quest_discovery_receiver"
+          },
+          "dimension": "minecraft:overworld",
+          "radius": 3,
+          "tracker": {
+            "text": "Bring your companion to {destination_name} at {target_x}, {target_y}, {target_z}."
+          }
+        }
+      ],
+      "next": {
+        "complete": true
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 25
+  }
+}

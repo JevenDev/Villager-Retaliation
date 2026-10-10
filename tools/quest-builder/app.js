@@ -264,11 +264,16 @@
       <section class="section-card">
         <h2>Provider</h2>
         <div class="form-grid">
-          ${selectField({ label: "Provider type", value: provider.type || "villagerretaliation:villager", field: "provider.type", options: [{ value: "villagerretaliation:villager", label: "Villager" }], className: "span-4" })}
+          ${selectField({ label: "Provider type", value: provider.type || "villagerretaliation:villager", field: "provider.type", options: [{ value: "villagerretaliation:villager", label: "Villager" }, { value: "villagerretaliation:discovery", label: "Discovery" }], className: "span-4" })}
           ${field({ label: "Professions", value: professions.join(", "), field: "provider.filters.professions", dataType: "list", className: "span-8", placeholder: "minecraft:farmer, minecraft:librarian", help: "Leave blank to allow any villager profession." })}
         </div>
       </section>
 
+      <section class="section-card">
+        <h2>Discovery</h2>
+        <p>Choose automatic enrollment or a journal offer. Books use a custom quest marker. Locations and gameplay events can also introduce quests.</p>
+        ${textareaField({ label: "Discovery entries", value: JSON.stringify(quest.discovery || [], null, 2), field: "discovery", dataType: "json", className: "full", path: "/discovery", issues })}
+      </section>
       <section class="section-card">
         <h2>Availability</h2>
         <div class="form-grid">
@@ -332,6 +337,11 @@
         ${field({ label: "Tracker text", value: stage.ui?.tracker_text || "", stageField: "ui.tracker_text", placeholder: "Bring the requested supplies." })}
       </div>
       <div class="subsection">
+        <h3>Companions</h3>
+        <p>These actors follow or wait during this stage. Players can use Follow and Wait while escorting them.</p>
+        ${textareaField({ label: "Follower directives", value: JSON.stringify(stage.followers || [], null, 2), stageField: "followers", dataType: "json", className: "full", issues })}
+      </div>
+      <div class="subsection">
         <div class="section-card-header"><div><h3>Objectives</h3><p>Every required objective must be complete before this stage advances.</p></div><button class="button button-secondary" type="button" data-action="add-objective"><i data-lucide="plus"></i>Add objective</button></div>
         <div class="objective-list">${(stage.objectives || []).length ? stage.objectives.map((objective, index) => renderObjective(stage, objective, index, stageIndex, issues)).join("") : `<div class="empty-state"><p>This is a return-only stage. Add an objective if the player must complete another task.</p><button class="button button-secondary" type="button" data-action="add-objective">Add objective</button></div>`}</div>
       </div>
@@ -367,6 +377,7 @@
     if (objective.type === "reputation") return numberField({ ...shared, label: "Minimum reputation", value: objective.min ?? 0, objectiveField: "min" });
     if (objective.type === "choice") return `${field({ ...shared, label: "Choice fact key", value: objective.key || "", objectiveField: "key", placeholder: "help_path" })}${field({ ...shared, label: "Allowed values", value: (objective.values || []).join(", "), objectiveField: "values", dataType: "list", placeholder: "supplies, defense" })}`;
     if (objective.type === "fact") return `${field({ ...shared, label: "Fact key", value: objective.key || "", objectiveField: "key", placeholder: "progress" })}${field({ ...shared, label: "Expected value", value: objective.value ?? "", objectiveField: "value", placeholder: "1" })}`;
+    if (objective.type === "follower_arrival") return field({ ...shared, label: "Companion alias", value: objective.match?.actor || "", objectiveField: "match.actor" }) + field({ ...shared, label: "Destination NPC tag", value: objective.match?.destination_tag || "", objectiveField: "match.destination_tag" }) + (objective.match?.destination_tag ? "" : ["x", "y", "z"].map((axis) => numberField({ ...shared, label: axis.toUpperCase(), value: objective.location?.[axis] ?? (axis === "y" ? 64 : 0), objectiveField: "location." + axis })).join("")) + numberField({ ...shared, label: "Radius", value: objective.radius ?? 8, objectiveField: "radius", min: 1 });
     if (objective.type === "location_visit") return `${numberField({ ...shared, label: "X", value: objective.x ?? 0, objectiveField: "x", className: "span-3" })}${numberField({ ...shared, label: "Y", value: objective.y ?? 64, objectiveField: "y", className: "span-3" })}${numberField({ ...shared, label: "Z", value: objective.z ?? 0, objectiveField: "z", className: "span-3" })}${numberField({ ...shared, label: "Radius", value: objective.radius ?? 8, objectiveField: "radius", className: "span-3", min: 1 })}`;
     if (objective.type === "condition") return textareaField({ ...shared, label: "Conditions JSON", value: JSON.stringify(objective.conditions || [], null, 2), objectiveField: "conditions", dataType: "json", className: "full" });
     return "";
@@ -672,7 +683,13 @@
           const previous = objective.id;
           objective.id = value;
           stage.complete_when = (stage.complete_when || []).map((id) => id === previous ? value : id);
-        } else setNested(objective, path, value, { deleteEmpty: true });
+        } else {
+          setNested(objective, path, value, { deleteEmpty: true });
+          if (objective.type === "follower_arrival" && path === "match.destination_tag") {
+            if (value) delete objective.location;
+            else objective.location = { x: 0, y: 64, z: 0 };
+          }
+        }
         syncCompletionRules(stage);
       });
       return;

@@ -84,6 +84,7 @@ public final class VillagerRecruitmentService {
     }
 
     public static boolean startFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (com.jvn.villagerretaliation.quest.follower.QuestFollowerService.command(player, villager.getUUID(), true)) return true;
         if (!RecruitmentPolicy.mayCommand(level, villager, player, VillagerAssignmentCommand.FOLLOW).allowed()) {
             return false;
         }
@@ -93,6 +94,7 @@ public final class VillagerRecruitmentService {
     }
 
     public static boolean stayHere(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (com.jvn.villagerretaliation.quest.follower.QuestFollowerService.command(player, villager.getUUID(), false)) return true;
         if (!RecruitmentPolicy.mayCommand(level, villager, player, VillagerAssignmentCommand.STAY).allowed()) {
             return false;
         }

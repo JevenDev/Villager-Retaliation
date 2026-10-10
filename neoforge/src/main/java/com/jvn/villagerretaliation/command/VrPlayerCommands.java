@@ -40,6 +40,13 @@ final class VrPlayerCommands {
                     com.jvn.villagerretaliation.allegiance.VillageOverviewService.open(player, player.blockPosition());
                     return 1;
                 }))
+                .then(literal("escort")
+                        .then(literal("follow").then(argument("actor", net.minecraft.commands.arguments.UuidArgument.uuid())
+                                .executes(context -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.command(
+                                        context.getSource().getPlayerOrException(), net.minecraft.commands.arguments.UuidArgument.getUuid(context, "actor"), true) ? 1 : 0)))
+                        .then(literal("wait").then(argument("actor", net.minecraft.commands.arguments.UuidArgument.uuid())
+                                .executes(context -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.command(
+                                        context.getSource().getPlayerOrException(), net.minecraft.commands.arguments.UuidArgument.getUuid(context, "actor"), false) ? 1 : 0))))
                 .then(party())
                 .then(SettlementCommands.root())
                 .then(duel());

@@ -58,8 +58,11 @@ public final class QuestV2Compiler {
         List<VillagerActionDefinition> globalEntry = lifecycleActions(resource, source, "on_stage_enter");
         List<VillagerActionDefinition> globalExit = lifecycleActions(resource, source, "on_stage_exit");
         QuestDefinition.Target target;
+        List<com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryDefinition> discovery;
         try {
             target = VillagerQuestResources.readTargetFields(resource.target(), registries);
+            discovery = resource.discovery().stream().map(entry ->
+                    com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryDefinition.parse(resource.id(), entry, registries)).toList();
             for (QuestV2Resource.Stage stage : orderedStages(resource)) {
                 QuestSourcePointer stageSource = source.child("stages", Integer.toString(stageIndexes.get(stage.id())));
                 for (int index = 0; index < stage.objectives().size(); index++) {
@@ -73,6 +76,12 @@ public final class QuestV2Compiler {
                 }
                 stages.add(new CompiledQuestStage(stage.id(), stages.size(),
                         compileStage(resource, stage, stageSource, globalEntry, globalExit), List.of(), stageSource));
+                if (stage.next().complete() || stage.next().abandon() || stage.next().fail()) {
+                    addTrigger(new QuestDefinition.Trigger(stage.id() + ".terminal_next", QuestDefinition.TriggerEvent.PLAYER_TICK,
+                            List.of(new DialogueCondition.Quest(resource.id(), Set.of("ready"))),
+                            actions(resource.id(), stageSource.child("next"), List.of(), stage.next()), Set.of(stage.id()),
+                            0L, 10.0D, true), stageSource.child("next"), triggers);
+                }
                 for (int index = 0; index < stage.events().size(); index++) {
                     QuestV2Resource.Event event = stage.events().get(index);
                     appendEvent(resource.id(), event, stage.id(), stage.id() + "." + event.id(),
@@ -107,7 +116,8 @@ public final class QuestV2Compiler {
                 objectives, Map.of(), stages, Map.of(), triggers, Map.of(), QuestTriggerIndex.EMPTY,
                 new CompiledQuestRewards(compileRewards(resource.id(), source, resource.rewards())),
                 DatapackJsonReader.readBoolean(resource.metadata().get("show_locked_adventure_hint"), true),
-                VillagerQuestResources.readRevision(resource.metadata().get("revision"), optionalObject(resource.metadata().get("migration")))));
+                VillagerQuestResources.readRevision(resource.metadata().get("revision"), optionalObject(resource.metadata().get("migration"))),
+                discovery));
     }
 
     private static QuestDefinition.Stage compileStage(QuestV2Resource resource, QuestV2Resource.Stage stage,
@@ -123,6 +133,17 @@ public final class QuestV2Compiler {
         List<VillagerActionDefinition> entry = new ArrayList<>(globalEntry);
         entry.addAll(VillagerActionDefinition.readObjects(source.resource(), source.jsonPointer() + "/entry", stage.entryActions(), resource.id()));
         entry.addAll(rewardActions(resource.id(), source, stage.rewards()));
+        if (stage.data().has("followers")) {
+            for (var child : stage.data().getAsJsonArray("followers")) {
+                var action = child.getAsJsonObject().deepCopy();
+                action.addProperty("type", "follower");
+                action.addProperty("scope", "stage");
+                action.addProperty("required", true);
+                var directives = VillagerActionDefinition.readObjects(source.resource(), source.jsonPointer() + "/followers", List.of(action), resource.id());
+                if (directives.size() != 1) throw new IllegalArgumentException("Invalid stage follower directive.");
+                entry.addAll(directives);
+            }
+        }
         List<VillagerActionDefinition> exit = new ArrayList<>(VillagerActionDefinition.readObjects(
                 source.resource(), source.jsonPointer() + "/exit", stage.exitActions(), resource.id()));
         exit.addAll(globalExit);

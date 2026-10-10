@@ -197,10 +197,11 @@ public record QuestDefinition(
         }
 
         public boolean matches(DialogueContext context) {
+            if (context.villager() == null && (!professions.isEmpty() || minVillagerLevel > 1 || !minSkills.isEmpty())) return false;
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
                 return false;
             }
-            if (context.villager().getVillagerData().getLevel() < this.minVillagerLevel) {
+            if (context.villager() != null && context.villager().getVillagerData().getLevel() < this.minVillagerLevel) {
                 return false;
             }
             for (Map.Entry<VillagerSkill, Integer> entry : this.minSkills.entrySet()) {
@@ -666,6 +667,7 @@ public record QuestDefinition(
         CAMPAIGN_SPEAK,
         CAMPAIGN_INVESTIGATE,
         CAMPAIGN_FOLLOW,
+        FOLLOWER_ARRIVAL,
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {

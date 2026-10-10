@@ -36,19 +36,19 @@ public final class QuestPresentationService {
             DialogueContext context,
             QuestDefinition definition,
             List<QuestTrackerSyncPayload.Prerequisite> prerequisites) {
-        String issuer = providerSummary(context.villager());
-        BlockPos pos = context.villager().blockPosition();
+        String issuer = context.villager() == null ? "" : providerSummary(context.villager());
+        BlockPos pos = context.origin();
         String issuerLocation = "Current location: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()
                 + " in " + dimensionDisplayName(context.level().dimension());
         Map<String, String> replacements = new LinkedHashMap<>();
         replacements.put("quest", definition.title());
         replacements.put("issuer", issuer);
-        replacements.put("issuer_name", VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString());
+        replacements.put("issuer_name", context.villager() == null ? "" : VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString());
         replacements.put("issuer_profession", VillagerInteractionTextUtil.professionName(
-                context.villager().getVillagerData().getProfession(),
+                context.profession(),
                 "villager"));
         String fallbackObjective = definition.description().isBlank()
-                ? "Talk to {issuer} to accept this quest."
+                ? context.villager() == null ? "Accept this quest in your journal." : "Talk to {issuer} to accept this quest."
                 : definition.description();
         QuestDefinition.Step step = new QuestDefinition.Step(
                 fallbackObjective,
@@ -158,13 +158,25 @@ public final class QuestPresentationService {
 
         BlockPos targetPos = progress == null ? null : progress.targetPos();
         values.put("target_dimension", targetDimensionText(progress));
+        values.put("destination_name", "the destination");
+        if (objective != null && objective.type() == QuestDefinition.ObjectiveType.FOLLOWER_ARRIVAL) {
+            var destination = com.jvn.villagerretaliation.quest.follower.QuestFollowerArrivalObjective.destination(player.serverLevel(), objective).orElse(null);
+            if (destination != null) {
+                targetPos = destination.position();
+                values.put("target_dimension", dimensionDisplayName(destination.dimension()));
+                if (!destination.name().isBlank()) values.put("destination_name", destination.name());
+            }
+        }
         if (targetPos != null) {
-            values.put("target_x", Integer.toString(roundCoordinate(targetPos.getX())));
-            values.put("target_z", Integer.toString(roundCoordinate(targetPos.getZ())));
+            boolean escort = objective != null && objective.type() == QuestDefinition.ObjectiveType.FOLLOWER_ARRIVAL;
+            values.put("target_x", Integer.toString(escort ? targetPos.getX() : roundCoordinate(targetPos.getX())));
+            values.put("target_y", Integer.toString(targetPos.getY()));
+            values.put("target_z", Integer.toString(escort ? targetPos.getZ() : roundCoordinate(targetPos.getZ())));
             values.put("direction", directionPhrase(player.blockPosition(), targetPos));
             values.put("distance", Integer.toString(roundDistance(player.blockPosition(), targetPos)));
         } else {
             values.put("target_x", "unknown");
+            values.put("target_y", "unknown");
             values.put("target_z", "unknown");
             values.put("direction", "somewhere beyond the map");
             values.put("distance", "unknown");
@@ -194,8 +206,8 @@ public final class QuestPresentationService {
         if (targetPos != null) {
             values.put("target_x", Integer.toString(roundCoordinate(targetPos.getX())));
             values.put("target_z", Integer.toString(roundCoordinate(targetPos.getZ())));
-            values.put("direction", directionPhrase(context.villager().blockPosition(), targetPos));
-            values.put("distance", Integer.toString(roundDistance(context.villager().blockPosition(), targetPos)));
+            values.put("direction", directionPhrase(context.origin(), targetPos));
+            values.put("distance", Integer.toString(roundDistance(context.origin(), targetPos)));
         } else {
             values.put("target_x", "unknown");
             values.put("target_z", "unknown");
@@ -447,6 +459,7 @@ public final class QuestPresentationService {
             case CAMPAIGN_SPEAK -> "Speak with the campaign character.";
             case CAMPAIGN_INVESTIGATE -> "Investigate the evidence.";
             case CAMPAIGN_FOLLOW -> "Follow the campaign character to the destination.";
+            case FOLLOWER_ARRIVAL -> "Escort the companion to the destination.";
             case CONDITION -> "Meet the quest condition.";
         };
     }
@@ -458,6 +471,7 @@ public final class QuestPresentationService {
         if (selected == null) {
             return "";
         }
+        if (context.villager() == null) return resolveQuestText(context.player(), selected, replacements);
         if (!selected.key().isBlank()) {
             return VillagerDialogueResources
                     .message(context, selected.key(), replacements)

@@ -32,6 +32,178 @@
     "provider": {
       "$ref": "#/$defs/provider"
     },
+    "discovery": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "event"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "event": {
+            "enum": [
+              "item_acquired",
+              "item_used",
+              "book_opened",
+              "location",
+              "mob_kill",
+              "block_break",
+              "block_place",
+              "block_interact",
+              "memory_event",
+              "gift",
+              "trade",
+              "reputation",
+              "criterion"
+            ]
+          },
+          "mode": {
+            "enum": [
+              "automatic",
+              "offer"
+            ]
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "match": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "item": {
+                "type": "string"
+              },
+              "item_tag": {
+                "type": "string"
+              },
+              "book": {
+                "type": "string"
+              },
+              "components": {
+                "type": "object"
+              },
+              "durability": {
+                "type": "object"
+              },
+              "dimension": {
+                "type": "string"
+              },
+              "structure": {
+                "type": "string"
+              },
+              "biome": {
+                "type": "string"
+              },
+              "pos": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "radius": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 512
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "event": {
+                  "const": "location"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "match"
+              ],
+              "properties": {
+                "match": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "structure"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "biome"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "pos"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "event": {
+                  "enum": [
+                    "item_acquired",
+                    "item_used",
+                    "book_opened"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "match"
+              ],
+              "properties": {
+                "match": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "item"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "item_tag"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "book"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
     "availability": {
       "$ref": "#/$defs/availability"
     },
@@ -201,6 +373,7 @@
         "type": {
           "type": "string",
           "enum": [
+            "villagerretaliation:discovery",
             "villagerretaliation:villager"
           ]
         },
@@ -671,6 +844,12 @@
             "$ref": "#/$defs/objective"
           }
         },
+        "followers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/follower"
+          }
+        },
         "complete_when": {
           "oneOf": [
             {
@@ -862,6 +1041,170 @@
         }
       }
     },
+    "follower": {
+      "type": "object",
+      "required": [
+        "actor"
+      ],
+      "properties": {
+        "command": {
+          "enum": [
+            "follow",
+            "wait",
+            "resume",
+            "release"
+          ]
+        },
+        "scope": {
+          "enum": [
+            "quest",
+            "stage"
+          ]
+        },
+        "distance": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "maximum_distance": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 128
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 1
+        },
+        "protected": {
+          "type": "boolean"
+        },
+        "actor": {
+          "type": "object",
+          "title": "Actor declaration",
+          "additionalProperties": false,
+          "required": [
+            "alias",
+            "type",
+            "binding_source"
+          ],
+          "properties": {
+            "alias": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+            },
+            "type": {
+              "enum": [
+                "villagerretaliation:villager",
+                "villagerretaliation:living_entity"
+              ]
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "capabilities": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              }
+            },
+            "binding_source": {
+              "enum": [
+                "quest_provider",
+                "uuid",
+                "campaign_role",
+                "entity_tag",
+                "owned_spawn",
+                "encounter"
+              ]
+            },
+            "binding": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "replacement_policy": {
+              "enum": [
+                "fixed",
+                "optional"
+              ]
+            },
+            "missing_actor_policy": {
+              "type": "string",
+              "minLength": 1,
+              "enum": [
+                "block",
+                "fail",
+                "skip",
+                "wait_until_timeout"
+              ]
+            },
+            "lethal_damage_policy": {
+              "const": "normal"
+            },
+            "death_policy": {
+              "enum": [
+                "fail",
+                "block",
+                "apply_missing_policy"
+              ]
+            },
+            "filters": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "entity_type": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                }
+              }
+            },
+            "timeout_ticks": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "binding_source": {
+                    "enum": [
+                      "uuid",
+                      "campaign_role",
+                      "entity_tag",
+                      "owned_spawn",
+                      "encounter"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "binding"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "source"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
     "completion": {
       "type": "object",
       "additionalProperties": false,
@@ -945,6 +1288,61 @@
         "type"
       ],
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "follower_arrival"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "match"
+            ],
+            "properties": {
+              "match": {
+                "type": "object",
+                "required": [
+                  "actor"
+                ],
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                  },
+                  "destination_tag": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                }
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "location"
+                ]
+              },
+              {
+                "properties": {
+                  "match": {
+                    "required": [
+                      "destination_tag"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        },
         {
           "if": {
             "properties": {
@@ -1233,6 +1631,7 @@
             "entity_kill",
             "event",
             "fact",
+            "follower_arrival",
             "gift",
             "gift_given",
             "give_gift",
@@ -3551,6 +3950,182 @@
           "if": {
             "properties": {
               "type": {
+                "const": "follower"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "actor"
+            ],
+            "properties": {
+              "command": {
+                "enum": [
+                  "follow",
+                  "wait",
+                  "resume",
+                  "release"
+                ]
+              },
+              "scope": {
+                "enum": [
+                  "quest",
+                  "stage"
+                ]
+              },
+              "distance": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 16
+              },
+              "maximum_distance": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 128
+              },
+              "speed": {
+                "type": "number",
+                "minimum": 0.05,
+                "maximum": 1
+              },
+              "protected": {
+                "type": "boolean"
+              },
+              "actor": {
+                "type": "object",
+                "title": "Actor declaration",
+                "additionalProperties": false,
+                "required": [
+                  "alias",
+                  "type",
+                  "binding_source"
+                ],
+                "properties": {
+                  "alias": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                  },
+                  "type": {
+                    "enum": [
+                      "villagerretaliation:villager",
+                      "villagerretaliation:living_entity"
+                    ]
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "capabilities": {
+                    "type": "array",
+                    "minItems": 0,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    }
+                  },
+                  "binding_source": {
+                    "enum": [
+                      "quest_provider",
+                      "uuid",
+                      "campaign_role",
+                      "entity_tag",
+                      "owned_spawn",
+                      "encounter"
+                    ]
+                  },
+                  "binding": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "replacement_policy": {
+                    "enum": [
+                      "fixed",
+                      "optional"
+                    ]
+                  },
+                  "missing_actor_policy": {
+                    "type": "string",
+                    "minLength": 1,
+                    "enum": [
+                      "block",
+                      "fail",
+                      "skip",
+                      "wait_until_timeout"
+                    ]
+                  },
+                  "lethal_damage_policy": {
+                    "const": "normal"
+                  },
+                  "death_policy": {
+                    "enum": [
+                      "fail",
+                      "block",
+                      "apply_missing_policy"
+                    ]
+                  },
+                  "filters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "entity_type": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                      }
+                    }
+                  },
+                  "timeout_ticks": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "binding_source": {
+                          "enum": [
+                            "uuid",
+                            "campaign_role",
+                            "entity_tag",
+                            "owned_spawn",
+                            "encounter"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "binding"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "source"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "campaign_payment"
               }
             },
@@ -3597,6 +4172,7 @@
             "experience",
             "fact",
             "flash_tracker",
+            "follower",
             "force_dialogue",
             "forced_dialogue",
             "gossip",
@@ -3674,6 +4250,7 @@
             "fail",
             "failed",
             "flash_tracker",
+            "follower",
             "force_dialogue",
             "forced_dialogue",
             "gossip",

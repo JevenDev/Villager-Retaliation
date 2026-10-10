@@ -12,12 +12,12 @@
   const STORAGE_VERSION = 1;
   const SEVERITY_ORDER = { error: 0, warning: 1, info: 2 };
   const ALLOWED_FIELDS = {
-    quest: new Set(["schema", "id", "localization_prefix", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui"]),
+    quest: new Set(["schema", "id", "localization_prefix", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "discovery"]),
     metadata: new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "show_locked_adventure_hint", "author", "version"]),
     provider: new Set(["type", "required_capabilities", "capabilities", "filters", "data"]),
     availability: new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]),
-    stage: new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]),
-    objective: new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui", "x", "y", "z", "pos", "pieces", "event", "events", "memory_event", "memory_events", "reaction", "reactions", "level", "levels", "min_reputation", "max_reputation", "fact", "variable", "counter", "custom_data", "nbt"]),
+    stage: new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata", "followers"]),
+    objective: new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui", "x", "y", "z", "pos", "pieces", "event", "events", "memory_event", "memory_events", "reaction", "reactions", "level", "levels", "min_reputation", "max_reputation", "fact", "variable", "counter", "custom_data", "nbt", "match"]),
     dialogue: new Set(["scene", "scene_ref", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]),
     response: new Set(["id", "label", "label_key", "text", "text_key", "lines", "conditions", "actions", "transition", "next", "stage", "scene", "response", "complete", "abandon", "fail", "request", "order", "metadata"]),
     rewards: new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event"]),
@@ -38,7 +38,8 @@
     reputation: "Reach reputation",
     choice: "Make a dialogue choice",
     fact: "Match a quest fact",
-    condition: "Meet a condition"
+    condition: "Meet a condition",
+    follower_arrival: "Escort a companion"
   };
 
   function clone(value) {
@@ -92,6 +93,7 @@
     if (["block_break", "block_place", "block_interact"].includes(type)) Object.assign(objective, { block: "minecraft:stone", count: 1 });
     if (type === "structure_visit") objective.structure = "minecraft:village_plains";
     if (type === "location_visit") Object.assign(objective, { x: 0, y: 64, z: 0, radius: 8 });
+    if (type === "follower_arrival") Object.assign(objective, { location: { x: 0, y: 64, z: 0 }, radius: 8, match: { actor: "companion" } });
     if (type === "memory_event") Object.assign(objective, { event: "player_helped_villager", count: 1 });
     if (type === "trade") objective.count = 1;
     if (type === "reputation") objective.min = 10;
@@ -536,7 +538,7 @@
     if (!String(quest.localization_prefix || "").startsWith(`${String(quest.id || "").split(":")[0]}.quest.`)) issue("error", "quest.localization_prefix", "/localization_prefix", "Localization prefix must begin with the quest namespace and .quest.", "Use a globally unique prefix such as my_pack.quest.first_steps.");
     if (!String(quest.metadata?.questline || "").trim()) issue("error", "quest.questline", "/metadata/questline", "Questline is required for bundle ownership.", "Use a stable directory name such as village_errands.");
     if (!quest.provider || typeof quest.provider !== "object") issue("error", "provider.missing", "/provider", "A quest provider is required.", "Choose the Villager provider in Quest setup.");
-    if (quest.provider?.type !== "villagerretaliation:villager") issue("error", "provider.type", "/provider/type", "Provider type is not supported by this version.", "Use villagerretaliation:villager.");
+    if (!["villagerretaliation:villager", "villagerretaliation:discovery"].includes(quest.provider?.type)) issue("error", "provider.type", "/provider/type", "Provider type is not supported by this version.", "Choose a villager or discovery provider.");
     const stages = Array.isArray(quest.stages) ? quest.stages : [];
     if (!stages.length) issue("error", "stages.empty", "/stages", "The quest needs at least one stage.", "Add a stage to define what the player does.");
     const stageIds = stages.map((stage) => String(stage?.id || ""));
@@ -590,7 +592,7 @@
     for (const stage of stages) {
       if (stage.id && quest.entry_stage && !reachable.has(stage.id)) issue("warning", "stage.unreachable", `/stages/${stageIds.indexOf(stage.id)}`, `Stage “${stage.id}” cannot be reached from the entry stage.`, "Connect it from another stage or remove it.");
       const hasTransition = collectEdges({ stages: [stage] }).length > 0;
-      const hasTurnIn = Boolean(stage.dialogue?.turn_in) || collectNamedArrays(stage, "actions").some((action) => action.type === "quest" && ["turn_in", "complete"].includes(action.action));
+      const hasTurnIn = Boolean(stage.dialogue?.turn_in) || stage.next?.complete === true || collectNamedArrays(stage, "actions").some((action) => action.type === "quest" && ["turn_in", "complete"].includes(action.action));
       if (stage.id && !hasTransition && !hasTurnIn && (stage.objectives || []).length) issue("warning", "stage.dead_end", `/stages/${stageIds.indexOf(stage.id)}`, `Stage “${stage.id}” has no next stage or completion dialogue.`, "Choose a next stage or add turn-in dialogue.");
     }
     validateRegistryBlocks(quest, "actions", ["type", "action"], actionRegistry, issue);

@@ -42,11 +42,11 @@ public final class QuestAvailabilityService {
         // scope once per quest candidate, which made tracker scans multiplicative.
         if (!CampaignQuestAccess.availabilityIssue(context, definition).isBlank()) return false;
         if (!com.jvn.villagerretaliation.campaign.CampaignCharacterService.matchesProvider(
-                context.level().getServer(), definition, context.villager().getUUID())) return false;
+                context.level().getServer(), definition, context.providerId())) return false;
         if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }
-        if (!bypassQuestPools && !QuestPoolResources.allows(context, definition)) {
+        if (context.villager() != null && !bypassQuestPools && !QuestPoolResources.allows(context, definition)) {
             return false;
         }
         if (!parentCompletionLookup.parentCompleted(context, definition)) {
@@ -58,7 +58,7 @@ public final class QuestAvailabilityService {
         }
         if (!definition.rules().crossVillagerCompatible()
                 && progress.startedVillagerId() != null
-                && !context.villager().getUUID().equals(progress.startedVillagerId())) {
+                && !java.util.Objects.equals(context.providerId(), progress.startedVillagerId())) {
             return false;
         }
         if (!withinStartLimit(definition, progress)

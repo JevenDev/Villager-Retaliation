@@ -19,6 +19,7 @@ import java.util.Set;
 
 public final class VillagerActionRegistry {
     private static final List<ActionTypeDescriptor> REGISTRATIONS = List.of(
+            register("follower", VillagerActionDefinition.Kind.FOLLOWER, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN)),
             register(
                     "notification",
                     VillagerActionDefinition.Kind.NOTIFICATION,
@@ -210,6 +211,10 @@ public final class VillagerActionRegistry {
         if (context == null && requiresLiveContext(capabilities)) {
             return ActionResult.failed("live dialogue context unavailable", capabilities);
         }
+        if (context != null && context.villager() == null && switch (action.kind()) {
+            case FORCED_DIALOGUE, REPUTATION, GOSSIP, PROFILE_ATTRIBUTE, MEMORY, DRAW_WEAPON -> true;
+            default -> action.factScope() == QuestFactScope.VILLAGER || action.factScope() == QuestFactScope.VILLAGE;
+        }) return ActionResult.unavailable("This action requires a quest provider.", capabilities, VillagerActionResult.EMPTY);
         if (outcomeActor != null && action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
             return ActionResult.failed("A saved decision actor cannot receive another player's personal effects.", capabilities);
         }
@@ -232,6 +237,9 @@ public final class VillagerActionRegistry {
             ActionResult result = VillagerActionExecutor.executeForcedDialogue(context, action, inheritedReplacements);
             return new ActionResult(result.status(), result.message(), capabilities, result.legacyResult(),
                     result.suspensionId(), result.suspensionKind(), result.retryOnResume());
+        }
+        if (action.kind() == VillagerActionDefinition.Kind.FOLLOWER) {
+            return com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(context, action);
         }
         if (action.kind() == VillagerActionDefinition.Kind.START_SCENE) {
             SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);

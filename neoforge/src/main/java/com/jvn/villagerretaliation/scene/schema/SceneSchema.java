@@ -874,7 +874,7 @@ public final class SceneSchema {
         return area;
     }
 
-    private static JsonObject actor() {
+    public static JsonObject actor() {
         JsonObject actor = object("Actor declaration");
         actor.addProperty("additionalProperties", false);
         actor.add("required", strings("alias", "type"));

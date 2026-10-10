@@ -1,0 +1,6 @@
+execute unless entity @e[tag=quest_discovery_scout] run summon minecraft:villager 0 64 2 {Tags:["quest_discovery_scout"],CustomName:'{"text":"Scout Tovin"}',PersistenceRequired:1b}
+execute unless entity @e[tag=quest_discovery_receiver] run summon minecraft:villager 20 64 0 {Tags:["quest_discovery_receiver"],CustomName:'{"text":"Scout Arlo"}',PersistenceRequired:1b}
+execute unless entity @e[tag=quest_discovery_dog] run summon minecraft:wolf 3 64 2 {Tags:["quest_discovery_dog"]}
+setblock 2 64 0 minecraft:chest
+item replace block 2 64 0 container.0 with minecraft:written_book[minecraft:written_book_content={title:"A Scout's Plea",author:"Scout Tovin",pages:['{"text":"I need help returning to Scout Arlo. Escort me along the road. If we are ambushed, clear the enemies before continuing."}']},minecraft:custom_data={"villagerretaliation:quest_book":"quest_discovery:scout_letter"}]
+item replace block 2 64 0 container.1 with minecraft:written_book[minecraft:written_book_content={title:"Missing Dog",author:"Scout Arlo",pages:['{"text":"Our dog is missing near the road. Please bring it back to Scout Arlo. Accept the quest in your journal after finding this note."}']},minecraft:custom_data={"villagerretaliation:quest_book":"quest_discovery:lost_dog"}]

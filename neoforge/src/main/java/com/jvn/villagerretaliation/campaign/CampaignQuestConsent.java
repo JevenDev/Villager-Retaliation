@@ -19,9 +19,9 @@ public record CampaignQuestConsent(UUID playerId, UUID providerId, Map<ResourceL
 
     public CompoundTag save() {
         var tag = new CompoundTag();
-        tag.putInt("Version", 2);
+        tag.putInt("Version", providerId == null ? 3 : 2);
         tag.putUUID("Player", playerId);
-        tag.putUUID("Provider", providerId);
+        if (providerId != null) tag.putUUID("Provider", providerId);
         var entries = new CompoundTag();
         quests.forEach((id, entry) -> {
             var value = new CompoundTag();
@@ -37,7 +37,9 @@ public record CampaignQuestConsent(UUID playerId, UUID providerId, Map<ResourceL
     }
 
     public static CampaignQuestConsent load(CompoundTag tag) {
-        if ((tag.getInt("Version") != 1 && tag.getInt("Version") != 2) || !tag.hasUUID("Player") || !tag.hasUUID("Provider")
+        if ((tag.getInt("Version") < 1 || tag.getInt("Version") > 3) || !tag.hasUUID("Player")
+                || tag.getInt("Version") < 3 && !tag.hasUUID("Provider")
+                || tag.contains("Provider") && !tag.hasUUID("Provider")
                 || !tag.contains("Quests", Tag.TAG_COMPOUND)) {
             throw new IllegalArgumentException("Campaign consent is unreadable or uses an unsupported version.");
         }
@@ -53,7 +55,7 @@ public record CampaignQuestConsent(UUID playerId, UUID providerId, Map<ResourceL
             entries.put(id, new Entry(acceptance, value.getCompound("Progress")));
         }
         var decisions = new LinkedHashMap<UUID, CampaignOutcomeConsent>();
-        if (tag.getInt("Version") == 2) {
+        if (tag.getInt("Version") >= 2) {
             if (!(tag.get("Decisions") instanceof net.minecraft.nbt.ListTag list)
                     || !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND) {
                 throw new IllegalArgumentException("Campaign decision approvals are unreadable.");
@@ -66,7 +68,7 @@ public record CampaignQuestConsent(UUID playerId, UUID providerId, Map<ResourceL
             }
         }
         if (entries.isEmpty() && decisions.isEmpty()) throw new IllegalArgumentException("Campaign consent has no accepted quests or decisions.");
-        return new CampaignQuestConsent(tag.getUUID("Player"), tag.getUUID("Provider"), entries, decisions);
+        return new CampaignQuestConsent(tag.getUUID("Player"), tag.hasUUID("Provider") ? tag.getUUID("Provider") : null, entries, decisions);
     }
 
     public record Entry(CampaignQuestAcceptance acceptance, CompoundTag progress) {

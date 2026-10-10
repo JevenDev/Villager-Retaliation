@@ -945,8 +945,8 @@ public final class VillagerQuestJournalScreen extends Screen {
         if (paged) {
             renderDetailsPageLabel(graphics, left, maskBottom + DETAILS_PAGE_LABEL_GAP, this.detailsPage + 1, pageCount);
         }
-        if (canAbandon(selected)) {
-            Component label = Component.translatable(GUI_KEY_PREFIX + "abandon");
+        if (canManageQuest(selected)) {
+            Component label = Component.translatable(GUI_KEY_PREFIX + ("discovered".equals(selected.state()) ? "accept" : "abandon"));
             int actionTop = top + DETAILS_HEIGHT - DETAILS_ABANDON_HEIGHT + 2;
             graphics.drawString(
                     this.font,
@@ -1828,13 +1828,13 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static int detailsPageViewportHeight(QuestTrackerSyncPayload.Entry selected) {
         return Math.max(
                 1,
-                DETAILS_HEIGHT - (canAbandon(selected)
+                DETAILS_HEIGHT - (canManageQuest(selected)
                         ? DETAILS_PAGE_LABEL_HEIGHT + DETAILS_ABANDON_HEIGHT
                         : 0));
     }
 
-    private static boolean canAbandon(QuestTrackerSyncPayload.Entry entry) {
-        return entry != null && "active".equalsIgnoreCase(entry.state());
+    private static boolean canManageQuest(QuestTrackerSyncPayload.Entry entry) {
+        return entry != null && ("active".equalsIgnoreCase(entry.state()) || "discovered".equals(entry.state()));
     }
 
     private boolean abandonActionAt(
@@ -1842,7 +1842,7 @@ public final class VillagerQuestJournalScreen extends Screen {
             double journalMouseY,
             QuestTrackerSyncPayload.Entry selected) {
         return !this.questlineMapOpen
-                && canAbandon(selected)
+                && canManageQuest(selected)
                 && isPointInside(
                         mouseX,
                         journalMouseY,
@@ -1857,6 +1857,10 @@ public final class VillagerQuestJournalScreen extends Screen {
             return;
         }
         String questId = selected.questId();
+        if ("discovered".equals(selected.state())) {
+            PacketDistributor.sendToServer(new QuestTrackerRequestPayload(questId, QuestTrackerRequestPayload.Action.ACCEPT));
+            return;
+        }
         if (!VillagerRetaliationClientPreferences.confirmQuestAbandonment()) {
             abandonQuest(questId);
             return;
@@ -2071,7 +2075,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         graphics.renderComponentTooltip(
                 this.font,
-                List.of(Component.translatable(GUI_KEY_PREFIX + "abandon.tooltip")
+                List.of(Component.translatable(GUI_KEY_PREFIX + ("discovered".equals(selected.state()) ? "accept.tooltip" : "abandon.tooltip"))
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR))),
                 mouseX,
                 mouseY);
@@ -2110,7 +2114,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         return switch (state == null ? "" : state.toLowerCase(Locale.ROOT)) {
             case "completed" -> "completed";
             case "active" -> "active";
-            case "available", "abandoned", "expired", "failed" -> "available";
+            case "available", "discovered", "abandoned", "expired", "failed" -> "available";
             case "closed" -> "closed";
             default -> "locked";
         };
@@ -3088,7 +3092,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         return switch (state == null ? "" : state.toLowerCase(Locale.ROOT)) {
             case "completed" -> QuestJournalEntryState.COMPLETED.texture();
             case "active" -> QuestJournalEntryState.ACTIVE.texture();
-            case "available" -> QuestJournalEntryState.AVAILABLE.texture();
+            case "available", "discovered" -> QuestJournalEntryState.AVAILABLE.texture();
             default -> QuestJournalEntryState.INACTIVE.texture();
         };
     }

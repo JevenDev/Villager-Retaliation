@@ -119,6 +119,9 @@ public final class QuestRegistryMetadata {
             if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
                 entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignRewardAction.schema());
             }
+            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.FOLLOWER) {
+                entry.add("schema", com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective.schema());
+            }
             entry.add("capabilities", enumNames(descriptor.capabilities()));
             actions.add(entry);
         }

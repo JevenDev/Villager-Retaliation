@@ -102,6 +102,7 @@ public final class HiredVillagerWorkService {
     }
 
     public static void onVillagerTickPost(Villager villager) {
+        if (com.jvn.villagerretaliation.quest.follower.QuestFollowerService.controls(villager)) return;
         if (!(villager.level() instanceof ServerLevel level) || shouldSkipHiredWorkTick(villager)) {
             return;
         }

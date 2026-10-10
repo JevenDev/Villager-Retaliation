@@ -280,6 +280,7 @@ public final class VillagerDialogueResources {
     }
 
     public static Optional<String> message(DialogueContext context, String key, Map<String, String> replacements) {
+        if (context.villager() == null) return globalMessage(context.level().getServer(), context.random(), key, context.locale(), replacements);
         DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
         List<KeyedMessageLine> candidates = bundleMessageLines(
                 context.level().getServer(), context.locale(), key).stream()

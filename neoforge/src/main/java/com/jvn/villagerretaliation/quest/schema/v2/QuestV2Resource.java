@@ -24,8 +24,26 @@ public record QuestV2Resource(
         Map<String, Stage> stagesById,
         List<Event> events,
         Rewards rewards,
-        UiHints ui
+        UiHints ui,
+        List<JsonObject> discovery
 ) {
+    public QuestV2Resource(
+            ResourceLocation id,
+            QuestResourceSource source,
+            Map<String, JsonElement> metadata,
+            Provider provider,
+            Availability availability,
+            Lifecycle lifecycle,
+            JsonObject target,
+            String entryStage,
+            List<Stage> stages,
+            Map<String, Stage> stagesById,
+            List<Event> events,
+            Rewards rewards,
+            UiHints ui) {
+        this(id, source, metadata, provider, availability, lifecycle, target, entryStage, stages, stagesById, events, rewards, ui, List.of());
+    }
+
     public QuestV2Resource {
         if (id == null) {
             throw new IllegalArgumentException("quest v2 id must not be null");
@@ -42,6 +60,7 @@ public record QuestV2Resource(
         events = events == null ? List.of() : List.copyOf(events);
         rewards = rewards == null ? Rewards.EMPTY : rewards;
         ui = ui == null ? UiHints.EMPTY : ui;
+        discovery = copyObjects(discovery);
     }
 
     public record Provider(

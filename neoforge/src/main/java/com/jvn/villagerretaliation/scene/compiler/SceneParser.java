@@ -46,7 +46,7 @@ public final class SceneParser {
         return new ParseResult(resource, List.copyOf(diagnostics));
     }
 
-    private static List<SceneActorDeclaration> parseActors(JsonElement element, ResourceLocation source,
+    public static List<SceneActorDeclaration> parseActors(JsonElement element, ResourceLocation source,
             List<SceneDiagnostic> diagnostics) {
         if (element == null || !element.isJsonArray()) {
             diagnostics.add(error("scene.actors", "actors", "actors must be an array"));

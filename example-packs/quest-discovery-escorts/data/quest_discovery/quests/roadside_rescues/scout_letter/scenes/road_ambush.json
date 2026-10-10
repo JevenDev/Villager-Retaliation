@@ -1,0 +1,54 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "quest_discovery:road_ambush",
+  "definition_version": 1,
+  "ownership": "player",
+  "entry_step": "ambush",
+  "timeout_ticks": 2400,
+  "cleanup_policy": "all_owned",
+  "actors": [
+    {
+      "alias": "player",
+      "type": "villagerretaliation:player",
+      "binding_source": "owner_player"
+    }
+  ],
+  "steps": [
+    {
+      "id": "ambush",
+      "type": "villagerretaliation:start_encounter",
+      "data": {
+        "template": "quest_discovery:road_ambush",
+        "anchor_actor": "player"
+      },
+      "next": "fight",
+      "failure_step": "failed"
+    },
+    {
+      "id": "fight",
+      "type": "villagerretaliation:wait_encounter",
+      "data": {
+        "encounter_step": "ambush"
+      },
+      "next": "cleanup",
+      "failure_step": "failed"
+    },
+    {
+      "id": "cleanup",
+      "type": "villagerretaliation:cleanup_encounter",
+      "data": {
+        "encounter_step": "ambush",
+        "force_remove": false
+      },
+      "next": "done"
+    },
+    {
+      "id": "done",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ]
+}

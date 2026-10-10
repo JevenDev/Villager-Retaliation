@@ -81,6 +81,7 @@ public final class VillagerCommandController {
 
     /** Executes one command tick and reports lifecycle changes to the coordinator. */
     public static TickResult onVillagerTickPost(Villager villager) {
+        if (com.jvn.villagerretaliation.quest.follower.QuestFollowerService.controls(villager)) return TickResult.NONE;
         if (!(villager.level() instanceof ServerLevel level)) return TickResult.NONE;
         UUID ownerId = VillagerAssignmentStore.commandOwner(villager).orElse(null);
         if (ownerId == null) return TickResult.NONE;

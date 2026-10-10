@@ -421,6 +421,7 @@ public final class SceneContinuation {
         tag.putString("Operation", action.sceneOperationId());
         tag.putBoolean("Wait", action.waitForScene());
         tag.putBoolean("Required", action.required());
+        if (action.follower() != null) tag.putString("Follower", action.follower().data().toString());
         if (action.campaignPayment() != null) tag.put("CampaignPayment", action.campaignPayment().save());
         if (action.campaignStanding() != null) tag.put("CampaignStanding", action.campaignStanding().save());
         if (action.campaignReward() != null) tag.put("CampaignReward", action.campaignReward().save());
@@ -453,7 +454,9 @@ public final class SceneContinuation {
                 tag.contains("CampaignStanding", Tag.TAG_COMPOUND)
                         ? com.jvn.villagerretaliation.campaign.CampaignStandingAction.load(tag.getCompound("CampaignStanding")) : null,
                 tag.contains("CampaignPayment", Tag.TAG_COMPOUND)
-                        ? com.jvn.villagerretaliation.campaign.CampaignPaymentAction.load(tag.getCompound("CampaignPayment")) : null);
+                        ? com.jvn.villagerretaliation.campaign.CampaignPaymentAction.load(tag.getCompound("CampaignPayment")) : null,
+                tag.contains("Follower", Tag.TAG_STRING) ? com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective.parse(
+                        ResourceLocation.parse("villagerretaliation:saved_follower"), com.google.gson.JsonParser.parseString(tag.getString("Follower")).getAsJsonObject()) : null);
     }
 
     private static Map<String, List<String>> readLineMap(CompoundTag tag, String field) {

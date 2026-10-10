@@ -683,6 +683,179 @@
     ],
     "actions": [
       {
+        "id": "follower",
+        "aliases": [],
+        "kind": "follower",
+        "schema": {
+          "type": "object",
+          "required": [
+            "actor"
+          ],
+          "properties": {
+            "command": {
+              "enum": [
+                "follow",
+                "wait",
+                "resume",
+                "release"
+              ]
+            },
+            "scope": {
+              "enum": [
+                "quest",
+                "stage"
+              ]
+            },
+            "distance": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 16
+            },
+            "maximum_distance": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 128
+            },
+            "speed": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 1
+            },
+            "protected": {
+              "type": "boolean"
+            },
+            "actor": {
+              "type": "object",
+              "title": "Actor declaration",
+              "additionalProperties": false,
+              "required": [
+                "alias",
+                "type",
+                "binding_source"
+              ],
+              "properties": {
+                "alias": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "type": {
+                  "enum": [
+                    "villagerretaliation:villager",
+                    "villagerretaliation:living_entity"
+                  ]
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "capabilities": {
+                  "type": "array",
+                  "minItems": 0,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  }
+                },
+                "binding_source": {
+                  "enum": [
+                    "quest_provider",
+                    "uuid",
+                    "campaign_role",
+                    "entity_tag",
+                    "owned_spawn",
+                    "encounter"
+                  ]
+                },
+                "binding": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "replacement_policy": {
+                  "enum": [
+                    "fixed",
+                    "optional"
+                  ]
+                },
+                "missing_actor_policy": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "block",
+                    "fail",
+                    "skip",
+                    "wait_until_timeout"
+                  ]
+                },
+                "lethal_damage_policy": {
+                  "const": "normal"
+                },
+                "death_policy": {
+                  "enum": [
+                    "fail",
+                    "block",
+                    "apply_missing_policy"
+                  ]
+                },
+                "filters": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_type": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    }
+                  }
+                },
+                "timeout_ticks": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "binding_source": {
+                        "enum": [
+                          "uuid",
+                          "campaign_role",
+                          "entity_tag",
+                          "owned_spawn",
+                          "encounter"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "binding"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "source"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ]
+      },
+      {
         "id": "notification",
         "aliases": [
           "hud",
@@ -1086,6 +1259,57 @@
       }
     ],
     "objectives": [
+      {
+        "id": "follower_arrival",
+        "aliases": [],
+        "type": "follower_arrival",
+        "requirements": [
+          "polling"
+        ],
+        "has_runtime": true,
+        "schema": {
+          "type": "object",
+          "required": [
+            "match"
+          ],
+          "properties": {
+            "match": {
+              "type": "object",
+              "required": [
+                "actor"
+              ],
+              "properties": {
+                "actor": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "destination_tag": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                }
+              }
+            }
+          },
+          "oneOf": [
+            {
+              "required": [
+                "location"
+              ]
+            },
+            {
+              "properties": {
+                "match": {
+                  "required": [
+                    "destination_tag"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "implementation": "QuestFollowerArrivalObjective"
+      },
       {
         "id": "structure_visit",
         "aliases": [],
@@ -1697,6 +1921,10 @@
     ],
     "providers": [
       {
+        "id": "villagerretaliation:discovery",
+        "capabilities": []
+      },
+      {
         "id": "villagerretaliation:villager",
         "capabilities": [
           "villagerretaliation:dialogue_context",
@@ -2093,6 +2321,20 @@
     ],
     "public_quest_providers": [
       {
+        "id": "villagerretaliation:discovery",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Discovery",
+        "description": "Built-in Discovery type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:villager",
         "aliases": [],
         "live_capabilities": [],
@@ -2257,6 +2499,20 @@
         "client_sync": "owner",
         "title": "Fact",
         "description": "Built-in Fact type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:follower_arrival",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Follower arrival",
+        "description": "Built-in Follower arrival type.",
         "browser_available": true,
         "schema": {
           "type": "object"
@@ -2469,6 +2725,20 @@
         "client_sync": "owner",
         "title": "Experience",
         "description": "Built-in Experience type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:follower",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Follower",
+        "description": "Built-in Follower type.",
         "browser_available": true,
         "schema": {
           "type": "object"
@@ -3175,6 +3445,7 @@
         "experience",
         "fact",
         "flash_tracker",
+        "follower",
         "force_dialogue",
         "forced_dialogue",
         "gossip",
@@ -3242,6 +3513,7 @@
         "entity_kill",
         "event",
         "fact",
+        "follower_arrival",
         "gift",
         "gift_given",
         "give_gift",
@@ -3335,6 +3607,7 @@
     "provider_type": {
       "type": "string",
       "enum": [
+        "villagerretaliation:discovery",
         "villagerretaliation:villager"
       ]
     }

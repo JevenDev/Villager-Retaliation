@@ -6,6 +6,7 @@ import java.util.Set;
 
 public final class QuestProviderRegistry {
     private static final List<QuestProviderTypeDescriptor> REGISTRATIONS = List.of(
+            new QuestProviderTypeDescriptor(DiscoveryQuestProviderType.ID, Set.of()),
             new QuestProviderTypeDescriptor(
                     VillagerQuestProviderType.ID,
                     Set.of(

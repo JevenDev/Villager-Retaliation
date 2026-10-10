@@ -93,11 +93,11 @@ public final class SceneContinuationService {
                     result.capabilities(), result.legacyResult()), null);
         }
         SceneContinuation continuation = scene == null
-                ? data.suspendRewardContinuation(context.player().getUUID(), context.villager().getUUID(),
+                ? data.suspendRewardContinuation(context.player().getUUID(), context.providerId(),
                         pointer(sourcePointer, suspendedAction, index), actions, sequence.nextActionIndex(),
                         result.legacyResult().replacements(), ownerQuest, ownerRun)
                 : data.suspendContinuation(scene, context.player().getUUID(),
-                        context.villager().getUUID(), pointer(sourcePointer, suspendedAction, index),
+                        context.providerId(), pointer(sourcePointer, suspendedAction, index),
                         actions, sequence.nextActionIndex(), result.legacyResult().replacements(), ownerQuest, ownerRun);
         continuation.bindCampaign(CampaignQuestAccess.campaignFor(context.level().getServer(), ownerQuest));
         if (!continuation.conversationEffect().isEmpty()) continuation.bindRecoveryFingerprint(fingerprint);
@@ -142,7 +142,7 @@ public final class SceneContinuationService {
         if (progress != null && !QuestAvailabilityService.matchesProviderLock(context, definition, progress)) {
             return RunResult.of(ActionResult.unavailable("Return to this quest's assigned character to continue its actions.", Set.of(), VillagerActionResult.EMPTY), null);
         }
-        var continuation = data.suspendRewardContinuation(context.player().getUUID(), context.villager().getUUID(),
+        var continuation = data.suspendRewardContinuation(context.player().getUUID(), context.providerId(),
                 pointer(source, actions.get(rewardIndex), rewardIndex), actions, 0, replacements, ownerQuest, run);
         if (!matchesProvider(context, continuation) || !continuation.actions().equals(actions)
                 || !Objects.equals(continuation.questRunId(), run)) {
@@ -255,9 +255,9 @@ public final class SceneContinuationService {
     }
 
     private static boolean matchesProvider(DialogueContext context, SceneContinuation continuation) {
-        return context.villager().getUUID().equals(continuation.providerId())
+        return java.util.Objects.equals(context.providerId(), continuation.providerId())
                 || com.jvn.villagerretaliation.campaign.CampaignQuestCharacters.canReplaceProvider(
-                        context.level().getServer(), continuation.questId(), continuation.providerId(), context.villager().getUUID());
+                        context.level().getServer(), continuation.questId(), continuation.providerId(), context.providerId());
     }
 
     public static boolean hasPendingDialogue(DialogueContext context) {
@@ -362,7 +362,8 @@ public final class SceneContinuationService {
         ServerPlayer player = authority == null ? server.getPlayerList().getPlayer(continuation.playerId()) : authority.controller();
         Villager provider = findVillager(server, com.jvn.villagerretaliation.campaign.CampaignQuestCharacters.continuationProvider(
                 server, continuation.questId(), continuation.providerId()));
-        if (player == null || provider == null || provider.level() != player.serverLevel()) return;
+        if (player == null || provider != null && provider.level() != player.serverLevel()
+                || provider == null && continuation.providerId() != null) return;
         if (continuation.questId() != null && continuation.questRunId() != null) {
             var progress = VillagerQuestSavedData.get(player.serverLevel())
                     .get(continuation.playerId(), continuation.questId());
@@ -373,7 +374,8 @@ public final class SceneContinuationService {
                 return;
             }
         }
-        DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+        DialogueContext context = provider == null ? DialogueContext.forPlayer(player)
+                : VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
         if (continuation.campaignRecovery() && authority == null) {
             String issue = com.jvn.villagerretaliation.campaign.CampaignAuthority.controlIssue(player);
             if (!issue.isBlank()) {
@@ -426,6 +428,7 @@ public final class SceneContinuationService {
     private static DialogueContext personalContext(DialogueContext context, SceneContinuation continuation) {
         var player = context.level().getServer().getPlayerList().getPlayer(continuation.playerId());
         return player == null || player.serverLevel() != context.level() ? null
+                : context.villager() == null ? DialogueContext.forPlayer(player)
                 : VillagerInteractionService.createDialogueContext(context.level(), player, context.villager());
     }
 

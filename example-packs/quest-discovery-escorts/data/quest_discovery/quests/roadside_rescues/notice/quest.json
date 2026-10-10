@@ -1,0 +1,72 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "quest_discovery:notice",
+  "localization_prefix": "quest_discovery.quest.notice",
+  "metadata": {
+    "title": "The Village Notice",
+    "questline": "roadside_rescues"
+  },
+  "provider": {
+    "type": "villagerretaliation:discovery"
+  },
+  "discovery": [
+    {
+      "id": "arrival",
+      "event": "location",
+      "mode": "offer",
+      "match": {
+        "pos": [
+          0,
+          64,
+          0
+        ],
+        "dimension": "minecraft:overworld",
+        "radius": 8
+      }
+    },
+    {
+      "id": "village",
+      "event": "location",
+      "mode": "offer",
+      "match": {
+        "structure": "minecraft:village_plains",
+        "dimension": "minecraft:overworld"
+      }
+    },
+    {
+      "id": "bell",
+      "event": "block_interact",
+      "mode": "offer",
+      "match": {
+        "payload": {
+          "block": "minecraft:bell"
+        }
+      }
+    }
+  ],
+  "entry_stage": "visit",
+  "stages": [
+    {
+      "id": "visit",
+      "objectives": [
+        {
+          "id": "visit",
+          "type": "location_visit",
+          "dimension": "minecraft:overworld",
+          "radius": 3,
+          "location": {
+            "x": 20,
+            "y": 64,
+            "z": 0
+          }
+        }
+      ],
+      "next": {
+        "complete": true
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 25
+  }
+}

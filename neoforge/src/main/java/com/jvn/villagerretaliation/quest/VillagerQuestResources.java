@@ -228,7 +228,7 @@ public final class VillagerQuestResources {
             case REPUTATION -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.REPUTATION);
             case CRITERION -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.CRITERION);
             case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, CHOICE, CONDITION,
-                    CAMPAIGN_OUTCOME, CAMPAIGN_SPEAK, CAMPAIGN_INVESTIGATE, CAMPAIGN_FOLLOW -> Set.of();
+                    CAMPAIGN_OUTCOME, CAMPAIGN_SPEAK, CAMPAIGN_INVESTIGATE, CAMPAIGN_FOLLOW, FOLLOWER_ARRIVAL -> Set.of();
         };
     }
 

@@ -75,6 +75,10 @@ public final class VillagerQuestProviderType implements QuestProviderType {
         if (context == null) {
             throw new IllegalArgumentException("dialogue context must not be null");
         }
+        if (context.villager() == null) {
+            return new QuestProviderBinding(DiscoveryQuestProviderType.ID, null,
+                    "", null, 0, context.level().dimension(), context.player().blockPosition(), "", Map.of(), false);
+        }
         return new QuestProviderBinding(
                 ID,
                 context.villager().getUUID(),

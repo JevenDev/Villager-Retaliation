@@ -45,7 +45,8 @@ public record QuestTrackerRequestPayload(String questId, Action action) implemen
         UNTRACK,
         TOGGLE,
         ABANDON,
-        REFRESH;
+        REFRESH,
+        ACCEPT;
 
         public static Action byName(String value) {
             if (value == null || value.isBlank()) {

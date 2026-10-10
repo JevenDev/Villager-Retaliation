@@ -10,6 +10,8 @@ public final class DialoguePlaceholders {
     }
 
     public static Map<String, String> base(DialogueContext context) {
+        if (context.villager() == null) return Map.of("player", context.player().getName().getString(), "villager", "");
+
         Map<String, String> values = new LinkedHashMap<>();
         values.put("player", context.player().getName().getString());
         String villagerName = context.villager().getName().getString();

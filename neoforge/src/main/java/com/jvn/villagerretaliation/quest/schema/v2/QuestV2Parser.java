@@ -116,11 +116,30 @@ public final class QuestV2Parser {
                         stagesById,
                         events,
                         rewards,
-                        ui);
+                        ui, readDiscovery(validator, root.get("discovery")));
         if (resource != null) {
             validateGraph(validator, resource);
         }
         return validator.valid() && resource != null ? Optional.of(resource) : Optional.empty();
+    }
+
+    private static List<JsonObject> readDiscovery(Validator validator, JsonElement element) {
+        if (element == null) return List.of();
+        var issues = com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(element,
+                com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryDefinition.arraySchema());
+        if (!issues.isEmpty()) {
+            validator.error("/discovery", issues.toString(), "Use valid discovery entries.", Set.of());
+            return List.of();
+        }
+        var entries = new ArrayList<JsonObject>();
+        var ids = new HashSet<String>();
+        for (var child : element.getAsJsonArray()) {
+            JsonObject entry = child.getAsJsonObject();
+            if (!ids.add(entry.get("id").getAsString()))
+                validator.error("/discovery", "duplicate discovery id", "Use unique ids.", Set.of());
+            entries.add(entry.deepCopy());
+        }
+        return List.copyOf(entries);
     }
 
     private static Map<String, JsonElement> readMetadata(Validator validator, JsonElement element) {

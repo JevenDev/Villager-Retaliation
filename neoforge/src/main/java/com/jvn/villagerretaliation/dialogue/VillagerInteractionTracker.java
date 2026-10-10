@@ -289,7 +289,7 @@ public final class VillagerInteractionTracker {
         return Optional.empty();
     }
 
-    private static boolean isPlayerInsideStructure(ServerLevel level, BlockPos playerPos, ResourceLocation structureId) {
+    public static boolean isPlayerInsideStructure(ServerLevel level, BlockPos playerPos, ResourceLocation structureId) {
         return detectedStructureAt(level, playerPos, structureId).isPresent();
     }
 

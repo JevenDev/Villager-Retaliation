@@ -53,6 +53,7 @@ public final class VillagerActionExecutor {
         }
 
         return switch (action.kind()) {
+            case FOLLOWER -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(context, action).legacyResult();
             case NOTIFICATION -> executeNotification(context, action, replacements);
             case TRACKER -> VillagerActionResult.tracker(action.flashTracker());
             case FORCED_DIALOGUE -> executeForcedDialogue(context, action, replacements).legacyResult();
@@ -164,7 +165,7 @@ public final class VillagerActionExecutor {
             if (!context.player().addItem(reward) && !reward.isEmpty()) {
                 context.player().drop(reward, false);
             }
-            VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), noticeStack);
+            if (context.villager() != null) VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), noticeStack);
             gaveAny = true;
         }
         return new LootGrant(true, gaveAny);
@@ -187,6 +188,10 @@ public final class VillagerActionExecutor {
             notificationReplacements.putIfAbsent("quest_id", action.questId().toString());
         }
         String fallback = action.text().isBlank() ? "Quest updated: {quest}" : action.text();
+        if (context.villager() == null) {
+            context.player().sendSystemMessage(net.minecraft.network.chat.Component.literal(VillagerDialogueResources.resolveTemplate(fallback, notificationReplacements)));
+            return VillagerActionResult.success();
+        }
         VillagerNotifications.sendHud(
                 context.player(),
                 context.level(),

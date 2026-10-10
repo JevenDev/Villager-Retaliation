@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.quest.provider.DiscoveryQuestProviderType;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderType;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
@@ -50,11 +51,11 @@ public record QuestExecutionContext(
                 context.player(),
                 quest,
                 event,
-                VillagerQuestProviderType.INSTANCE,
+                context.villager() == null ? DiscoveryQuestProviderType.INSTANCE : VillagerQuestProviderType.INSTANCE,
                 binding,
                 context.villager(),
                 binding.villageKey(),
-                Set.of(LIVE_PROVIDER, DIALOGUE_CONTEXT, VILLAGER_PROVIDER),
+                context.villager() == null ? Set.of() : Set.of(LIVE_PROVIDER, DIALOGUE_CONTEXT, VILLAGER_PROVIDER),
                 context);
     }
 

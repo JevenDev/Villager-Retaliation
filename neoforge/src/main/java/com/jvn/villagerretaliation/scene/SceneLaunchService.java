@@ -28,7 +28,7 @@ public final class SceneLaunchService {
             runId = progress == null ? null : progress.questRunId();
         }
         return launcher.launch(new LaunchRequest(context.level().getServer(), action.sceneId(), action.sceneOperationId(),
-                action.waitForScene(), context.player().getUUID(), context.villager().getUUID(), action.questId(), runId));
+                action.waitForScene(), context.player().getUUID(), context.providerId(), action.questId(), runId));
     }
 
     public static void install(Launcher implementation) {

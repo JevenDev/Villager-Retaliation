@@ -49,15 +49,16 @@ public final class VillagerRetaliationRegistries {
         registerSimple(ENCOUNTER_TEMPLATES, "controlled", RecoveryMode.WORLD_RECONCILED, ClientSync.PARTICIPANTS);
 
         registerSimple(QUEST_PROVIDERS, "villager", RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
+        registerSimple(QUEST_PROVIDERS, "discovery", RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
         for (String id : List.of("mob_kill", "block_break", "block_place", "block_interact", "structure_visit",
                 "location_visit", "item_check", "memory_event", "trade", "gift", "reputation", "choice", "fact", "condition", "criterion",
-                "campaign_outcome", "campaign_speak", "campaign_investigate", "campaign_follow")) {
+                "campaign_outcome", "campaign_speak", "campaign_investigate", "campaign_follow", "follower_arrival")) {
             registerSimple(QUEST_OBJECTIVES, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.OWNER);
         }
         for (String id : List.of("notification", "tracker", "forced_dialogue", "quest", "quest_transition", "campaign_outcome", "campaign_fact", "campaign_reward", "campaign_payment", "experience",
-                "reputation", "gossip", "memory", "loot", "set_tag", "clear_tag", "set_variable", "counter", "start_scene")) {
+                "reputation", "gossip", "memory", "loot", "set_tag", "clear_tag", "set_variable", "counter", "start_scene", "follower")) {
             registerSimple(QUEST_ACTIONS, id, switch (id) {
-                case "set_tag", "clear_tag", "set_variable", "tracker" -> RecoveryMode.NATURALLY_IDEMPOTENT;
+                case "set_tag", "clear_tag", "set_variable", "tracker", "follower" -> RecoveryMode.NATURALLY_IDEMPOTENT;
                 default -> RecoveryMode.RECEIPT_REQUIRED;
             }, ClientSync.OWNER);
         }

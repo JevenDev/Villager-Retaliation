@@ -80,7 +80,7 @@ public final class QuestRewardService {
                 progress.recordRewardDelivery(new QuestRewardDelivery(rewards, index + 1));
                 data.setDirty();
             }
-            context.villager().playSound(SoundEvents.PLAYER_LEVELUP, 0.55F, 1.1F);
+            context.player().playSound(SoundEvents.PLAYER_LEVELUP, 0.55F, 1.1F);
             return ActionResult.success(VillagerActionResult.success(), Set.of());
         } finally {
             DELIVERING.remove(progress);
@@ -88,6 +88,7 @@ public final class QuestRewardService {
     }
 
     private static ActionResult remember(DialogueContext context, VillagerActionDefinition action) {
+        if (context.villager() == null) return ActionResult.unavailable("This memory reward requires a villager provider.", Set.of(), VillagerActionResult.EMPTY);
         var registry = VillageAllegianceRegistrySavedData.get(context.level());
         boolean bucketAvailable = action.memoryScope().includesVillager()
                 || registry.resolveAt(context.level(), context.villager().blockPosition()).flatMap(registry::canonical).isPresent();

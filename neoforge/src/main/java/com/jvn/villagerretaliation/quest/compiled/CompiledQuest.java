@@ -33,8 +33,33 @@ public record CompiledQuest(
         QuestTriggerIndex triggerIndex,
         CompiledQuestRewards rewards,
         boolean showLockedAdventureHint,
-        QuestDefinition.Revision revision
+        QuestDefinition.Revision revision,
+        List<com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryDefinition> discovery
 ) {
+    public CompiledQuest(
+            ResourceLocation id,
+            QuestSourcePointer source,
+            QuestDefinition compatibilityDefinition,
+            CompiledQuestMetadata metadata,
+            CompiledQuestProvider provider,
+            QuestDefinition.Target target,
+            String entryStage,
+            List<ResourceLocation> prerequisites,
+            QuestDefinition.Rules rules,
+            CompiledQuestUi ui,
+            List<CompiledQuestObjective> objectives,
+            Map<String, CompiledQuestObjective> objectivesById,
+            List<CompiledQuestStage> stages,
+            Map<String, CompiledQuestStage> stagesById,
+            List<CompiledQuestTrigger> triggers,
+            Map<QuestDefinition.TriggerEvent, List<CompiledQuestTrigger>> triggersByEvent,
+            QuestTriggerIndex triggerIndex,
+            CompiledQuestRewards rewards,
+            boolean showLockedAdventureHint,
+            QuestDefinition.Revision revision) {
+        this(id, source, compatibilityDefinition, metadata, provider, target, entryStage, prerequisites, rules, ui, objectives, objectivesById, stages, stagesById, triggers, triggersByEvent, triggerIndex, rewards, showLockedAdventureHint, revision, List.of());
+    }
+
     public CompiledQuest {
         if (id == null) {
             throw new IllegalArgumentException("compiled quest id must not be null");
@@ -65,6 +90,7 @@ public record CompiledQuest(
         triggersByEvent = triggerIndex.triggersByEvent();
         rewards = rewards == null ? new CompiledQuestRewards(null) : rewards;
         revision = revision == null ? QuestDefinition.Revision.DEFAULT : revision;
+        discovery = discovery == null ? List.of() : List.copyOf(discovery);
         Map<String, QuestDefinition.Stage> stageDefinitions = new LinkedHashMap<>();
         stages.forEach(stage -> stageDefinitions.put(stage.id(), stage.definition()));
         // derive the compatibility view from typed fields so runtime paths cannot disagree

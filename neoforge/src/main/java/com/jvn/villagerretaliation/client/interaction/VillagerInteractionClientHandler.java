@@ -225,6 +225,21 @@ public final class VillagerInteractionClientHandler {
 
     public static void acceptCampaignConfirmation(com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (payload.entityId() < 0) {
+            if (minecraft.player == null) return;
+            if (!payload.pending()) {
+                if (!payload.text().isBlank()) minecraft.player.displayClientMessage(net.minecraft.network.chat.Component.literal(payload.text()), false);
+                return;
+            }
+            var previous = minecraft.screen;
+            minecraft.setScreen(new net.minecraft.client.gui.screens.ConfirmScreen(accept -> {
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(payload.requestId(), payload.revision(), accept));
+                minecraft.setScreen(previous);
+            }, net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.quest_journal.accept"),
+                    net.minecraft.network.chat.Component.literal(payload.text())));
+            return;
+        }
         if (minecraft.level == null || minecraft.level.getEntity(payload.entityId()) == null
                 || !minecraft.level.getEntity(payload.entityId()).getUUID().equals(payload.providerId())) return;
         VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());

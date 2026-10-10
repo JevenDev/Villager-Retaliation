@@ -509,6 +509,23 @@ public final class CampaignQuestEntryGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_quest_entry")
+    public static void journalCampaignAcceptanceWorksWithoutConversationOrProvider(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = new Fixture(helper, QUEST)) {
+            var context = com.jvn.villagerretaliation.dialogue.DialogueContext.forPlayer(fixture.player);
+            CampaignQuestAcceptanceService.beforeSelection(context, "discovery:" + QUEST, Set.of(QUEST), Set.of(QUEST), () -> true,
+                    () -> VillagerQuestService.startDiscoveredQuest(context, QUEST));
+            var request = CampaignQuestAcceptanceService.pending(fixture.player);
+            helper.assertTrue(request != null && request.entityId() < 0 && request.providerId() == null, "journal confirmation does not invent a provider");
+            helper.assertTrue(fixture.progress(QUEST) == null, "irreversible quest waits for confirmation");
+            CampaignQuestAcceptanceService.handle(fixture.player, new com.jvn.villagerretaliation.network.CampaignQuestConfirmationRequestPayload(
+                    request.id(), request.revision(), true));
+            helper.assertTrue(fixture.progress(QUEST) != null && fixture.progress(QUEST).state() == VillagerQuestSavedData.QuestState.ACTIVE, "confirmed journal quest starts");
+            helper.assertTrue(fixture.progress(QUEST).startedVillagerId() == null, "accepted quest remains provider-free");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_entry")
     public static void changedQuestProgressInvalidatesConfirmation(GameTestHelper helper) throws IOException {
         try (Fixture fixture = new Fixture(helper, QUEST)) {
             var request = fixture.confirmation();

@@ -129,6 +129,7 @@
               "quest_provider",
               "uuid",
               "marker",
+              "entity_tag",
               "campaign_location",
               "campaign_role",
               "encounter",

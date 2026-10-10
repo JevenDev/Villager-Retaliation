@@ -1965,6 +1965,15 @@ function checkQuestV2(file, data) {
       "Keep structural dialogue in quest.json and use bundle scene companions only for persistent orchestration.");
   }
   checkQuestV2UnknownKeys(file, data, "", "root", questV2RootKeys);
+  if (data.discovery !== undefined) {
+    for (const issue of validateConversationSchema(data.discovery, questV2Schema.properties.discovery))
+      questV2Error(file, "/discovery" + issue.pointer, "discovery", issue.message, "Use the discovery schema.");
+    const ids = new Set();
+    for (const entry of Array.isArray(data.discovery) ? data.discovery : []) {
+      if (ids.has(entry?.id)) questV2Error(file, "/discovery", "discovery", "duplicate discovery id", "Use unique discovery ids.");
+      ids.add(entry?.id);
+    }
+  }
   if (!stringValue(data.localization_prefix)) {
     questV2Error(file, "/localization_prefix", "localization_prefix", "localization_prefix is required.", "Use an immutable globally unique prefix beginning with the datapack namespace.");
   }
@@ -2289,6 +2298,10 @@ function checkQuestV2Stages(file, stages, pointer, location, questId) {
       continue;
     }
     checkQuestV2UnknownKeys(file, stage, stagePointer, stageLocation, questV2StageKeys);
+    if (stage.followers !== undefined) {
+      for (const issue of validateConversationSchema(stage.followers, { type: "array", items: questV2Schema.$defs.follower }))
+        questV2Error(file, stagePointer + "/followers" + issue.pointer, stageLocation + ".followers", issue.message, "Use the follower directive schema.");
+    }
     const stageId = stringValue(stage.id);
     checkQuestV2Id(file, stageId, `${stagePointer}/id`, `${stageLocation}.id`, "stage id");
     if (stageId) {
@@ -3093,6 +3106,8 @@ function warnQuestV2LifecycleCoverage(file, data, model) {
       }
     }
   }
+  if (Array.isArray(data.discovery) && data.discovery.length) covered.add("on_start");
+  if (model.stages.some((stage) => stage.raw.next?.complete === true)) covered.add("on_complete");
   if (!covered.has("on_start") && !covered.has("offer")) {
     questV2Warning(file, "/lifecycle", "lifecycle", "quest module v2 has no start lifecycle hook or offer dialogue slot.", "Add lifecycle.on_start or a dialogue.offer slot so authors can verify start behavior.");
   }

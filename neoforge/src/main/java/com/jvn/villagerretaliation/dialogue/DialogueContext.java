@@ -69,6 +69,29 @@ public record DialogueContext(
         String locale,
         String villageKey
 ) {
+    public static DialogueContext forPlayer(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        long day = Math.floorMod(level.getDayTime(), 24000L);
+        TimeOfDay time = day < 6000 ? TimeOfDay.MORNING : day < 12000 ? TimeOfDay.AFTERNOON
+                : day < 14000 ? TimeOfDay.EVENING : TimeOfDay.NIGHT;
+        return new DialogueContext(level, player, null, VillagerProfession.NONE, 0,
+                VillagerReputationLevel.fromReputation(0), null, null, false, false,
+                Long.MIN_VALUE, Long.MIN_VALUE, level.isThundering() ? WeatherState.THUNDER
+                        : level.isRaining() ? WeatherState.RAIN : WeatherState.CLEAR,
+                time, -1, -1, -1, -1, -1, -1, false, -1, -1, "",
+                null, null, null, null, null, null, null, null, null, null, null,
+                List.of(), List.of(), player.getRandom(),
+                com.jvn.villagerretaliation.util.VillagerLocale.locale(player), "");
+    }
+
+    public UUID providerId() {
+        return villager == null ? null : villager.getUUID();
+    }
+
+    public net.minecraft.core.BlockPos origin() {
+        return villager == null ? player.blockPosition() : villager.blockPosition();
+    }
+
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long DIALOGUE_MOOD_MEMORY_TICKS = 20L * 60L * 5L;
@@ -333,6 +356,7 @@ public record DialogueContext(
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentGiftToThisVillager() {
+        if (this.villager == null) return Optional.empty();
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
         return this.personalEvents.stream()
@@ -343,6 +367,7 @@ public record DialogueContext(
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentGiftToAnotherVillager() {
+        if (this.villager == null) return Optional.empty();
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
         return this.villageEvents.stream()
@@ -353,6 +378,7 @@ public record DialogueContext(
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentContainerTheftToThisVillager() {
+        if (this.villager == null) return Optional.empty();
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
         return this.personalEvents.stream()
@@ -363,6 +389,7 @@ public record DialogueContext(
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentContainerTheftFromAnotherVillager() {
+        if (this.villager == null) return Optional.empty();
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
         return this.villageEvents.stream()
@@ -377,6 +404,7 @@ public record DialogueContext(
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentRetaliationToThisVillager() {
+        if (this.villager == null) return Optional.empty();
         UUID villagerId = this.villager.getUUID();
         return this.personalEvents.stream()
                 .filter(event -> event.retaliation() != null)
@@ -385,6 +413,7 @@ public record DialogueContext(
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentRetaliationFromAnotherVillager() {
+        if (this.villager == null) return Optional.empty();
         UUID villagerId = this.villager.getUUID();
         return this.villageEvents.stream()
                 .filter(event -> event.retaliation() != null)
@@ -581,6 +610,7 @@ public record DialogueContext(
 
     public long latestRememberedHarmGameTime() {
         long latest = Long.MIN_VALUE;
+        if (this.villager == null) return latest;
         if (hasRecentDirectHitMemory()) {
             latest = Math.max(latest, this.lastDirectHitGameTime);
         }

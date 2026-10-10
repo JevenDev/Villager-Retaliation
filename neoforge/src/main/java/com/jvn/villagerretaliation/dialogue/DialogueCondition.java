@@ -1269,6 +1269,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             if (conditions == null || conditions.isEmpty()) {
                 return true;
             }
+            if (context != null && context.villager() == null)
+                return VillagerQuestService.matchesPlayerConditions(context, triggerContext, conditions);
             for (DialogueCondition condition : conditions) {
                 if (condition == null || !condition.unavailableReason(context).isBlank() || !condition.matches(context, triggerContext)) {
                     return false;
@@ -1284,6 +1286,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             if (condition instanceof Invalid invalid) {
                 return new ConditionEvaluationTrace("invalid", ConditionOutcome.UNMET, invalid.reason(), List.of());
             }
+            if (context != null && context.villager() == null)
+                return VillagerQuestService.tracePlayerCondition(context, condition);
             String unavailable = condition.unavailableReason(context);
             if (!unavailable.isBlank()) return new ConditionEvaluationTrace(canonicalTypeId(condition), ConditionOutcome.UNKNOWN, unavailable, List.of());
             if (condition instanceof AllOf allOf) {
@@ -2033,7 +2037,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     record Biome(Set<ResourceLocation> biomes, Set<ResourceLocation> tags) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            var biome = context.level().getBiome(context.villager().blockPosition());
+            var biome = context.level().getBiome(context.origin());
             boolean idMatch = biome.unwrapKey().map(key -> this.biomes.contains(key.location())).orElse(false);
             boolean tagMatch = this.tags.stream().anyMatch(id -> biome.is(
                     net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BIOME, id)));
@@ -2106,6 +2110,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         @Override
         public boolean matches(DialogueContext context) {
             net.minecraft.world.entity.Entity origin = this.aroundPlayer ? context.player() : context.villager();
+            if (origin == null) return false;
             net.minecraft.world.phys.AABB bounds = origin.getBoundingBox().inflate(this.radius);
             int count = context.level().getEntities(origin, bounds, entity -> {
                 ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());

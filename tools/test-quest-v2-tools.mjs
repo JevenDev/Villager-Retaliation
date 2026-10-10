@@ -222,6 +222,28 @@ try {
   run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
 
   const conditionFixture = JSON.parse(await readFile(validQuest, "utf8"));
+  const discovered = structuredClone(conditionFixture);
+  discovered.provider.type = "villagerretaliation:discovery";
+  discovered.discovery = [{ id: "letter", event: "book_opened", mode: "automatic", match: { book: "test:letter" } }];
+  discovered.stages[0].followers = [{ actor: { alias: "companion", type: "villagerretaliation:living_entity", binding_source: "entity_tag", binding: "escort_dog" }, protected: true }];
+  await writeJson(validQuest, discovered);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
+  const adaptive = structuredClone(discovered);
+  adaptive.stages[0].objectives[0] = { id: adaptive.stages[0].objectives[0].id, type: "follower_arrival",
+    match: { actor: "companion", destination_tag: "waiting_villager" }, radius: 3 };
+  await writeJson(validQuest, adaptive);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
+  for (const invalid of [
+    { ...adaptive, stages: [{ ...adaptive.stages[0], objectives: [{ ...adaptive.stages[0].objectives[0], location: { x: 1, y: 64, z: 0 } }] }] },
+    { ...discovered, stages: [{ ...discovered.stages[0], followers: [{ actor: { alias: "companion", type: "villagerretaliation:living_entity", binding_source: "entity_tag" } }] }] },
+    { ...discovered, discovery: [{ id: "letter", event: "book_opened" }] },
+    { ...discovered, discovery: [{ id: "letter", event: "not_an_event", match: { book: "test:letter" } }] },
+    { ...discovered, stages: [{ ...discovered.stages[0], followers: [{ command: "teleport", actor: discovered.stages[0].followers[0].actor }] }] }
+  ]) {
+    await writeJson(validQuest, invalid);
+    run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
+  }
+  await writeJson(validQuest, conditionFixture);
   for (const campaign of [null, 7, true, "", "journey", "test:Bad", `test:${"x".repeat(257)}`, {}]) {
     const candidate = structuredClone(conditionFixture);
     candidate.metadata.campaign = campaign;

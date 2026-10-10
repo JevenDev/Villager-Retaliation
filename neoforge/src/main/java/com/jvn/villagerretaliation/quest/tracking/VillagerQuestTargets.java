@@ -46,7 +46,7 @@ public final class VillagerQuestTargets {
 
     public static Optional<LocatedTarget> locateInitialTarget(DialogueContext context, QuestDefinition definition) {
         if (definition.target().hasStructureTarget()) {
-            return locateTarget(context.level(), context.villager().blockPosition(), definition);
+            return locateTarget(context.level(), context.origin(), definition);
         }
         return locateStageTarget(context, definition, QuestLifecycleService.initialStage(definition));
     }
@@ -62,7 +62,7 @@ public final class VillagerQuestTargets {
                 .filter(QuestObjectiveRegistry::requiresLocatedTarget)
                 .findFirst()
                 .flatMap(objective -> objective.campaignLocation().isBlank()
-                        ? locateTarget(context.level(), context.villager().blockPosition(), objective)
+                        ? locateTarget(context.level(), context.origin(), objective)
                         : locateCampaignLocation(context.level(), definition, objective));
     }
 
