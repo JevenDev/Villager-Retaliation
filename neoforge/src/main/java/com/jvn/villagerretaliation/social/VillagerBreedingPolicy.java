@@ -5,7 +5,6 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
-import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.List;
@@ -195,7 +194,7 @@ public final class VillagerBreedingPolicy {
     }
 
     private static BreedingBlockReason evaluateSceneState(ServerLevel level, Villager villager) {
-        return SceneSavedData.get(level).hasActiveActor(villager.getUUID())
+        return com.jvn.villagerretaliation.interaction.NarrativeActorReservations.scene(level, villager.getUUID())
                 ? BreedingBlockReason.SCENE_CONTROLLED : BreedingBlockReason.NONE;
     }
 

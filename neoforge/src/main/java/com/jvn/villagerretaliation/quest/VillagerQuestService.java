@@ -4,6 +4,9 @@ import com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.tracking.QuestPresentationService;
+import com.jvn.villagerretaliation.quest.query.QuestProgressSnapshot;
+import com.jvn.villagerretaliation.quest.inventory.QuestInventoryService;
+import com.jvn.villagerretaliation.quest.inventory.QuestInventoryService.ItemHandInResult;
 import com.jvn.villagerretaliation.quest.tracking.QuestStageReadiness;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveResult;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRequirement;
@@ -52,7 +55,6 @@ import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
-import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.mood.VillagerMoodSavedData;
@@ -101,14 +103,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NumericTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -122,9 +120,6 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -133,7 +128,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class VillagerQuestService {
     private static final int QUEST_PROGRESS_SCAN_INTERVAL_TICKS = 20;
     private static final int QUEST_ITEM_TRACKER_SYNC_INTERVAL_TICKS = 5;
-    private static final long INVENTORY_ITEM_COUNT_CACHE_TICKS = 5L;
     private static final int NEARBY_AVAILABLE_QUEST_RADIUS = 32;
     private static final int MAX_NEARBY_AVAILABLE_QUEST_VILLAGERS = 16;
     private static final int NEARBY_AVAILABLE_QUEST_CACHE_TICKS = QUEST_PROGRESS_SCAN_INTERVAL_TICKS * 2;
@@ -171,7 +165,11 @@ public final class VillagerQuestService {
     private static final Set<UUID> CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS = new HashSet<>();
     private static final Map<UUID, TrackerSyncState> LAST_TRACKER_SYNCS = new HashMap<>();
     private static final Map<UUID, NearbyAvailableQuestCache> NEARBY_AVAILABLE_QUEST_CACHES = new HashMap<>();
-    private static final Map<UUID, InventoryItemCountCache> INVENTORY_ITEM_COUNT_CACHES = new HashMap<>();
+    private static final PartyQuestEnrollmentService PARTY_QUEST_ENROLLMENT = new PartyQuestEnrollmentService(
+            (context, definition, progress) -> canStart(context, definition, progress, false),
+            VillagerQuestService::ensureRandomItemSelections,
+            VillagerQuestService::applyPartyMemberStart,
+            player -> sendTrackerSync(player, true));
 
     private VillagerQuestService() {
     }
@@ -191,16 +189,6 @@ public final class VillagerQuestService {
         MET,
         UNMET,
         UNKNOWN
-    }
-
-    private record InventoryObjectiveCountKey(
-            ResourceLocation itemId,
-            QuestDefinition.ItemRequirements requirements) {
-        private static InventoryObjectiveCountKey of(
-                QuestDefinition.Objective objective,
-                ResourceLocation resolvedItem) {
-            return new InventoryObjectiveCountKey(resolvedItem, objective.itemRequirements());
-        }
     }
 
     private record QuestOfferHint(QuestOfferHintKind kind, int villagerLevel, VillagerSkill skill) {
@@ -228,86 +216,12 @@ public final class VillagerQuestService {
         TIMING
     }
 
-    private static final class InventoryItemCountCache {
-        private final int changeCount;
-        private final Map<ResourceLocation, Integer> counts;
-        private final Map<InventoryObjectiveCountKey, Integer> objectiveCounts;
-        private final long rebuiltGameTime;
-        private final int simpleScanSlots;
-        private int simpleLookups;
-        private int exactLookups;
-        private int exactCacheMisses;
-        private int exactScanSlots;
-
-        private InventoryItemCountCache(
-                int changeCount,
-                Map<ResourceLocation, Integer> counts,
-                Map<InventoryObjectiveCountKey, Integer> objectiveCounts,
-                long rebuiltGameTime,
-                int simpleScanSlots) {
-            this.changeCount = changeCount;
-            this.counts = counts;
-            this.objectiveCounts = objectiveCounts;
-            this.rebuiltGameTime = rebuiltGameTime;
-            this.simpleScanSlots = simpleScanSlots;
-        }
-
-        private int changeCount() {
-            return this.changeCount;
-        }
-
-        private Map<ResourceLocation, Integer> counts() {
-            return this.counts;
-        }
-
-        private Map<InventoryObjectiveCountKey, Integer> objectiveCounts() {
-            return this.objectiveCounts;
-        }
-
-        private long rebuiltGameTime() {
-            return this.rebuiltGameTime;
-        }
-
-        private int simpleScanSlots() {
-            return this.simpleScanSlots;
-        }
-
-        private int simpleLookups() {
-            return this.simpleLookups;
-        }
-
-        private int exactLookups() {
-            return this.exactLookups;
-        }
-
-        private int exactCacheMisses() {
-            return this.exactCacheMisses;
-        }
-
-        private int exactScanSlots() {
-            return this.exactScanSlots;
-        }
-
-        private void recordSimpleLookup() {
-            this.simpleLookups++;
-        }
-
-        private void recordExactLookup() {
-            this.exactLookups++;
-        }
-
-        private void recordExactCacheMiss(int scannedSlots) {
-            this.exactCacheMisses++;
-            this.exactScanSlots += scannedSlots;
-        }
-    }
-
     public static void clearRuntimeState() {
         DISPATCHING_STAGE_TRIGGERS.remove();
         CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.clear();
         LAST_TRACKER_SYNCS.clear();
         NEARBY_AVAILABLE_QUEST_CACHES.clear();
-        INVENTORY_ITEM_COUNT_CACHES.clear();
+        QuestInventoryService.clearRuntimeState();
         QuestDebugTraceService.clearRuntimeState();
     }
 
@@ -317,7 +231,7 @@ public final class VillagerQuestService {
             CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.remove(playerId);
             LAST_TRACKER_SYNCS.remove(playerId);
             NEARBY_AVAILABLE_QUEST_CACHES.remove(playerId);
-            INVENTORY_ITEM_COUNT_CACHES.remove(playerId);
+            QuestInventoryService.clearRuntimeState(player);
             QuestDebugTraceService.clearRuntimeState(player);
         }
     }
@@ -348,42 +262,14 @@ public final class VillagerQuestService {
             String responseId,
             String priorStage,
             String nextStage) {
-        return choiceHistory(context, questId).stream().anyMatch(choice ->
-                matchesChoiceValue(scenePath, choice.scenePath())
-                        && matchesChoiceValue(responseId, choice.responseId())
-                        && matchesChoiceValue(priorStage, choice.priorStage())
-                        && matchesChoiceValue(nextStage, choice.nextStage()));
+        return com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.hasSelectedChoice(context,
+                new DialogueCondition.SelectedChoice(questId, scenePath, responseId, priorStage, nextStage));
     }
 
-    public static boolean hasStageHistory(
-            DialogueContext context,
-            ResourceLocation questId,
-            String stage,
-            String priorStage,
-            String nextStage) {
-        return choiceHistory(context, questId).stream().anyMatch(choice -> {
-            boolean stageMatches = stage == null || stage.isBlank()
-                    || choice.priorStage().equals(stage)
-                    || choice.nextStage().equals(stage);
-            return stageMatches
-                    && matchesChoiceValue(priorStage, choice.priorStage())
-                    && matchesChoiceValue(nextStage, choice.nextStage());
-        });
-    }
-
-    private static List<VillagerQuestSavedData.ChoiceHistoryEntry> choiceHistory(
-            DialogueContext context,
-            ResourceLocation questId) {
-        if (context == null || questId == null) {
-            return List.of();
-        }
-        VillagerQuestSavedData.QuestProgress progress =
-                VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), questId);
-        return progress == null ? List.of() : progress.choiceHistory();
-    }
-
-    private static boolean matchesChoiceValue(String expected, String actual) {
-        return expected == null || expected.isBlank() || expected.trim().equals(actual);
+    public static boolean hasStageHistory(DialogueContext context, ResourceLocation questId, String stage,
+            String priorStage, String nextStage) {
+        return com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.hasStageHistory(context,
+                new DialogueCondition.StageHistory(questId, stage, priorStage, nextStage));
     }
 
     public static List<DialogueOptionDefinition> stageBranchOptions(DialogueContext context) {
@@ -1710,7 +1596,7 @@ public final class VillagerQuestService {
         lines.add(debugProgressLine(player, definition, progress, context));
         if (progress != null) {
             lines.add(QuestDebugFormatter.issuerLine(new QuestDebugFormatter.IssuerLine(
-                    QuestPresentationService.issuerStatus(player, progress),
+                    QuestPresentationService.issuerStatusView(player, QuestProgressSnapshot.capture(progress)),
                     progress.startedVillagerId() == null ? "none" : progress.startedVillagerId().toString(),
                     progress.issuerName(),
                     progress.issuerProfession(),
@@ -2360,9 +2246,11 @@ public final class VillagerQuestService {
                 || com.jvn.villagerretaliation.scene.SceneContinuationService.hasPendingQuestOperation(level, player.getUUID(), definition.id())) return false;
         boolean changed = false;
         for (int index = 0; index < MAX_STAGE_ADVANCES_PER_CHECK; index++) {
-            if (!QuestProgressionService.advanceSaved(level, player, definition, progress,
+            if (!QuestProgressionService.advanceSaved(definition, progress, level.getGameTime(),
                     objective -> objectiveComplete(player, null, level, definition, progress, objective),
                     conditions -> conditionsStateWithoutLiveContext(player, level, definition, progress, conditions) == ConditionMatch.MET)) break;
+            VillagerQuestFacts.get(level).setVariable(playerQuestScopeKey(player, definition), "stage", progress.currentStage());
+            VillagerQuestSavedData.get(level).setDirty();
             changed = true;
         }
         return changed;
@@ -2474,7 +2362,7 @@ public final class VillagerQuestService {
 
         VillagerQuestSavedData.QuestProgress started = data.getOrCreate(context.player().getUUID(), definition.id());
         QuestProviderBinding providerBinding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(context);
-        PartyStartPlan partyStart = preparePartyStart(context, definition);
+        PartyQuestEnrollmentService.StartPlan partyStart = preparePartyStart(context, definition);
         UUID definitiveRunId = partyStart == null ? null : partyStart.shared().instanceId();
         QuestLifecycleService.start(definition.id(), started, providerBinding, target,
                 context.level().getGameTime(), context.player().getUUID(), definitiveRunId, forceRestart);
@@ -2553,171 +2441,38 @@ public final class VillagerQuestService {
                 replacements(context, definition, started));
     }
 
-    private static PartyStartPlan preparePartyStart(DialogueContext context, QuestDefinition definition) {
-        if (!PartyQuestService.isShareable(definition)) {
-            return null;
-        }
-        com.jvn.villagerretaliation.party.PartyRecord party =
-                com.jvn.villagerretaliation.party.PartyService
-                        .getPartyForPlayer(context.level(), context.player().getUUID())
-                        .orElse(null);
-        if (party == null) {
-            return null;
-        }
-        Optional<com.jvn.villagerretaliation.party.PartySharedQuestRecord> existing =
-                PartyQuestService.findCompatible(party, definition, context.providerId());
-        com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = existing.orElseGet(
-                () -> PartyQuestService.getOrCreate(
-                        context.level(), party, definition, context.providerId()));
-        return new PartyStartPlan(party, shared, existing.isEmpty());
+    private static PartyQuestEnrollmentService.StartPlan preparePartyStart(DialogueContext context, QuestDefinition definition) {
+        return PARTY_QUEST_ENROLLMENT.preparePartyStart(context, definition);
     }
 
-    private static void shareStartedQuest(
-            DialogueContext context,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress started,
-            PartyStartPlan partyStart) {
-        if (partyStart == null) {
-            return;
-        }
-        com.jvn.villagerretaliation.party.PartyRecord party = partyStart.party();
-        com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = partyStart.shared();
-        shared.enroll(context.player().getUUID(), false);
-        PartyQuestService.mergePersonalProgress(shared, definition, started);
-        PartyQuestService.syncPersonalProgress(shared, definition, started);
-        if (!partyStart.created()) {
-            syncSharedQuestEnrollmentSnapshots(context.level(), shared, definition);
-            com.jvn.villagerretaliation.party.PartyService.markChanged(context.level());
-            context.player().sendSystemMessage(Component.translatable("villagerretaliation.party.quest_shared"));
-            return;
-        }
-        for (UUID playerId : party.playerIds()) {
-            if (playerId.equals(context.player().getUUID())) {
-                continue;
-            }
-            ServerPlayer member = context.level().getServer().getPlayerList().getPlayer(playerId);
-            if (member == null || member.serverLevel() != context.level()) {
-                shared.enroll(playerId, true);
-                continue;
-            }
-            startOrLinkPartyMemberQuest(member, context.villager(), definition, started, shared);
-        }
-        syncSharedQuestEnrollmentSnapshots(context.level(), shared, definition);
-        com.jvn.villagerretaliation.party.PartyService.markChanged(context.level());
-        context.player().sendSystemMessage(Component.translatable("villagerretaliation.party.quest_shared"));
+    private static void shareStartedQuest(DialogueContext context, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress, PartyQuestEnrollmentService.StartPlan plan) {
+        PARTY_QUEST_ENROLLMENT.shareStartedQuest(context, definition, progress, plan);
     }
 
-    private static void linkExistingActivePartyQuest(
-            DialogueContext context,
-            QuestDefinition definition,
+    private static void linkExistingActivePartyQuest(DialogueContext context, QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        if (!PartyQuestService.isShareable(definition)) {
-            return;
-        }
-        com.jvn.villagerretaliation.party.PartyRecord party =
-                com.jvn.villagerretaliation.party.PartyService
-                        .getPartyForPlayer(context.level(), context.player().getUUID())
-                        .orElse(null);
-        if (party == null) {
-            return;
-        }
-        com.jvn.villagerretaliation.party.PartySharedQuestRecord shared =
-                PartyQuestService.findCompatible(party, definition, progress.startedVillagerId()).orElse(null);
-        if (shared == null || shared.linked(context.player().getUUID())) {
-            return;
-        }
-        if (progress.questRunId() != null && !progress.questRunId().equals(shared.instanceId())) {
-            return;
-        }
-        shared.enroll(context.player().getUUID(), false);
-        if (!progress.linkPartyQuest(shared.instanceId())) {
-            shared.removeEnrollment(context.player().getUUID());
-            return;
-        }
-        PartyQuestService.mergePersonalProgress(shared, definition, progress);
-        syncSharedQuestEnrollmentSnapshots(context.level(), shared, definition);
-        com.jvn.villagerretaliation.party.PartyService.markChanged(context.level());
-        sendTrackerSync(context.player(), true);
-        context.player().sendSystemMessage(Component.translatable("villagerretaliation.party.quest_shared"));
+        PARTY_QUEST_ENROLLMENT.linkExistingActivePartyQuest(context, definition, progress);
     }
 
-    private static void syncSharedQuestEnrollmentSnapshots(
-            ServerLevel level,
-            com.jvn.villagerretaliation.party.PartySharedQuestRecord shared,
-            QuestDefinition definition) {
-        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
-        for (com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment
-                : shared.enrollments().values()) {
-            if (enrollment.pendingStart()) {
-                continue;
-            }
-            VillagerQuestSavedData.QuestProgress progress = data.get(enrollment.playerId(), definition.id());
-            if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
-                continue;
-            }
-            PartyQuestService.syncPersonalProgress(shared, definition, progress);
-            ServerPlayer online = level.getServer().getPlayerList().getPlayer(enrollment.playerId());
-            if (online != null) {
-                sendTrackerSync(online, true);
-            }
-        }
-        data.setDirty();
+    public static void attachPendingPartyQuests(ServerPlayer player) {
+        attachPendingPartyQuests(player, true);
     }
 
-    private static boolean startOrLinkPartyMemberQuest(
-            ServerPlayer member,
-            Villager provider,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress sourceProgress,
+    private static void attachPendingPartyQuests(ServerPlayer player, boolean deliverRewards) {
+        PARTY_QUEST_ENROLLMENT.attachPendingPartyQuests(player, deliverRewards);
+    }
+
+    private static VillagerQuestSavedData.QuestProgress canonicalSharedProgress(ServerLevel level,
             com.jvn.villagerretaliation.party.PartySharedQuestRecord shared) {
-        if (member == null || provider != null && member.serverLevel() != provider.level()) {
-            return false;
-        }
-        ServerLevel level = member.serverLevel();
-        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
-        VillagerQuestSavedData.QuestProgress existing = data.get(member.getUUID(), definition.id());
-        DialogueContext memberContext = provider == null ? DialogueContext.forPlayer(member)
-                : VillagerInteractionService.createDialogueContext(level, member, provider);
-        if (existing != null && existing.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
-            if (!matchesVillagerLock(memberContext, definition, existing)) {
-                shared.removeEnrollment(member.getUUID());
-                return false;
-            }
-            if (existing.questRunId() != null && !existing.questRunId().equals(shared.instanceId())) {
-                shared.removeEnrollment(member.getUUID());
-                return false;
-            }
-            shared.enroll(member.getUUID(), false);
-            if (!existing.linkPartyQuest(shared.instanceId())) {
-                shared.removeEnrollment(member.getUUID());
-                return false;
-            }
-            PartyQuestService.mergePersonalProgress(shared, definition, existing);
-            PartyQuestService.syncPersonalProgress(shared, definition, existing);
-            data.setDirty();
-            sendTrackerSync(member, true);
-            return true;
-        }
-        if (!canStart(memberContext, definition, existing, false)) {
-            shared.removeEnrollment(member.getUUID());
-            return false;
-        }
+        return PartyQuestEnrollmentService.canonicalSharedProgress(level, shared);
+    }
 
-        VillagerQuestSavedData.QuestProgress linked = data.getOrCreate(member.getUUID(), definition.id());
-        QuestProviderBinding providerBinding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(memberContext);
-        VillagerQuestTargets.LocatedTarget target = sourceProgress.targetPos() == null
-                ? null
-                : new VillagerQuestTargets.LocatedTarget(
-                        sourceProgress.targetDimension() == null ? level.dimension() : sourceProgress.targetDimension(),
-                        sourceProgress.targetPos(),
-                        sourceProgress.targetObjectiveId());
-        QuestLifecycleService.start(definition.id(), linked, providerBinding, target,
-                level.getGameTime(), member.getUUID(), shared.instanceId());
-        linked.adoptDefinitionRevision(definition.revision().number());
-        ensureRandomItemSelections(definition, linked);
-        shared.enroll(member.getUUID(), false);
-        linked.linkPartyQuest(shared.instanceId());
-        data.setDirty();
+    private static void applyPartyMemberStart(DialogueContext memberContext, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress linked, VillagerQuestTargets.LocatedTarget target) {
+        ServerLevel level = memberContext.level();
+        ServerPlayer member = memberContext.player();
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         markContinuousTriggersUsed(linked, memberContext, definition);
         markQuestLifecycleFact(level, member, definition, QUEST_STARTED_FACT, "started");
         initializeQuestStage(memberContext, definition, linked);
@@ -2733,88 +2488,6 @@ public final class VillagerQuestService {
         } else if (dispatchQuestTriggers(memberContext, definition, linked, QuestDefinition.TriggerEvent.STARTED)) {
             data.setDirty();
         }
-        PartyQuestService.syncPersonalProgress(shared, definition, linked);
-        data.setDirty();
-        sendTrackerSync(member, true);
-        member.sendSystemMessage(Component.translatable("villagerretaliation.party.quest_shared"));
-        return true;
-    }
-
-    private record PartyStartPlan(
-            com.jvn.villagerretaliation.party.PartyRecord party,
-            com.jvn.villagerretaliation.party.PartySharedQuestRecord shared,
-            boolean created) {
-    }
-
-    public static void attachPendingPartyQuests(ServerPlayer player) {
-        attachPendingPartyQuests(player, true);
-    }
-
-    private static void attachPendingPartyQuests(ServerPlayer player, boolean deliverRewards) {
-        if (player == null) {
-            return;
-        }
-        ServerLevel level = player.serverLevel();
-        com.jvn.villagerretaliation.party.PartyRecord party =
-                com.jvn.villagerretaliation.party.PartyService
-                        .getPartyForPlayer(level, player.getUUID())
-                        .orElse(null);
-        if (party == null) {
-            return;
-        }
-        for (com.jvn.villagerretaliation.party.PartySharedQuestRecord shared : party.sharedQuests()) {
-            com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment =
-                    shared.enrollment(player.getUUID());
-            if (enrollment == null || !enrollment.pendingStart()) {
-                continue;
-            }
-            QuestDefinition definition = VillagerQuestResources.quest(player.getServer(), shared.questId()).orElse(null);
-            Villager provider = VillagerEntityResolver.loaded(player.getServer(), shared.sourceVillagerId());
-            VillagerQuestSavedData.QuestProgress source = canonicalSharedProgress(level, shared);
-            if (definition == null || provider == null && shared.sourceVillagerId() != null || provider != null && provider.level() != level || source == null) {
-                continue;
-            }
-            boolean linked = startOrLinkPartyMemberQuest(player, provider, definition, source, shared);
-            if (linked && shared.completed()) {
-                VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
-                VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), shared.questId());
-                if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
-                    PartyQuestService.syncPersonalProgress(shared, definition, progress);
-                    QuestLifecycleService.complete(
-                            definition.id(),
-                            progress,
-                            level.getGameTime(),
-                            definition.rules().consumeOnCompletion());
-                    com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment linkedEnrollment =
-                            shared.enrollment(player.getUUID());
-                    if (linkedEnrollment != null) {
-                        linkedEnrollment.markPendingReward();
-                    }
-                    progress.markPendingPartyReward();
-                    data.setDirty();
-                }
-            }
-            com.jvn.villagerretaliation.party.PartyService.markChanged(level);
-        }
-        if (deliverRewards) PartyQuestRewardService.deliverPendingPartyRewards(player);
-    }
-
-    private static VillagerQuestSavedData.QuestProgress canonicalSharedProgress(
-            ServerLevel level,
-            com.jvn.villagerretaliation.party.PartySharedQuestRecord shared) {
-        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
-        VillagerQuestSavedData.QuestProgress completed = null;
-        for (com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment
-                : shared.enrollments().values()) {
-            VillagerQuestSavedData.QuestProgress progress = data.get(enrollment.playerId(), shared.questId());
-            if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
-                return progress;
-            }
-            if (progress != null && progress.state() != VillagerQuestSavedData.QuestState.NOT_STARTED) {
-                completed = progress;
-            }
-        }
-        return completed;
     }
 
     private static QuestActionOutcome remindQuest(DialogueContext context, QuestDefinition definition) {
@@ -2938,12 +2611,12 @@ public final class VillagerQuestService {
         ItemHandInResult itemHandInResult = handInRequiredObjectiveItems(context, definition, progress);
         if (itemHandInResult != ItemHandInResult.SUCCESS) {
             return result(
-                    itemHandInResult.status,
+                    itemHandInResult.status(),
                     lineId(definition, "missing_objectives"),
                     QuestPresentationService.resolveGlobalText(
                             context.player(),
-                            itemHandInResult.messageKey,
-                            itemHandInResult.message,
+                            itemHandInResult.messageKey(),
+                            itemHandInResult.message(),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -3483,7 +3156,9 @@ public final class VillagerQuestService {
             return ConditionMatch.MET;
         }
         if (context != null) {
-            return activeConditionsMet(context, definition) ? ConditionMatch.MET : ConditionMatch.UNMET;
+            if (!CampaignQuestAccess.executionIssue(context, definition).isBlank()) return ConditionMatch.UNMET;
+            return conditionMatch(com.jvn.villagerretaliation.dialogue.conditions.ConditionEvaluator.all(
+                    context.conditions(), null, activeState.conditions()));
         }
         return conditionsStateWithoutLiveContext(player, level, definition, progress, activeState.conditions());
     }
@@ -3504,779 +3179,78 @@ public final class VillagerQuestService {
 
     public static boolean matchesPlayerConditions(DialogueContext context, QuestTriggerContext trigger,
             List<DialogueCondition> conditions) {
-        return conditions.stream().allMatch(condition -> playerConditionState(context, trigger, condition) == ConditionMatch.MET);
+        return DialogueCondition.matchesAll(context, trigger, conditions);
     }
 
     public static DialogueCondition.ConditionEvaluationTrace tracePlayerCondition(DialogueContext context, DialogueCondition condition) {
-        var state = playerConditionState(context, null, condition);
-        var outcome = switch (state) {
-            case MET -> DialogueCondition.ConditionOutcome.MATCHED;
-            case UNMET -> DialogueCondition.ConditionOutcome.UNMET;
-            case UNKNOWN -> DialogueCondition.ConditionOutcome.UNKNOWN;
-        };
-        var children = condition instanceof DialogueCondition.AllOf all ? all.conditions()
-                : condition instanceof DialogueCondition.AnyOf any ? any.conditions()
-                : condition instanceof DialogueCondition.Not not ? List.of(not.condition()) : List.<DialogueCondition>of();
-        return new DialogueCondition.ConditionEvaluationTrace(DialogueCondition.canonicalTypeId(condition), outcome,
-                state == ConditionMatch.UNKNOWN ? "condition cannot be evaluated" : state == ConditionMatch.MET ? "matched" : "condition returned false",
-                children.stream().map(child -> tracePlayerCondition(context, child)).toList());
+        return DialogueCondition.trace(context, condition);
     }
 
-    private static ConditionMatch playerConditionState(DialogueContext context, QuestTriggerContext trigger, DialogueCondition condition) {
-        if (condition instanceof DialogueCondition.AllOf all) {
-            var values = all.conditions().stream().map(child -> playerConditionState(context, trigger, child)).toList();
-            return values.contains(ConditionMatch.UNMET) ? ConditionMatch.UNMET
-                    : values.contains(ConditionMatch.UNKNOWN) ? ConditionMatch.UNKNOWN : ConditionMatch.MET;
-        }
-        if (condition instanceof DialogueCondition.AnyOf any) {
-            var values = any.conditions().stream().map(child -> playerConditionState(context, trigger, child)).toList();
-            return values.contains(ConditionMatch.MET) ? ConditionMatch.MET
-                    : values.contains(ConditionMatch.UNKNOWN) ? ConditionMatch.UNKNOWN : ConditionMatch.UNMET;
-        }
-        if (condition instanceof DialogueCondition.Not not) {
-            return switch (playerConditionState(context, trigger, not.condition())) {
-                case MET -> ConditionMatch.UNMET;
-                case UNMET -> ConditionMatch.MET;
-                case UNKNOWN -> ConditionMatch.UNKNOWN;
-            };
-        }
-        if (condition instanceof DialogueCondition.TriggerPayload payload)
-            return payload.matches(context, trigger) ? ConditionMatch.MET : ConditionMatch.UNMET;
-        return conditionStateWithoutLiveContext(context.player(), context.level(), null, null, condition);
+    private static ConditionMatch conditionsStateWithoutLiveContext(ServerPlayer player, ServerLevel level,
+            QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress, List<DialogueCondition> conditions) {
+        return conditionMatch(com.jvn.villagerretaliation.dialogue.conditions.ConditionEvaluator.all(
+                com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forSaved(level, player, definition, progress, conditionQueries(player)),
+                null, conditions));
     }
 
-    private static ConditionMatch conditionsStateWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel level,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
-            List<DialogueCondition> conditions) {
-        ConditionMatch result = ConditionMatch.MET;
-        for (DialogueCondition condition : conditions) {
-            ConditionMatch conditionMatch = conditionStateWithoutLiveContext(player, level, definition, progress, condition);
-            if (conditionMatch == ConditionMatch.UNMET) {
-                return ConditionMatch.UNMET;
-            }
-            if (conditionMatch == ConditionMatch.UNKNOWN) {
-                result = ConditionMatch.UNKNOWN;
-            }
-        }
-        return result;
-    }
-
-    private static ConditionMatch conditionStateWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel level,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition condition) {
-        if (condition instanceof DialogueCondition.AllOf allOf) {
-            return conditionsStateWithoutLiveContext(player, level, definition, progress, allOf.conditions());
-        }
-        if (condition instanceof DialogueCondition.AnyOf anyOf) {
-            boolean sawUnknown = false;
-            for (DialogueCondition child : anyOf.conditions()) {
-                ConditionMatch childMatch = conditionStateWithoutLiveContext(player, level, definition, progress, child);
-                if (childMatch == ConditionMatch.MET) {
-                    return ConditionMatch.MET;
-                }
-                sawUnknown |= childMatch == ConditionMatch.UNKNOWN;
-            }
-            return sawUnknown ? ConditionMatch.UNKNOWN : ConditionMatch.UNMET;
-        }
-        if (condition instanceof DialogueCondition.Not not) {
-            ConditionMatch childMatch = conditionStateWithoutLiveContext(player, level, definition, progress, not.condition());
-            return switch (childMatch) {
-                case MET -> ConditionMatch.UNMET;
-                case UNMET -> ConditionMatch.MET;
-                case UNKNOWN -> ConditionMatch.UNKNOWN;
-            };
-        }
-        if (condition instanceof DialogueCondition.Quest quest) {
-            return questConditionStateWithoutLiveContext(player, level, quest.questId(), quest.states());
-        }
-        if (condition instanceof DialogueCondition.QuestFact fact) {
-            return questFactStateWithoutLiveContext(player, level, definition, progress, fact);
-        }
-        if (condition instanceof DialogueCondition.CampaignEvidence evidence) {
-            var result = evidence.reference().evaluate(level, player);
-            return campaignConditionState(result.matches(), result.diagnostic());
-        }
-        if (condition instanceof DialogueCondition.CampaignFact fact) {
-            var result = fact.reference().evaluate(level, player.getUUID());
-            return campaignConditionState(result.matches(), result.diagnostic());
-        }
-        if (condition instanceof DialogueCondition.CampaignOutcome outcome) {
-            var result = outcome.reference().evaluate(level, player.getUUID());
-            return campaignConditionState(result.matches(), result.diagnostic());
-        }
-        if (condition instanceof DialogueCondition.CampaignStanding standing) {
-            var result = standing.reference().evaluate(level, player.getUUID());
-            return campaignConditionState(result.matches(), result.diagnostic());
-        }
-        if (condition instanceof DialogueCondition.CampaignTransaction transaction) {
-            var result = transaction.reference().evaluate(level, player.getUUID());
-            return campaignConditionState(result.matches(), result.diagnostic());
-        }
-        if (condition instanceof DialogueCondition.CampaignCharacter character) {
-            var result = character.reference().evaluate(level, null);
-            return campaignConditionState(result.matches(), result.diagnostic());
-        }
-        if (condition instanceof DialogueCondition.CampaignCompanion companion) {
-            var result = companion.reference().evaluate(level, player);
-            return campaignConditionState(result.matches(), result.diagnostic());
-        }
-        if (condition instanceof DialogueCondition.CampaignLocation location) {
-            var result = location.reference().evaluate(level, player);
-            return campaignConditionState(result.matches(), result.diagnostic());
-        }
-        if (condition instanceof DialogueCondition.Reputation reputation) {
-            return reputationStateWithoutLiveContext(player, level, progress, reputation);
-        }
-        if (condition instanceof DialogueCondition.Memory memory) {
-            ConditionMatch memoryState = memoryStateWithoutLiveContext(player, level, progress, memory);
-            if (memoryState != ConditionMatch.UNKNOWN) {
-                return memoryState;
-            }
-        }
-        if (condition instanceof DialogueCondition.SocialAttribute socialAttribute) {
-            return socialAttributeStateWithoutLiveContext(level, progress, socialAttribute);
-        }
-        if (condition instanceof DialogueCondition.Skill skill) {
-            return skillStateWithoutLiveContext(level, progress, skill);
-        }
-        if (condition instanceof DialogueCondition.Family family) {
-            return familyStateWithoutLiveContext(level, progress, family);
-        }
-        if (condition instanceof DialogueCondition.Relationship relationship) {
-            return relationshipStateWithoutLiveContext(level, progress, relationship);
-        }
-        if (condition instanceof DialogueCondition.RecruitmentMemory recruitmentMemory) {
-            return recruitmentMemoryStateWithoutLiveContext(player, level, progress, recruitmentMemory);
-        }
-        if (condition instanceof DialogueCondition.VillagerAge villagerAge) {
-            return villagerAgeStateWithoutLiveContext(level, progress, villagerAge);
-        }
-        if (condition instanceof DialogueCondition.VillagerLevel villagerLevel) {
-            return villagerLevelStateWithoutLiveContext(progress, villagerLevel);
-        }
-        if (condition instanceof DialogueCondition.Mood mood) {
-            return moodStateWithoutLiveContext(level, progress, mood);
-        }
-        if (condition instanceof DialogueCondition.PlayerItem || condition instanceof DialogueCondition.Dimension
-                || condition instanceof DialogueCondition.Biome || condition instanceof DialogueCondition.Advancement
-                || condition instanceof DialogueCondition.Scoreboard || condition instanceof DialogueCondition.NearbyEntity)
-            return condition.matches(DialogueContext.forPlayer(player)) ? ConditionMatch.MET : ConditionMatch.UNMET;
-        if (condition instanceof DialogueCondition.Weather weather) {
-            return weather.states().contains(savedWeatherState(level, player, progress))
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-        }
-        if (condition instanceof DialogueCondition.Time time) {
-            return time.times().contains(savedTimeOfDay(level)) ? ConditionMatch.MET : ConditionMatch.UNMET;
-        }
-        return ConditionMatch.UNKNOWN;
-    }
-
-    private static ConditionMatch campaignConditionState(boolean matches, String diagnostic) {
-        if (!diagnostic.isBlank()) {
-            return ConditionMatch.UNKNOWN;
-        }
-        return matches ? ConditionMatch.MET : ConditionMatch.UNMET;
-    }
-
-    private static ConditionMatch questConditionStateWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel level,
-            ResourceLocation questId,
-            Set<String> states) {
-        QuestDefinition target = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
-        if (target == null) {
-            return ConditionMatch.UNMET;
-        }
-        if (states == null || states.isEmpty()) {
-            return ConditionMatch.MET;
-        }
-        VillagerQuestSavedData.QuestProgress progress =
-                VillagerQuestSavedData.get(level).get(player.getUUID(), questId);
-        boolean sawUnknown = false;
-        for (String state : states) {
-            ConditionMatch stateMatch = Set.of("ready", "turn_in", "turnin", "completeable", "completable").contains(state)
-                    ? (isReadyToTurnIn(DialogueContext.forPlayer(player), target, progress) ? ConditionMatch.MET : ConditionMatch.UNMET)
-                    : savedQuestState(target, progress, state);
-            if (stateMatch == ConditionMatch.MET) {
-                return ConditionMatch.MET;
-            }
-            sawUnknown |= stateMatch == ConditionMatch.UNKNOWN;
-        }
-        return sawUnknown ? ConditionMatch.UNKNOWN : ConditionMatch.UNMET;
-    }
-
-    private static ConditionMatch savedQuestState(
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
-            String state) {
-        String normalized = state == null ? "" : state.trim().toLowerCase(Locale.ROOT);
-        boolean completed = progress != null && progress.completionCount() > 0;
-        return switch (normalized) {
-            case "not_started", "locked" -> progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case "active", "started" -> progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case "completed", "complete" -> {
-                if (completed) {
-                    yield ConditionMatch.MET;
-                }
-                yield isPlayerCompletionScope(definition.rules().completionScope())
-                        ? ConditionMatch.UNMET
-                        : ConditionMatch.UNKNOWN;
-            }
-            case "abandoned", "dropped" -> progress != null && progress.state() == VillagerQuestSavedData.QuestState.ABANDONED
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case "failed", "failure" -> progress != null && progress.state() == VillagerQuestSavedData.QuestState.FAILED
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case "expired", "timed_out", "time_out" -> progress != null && progress.state() == VillagerQuestSavedData.QuestState.EXPIRED
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case "consumed", "removed", "removed_forever" -> progress != null && progress.state() == VillagerQuestSavedData.QuestState.CONSUMED
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case "branch_locked", "branch_blocked", "blocked_branch" -> branchLocked(progress)
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case "not_completed" -> {
-                if (completed) {
-                    yield ConditionMatch.UNMET;
-                }
-                yield isPlayerCompletionScope(definition.rules().completionScope())
-                        ? ConditionMatch.MET
-                        : ConditionMatch.UNKNOWN;
-            }
-            default -> ConditionMatch.UNKNOWN;
+    private static ConditionMatch conditionMatch(DialogueCondition.ConditionOutcome outcome) {
+        return switch (outcome) {
+            case MATCHED -> ConditionMatch.MET;
+            case UNMET -> ConditionMatch.UNMET;
+            case UNKNOWN -> ConditionMatch.UNKNOWN;
         };
     }
 
-    private static ConditionMatch questFactStateWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel level,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.QuestFact fact) {
-        String scopeKey = savedQuestFactScopeKey(player, level, definition, progress, fact.scope(), fact.questId());
-        if (scopeKey.isBlank()) {
-            return ConditionMatch.UNKNOWN;
-        }
-        VillagerQuestFacts facts = VillagerQuestFacts.get(level);
-        if (!fact.tags().isEmpty() && fact.tags().stream().noneMatch(tag -> facts.hasTag(scopeKey, tag))) {
-            return ConditionMatch.UNMET;
-        }
-        if (fact.key() == null || fact.key().isBlank()) {
-            return fact.tags().isEmpty() ? ConditionMatch.UNKNOWN : ConditionMatch.MET;
-        }
-        Optional<String> variable = facts.variable(scopeKey, fact.key());
-        if (!fact.values().isEmpty() && variable.stream().noneMatch(fact.values()::contains)) {
-            return ConditionMatch.UNMET;
-        }
-        int counter = facts.counter(scopeKey, fact.key());
-        if (fact.min() != null && counter < fact.min()) {
-            return ConditionMatch.UNMET;
-        }
-        if (fact.max() != null && counter > fact.max()) {
-            return ConditionMatch.UNMET;
-        }
-        return !fact.values().isEmpty() || fact.min() != null || fact.max() != null || variable.isPresent() || counter != 0
-                ? ConditionMatch.MET
-                : ConditionMatch.UNMET;
+    public static com.jvn.villagerretaliation.dialogue.conditions.QuestConditionQueries conditionQueries(DialogueContext context) {
+        return conditionQueries(context.player(), context);
     }
 
-    private static ConditionMatch reputationStateWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.Reputation reputation) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        if (villagerId == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        VillagerReputationSavedData.ReputationEntry entry =
-                VillagerReputationSavedData.get(level).get(villagerId, player.getUUID());
-        int value = entry == null ? 0 : entry.reputation();
-        VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(value);
-        if (!reputation.levels().isEmpty() && !reputation.levels().contains(reputationLevel)) {
-            return ConditionMatch.UNMET;
-        }
-        if (reputation.minReputation() != null && value < reputation.minReputation()) {
-            return ConditionMatch.UNMET;
-        }
-        if (reputation.maxReputation() != null && value > reputation.maxReputation()) {
-            return ConditionMatch.UNMET;
-        }
-        return ConditionMatch.MET;
+    public static com.jvn.villagerretaliation.dialogue.conditions.QuestConditionQueries conditionQueries(ServerPlayer player) {
+        return conditionQueries(player, null);
     }
 
-    private static ConditionMatch socialAttributeStateWithoutLiveContext(
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.SocialAttribute socialAttribute) {
-        Optional<VillagerProfile> profile = savedIssuerProfile(level, progress);
-        if (profile.isEmpty()) {
-            return ConditionMatch.UNKNOWN;
-        }
-        for (var attribute : socialAttribute.attributes()) {
-            int value = profile.get().socialAttributes().get(attribute);
-            if (socialAttribute.minValue() != null && value < socialAttribute.minValue()) {
-                continue;
+    private static com.jvn.villagerretaliation.dialogue.conditions.QuestConditionQueries conditionQueries(
+            ServerPlayer player, DialogueContext context) {
+        return new com.jvn.villagerretaliation.dialogue.conditions.QuestConditionQueries() {
+            @Override
+            public DialogueCondition.ConditionOutcome matchesState(ResourceLocation questId, Set<String> states) {
+                if (context == null) return DialogueCondition.ConditionOutcome.UNKNOWN;
+                return VillagerQuestService.matchesState(context, questId, states)
+                        ? DialogueCondition.ConditionOutcome.MATCHED : DialogueCondition.ConditionOutcome.UNMET;
             }
-            if (socialAttribute.maxValue() != null && value > socialAttribute.maxValue()) {
-                continue;
+
+            @Override
+            public DialogueCondition.ConditionOutcome ready(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
+                return conditionReadyForPlayer(player, definition, progress)
+                        ? DialogueCondition.ConditionOutcome.MATCHED : DialogueCondition.ConditionOutcome.UNMET;
             }
-            return ConditionMatch.MET;
-        }
-        return ConditionMatch.UNMET;
+
+            @Override
+            public DialogueCondition.ConditionOutcome selectedChoice(DialogueCondition.SelectedChoice condition) {
+                return com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.hasSelectedChoice(
+                        player.serverLevel(), player.getUUID(), condition)
+                        ? DialogueCondition.ConditionOutcome.MATCHED : DialogueCondition.ConditionOutcome.UNMET;
+            }
+
+            @Override
+            public DialogueCondition.ConditionOutcome stageHistory(DialogueCondition.StageHistory condition) {
+                return com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.hasStageHistory(
+                        player.serverLevel(), player.getUUID(), condition)
+                        ? DialogueCondition.ConditionOutcome.MATCHED : DialogueCondition.ConditionOutcome.UNMET;
+            }
+        };
     }
 
-    private static ConditionMatch skillStateWithoutLiveContext(
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.Skill skill) {
-        Optional<VillagerProfile> profile = savedIssuerProfile(level, progress);
-        if (profile.isEmpty()) {
-            return ConditionMatch.UNKNOWN;
-        }
-        for (var villagerSkill : skill.skills()) {
-            int value = profile.get().skills().get(villagerSkill);
-            if (skill.minValue() != null && value < skill.minValue()) {
-                continue;
-            }
-            if (skill.maxValue() != null && value > skill.maxValue()) {
-                continue;
-            }
-            if (skill.minRank() != null && value < skill.minRank().minInclusive()) {
-                continue;
-            }
-            if (skill.maxRank() != null && value > skill.maxRank().maxInclusive()) {
-                continue;
-            }
-            return ConditionMatch.MET;
-        }
-        return ConditionMatch.UNMET;
-    }
-
-    private static Optional<VillagerProfile> savedIssuerProfile(
-            ServerLevel level,
+    public static boolean conditionReadyForPlayer(ServerPlayer player, QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        return villagerId == null ? Optional.empty() : VillagerProfileManager.getProfile(level, villagerId);
+        return isReadyToTurnIn(DialogueContext.forPlayer(player), definition, progress);
     }
 
-    private static ConditionMatch familyStateWithoutLiveContext(
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.Family family) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        if (villagerId == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        VillagerFamilyTreeSnapshot snapshot = VillagerSocialGraphService.familySnapshot(level, villagerId);
-        if (family.relations().isEmpty()) {
-            return snapshot.hasFamily() ? ConditionMatch.MET : ConditionMatch.UNMET;
-        }
-        for (String relation : family.relations()) {
-            if (savedFamilyRelationMatches(snapshot, relation)) {
-                return ConditionMatch.MET;
-            }
-        }
-        return ConditionMatch.UNMET;
-    }
-
-    private static boolean savedFamilyRelationMatches(VillagerFamilyTreeSnapshot snapshot, String relation) {
-        return switch (relation) {
-            case "family", "any" -> snapshot.hasFamily();
-            case "parent" -> snapshot.hasParent();
-            case "sibling" -> snapshot.hasSibling();
-            case "spouse" -> snapshot.hasSpouse();
-            case "child" -> snapshot.hasChild();
-            case "grandparent" -> snapshot.hasGrandparent();
-            case "grandchild" -> snapshot.hasGrandchild();
-            case "descendant" -> snapshot.hasDescendant();
-            case "aunt_uncle", "aunt_or_uncle" -> snapshot.hasAuntUncle();
-            case "cousin" -> snapshot.hasCousin();
-            case "niece_nephew", "niece_or_nephew" -> snapshot.hasNieceNephew();
-            case "extended_family" -> snapshot.hasExtendedFamily();
-            case "deceased_family" -> snapshot.hasDeceasedFamily();
-            default -> false;
-        };
-    }
-
-    private static ConditionMatch relationshipStateWithoutLiveContext(
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.Relationship relationship) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        if (villagerId == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        VillagerRelationshipSnapshot snapshot = VillagerSocialGraphService.relationshipSnapshot(level, villagerId);
-        if (relationship.states().isEmpty()) {
-            return snapshot.hasRelationships() ? ConditionMatch.MET : ConditionMatch.UNMET;
-        }
-        for (String state : relationship.states()) {
-            if (savedRelationshipStateMatches(snapshot, state)) {
-                return ConditionMatch.MET;
-            }
-        }
-        return ConditionMatch.UNMET;
-    }
-
-    private static boolean savedRelationshipStateMatches(VillagerRelationshipSnapshot snapshot, String state) {
-        return switch (state) {
-            case "relationship", "any" -> snapshot.hasRelationships();
-            case "current", "current_relationship" -> snapshot.hasCurrentRelationship();
-            case "past", "past_relationship" -> snapshot.hasPastRelationship();
-            case "crush" -> snapshot.hasCrush();
-            case "dating", "dating_partner" -> snapshot.hasDatingPartner();
-            case "fiance", "fiancee" -> snapshot.hasFiance();
-            case "romantic_spouse", "spouse" -> snapshot.hasRomanticSpouse();
-            case "separated", "separated_partner" -> snapshot.hasSeparatedPartner();
-            case "widowed", "widowed_partner" -> snapshot.hasWidowedPartner();
-            default -> false;
-        };
-    }
-
-    private static ConditionMatch recruitmentMemoryStateWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.RecruitmentMemory recruitmentMemory) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        if (villagerId == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        VillagerInteractionTracker.RecruitmentMemory savedMemory =
-                savedRecruitmentMemory(player, level, villagerId).orElse(null);
-        if (savedMemory == null) {
-            return ConditionMatch.UNMET;
-        }
-        if (!recruitmentMemory.scenarios().isEmpty()
-                && recruitmentMemory.scenarios().stream().noneMatch(scenario -> savedRecruitmentScenarioMatches(savedMemory, scenario))) {
-            return ConditionMatch.UNMET;
-        }
-        if (!recruitmentMemory.biomeKeys().isEmpty()
-                && !recruitmentMemory.biomeKeys().contains(savedRecruitmentBiomeKey(savedMemory))) {
-            return ConditionMatch.UNMET;
-        }
-        if (recruitmentMemory.minFollowDistance() != null
-                && savedMemory.distanceBlocks() < recruitmentMemory.minFollowDistance()) {
-            return ConditionMatch.UNMET;
-        }
-        if (recruitmentMemory.boatTrip() != null
-                && savedMemory.boatTrip() != recruitmentMemory.boatTrip()) {
-            return ConditionMatch.UNMET;
-        }
-        if (recruitmentMemory.oceanCrossing() != null
-                && savedMemory.oceanCrossing() != recruitmentMemory.oceanCrossing()) {
-            return ConditionMatch.UNMET;
-        }
-        boolean swimTrip = savedMemory.oceanCrossing() && !savedMemory.boatTrip();
-        if (recruitmentMemory.swimTrip() != null && swimTrip != recruitmentMemory.swimTrip()) {
-            return ConditionMatch.UNMET;
-        }
-        if (recruitmentMemory.excludesOceanCrossing() != null
-                && recruitmentMemory.excludesOceanCrossing()
-                && savedMemory.oceanCrossing()) {
-            return ConditionMatch.UNMET;
-        }
-        return ConditionMatch.MET;
-    }
-
-    private static ConditionMatch memoryStateWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.Memory memory) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        if (villagerId == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        VillagerInteractionSavedData interactionData = VillagerInteractionSavedData.get(level);
-        return switch (memory.kind()) {
-            case RECENT_BROKEN_BED -> interactionData.hasRecentBrokenBedMemory(
-                    villagerId,
-                    player.getUUID(),
-                    level.getGameTime(),
-                    BROKEN_BED_MEMORY_TICKS)
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case RECENT_DIRECT_HIT -> interactionData.hasRecentDirectHitMemory(
-                    villagerId,
-                    player.getUUID(),
-                    level.getGameTime(),
-                    DIRECT_HIT_MEMORY_TICKS)
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
-            case GEAR_REPORT_USED_IN_COMBAT -> {
-                VillagerInteractionTracker.GearReport gearReport =
-                        interactionData.unreportedGearReport(villagerId, player.getUUID());
-                yield gearReport != null && gearReport.usedInCombat()
-                        ? ConditionMatch.MET
-                        : ConditionMatch.UNMET;
-            }
-            case GEAR_REPORT_UNUSED_IN_COMBAT -> {
-                VillagerInteractionTracker.GearReport gearReport =
-                        interactionData.unreportedGearReport(villagerId, player.getUUID());
-                yield gearReport != null && !gearReport.usedInCombat()
-                        ? ConditionMatch.MET
-                        : ConditionMatch.UNMET;
-            }
-            case RECRUITMENT_MEMORY -> recruitmentMemoryPresentWithoutLiveContext(player, level, progress);
-            case EVENT_TAG -> eventTagMemoryStateWithoutLiveContext(player, level, progress, memory, villagerId);
-        };
-    }
-
-    private static ConditionMatch eventTagMemoryStateWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel fallbackLevel,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.Memory memory,
-            UUID villagerId) {
-        if (memory.tags().isEmpty()) {
-            return ConditionMatch.UNKNOWN;
-        }
-        ServerLevel memoryLevel = savedVillageMemoryLevel(fallbackLevel, progress);
-        if (memoryLevel == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        UUID playerId = player.getUUID();
-        if (memory.source() != DialogueCondition.MemorySource.OTHER_VILLAGER
-                && hasMatchingOfflineMemory(
-                        VillageEventMemory.recentForVillager(memoryLevel, villagerId),
-                        memory,
-                        playerId,
-                        villagerId,
-                        false)) {
-            return ConditionMatch.MET;
-        }
-        if (memory.source() == DialogueCondition.MemorySource.THIS_VILLAGER) {
-            return ConditionMatch.UNMET;
-        }
-        var rosterVillage = VillageEventMemory.villageForVillager(memoryLevel, villagerId);
-        Optional<BlockPos> savedVillagePos = savedVillageMemoryQueryPos(progress);
-        List<VillageEventMemory.MemoryEvent> communalEvents = rosterVillage
-                .map(id -> VillageEventMemory.recentForVillage(memoryLevel, id))
-                .orElseGet(() -> savedVillagePos
-                        .map(pos -> VillageEventMemory.recentForVillageAt(memoryLevel, pos))
-                        .orElseGet(List::of));
-        if (rosterVillage.isEmpty() && savedVillagePos.isEmpty()) {
-            return memory.source() == DialogueCondition.MemorySource.ANY
-                    ? ConditionMatch.UNMET
-                    : ConditionMatch.UNKNOWN;
-        }
-        return hasMatchingOfflineMemory(
-                communalEvents,
-                memory,
-                playerId,
-                villagerId,
-                true)
-                ? ConditionMatch.MET
-                : ConditionMatch.UNMET;
-    }
-
-    public static boolean debugEventTagMemoryMatchesWithoutLiveContextForTests(
-            ServerPlayer player,
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.Memory memory) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        return villagerId != null
-                && eventTagMemoryStateWithoutLiveContext(player, level, progress, memory, villagerId)
-                == ConditionMatch.MET;
-    }
-
-    private static boolean hasMatchingOfflineMemory(
-            List<VillageEventMemory.MemoryEvent> events,
-            DialogueCondition.Memory memory,
-            UUID playerId,
-            UUID villagerId,
-            boolean communal) {
-        for (VillageEventMemory.MemoryEvent event : events) {
-            if (!memory.tags().contains(event.tagId())) {
-                continue;
-            }
-            if (memory.currentPlayerOnly() && !playerId.equals(event.playerId())) {
-                continue;
-            }
-            if (communal && villagerId.equals(event.sourceId())) {
-                continue;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private static Optional<BlockPos> savedVillageMemoryQueryPos(VillagerQuestSavedData.QuestProgress progress) {
-        if (progress == null) {
-            return Optional.empty();
-        }
-        Optional<BlockPos> villagePos = VillageScopeKeys.pos(progress.issuerVillageKey());
-        return villagePos.isPresent() ? villagePos : Optional.ofNullable(progress.issuerPos());
-    }
-
-    private static ServerLevel savedVillageMemoryLevel(
-            ServerLevel fallbackLevel,
-            VillagerQuestSavedData.QuestProgress progress) {
-        ResourceKey<Level> dimension = progress == null
-                ? null
-                : VillageScopeKeys.dimension(progress.issuerVillageKey()).orElse(progress.issuerDimension());
-        if (dimension == null || dimension.equals(fallbackLevel.dimension())) {
-            return fallbackLevel;
-        }
-        return fallbackLevel.getServer().getLevel(dimension);
-    }
-
-    private static ConditionMatch recruitmentMemoryPresentWithoutLiveContext(
-            ServerPlayer player,
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        if (villagerId == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        return savedRecruitmentMemory(player, level, villagerId).isPresent()
-                ? ConditionMatch.MET
-                : ConditionMatch.UNMET;
-    }
-
-    private static Optional<VillagerInteractionTracker.RecruitmentMemory> savedRecruitmentMemory(
-            ServerPlayer player,
-            ServerLevel level,
-            UUID villagerId) {
-        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
-                .recruitmentMemory(villagerId, player.getUUID()));
-    }
-
-    private static boolean savedRecruitmentScenarioMatches(
-            VillagerInteractionTracker.RecruitmentMemory memory,
-            String scenario) {
-        return memory.scenario() != null && scenario != null && memory.scenario().equalsIgnoreCase(scenario);
-    }
-
-    private static String savedRecruitmentBiomeKey(VillagerInteractionTracker.RecruitmentMemory memory) {
-        if (memory.biomeName() == null || memory.biomeName().isBlank()) {
-            return "";
-        }
-        return memory.biomeName().toLowerCase(Locale.ROOT).replace(' ', '_');
-    }
-
-    private static ConditionMatch villagerAgeStateWithoutLiveContext(
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.VillagerAge villagerAge) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        if (villagerId == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        Optional<Boolean> savedBaby = VillagerSocialGraphService.knownBaby(level, villagerId);
-        if (savedBaby.isEmpty()) {
-            return ConditionMatch.UNKNOWN;
-        }
-        boolean isBaby = savedBaby.get();
-        if (villagerAge.baby() != null && isBaby != villagerAge.baby()) {
-            return ConditionMatch.UNMET;
-        }
-        if (villagerAge.adult() != null && isBaby == villagerAge.adult()) {
-            return ConditionMatch.UNMET;
-        }
-        return ConditionMatch.MET;
-    }
-
-    private static ConditionMatch villagerLevelStateWithoutLiveContext(
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.VillagerLevel villagerLevel) {
-        int level = progress == null ? 0 : progress.issuerLevel();
-        if (level <= 0) {
-            return ConditionMatch.UNKNOWN;
-        }
-        if (!villagerLevel.levels().isEmpty() && !villagerLevel.levels().contains(level)) {
-            return ConditionMatch.UNMET;
-        }
-        if (villagerLevel.minLevel() != null && level < villagerLevel.minLevel()) {
-            return ConditionMatch.UNMET;
-        }
-        if (villagerLevel.maxLevel() != null && level > villagerLevel.maxLevel()) {
-            return ConditionMatch.UNMET;
-        }
-        return ConditionMatch.MET;
-    }
-
-    private static ConditionMatch moodStateWithoutLiveContext(
-            ServerLevel level,
-            VillagerQuestSavedData.QuestProgress progress,
-            DialogueCondition.Mood mood) {
-        UUID villagerId = progress == null ? null : progress.startedVillagerId();
-        if (villagerId == null) {
-            return ConditionMatch.UNKNOWN;
-        }
-        VillagerMoodState state = VillagerRetaliationConfig.ENABLE_VILLAGER_MOODS.get()
-                ? VillagerMoodSavedData.get(level).get(villagerId).withEffectiveDecay(level.getGameTime())
-                : VillagerMoodState.DEFAULT;
-        if (!mood.moods().isEmpty() && !mood.moods().contains(state.primaryMood())) {
-            return ConditionMatch.UNMET;
-        }
-        if (mood.minIntensity() != null && state.intensity() < mood.minIntensity()) {
-            return ConditionMatch.UNMET;
-        }
-        if (mood.maxIntensity() != null && state.intensity() > mood.maxIntensity()) {
-            return ConditionMatch.UNMET;
-        }
-        return ConditionMatch.MET;
-    }
-
-    private static String savedQuestFactScopeKey(
-            ServerPlayer player,
-            ServerLevel level,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
-            QuestFactScope scope,
-            ResourceLocation questId) {
-        QuestFactScope resolvedScope = scope == null ? QuestFactScope.PLAYER : scope;
-        ResourceLocation resolvedQuestId = questId == null && definition != null ? definition.id() : questId;
-        QuestScopeKey scopeKey = switch (resolvedScope) {
-            case PLAYER -> QuestScopeKey.player(player.getUUID());
-            case WORLD -> QuestScopeKey.WORLD;
-            case QUEST -> QuestScopeKey.quest(player.getUUID(), resolvedQuestId);
-            case VILLAGER -> QuestScopeKey.villager(progress == null ? null : progress.startedVillagerId());
-            case VILLAGE -> QuestScopeKey.village(progress == null ? "" : factVillageScopeKey(level, progress));
-        };
-        return scopeKey.asString();
-    }
-
-    private static DialogueContext.WeatherState savedWeatherState(
-            ServerLevel level,
-            ServerPlayer player,
-            VillagerQuestSavedData.QuestProgress progress) {
-        if (level.isThundering()) {
-            return DialogueContext.WeatherState.THUNDER;
-        }
-        BlockPos pos = progress == null || progress.issuerPos() == null ? player.blockPosition() : progress.issuerPos();
-        return level.isRainingAt(pos) ? DialogueContext.WeatherState.RAIN : DialogueContext.WeatherState.CLEAR;
-    }
-
-    private static DialogueContext.TimeOfDay savedTimeOfDay(ServerLevel level) {
-        long dayTime = level.getDayTime() % 24000L;
-        if (dayTime < 6000L) {
-            return DialogueContext.TimeOfDay.MORNING;
-        }
-        if (dayTime < 12000L) {
-            return DialogueContext.TimeOfDay.AFTERNOON;
-        }
-        if (dayTime < 14000L) {
-            return DialogueContext.TimeOfDay.EVENING;
-        }
-        return DialogueContext.TimeOfDay.NIGHT;
+    public static boolean debugEventTagMemoryMatchesWithoutLiveContextForTests(ServerPlayer player, ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress, DialogueCondition.Memory memory) {
+        return com.jvn.villagerretaliation.dialogue.conditions.ConditionEvaluator.evaluate(
+                com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forSaved(level, player, null, progress),
+                null, memory) == DialogueCondition.ConditionOutcome.MATCHED;
     }
 
     private static ConditionMatch expirationConditionsState(
@@ -4290,9 +3264,8 @@ public final class VillagerQuestService {
             return ConditionMatch.UNMET;
         }
         if (context != null) {
-            return DialogueCondition.matchesAll(context, expiration.conditions())
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
+            return conditionMatch(com.jvn.villagerretaliation.dialogue.conditions.ConditionEvaluator.all(
+                    context.conditions(), null, expiration.conditions()));
         }
         return conditionsStateWithoutLiveContext(player, level, definition, progress, expiration.conditions());
     }
@@ -4618,127 +3591,22 @@ public final class VillagerQuestService {
     }
 
     private static int itemCount(ServerPlayer player, ResourceLocation itemId) {
-        if (itemId == null) {
-            return 0;
-        }
-        InventoryItemCountCache cache = cachedInventoryCache(player);
-        cache.recordSimpleLookup();
-        return cache.counts().getOrDefault(itemId, 0);
+        return QuestInventoryService.itemCount(player, itemId);
     }
 
     private static int itemCount(
             ServerPlayer player,
             ResourceLocation itemId,
             ItemStackPredicate stackPredicate) {
-        ItemStackPredicate predicate = stackPredicate == null ? ItemStackPredicate.ANY : stackPredicate;
-        if (predicate.isAny()) {
-            return itemCount(player, itemId);
-        }
-        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
-        if (item.isEmpty()) {
-            return 0;
-        }
-        int total = 0;
-        for (ItemStack stack : removablePlayerStacks(player)) {
-            if (!stack.isEmpty() && stack.is(item.get()) && predicate.matches(stack)) {
-                total += stack.getCount();
-            }
-        }
-        return total;
+        return QuestInventoryService.itemCount(player, itemId, stackPredicate);
     }
 
     private static int itemCount(
             ServerPlayer player,
             QuestDefinition.Objective objective,
             VillagerQuestSavedData.QuestProgress progress) {
-        ResourceLocation itemId = QuestObjectiveQuery.resolvedItem(objective, progress);
-        if (itemId == null) {
-            return 0;
-        }
-        if (hasSimpleItemRequirements(objective.itemRequirements())) {
-            return itemCount(player, itemId);
-        }
-        InventoryItemCountCache cache = cachedInventoryCache(player);
-        cache.recordExactLookup();
-        InventoryObjectiveCountKey cacheKey = InventoryObjectiveCountKey.of(objective, itemId);
-        Integer cached = cache.objectiveCounts().get(cacheKey);
-        if (cached != null) {
-            return cached;
-        }
-        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
-        if (item.isEmpty()) {
-            cache.objectiveCounts().put(cacheKey, 0);
-            cache.recordExactCacheMiss(0);
-            return 0;
-        }
-        int total = 0;
-        int scannedSlots = 0;
-        for (ItemStack stack : player.getInventory().items) {
-            scannedSlots++;
-            if (matchesObjectiveItem(stack, objective, item.get())) {
-                total += stack.getCount();
-            }
-        }
-        for (ItemStack stack : player.getInventory().offhand) {
-            scannedSlots++;
-            if (matchesObjectiveItem(stack, objective, item.get())) {
-                total += stack.getCount();
-            }
-        }
-        cache.objectiveCounts().put(cacheKey, total);
-        cache.recordExactCacheMiss(scannedSlots);
-        return total;
-    }
-
-    private static InventoryItemCountCache cachedInventoryCache(ServerPlayer player) {
-        int changeCount = player.getInventory().getTimesChanged();
-        long gameTime = player.level().getGameTime();
-        InventoryItemCountCache cache = INVENTORY_ITEM_COUNT_CACHES.get(player.getUUID());
-        if (cache != null
-                && cache.changeCount() == changeCount
-                && gameTime - cache.rebuiltGameTime() <= INVENTORY_ITEM_COUNT_CACHE_TICKS) {
-            return cache;
-        }
-
-        Map<ResourceLocation, Integer> counts = new HashMap<>();
-        int scannedSlots = 0;
-        scannedSlots += addInventoryItemCounts(counts, player.getInventory().items);
-        scannedSlots += addInventoryItemCounts(counts, player.getInventory().offhand);
-        Map<ResourceLocation, Integer> immutableCounts = Map.copyOf(counts);
-        InventoryItemCountCache updated = new InventoryItemCountCache(
-                changeCount,
-                immutableCounts,
-                new HashMap<>(),
-                gameTime,
-                scannedSlots);
-        INVENTORY_ITEM_COUNT_CACHES.put(player.getUUID(), updated);
-        return updated;
-    }
-
-    private static int addInventoryItemCounts(Map<ResourceLocation, Integer> counts, Iterable<ItemStack> stacks) {
-        int scannedSlots = 0;
-        for (ItemStack stack : stacks) {
-            scannedSlots++;
-            if (stack.isEmpty()) {
-                continue;
-            }
-            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-            if (itemId != null) {
-                counts.merge(itemId, stack.getCount(), Integer::sum);
-            }
-        }
-        return scannedSlots;
-    }
-
-    private static boolean hasSimpleItemRequirements(QuestDefinition.ItemRequirements requirements) {
-        return requirements == null
-                || (requirements.enchantments().isEmpty()
-                && requirements.minDurability().isEmpty()
-                && requirements.maxDurability().isEmpty()
-                && requirements.minDurabilityPercent().isEmpty()
-                && requirements.maxDurabilityPercent().isEmpty()
-                && !requirements.hasCustomData()
-                && requirements.stackPredicate().isAny());
+        return QuestInventoryService.itemCount(
+                player, QuestObjectiveQuery.resolvedItem(objective, progress), objective.itemRequirements());
     }
 
     private static boolean updateObjectiveProgress(
@@ -4833,57 +3701,42 @@ public final class VillagerQuestService {
         }
 
         com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryService.event(player, event);
-        Set<ResourceLocation> candidateQuestIds = QuestObjectiveDispatchService.candidateQuestIds(level, event);
-        QuestDefinition.TriggerEvent objectiveTriggerEvent = QuestObjectiveDispatchService.triggerEventFor(event.kind());
+        var content = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.current(level.getServer());
         QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.OBJECTIVE_EVENT, null,
                 "event=" + event.kind().name().toLowerCase(Locale.ROOT)
-                        + " candidate_quests=" + candidateQuestIds.size());
-
+                        + " candidate_quests=" + com.jvn.villagerretaliation.quest.runtime.QuestObservationDispatcher.candidates(content, event).size());
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
-        boolean changed = false;
-        boolean progressNotice = false;
-        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
-            if (excludedQuestIds.contains(entry.getKey())) {
-                continue;
-            }
-            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
-            if (definition == null) {
-                continue;
-            }
-            boolean objectiveCandidate = candidateQuestIds.contains(entry.getKey());
-            boolean triggerCandidate = VillagerQuestResources.questTriggerIndex(level.getServer(), entry.getKey())
-                    .map(index -> index.hasEvent(objectiveTriggerEvent))
-                    .orElse(false);
-            if (!objectiveCandidate && !triggerCandidate) {
-                continue;
-            }
-            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
-            if (!activeConditionsMetForPlayer(player, definition, progress)) {
-                continue;
-            }
-            boolean questProgressChanged = objectiveCandidate
-                    && QuestObjectiveDispatchService.dispatch(
-                            objectiveEvaluationContext(player, null, level, definition, progress), event,
-                            objective -> markQuestObjectiveFact(level, player, definition, objective));
-            if (triggerCandidate) {
-                changed |= dispatchQuestTriggers(player, definition, progress, objectiveTriggerEvent, event);
-            }
-            if (questProgressChanged) {
-                questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
-                changed = true;
-                progressNotice = true;
-                sendQuestProgressNotification(
-                        player,
-                        definition,
-                        progress,
-                        "quest.updated",
-                        "Quest updated: {quest}");
-                changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
-            }
-        }
-        if (changed) {
-            data.setDirty();
-            sendTrackerSync(player, progressNotice);
+        var result = com.jvn.villagerretaliation.quest.runtime.QuestObservationDispatcher.dispatch(
+                content, data, player.getUUID(), event, excludedQuestIds,
+                new com.jvn.villagerretaliation.quest.runtime.QuestObservationDispatcher.Access<VillagerQuestSavedData.QuestProgress>() {
+                    public boolean active(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
+                        return activeConditionsMetForPlayer(player, definition, progress);
+                    }
+
+                    public boolean objectives(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress,
+                            QuestObjectiveEvent observation) {
+                        return QuestObjectiveDispatchService.dispatch(
+                                objectiveEvaluationContext(player, null, level, definition, progress), observation,
+                                objective -> markQuestObjectiveFact(level, player, definition, objective));
+                    }
+
+                    public boolean triggers(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress,
+                            QuestDefinition.TriggerEvent trigger, QuestObjectiveEvent observation) {
+                        return observation == null ? dispatchQuestTriggers(player, definition, progress, trigger)
+                                : dispatchQuestTriggers(player, definition, progress, trigger, observation);
+                    }
+
+                    public void advance(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
+                        advanceStageAfterEvent(level, player, definition, progress);
+                    }
+
+                    public void updated(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
+                        sendQuestProgressNotification(player, definition, progress, "quest.updated", "Quest updated: {quest}");
+                    }
+                });
+        if (result.changed()) {
+            data.changed();
+            sendTrackerSync(player, result.progressNotice());
         }
     }
 
@@ -5045,9 +3898,8 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
         if (context != null) {
-            return DialogueCondition.matchesAll(context, objective.conditions())
-                    ? ConditionMatch.MET
-                    : ConditionMatch.UNMET;
+            return conditionMatch(com.jvn.villagerretaliation.dialogue.conditions.ConditionEvaluator.all(
+                    context.conditions(), null, objective.conditions()));
         }
         return conditionsStateWithoutLiveContext(player, level, definition, progress, objective.conditions());
     }
@@ -5160,28 +4012,13 @@ public final class VillagerQuestService {
         }
         Optional<com.jvn.villagerretaliation.party.PartySharedQuestRecord> shared =
                 PartyQuestService.sharedForPlayer(context.level(), context.player().getUUID(), definition.id());
-        if (shared.isPresent()) {
-            Optional<PartyQuestService.SubmissionPlan> planned = PartyQuestService.planSharedItemSubmission(
-                    context.player(),
-                    shared.get(),
-                    requiredItemHandIns,
-                    (objective, stack) -> matchesObjectiveItemStack(objective, stack, progress));
-            if (planned.isEmpty()) {
-                return ItemHandInResult.MISSING_ITEMS;
-            }
-            PartyQuestService.SubmissionPlan plan = planned.get();
-            if (context.villager() != null && !VillagerInventoryAccess.canAddItems(context.villager(), plan.submittedStacks())) {
-                return ItemHandInResult.NO_ROOM;
-            }
-            if (!plan.remove()) {
-                return ItemHandInResult.MISSING_ITEMS;
-            }
-            for (ItemStack stack : context.villager() == null ? List.<ItemStack>of() : plan.submittedStacks()) {
-                ItemStack remainder = VillagerInventoryAccess.addItem(context.villager(), stack.copy());
-                if (!remainder.isEmpty()) {
-                    context.player().addItem(remainder);
-                }
-            }
+        ItemHandInResult result = QuestInventoryService.handInRequiredObjectiveItems(
+                context.player(),
+                context.villager(),
+                requiredItemHandIns,
+                objective -> QuestObjectiveQuery.resolvedItem(objective, progress),
+                shared.orElse(null));
+        if (result == ItemHandInResult.SUCCESS && shared.isPresent()) {
             for (QuestDefinition.Objective objective : requiredItemHandIns) {
                 shared.get().mergeObjectiveCounter(objective.id(), objective.count());
                 shared.get().markObjectiveComplete(objective.id());
@@ -5194,217 +4031,24 @@ public final class VillagerQuestService {
                 syncSharedQuestAfterEvent(context.level(), shared.get(), definition);
                 com.jvn.villagerretaliation.party.PartyService.markChanged(context.level());
             }
-            return ItemHandInResult.SUCCESS;
         }
-        List<ItemStack> handInStacks = previewObjectiveItemStacks(context.player(), requiredItemHandIns, progress)
-                .orElse(null);
-        if (handInStacks == null) {
-            return ItemHandInResult.MISSING_ITEMS;
-        }
-        if (context.villager() != null && !VillagerInventoryAccess.canAddItems(context.villager(), handInStacks)) {
-            return ItemHandInResult.NO_ROOM;
-        }
-        if (!removeSpecificPlayerStacks(context.player(), handInStacks)) {
-            return ItemHandInResult.MISSING_ITEMS;
-        }
-        for (ItemStack stack : context.villager() == null ? List.<ItemStack>of() : handInStacks) {
-            ItemStack remainder = VillagerInventoryAccess.addItem(context.villager(), stack.copy());
-            if (!remainder.isEmpty()) {
-                context.player().addItem(remainder);
-            }
-        }
-        return ItemHandInResult.SUCCESS;
+        return result;
     }
 
     private static Optional<List<ItemStack>> previewObjectiveItemStacks(
             ServerPlayer player,
             List<QuestDefinition.Objective> requiredObjectives,
             VillagerQuestSavedData.QuestProgress progress) {
-        List<ItemStack> handInStacks = new ArrayList<>();
-        List<ItemStack> availableStacks = removablePlayerStacks(player).stream()
-                .map(ItemStack::copy)
-                .toList();
-        for (QuestDefinition.Objective objective : requiredObjectives) {
-            ResourceLocation itemId = QuestObjectiveQuery.resolvedItem(objective, progress);
-            if (itemId == null) {
-                return Optional.empty();
-            }
-            Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
-            if (item.isEmpty()) {
-                return Optional.empty();
-            }
-            int remaining = objective.count();
-            for (ItemStack stack : availableStacks) {
-                if (remaining <= 0) {
-                    break;
-                }
-                if (!matchesObjectiveItem(stack, objective, item.get())) {
-                    continue;
-                }
-                int removed = Math.min(remaining, stack.getCount());
-                handInStacks.add(stack.copyWithCount(removed));
-                stack.shrink(removed);
-                remaining -= removed;
-            }
-            if (remaining > 0) {
-                return Optional.empty();
-            }
-        }
-        return Optional.of(List.copyOf(handInStacks));
+        return QuestInventoryService.previewObjectiveItemStacks(
+                player, requiredObjectives, objective -> QuestObjectiveQuery.resolvedItem(objective, progress));
     }
 
     private static boolean matchesObjectiveItemStack(
             QuestDefinition.Objective objective,
             ItemStack stack,
             VillagerQuestSavedData.QuestProgress progress) {
-        ResourceLocation itemId = QuestObjectiveQuery.resolvedItem(objective, progress);
-        if (itemId == null || stack == null || stack.isEmpty()) {
-            return false;
-        }
-        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
-        return item.isPresent() && matchesObjectiveItem(stack, objective, item.get());
-    }
-
-    private static boolean matchesObjectiveItem(
-            ItemStack stack,
-            QuestDefinition.Objective objective,
-            Item item) {
-        if (stack.isEmpty() || !stack.is(item)) {
-            return false;
-        }
-        QuestDefinition.ItemRequirements requirements = objective.itemRequirements();
-        if (!requirements.stackPredicate().matches(stack)) {
-            return false;
-        }
-        if (!requirements.enchantments().isEmpty()
-                && requirements.enchantments().stream().anyMatch(requirement -> !matchesEnchantment(stack, requirement))) {
-            return false;
-        }
-        if ((requirements.minDurability().isPresent()
-                || requirements.maxDurability().isPresent()
-                || requirements.minDurabilityPercent().isPresent()
-                || requirements.maxDurabilityPercent().isPresent())
-                && !matchesDurability(stack, requirements)) {
-            return false;
-        }
-        if (requirements.hasCustomData() && !matchesCustomData(stack, requirements.customData())) {
-            return false;
-        }
-        return true;
-    }
-
-    private static boolean matchesEnchantment(ItemStack stack, QuestDefinition.EnchantmentRequirement requirement) {
-        int level = Math.max(
-                enchantmentLevel(stack.getEnchantments(), requirement.id()),
-                enchantmentLevel(stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY), requirement.id()));
-        return level > 0
-                && requirement.minLevel().stream().allMatch(min -> level >= min)
-                && requirement.maxLevel().stream().allMatch(max -> level <= max);
-    }
-
-    private static int enchantmentLevel(ItemEnchantments enchantments, ResourceLocation id) {
-        int level = 0;
-        for (var entry : enchantments.entrySet()) {
-            Holder<Enchantment> holder = entry.getKey();
-            if (holder.unwrapKey().map(key -> key.location().equals(id)).orElse(false)) {
-                level = Math.max(level, entry.getIntValue());
-            }
-        }
-        return level;
-    }
-
-    private static boolean matchesDurability(ItemStack stack, QuestDefinition.ItemRequirements requirements) {
-        int maximum = stack.isDamageableItem() ? Math.max(0, stack.getMaxDamage()) : 0;
-        int remaining = stack.isDamageableItem() ? Math.max(0, maximum - stack.getDamageValue()) : 0;
-        int percent = maximum <= 0 ? 0 : Math.round(remaining * 100.0F / maximum);
-        return requirements.minDurability().stream().allMatch(min -> remaining >= min)
-                && requirements.maxDurability().stream().allMatch(max -> remaining <= max)
-                && requirements.minDurabilityPercent().stream().allMatch(min -> percent >= min)
-                && requirements.maxDurabilityPercent().stream().allMatch(max -> percent <= max);
-    }
-
-    private static boolean matchesCustomData(ItemStack stack, CompoundTag requiredData) {
-        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        return containsTagSubset(customData.copyTag(), requiredData);
-    }
-
-    private static boolean containsTagSubset(CompoundTag actual, CompoundTag required) {
-        for (String key : required.getAllKeys()) {
-            Tag requiredChild = required.get(key);
-            Tag actualChild = actual.get(key);
-            if (requiredChild == null || actualChild == null) {
-                return false;
-            }
-            if (requiredChild instanceof CompoundTag requiredCompound) {
-                if (!(actualChild instanceof CompoundTag actualCompound)
-                        || !containsTagSubset(actualCompound, requiredCompound)) {
-                    return false;
-                }
-                continue;
-            }
-            if (requiredChild instanceof NumericTag requiredNumber && actualChild instanceof NumericTag actualNumber) {
-                if (Double.compare(requiredNumber.getAsDouble(), actualNumber.getAsDouble()) != 0) {
-                    return false;
-                }
-                continue;
-            }
-            if (!requiredChild.equals(actualChild)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean removeSpecificPlayerStacks(ServerPlayer player, List<ItemStack> handInStacks) {
-        if (!canRemoveSpecificPlayerStacks(player, handInStacks)) {
-            return false;
-        }
-        for (ItemStack handInStack : handInStacks) {
-            int remaining = handInStack.getCount();
-            for (ItemStack stack : removablePlayerStacks(player)) {
-                if (remaining <= 0) {
-                    break;
-                }
-                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, handInStack)) {
-                    continue;
-                }
-                int removed = Math.min(remaining, stack.getCount());
-                stack.shrink(removed);
-                remaining -= removed;
-            }
-        }
-        player.getInventory().setChanged();
-        return true;
-    }
-
-    private static boolean canRemoveSpecificPlayerStacks(ServerPlayer player, List<ItemStack> handInStacks) {
-        List<ItemStack> availableStacks = removablePlayerStacks(player).stream()
-                .map(ItemStack::copy)
-                .toList();
-        for (ItemStack handInStack : handInStacks) {
-            int remaining = handInStack.getCount();
-            for (ItemStack stack : availableStacks) {
-                if (remaining <= 0) {
-                    break;
-                }
-                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, handInStack)) {
-                    continue;
-                }
-                int removed = Math.min(remaining, stack.getCount());
-                stack.shrink(removed);
-                remaining -= removed;
-            }
-            if (remaining > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static List<ItemStack> removablePlayerStacks(ServerPlayer player) {
-        List<ItemStack> stacks = new ArrayList<>(player.getInventory().items);
-        stacks.addAll(player.getInventory().offhand);
-        return stacks;
+        return QuestInventoryService.matchesObjectiveItemStack(
+                objective, stack, QuestObjectiveQuery.resolvedItem(objective, progress));
     }
 
     static String unresolvedQuestRewardDiagnostic(
@@ -6102,9 +4746,9 @@ public final class VillagerQuestService {
             return;
         }
         Map<String, QuestTrackerPresenter.QuestlineProgress> progressByQuestline =
-                QuestTrackerPresenter.questlineProgress(
+                QuestTrackerPresenter.questlineProgressView(
                         VillagerQuestResources.quests(level.getServer()),
-                        questId -> data.get(player.getUUID(), questId));
+                        questId -> QuestProgressSnapshot.capture(data.get(player.getUUID(), questId)));
         for (int index = 0; index < entries.size(); index++) {
             QuestTrackerSyncPayload.Entry entry = entries.get(index);
             QuestTrackerPresenter.QuestlineProgress progress =
@@ -6695,11 +5339,13 @@ public final class VillagerQuestService {
         QuestDefinition.Objective replacementObjective = currentObjective == null
                 ? currentObjectiveForReplacements(player, context, definition, progress, activeConditionsMet)
                 : currentObjective;
+        var presentationProgress = capturePresentationProgress(player, definition, progress);
         Map<String, String> replacements = trackerReplacements(
                 player,
                 context,
                 definition,
                 progress,
+                presentationProgress,
                 replacementObjective,
                 activeConditionsMet);
         QuestDefinition.Step fallback = QuestTrackerPresenter.fallbackStep(stepKey, progress.state());
@@ -6723,6 +5369,7 @@ public final class VillagerQuestService {
                     context,
                     definition,
                     progress,
+                    presentationProgress,
                     currentObjective,
                     currentObjectiveComplete,
                     step);
@@ -6738,8 +5385,8 @@ public final class VillagerQuestService {
         QuestDefinition.SelectedText title = definition.tracker().title().isBlank() && definition.tracker().titleKey().isBlank()
                 ? new QuestDefinition.SelectedText(definition.title(), definition.titleKey())
                 : new QuestDefinition.SelectedText(definition.tracker().title(), definition.tracker().titleKey());
-        String issuer = QuestPresentationService.issuerSummary(player, progress);
-        String issuerLocation = QuestPresentationService.issuerLocationSummary(player, progress);
+        String issuer = QuestPresentationService.issuerSummaryView(player, presentationProgress);
+        String issuerLocation = QuestPresentationService.issuerLocationSummaryView(player, presentationProgress);
         String status = trackerStatusText(player, definition, progress, activeConditions, replacements, readyToTurnIn);
         QuestTrackerSyncPayload.Entry presented = QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
                 player,
@@ -6750,28 +5397,29 @@ public final class VillagerQuestService {
                 status,
                 issuer,
                 issuerLocation,
-                QuestTrackerPresenter.questItems(
+                QuestTrackerPresenter.questItemsView(
                         definition,
-                        progress,
+                        presentationProgress,
                         QuestPresentationService::itemName,
                         itemId -> itemId != null && itemId.equals(definition.target().proofItem())
                                 ? itemCount(player, itemId, definition.target().proofItemPredicate())
                                 : itemCount(player, itemId),
-                        objective -> itemCount(player, objective, progress),
-                        objective -> QuestObjectiveQuery.resolvedItem(objective, progress),
+                        objective -> QuestInventoryService.itemCount(player,
+                                QuestProgressSnapshot.resolvedItem(objective, presentationProgress), objective.itemRequirements()),
+                        objective -> QuestProgressSnapshot.resolvedItem(objective, presentationProgress),
                         requiredObjectivesForReadiness(definition, progress)),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisitePreviews(player, definition),
                 progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
-                        ? QuestPresentationService.completedObjectiveSteps(player, definition, progress)
-                        : activeObjectiveSteps(player, context, definition, progress),
+                        ? QuestPresentationService.completedObjectiveStepsView(player, definition, presentationProgress)
+                        : activeObjectiveSteps(player, context, definition, progress, presentationProgress),
                 progressValue,
                 showProgress,
                 progress.state()));
         if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE && !activeConditionsMet) {
             presented = presented.withJournal(presented.journal().withBlocker(presented.objective()));
         }
-        return QuestPresentationService.withRuntimeJournal(presented, definition, progress, progress.completedGameTime());
+        return QuestPresentationService.withRuntimeJournalView(presented, definition, presentationProgress, presentationProgress.completedGameTime());
     }
 
     private static List<QuestTrackerSyncPayload.Prerequisite> prerequisitePreviews(
@@ -6791,7 +5439,8 @@ public final class VillagerQuestService {
             ServerPlayer player,
             DialogueContext context,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot presentationProgress) {
         if (player == null
                 || definition == null
                 || progress == null
@@ -6800,7 +5449,7 @@ public final class VillagerQuestService {
             return List.of();
         }
         List<QuestTrackerSyncPayload.ObjectiveStep> steps = new ArrayList<>();
-        Map<String, String> baseReplacements = trackerReplacements(player, context, definition, progress, null, true);
+        Map<String, String> baseReplacements = trackerReplacements(player, context, definition, progress, presentationProgress, null, true);
         QuestPresentationService.addActiveTrackerStep(
                 steps,
                 player,
@@ -6819,7 +5468,7 @@ public final class VillagerQuestService {
                 baseReplacements);
         for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
             boolean complete = objectiveComplete(player, context, level, definition, progress, objective);
-            String label = activeObjectiveStepLabel(player, context, definition, progress, objective, complete);
+            String label = activeObjectiveStepLabel(player, context, definition, progress, presentationProgress, objective, complete);
             if (!label.isBlank()) {
                 steps.add(new QuestTrackerSyncPayload.ObjectiveStep(label, complete));
             }
@@ -6835,6 +5484,7 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot presentationProgress,
             QuestDefinition.Objective objective,
             boolean complete) {
         if (objective == null) {
@@ -6852,7 +5502,7 @@ public final class VillagerQuestService {
         String label = QuestTrackerPresenter.resolveText(
                 player,
                 new QuestDefinition.SelectedText(step.text(), step.textKey()),
-                activeObjectiveStepReplacements(player, context, definition, progress, objective));
+                activeObjectiveStepReplacements(player, context, definition, progress, presentationProgress, objective));
         return complete ? label : progressAwareObjectiveText(player, progress, objective, label);
     }
 
@@ -6861,6 +5511,7 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot presentationProgress,
             QuestDefinition.Objective objective,
             boolean complete,
             QuestDefinition.Step step) {
@@ -6870,7 +5521,7 @@ public final class VillagerQuestService {
         String text = QuestTrackerPresenter.resolveText(
                 player,
                 new QuestDefinition.SelectedText(step.text(), step.textKey()),
-                activeObjectiveStepReplacements(player, context, definition, progress, objective));
+                activeObjectiveStepReplacements(player, context, definition, progress, presentationProgress, objective));
         return new QuestDefinition.Step(
                 progressAwareObjectiveText(player, progress, objective, text),
                 "",
@@ -6946,8 +5597,9 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot presentationProgress,
             QuestDefinition.Objective objective) {
-        return trackerReplacements(player, context, definition, progress, objective, true);
+        return trackerReplacements(player, context, definition, progress, presentationProgress, objective, true);
     }
 
     private static String parentQuestTitle(ServerLevel level, ServerPlayer player, ResourceLocation parentId) {
@@ -7184,11 +5836,30 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective,
             boolean activeConditionsMet) {
+        return trackerReplacements(player, context, definition, progress,
+                capturePresentationProgress(player, definition, progress), objective, activeConditionsMet);
+    }
+
+    private static QuestProgressSnapshot capturePresentationProgress(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
         if (player != null && progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
                 && ensureRandomItemSelections(definition, progress)) {
             VillagerQuestSavedData.get(player.serverLevel()).setDirty();
         }
-        return QuestPresentationService.trackerReplacements(player, definition, progress, objective,
+        return QuestProgressSnapshot.capture(progress, definition);
+    }
+
+    private static Map<String, String> trackerReplacements(
+            ServerPlayer player,
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot presentationProgress,
+            QuestDefinition.Objective objective,
+            boolean activeConditionsMet) {
+        return QuestPresentationService.trackerReplacementsView(player, definition, presentationProgress, objective,
                 activeConditionsMet, hasRequiredProof(player, definition),
                 objectivePresentationState(player, context, definition, progress, objective));
     }
@@ -7214,7 +5885,7 @@ public final class VillagerQuestService {
         boolean activeConditionsMet = activeConditionsMet(context, definition);
         QuestDefinition.Objective objective = currentObjectiveForReplacements(
                 context.player(), context, definition, progress, activeConditionsMet);
-        return QuestPresentationService.dialogueReplacements(context, definition, progress, objective,
+        return QuestPresentationService.dialogueReplacementsView(context, definition, QuestProgressSnapshot.capture(progress, definition), objective,
                 activeConditionsMet, hasRequiredProof(context.player(), definition),
                 objectivePresentationState(context.player(), context, definition, progress, objective));
     }
@@ -7667,55 +6338,7 @@ public final class VillagerQuestService {
     }
 
     private static String debugInventoryCacheLine(ServerPlayer player, QuestDefinition definition) {
-        int itemObjectives = 0;
-        int exactItemObjectives = 0;
-        for (QuestDefinition.Objective objective : definition.objectives()) {
-            if (!QuestObjectiveRegistry.requirements(objective).contains(QuestObjectiveRequirement.INVENTORY)) {
-                continue;
-            }
-            itemObjectives++;
-            if (!hasSimpleItemRequirements(objective.itemRequirements())) {
-                exactItemObjectives++;
-            }
-        }
-        boolean proofItem = definition.target().hasProofItem();
-        if (itemObjectives == 0 && !proofItem) {
-            return QuestDebugFormatter.inventoryCacheLine(new QuestDebugFormatter.InventoryCacheLine(
-                    false,
-                    false,
-                    0,
-                    0,
-                    0,
-                    false,
-                    0,
-                    0,
-                    0L,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0));
-        }
-
-        int changeCount = player.getInventory().getTimesChanged();
-        InventoryItemCountCache cache = INVENTORY_ITEM_COUNT_CACHES.get(player.getUUID());
-        boolean warm = cache != null && cache.changeCount() == changeCount;
-        long gameTime = player.level().getGameTime();
-        return QuestDebugFormatter.inventoryCacheLine(new QuestDebugFormatter.InventoryCacheLine(
-                true,
-                warm,
-                changeCount,
-                itemObjectives,
-                exactItemObjectives,
-                proofItem,
-                warm ? cache.counts().size() : 0,
-                warm ? cache.objectiveCounts().size() : 0,
-                warm ? Math.max(0L, gameTime - cache.rebuiltGameTime()) : 0L,
-                warm ? cache.simpleScanSlots() : 0,
-                warm ? cache.simpleLookups() : 0,
-                warm ? cache.exactLookups() : 0,
-                warm ? cache.exactCacheMisses() : 0,
-                warm ? cache.exactScanSlots() : 0));
+        return QuestInventoryService.debugInventoryCacheLine(player, definition);
     }
 
     private static String debugDimension(ResourceKey<Level> dimension) {
@@ -7799,19 +6422,5 @@ public final class VillagerQuestService {
         }
     }
 
-    private enum ItemHandInResult {
-        SUCCESS("completed", "", ""),
-        MISSING_ITEMS("missing_objectives", "There is still more to do before this is ready.", "quest.dialogue.missing_objectives"),
-        NO_ROOM("inventory_full", "I do not have room in my inventory for that.", "quest.dialogue.inventory_full");
 
-        private final String status;
-        private final String message;
-        private final String messageKey;
-
-        ItemHandInResult(String status, String message, String messageKey) {
-            this.status = status;
-            this.message = message;
-            this.messageKey = messageKey;
-        }
-    }
 }

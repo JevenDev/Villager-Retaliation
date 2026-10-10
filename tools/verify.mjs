@@ -67,7 +67,6 @@ const requiredFiles = [
   "wiki/dev/site-data.js",
   "wiki/dev/content/Home.md",
   "wiki/dev/content/Commands.md",
-  "wiki/dev/content/Quest-Scene-Runtime.md",
   "wiki/dev/content/Tracked-Villages.md"
 ];
 

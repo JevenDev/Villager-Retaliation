@@ -10,7 +10,7 @@ import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.QuestTriggerContext;
 import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
-import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.dialogue.conditions.ConditionEvaluator;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
@@ -59,13 +59,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         if (this instanceof CampaignCharacter character) return character.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignCompanion companion) return companion.reference().evaluate(context).diagnostic();
         if (this instanceof CampaignLocation location) return location.reference().evaluate(context).diagnostic();
-        List<DialogueCondition> children = this instanceof AllOf all ? all.conditions()
-                : this instanceof AnyOf any ? any.conditions()
-                : this instanceof Not not && not.condition() != null ? List.of(not.condition()) : List.of();
-        for (var child : children) {
-            if (child == null) continue;
-            String issue = child.unavailableReason(context);
-            if (!issue.isBlank()) return issue;
+        if (this instanceof AllOf || this instanceof AnyOf || this instanceof Not) {
+            return ConditionEvaluator.unavailableReason(ConditionRegistry.trace(context, this));
         }
         return "";
     }
@@ -916,12 +911,24 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             String id,
             Set<String> aliases,
             Set<ConditionCapability> capabilities,
-            Class<? extends DialogueCondition> implementationType
+            Class<? extends DialogueCondition> implementationType,
+            JsonObject schema
     ) {
+        public ConditionTypeDescriptor(String id, Set<String> aliases, Set<ConditionCapability> capabilities,
+                Class<? extends DialogueCondition> implementationType) {
+            this(id, aliases, capabilities, implementationType, new JsonObject());
+        }
+
         public ConditionTypeDescriptor {
             id = normalizeType(id);
             aliases = aliases == null ? Set.of() : Set.copyOf(aliases);
             capabilities = capabilities == null ? Set.of() : Set.copyOf(capabilities);
+            schema = schema == null ? new JsonObject() : schema.deepCopy();
+        }
+
+        @Override
+        public JsonObject schema() {
+            return this.schema.deepCopy();
         }
     }
 
@@ -943,16 +950,12 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         }
 
         public Optional<ConditionEvaluationTrace> firstUnmatched() {
-            if (this.outcome != ConditionOutcome.MATCHED && this.children.isEmpty()) {
-                return Optional.of(this);
-            }
+            if (this.outcome == ConditionOutcome.MATCHED) return Optional.empty();
             for (ConditionEvaluationTrace child : this.children) {
                 Optional<ConditionEvaluationTrace> failed = child.firstUnmatched();
-                if (failed.isPresent()) {
-                    return failed;
-                }
+                if (failed.isPresent()) return failed;
             }
-            return this.outcome == ConditionOutcome.MATCHED ? Optional.empty() : Optional.of(this);
+            return Optional.of(this);
         }
     }
 
@@ -964,21 +967,21 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                         aliases("all_of", "and"),
                         Set.of(),
                         (location, context, condition, defaultQuestId) ->
-                                readChildren(location, context, condition, defaultQuestId).map(AllOf::new)),
+                                readChildren(location, context, condition, defaultQuestId).map(AllOf::new), compoundSchema(false)),
                 register(
                         "any",
                         AnyOf.class,
                         aliases("any_of", "or"),
                         Set.of(),
                         (location, context, condition, defaultQuestId) ->
-                                readChildren(location, context, condition, defaultQuestId).map(AnyOf::new)),
+                                readChildren(location, context, condition, defaultQuestId).map(AnyOf::new), compoundSchema(false)),
                 register(
                         "not",
                         Not.class,
                         Set.of(),
                         Set.of(),
                         (location, context, condition, defaultQuestId) ->
-                                DialogueCondition.read(location, context + ".condition", condition.get("condition"), defaultQuestId).map(Not::new)),
+                                DialogueCondition.read(location, context + ".condition", condition.get("condition"), defaultQuestId).map(Not::new), compoundSchema(true)),
                 register(
                         "reputation",
                         Reputation.class,
@@ -1052,7 +1055,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                                 return Optional.empty();
                             }
                             return Optional.of(new CampaignEvidence(value));
-                        }),
+                        }, com.jvn.villagerretaliation.campaign.CampaignEvidencePredicate.schema()),
                 register(
                         "campaign_transaction",
                         CampaignTransaction.class,
@@ -1065,7 +1068,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                                 return Optional.empty();
                             }
                             return Optional.of(new CampaignTransaction(value));
-                        }),
+                        }, com.jvn.villagerretaliation.campaign.CampaignTransactionPredicate.schema()),
                 register(
                         "campaign_standing",
                         CampaignStanding.class,
@@ -1078,7 +1081,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                                 return Optional.empty();
                             }
                             return Optional.of(new CampaignStanding(value));
-                        }),
+                        }, com.jvn.villagerretaliation.campaign.CampaignStandingPredicate.schema()),
                 register(
                         "campaign_fact",
                         CampaignFact.class,
@@ -1091,7 +1094,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                                 return Optional.empty();
                             }
                             return Optional.of(new CampaignFact(value));
-                        }),
+                        }, com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema()),
                 register(
                         "campaign_outcome",
                         CampaignOutcome.class,
@@ -1104,7 +1107,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                                 return Optional.empty();
                             }
                             return Optional.of(new CampaignOutcome(value));
-                        }),
+                        }, com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema()),
                 register(
                         "campaign_character",
                         CampaignCharacter.class,
@@ -1117,7 +1120,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                                 return Optional.empty();
                             }
                             return Optional.of(new CampaignCharacter(value));
-                        }),
+                        }, com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema()),
                 register(
                         "campaign_companion",
                         CampaignCompanion.class,
@@ -1130,7 +1133,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                                 return Optional.empty();
                             }
                             return Optional.of(new CampaignCompanion(value));
-                        }),
+                        }, com.jvn.villagerretaliation.campaign.CampaignCompanionPredicate.schema()),
                 register(
                         "campaign_location",
                         CampaignLocation.class,
@@ -1143,7 +1146,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                                 return Optional.empty();
                             }
                             return Optional.of(new CampaignLocation(value));
-                        }),
+                        }, com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.schema()),
                 register(
                         "quest_fact",
                         QuestFact.class,
@@ -1262,72 +1265,24 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             return matchesAll(context, null, conditions);
         }
 
-        static boolean matchesAll(
-                DialogueContext context,
-                QuestTriggerContext triggerContext,
+        static boolean matchesAll(DialogueContext context, QuestTriggerContext triggerContext,
                 List<DialogueCondition> conditions) {
-            if (conditions == null || conditions.isEmpty()) {
-                return true;
-            }
-            if (context != null && context.villager() == null)
-                return VillagerQuestService.matchesPlayerConditions(context, triggerContext, conditions);
-            for (DialogueCondition condition : conditions) {
-                if (condition == null || !condition.unavailableReason(context).isBlank() || !condition.matches(context, triggerContext)) {
-                    return false;
-                }
-            }
-            return true;
+            if (conditions == null || conditions.isEmpty()) return true;
+            return ConditionEvaluator.all(context == null ? null : context.conditions(), triggerContext, conditions)
+                    == ConditionOutcome.MATCHED;
+        }
+
+        static boolean matches(DialogueContext context, QuestTriggerContext triggerContext, DialogueCondition condition) {
+            return ConditionEvaluator.evaluate(context == null ? null : context.conditions(), triggerContext, condition)
+                    == ConditionOutcome.MATCHED;
         }
 
         static ConditionEvaluationTrace trace(DialogueContext context, DialogueCondition condition) {
-            if (condition == null) {
-                return new ConditionEvaluationTrace("unknown", ConditionOutcome.UNKNOWN, "condition is missing", List.of());
-            }
-            if (condition instanceof Invalid invalid) {
-                return new ConditionEvaluationTrace("invalid", ConditionOutcome.UNMET, invalid.reason(), List.of());
-            }
-            if (context != null && context.villager() == null)
-                return VillagerQuestService.tracePlayerCondition(context, condition);
-            String unavailable = condition.unavailableReason(context);
-            if (!unavailable.isBlank()) return new ConditionEvaluationTrace(canonicalTypeId(condition), ConditionOutcome.UNKNOWN, unavailable, List.of());
-            if (condition instanceof AllOf allOf) {
-                List<ConditionEvaluationTrace> children = traceAll(context, allOf.conditions());
-                return new ConditionEvaluationTrace("all", allOutcome(children), allMessage(children), children);
-            }
-            if (condition instanceof AnyOf anyOf) {
-                List<ConditionEvaluationTrace> children = traceAll(context, anyOf.conditions());
-                return new ConditionEvaluationTrace("any", anyOutcome(children), anyMessage(children), children);
-            }
-            if (condition instanceof Not not) {
-                ConditionEvaluationTrace child = trace(context, not.condition());
-                ConditionOutcome outcome = switch (child.outcome()) {
-                    case MATCHED -> ConditionOutcome.UNMET;
-                    case UNMET -> ConditionOutcome.MATCHED;
-                    case UNKNOWN -> ConditionOutcome.UNKNOWN;
-                };
-                return new ConditionEvaluationTrace("not", outcome, "negated " + child.outcome().name().toLowerCase(Locale.ROOT), List.of(child));
-            }
-            String id = canonicalTypeId(condition);
-            if (context == null) {
-                return new ConditionEvaluationTrace(id, ConditionOutcome.UNKNOWN, "live context unavailable", List.of());
-            }
-            boolean matched = condition.matches(context);
-            return new ConditionEvaluationTrace(
-                    id,
-                    matched ? ConditionOutcome.MATCHED : ConditionOutcome.UNMET,
-                    matched ? "matched" : "condition returned false",
-                    List.of());
+            return ConditionEvaluator.trace(context == null ? null : context.conditions(), null, condition);
         }
 
         static List<ConditionEvaluationTrace> traceAll(DialogueContext context, List<DialogueCondition> conditions) {
-            if (conditions == null || conditions.isEmpty()) {
-                return List.of();
-            }
-            List<ConditionEvaluationTrace> traces = new ArrayList<>();
-            for (DialogueCondition condition : conditions) {
-                traces.add(trace(context, condition));
-            }
-            return List.copyOf(traces);
+            return ConditionEvaluator.traceAll(context == null ? null : context.conditions(), null, conditions);
         }
 
         static List<ConditionTypeDescriptor> descriptors() {
@@ -1380,36 +1335,6 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             return Set.copyOf(result);
         }
 
-        private static ConditionOutcome allOutcome(List<ConditionEvaluationTrace> children) {
-            boolean sawUnknown = false;
-            for (ConditionEvaluationTrace child : children) {
-                if (child.outcome() == ConditionOutcome.UNMET) {
-                    return ConditionOutcome.UNMET;
-                }
-                sawUnknown |= child.outcome() == ConditionOutcome.UNKNOWN;
-            }
-            return sawUnknown ? ConditionOutcome.UNKNOWN : ConditionOutcome.MATCHED;
-        }
-
-        private static String allMessage(List<ConditionEvaluationTrace> children) {
-            return allOutcome(children) == ConditionOutcome.MATCHED ? "all conditions matched" : "one or more conditions did not match";
-        }
-
-        private static ConditionOutcome anyOutcome(List<ConditionEvaluationTrace> children) {
-            boolean sawUnknown = false;
-            for (ConditionEvaluationTrace child : children) {
-                if (child.outcome() == ConditionOutcome.MATCHED) {
-                    return ConditionOutcome.MATCHED;
-                }
-                sawUnknown |= child.outcome() == ConditionOutcome.UNKNOWN;
-            }
-            return sawUnknown ? ConditionOutcome.UNKNOWN : ConditionOutcome.UNMET;
-        }
-
-        private static String anyMessage(List<ConditionEvaluationTrace> children) {
-            return anyOutcome(children) == ConditionOutcome.MATCHED ? "at least one condition matched" : "no conditions matched";
-        }
-
         private static Map<String, ConditionTypeRegistration> registrationsByAlias() {
             Map<String, ConditionTypeRegistration> byAlias = new LinkedHashMap<>();
             for (ConditionTypeRegistration registration : REGISTRATIONS) {
@@ -1435,9 +1360,36 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                 Set<String> aliases,
                 Set<ConditionCapability> capabilities,
                 ConditionReader reader) {
+            return register(id, implementationType, aliases, capabilities, reader, new JsonObject());
+        }
+
+        private static ConditionTypeRegistration register(String id, Class<? extends DialogueCondition> implementationType,
+                Set<String> aliases, Set<ConditionCapability> capabilities, ConditionReader reader, JsonObject schema) {
             return new ConditionTypeRegistration(
-                    new ConditionTypeDescriptor(id, aliases, capabilities, implementationType),
-                    reader);
+                    new ConditionTypeDescriptor(id, aliases, capabilities, implementationType, schema), reader);
+        }
+
+        private static JsonObject compoundSchema(boolean negated) {
+            JsonObject schema = new JsonObject();
+            schema.addProperty("type", "object");
+            schema.addProperty("additionalProperties", true);
+            String field = negated ? "condition" : "conditions";
+            var required = new com.google.gson.JsonArray();
+            required.add(field);
+            schema.add("required", required);
+            JsonObject child = new JsonObject();
+            child.addProperty("$ref", "#/$defs/condition");
+            JsonObject value = child;
+            if (!negated) {
+                value = new JsonObject();
+                value.addProperty("type", "array");
+                value.addProperty("minItems", 1);
+                value.add("items", child);
+            }
+            JsonObject properties = new JsonObject();
+            properties.add(field, value);
+            schema.add("properties", properties);
+            return schema;
         }
 
         private static Set<String> aliases(String... aliases) {
@@ -1515,26 +1467,12 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     record AnyOf(List<DialogueCondition> conditions) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            if (context == null || !unavailableReason(context).isBlank()) {
-                return false;
-            }
-            for (DialogueCondition condition : this.conditions) {
-                if (condition != null && condition.matches(context)) {
-                    return true;
-                }
-            }
-            return false;
+            return ConditionRegistry.matches(context, null, this);
         }
 
         @Override
         public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
-            if (!unavailableReason(context).isBlank()) return false;
-            for (DialogueCondition condition : this.conditions) {
-                if (condition != null && condition.matches(context, triggerContext)) {
-                    return true;
-                }
-            }
-            return false;
+            return ConditionRegistry.matches(context, triggerContext, this);
         }
 
         @Override
@@ -1549,19 +1487,12 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     record Not(DialogueCondition condition) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return context != null
-                    && this.condition != null
-                    && unavailableReason(context).isBlank()
-                    && !(this.condition instanceof Invalid)
-                    && !this.condition.matches(context);
+            return ConditionRegistry.matches(context, null, this);
         }
 
         @Override
         public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
-            return this.condition != null
-                    && unavailableReason(context).isBlank()
-                    && !(this.condition instanceof Invalid)
-                    && !this.condition.matches(context, triggerContext);
+            return ConditionRegistry.matches(context, triggerContext, this);
         }
 
         @Override
@@ -1848,7 +1779,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     record Quest(ResourceLocation questId, Set<String> states) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return VillagerQuestService.matchesState(context, this.questId, this.states);
+            return ConditionRegistry.matches(context, null, this);
         }
 
         @Override
@@ -1968,13 +1899,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
 
         @Override
         public boolean matches(DialogueContext context) {
-            return VillagerQuestService.hasSelectedChoice(
-                    context,
-                    this.questId,
-                    this.scenePath,
-                    this.responseId,
-                    this.priorStage,
-                    this.nextStage);
+            return ConditionRegistry.matches(context, null, this);
         }
 
         @Override
@@ -1996,12 +1921,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
 
         @Override
         public boolean matches(DialogueContext context) {
-            return VillagerQuestService.hasStageHistory(
-                    context,
-                    this.questId,
-                    this.stage,
-                    this.priorStage,
-                    this.nextStage);
+            return ConditionRegistry.matches(context, null, this);
         }
 
         @Override
@@ -2037,7 +1957,11 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     record Biome(Set<ResourceLocation> biomes, Set<ResourceLocation> tags) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            var biome = context.level().getBiome(context.origin());
+            return matches(context.level(), context.origin());
+        }
+
+        public boolean matches(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos origin) {
+            var biome = level.getBiome(origin);
             boolean idMatch = biome.unwrapKey().map(key -> this.biomes.contains(key.location())).orElse(false);
             boolean tagMatch = this.tags.stream().anyMatch(id -> biome.is(
                     net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BIOME, id)));
@@ -2065,9 +1989,13 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     record Advancement(Set<ResourceLocation> advancements, boolean requireAll) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
+            return matches(context.level(), context.player());
+        }
+
+        public boolean matches(net.minecraft.server.level.ServerLevel level, net.minecraft.server.level.ServerPlayer player) {
             java.util.function.Predicate<ResourceLocation> completed = id -> {
-                var advancement = context.level().getServer().getAdvancements().get(id);
-                return advancement != null && context.player().getAdvancements().getOrStartProgress(advancement).isDone();
+                var advancement = level.getServer().getAdvancements().get(id);
+                return advancement != null && player.getAdvancements().getOrStartProgress(advancement).isDone();
             };
             return this.requireAll ? this.advancements.stream().allMatch(completed) : this.advancements.stream().anyMatch(completed);
         }
@@ -2081,12 +2009,16 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     record Scoreboard(String objective, Integer min, Integer max) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            net.minecraft.world.scores.Scoreboard scoreboard = context.level().getScoreboard();
+            return matches(context.level(), context.player());
+        }
+
+        public boolean matches(net.minecraft.server.level.ServerLevel level, net.minecraft.server.level.ServerPlayer player) {
+            net.minecraft.world.scores.Scoreboard scoreboard = level.getScoreboard();
             net.minecraft.world.scores.Objective target = scoreboard.getObjective(this.objective);
             if (target == null) {
                 return false;
             }
-            net.minecraft.world.scores.ReadOnlyScoreInfo score = scoreboard.getPlayerScoreInfo(context.player(), target);
+            net.minecraft.world.scores.ReadOnlyScoreInfo score = scoreboard.getPlayerScoreInfo(player, target);
             if (score == null) {
                 return false;
             }
@@ -2109,10 +2041,13 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             boolean aroundPlayer) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            net.minecraft.world.entity.Entity origin = this.aroundPlayer ? context.player() : context.villager();
+            return matches(context.level(), this.aroundPlayer ? context.player() : context.villager());
+        }
+
+        public boolean matches(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.Entity origin) {
             if (origin == null) return false;
             net.minecraft.world.phys.AABB bounds = origin.getBoundingBox().inflate(this.radius);
-            int count = context.level().getEntities(origin, bounds, entity -> {
+            int count = level.getEntities(origin, bounds, entity -> {
                 ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
                 if (this.entityTypes.contains(id)) {
                     return true;

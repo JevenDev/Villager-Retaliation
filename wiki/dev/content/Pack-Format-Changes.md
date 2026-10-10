@@ -28,7 +28,7 @@ Beta.13 requires quest content to move into owner bundles. Non-quest beta.12 dia
 14. Quest availability accepts `weight` or `selection_weight`, `max_active_quests`, and `max_active_by_tag`.
 15. Quest triggers accept `priority`, `chance`, `weight`, and `exclusive`; their dispatch payload can be queried with `trigger_payload`.
 
-Start with [Persistent Quest Scenes](Quest-Scenes.md) for the authoring surface. [Quest Scene Runtime](Quest-Scene-Runtime.md) defines the underlying ownership, continuation, recovery, and cleanup guarantees for developers who need the high-level runtime contract.
+Start with [Persistent Quest Scenes](Quest-Scenes.md) for the authoring surface.
 
 Basic quest bundles remain valid without a companion scene. Add private `scenes/` and `encounters/` only when a sequence needs persistent actors, resumable timing, controlled combat, or recovery across unloads.
 

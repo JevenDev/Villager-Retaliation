@@ -40,6 +40,7 @@ import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
 import com.jvn.villagerretaliation.mount.VillagerMountTravelService;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
+import com.jvn.villagerretaliation.quest.inventory.QuestInventoryService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
@@ -1619,6 +1620,55 @@ public final class PartyGameTests {
         } finally {
             PartyService.deleteParty(level, party.id());
             villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sharedFetchCapacityFailurePreservesEveryContributor(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager contributor = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager issuer = spawnVillager(helper, new BlockPos(4, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartySavedData data = PartySavedData.get(level);
+        PartyRecord party = data.createParty(player.getUUID(), now);
+        try {
+            helper.assertTrue(data.addVillager(party, villagerRecord(contributor.getUUID(), player.getUUID(), 0, now)),
+                    "fixture contributor belongs to the party");
+            PartySharedQuestRecord shared = new PartySharedQuestRecord(
+                    VillagerRetaliation.id("party_inventory_boundary"), issuer.getUUID(), now);
+            shared.enroll(player.getUUID(), false);
+            party.addSharedQuest(shared);
+            data.changed();
+            player.getInventory().setItem(0, new ItemStack(Items.BONE, 2));
+            HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(contributor);
+            jobInventory.setItem(0, new ItemStack(Items.BONE, 3));
+            QuestDefinition.Objective objective = itemObjective("submit_bones", Items.BONE.builtInRegistryHolder().key().location(), 5);
+            List<ItemStack> full = VillagerInventoryAccess.captureFullInventory(issuer).stream()
+                    .map(ignored -> new ItemStack(Items.STONE, 64)).toList();
+            VillagerInventoryAccess.replaceFullInventory(issuer, full);
+            helper.assertValueEqual(QuestInventoryService.handInRequiredObjectiveItems(
+                    player, issuer, List.of(objective), QuestDefinition.Objective::item, shared),
+                    QuestInventoryService.ItemHandInResult.NO_ROOM, "issuer room is checked before a shared removal");
+            helper.assertValueEqual(player.getInventory().getItem(0).getCount(), 2, "the submitter retains its source stack");
+            helper.assertValueEqual(jobInventory.getItem(0).getCount(), 3, "the party villager retains its contribution");
+            VillagerInventoryAccess.replaceFullInventory(issuer, List.of());
+            helper.assertValueEqual(QuestInventoryService.handInRequiredObjectiveItems(
+                    player, issuer, List.of(objective), QuestDefinition.Objective::item, shared),
+                    QuestInventoryService.ItemHandInResult.SUCCESS, "shared sources retain the existing aggregate plan");
+            helper.assertTrue(player.getInventory().getItem(0).isEmpty() && jobInventory.getItem(0).isEmpty(),
+                    "successful shared submission removes each contribution once");
+            helper.assertValueEqual(VillagerInventoryAccess.captureFullInventory(issuer).stream()
+                    .filter(stack -> stack.is(Items.BONE)).mapToInt(ItemStack::getCount).sum(), 5,
+                    "the physical issuer receives the complete shared submission");
+            helper.assertValueEqual(shared.objectiveCounter(objective.id()), 0,
+                    "the inventory collaborator leaves narrative progress to the quest facade");
+        } finally {
+            PartyService.deleteParty(level, party.id());
+            player.getInventory().clearContent();
+            contributor.discard();
+            issuer.discard();
         }
         helper.succeed();
     }

@@ -1137,7 +1137,11 @@ public final class SceneSchema {
             com.jvn.villagerretaliation.api.registry.FreezableExtensionRegistry<?> registry) {
         JsonObject value = resourceLocation();
         JsonArray ids = new JsonArray();
-        registry.descriptors().forEach(descriptor -> ids.add(descriptor.id().toString()));
+        registry.descriptors().stream()
+                .flatMap(descriptor -> java.util.stream.Stream.concat(
+                        java.util.stream.Stream.of(descriptor.id()), descriptor.aliases().stream()))
+                .map(net.minecraft.resources.ResourceLocation::toString)
+                .distinct().sorted().forEach(ids::add);
         value.add("enum", ids);
         return value;
     }

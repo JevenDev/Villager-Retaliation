@@ -9,10 +9,6 @@ import com.jvn.villagerretaliation.campaign.CampaignTransaction;
 import com.jvn.villagerretaliation.campaign.CampaignTransactionSavedData;
 import com.jvn.villagerretaliation.campaign.CampaignTransactionSceneFields;
 import com.jvn.villagerretaliation.campaign.content.CampaignResources;
-import com.jvn.villagerretaliation.network.CampaignConversationViewPayload;
-import com.jvn.villagerretaliation.network.CampaignConversationViewPayload.Response;
-import com.jvn.villagerretaliation.network.CampaignConversationViewPayload.Transaction;
-import com.jvn.villagerretaliation.network.CampaignConversationViewPayload.TransactionState;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import java.util.ArrayDeque;
@@ -25,9 +21,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
-final class ConversationTransactionPresentation {
+final class ConversationTransactionQueries {
     private final ServerPlayer viewer;
-    private final ConversationSession session;
+    private final ConversationSession.Snapshot session;
+    private final UUID actingPlayer;
+    private final int maximum;
     private final ConversationDefinition definition;
     private final CampaignTransactionSavedData data;
     private final LinkedHashMap<Key, Transaction> rows = new LinkedHashMap<>();
@@ -35,36 +33,40 @@ final class ConversationTransactionPresentation {
     private final Set<String> issues = new LinkedHashSet<>();
     private boolean blocked;
 
-    private ConversationTransactionPresentation(ServerPlayer viewer, ConversationSession session, ConversationDefinition definition) {
+    private ConversationTransactionQueries(ServerPlayer viewer, ConversationSession.Snapshot session, UUID actingPlayer,
+            ConversationDefinition definition, int maximum) {
         this.viewer = viewer;
         this.session = session;
+        this.actingPlayer = actingPlayer;
+        this.maximum = maximum;
         this.definition = definition;
         data = CampaignTransactionSavedData.get(viewer.serverLevel());
     }
 
-    static Report view(ServerPlayer viewer, ConversationSession session, ConversationDefinition definition, List<Response> responses) {
-        var projection = new ConversationTransactionPresentation(viewer, session, definition);
+    static Report view(ServerPlayer viewer, ConversationSession.Snapshot session, UUID actingPlayer,
+            ConversationDefinition definition, List<String> responses, int maximum) {
+        var projection = new ConversationTransactionQueries(viewer, session, actingPlayer, definition, maximum);
         if (definition == null) {
-            for (var operation : session.transactionChecks.values()) {
+            for (var operation : session.transactionChecks().values()) {
                 var receipt = projection.data.receipts().get(operation);
                 if (receipt != null) projection.add(receipt.terms().key().quest(), receipt.terms().key().transaction(), "", "", false);
             }
-        } else if (session.phase == ConversationSession.Phase.CHECK || session.phase == ConversationSession.Phase.ROLLED) {
-            projection.check(session.check, "", new LinkedHashSet<>());
-        } else if (session.phase == ConversationSession.Phase.RESPONSES) {
-            var node = definition.nodes().get(session.node);
+        } else if (session.phase() == ConversationSession.Phase.CHECK || session.phase() == ConversationSession.Phase.ROLLED) {
+            projection.check(session.check(), "", new LinkedHashSet<>());
+        } else if (session.phase() == ConversationSession.Phase.RESPONSES) {
+            var node = definition.nodes().get(session.node());
             for (var response : responses) {
-                var authored = node.responses().get(response.id());
-                projection.effects(authored.effects(), response.id(), false);
+                var authored = node.responses().get(response);
+                projection.effects(authored.effects(), response, false);
                 var visited = new LinkedHashSet<String>();
-                if (!authored.check().isEmpty()) projection.check(authored.check(), response.id(), visited);
-                else projection.nodes(authored.next(), response.id(), visited);
+                if (!authored.check().isEmpty()) projection.check(authored.check(), response, visited);
+                else projection.nodes(authored.next(), response, visited);
             }
-        } else if (session.phase == ConversationSession.Phase.RESPONSE_EFFECTS || session.phase == ConversationSession.Phase.CONFIRMATION) {
-            var response = definition.nodes().get(session.node).responses().get(session.response);
+        } else if (session.phase() == ConversationSession.Phase.RESPONSE_EFFECTS || session.phase() == ConversationSession.Phase.CONFIRMATION) {
+            var response = definition.nodes().get(session.node()).responses().get(session.response());
             if (response != null) projection.effects(response.effects(), "", false);
-        } else if (session.phase == ConversationSession.Phase.NODE_EFFECTS) {
-            projection.effects(definition.nodes().get(session.node).effects(), "", false);
+        } else if (session.phase() == ConversationSession.Phase.NODE_EFFECTS) {
+            projection.effects(definition.nodes().get(session.node()).effects(), "", false);
         }
         return new Report(List.copyOf(projection.rows.values()), Set.copyOf(projection.unavailable), projection.blocked,
                 String.join("\n", projection.issues));
@@ -125,14 +127,14 @@ final class ConversationTransactionPresentation {
                         prior.state(), prior.possible() && possible, prior.diagnostic()));
             return;
         }
-        if (rows.size() == CampaignConversationViewPayload.MAX_TRANSACTIONS) {
+        if (rows.size() == maximum) {
             blocked = true;
             issues.add("This conversation page has too many payment terms. Split its choices into smaller authored nodes.");
             return;
         }
-        UUID buyer = response.isEmpty() || session.controller == null ? session.actingPlayer : session.controller;
+        UUID buyer = response.isEmpty() || session.controller() == null ? actingPlayer : session.controller();
         CampaignTransaction.Receipt receipt = null;
-        for (var operation : session.transactionChecks.values()) {
+        for (var operation : session.transactionChecks().values()) {
             var linked = data.receipts().get(operation);
             if (linked != null && linked.terms().key().quest().equals(quest) && linked.terms().key().transaction().equals(transaction)) {
                 receipt = linked;
@@ -159,8 +161,8 @@ final class ConversationTransactionPresentation {
             diagnostic = "Start the owning quest before arranging this transaction.";
         if (diagnostic.isBlank() && receipt == null && operation != null && ConversationSavedData.get(viewer.serverLevel()).hasTransaction(operation))
             diagnostic = "Restore the missing transaction receipt before continuing this bargain.";
-        if (diagnostic.isBlank() && !response.isEmpty() && session.controller != null && !buyer.equals(session.controller))
-            diagnostic = "This bargain belongs to " + ConversationPresentationService.playerName(viewer, buyer) + ". Hand control back to that buyer.";
+        if (diagnostic.isBlank() && !response.isEmpty() && session.controller() != null && !buyer.equals(session.controller()))
+            diagnostic = "This bargain belongs to " + ConversationQueries.playerName(viewer, buyer) + ". Hand control back to that buyer.";
         if (diagnostic.isBlank() && receipt != null && !check.isEmpty() && receipt.negotiation() == null)
             diagnostic = "Payment already reserved this transaction's price. Its terms cannot be renegotiated.";
         String role = receipt == null ? authored.character() : receipt.terms().character();
@@ -177,9 +179,9 @@ final class ConversationTransactionPresentation {
         var state = receipt == null ? TransactionState.QUOTED : TransactionState.valueOf(receipt.phase().name());
         boolean cannotContinue = !diagnostic.isBlank();
         if (diagnostic.isBlank()) diagnostic = storageIssue;
-        rows.put(key, new Transaction(quest.toString(), transaction, response, check, label(title), buyer,
-                ConversationPresentationService.playerName(viewer, buyer), item.toString(), base, bargain == null ? -1 : bargain,
-                receipt == null ? base : receipt.price(), state, possible, label(diagnostic)));
+        rows.put(key, new Transaction(quest.toString(), transaction, response, check, title, buyer,
+                ConversationQueries.playerName(viewer, buyer), item.toString(), base, bargain == null ? -1 : bargain,
+                receipt == null ? base : receipt.price(), state, possible, diagnostic));
         if (cannotContinue) {
             if (response.isEmpty()) blocked = true;
             else unavailable.add(response);
@@ -192,13 +194,12 @@ final class ConversationTransactionPresentation {
         else unavailable.add(response);
     }
 
-    private static String label(String value) {
-        int end = Math.min(value.length(), CampaignConversationViewPayload.MAX_LABEL_LENGTH);
-        if (end < value.length() && Character.isHighSurrogate(value.charAt(end - 1))) end--;
-        return value.substring(0, end);
-    }
-
     private record Key(ResourceLocation quest, String transaction, String response) { }
 
-    record Report(List<Transaction> transactions, Set<String> unavailableResponses, boolean blocked, String diagnostic) { }
+    enum TransactionState { QUOTED, NEGOTIATED, PAYMENT_PENDING, PAID }
+    record Transaction(String quest, String id, String response, String check, String title, UUID buyer, String buyerName,
+            String item, int basePrice, int bargainPrice, int price, TransactionState state, boolean possible, String diagnostic) { }
+    record Report(List<Transaction> transactions, Set<String> unavailableResponses, boolean blocked, String diagnostic) {
+        Report { transactions = List.copyOf(transactions); unavailableResponses = Set.copyOf(unavailableResponses); }
+    }
 }

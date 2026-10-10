@@ -651,6 +651,37 @@ public final class ConversationSessionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void constructedQuerySnapshotsOwnTheirCollections(GameTestHelper helper) {
+        var session = session(UUID.randomUUID());
+        var participants = new java.util.LinkedHashSet<>(session.participants);
+        var speakers = new java.util.LinkedHashMap<>(session.speakers);
+        var transcript = new java.util.ArrayList<ConversationSession.Line>();
+        transcript.add(new ConversationSession.Line("welcome", 1, "greet", ConversationDefinition.SpeakerKind.ROLE,
+                "mentor", session.identity.character(), "Mira", "fixture.welcome", "Welcome back."));
+        var choices = new java.util.ArrayList<ConversationSession.Choice>();
+        var checks = new java.util.LinkedHashMap<String, ConversationSession.Check>();
+        var receipts = new java.util.LinkedHashMap<String, ConversationSession.Receipt>();
+        var snapshot = new ConversationSession.Snapshot(session.identity, session.revision, session.visit, session.node,
+                session.phase, session.exchange, session.response, session.check, session.outcome, session.controller,
+                participants, speakers, transcript, choices, checks, receipts, Set.of(), "", null);
+        participants.clear();
+        speakers.clear();
+        transcript.clear();
+        choices.add(new ConversationSession.Choice(UUID.randomUUID(), "welcome", 1, "appeal", session.identity.owner(), Set.of(), 0));
+        checks.put("convince", ConversationSession.Check.roll(UUID.randomUUID(), new ConversationDefinition.Check("convince", 10, "yes", "no", ""),
+                12, session.identity.owner(), 0));
+        receipts.put("1/node/gift", new ConversationSession.Receipt("1/node/gift", session.identity.owner(), null, action(),
+                ConversationSession.ReceiptState.RESOLVED, ActionResult.success(VillagerActionResult.success(), Set.of())));
+        helper.assertValueEqual(snapshot.participants(), session.participants, "participants remain captured");
+        helper.assertValueEqual(snapshot.speakers(), session.speakers, "speakers remain captured");
+        helper.assertValueEqual(snapshot.transcript().size(), 1, "history remains captured");
+        helper.assertTrue(snapshot.choices().isEmpty() && snapshot.checks().isEmpty() && snapshot.receipts().isEmpty(), "later mutations cannot enter a query snapshot");
+        try { snapshot.receipts().clear(); helper.fail("query receipts must be immutable"); }
+        catch (UnsupportedOperationException expected) { }
+        helper.succeed();
+    }
+
     private static ConversationSession session(UUID character) {
         UUID player = UUID.randomUUID();
         var id = ResourceLocation.parse("campaign_fixture:mentor_conversation");

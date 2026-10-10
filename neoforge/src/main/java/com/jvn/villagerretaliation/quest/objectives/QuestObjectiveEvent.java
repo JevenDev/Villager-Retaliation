@@ -26,7 +26,8 @@ public record QuestObjectiveEvent(
         Map<String, String> criterionData
 ) {
     public QuestObjectiveEvent {
-        itemStack = itemStack == null ? ItemStack.EMPTY : itemStack;
+        blockPos = blockPos == null ? null : blockPos.immutable();
+        itemStack = itemStack == null ? ItemStack.EMPTY : itemStack.copy();
         criterionData = criterionData == null ? Map.of() : Map.copyOf(criterionData);
     }
 

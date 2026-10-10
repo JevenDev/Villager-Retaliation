@@ -3,7 +3,6 @@ package com.jvn.villagerretaliation.action;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.campaign.CampaignOutcomeAction;
-import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
@@ -309,12 +308,11 @@ public record VillagerActionDefinition(
             String context,
             JsonObject entry,
             ResourceLocation defaultQuestId) {
-        Kind kind = inferKind(entry, defaultQuestId);
-        if (kind == Kind.NONE) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "action must define a supported type.");
-            return java.util.Optional.empty();
-        }
+        return VillagerActionRegistry.read(location, context, entry, defaultQuestId, inferKind(entry, defaultQuestId));
+    }
 
+    static java.util.Optional<VillagerActionDefinition> readRegistered(
+            ResourceLocation location, String context, JsonObject entry, ResourceLocation defaultQuestId, Kind kind) {
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
         if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind == Kind.FOLLOWER || kind.isQuestFact()) && !hasExplicitQuestId) {
@@ -376,25 +374,6 @@ public record VillagerActionDefinition(
                     DatapackDiagnostics.warnInvalidDialogueCondition(location, context + "." + field, message));
         }
 
-        if (!hasRequiredFields(
-                location,
-                context,
-                kind,
-                questId,
-                questAction,
-                memoryTag,
-                lootTable,
-                notificationTrigger,
-                text,
-                forcedDialogue,
-                factTag,
-                factKey,
-                factValue,
-                questTransition,
-                sceneId,
-                sceneOperationId)) {
-            return java.util.Optional.empty();
-        }
         return java.util.Optional.of(new VillagerActionDefinition(
                 kind,
                 questId,
@@ -524,46 +503,6 @@ public record VillagerActionDefinition(
             }
         }
         return null;
-    }
-
-    private static boolean hasRequiredFields(
-            ResourceLocation location,
-            String context,
-            Kind kind,
-            ResourceLocation questId,
-            QuestAction questAction,
-            ResourceLocation memoryTag,
-            ResourceLocation lootTable,
-            String notificationTrigger,
-            String text,
-            String forcedDialogue,
-            ResourceLocation factTag,
-            String factKey,
-            String factValue,
-            CompiledQuestTransition questTransition,
-            ResourceLocation sceneId,
-            String sceneOperationId) {
-        boolean valid = switch (kind) {
-            case QUEST -> questId != null && questAction != QuestAction.NONE;
-            case QUEST_TRANSITION -> questTransition != null && !questTransition.isEmpty();
-            case CAMPAIGN_OUTCOME, CAMPAIGN_FACT, CAMPAIGN_REWARD, CAMPAIGN_STANDING, CAMPAIGN_PAYMENT, FOLLOWER -> true;
-            case MEMORY -> memoryTag != null;
-            case LOOT -> lootTable != null;
-            case FORCED_DIALOGUE -> !forcedDialogue.isBlank();
-            case NOTIFICATION -> !notificationTrigger.isBlank() || !text.isBlank();
-            case SET_TAG, CLEAR_TAG -> factTag != null;
-            case SET_VARIABLE -> !factKey.isBlank() && !factValue.isBlank();
-            case COUNTER -> !factKey.isBlank();
-            case START_SCENE -> sceneId != null && !sceneOperationId.isBlank();
-            case PROFILE_ATTRIBUTE ->
-                    VillagerSocialAttribute.bySerializedName(factKey) != null;
-            case TRACKER, EXPERIENCE, REPUTATION, GOSSIP, DRAW_WEAPON -> true;
-            case NONE -> false;
-        };
-        if (!valid) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "action is missing required fields for type \"" + kind.serializedName() + "\".");
-        }
-        return valid;
     }
 
     private static ResourceLocation readSceneId(ResourceLocation location, JsonObject entry) {

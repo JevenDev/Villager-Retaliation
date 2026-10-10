@@ -114,9 +114,8 @@ public final class ConversationSession {
 
     public Snapshot snapshot() {
         return new Snapshot(identity, revision, visit, node, phase, exchange, response, check, outcome,
-                controller, Set.copyOf(participants), ordered(speakers), List.copyOf(transcript),
-                List.copyOf(choices), ordered(checks), ordered(receipts), Set.copyOf(socialAwards), diagnostic, confirmation != null ? confirmation
-                        : nestedDecision != null && nestedDecision.state() == ConversationNestedDecision.State.PENDING ? nestedDecision.confirmation() : null, ordered(transactionChecks));
+                controller, participants, speakers, transcript, choices, checks, receipts, socialAwards, diagnostic, confirmation != null ? confirmation
+                        : nestedDecision != null && nestedDecision.state() == ConversationNestedDecision.State.PENDING ? nestedDecision.confirmation() : null, transactionChecks);
     }
 
     private static <K, V> Map<K, V> ordered(Map<K, V> values) {
@@ -215,9 +214,17 @@ public final class ConversationSession {
             List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, Set<String> socialAwards,
             String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation, Map<String, UUID> transactionChecks) {
         public Snapshot {
+            participants = Set.copyOf(participants);
+            speakers = ordered(speakers);
+            transcript = List.copyOf(transcript);
+            choices = List.copyOf(choices);
+            checks = ordered(checks);
+            receipts = ordered(receipts);
             socialAwards = Set.copyOf(socialAwards);
             transactionChecks = ordered(transactionChecks);
         }
+
+        public boolean active() { return phase != Phase.COMPLETE && phase != Phase.CANCELLED; }
 
         public Snapshot(Identity identity, long revision, long visit, String node, Phase phase,
                 int exchange, String response, String check, String outcome, UUID controller,

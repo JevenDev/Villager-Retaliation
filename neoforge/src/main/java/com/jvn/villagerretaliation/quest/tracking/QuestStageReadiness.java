@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest.tracking;
 
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressState;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
@@ -23,11 +24,25 @@ public record QuestStageReadiness(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             Predicate<QuestDefinition.Objective> objectiveComplete) {
+        return forCurrentStage(context, definition, (QuestProgressState) progress, objectiveComplete);
+    }
+
+    public static QuestStageReadiness forCurrentStage(
+            DialogueContext context,
+            QuestDefinition definition,
+            QuestProgressState progress,
+            Predicate<QuestDefinition.Objective> objectiveComplete) {
         return forCurrentStage(definition, progress, objectiveComplete, conditions -> DialogueCondition.matchesAll(context, conditions));
     }
 
     public static QuestStageReadiness forCurrentStage(QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress, Predicate<QuestDefinition.Objective> objectiveComplete,
+            Predicate<java.util.List<DialogueCondition>> conditionsMet) {
+        return forCurrentStage(definition, (QuestProgressState) progress, objectiveComplete, conditionsMet);
+    }
+
+    public static QuestStageReadiness forCurrentStage(QuestDefinition definition,
+            QuestProgressState progress, Predicate<QuestDefinition.Objective> objectiveComplete,
             Predicate<java.util.List<DialogueCondition>> conditionsMet) {
         if (definition == null || progress == null || definition.stages().isEmpty()) {
             return notReady("", "", "stage context unavailable");

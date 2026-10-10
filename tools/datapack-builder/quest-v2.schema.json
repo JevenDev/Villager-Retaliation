@@ -3167,7 +3167,103 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_evidence"
+                "type": "string",
+                "enum": [
+                  "all",
+                  "all_of",
+                  "and"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "conditions"
+            ],
+            "properties": {
+              "conditions": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/condition"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "any",
+                  "any_of",
+                  "or"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "conditions"
+            ],
+            "properties": {
+              "conditions": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/condition"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "not"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "condition"
+            ],
+            "properties": {
+              "condition": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "campaign_evidence"
+                ]
               }
             },
             "required": [
@@ -3202,7 +3298,10 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_transaction"
+                "type": "string",
+                "enum": [
+                  "campaign_transaction"
+                ]
               }
             },
             "required": [
@@ -3254,7 +3353,10 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_standing"
+                "type": "string",
+                "enum": [
+                  "campaign_standing"
+                ]
               }
             },
             "required": [
@@ -3347,7 +3449,10 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_fact"
+                "type": "string",
+                "enum": [
+                  "campaign_fact"
+                ]
               }
             },
             "required": [
@@ -3396,7 +3501,10 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_outcome"
+                "type": "string",
+                "enum": [
+                  "campaign_outcome"
+                ]
               }
             },
             "required": [
@@ -3447,7 +3555,10 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_character"
+                "type": "string",
+                "enum": [
+                  "campaign_character"
+                ]
               }
             },
             "required": [
@@ -3495,7 +3606,10 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_companion"
+                "type": "string",
+                "enum": [
+                  "campaign_companion"
+                ]
               }
             },
             "required": [
@@ -3537,7 +3651,10 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_location"
+                "type": "string",
+                "enum": [
+                  "campaign_location"
+                ]
               }
             },
             "required": [
@@ -3574,198 +3691,6 @@
               }
             }
           }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "all"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "additionalProperties": true,
-            "required": [
-              "conditions"
-            ],
-            "properties": {
-              "conditions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/$defs/condition"
-                },
-                "minItems": 1
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "all_of"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "additionalProperties": true,
-            "required": [
-              "conditions"
-            ],
-            "properties": {
-              "conditions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/$defs/condition"
-                },
-                "minItems": 1
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "and"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "additionalProperties": true,
-            "required": [
-              "conditions"
-            ],
-            "properties": {
-              "conditions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/$defs/condition"
-                },
-                "minItems": 1
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "any"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "additionalProperties": true,
-            "required": [
-              "conditions"
-            ],
-            "properties": {
-              "conditions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/$defs/condition"
-                },
-                "minItems": 1
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "any_of"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "additionalProperties": true,
-            "required": [
-              "conditions"
-            ],
-            "properties": {
-              "conditions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/$defs/condition"
-                },
-                "minItems": 1
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "not"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "additionalProperties": true,
-            "required": [
-              "condition"
-            ],
-            "properties": {
-              "condition": {
-                "$ref": "#/$defs/condition"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "or"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "additionalProperties": true,
-            "required": [
-              "conditions"
-            ],
-            "properties": {
-              "conditions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/$defs/condition"
-                },
-                "minItems": 1
-              }
-            }
-          }
         }
       ]
     },
@@ -3780,177 +3705,9 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_outcome"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "required": [
-              "milestone",
-              "outcome",
-              "operation_id"
-            ],
-            "properties": {
-              "milestone": {
-                "type": "string",
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "outcome": {
-                "type": "string",
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "operation_id": {
-                "type": "string",
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "required": {
-                "const": true
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "campaign_standing"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "required": [
-              "scope",
-              "subject",
-              "amount",
-              "operation_id"
-            ],
-            "properties": {
-              "scope": {
-                "type": "string",
                 "enum": [
-                  "character",
-                  "faction"
+                  "follower"
                 ]
-              },
-              "subject": {
-                "type": "string",
-                "maxLength": 256,
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "amount": {
-                "type": "integer",
-                "minimum": -2147483648,
-                "maximum": 2147483647
-              },
-              "operation_id": {
-                "type": "string",
-                "maxLength": 256,
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "required": {
-                "const": true
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "campaign_fact"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "required": [
-              "fact",
-              "value",
-              "operation_id"
-            ],
-            "properties": {
-              "fact": {
-                "type": "string",
-                "maxLength": 256,
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "value": {
-                "type": "string",
-                "maxLength": 4096
-              },
-              "milestone": {
-                "type": "string",
-                "maxLength": 256,
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "operation_id": {
-                "type": "string",
-                "maxLength": 256,
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "mutation": {
-                "type": "string",
-                "enum": [
-                  "set",
-                  "add"
-                ]
-              },
-              "required": {
-                "const": true
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "campaign_reward"
-              }
-            },
-            "required": [
-              "type"
-            ]
-          },
-          "then": {
-            "type": "object",
-            "properties": {
-              "reward": {
-                "type": "string",
-                "maxLength": 256,
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "operation_id": {
-                "type": "string",
-                "maxLength": 256,
-                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
-              },
-              "required": {
-                "const": true
-              }
-            },
-            "required": [
-              "reward",
-              "operation_id"
-            ]
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "follower"
               }
             },
             "required": [
@@ -4126,7 +3883,9 @@
           "if": {
             "properties": {
               "type": {
-                "const": "campaign_payment"
+                "enum": [
+                  "campaign_payment"
+                ]
               }
             },
             "required": [
@@ -4148,6 +3907,184 @@
             "required": [
               "transaction"
             ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_reward"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "reward": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "operation_id": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            },
+            "required": [
+              "reward",
+              "operation_id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_standing"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "scope",
+              "subject",
+              "amount",
+              "operation_id"
+            ],
+            "properties": {
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "character",
+                  "faction"
+                ]
+              },
+              "subject": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "amount": {
+                "type": "integer",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "operation_id": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_fact"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "fact",
+              "value",
+              "operation_id"
+            ],
+            "properties": {
+              "fact": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "value": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "milestone": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "operation_id": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "mutation": {
+                "type": "string",
+                "enum": [
+                  "set",
+                  "add"
+                ]
+              },
+              "required": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "campaign_outcome"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "milestone",
+              "outcome",
+              "operation_id"
+            ],
+            "properties": {
+              "milestone": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "outcome": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "operation_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+              },
+              "required": {
+                "const": true
+              }
+            }
           }
         }
       ],

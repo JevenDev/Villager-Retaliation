@@ -610,32 +610,20 @@ public final class QuestV2Schema {
         schema.add("properties", properties);
         schema.add("additionalProperties", booleanLiteral(true));
         var rules = new JsonArray();
-        rules.add(typeRule("campaign_evidence", com.jvn.villagerretaliation.campaign.CampaignEvidencePredicate.schema()));
-        rules.add(typeRule("campaign_transaction", com.jvn.villagerretaliation.campaign.CampaignTransactionPredicate.schema()));
-        rules.add(typeRule("campaign_standing", com.jvn.villagerretaliation.campaign.CampaignStandingPredicate.schema()));
-        rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema()));
-        rules.add(typeRule("campaign_outcome", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema()));
-        rules.add(typeRule("campaign_character", com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema()));
-        rules.add(typeRule("campaign_companion", com.jvn.villagerretaliation.campaign.CampaignCompanionPredicate.schema()));
-        rules.add(typeRule("campaign_location", com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.schema()));
-        JsonObject compound = typedObject();
-        compound.add("required", strings("conditions"));
-        JsonObject compoundProperties = object();
-        JsonObject children = arrayOf(ref("#/$defs/condition"));
-        children.addProperty("minItems", 1);
-        compoundProperties.add("conditions", children);
-        compound.add("properties", compoundProperties);
-        compound.addProperty("additionalProperties", true);
-        JsonObject negation = typedObject();
-        negation.add("required", strings("condition"));
-        JsonObject negationProperties = object();
-        negationProperties.add("condition", ref("#/$defs/condition"));
-        negation.add("properties", negationProperties);
-        negation.addProperty("additionalProperties", true);
-        for (String name : conditionTypes()) {
-            String canonical = DialogueCondition.canonicalTypeId(name);
-            if (canonical.equals("all") || canonical.equals("any")) rules.add(typeRule(name, compound));
-            if (canonical.equals("not")) rules.add(typeRule(name, negation));
+        for (var descriptor : DialogueCondition.descriptors()) {
+            JsonObject fields = descriptor.schema();
+            if (!fields.entrySet().isEmpty()) {
+                var names = Stream.concat(Stream.of(descriptor.id()), descriptor.aliases().stream()).sorted().toList();
+                var rule = new JsonObject();
+                var when = new JsonObject();
+                var typeProperties = new JsonObject();
+                typeProperties.add("type", stringEnum(names));
+                when.add("properties", typeProperties);
+                when.add("required", strings("type"));
+                rule.add("if", when);
+                rule.add("then", fields);
+                rules.add(rule);
+            }
         }
         schema.add("allOf", rules);
         return schema;
@@ -654,41 +642,10 @@ public final class QuestV2Schema {
         properties.add("duration_ticks", integer());
         properties.add("duration_seconds", integer());
         properties.add("duration_days", integer());
-        var decision = new JsonObject();
-        var when = new JsonObject();
-        var whenProperties = new JsonObject();
-        var type = new JsonObject();
-        type.addProperty("const", "campaign_outcome");
-        whenProperties.add("type", type);
-        when.add("properties", whenProperties);
-        when.add("required", strings("type"));
-        decision.add("if", when);
-        decision.add("then", com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.schema());
-        var rules = new JsonArray();
-        rules.add(decision);
-        rules.add(typeRule("campaign_standing", com.jvn.villagerretaliation.campaign.CampaignStandingAction.schema()));
-        rules.add(typeRule("campaign_fact", com.jvn.villagerretaliation.campaign.CampaignFactAction.schema()));
-        rules.add(typeRule("campaign_reward", com.jvn.villagerretaliation.campaign.CampaignRewardAction.schema()));
-        rules.add(typeRule("follower", com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective.schema()));
-        rules.add(typeRule("campaign_payment", com.jvn.villagerretaliation.campaign.CampaignPaymentAction.schema()));
-        schema.add("allOf", rules);
+        schema.add("allOf", VillagerActionRegistry.structuralRules());
         schema.add("properties", properties);
         schema.add("additionalProperties", booleanLiteral(true));
         return schema;
-    }
-
-    private static JsonObject typeRule(String name, JsonObject fields) {
-        var rule = new JsonObject();
-        var when = new JsonObject();
-        var properties = new JsonObject();
-        var type = new JsonObject();
-        type.addProperty("const", name);
-        properties.add("type", type);
-        when.add("properties", properties);
-        when.add("required", strings("type"));
-        rule.add("if", when);
-        rule.add("then", fields);
-        return rule;
     }
 
     private static Collection<String> conditionTypes() {

@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.quest.tracking;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
-import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
+import com.jvn.villagerretaliation.quest.query.QuestProgressSnapshot;
 import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
@@ -29,6 +29,42 @@ public final class QuestPresentationService {
     private static final int APPROXIMATE_COORDINATE_STEP = 50;
 
     private QuestPresentationService() {
+    }
+
+    public static QuestTrackerSyncPayload.Entry withRuntimeJournal(QuestTrackerSyncPayload.Entry entry,
+            QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress, long completedGameTime) {
+        return withRuntimeJournalView(entry, definition, QuestProgressSnapshot.capture(progress, definition), completedGameTime);
+    }
+
+    public static Map<String, String> trackerReplacements(ServerPlayer player, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress, QuestDefinition.Objective objective,
+            boolean activeConditionsMet, boolean hasRequiredProof, ObjectiveState state) {
+        return trackerReplacementsView(player, definition, QuestProgressSnapshot.capture(progress, definition), objective,
+                activeConditionsMet, hasRequiredProof, state);
+    }
+
+    public static Map<String, String> dialogueReplacements(DialogueContext context, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress, QuestDefinition.Objective objective,
+            boolean activeConditionsMet, boolean hasRequiredProof, ObjectiveState state) {
+        return dialogueReplacementsView(context, definition, QuestProgressSnapshot.capture(progress, definition), objective,
+                activeConditionsMet, hasRequiredProof, state);
+    }
+
+    public static List<QuestTrackerSyncPayload.ObjectiveStep> completedObjectiveSteps(ServerPlayer player,
+            QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
+        return completedObjectiveStepsView(player, definition, QuestProgressSnapshot.capture(progress, definition));
+    }
+
+    public static String issuerSummary(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+        return issuerSummaryView(player, QuestProgressSnapshot.capture(progress));
+    }
+
+    public static String issuerLocationSummary(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+        return issuerLocationSummaryView(player, QuestProgressSnapshot.capture(progress));
+    }
+
+    public static String issuerStatus(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+        return issuerStatusView(player, QuestProgressSnapshot.capture(progress));
     }
 
     public static QuestTrackerSyncPayload.Entry availableEntry(
@@ -89,7 +125,7 @@ public final class QuestPresentationService {
                 ? new QuestDefinition.SelectedText(definition.title(), definition.titleKey())
                 : new QuestDefinition.SelectedText(definition.tracker().title(), definition.tracker().titleKey());
         String status = resolveGlobalText(player, "quest.tracker.status.completed", "Completed", replacements);
-        return withRuntimeJournal(QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+        return withRuntimeJournalView(QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
                 player,
                 definition,
                 title,
@@ -101,7 +137,7 @@ public final class QuestPresentationService {
                 List.of(),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisites,
-                completedObjectiveSteps(player, definition, null),
+                completedObjectiveStepsView(player, definition, null),
                 QuestTrackerPresenter.fallbackProgress("completed"),
                 false,
                 VillagerQuestSavedData.QuestState.COMPLETED))
@@ -111,10 +147,10 @@ public final class QuestPresentationService {
                 history.completedGameTime());
     }
 
-    public static QuestTrackerSyncPayload.Entry withRuntimeJournal(
+    public static QuestTrackerSyncPayload.Entry withRuntimeJournalView(
             QuestTrackerSyncPayload.Entry entry,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot progress,
             long completedGameTime) {
         if (entry == null || definition == null) {
             return entry;
@@ -138,8 +174,8 @@ public final class QuestPresentationService {
         return entry.withJournal(entry.journal().withRuntime(expiresAt, completedGameTime, waypoint));
     }
 
-    public static Map<String, String> trackerReplacements(
-            ServerPlayer player, QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress,
+    public static Map<String, String> trackerReplacementsView(
+            ServerPlayer player, QuestDefinition definition, QuestProgressSnapshot progress,
             QuestDefinition.Objective objective, boolean activeConditionsMet, boolean hasRequiredProof, ObjectiveState state) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("quest", questTitle(player, definition, Map.of()));
@@ -184,10 +220,10 @@ public final class QuestPresentationService {
         return Map.copyOf(values);
     }
 
-    public static Map<String, String> dialogueReplacements(
+    public static Map<String, String> dialogueReplacementsView(
             DialogueContext context,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot progress,
             QuestDefinition.Objective objective, boolean activeConditionsMet, boolean hasRequiredProof, ObjectiveState state) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("quest", questTitle(context, definition, Map.of()));
@@ -337,10 +373,10 @@ public final class QuestPresentationService {
         }
     }
 
-    public static List<QuestTrackerSyncPayload.ObjectiveStep> completedObjectiveSteps(
+    public static List<QuestTrackerSyncPayload.ObjectiveStep> completedObjectiveStepsView(
             ServerPlayer player,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
+            QuestProgressSnapshot progress) {
         if (player == null || definition == null || definition.objectives().isEmpty()) {
             return List.of();
         }
@@ -360,7 +396,7 @@ public final class QuestPresentationService {
     private static String completedObjectiveStepLabel(
             ServerPlayer player,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot progress,
             QuestDefinition.Objective objective) {
         if (objective == null) {
             return "";
@@ -381,7 +417,7 @@ public final class QuestPresentationService {
     private static Map<String, String> completedObjectiveReplacements(
             ServerPlayer player,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot progress,
             QuestDefinition.Objective objective) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("quest", questTitle(player, definition, Map.of()));
@@ -396,7 +432,7 @@ public final class QuestPresentationService {
         values.put("objective", objective.id());
         values.put("objective_id", objective.id());
         values.put("objective_type", objective.type().name().toLowerCase(Locale.ROOT));
-        ResourceLocation objectiveItem = QuestObjectiveQuery.resolvedItem(objective, progress);
+        ResourceLocation objectiveItem = QuestProgressSnapshot.resolvedItem(objective, progress);
         values.put("objective_item", objectiveItem == null ? questItemName(definition, progress) : itemName(objectiveItem));
         values.put("objective_item_id", objectiveItem == null ? "" : objectiveItem.toString());
         values.put("objective_count", Integer.toString(objective.count()));
@@ -518,13 +554,13 @@ public final class QuestPresentationService {
     private static void addIssuerReplacements(
             Map<String, String> values,
             ServerPlayer player,
-            VillagerQuestSavedData.QuestProgress progress) {
-        values.put("issuer", issuerSummary(player, progress));
+            QuestProgressSnapshot progress) {
+        values.put("issuer", issuerSummaryView(player, progress));
         values.put("issuer_name", issuerName(player, progress));
         values.put("issuer_profession", issuerProfessionName(player, progress));
         values.put("issuer_dimension", issuerDimensionText(player, progress));
-        values.put("issuer_location", issuerLocationSummary(player, progress));
-        values.put("issuer_status", issuerStatus(player, progress));
+        values.put("issuer_location", issuerLocationSummaryView(player, progress));
+        values.put("issuer_status", issuerStatusView(player, progress));
         BlockPos issuerPos = issuerPos(player, progress);
         if (issuerPos == null) {
             values.put("issuer_x", "unknown");
@@ -540,7 +576,7 @@ public final class QuestPresentationService {
     private static void addObjectiveReplacements(
             Map<String, String> values,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressSnapshot progress,
             QuestDefinition.Objective objective,
             ObjectiveState state) {
         if (objective == null) {
@@ -581,7 +617,7 @@ public final class QuestPresentationService {
         values.put("objective", objective.id());
         values.put("objective_id", objective.id());
         values.put("objective_type", objective.type().name().toLowerCase(Locale.ROOT));
-        ResourceLocation objectiveItem = QuestObjectiveQuery.resolvedItem(objective, progress);
+        ResourceLocation objectiveItem = QuestProgressSnapshot.resolvedItem(objective, progress);
         values.put("objective_item", objectiveItem == null ? questItemName(definition, progress) : itemName(objectiveItem));
         values.put("objective_item_id", objectiveItem == null ? "" : objectiveItem.toString());
         values.put("objective_count", Integer.toString(objective.count()));
@@ -632,24 +668,24 @@ public final class QuestPresentationService {
     private static void addIssuerReplacements(
             Map<String, String> values,
             DialogueContext context,
-            VillagerQuestSavedData.QuestProgress progress) {
+            QuestProgressSnapshot progress) {
         addIssuerReplacements(values, context.player(), progress);
     }
 
-    private static String questItemName(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
+    private static String questItemName(QuestDefinition definition, QuestProgressSnapshot progress) {
         if (definition.target().hasProofItem()) {
             return itemName(definition.target().proofItem());
         }
-        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
-            ResourceLocation itemId = QuestObjectiveQuery.resolvedItem(objective, progress);
+        for (QuestDefinition.Objective objective : QuestProgressSnapshot.activeObjectives(definition, progress)) {
+            ResourceLocation itemId = QuestProgressSnapshot.resolvedItem(objective, progress);
             if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK
                     && itemId != null
                     && (progress == null || !progress.objectiveComplete(objective.id()))) {
                 return itemName(itemId);
             }
         }
-        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
-            ResourceLocation itemId = QuestObjectiveQuery.resolvedItem(objective, progress);
+        for (QuestDefinition.Objective objective : QuestProgressSnapshot.activeObjectives(definition, progress)) {
+            ResourceLocation itemId = QuestProgressSnapshot.resolvedItem(objective, progress);
             if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK && itemId != null) {
                 return itemName(itemId);
             }
@@ -799,7 +835,7 @@ public final class QuestPresentationService {
         return "";
     }
 
-    public static String issuerSummary(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+    public static String issuerSummaryView(ServerPlayer player, QuestProgressSnapshot progress) {
         String name = issuerName(player, progress);
         String profession = issuerProfessionName(player, progress);
         if (profession.isBlank() || "villager".equalsIgnoreCase(profession)) {
@@ -808,7 +844,7 @@ public final class QuestPresentationService {
         return name + " the " + profession;
     }
 
-    private static String issuerName(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+    private static String issuerName(ServerPlayer player, QuestProgressSnapshot progress) {
         Villager villager = liveStartedVillager(player, progress);
         if (villager != null) {
             return VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
@@ -819,7 +855,7 @@ public final class QuestPresentationService {
         return "Unknown villager";
     }
 
-    private static String issuerProfessionName(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+    private static String issuerProfessionName(ServerPlayer player, QuestProgressSnapshot progress) {
         Villager villager = liveStartedVillager(player, progress);
         if (villager != null) {
             return VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "villager");
@@ -833,7 +869,7 @@ public final class QuestPresentationService {
         return "villager";
     }
 
-    public static String issuerLocationSummary(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+    public static String issuerLocationSummaryView(ServerPlayer player, QuestProgressSnapshot progress) {
         Villager live = liveStartedVillager(player, progress);
         if (live != null && live.isAlive()) {
             BlockPos livePos = live.blockPosition();
@@ -849,7 +885,7 @@ public final class QuestPresentationService {
                 + (dimension.isBlank() || "unknown".equals(dimension) ? "" : " in " + dimension);
     }
 
-    private static BlockPos issuerPos(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+    private static BlockPos issuerPos(ServerPlayer player, QuestProgressSnapshot progress) {
         Villager villager = liveStartedVillager(player, progress);
         if (villager != null) {
             return villager.blockPosition();
@@ -857,7 +893,7 @@ public final class QuestPresentationService {
         return progress == null ? null : progress.issuerPos();
     }
 
-    private static String issuerDimensionText(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+    private static String issuerDimensionText(ServerPlayer player, QuestProgressSnapshot progress) {
         Villager villager = liveStartedVillager(player, progress);
         if (villager != null) {
             return dimensionDisplayName(villager.level().dimension());
@@ -866,7 +902,7 @@ public final class QuestPresentationService {
         return dimensionDisplayName(dimension);
     }
 
-    private static String targetDimensionText(VillagerQuestSavedData.QuestProgress progress) {
+    private static String targetDimensionText(QuestProgressSnapshot progress) {
         ResourceKey<Level> dimension = progress == null ? null : progress.targetDimension();
         return dimensionDisplayName(dimension);
     }
@@ -905,7 +941,7 @@ public final class QuestPresentationService {
         return builder.toString();
     }
 
-    public static String issuerStatus(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+    public static String issuerStatusView(ServerPlayer player, QuestProgressSnapshot progress) {
         if (liveStartedVillager(player, progress) != null) {
             return "current";
         }
@@ -915,7 +951,7 @@ public final class QuestPresentationService {
                 : "unknown";
     }
 
-    private static Villager liveStartedVillager(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+    private static Villager liveStartedVillager(ServerPlayer player, QuestProgressSnapshot progress) {
         if (player.level() instanceof ServerLevel level) {
             if (progress == null || progress.startedVillagerId() == null) return null;
             Entity entity = level.getEntity(progress.startedVillagerId());

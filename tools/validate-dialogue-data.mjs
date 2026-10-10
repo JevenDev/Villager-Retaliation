@@ -2887,7 +2887,13 @@ function checkRegisteredFields(file, action, location, type, pointer = "", regis
   for (const [field, rule] of Object.entries(schema.properties ?? {})) {
     if (!Object.hasOwn(action, field)) continue;
     const value = action[field];
-    if ((rule.type === "integer" ? !Number.isInteger(value) : rule.type && typeof value !== rule.type)
+    const matchesType = rule.type === "array" ? Array.isArray(value)
+      : rule.type === "object" ? value !== null && typeof value === "object" && !Array.isArray(value)
+      : rule.type === "integer" ? Number.isInteger(value)
+      : rule.type === "null" ? value === null : typeof value === rule.type;
+    if ((rule.type && !matchesType)
+        || (rule.minItems !== undefined && (!Array.isArray(value) || value.length < rule.minItems))
+        || (rule.maxItems !== undefined && (!Array.isArray(value) || value.length > rule.maxItems))
         || (rule.minimum !== undefined && (typeof value !== "number" || value < rule.minimum))
         || (rule.maximum !== undefined && (typeof value !== "number" || value > rule.maximum))
         || (rule.pattern && (typeof value !== "string" || !new RegExp(rule.pattern).test(value)))

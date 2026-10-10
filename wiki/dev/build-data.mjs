@@ -46,7 +46,6 @@ const catalog = [
 ];
 
 const implementationDocs = [
-  ["Quest-Scene-Runtime.md", "Runtime Internals", "database-zap", "Durable quest-run identity, operation ownership, continuations, cleanup, and downed-state contracts."],
   ["Tracked-Villages.md", "Runtime Internals", "map-pinned", "Tracked-village identity, footprints, allegiance, naming, lifecycle, and administration."]
 ];
 
@@ -164,10 +163,10 @@ const related = {
   "forced-dialogue": ["dialogue", "notification-triggers", "villager-event-triggers", "generated-containers"],
   "notifications": ["notification-triggers", "localization", "event-tags"],
   "villager-event-triggers": ["forced-dialogue", "notifications", "event-tags"],
-  "quests": ["first-quest", "dialogue-and-quests", "quest-scenes", "quest-scene-runtime"],
+  "quests": ["first-quest", "dialogue-and-quests", "quest-scenes"],
   "dialogue-and-quests": ["quests", "dialogue-trees", "forced-dialogue"],
-  "quest-scenes": ["quests", "quest-scene-runtime", "quest-runtime-roadmap"],
-  "quest-runtime-roadmap": ["quest-scenes", "quest-scene-runtime"],
+  "quest-scenes": ["quests", "quest-runtime-roadmap"],
+  "quest-runtime-roadmap": ["quest-scenes"],
   "gifts": ["json-reference", "localization", "profession-loot", "currency-and-item-text"],
   "pacification": ["forced-dialogue", "gifts", "json-reference", "currency-and-item-text"],
   "currency-and-item-text": ["pacification", "sell-box-and-daily-market", "localization"],
@@ -181,7 +180,6 @@ const related = {
   "player-raids": ["natural-job-armor", "forced-dialogue", "tracked-villages"],
   "generated-containers": ["forced-dialogue", "quest-scenes", "example-packs"],
   "pack-format-changes": ["pack-development", "example-packs", "datapack-generator"],
-  "quest-scene-runtime": ["quest-scenes", "quests", "quest-runtime-roadmap"],
   "tracked-villages": ["village-names", "story-discovery", "player-raids"]
 };
 for (const page of pages) page.related = related[page.slug] || [];

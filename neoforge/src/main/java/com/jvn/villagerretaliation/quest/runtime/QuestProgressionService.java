@@ -19,6 +19,16 @@ public final class QuestProgressionService {
     public static boolean advanceSaved(ServerLevel level, ServerPlayer player, QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress, Predicate<QuestDefinition.Objective> objectiveComplete,
             Predicate<List<DialogueCondition>> conditionsMet) {
+        if (!advanceSaved(definition, progress, level.getGameTime(), objectiveComplete, conditionsMet)) return false;
+        VillagerQuestFacts.get(level).setVariable(QuestScopeKey.quest(player.getUUID(), definition.id()).asString(),
+                "stage", progress.currentStage());
+        VillagerQuestSavedData.get(level).setDirty();
+        return true;
+    }
+
+    public static boolean advanceSaved(QuestDefinition definition,
+            QuestProgressState progress, long gameTime, Predicate<QuestDefinition.Objective> objectiveComplete,
+            Predicate<List<DialogueCondition>> conditionsMet) {
         if (definition.campaign() != null || progress.completionPending()
                 || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
                 || !progress.pendingStageEntry().isBlank() || !progress.pendingStageTransition().isBlank()
@@ -34,13 +44,11 @@ public final class QuestProgressionService {
             definition.objectives().stream().filter(objective -> objective.id().equals(predicate.objective()) && objectiveComplete.test(objective))
                     .forEach(objective -> progress.markObjectiveComplete(objective.id()));
         }
-        var transition = QuestLifecycleService.transitionStage(definition, progress, readiness.nextStage(), level.getGameTime());
+        var transition = QuestLifecycleService.transitionStage(definition, progress, readiness.nextStage(), gameTime);
         if (!transition.changed()) return false;
-        VillagerQuestFacts.get(level).setVariable(QuestScopeKey.quest(player.getUUID(), definition.id()).asString(), "stage", transition.currentStage());
         var next = definition.stages().get(transition.currentStage());
         if (!next.entryActions().isEmpty() || QuestObjectiveQuery.stageObjectives(definition, next.id()).stream()
                 .anyMatch(QuestObjectiveRegistry::requiresLocatedTarget)) progress.requestStageEntry(next.id());
-        VillagerQuestSavedData.get(level).setDirty();
         return true;
     }
 }

@@ -31,6 +31,13 @@ public final class ActionSequenceRunner {
             int firstAction, Map<String, String> inheritedReplacements, Runnable trackerFlashHandler,
             BiConsumer<Integer, ActionResult> observer, IntConsumer beforeAction,
             java.util.function.BiFunction<VillagerActionDefinition, Map<String, String>, ActionResult> executor) {
+        return run(actions, firstAction, inheritedReplacements, trackerFlashHandler, observer, beforeAction, executor);
+    }
+
+    public static Result run(List<VillagerActionDefinition> actions,
+            int firstAction, Map<String, String> inheritedReplacements, Runnable trackerFlashHandler,
+            BiConsumer<Integer, ActionResult> observer, IntConsumer beforeAction,
+            java.util.function.BiFunction<VillagerActionDefinition, Map<String, String>, ActionResult> executor) {
         List<VillagerActionDefinition> sequence = actions == null ? List.of() : actions;
         if (firstAction < 0 || firstAction > sequence.size()) {
             return new Result(ActionResult.failed("saved action cursor is outside the sequence", Set.of()), firstAction);

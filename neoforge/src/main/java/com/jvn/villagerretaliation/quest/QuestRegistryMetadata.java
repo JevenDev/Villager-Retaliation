@@ -37,6 +37,8 @@ public final class QuestRegistryMetadata {
     public static JsonObject export() {
         JsonObject root = new JsonObject();
         VillagerRetaliationRegistries.registerBuiltIns();
+        com.jvn.villagerretaliation.scene.executor.BuiltinSceneStepExecutors.register();
+        com.jvn.villagerretaliation.scene.executor.EncounterStepExecutors.register();
         root.addProperty("format_version", 2);
         root.addProperty("mod_id", VillagerRetaliation.MOD_ID);
         root.addProperty("generated_by", "com.jvn.villagerretaliation.quest.QuestRegistryMetadata");
@@ -86,14 +88,8 @@ public final class QuestRegistryMetadata {
             JsonObject entry = descriptorBase(descriptor.id(), descriptor.aliases());
             entry.add("capabilities", enumNames(descriptor.capabilities()));
             entry.addProperty("implementation", descriptor.implementationType().getSimpleName());
-            if (descriptor.id().equals("campaign_evidence")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignEvidencePredicate.schema());
-            if (descriptor.id().equals("campaign_transaction")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignTransactionPredicate.schema());
-            if (descriptor.id().equals("campaign_standing")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignStandingPredicate.schema());
-            if (descriptor.id().equals("campaign_fact")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignFactPredicate.schema());
-            if (descriptor.id().equals("campaign_outcome")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignOutcomePredicate.schema());
-            if (descriptor.id().equals("campaign_character")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignCharacterPredicate.schema());
-            if (descriptor.id().equals("campaign_companion")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignCompanionPredicate.schema());
-            if (descriptor.id().equals("campaign_location")) entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignLocationPredicate.schema());
+            JsonObject schema = descriptor.schema();
+            if (!schema.entrySet().isEmpty()) entry.add("schema", schema);
             conditions.add(entry);
         }
         return conditions;
@@ -104,24 +100,10 @@ public final class QuestRegistryMetadata {
         for (VillagerActionRegistry.ActionTypeDescriptor descriptor : VillagerActionRegistry.descriptors()) {
             JsonObject entry = descriptorBase(descriptor.id(), descriptor.aliases());
             entry.addProperty("kind", descriptor.kind().name().toLowerCase(java.util.Locale.ROOT));
-            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
-                entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignOutcomeAction.schema());
-            }
-            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_STANDING) {
-                entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignStandingAction.schema());
-            }
-            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_FACT) {
-                entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignFactAction.schema());
-            }
-            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT) {
-                entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignPaymentAction.schema());
-            }
-            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
-                entry.add("schema", com.jvn.villagerretaliation.campaign.CampaignRewardAction.schema());
-            }
-            if (descriptor.kind() == com.jvn.villagerretaliation.action.VillagerActionDefinition.Kind.FOLLOWER) {
-                entry.add("schema", com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective.schema());
-            }
+            JsonObject schema = descriptor.schema();
+            if (!schema.entrySet().isEmpty()) entry.add("schema", schema);
+            entry.addProperty("recovery", descriptor.recoveryMode().name().toLowerCase(java.util.Locale.ROOT));
+            entry.addProperty("reconciles_prepared_operation", descriptor.reconcilesPreparedOperation());
             entry.add("capabilities", enumNames(descriptor.capabilities()));
             actions.add(entry);
         }
@@ -175,7 +157,11 @@ public final class QuestRegistryMetadata {
             entry.add("aliases", resourceLocationNames(descriptor.aliases()));
             entry.add("live_capabilities", resourceLocationNames(descriptor.liveCapabilities()));
             entry.add("snapshot_capabilities", resourceLocationNames(descriptor.snapshotCapabilities()));
-            entry.addProperty("recovery", descriptor.recoveryMode().name().toLowerCase(java.util.Locale.ROOT));
+            var executor = registry == VillagerRetaliationRegistries.SCENE_STEPS
+                    ? com.jvn.villagerretaliation.api.scene.SceneStepExecutors.get(descriptor.id()).orElse(null) : null;
+            entry.addProperty("runtime_binding", executor == null ? "descriptor_only" : "scene_executor");
+            entry.addProperty("recovery", (executor == null ? descriptor.recoveryMode() : executor.recoveryMode())
+                    .name().toLowerCase(java.util.Locale.ROOT));
             entry.addProperty("client_sync", descriptor.clientSync().name().toLowerCase(java.util.Locale.ROOT));
             entry.addProperty("title", descriptor.tooling().title());
             entry.addProperty("description", descriptor.tooling().description());

@@ -5,11 +5,8 @@ import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
-import com.jvn.villagerretaliation.campaign.CampaignRewardRecovery;
 import com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
-import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
-import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +22,10 @@ final class ConversationRuntime {
     }
 
     static void drive(ServerPlayer player, UUID id, boolean retryUnavailable) throws IOException {
+        drive(player, id, retryUnavailable, VrConversationEffects.INSTANCE);
+    }
+
+    static void drive(ServerPlayer player, UUID id, boolean retryUnavailable, ConversationEffects execution) throws IOException {
         var data = ConversationSavedData.get(player.serverLevel());
         for (int step = 0; step < MAX_STEPS; step++) {
             ConversationService.require(data.issue(id).isBlank(), data.issue(id));
@@ -50,7 +51,7 @@ final class ConversationRuntime {
                 return;
             }
             if (session.effect < effects.size()) {
-                if (!executeEffect(player, data, session, effects.get(session.effect), nodeEffects, retryUnavailable)) return;
+                if (!executeEffect(player, data, session, effects.get(session.effect), nodeEffects, retryUnavailable, execution)) return;
                 continue;
             }
             session.consent = new net.minecraft.nbt.CompoundTag();
@@ -121,18 +122,18 @@ final class ConversationRuntime {
     }
 
     private static boolean executeEffect(ServerPlayer controller, ConversationSavedData data, ConversationSession session,
-            ConversationDefinition.Effect effect, boolean nodeEffect, boolean retryUnavailable) throws IOException {
+            ConversationDefinition.Effect effect, boolean nodeEffect, boolean retryUnavailable, ConversationEffects execution) throws IOException {
         String key = session.visit + "/" + (nodeEffect ? "node" : "response/" + session.response) + "/" + effect.id();
         var receipt = session.receipts.get(key);
         boolean execute = receipt == null;
         if (receipt != null && receipt.state() == ConversationSession.ReceiptState.PREPARED) {
-            ConversationService.require(recoverable(receipt.action()), "Effect " + effect.id() + " has no completion receipt. Inspect its effects before repairing this conversation.");
+            ConversationService.require(execution.recoverable(receipt.action()), "Effect " + effect.id() + " has no completion receipt. Inspect its effects before repairing this conversation.");
             execute = true;
         }
         if (receipt != null && receipt.state() == ConversationSession.ReceiptState.RESOLVED) {
             var outcome = receipt.result();
             if (outcome.suspended()) {
-                outcome = poll(controller, outcome);
+                outcome = execution.poll(controller, outcome);
                 ConversationService.require(!outcome.suspended(), outcome.message());
                 session.replacements.putAll(outcome.legacyResult().replacements());
                 if (outcome.success() && receipt.result().retryOnResume()) execute = true;
@@ -175,18 +176,9 @@ final class ConversationRuntime {
                 ActionResult.unavailable("Effect completion has not been saved.", VillagerActionRegistry.capabilities(action), VillagerActionResult.EMPTY));
         session.receipts.put(key, receipt);
         ConversationService.save(controller, data, session);
-        var applied = new ActionResult[1];
-        var replacements = session.replacements;
         var participants = session.decisionParticipants == null ? new net.minecraft.nbt.CompoundTag() : session.decisionParticipants.save();
-        var outcomeActor = sharedOutcome ? new com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor(actorId, run) : null;
-        UUID sessionId = session.identity.id();
-        var identity = session.identity;
-        CampaignQuestAcceptanceService.withConsent(session.consent, () -> applied[0] =
-                ConversationSceneExecution.withEffect(sessionId, key,
-                        () -> com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants.withParticipants(participants,
-                                () -> ConversationService.withController(controller, actorId, identity,
-                                        () -> VillagerActionRegistry.execute(context, action, replacements, outcomeActor)))));
-        var outcome = applied[0];
+        var outcome = execution.apply(new ConversationEffects.Operation(context, controller, session.identity, key, actorId, run,
+                action, session.replacements, session.consent, participants));
         if (outcome.suspended() && outcome.suspensionId() == null) outcome = ActionResult.failed("Suspended effect has no persistent dependency.", outcome.capabilities());
         session = data.session(session.identity.id());
         session.consent = CampaignQuestAcceptanceService.remainingConsent(context, actorId, session.consent);
@@ -218,25 +210,6 @@ final class ConversationRuntime {
         ConversationService.save(controller, data, session);
     }
 
-    private static ActionResult poll(ServerPlayer player, ActionResult waiting) {
-        if (waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_REWARD) return CampaignRewardRecovery.poll(player.server, waiting);
-        if (waiting.suspensionKind() == ActionResult.SuspensionKind.CAMPAIGN_OUTCOME)
-            return com.jvn.villagerretaliation.campaign.CampaignLocationVariants.poll(player.server, waiting);
-        var scenes = SceneSavedData.get(player.serverLevel());
-        if (waiting.suspensionKind() == ActionResult.SuspensionKind.CONTINUATION) {
-            var continuation = scenes.continuation(waiting.suspensionId()).orElse(null);
-            ConversationService.require(continuation != null, "The saved action continuation is unavailable. Restore its scene data.");
-            return continuation.completionReceipt() ? new ActionResult(continuation.actionStatus(), continuation.actionDiagnostic(),
-                    waiting.capabilities(), new VillagerActionResult(false, "", "", continuation.replacements(), false)) : waiting;
-        }
-        var scene = scenes.get(waiting.suspensionId()).orElse(null);
-        ConversationService.require(scene != null, "The saved scene is unavailable. Restore its scene data.");
-        if (!scene.state().terminal()) return waiting;
-        return scene.completionResult() == SceneInstance.CompletionResult.SUCCESS
-                ? ActionResult.alreadySatisfied("Scene completed.", waiting.capabilities(), VillagerActionResult.EMPTY)
-                : ActionResult.failed("Scene ended with " + scene.completionResult() + ".", waiting.capabilities());
-    }
-
     private static VillagerActionDefinition scopedAction(UUID session, String effect, VillagerActionDefinition action) {
         if (action.kind() != VillagerActionDefinition.Kind.START_SCENE) return action;
         String operation = "conversation/" + UUID.nameUUIDFromBytes((session + "/" + effect + "/" + action.sceneOperationId()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -246,12 +219,4 @@ final class ConversationRuntime {
                 action.sceneId(), operation, action.waitForScene(), action.required(), action.campaignOutcome(), action.campaignFact(), action.campaignReward(), action.campaignStanding(), action.campaignPayment());
     }
 
-    private static boolean recoverable(VillagerActionDefinition action) {
-        return action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT
-                || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD
-                || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_STANDING
-                || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_FACT
-                || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME
-                || action.kind() == VillagerActionDefinition.Kind.START_SCENE;
-    }
 }

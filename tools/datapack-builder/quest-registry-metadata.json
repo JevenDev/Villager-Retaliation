@@ -11,7 +11,23 @@
           "and"
         ],
         "capabilities": [],
-        "implementation": "AllOf"
+        "implementation": "AllOf",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "conditions"
+          ],
+          "properties": {
+            "conditions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        }
       },
       {
         "id": "any",
@@ -20,13 +36,41 @@
           "or"
         ],
         "capabilities": [],
-        "implementation": "AnyOf"
+        "implementation": "AnyOf",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "conditions"
+          ],
+          "properties": {
+            "conditions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        }
       },
       {
         "id": "not",
         "aliases": [],
         "capabilities": [],
-        "implementation": "Not"
+        "implementation": "Not",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "condition"
+          ],
+          "properties": {
+            "condition": {
+              "$ref": "#/$defs/condition"
+            }
+          }
+        }
       },
       {
         "id": "reputation",
@@ -850,6 +894,8 @@
             }
           }
         },
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "world_known"
@@ -863,6 +909,8 @@
           "notify"
         ],
         "kind": "notification",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live"
@@ -875,6 +923,8 @@
           "quest_tracker"
         ],
         "kind": "tracker",
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live"
         ]
@@ -886,6 +936,8 @@
           "force_dialogue"
         ],
         "kind": "forced_dialogue",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live"
@@ -897,6 +949,8 @@
           "quest_action"
         ],
         "kind": "quest",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -911,6 +965,8 @@
           "response_transition"
         ],
         "kind": "quest_transition",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -937,6 +993,8 @@
             "transaction"
           ]
         },
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": true,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -969,6 +1027,8 @@
             "operation_id"
           ]
         },
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": true,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1015,6 +1075,8 @@
             }
           }
         },
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": true,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1064,6 +1126,8 @@
             }
           }
         },
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": true,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1099,6 +1163,8 @@
             }
           }
         },
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": true,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1111,6 +1177,8 @@
           "xp"
         ],
         "kind": "experience",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live"
         ]
@@ -1121,6 +1189,8 @@
           "rep"
         ],
         "kind": "reputation",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live"
@@ -1132,6 +1202,8 @@
           "gossip_reputation"
         ],
         "kind": "gossip",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live"
@@ -1144,6 +1216,8 @@
           "social_attribute"
         ],
         "kind": "profile_attribute",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "provider_live"
         ]
@@ -1154,6 +1228,8 @@
           "memory_event"
         ],
         "kind": "memory",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1166,6 +1242,8 @@
           "loot_table"
         ],
         "kind": "loot",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "world_known"
@@ -1179,6 +1257,8 @@
           "tag"
         ],
         "kind": "set_tag",
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1193,6 +1273,8 @@
           "unset_tag"
         ],
         "kind": "clear_tag",
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1211,6 +1293,8 @@
           "variable"
         ],
         "kind": "set_variable",
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1225,6 +1309,8 @@
           "increment_counter"
         ],
         "kind": "counter",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1239,6 +1325,8 @@
           "ready_weapon"
         ],
         "kind": "draw_weapon",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": false,
         "capabilities": [
           "provider_live"
         ]
@@ -1250,6 +1338,8 @@
           "scene_start"
         ],
         "kind": "start_scene",
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": true,
         "capabilities": [
           "player_live",
           "provider_live",
@@ -1945,6 +2035,7 @@
           "villagerretaliation:capability/identity",
           "villagerretaliation:capability/members"
         ],
+        "runtime_binding": "descriptor_only",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Hostile encounter group",
@@ -1967,6 +2058,7 @@
           "villagerretaliation:capability/identity",
           "villagerretaliation:capability/position"
         ],
+        "runtime_binding": "descriptor_only",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Living entity",
@@ -1986,6 +2078,7 @@
         "snapshot_capabilities": [
           "villagerretaliation:capability/identity"
         ],
+        "runtime_binding": "descriptor_only",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Player",
@@ -2004,6 +2097,7 @@
         "snapshot_capabilities": [
           "villagerretaliation:capability/position"
         ],
+        "runtime_binding": "descriptor_only",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Position",
@@ -2027,6 +2121,7 @@
           "villagerretaliation:capability/identity",
           "villagerretaliation:capability/position"
         ],
+        "runtime_binding": "descriptor_only",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Villager",
@@ -2043,7 +2138,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "receipt_required",
         "client_sync": "participants",
         "title": "Action batch",
         "description": "Built-in Action batch type.",
@@ -2057,6 +2153,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "scene_executor",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Cancel encounter",
@@ -2071,6 +2168,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "scene_executor",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Cleanup encounter",
@@ -2085,7 +2183,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "receipt_required",
         "client_sync": "participants",
         "title": "Dialogue",
         "description": "Built-in Dialogue type.",
@@ -2099,7 +2198,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "naturally_idempotent",
         "client_sync": "participants",
         "title": "Face actor",
         "description": "Built-in Face actor type.",
@@ -2113,7 +2213,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "naturally_idempotent",
         "client_sync": "participants",
         "title": "Face position",
         "description": "Built-in Face position type.",
@@ -2127,6 +2228,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "scene_executor",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Follow a campaign character",
@@ -2181,6 +2283,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "scene_executor",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Move actor",
@@ -2195,7 +2298,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "receipt_required",
         "client_sync": "participants",
         "title": "Quest transition",
         "description": "Built-in Quest transition type.",
@@ -2209,7 +2313,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "naturally_idempotent",
         "client_sync": "participants",
         "title": "Scene branch",
         "description": "Built-in Scene branch type.",
@@ -2223,7 +2328,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "naturally_idempotent",
         "client_sync": "participants",
         "title": "Scene complete",
         "description": "Built-in Scene complete type.",
@@ -2237,7 +2343,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "naturally_idempotent",
         "client_sync": "participants",
         "title": "Scene fail",
         "description": "Built-in Scene fail type.",
@@ -2251,6 +2358,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "scene_executor",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Start encounter",
@@ -2265,7 +2373,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "naturally_idempotent",
         "client_sync": "participants",
         "title": "Wait condition",
         "description": "Built-in Wait condition type.",
@@ -2279,6 +2388,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "scene_executor",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Wait encounter",
@@ -2293,7 +2403,8 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
-        "recovery": "world_reconciled",
+        "runtime_binding": "scene_executor",
+        "recovery": "naturally_idempotent",
         "client_sync": "participants",
         "title": "Wait ticks",
         "description": "Built-in Wait ticks type.",
@@ -2309,6 +2420,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "world_reconciled",
         "client_sync": "participants",
         "title": "Controlled",
@@ -2325,6 +2437,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Discovery",
@@ -2337,8 +2450,14 @@
       {
         "id": "villagerretaliation:villager",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:dialogue_context",
+          "villagerretaliation:live_provider",
+          "villagerretaliation:saved_provider",
+          "villagerretaliation:villager_provider"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Villager",
@@ -2352,9 +2471,14 @@
     "public_quest_objectives": [
       {
         "id": "villagerretaliation:block_break",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:break_block",
+          "villagerretaliation:mine",
+          "villagerretaliation:mine_block"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Block break",
@@ -2366,9 +2490,15 @@
       },
       {
         "id": "villagerretaliation:block_interact",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:block_use",
+          "villagerretaliation:interact_block",
+          "villagerretaliation:right_click_block",
+          "villagerretaliation:use_block"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Block interact",
@@ -2380,9 +2510,13 @@
       },
       {
         "id": "villagerretaliation:block_place",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:place",
+          "villagerretaliation:place_block"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Block place",
@@ -2397,12 +2531,61 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Campaign follow",
         "description": "Built-in Campaign follow type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {},
+            "optional": {},
+            "tracker": {},
+            "conditions": {},
+            "metadata": {},
+            "ui": {},
+            "type": {
+              "const": "campaign_follow"
+            },
+            "story": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "location": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "step": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "scene": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                }
+              },
+              "required": [
+                "role",
+                "location",
+                "scene",
+                "step"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "story"
+          ],
           "type": "object"
         }
       },
@@ -2411,12 +2594,43 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Campaign investigate",
         "description": "Built-in Campaign investigate type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {},
+            "optional": {},
+            "tracker": {},
+            "conditions": {},
+            "metadata": {},
+            "ui": {},
+            "type": {
+              "const": "campaign_investigate"
+            },
+            "story": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "evidence": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                }
+              },
+              "required": [
+                "evidence"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "story"
+          ],
           "type": "object"
         }
       },
@@ -2425,12 +2639,59 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Campaign outcome",
         "description": "Built-in Campaign outcome type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {},
+            "optional": {},
+            "tracker": {},
+            "conditions": {},
+            "metadata": {},
+            "ui": {},
+            "type": {
+              "const": "campaign_outcome"
+            },
+            "story": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "milestone": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "outcome": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "world",
+                    "discovered",
+                    "participated",
+                    "completed"
+                  ]
+                }
+              },
+              "required": [
+                "milestone",
+                "outcome",
+                "scope"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "story"
+          ],
           "type": "object"
         }
       },
@@ -2439,20 +2700,68 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Campaign speak",
         "description": "Built-in Campaign speak type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {},
+            "optional": {},
+            "tracker": {},
+            "conditions": {},
+            "metadata": {},
+            "ui": {},
+            "type": {
+              "const": "campaign_speak"
+            },
+            "story": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                },
+                "conversation": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "node": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+                }
+              },
+              "required": [
+                "role",
+                "conversation",
+                "node"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "story"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:choice",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:branch_choice",
+          "villagerretaliation:dialogue_choice",
+          "villagerretaliation:quest_choice"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Choice",
@@ -2467,6 +2776,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Condition",
@@ -2478,9 +2788,13 @@
       },
       {
         "id": "villagerretaliation:criterion",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:criterion_event",
+          "villagerretaliation:custom_event"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Criterion",
@@ -2492,9 +2806,17 @@
       },
       {
         "id": "villagerretaliation:fact",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:quest_counter",
+          "villagerretaliation:quest_fact",
+          "villagerretaliation:quest_stage",
+          "villagerretaliation:quest_tag",
+          "villagerretaliation:quest_variable",
+          "villagerretaliation:stage"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Fact",
@@ -2509,20 +2831,63 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Follower arrival",
         "description": "Built-in Follower arrival type.",
         "browser_available": true,
         "schema": {
+          "oneOf": [
+            {
+              "required": [
+                "location"
+              ]
+            },
+            {
+              "properties": {
+                "match": {
+                  "required": [
+                    "destination_tag"
+                  ]
+                }
+              }
+            }
+          ],
+          "properties": {
+            "match": {
+              "type": "object",
+              "required": [
+                "actor"
+              ],
+              "properties": {
+                "actor": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "destination_tag": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                }
+              }
+            }
+          },
+          "required": [
+            "match"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:gift",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:gift_given",
+          "villagerretaliation:give_gift"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Gift",
@@ -2537,6 +2902,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Item check",
@@ -2548,9 +2914,15 @@
       },
       {
         "id": "villagerretaliation:location_visit",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:coordinate",
+          "villagerretaliation:coordinates",
+          "villagerretaliation:coords",
+          "villagerretaliation:region_visit"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Location visit",
@@ -2562,9 +2934,15 @@
       },
       {
         "id": "villagerretaliation:memory_event",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:event",
+          "villagerretaliation:memory",
+          "villagerretaliation:village_event",
+          "villagerretaliation:village_memory"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Memory event",
@@ -2576,9 +2954,13 @@
       },
       {
         "id": "villagerretaliation:mob_kill",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:entity_kill",
+          "villagerretaliation:kill"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Mob kill",
@@ -2590,9 +2972,14 @@
       },
       {
         "id": "villagerretaliation:reputation",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:rep",
+          "villagerretaliation:reputation_level",
+          "villagerretaliation:trust"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Reputation",
@@ -2607,6 +2994,7 @@
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Structure visit",
@@ -2618,9 +3006,14 @@
       },
       {
         "id": "villagerretaliation:trade",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:merchant_trade",
+          "villagerretaliation:trading",
+          "villagerretaliation:villager_trade"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Trade",
@@ -2635,64 +3028,236 @@
       {
         "id": "villagerretaliation:campaign_fact",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Campaign fact",
         "description": "Built-in Campaign fact type.",
         "browser_available": true,
         "schema": {
+          "properties": {
+            "fact": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "value": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "milestone": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "operation_id": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "mutation": {
+              "type": "string",
+              "enum": [
+                "set",
+                "add"
+              ]
+            },
+            "required": {
+              "const": true
+            }
+          },
+          "required": [
+            "fact",
+            "value",
+            "operation_id"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:campaign_outcome",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Campaign outcome",
         "description": "Built-in Campaign outcome type.",
         "browser_available": true,
         "schema": {
+          "properties": {
+            "milestone": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "outcome": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "operation_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "required": {
+              "const": true
+            }
+          },
+          "required": [
+            "milestone",
+            "outcome",
+            "operation_id"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:campaign_payment",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Campaign payment",
         "description": "Built-in Campaign payment type.",
         "browser_available": true,
         "schema": {
+          "properties": {
+            "transaction": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "required": {
+              "const": true
+            }
+          },
+          "required": [
+            "transaction"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:campaign_reward",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Campaign reward",
         "description": "Built-in Campaign reward type.",
         "browser_available": true,
         "schema": {
+          "properties": {
+            "reward": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "operation_id": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "required": {
+              "const": true
+            }
+          },
+          "required": [
+            "reward",
+            "operation_id"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_standing",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Campaign standing",
+        "description": "Built-in Campaign standing type.",
+        "browser_available": true,
+        "schema": {
+          "properties": {
+            "scope": {
+              "type": "string",
+              "enum": [
+                "character",
+                "faction"
+              ]
+            },
+            "subject": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "amount": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "operation_id": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "required": {
+              "const": true
+            }
+          },
+          "required": [
+            "scope",
+            "subject",
+            "amount",
+            "operation_id"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:clear_tag",
-        "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "aliases": [
+          "villagerretaliation:remove_tag",
+          "villagerretaliation:unset_tag"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Clear tag",
@@ -2704,9 +3269,19 @@
       },
       {
         "id": "villagerretaliation:counter",
-        "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "aliases": [
+          "villagerretaliation:add_counter",
+          "villagerretaliation:increment_counter"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Counter",
@@ -2717,10 +3292,35 @@
         }
       },
       {
-        "id": "villagerretaliation:experience",
-        "aliases": [],
-        "live_capabilities": [],
+        "id": "villagerretaliation:draw_weapon",
+        "aliases": [
+          "villagerretaliation:arm",
+          "villagerretaliation:ready_weapon"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Draw weapon",
+        "description": "Built-in Draw weapon type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:experience",
+        "aliases": [
+          "villagerretaliation:xp"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Experience",
@@ -2733,22 +3333,194 @@
       {
         "id": "villagerretaliation:follower",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Follower",
         "description": "Built-in Follower type.",
         "browser_available": true,
         "schema": {
+          "properties": {
+            "command": {
+              "enum": [
+                "follow",
+                "wait",
+                "resume",
+                "release"
+              ]
+            },
+            "scope": {
+              "enum": [
+                "quest",
+                "stage"
+              ]
+            },
+            "distance": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 16
+            },
+            "maximum_distance": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 128
+            },
+            "speed": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 1
+            },
+            "protected": {
+              "type": "boolean"
+            },
+            "actor": {
+              "type": "object",
+              "title": "Actor declaration",
+              "additionalProperties": false,
+              "required": [
+                "alias",
+                "type",
+                "binding_source"
+              ],
+              "properties": {
+                "alias": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "type": {
+                  "enum": [
+                    "villagerretaliation:villager",
+                    "villagerretaliation:living_entity"
+                  ]
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "capabilities": {
+                  "type": "array",
+                  "minItems": 0,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  }
+                },
+                "binding_source": {
+                  "enum": [
+                    "quest_provider",
+                    "uuid",
+                    "campaign_role",
+                    "entity_tag",
+                    "owned_spawn",
+                    "encounter"
+                  ]
+                },
+                "binding": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "replacement_policy": {
+                  "enum": [
+                    "fixed",
+                    "optional"
+                  ]
+                },
+                "missing_actor_policy": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "block",
+                    "fail",
+                    "skip",
+                    "wait_until_timeout"
+                  ]
+                },
+                "lethal_damage_policy": {
+                  "const": "normal"
+                },
+                "death_policy": {
+                  "enum": [
+                    "fail",
+                    "block",
+                    "apply_missing_policy"
+                  ]
+                },
+                "filters": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_type": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    }
+                  }
+                },
+                "timeout_ticks": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "binding_source": {
+                        "enum": [
+                          "uuid",
+                          "campaign_role",
+                          "entity_tag",
+                          "owned_spawn",
+                          "encounter"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "binding"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "source"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "required": [
+            "actor"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:forced_dialogue",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:dialogue",
+          "villagerretaliation:force_dialogue"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Forced dialogue",
@@ -2760,9 +3532,15 @@
       },
       {
         "id": "villagerretaliation:gossip",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:gossip_reputation"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Gossip",
@@ -2774,9 +3552,15 @@
       },
       {
         "id": "villagerretaliation:loot",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:loot_table"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Loot",
@@ -2788,9 +3572,16 @@
       },
       {
         "id": "villagerretaliation:memory",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:memory_event"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Memory",
@@ -2802,9 +3593,17 @@
       },
       {
         "id": "villagerretaliation:notification",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:hud",
+          "villagerretaliation:message",
+          "villagerretaliation:notify"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Notification",
@@ -2815,10 +3614,38 @@
         }
       },
       {
-        "id": "villagerretaliation:quest",
-        "aliases": [],
-        "live_capabilities": [],
+        "id": "villagerretaliation:profile_attribute",
+        "aliases": [
+          "villagerretaliation:attribute_reward",
+          "villagerretaliation:social_attribute"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Profile attribute",
+        "description": "Built-in Profile attribute type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:quest",
+        "aliases": [
+          "villagerretaliation:quest_action"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Quest",
@@ -2830,9 +3657,18 @@
       },
       {
         "id": "villagerretaliation:quest_transition",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:branch_transition",
+          "villagerretaliation:quest_response_transition",
+          "villagerretaliation:response_transition"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Quest transition",
@@ -2844,9 +3680,15 @@
       },
       {
         "id": "villagerretaliation:reputation",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:rep"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Reputation",
@@ -2858,9 +3700,20 @@
       },
       {
         "id": "villagerretaliation:set_tag",
-        "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "aliases": [
+          "villagerretaliation:add_tag",
+          "villagerretaliation:quest_tag",
+          "villagerretaliation:tag"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Set tag",
@@ -2872,9 +3725,23 @@
       },
       {
         "id": "villagerretaliation:set_variable",
-        "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "aliases": [
+          "villagerretaliation:fact",
+          "villagerretaliation:quest_stage",
+          "villagerretaliation:set_fact",
+          "villagerretaliation:set_stage",
+          "villagerretaliation:stage",
+          "villagerretaliation:variable"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Set variable",
@@ -2886,9 +3753,19 @@
       },
       {
         "id": "villagerretaliation:start_scene",
-        "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "aliases": [
+          "villagerretaliation:scene",
+          "villagerretaliation:scene_start"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "receipt_required",
         "client_sync": "owner",
         "title": "Start scene",
@@ -2900,9 +3777,15 @@
       },
       {
         "id": "villagerretaliation:tracker",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:flash_tracker",
+          "villagerretaliation:quest_tracker"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "owner",
         "title": "Tracker",
@@ -2915,70 +3798,552 @@
     ],
     "public_quest_conditions": [
       {
+        "id": "villagerretaliation:advancement",
+        "aliases": [
+          "villagerretaliation:advancements"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Advancement",
+        "description": "Built-in Advancement type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:all",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:all_of",
+          "villagerretaliation:and"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "All",
         "description": "Built-in All type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": true,
+          "properties": {
+            "conditions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          },
+          "required": [
+            "conditions"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:any",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:any_of",
+          "villagerretaliation:or"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Any",
         "description": "Built-in Any type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": true,
+          "properties": {
+            "conditions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          },
+          "required": [
+            "conditions"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:biome",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Biome",
+        "description": "Built-in Biome type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_character",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Campaign character",
+        "description": "Built-in Campaign character type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "description": "Checks a campaign role and its saved replacements without casting or spawning.",
+          "properties": {
+            "type": {
+              "const": "campaign_character"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "role": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "bound",
+                "available",
+                "downed",
+                "lost",
+                "speaker",
+                "replaced"
+              ]
+            }
+          },
+          "required": [
+            "campaign",
+            "role",
+            "state"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_companion",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Campaign companion",
+        "description": "Built-in Campaign companion type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "description": "Checks whether a bound, loaded campaign character is nearby and actively recruited into the player's party without casting or spawning.",
+          "properties": {
+            "type": {
+              "const": "campaign_companion"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "role": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "radius": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32,
+              "default": 8
+            }
+          },
+          "required": [
+            "campaign",
+            "role"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:campaign_evidence",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Campaign evidence",
         "description": "Built-in Campaign evidence type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "campaign_evidence"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$(?![\\s\\S])"
+            },
+            "evidence": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "campaign",
+            "evidence"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:campaign_fact",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Campaign fact",
         "description": "Built-in Campaign fact type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "fact": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "value": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "type": {
+              "const": "campaign_fact"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "comparison": {
+              "type": "string",
+              "enum": [
+                "equals",
+                "not_equals",
+                "at_least",
+                "at_most"
+              ]
+            }
+          },
+          "required": [
+            "fact",
+            "value",
+            "campaign"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_location",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Campaign location",
+        "description": "Built-in Campaign location type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "description": "Checks a player's distance from an already-bound campaign destination.",
+          "properties": {
+            "type": {
+              "const": "campaign_location"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "location": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "radius": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256,
+              "default": 12
+            }
+          },
+          "required": [
+            "campaign",
+            "location"
+          ],
           "type": "object"
         }
       },
       {
         "id": "villagerretaliation:campaign_outcome",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Campaign outcome",
         "description": "Built-in Campaign outcome type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "campaign_outcome"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "milestone": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "outcome": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "world",
+                "discovered",
+                "participated",
+                "completed"
+              ]
+            }
+          },
+          "required": [
+            "campaign",
+            "milestone",
+            "outcome",
+            "scope"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_standing",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Campaign standing",
+        "description": "Built-in Campaign standing type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "required": [
+                "value"
+              ],
+              "not": {
+                "required": [
+                  "reaction"
+                ]
+              }
+            },
+            {
+              "required": [
+                "reaction"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "comparison"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "properties": {
+            "scope": {
+              "type": "string",
+              "enum": [
+                "character",
+                "faction"
+              ]
+            },
+            "subject": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "type": {
+              "const": "campaign_standing"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "comparison": {
+              "type": "string",
+              "enum": [
+                "equals",
+                "not_equals",
+                "at_least",
+                "at_most"
+              ]
+            },
+            "value": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "reaction": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            }
+          },
+          "required": [
+            "scope",
+            "subject",
+            "campaign"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:campaign_transaction",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Campaign transaction",
+        "description": "Built-in Campaign transaction type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "campaign_transaction"
+            },
+            "campaign": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "quest": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "transaction": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]{0,255}$"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "unarranged",
+                "negotiated",
+                "payment_pending",
+                "paid",
+                "unpaid"
+              ]
+            }
+          },
+          "required": [
+            "campaign",
+            "quest",
+            "transaction",
+            "state"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:dimension",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Dimension",
+        "description": "Built-in Dimension type.",
         "browser_available": true,
         "schema": {
           "type": "object"
@@ -2987,8 +4352,13 @@
       {
         "id": "villagerretaliation:family",
         "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Family",
@@ -3001,8 +4371,15 @@
       {
         "id": "villagerretaliation:memory",
         "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/village_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Memory",
@@ -3014,9 +4391,16 @@
       },
       {
         "id": "villagerretaliation:mood",
-        "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "aliases": [
+          "villagerretaliation:villager_mood"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Mood",
@@ -3027,14 +4411,65 @@
         }
       },
       {
+        "id": "villagerretaliation:nearby_entity",
+        "aliases": [
+          "villagerretaliation:entity_nearby",
+          "villagerretaliation:nearby_entities"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Nearby entity",
+        "description": "Built-in Nearby entity type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:not",
         "aliases": [],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Not",
         "description": "Built-in Not type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": true,
+          "properties": {
+            "condition": {
+              "$ref": "#/$defs/condition"
+            }
+          },
+          "required": [
+            "condition"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_item",
+        "aliases": [
+          "villagerretaliation:held_item",
+          "villagerretaliation:item"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player item",
+        "description": "Built-in Player item type.",
         "browser_available": true,
         "schema": {
           "type": "object"
@@ -3043,8 +4478,12 @@
       {
         "id": "villagerretaliation:quest",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Quest",
@@ -3056,9 +4495,23 @@
       },
       {
         "id": "villagerretaliation:quest_fact",
-        "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "aliases": [
+          "villagerretaliation:fact",
+          "villagerretaliation:quest_counter",
+          "villagerretaliation:quest_stage",
+          "villagerretaliation:quest_tag",
+          "villagerretaliation:quest_variable",
+          "villagerretaliation:stage"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/village_known",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Quest fact",
@@ -3071,8 +4524,14 @@
       {
         "id": "villagerretaliation:recruitment_memory",
         "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Recruitment memory",
@@ -3085,8 +4544,13 @@
       {
         "id": "villagerretaliation:relationship",
         "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Relationship",
@@ -3099,8 +4563,14 @@
       {
         "id": "villagerretaliation:reputation",
         "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Reputation",
@@ -3111,10 +4581,38 @@
         }
       },
       {
-        "id": "villagerretaliation:selected_choice",
-        "aliases": [],
-        "live_capabilities": [],
+        "id": "villagerretaliation:scoreboard",
+        "aliases": [
+          "villagerretaliation:score"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Scoreboard",
+        "description": "Built-in Scoreboard type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:selected_choice",
+        "aliases": [
+          "villagerretaliation:choice_selected",
+          "villagerretaliation:quest_choice_selected",
+          "villagerretaliation:response_selected"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Selected choice",
@@ -3127,8 +4625,13 @@
       {
         "id": "villagerretaliation:skill",
         "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Skill",
@@ -3140,9 +4643,17 @@
       },
       {
         "id": "villagerretaliation:social_attribute",
-        "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "aliases": [
+          "villagerretaliation:attribute",
+          "villagerretaliation:stat"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Social attribute",
@@ -3154,9 +4665,16 @@
       },
       {
         "id": "villagerretaliation:stage_history",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:quest_stage_history",
+          "villagerretaliation:visited_stage"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Stage history",
@@ -3168,9 +4686,14 @@
       },
       {
         "id": "villagerretaliation:time",
-        "aliases": [],
-        "live_capabilities": [],
+        "aliases": [
+          "villagerretaliation:time_of_day"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Time",
@@ -3181,10 +4704,54 @@
         }
       },
       {
+        "id": "villagerretaliation:trigger_payload",
+        "aliases": [
+          "villagerretaliation:event_payload",
+          "villagerretaliation:quest_trigger_payload"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/trigger_payload"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Trigger payload",
+        "description": "Built-in Trigger payload type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:village",
+        "aliases": [
+          "villagerretaliation:village_presence"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/village_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Village",
+        "description": "Built-in Village type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:villager_age",
         "aliases": [],
-        "live_capabilities": [],
-        "snapshot_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Villager age",
@@ -3195,10 +4762,37 @@
         }
       },
       {
-        "id": "villagerretaliation:villager_level",
-        "aliases": [],
-        "live_capabilities": [],
+        "id": "villagerretaliation:villager_equipment",
+        "aliases": [
+          "villagerretaliation:armed",
+          "villagerretaliation:equipment"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Villager equipment",
+        "description": "Built-in Villager equipment type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:villager_level",
+        "aliases": [
+          "villagerretaliation:trade_level"
+        ],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Villager level",
@@ -3211,8 +4805,11 @@
       {
         "id": "villagerretaliation:weather",
         "aliases": [],
-        "live_capabilities": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Weather",
@@ -3226,9 +4823,13 @@
     "public_quest_triggers": [
       {
         "id": "villagerretaliation:abandoned",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:abandon",
+          "villagerretaliation:quest_abandoned"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Abandoned",
@@ -3239,10 +4840,66 @@
         }
       },
       {
-        "id": "villagerretaliation:completed",
-        "aliases": [],
+        "id": "villagerretaliation:block_break",
+        "aliases": [
+          "villagerretaliation:break_block"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Block break",
+        "description": "Built-in Block break type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:block_interact",
+        "aliases": [
+          "villagerretaliation:interact_block",
+          "villagerretaliation:use_block"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Block interact",
+        "description": "Built-in Block interact type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:block_place",
+        "aliases": [
+          "villagerretaliation:place_block"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Block place",
+        "description": "Built-in Block place type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:completed",
+        "aliases": [
+          "villagerretaliation:complete",
+          "villagerretaliation:quest_completed"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Completed",
@@ -3253,10 +4910,31 @@
         }
       },
       {
-        "id": "villagerretaliation:expired",
-        "aliases": [],
+        "id": "villagerretaliation:criterion",
+        "aliases": [
+          "villagerretaliation:custom_criterion"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Criterion",
+        "description": "Built-in Criterion type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:expired",
+        "aliases": [
+          "villagerretaliation:expire",
+          "villagerretaliation:quest_expired"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Expired",
@@ -3268,9 +4946,13 @@
       },
       {
         "id": "villagerretaliation:failed",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:fail",
+          "villagerretaliation:quest_failed"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Failed",
@@ -3281,10 +4963,66 @@
         }
       },
       {
-        "id": "villagerretaliation:player_tick",
-        "aliases": [],
+        "id": "villagerretaliation:gift",
+        "aliases": [
+          "villagerretaliation:gift_given"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Gift",
+        "description": "Built-in Gift type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:memory_event",
+        "aliases": [
+          "villagerretaliation:memory"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Memory event",
+        "description": "Built-in Memory event type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:mob_kill",
+        "aliases": [
+          "villagerretaliation:entity_kill",
+          "villagerretaliation:kill"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Mob kill",
+        "description": "Built-in Mob kill type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_tick",
+        "aliases": [
+          "villagerretaliation:player",
+          "villagerretaliation:tick"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Player tick",
@@ -3296,9 +5034,13 @@
       },
       {
         "id": "villagerretaliation:progress",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:quest_progress",
+          "villagerretaliation:updated"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Progress",
@@ -3310,9 +5052,13 @@
       },
       {
         "id": "villagerretaliation:proximity",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:near_provider",
+          "villagerretaliation:nearby"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Proximity",
@@ -3323,10 +5069,32 @@
         }
       },
       {
-        "id": "villagerretaliation:stage_changed",
-        "aliases": [],
+        "id": "villagerretaliation:reputation",
+        "aliases": [
+          "villagerretaliation:reputation_changed"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Reputation",
+        "description": "Built-in Reputation type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:stage_changed",
+        "aliases": [
+          "villagerretaliation:stage",
+          "villagerretaliation:stage_entered",
+          "villagerretaliation:stage_set"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Stage changed",
@@ -3338,13 +5106,34 @@
       },
       {
         "id": "villagerretaliation:started",
-        "aliases": [],
+        "aliases": [
+          "villagerretaliation:quest_started",
+          "villagerretaliation:start"
+        ],
         "live_capabilities": [],
         "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
         "recovery": "naturally_idempotent",
         "client_sync": "none",
         "title": "Started",
         "description": "Built-in Started type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:trade",
+        "aliases": [
+          "villagerretaliation:trade_completed"
+        ],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Trade",
+        "description": "Built-in Trade type.",
         "browser_available": true,
         "schema": {
           "type": "object"

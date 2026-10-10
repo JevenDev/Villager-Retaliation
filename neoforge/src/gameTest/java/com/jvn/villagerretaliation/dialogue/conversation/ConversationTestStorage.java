@@ -38,6 +38,36 @@ public final class ConversationTestStorage implements AutoCloseable {
         data.write(level, session.revision++, session);
     }
 
+    public ConversationSession.Snapshot durable(UUID id) throws IOException {
+        var saved = NbtIo.readCompressed(directory.resolve(ConversationSavedData.DATA_NAME + ".dat"), NbtAccounter.unlimitedHeap()).getCompound("data");
+        return ConversationSavedData.load(saved, directory).session(id).snapshot();
+    }
+
+    public static String driveWithEffects(net.minecraft.server.level.ServerPlayer player, UUID id,
+            java.util.function.Function<EffectCall, com.jvn.villagerretaliation.action.ActionResult> executor) throws IOException {
+        try {
+            ConversationRuntime.drive(player, id, true, new ConversationEffects() {
+                @Override public com.jvn.villagerretaliation.action.ActionResult apply(Operation operation) {
+                    return executor.apply(new EffectCall(operation.effect(), operation.actor(), operation.questRun(),
+                            operation.controller().getUUID(), operation.action(), operation.replacements()));
+                }
+                @Override public com.jvn.villagerretaliation.action.ActionResult poll(net.minecraft.server.level.ServerPlayer controller,
+                        com.jvn.villagerretaliation.action.ActionResult waiting) {
+                    return VrConversationEffects.INSTANCE.poll(controller, waiting);
+                }
+                @Override public boolean recoverable(com.jvn.villagerretaliation.action.VillagerActionDefinition action) {
+                    return VrConversationEffects.INSTANCE.recoverable(action);
+                }
+            });
+            return "";
+        } catch (ConversationService.Unavailable unavailable) { return unavailable.getMessage(); }
+    }
+
+    public record EffectCall(String effect, UUID actor, UUID questRun, UUID controller,
+            com.jvn.villagerretaliation.action.VillagerActionDefinition action, java.util.Map<String, String> replacements) {
+        public EffectCall { replacements = java.util.Map.copyOf(replacements); }
+    }
+
     public void blockWrites() throws IOException {
         var file = directory.resolve(ConversationSavedData.DATA_NAME + ".dat");
         Files.move(file, directory.resolve("previous.dat"));

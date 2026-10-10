@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.quest;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.quest.tracking.QuestPresentationService;
+import com.jvn.villagerretaliation.quest.tracking.QuestTrackerPresenter;
+import com.jvn.villagerretaliation.quest.query.QuestProgressSnapshot;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -102,6 +104,45 @@ public final class QuestPresentationGameTests {
         helper.assertValueEqual(progress.issuerName(), "Saved name", "presentation does not overwrite the saved issuer");
         helper.assertValueEqual(progress.issuerDimension(), Level.NETHER, "presentation does not rewrite the saved location");
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_quest_presentation")
+    public static void immutableQuestViewsPreserveSelectionsAndPresentationAfterRuntimeChanges(GameTestHelper helper) {
+        var definition = definition("""
+                {"display":{"title":"Supplies"},
+                 "objectives":[{"id":"crop","type":"item_check","selection":"random",
+                   "items":["minecraft:wheat","minecraft:carrot"],"count":4}]}
+                """);
+        var objective = definition.objectives().getFirst();
+        var player = helper.makeMockServerPlayerInLevel();
+        var progress = new VillagerQuestSavedData.QuestProgress();
+        UUID issuer = UUID.randomUUID();
+        progress.start(issuer, Level.OVERWORLD, null, 42L);
+        progress.setIssuer(issuer, "Mara", "minecraft:farmer", 2, Level.OVERWORLD, new BlockPos(12, 65, -4), "home");
+        progress.setTarget(issuer, Level.OVERWORLD, new BlockPos(200, 64, 300), objective.id());
+        var selected = ResourceLocation.parse("minecraft:carrot");
+        progress.resolveObjectiveItem(objective.id(), selected);
+        var snapshot = QuestProgressSnapshot.capture(progress, definition);
+        var state = new QuestPresentationService.ObjectiveState(3, 17, false, 0.75F);
+        var legacy = QuestPresentationService.trackerReplacements(player, definition, progress, objective, true, false, state);
+        helper.assertValueEqual(QuestPresentationService.trackerReplacementsView(player, definition, snapshot, objective, true, false, state),
+                legacy, "snapshot and compatibility entry points produce the same replacements");
+        var legacyItems = QuestTrackerPresenter.questItems(definition, progress, QuestPresentationService::itemName,
+                item -> 3, ignored -> 3, ignored -> selected, definition.objectives());
+        helper.assertValueEqual(QuestTrackerPresenter.questItemsView(definition, snapshot, QuestPresentationService::itemName,
+                item -> 3, ignored -> 3, ignored -> selected, definition.objectives()), legacyItems, "snapshot item previews preserve counts and labels");
+        progress.setIssuer(issuer, "Changed", "minecraft:librarian", 3, Level.NETHER, BlockPos.ZERO, "away");
+        progress.setTarget(issuer, Level.NETHER, BlockPos.ZERO, objective.id());
+        progress.markObjectiveComplete(objective.id());
+        progress.markVisitedTarget();
+        helper.assertValueEqual(QuestPresentationService.trackerReplacementsView(player, definition, snapshot, objective, true, false, state),
+                legacy, "later runtime mutations cannot change the captured presentation facts");
+        helper.assertFalse(snapshot.objectiveComplete(objective.id()) || snapshot.visitedTarget(), "captured completion state stays unchanged");
+        helper.assertValueEqual(QuestProgressSnapshot.resolvedItem(objective, snapshot), selected, "query retains the recorded random item");
+        helper.assertValueEqual(snapshot.questRunId(), progress.questRunId(), "query identifies its original run");
+        try { snapshot.resolvedObjectiveItems().clear(); helper.fail("query selections must be immutable"); }
+        catch (UnsupportedOperationException expected) { }
         helper.succeed();
     }
 

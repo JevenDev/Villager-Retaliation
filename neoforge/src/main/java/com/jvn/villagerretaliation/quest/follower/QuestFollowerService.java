@@ -179,7 +179,7 @@ public final class QuestFollowerService {
     public static boolean controls(Mob mob) {
         if (!(mob.level() instanceof ServerLevel level)) return false;
         var entry = QuestFollowerSavedData.get(level).entries.get(mob.getUUID());
-        return entry != null && valid(level, entry) && !SceneSavedData.get(level).hasActiveActor(mob.getUUID());
+        return entry != null && valid(level, entry) && !com.jvn.villagerretaliation.interaction.NarrativeActorReservations.scene(level, mob.getUUID());
     }
 
     public static void tickMob(Mob mob) {
@@ -189,7 +189,7 @@ public final class QuestFollowerService {
         if (entry == null) return;
         if (VillagerQuestResources.quest(level.getServer(), entry.quest).isEmpty()) { mob.getNavigation().stop(); return; }
         if (!valid(level, entry)) { release(level, mob.getUUID()); return; }
-        if (SceneSavedData.get(level).hasActiveActor(mob.getUUID())) return;
+        if (com.jvn.villagerretaliation.interaction.NarrativeActorReservations.scene(level, mob.getUUID())) return;
         install(mob);
         if (!com.jvn.villagerretaliation.campaign.CampaignQuestAccess.executionIssue(level, entry.player,
                 VillagerQuestResources.quest(level.getServer(), entry.quest).orElseThrow(),

@@ -20,11 +20,30 @@ public final class QuestStateMachine {
             ResourceKey<Level> dimension,
             BlockPos target,
             long gameTime) {
+        return start((QuestProgressState) progress, providerId, dimension, target, gameTime);
+    }
+
+    public static TransitionResult start(
+            QuestProgressState progress,
+            UUID providerId,
+            ResourceKey<Level> dimension,
+            BlockPos target,
+            long gameTime) {
         return start(progress, providerId, dimension, target, gameTime, false);
     }
 
     public static TransitionResult start(
             VillagerQuestSavedData.QuestProgress progress,
+            UUID providerId,
+            ResourceKey<Level> dimension,
+            BlockPos target,
+            long gameTime,
+            boolean forceRestart) {
+        return start((QuestProgressState) progress, providerId, dimension, target, gameTime, forceRestart);
+    }
+
+    public static TransitionResult start(
+            QuestProgressState progress,
             UUID providerId,
             ResourceKey<Level> dimension,
             BlockPos target,
@@ -46,6 +65,12 @@ public final class QuestStateMachine {
     public static TransitionResult initializeStage(
             VillagerQuestSavedData.QuestProgress progress,
             String stage) {
+        return initializeStage((QuestProgressState) progress, stage);
+    }
+
+    public static TransitionResult initializeStage(
+            QuestProgressState progress,
+            String stage) {
         String normalized = normalize(stage);
         if (progress == null || normalized.isBlank()) {
             return blocked(progress, "missing_entry_stage");
@@ -56,6 +81,12 @@ public final class QuestStateMachine {
 
     public static TransitionResult transitionStage(
             VillagerQuestSavedData.QuestProgress progress,
+            String stage) {
+        return transitionStage((QuestProgressState) progress, stage);
+    }
+
+    public static TransitionResult transitionStage(
+            QuestProgressState progress,
             String stage) {
         String normalized = normalize(stage);
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE || progress.completionPending()) {
@@ -75,6 +106,13 @@ public final class QuestStateMachine {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
+        return complete((QuestProgressState) progress, gameTime, consume);
+    }
+
+    public static TransitionResult complete(
+            QuestProgressState progress,
+            long gameTime,
+            boolean consume) {
         if (!active(progress)) {
             return blocked(progress, "quest_not_active");
         }
@@ -84,6 +122,13 @@ public final class QuestStateMachine {
 
     public static TransitionResult fail(
             VillagerQuestSavedData.QuestProgress progress,
+            long gameTime,
+            String reason) {
+        return fail((QuestProgressState) progress, gameTime, reason);
+    }
+
+    public static TransitionResult fail(
+            QuestProgressState progress,
             long gameTime,
             String reason) {
         if (!active(progress) || progress.completionPending()) {
@@ -98,6 +143,13 @@ public final class QuestStateMachine {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
+        return abandon((QuestProgressState) progress, gameTime, consume);
+    }
+
+    public static TransitionResult abandon(
+            QuestProgressState progress,
+            long gameTime,
+            boolean consume) {
         if (!active(progress) || progress.completionPending()) {
             return blocked(progress, "quest_not_active");
         }
@@ -109,6 +161,13 @@ public final class QuestStateMachine {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
+        return expire((QuestProgressState) progress, gameTime, consume);
+    }
+
+    public static TransitionResult expire(
+            QuestProgressState progress,
+            long gameTime,
+            boolean consume) {
         if (!active(progress) || progress.completionPending()) {
             return blocked(progress, "quest_not_active");
         }
@@ -118,6 +177,12 @@ public final class QuestStateMachine {
 
     public static TransitionResult consume(
             VillagerQuestSavedData.QuestProgress progress,
+            String reason) {
+        return consume((QuestProgressState) progress, reason);
+    }
+
+    public static TransitionResult consume(
+            QuestProgressState progress,
             String reason) {
         if (progress == null) {
             return blocked(null, "missing_progress");
@@ -140,12 +205,12 @@ public final class QuestStateMachine {
         return normalized.isBlank() ? fallback : normalized;
     }
 
-    private static boolean active(VillagerQuestSavedData.QuestProgress progress) {
+    private static boolean active(QuestProgressState progress) {
         return progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE;
     }
 
     private static TransitionResult mutate(
-            VillagerQuestSavedData.QuestProgress progress,
+            QuestProgressState progress,
             LifecycleEvent event,
             String code,
             Runnable mutation,
@@ -166,7 +231,7 @@ public final class QuestStateMachine {
                 followUps.length == 0 ? Set.of() : Set.copyOf(EnumSet.of(followUps[0], followUps)));
     }
 
-    private static TransitionResult blocked(VillagerQuestSavedData.QuestProgress progress, String blocker) {
+    private static TransitionResult blocked(QuestProgressState progress, String blocker) {
         VillagerQuestSavedData.QuestState state = progress == null
                 ? VillagerQuestSavedData.QuestState.NOT_STARTED
                 : progress.state();

@@ -1,6 +1,11 @@
 package com.jvn.villagerretaliation.action;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.api.registry.ExtensionContracts.RecoveryMode;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
@@ -16,9 +21,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import net.minecraft.resources.ResourceLocation;
 
 public final class VillagerActionRegistry {
-    private static final List<ActionTypeDescriptor> REGISTRATIONS = List.of(
+    private static final List<ActionTypeRegistration> REGISTRATIONS = List.of(
             register("follower", VillagerActionDefinition.Kind.FOLLOWER, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN)),
             register(
                     "notification",
@@ -136,41 +145,41 @@ public final class VillagerActionRegistry {
                     capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN,
                             ActionCapability.PROVIDER_LIVE, ActionCapability.PROVIDER_SNAPSHOT))
     );
-    private static final Map<String, ActionTypeDescriptor> BY_ALIAS = descriptorsByAlias();
-    private static final Map<VillagerActionDefinition.Kind, ActionTypeDescriptor> BY_KIND = descriptorsByKind();
+    private static final Map<String, ActionTypeRegistration> BY_ALIAS = descriptorsByAlias();
+    private static final Map<VillagerActionDefinition.Kind, ActionTypeRegistration> BY_KIND = descriptorsByKind();
 
     private VillagerActionRegistry() {
     }
 
     public static List<ActionTypeDescriptor> descriptors() {
-        return REGISTRATIONS;
+        return REGISTRATIONS.stream().map(ActionTypeRegistration::descriptor).toList();
     }
 
     public static VillagerActionDefinition.Kind kindBySerializedName(String value) {
-        ActionTypeDescriptor descriptor = BY_ALIAS.get(normalizeType(value));
-        return descriptor == null ? VillagerActionDefinition.Kind.NONE : descriptor.kind();
+        ActionTypeRegistration registration = BY_ALIAS.get(normalizeType(value));
+        return registration == null ? VillagerActionDefinition.Kind.NONE : registration.descriptor().kind();
     }
 
     public static String canonicalTypeId(String type) {
         String normalized = normalizeType(type);
-        ActionTypeDescriptor descriptor = BY_ALIAS.get(normalized);
-        return descriptor == null ? normalized : descriptor.id();
+        ActionTypeRegistration registration = BY_ALIAS.get(normalized);
+        return registration == null ? normalized : registration.descriptor().id();
     }
 
     public static String canonicalTypeId(VillagerActionDefinition action) {
         if (action == null) {
             return "none";
         }
-        ActionTypeDescriptor descriptor = BY_KIND.get(action.kind());
-        return descriptor == null ? action.kind().serializedName() : descriptor.id();
+        ActionTypeRegistration registration = BY_KIND.get(action.kind());
+        return registration == null ? action.kind().serializedName() : registration.descriptor().id();
     }
 
     public static Set<ActionCapability> capabilities(VillagerActionDefinition action) {
         if (action == null) {
             return Set.of();
         }
-        ActionTypeDescriptor descriptor = BY_KIND.get(action.kind());
-        return descriptor == null ? Set.of() : descriptor.capabilities();
+        ActionTypeRegistration registration = BY_KIND.get(action.kind());
+        return registration == null ? Set.of() : registration.descriptor().capabilities();
     }
 
     public static ActionResult execute(
@@ -218,38 +227,14 @@ public final class VillagerActionRegistry {
         if (outcomeActor != null && action.kind() != VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
             return ActionResult.failed("A saved decision actor cannot receive another player's personal effects.", capabilities);
         }
-        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT) {
-            return com.jvn.villagerretaliation.campaign.CampaignPaymentService.execute(context, action);
-        }
-        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_REWARD) {
-            return com.jvn.villagerretaliation.campaign.CampaignRewardService.execute(context, action);
-        }
-        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_STANDING) {
-            return com.jvn.villagerretaliation.campaign.CampaignStandingService.execute(context, action);
-        }
-        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_FACT) {
-            return com.jvn.villagerretaliation.campaign.CampaignFactService.execute(context, action);
-        }
-        if (action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
-            return com.jvn.villagerretaliation.campaign.CampaignOutcomeService.execute(context, action, outcomeActor);
-        }
-        if (action.kind() == VillagerActionDefinition.Kind.FORCED_DIALOGUE) {
-            ActionResult result = VillagerActionExecutor.executeForcedDialogue(context, action, inheritedReplacements);
-            return new ActionResult(result.status(), result.message(), capabilities, result.legacyResult(),
-                    result.suspensionId(), result.suspensionKind(), result.retryOnResume());
-        }
-        if (action.kind() == VillagerActionDefinition.Kind.FOLLOWER) {
-            return com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(context, action);
-        }
-        if (action.kind() == VillagerActionDefinition.Kind.START_SCENE) {
-            SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);
-            if (!launch.accepted()) {
-                return ActionResult.unavailable(launch.diagnostic(), capabilities, VillagerActionResult.EMPTY);
-            }
-            if (action.waitForScene()) return ActionResult.suspended(launch.instanceId(), capabilities);
-            return launch.created() ? ActionResult.success(VillagerActionResult.success(), capabilities)
-                    : ActionResult.alreadySatisfied(launch.diagnostic(), capabilities, VillagerActionResult.EMPTY);
-        }
+        ActionTypeRegistration registration = BY_KIND.get(action.kind());
+        return registration.handler().execute(context, action, inheritedReplacements, outcomeActor);
+    }
+
+    private static ActionResult executeLegacy(
+            DialogueContext context, VillagerActionDefinition action, Map<String, String> inheritedReplacements,
+            com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor outcomeActor) {
+        Set<ActionCapability> capabilities = capabilities(action);
         if (context != null && action.questId() != null && SceneContinuationService.questOperation(action)) {
             var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), action.questId());
             if (progress != null && progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
@@ -350,31 +335,172 @@ public final class VillagerActionRegistry {
                 || capabilities.contains(ActionCapability.PROVIDER_LIVE);
     }
 
-    private static ActionTypeDescriptor register(
-            String id,
-            VillagerActionDefinition.Kind kind,
-            Set<String> aliases,
-            Set<ActionCapability> capabilities) {
-        return new ActionTypeDescriptor(id, kind, aliases, capabilities);
+    static Optional<VillagerActionDefinition> read(ResourceLocation location, String context, JsonObject entry,
+            ResourceLocation defaultQuestId, VillagerActionDefinition.Kind kind) {
+        ActionTypeRegistration registration = BY_KIND.get(kind);
+        if (registration == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "action must define a supported type.");
+            return Optional.empty();
+        }
+        return registration.reader().read(location, context, entry, defaultQuestId).filter(action -> {
+            if (registration.requiredFields().test(action)) return true;
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context,
+                    "action is missing required fields for type \"" + registration.descriptor().id() + "\".");
+            return false;
+        });
     }
 
-    private static Map<String, ActionTypeDescriptor> descriptorsByAlias() {
-        Map<String, ActionTypeDescriptor> descriptors = new LinkedHashMap<>();
-        for (ActionTypeDescriptor descriptor : REGISTRATIONS) {
-            descriptors.put(descriptor.id(), descriptor);
+    public static RecoveryMode recoveryMode(VillagerActionDefinition action) {
+        ActionTypeRegistration registration = action == null ? null : BY_KIND.get(action.kind());
+        return registration == null ? RecoveryMode.UNSAFE_BLOCK : registration.recovery();
+    }
+
+    public static boolean reconcilesPreparedOperation(VillagerActionDefinition action) {
+        ActionTypeRegistration registration = action == null ? null : BY_KIND.get(action.kind());
+        return registration != null && registration.reconcilesPreparedOperation();
+    }
+
+    public static JsonArray structuralRules() {
+        JsonArray rules = new JsonArray();
+        for (ActionTypeRegistration registration : REGISTRATIONS) {
+            JsonObject fields = registration.schema().get();
+            if (fields.entrySet().isEmpty()) continue;
+            JsonArray names = new JsonArray();
+            names.add(registration.descriptor().id());
+            registration.descriptor().aliases().stream().sorted().forEach(names::add);
+            JsonObject type = new JsonObject();
+            type.add("enum", names);
+            JsonObject properties = new JsonObject();
+            properties.add("type", type);
+            JsonObject when = new JsonObject();
+            when.add("properties", properties);
+            JsonArray required = new JsonArray();
+            required.add("type");
+            when.add("required", required);
+            JsonObject rule = new JsonObject();
+            rule.add("if", when);
+            rule.add("then", fields);
+            rules.add(rule);
+        }
+        return rules;
+    }
+
+    private static ActionTypeRegistration register(String id, VillagerActionDefinition.Kind kind,
+            Set<String> aliases, Set<ActionCapability> capabilities) {
+        ActionTypeDescriptor descriptor = new ActionTypeDescriptor(id, kind, aliases, capabilities);
+        return switch (kind) {
+            case FOLLOWER -> registration(descriptor, action -> true,
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(context, action),
+                    com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective::schema, RecoveryMode.NATURALLY_IDEMPOTENT);
+            case CAMPAIGN_PAYMENT -> registration(descriptor, action -> true,
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.campaign.CampaignPaymentService.execute(context, action),
+                    com.jvn.villagerretaliation.campaign.CampaignPaymentAction::schema, RecoveryMode.RECEIPT_REQUIRED, true);
+            case CAMPAIGN_REWARD -> registration(descriptor, action -> true,
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.campaign.CampaignRewardService.execute(context, action),
+                    com.jvn.villagerretaliation.campaign.CampaignRewardAction::schema, RecoveryMode.RECEIPT_REQUIRED, true);
+            case CAMPAIGN_STANDING -> registration(descriptor, action -> true,
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.campaign.CampaignStandingService.execute(context, action),
+                    com.jvn.villagerretaliation.campaign.CampaignStandingAction::schema, RecoveryMode.RECEIPT_REQUIRED, true);
+            case CAMPAIGN_FACT -> registration(descriptor, action -> true,
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.campaign.CampaignFactService.execute(context, action),
+                    com.jvn.villagerretaliation.campaign.CampaignFactAction::schema, RecoveryMode.RECEIPT_REQUIRED, true);
+            case CAMPAIGN_OUTCOME -> registration(descriptor, action -> true,
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.campaign.CampaignOutcomeService.execute(context, action, actor),
+                    com.jvn.villagerretaliation.campaign.CampaignOutcomeAction::schema, RecoveryMode.RECEIPT_REQUIRED, true);
+            case START_SCENE -> registration(descriptor, action -> action.sceneId() != null && !action.sceneOperationId().isBlank(),
+                    VillagerActionRegistry::executeScene, JsonObject::new, RecoveryMode.RECEIPT_REQUIRED, true);
+            case FORCED_DIALOGUE -> registration(descriptor, action -> !action.forcedDialogue().isBlank(),
+                    (context, action, replacements, actor) -> {
+                        ActionResult result = VillagerActionExecutor.executeForcedDialogue(context, action, replacements);
+                        return new ActionResult(result.status(), result.message(), capabilities(action), result.legacyResult(),
+                                result.suspensionId(), result.suspensionKind(), result.retryOnResume());
+                    }, JsonObject::new, RecoveryMode.RECEIPT_REQUIRED);
+            case QUEST -> registration(descriptor, action -> action.questId() != null && action.questAction() != VillagerActionDefinition.QuestAction.NONE);
+            case QUEST_TRANSITION -> registration(descriptor, action -> !action.questTransition().isEmpty());
+            case MEMORY -> registration(descriptor, action -> action.memoryTag() != null);
+            case LOOT -> registration(descriptor, action -> action.lootTable() != null);
+            case NOTIFICATION -> registration(descriptor, action -> !action.notificationTrigger().isBlank() || !action.text().isBlank());
+            case SET_TAG, CLEAR_TAG -> registration(descriptor, action -> action.factTag() != null,
+                    VillagerActionRegistry::executeLegacy, JsonObject::new, RecoveryMode.NATURALLY_IDEMPOTENT);
+            case SET_VARIABLE -> registration(descriptor, action -> !action.factKey().isBlank() && !action.factValue().isBlank(),
+                    VillagerActionRegistry::executeLegacy, JsonObject::new, RecoveryMode.NATURALLY_IDEMPOTENT);
+            case COUNTER -> registration(descriptor, action -> !action.factKey().isBlank());
+            case PROFILE_ATTRIBUTE -> registration(descriptor, action -> VillagerSocialAttribute.bySerializedName(action.factKey()) != null);
+            case TRACKER -> registration(descriptor, action -> true,
+                    VillagerActionRegistry::executeLegacy, JsonObject::new, RecoveryMode.NATURALLY_IDEMPOTENT);
+            case EXPERIENCE, REPUTATION, GOSSIP, DRAW_WEAPON -> registration(descriptor, action -> true);
+            case NONE -> throw new IllegalArgumentException("empty actions cannot be registered");
+        };
+    }
+
+    private static ActionTypeRegistration registration(ActionTypeDescriptor descriptor,
+            Predicate<VillagerActionDefinition> requiredFields) {
+        return registration(descriptor, requiredFields, VillagerActionRegistry::executeLegacy,
+                JsonObject::new, RecoveryMode.RECEIPT_REQUIRED);
+    }
+
+    private static ActionTypeRegistration registration(ActionTypeDescriptor descriptor,
+            Predicate<VillagerActionDefinition> requiredFields, ActionHandler handler,
+            Supplier<JsonObject> schema, RecoveryMode recovery) {
+        return registration(descriptor, requiredFields, handler, schema, recovery, false);
+    }
+
+    private static ActionTypeRegistration registration(ActionTypeDescriptor descriptor,
+            Predicate<VillagerActionDefinition> requiredFields, ActionHandler handler,
+            Supplier<JsonObject> schema, RecoveryMode recovery, boolean reconcilesPreparedOperation) {
+        return new ActionTypeRegistration(descriptor,
+                (location, context, entry, defaultQuestId) -> VillagerActionDefinition.readRegistered(
+                        location, context, entry, defaultQuestId, descriptor.kind()),
+                requiredFields, handler, schema, recovery, reconcilesPreparedOperation);
+    }
+
+    private static ActionResult executeScene(DialogueContext context, VillagerActionDefinition action,
+            Map<String, String> replacements, com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor actor) {
+        Set<ActionCapability> capabilities = capabilities(action);
+        SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);
+        if (!launch.accepted()) return ActionResult.unavailable(launch.diagnostic(), capabilities, VillagerActionResult.EMPTY);
+        if (action.waitForScene()) return ActionResult.suspended(launch.instanceId(), capabilities);
+        return launch.created() ? ActionResult.success(VillagerActionResult.success(), capabilities)
+                : ActionResult.alreadySatisfied(launch.diagnostic(), capabilities, VillagerActionResult.EMPTY);
+    }
+
+    private static Map<String, ActionTypeRegistration> descriptorsByAlias() {
+        Map<String, ActionTypeRegistration> registrations = new LinkedHashMap<>();
+        for (ActionTypeRegistration registration : REGISTRATIONS) {
+            ActionTypeDescriptor descriptor = registration.descriptor();
+            if (registrations.putIfAbsent(descriptor.id(), registration) != null)
+                throw new IllegalStateException("duplicate action type " + descriptor.id());
             for (String alias : descriptor.aliases()) {
-                descriptors.put(normalizeType(alias), descriptor);
+                if (registrations.putIfAbsent(normalizeType(alias), registration) != null)
+                    throw new IllegalStateException("colliding action alias " + alias);
             }
         }
-        return Map.copyOf(descriptors);
+        return Map.copyOf(registrations);
     }
 
-    private static Map<VillagerActionDefinition.Kind, ActionTypeDescriptor> descriptorsByKind() {
-        Map<VillagerActionDefinition.Kind, ActionTypeDescriptor> descriptors = new HashMap<>();
-        for (ActionTypeDescriptor descriptor : REGISTRATIONS) {
-            descriptors.put(descriptor.kind(), descriptor);
+    private static Map<VillagerActionDefinition.Kind, ActionTypeRegistration> descriptorsByKind() {
+        Map<VillagerActionDefinition.Kind, ActionTypeRegistration> registrations = new HashMap<>();
+        for (ActionTypeRegistration registration : REGISTRATIONS) {
+            if (registrations.putIfAbsent(registration.descriptor().kind(), registration) != null)
+                throw new IllegalStateException("duplicate action kind " + registration.descriptor().kind());
         }
-        return Map.copyOf(descriptors);
+        return Map.copyOf(registrations);
+    }
+
+    private record ActionTypeRegistration(ActionTypeDescriptor descriptor, ActionReader reader,
+            Predicate<VillagerActionDefinition> requiredFields, ActionHandler handler,
+            Supplier<JsonObject> schema, RecoveryMode recovery, boolean reconcilesPreparedOperation) { }
+
+    @FunctionalInterface
+    private interface ActionReader {
+        Optional<VillagerActionDefinition> read(ResourceLocation location, String context, JsonObject entry,
+                ResourceLocation defaultQuestId);
+    }
+
+    @FunctionalInterface
+    private interface ActionHandler {
+        ActionResult execute(DialogueContext context, VillagerActionDefinition action, Map<String, String> replacements,
+                com.jvn.villagerretaliation.campaign.CampaignOutcomeService.Actor outcomeActor);
     }
 
     private static Set<String> aliases(String... aliases) {
@@ -406,6 +532,21 @@ public final class VillagerActionRegistry {
             Set<String> aliases,
             Set<ActionCapability> capabilities
     ) {
+        public JsonObject schema() {
+            ActionTypeRegistration registration = BY_KIND.get(kind);
+            return registration == null ? new JsonObject() : registration.schema().get();
+        }
+
+        public boolean reconcilesPreparedOperation() {
+            ActionTypeRegistration registration = BY_KIND.get(kind);
+            return registration != null && registration.reconcilesPreparedOperation();
+        }
+
+        public RecoveryMode recoveryMode() {
+            ActionTypeRegistration registration = BY_KIND.get(kind);
+            return registration == null ? RecoveryMode.UNSAFE_BLOCK : registration.recovery();
+        }
+
         public ActionTypeDescriptor {
             id = normalizeType(id);
             kind = kind == null ? VillagerActionDefinition.Kind.NONE : kind;

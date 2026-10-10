@@ -4,6 +4,9 @@ import com.jvn.villagerretaliation.campaign.CampaignCharacterService;
 import com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.conditions.ConditionEvaluator;
+import com.jvn.villagerretaliation.dialogue.conditions.QuestConditionQueries;
+import com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.*;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
@@ -119,8 +122,10 @@ public final class QuestDiscoveryService {
 
     private static void discover(ServerPlayer player, CompiledQuest quest, QuestDiscoveryDefinition discovery,
             UUID provider, Map<String, String> payload) {
+        boolean playerOnly = playerOnly(quest, provider);
+        if (playerOnly && playerConditions(player, discovery, payload) != DialogueCondition.ConditionOutcome.MATCHED) return;
         var context = context(player, quest, provider);
-        if (context == null || !eligible(context, quest, discovery, payload)) return;
+        if (context == null || !eligible(context, quest, discovery, payload, playerOnly)) return;
         boolean offer = discovery.offer() || CampaignQuestAcceptanceService.requiresConfirmation(context, quest.asQuestDefinition());
         var saved = QuestDiscoverySavedData.get(player.serverLevel());
         if (offer) {
@@ -138,10 +143,29 @@ public final class QuestDiscoveryService {
         return Component.literal(com.jvn.villagerretaliation.quest.tracking.QuestPresentationService.questTitle(player, quest.asQuestDefinition(), Map.of()));
     }
 
+    public static DialogueCondition.ConditionOutcome playerConditions(ServerPlayer player,
+            QuestDiscoveryDefinition discovery, Map<String, String> payload) {
+        return playerConditions(player, discovery, payload, VillagerQuestService.conditionQueries(player));
+    }
+
+    public static DialogueCondition.ConditionOutcome playerConditions(ServerPlayer player,
+            QuestDiscoveryDefinition discovery, Map<String, String> payload, QuestConditionQueries quests) {
+        var event = QuestTriggerRegistry.eventBySerializedName(discovery.event());
+        var trigger = new QuestTriggerContext(event == null ? QuestDefinition.TriggerEvent.PLAYER_TICK : event,
+                player.serverLevel().getGameTime(), "", payload, null);
+        return ConditionEvaluator.all(VillagerConditionAccess.forPlayer(player, quests), trigger, discovery.conditions());
+    }
+
+    private static boolean playerOnly(CompiledQuest quest, UUID provider) {
+        if (!quest.provider().campaignRole().isBlank() && quest.metadata().campaign() != null) return false;
+        return provider == null || quest.provider().providerType().equals(ResourceLocation.parse("villagerretaliation:discovery"));
+    }
+
     private static boolean eligible(DialogueContext context, CompiledQuest quest, QuestDiscoveryDefinition discovery,
-            Map<String, String> payload) {
+            Map<String, String> payload, boolean conditionsMatched) {
         var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), quest.id());
         if (!VillagerQuestService.canStartDiscoveredQuest(context, quest.asQuestDefinition(), progress)) return false;
+        if (conditionsMatched) return true;
         var event = QuestTriggerRegistry.eventBySerializedName(discovery.event());
         var trigger = new QuestTriggerContext(event == null ? QuestDefinition.TriggerEvent.PLAYER_TICK : event,
                 context.level().getGameTime(), "", payload, context);
@@ -153,9 +177,12 @@ public final class QuestDiscoveryService {
         var offer = QuestDiscoverySavedData.get(player.serverLevel()).offers(player.getUUID()).get(id);
         var quest = VillagerQuestResources.compiledQuest(player.serverLevel().getServer(), id).orElse(null);
         if (offer == null || quest == null) return false;
+        var discovery = quest.discovery().stream().filter(value -> value.id().equals(offer.discovery())).findFirst().orElse(null);
+        if (discovery == null) return false;
+        boolean playerOnly = playerOnly(quest, offer.provider());
+        if (playerOnly && playerConditions(player, discovery, offer.payload()) != DialogueCondition.ConditionOutcome.MATCHED) return false;
         var context = context(player, quest, offer.provider());
-        return context != null && quest.discovery().stream().anyMatch(discovery -> discovery.id().equals(offer.discovery())
-                && eligible(context, quest, discovery, offer.payload()));
+        return context != null && eligible(context, quest, discovery, offer.payload(), playerOnly);
     }
 
     public static boolean accept(ServerPlayer player, ResourceLocation id) {
@@ -164,8 +191,11 @@ public final class QuestDiscoveryService {
         var quest = VillagerQuestResources.compiledQuest(player.serverLevel().getServer(), id).orElse(null);
         if (offer == null || quest == null) return false;
         var discovery = quest.discovery().stream().filter(value -> value.id().equals(offer.discovery())).findFirst().orElse(null);
-        var context = context(player, quest, offer.provider());
-        if (discovery == null || context == null || !eligible(context, quest, discovery, offer.payload())) {
+        boolean playerOnly = playerOnly(quest, offer.provider());
+        boolean conditionsMatched = discovery != null && (!playerOnly
+                || playerConditions(player, discovery, offer.payload()) == DialogueCondition.ConditionOutcome.MATCHED);
+        var context = conditionsMatched ? context(player, quest, offer.provider()) : null;
+        if (discovery == null || context == null || !eligible(context, quest, discovery, offer.payload(), playerOnly)) {
             player.sendSystemMessage(Component.translatable("villagerretaliation.quest.discovery.unavailable"));
             return false;
         }

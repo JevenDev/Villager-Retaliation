@@ -160,12 +160,12 @@ public final class SceneCompiler {
                         error("scene.step.parse", "steps." + step.id(), exception.getMessage()));
             }
             if (step.type().equals(com.jvn.villagerretaliation.scene.model.CampaignFollowDefinition.TYPE) && follow == null) continue;
-            String localType = step.type().getPath();
+            String localType = descriptor.id().getPath();
             steps.put(
                     step.id(),
                     new CompiledScene.CompiledStep(
                             step.id(),
-                            step.type(),
+                            descriptor.id(),
                             step.actors(),
                             step.data(),
                             step.transitions(),

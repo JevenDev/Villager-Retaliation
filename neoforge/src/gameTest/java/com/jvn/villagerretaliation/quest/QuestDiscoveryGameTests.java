@@ -281,6 +281,75 @@ public final class QuestDiscoveryGameTests {
         }
     }
 
+    @GameTest(template = "empty", batch = "quest_discovery")
+    public static void playerConditionPrefilterPreservesUnknownNegationAndOffers(GameTestHelper helper) {
+        try (var fixture = new Fixture(helper, "book_opened", "offer", root -> {
+            root.getAsJsonArray("discovery").get(0).getAsJsonObject().add("conditions", JsonParser.parseString(
+                    "[{\"type\":\"not\",\"condition\":{\"type\":\"reputation\",\"min\":1}}]"));
+        })) {
+            var quest = VillagerQuestResources.compiledQuest(helper.getLevel().getServer(), ID).orElseThrow();
+            helper.assertValueEqual(QuestDiscoveryService.playerConditions(fixture.player, quest.discovery().getFirst(), Map.of()),
+                    com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNKNOWN,
+                    "a missing provider remains unavailable through negation without a dialogue context");
+            QuestDiscoveryService.bookOpened(fixture.player, book());
+            helper.assertTrue(QuestDiscoverySavedData.get(helper.getLevel()).offers(fixture.player.getUUID()).isEmpty(),
+                    "unavailable provider facts cannot create an offer");
+            helper.assertTrue(fixture.progress() == null, "condition prefilter does not create quest progress");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_discovery")
+    public static void playerConditionPrefilterAcceptsExplicitQuestQueriesAndSavedPayload(GameTestHelper helper) {
+        try (var fixture = new Fixture(helper, "block_interact", "offer", root -> {
+            root.getAsJsonArray("discovery").get(0).getAsJsonObject().add("conditions", JsonParser.parseString("""
+                    [{"type":"all","conditions":[{"type":"trigger_payload","block":"minecraft:bell"},
+                      {"type":"quest","quest":"test:discovery","states":["ready"]}]}]
+                    """));
+        })) {
+            var quest = VillagerQuestResources.compiledQuest(helper.getLevel().getServer(), ID).orElseThrow();
+            var queries = new com.jvn.villagerretaliation.dialogue.conditions.QuestConditionQueries() {
+                public com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome matchesState(ResourceLocation id, java.util.Set<String> states) {
+                    return com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNKNOWN;
+                }
+                public com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome ready(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
+                    return com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED;
+                }
+            };
+            helper.assertValueEqual(QuestDiscoveryService.playerConditions(fixture.player, quest.discovery().getFirst(),
+                            Map.of("block", "minecraft:bell"), queries),
+                    com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED,
+                    "player-only filtering uses explicit readiness queries and captured event facts");
+            helper.assertValueEqual(QuestDiscoveryService.playerConditions(fixture.player, quest.discovery().getFirst(),
+                            Map.of("block", "minecraft:stone"), queries),
+                    com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNMET,
+                    "unmet event facts remain unmet without a provider context");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_discovery")
+    public static void runtimeStartRulesUseExplicitIdentityTimeAndCompletionFacts(GameTestHelper helper) {
+        try (var fixture = new Fixture(helper, "book_opened", "automatic")) {
+            var definition = VillagerQuestResources.quest(helper.getLevel().getServer(), ID).orElseThrow();
+            var progress = new com.jvn.villagerretaliation.quest.runtime.QuestProgressState();
+            java.util.function.IntSupplier unused = () -> { helper.fail("unlimited completion rules must not query scoped state"); return 0; };
+            helper.assertTrue(com.jvn.villagerretaliation.quest.runtime.QuestStartRules.canStart(definition, progress, null, 10L, unused),
+                    "an unstarted provider-free runtime model can satisfy start rules");
+            progress.start(null, helper.getLevel().dimension(), null, 10L);
+            helper.assertFalse(com.jvn.villagerretaliation.quest.runtime.QuestStartRules.canStart(definition, progress, null, 11L, unused),
+                    "an active run cannot restart");
+            progress.consume("branch_lock");
+            helper.assertFalse(com.jvn.villagerretaliation.quest.runtime.QuestStartRules.canStart(definition, progress, null, 12L, unused),
+                    "a consumed run remains unavailable");
+            helper.assertFalse(com.jvn.villagerretaliation.quest.runtime.QuestStartRules.cooldownElapsed(19L, 10L, 10L),
+                    "cooldown remains active before its exact deadline");
+            helper.assertTrue(com.jvn.villagerretaliation.quest.runtime.QuestStartRules.cooldownElapsed(20L, 10L, 10L),
+                    "cooldown ends at its existing deadline");
+            helper.succeed();
+        }
+    }
+
     private static ItemStack book() {
         var stack = new ItemStack(Items.WRITTEN_BOOK);
         var tag = new CompoundTag();

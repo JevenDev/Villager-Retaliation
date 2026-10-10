@@ -84,6 +84,11 @@ public record DialogueContext(
                 com.jvn.villagerretaliation.util.VillagerLocale.locale(player), "");
     }
 
+    public com.jvn.villagerretaliation.dialogue.conditions.ConditionContext conditions() {
+        return com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forDialogue(this,
+                com.jvn.villagerretaliation.quest.VillagerQuestService.conditionQueries(this));
+    }
+
     public UUID providerId() {
         return villager == null ? null : villager.getUUID();
     }

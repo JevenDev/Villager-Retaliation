@@ -3,6 +3,9 @@ package com.jvn.villagerretaliation.quest;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveDispatchService;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveDispatcher;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressState;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEvaluationContext;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEvent;
 import java.util.ArrayList;
@@ -72,6 +75,36 @@ public final class QuestObjectiveDispatchGameTests {
         helper.assertFalse(QuestObjectiveDispatchService.poll(context, objective -> completed.add(objective.id())),
                 "repeated polling does not replay completion effects");
         helper.assertValueEqual(completed.size(), 2, "each completion callback runs once");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_objective_dispatch")
+    public static void runtimeDispatcherUsesExplicitPolicyAndPreservesObserverOrdering(GameTestHelper helper) {
+        var definition = definition("""
+                {"objectives":[{"id":"evidence","type":"criterion","criterion":"villagerretaliation:evidence","count":2}],
+                 "stages":{"active":{"objectives":["evidence"]}}}
+                """);
+        QuestProgressState progress = new QuestProgressState();
+        progress.start(UUID.randomUUID(), helper.getLevel().dimension(), null, helper.getLevel().getGameTime());
+        progress.setCurrentStage("active");
+        progress.setTarget(progress.startedVillagerId(), helper.getLevel().dimension(), BlockPos.ZERO, "evidence");
+        List<String> order = new ArrayList<>();
+        var objectives = definition.objectives();
+        helper.assertFalse(QuestObjectiveDispatcher.dispatch(progress, objectives, false, QuestObjectiveEventKind.CRITERION,
+                        objective -> { helper.fail("denied policy must not evaluate gameplay facts"); return true; },
+                        objective -> false, objective -> order.add("complete"), update -> order.add("observed")),
+                "an explicit denied access decision prevents progression");
+        for (int index = 0; index < 2; index++) {
+            helper.assertTrue(QuestObjectiveDispatcher.dispatch(progress, objectives, true, QuestObjectiveEventKind.CRITERION,
+                            objective -> true, objective -> false, objective -> order.add("complete"), update -> {
+                                helper.assertValueEqual(update.counterDelta(), 1, "one observation produces one counter increment");
+                                if (update.completed()) helper.assertTrue(progress.targetPos() == null, "target clears before progress observation");
+                                order.add(update.completed() ? "observed_complete" : "observed_progress");
+                            }), "permitted observations advance the runtime model");
+        }
+        helper.assertValueEqual(order, List.of("observed_progress", "complete", "observed_complete"),
+                "completion effects remain ordered before the progress observer");
+        helper.assertValueEqual(progress.objectiveCounter("evidence"), 2, "runtime progress uses the existing state owner");
         helper.succeed();
     }
 

@@ -44,7 +44,7 @@ public record QuestContentCatalog(
         QuestLocaleCatalog localization,
         QuestRewardCatalog rewards,
         Map<ResourceLocation, ConversationDefinition> conversations,
-        Map<ResourceLocation, SocialProgressionDefinition> socialProgressions) {
+        Map<ResourceLocation, SocialProgressionDefinition> socialProgressions) implements QuestContentAccess {
     public QuestContentCatalog {
         compiledQuestCatalog = compiledQuestCatalog == null
                 ? new CompiledQuestCatalog(Map.of())

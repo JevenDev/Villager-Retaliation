@@ -79,6 +79,15 @@ public record QuestExecutionContext(
                 null);
     }
 
+    public com.jvn.villagerretaliation.dialogue.conditions.ConditionContext conditions(
+            VillagerQuestSavedData.QuestProgress progress) {
+        return this.legacyDialogueContext != null && this.liveProvider != null
+                ? com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forDialogue(
+                        this.legacyDialogueContext, this.quest, progress, VillagerQuestService.conditionQueries(this.legacyDialogueContext))
+                : com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forSaved(
+                        this.level, this.player, this.quest, progress, VillagerQuestService.conditionQueries(this.player));
+    }
+
     public Optional<QuestProviderBinding> providerBinding() {
         return Optional.ofNullable(this.binding);
     }

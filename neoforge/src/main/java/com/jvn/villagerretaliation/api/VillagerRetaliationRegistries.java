@@ -2,6 +2,11 @@ package com.jvn.villagerretaliation.api;
 
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.action.VillagerActionRegistry;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
+import com.jvn.villagerretaliation.quest.provider.QuestProviderRegistry;
 import com.jvn.villagerretaliation.api.registry.ExtensionContracts.ClientSync;
 import com.jvn.villagerretaliation.api.registry.ExtensionContracts.RecoveryMode;
 import com.jvn.villagerretaliation.api.registry.ExtensionContracts.ToolingMetadata;
@@ -12,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
-/** Supported registration surface. Extensions register during mod construction, before datapack compilation. */
+/** Scene extensions execute through attached step executors. Quest registries expose descriptor metadata. */
 public final class VillagerRetaliationRegistries {
     public static final FreezableExtensionRegistry<RuntimeTypeDescriptor> ACTOR_TYPES = registry("actor type");
     public static final FreezableExtensionRegistry<RuntimeTypeDescriptor> SCENE_STEPS = registry("scene step");
@@ -48,28 +53,29 @@ public final class VillagerRetaliationRegistries {
         SCENE_STEPS.register(com.jvn.villagerretaliation.scene.model.CampaignFollowDefinition.descriptor());
         registerSimple(ENCOUNTER_TEMPLATES, "controlled", RecoveryMode.WORLD_RECONCILED, ClientSync.PARTICIPANTS);
 
-        registerSimple(QUEST_PROVIDERS, "villager", RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
-        registerSimple(QUEST_PROVIDERS, "discovery", RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
-        for (String id : List.of("mob_kill", "block_break", "block_place", "block_interact", "structure_visit",
-                "location_visit", "item_check", "memory_event", "trade", "gift", "reputation", "choice", "fact", "condition", "criterion",
-                "campaign_outcome", "campaign_speak", "campaign_investigate", "campaign_follow", "follower_arrival")) {
-            registerSimple(QUEST_OBJECTIVES, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.OWNER);
+        for (var provider : QuestProviderRegistry.descriptors()) {
+            QUEST_PROVIDERS.register(descriptor(provider.id().getPath(), Set.of(), provider.capabilities(), Set.of(),
+                    RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE, new JsonObject()));
         }
-        for (String id : List.of("notification", "tracker", "forced_dialogue", "quest", "quest_transition", "campaign_outcome", "campaign_fact", "campaign_reward", "campaign_payment", "experience",
-                "reputation", "gossip", "memory", "loot", "set_tag", "clear_tag", "set_variable", "counter", "start_scene", "follower")) {
-            registerSimple(QUEST_ACTIONS, id, switch (id) {
-                case "set_tag", "clear_tag", "set_variable", "tracker", "follower" -> RecoveryMode.NATURALLY_IDEMPOTENT;
-                default -> RecoveryMode.RECEIPT_REQUIRED;
-            }, ClientSync.OWNER);
+        for (var objective : QuestObjectiveRegistry.descriptors()) {
+            JsonObject schema = objective.implementation() == null ? new JsonObject()
+                    : objective.implementation().structuralSchema().orElseGet(JsonObject::new);
+            QUEST_OBJECTIVES.register(descriptor(objective.id(), namespaced(objective.aliases()), Set.of(), Set.of(),
+                    RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.OWNER, schema));
         }
-        for (String id : List.of("all", "any", "not", "reputation", "memory", "family", "relationship",
-                "recruitment_memory", "villager_age", "social_attribute", "skill", "villager_level", "quest",
-                "quest_fact", "campaign_fact", "campaign_outcome", "campaign_evidence", "selected_choice", "stage_history", "mood", "weather", "time")) {
-            registerSimple(QUEST_CONDITIONS, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
+        for (var action : VillagerActionRegistry.descriptors()) {
+            QUEST_ACTIONS.register(descriptor(action.id(), namespaced(action.aliases()),
+                    capabilities(action.capabilities(), false), capabilities(action.capabilities(), true),
+                    action.recoveryMode(), ClientSync.OWNER, action.schema()));
         }
-        for (String id : List.of("player_tick", "proximity", "started", "progress", "stage_changed", "completed",
-                "failed", "abandoned", "expired")) {
-            registerSimple(QUEST_TRIGGER_EVENTS, id, RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE);
+        for (var condition : DialogueCondition.descriptors()) {
+            QUEST_CONDITIONS.register(descriptor(condition.id(), namespaced(condition.aliases()),
+                    capabilities(condition.capabilities(), false), capabilities(condition.capabilities(), true),
+                    RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE, condition.schema()));
+        }
+        for (var trigger : QuestTriggerRegistry.descriptors()) {
+            QUEST_TRIGGER_EVENTS.register(descriptor(trigger.id(), namespaced(trigger.aliases()), Set.of(), Set.of(),
+                    RecoveryMode.NATURALLY_IDEMPOTENT, ClientSync.NONE, new JsonObject()));
         }
         builtInsRegistered = true;
     }
@@ -103,15 +109,39 @@ public final class VillagerRetaliationRegistries {
 
     private static RuntimeTypeDescriptor descriptor(String path, Set<ResourceLocation> live, Set<ResourceLocation> snapshot,
             RecoveryMode recovery, ClientSync sync) {
+        return descriptor(path, Set.of(), live, snapshot, recovery, sync, new JsonObject());
+    }
+
+    private static RuntimeTypeDescriptor descriptor(String path, Set<ResourceLocation> aliases,
+            Set<ResourceLocation> live, Set<ResourceLocation> snapshot, RecoveryMode recovery, ClientSync sync,
+            JsonObject schema) {
         ResourceLocation id = VillagerRetaliation.id(path);
-        return new RuntimeTypeDescriptor(id, Set.of(), live, snapshot,
+        return new RuntimeTypeDescriptor(id, aliases, live, snapshot,
                 JsonObject::deepCopy,
                 value -> List.of(),
                 (value, context) -> value,
                 value -> id + " " + String.valueOf(value),
                 recovery,
-                new ToolingMetadata(humanize(path), "Built-in " + humanize(path) + " type.", Map.of("type", "object"), true),
+                new ToolingMetadata(humanize(path), "Built-in " + humanize(path) + " type.", schemaMetadata(schema), true),
                 sync);
+    }
+
+    private static Map<String, Object> schemaMetadata(JsonObject schema) {
+        if (schema == null || schema.entrySet().isEmpty()) return Map.of("type", "object");
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        schema.entrySet().forEach(entry -> fields.put(entry.getKey(), entry.getValue()));
+        return fields;
+    }
+
+    private static Set<ResourceLocation> namespaced(Set<String> values) {
+        return values.stream().map(VillagerRetaliation::id).collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    private static Set<ResourceLocation> capabilities(Set<? extends Enum<?>> values, boolean snapshot) {
+        return values.stream()
+                .filter(value -> value.name().endsWith("_SNAPSHOT") == snapshot)
+                .map(value -> capability(value.name().toLowerCase(java.util.Locale.ROOT)))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
     private static String humanize(String path) {

@@ -12,9 +12,14 @@ public final class SceneStepExecutors {
     private SceneStepExecutors() { }
     public static synchronized void register(ResourceLocation id,SceneStepExecutor executor){
         if(id==null||executor==null)throw new IllegalArgumentException("scene executor id and implementation are required");
-        if(VillagerRetaliationRegistries.SCENE_STEPS.get(id).isEmpty())throw new IllegalArgumentException("scene executor has no registered descriptor: "+id);
-        if(EXECUTORS.putIfAbsent(id,executor)!=null)throw new IllegalArgumentException("duplicate scene executor: "+id);
+        ResourceLocation canonical = VillagerRetaliationRegistries.SCENE_STEPS.get(id)
+                .orElseThrow(() -> new IllegalArgumentException("scene executor has no registered descriptor: " + id)).id();
+        if(EXECUTORS.putIfAbsent(canonical,executor)!=null)throw new IllegalArgumentException("duplicate scene executor: "+canonical);
     }
-    public static synchronized Optional<SceneStepExecutor> get(ResourceLocation id){return Optional.ofNullable(EXECUTORS.get(id));}
+    public static synchronized Optional<SceneStepExecutor> get(ResourceLocation id){
+        ResourceLocation canonical = VillagerRetaliationRegistries.SCENE_STEPS.get(id)
+                .map(descriptor -> descriptor.id()).orElse(id);
+        return Optional.ofNullable(EXECUTORS.get(canonical));
+    }
     public static synchronized Map<ResourceLocation,SceneStepExecutor> snapshot(){return Map.copyOf(EXECUTORS);}
 }

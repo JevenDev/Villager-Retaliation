@@ -57,7 +57,7 @@ public final class VillagerConversationService {
         if (!forced && canStart && !VillagerInteractionService.canStartNormalConversation(player, villager)) {
             return false;
         }
-        if (!canStart || !forced && com.jvn.villagerretaliation.dialogue.conversation.ConversationService.isCharacterReserved(villager)) {
+        if (!canStart || !forced && NarrativeActorReservations.conversation(villager)) {
             return false;
         }
 

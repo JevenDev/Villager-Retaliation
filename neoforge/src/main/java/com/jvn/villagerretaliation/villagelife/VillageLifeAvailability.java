@@ -9,7 +9,6 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWorkAuthority;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
-import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
 import com.jvn.villagerretaliation.social.BreedingBlockReason;
 import com.jvn.villagerretaliation.study.VillagerStudyService;
@@ -35,7 +34,7 @@ public final class VillageLifeAvailability {
                 || VillagerStudyService.isActivelyStudying(level, villager) || DuelService.isParticipant(villager)) {
             return BreedingBlockReason.CONTROLLED_ACTIVITY;
         }
-        if (SceneSavedData.get(level).hasActiveActor(villager.getUUID())) return BreedingBlockReason.SCENE_CONTROLLED;
+        if (com.jvn.villagerretaliation.interaction.NarrativeActorReservations.scene(level, villager.getUUID())) return BreedingBlockReason.SCENE_CONTROLLED;
         if (HiredVillagerWorkService.isActivelyWorking(villager)
                 || SettlementWorkforceService.onDuty(level, villager)
                 || HiredVillagerFocusService.isOnDutyGuard(level, villager)

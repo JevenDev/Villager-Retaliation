@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest.tracking;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
+import com.jvn.villagerretaliation.quest.query.QuestProgressSnapshot;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
@@ -373,6 +374,18 @@ public final class QuestTrackerPresenter {
             ToIntFunction<QuestDefinition.Objective> objectiveCounter,
             Function<QuestDefinition.Objective, ResourceLocation> objectiveItemResolver,
             List<QuestDefinition.Objective> objectives) {
+        return questItemsView(definition, QuestProgressSnapshot.capture(progress, definition), itemLabeler, itemCounter,
+                objectiveCounter, objectiveItemResolver, objectives);
+    }
+
+    public static List<QuestTrackerSyncPayload.QuestItem> questItemsView(
+            QuestDefinition definition,
+            QuestProgressSnapshot progress,
+            Function<ResourceLocation, String> itemLabeler,
+            Function<ResourceLocation, Integer> itemCounter,
+            ToIntFunction<QuestDefinition.Objective> objectiveCounter,
+            Function<QuestDefinition.Objective, ResourceLocation> objectiveItemResolver,
+            List<QuestDefinition.Objective> objectives) {
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
             return List.of();
         }
@@ -460,6 +473,13 @@ public final class QuestTrackerPresenter {
     public static Map<String, QuestlineProgress> questlineProgress(
             Collection<QuestDefinition> definitions,
             Function<ResourceLocation, VillagerQuestSavedData.QuestProgress> progressLookup) {
+        return questlineProgressView(definitions, progressLookup == null ? null
+                : questId -> QuestProgressSnapshot.capture(progressLookup.apply(questId)));
+    }
+
+    public static Map<String, QuestlineProgress> questlineProgressView(
+            Collection<QuestDefinition> definitions,
+            Function<ResourceLocation, QuestProgressSnapshot> progressLookup) {
         if (definitions == null || definitions.isEmpty()) {
             return Map.of();
         }
@@ -468,7 +488,7 @@ public final class QuestTrackerPresenter {
             if (definition == null || definition.questline().isBlank() || definition.tracker().hidden()) {
                 continue;
             }
-            VillagerQuestSavedData.QuestProgress progress = progressLookup == null
+            QuestProgressSnapshot progress = progressLookup == null
                     ? null
                     : progressLookup.apply(definition.id());
             if (progress != null
