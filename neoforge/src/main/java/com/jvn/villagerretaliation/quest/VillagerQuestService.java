@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveDebugState;
 import com.jvn.villagerretaliation.quest.debug.QuestDebugTraceService;
 import com.jvn.villagerretaliation.quest.debug.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.conditions.QuestAvailabilityService;
+import com.jvn.villagerretaliation.quest.pool.QuestPoolResources;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageActionService;
@@ -3174,6 +3175,29 @@ public final class VillagerQuestService {
                 VillagerQuestService::scopedCompletionCount);
     }
 
+    private static boolean canStart(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            boolean bypassOfferRequirements,
+            QuestPoolResources.Evaluation poolEvaluation) {
+        if (!withinActiveCapacity(context, definition, progress)) return false;
+        if (!bypassOfferRequirements && !definition.offer().matches(context)) {
+            return false;
+        }
+        if (!bypassOfferRequirements && !poolEvaluation.allows(definition)) {
+            return false;
+        }
+        return QuestAvailabilityService.canStart(
+                context,
+                definition,
+                progress,
+                true,
+                true,
+                VillagerQuestService::parentCompleted,
+                VillagerQuestService::scopedCompletionCount);
+    }
+
     private static boolean withinActiveCapacity(
             DialogueContext context,
             QuestDefinition definition,
@@ -6233,7 +6257,9 @@ public final class VillagerQuestService {
         Set<String> includedQuestIds = new HashSet<>();
         for (Villager villager : nearbyVillagers) {
             DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
-            appendDialogueAvailableQuestEntries(level, player, data, context, entries, includedQuestIds);
+            QuestPoolResources.Evaluation poolEvaluation = QuestPoolResources.evaluate(context);
+            appendDialogueAvailableQuestEntries(
+                    level, player, data, context, poolEvaluation, entries, includedQuestIds);
             for (QuestDefinition definition : VillagerQuestResources.quests(level.getServer())) {
                 if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
                     return List.copyOf(entries);
@@ -6245,7 +6271,7 @@ public final class VillagerQuestService {
                 VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
                 if (VillagerQuestResources.compiledQuest(level.getServer(), definition.id())
                         .map(quest -> quest.provider().providerType().equals(ResourceLocation.parse("villagerretaliation:discovery"))).orElse(false)
-                        || !canStart(context, definition, progress)) {
+                        || !canStart(context, definition, progress, false, poolEvaluation)) {
                     continue;
                 }
                 entries.add(availableTrackerEntry(player, context, definition));
@@ -6260,6 +6286,7 @@ public final class VillagerQuestService {
             ServerPlayer player,
             VillagerQuestSavedData data,
             DialogueContext context,
+            QuestPoolResources.Evaluation poolEvaluation,
             List<QuestTrackerSyncPayload.Entry> entries,
             Set<String> includedQuestIds) {
         DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
@@ -6282,7 +6309,7 @@ public final class VillagerQuestService {
                 continue;
             }
             VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
-            if (!canStart(context, definition, progress, true)) {
+            if (!canStart(context, definition, progress, true, poolEvaluation)) {
                 continue;
             }
             entries.add(availableTrackerEntry(player, context, definition));

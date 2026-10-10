@@ -3,8 +3,6 @@ package com.jvn.villagerretaliation.quest.pool;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.util.ContentTagDomain;
-import com.jvn.villagerretaliation.util.ContentTagQuery;
 import com.jvn.villagerretaliation.util.ContentTags;
 import java.util.Map;
 import java.util.List;
@@ -81,9 +79,7 @@ public record QuestPoolDefinition(
             return false;
         }
         Set<String> tags = quest.tags();
-        ContentTagQuery query = new ContentTagQuery(
-                ContentTagDomain.CLASSIFICATION, this.anyTags, this.allTags, this.excludedTags);
-        if (tags.stream().anyMatch(query.not()::contains)) {
+        if (tags.stream().anyMatch(this.excludedTags::contains)) {
             return false;
         }
         boolean explicit = this.quests.isEmpty() || this.quests.contains(quest.id());
@@ -107,7 +103,7 @@ public record QuestPoolDefinition(
                 ? Math.max(0, this.weights.get(quest.id()))
                 : (double) this.defaultWeight * quest.offer().weight();
         for (WeightRule rule : this.weightRules) {
-            if (rule.matches(quest.tags(), context)) value *= rule.multiplier();
+            if (rule.matchesNormalized(quest.tags(), context)) value *= rule.multiplier();
         }
         return (int) Math.max(0, Math.min(10_000, Math.round(value)));
     }
@@ -152,8 +148,13 @@ public record QuestPoolDefinition(
         }
 
         public boolean matches(Set<String> tags, DialogueContext context) {
-            return new ContentTagQuery(ContentTagDomain.CLASSIFICATION,
-                    this.anyTags, this.allTags, this.excludeTags).matches(tags)
+            return matchesNormalized(ContentTags.normalizeAll(tags), context);
+        }
+
+        private boolean matchesNormalized(Set<String> tags, DialogueContext context) {
+            return tags.stream().noneMatch(this.excludeTags::contains)
+                    && (this.anyTags.isEmpty() || tags.stream().anyMatch(this.anyTags::contains))
+                    && (this.allTags.isEmpty() || tags.containsAll(this.allTags))
                     && (this.conditions.isEmpty() || DialogueCondition.matchesAll(context, this.conditions));
         }
     }

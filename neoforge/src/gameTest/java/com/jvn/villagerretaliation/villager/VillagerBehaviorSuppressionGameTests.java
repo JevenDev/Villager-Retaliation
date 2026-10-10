@@ -110,6 +110,12 @@ public final class VillagerBehaviorSuppressionGameTests {
         helper.assertFalse(
                 VillagerTrafficService.shouldYieldTo(leading, trailing, east, east),
                 "the leading villager should retain right-of-way on a shared route");
+        helper.assertTrue(
+                VillagerTrafficService.shouldUseRollingYield(east, east),
+                "villagers sharing a heading should yield by slowing down");
+        helper.assertFalse(
+                VillagerTrafficService.shouldUseRollingYield(east, west),
+                "head-on villagers should keep using a stop or sidestep maneuver");
 
         boolean trailingYieldsHeadOn = VillagerTrafficService.shouldYieldTo(trailing, leading, east, west);
         boolean leadingYieldsHeadOn = VillagerTrafficService.shouldYieldTo(leading, trailing, west, east);
@@ -135,6 +141,18 @@ public final class VillagerBehaviorSuppressionGameTests {
         helper.assertTrue(
                 VillagerTrafficService.safeSidestep(level, trailing, east) == null,
                 "a one-block-wide passage should make the villager queue instead of clipping sideways");
+
+        Vec3 queuedMotion = new Vec3(0.2D, 0.0D, 0.05D);
+        float queuedSpeed = 0.35F;
+        trailing.setDeltaMovement(queuedMotion);
+        trailing.setSpeed(queuedSpeed);
+        VillagerTrafficService.applyQueuedHold(trailing);
+        helper.assertTrue(
+                trailing.getDeltaMovement().equals(queuedMotion),
+                "queued traffic should preserve momentum instead of snapping horizontal velocity");
+        helper.assertTrue(
+                Float.compare(trailing.getSpeed(), queuedSpeed) == 0,
+                "queued traffic should let movement control decelerate instead of forcing speed to zero");
 
         trailing.discard();
         leading.discard();

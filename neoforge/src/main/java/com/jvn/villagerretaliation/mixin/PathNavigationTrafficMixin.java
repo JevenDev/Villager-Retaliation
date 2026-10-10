@@ -33,10 +33,10 @@ public abstract class PathNavigationTrafficMixin {
         }
     }
 
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tick", at = @At("TAIL"))
     private void villagerretaliation$coordinateVillagerTraffic(CallbackInfo callback) {
-        if (this.mob instanceof Villager villager && VillagerTrafficService.controlNavigation(villager)) {
-            callback.cancel();
+        if (this.mob instanceof Villager villager) {
+            VillagerTrafficService.controlNavigation(villager);
         }
     }
 }

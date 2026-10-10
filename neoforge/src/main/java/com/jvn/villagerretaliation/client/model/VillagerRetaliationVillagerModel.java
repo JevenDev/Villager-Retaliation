@@ -31,10 +31,13 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     private static final int STUDY_GLANCE_EARLIEST_TICK = 80;
     private static final int STUDY_GLANCE_START_VARIANCE = 70;
     private static final float STUDY_BOOK_HEAD_PITCH = 0.55F;
+    private static final float STUDY_EMF_MARKER_X = 0.01F;
+    private static final float BODY_SWING_EMF_MARKER_X = 0.02F;
 
     private final ModelPart root;
     private final ModelPart body;
     private final ModelPart robe;
+    private final boolean robeInheritsBodyTransform;
     private final ModelPart crossedArms;
     private final ModelPart head;
     private final ModelPart helmet;
@@ -54,7 +57,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     public VillagerRetaliationVillagerModel(ModelPart root, VillagerPoseProvider<T> poseProvider) {
         this.root = root;
         this.body = root.getChild("body");
-        this.robe = getOptionalChild(root, "robe");
+        ModelPart bodyRobe = getOptionalChild(this.body, "robe");
+        this.robe = bodyRobe != null ? bodyRobe : getOptionalChild(root, "robe");
+        this.robeInheritsBodyTransform = bodyRobe != null;
         this.crossedArms = root.getChild("arms");
         this.head = root.getChild("head");
         this.helmet = getOptionalChild(this.head, "helmet");
@@ -72,9 +77,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 
-        partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 20).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+        PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 20).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        partdefinition.addOrReplaceChild("robe", CubeListBuilder.create().texOffs(0, 38).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+        body.addOrReplaceChild("robe", CubeListBuilder.create().texOffs(0, 38).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.ZERO);
 
         partdefinition.addOrReplaceChild("arms", CubeListBuilder.create().texOffs(44, 22).addBox(-8.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
                 .texOffs(44, 22).addBox(4.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
@@ -124,6 +129,8 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
 
         if (villager instanceof net.minecraft.world.entity.npc.Villager studyingVillager
                 && VillagerStudyClientCache.isActive(studyingVillager)) {
+            // a sub-pixel EMF marker lets compatibility packs preserve the study pose
+            this.root.x = STUDY_EMF_MARKER_X;
             float bookLookAmount = studyBookLookAmount(studyingVillager, ageInTicks);
             this.head.xRot = Mth.lerp(bookLookAmount, this.head.xRot, STUDY_BOOK_HEAD_PITCH);
             this.head.yRot = Mth.lerp(bookLookAmount, this.head.yRot, 0.0F);
@@ -157,6 +164,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
                     ? VillagerArmPose.NONE
                     : this.poseProvider.getArmPose(villager, this.attackTime);
             if (pose != VillagerArmPose.NONE) {
+                if (requiresBodySwingCompatibilityLock(pose, villager, this.attackTime)) {
+                    this.root.x = BODY_SWING_EMF_MARKER_X;
+                }
                 VillagerPoseAnimator.applyPose(
                         pose,
                         villager,
@@ -165,6 +175,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
                         this.rightArm,
                         this.leftArm,
                         this.attackTime,
+                        limbSwing,
                         ageInTicks);
             }
             this.syncRobe(villager);
@@ -197,7 +208,12 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
             this.dialogueMouthParts.apply(villager, ageInTicks);
             return;
         }
-        VillagerPoseAnimator.applyPose(pose, villager, this.body, this.head, this.rightArm, this.leftArm, this.attackTime, ageInTicks);
+        if (requiresBodySwingCompatibilityLock(pose, villager, this.attackTime)) {
+            this.root.x = BODY_SWING_EMF_MARKER_X;
+        }
+        VillagerPoseAnimator.applyPose(
+                pose, villager, this.body, this.head, this.rightArm, this.leftArm,
+                this.attackTime, limbSwing, ageInTicks);
         this.syncRobe(villager);
         this.dialogueMouthParts.apply(villager, ageInTicks);
     }
@@ -274,6 +290,12 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         return clamped * clamped * (3.0F - 2.0F * clamped);
     }
 
+    private static boolean requiresBodySwingCompatibilityLock(
+            VillagerArmPose pose, AbstractVillager villager, float attackTime) {
+        return pose == VillagerArmPose.MELEE_WEAPON
+                || pose == VillagerArmPose.THROWING_ITEM && (villager.swinging || attackTime > 0.0F);
+    }
+
     private void setArmLayout(boolean sideArmsVisible) {
         this.crossedArms.visible = !sideArmsVisible;
         this.rightArm.visible = sideArmsVisible;
@@ -288,7 +310,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         if (this.robe == null) {
             return;
         }
-        this.robe.copyFrom(this.body);
+        if (!this.robeInheritsBodyTransform) {
+            this.robe.copyFrom(this.body);
+        }
         this.robe.visible = !VillagerRenderEquipmentState.hasBodyArmorEquipped(villager);
     }
 

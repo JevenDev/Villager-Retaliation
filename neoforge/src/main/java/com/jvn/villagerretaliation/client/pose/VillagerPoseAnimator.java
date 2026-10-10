@@ -130,6 +130,7 @@ public final class VillagerPoseAnimator {
             ModelPart rightArm,
             ModelPart leftArm,
             float attackTime,
+            float limbSwing,
             float ageInTicks
     ) {
         switch (pose) {
@@ -142,6 +143,8 @@ public final class VillagerPoseAnimator {
             case THROWING_ITEM -> applyThrowingPose(villager, body, head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT, attackTime);
             case CASTING_OR_POTION -> applyPotionPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case WORK_ITEM_USE -> applyWorkItemUsePose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT, ageInTicks);
+            case CONSUMING_ITEM -> applyConsumingPose(villager, head, rightArm, leftArm, ageInTicks);
+            case SWIMMING -> applySwimmingPose(villager, head, rightArm, leftArm, limbSwing, ageInTicks);
             case NONE, HOLDING_ITEM -> {
             }
         }
@@ -163,6 +166,49 @@ public final class VillagerPoseAnimator {
         useArm.zRot = direction * 0.06F;
         supportArm.xRot = -0.28F - motion * 0.35F;
         supportArm.yRot = head.yRot + direction * 0.12F;
+    }
+
+    private static void applyConsumingPose(
+            AbstractVillager villager,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            float ageInTicks
+    ) {
+        boolean usingRightArm = (villager.getUsedItemHand() == InteractionHand.MAIN_HAND)
+                == (villager.getMainArm() == HumanoidArm.RIGHT);
+        ModelPart useArm = usingRightArm ? rightArm : leftArm;
+        ModelPart supportArm = usingRightArm ? leftArm : rightArm;
+        float direction = usingRightArm ? 1.0F : -1.0F;
+        float biteMotion = Mth.abs(Mth.sin(ageInTicks * 0.45F)) * 0.12F;
+
+        useArm.xRot = -1.32F + head.xRot * 0.5F - biteMotion;
+        useArm.yRot = head.yRot - direction * 0.18F;
+        useArm.zRot = direction * 0.06F;
+        supportArm.xRot = -0.18F - biteMotion * 0.2F;
+        supportArm.yRot = head.yRot + direction * 0.08F;
+        supportArm.zRot = -direction * 0.03F;
+    }
+
+    private static void applySwimmingPose(
+            AbstractVillager villager,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            float limbSwing,
+            float ageInTicks
+    ) {
+        float swimCycle = limbSwing / (villager.isBaby() ? 4.0F : 2.0F)
+                + ageInTicks / (villager.isBaby() ? 2.0F : 3.0F);
+        float pitch = Mth.sin(((float) Math.PI / 4.0F) + swimCycle * 2.0F) / 16.0F;
+        float yaw = Mth.sin(((float) Math.PI / 4.0F) + swimCycle) / 10.0F;
+
+        rightArm.xRot = -0.9F + pitch;
+        rightArm.yRot = head.yRot * 0.2F - 0.1F + yaw;
+        rightArm.zRot = 0.06F;
+        leftArm.xRot = -0.9F + pitch;
+        leftArm.yRot = head.yRot * 0.2F + 0.1F + yaw;
+        leftArm.zRot = -0.06F;
     }
 
     public static <T extends AbstractVillager> void applyMeleePose(

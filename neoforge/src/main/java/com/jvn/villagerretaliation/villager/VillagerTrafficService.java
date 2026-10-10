@@ -31,19 +31,23 @@ public final class VillagerTrafficService {
     private static final double SIDESTEP_DISTANCE = 0.9D;
     private static final double SIDESTEP_REACHED_SQR = 0.08D;
     private static final double MANEUVER_RELEASE_DISTANCE_SQR = 5.0625D;
+    private static final double ROLLING_YIELD_SPEED_MODIFIER = 0.25D;
     private static final int HOLD_TICKS = 5;
     private static final int SIDESTEP_TICKS = 10;
+    private static final int MANEUVER_COOLDOWN_TICKS = 10;
     private static final Map<Villager, Maneuver> MANEUVERS = new WeakHashMap<>();
+    private static final Map<Villager, Long> COOLDOWN_UNTIL = new WeakHashMap<>();
 
     private VillagerTrafficService() {
     }
 
     /**
-     * Applies a local traffic maneuver and returns true when vanilla navigation should wait this tick.
+     * Applies a local traffic adjustment after vanilla navigation has advanced the current path.
      */
     public static boolean controlNavigation(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level) || !canCoordinate(villager)) {
             MANEUVERS.remove(villager);
+            COOLDOWN_UNTIL.remove(villager);
             return false;
         }
 
@@ -58,6 +62,16 @@ public final class VillagerTrafficService {
                 return applyManeuver(level, villager, active);
             }
             MANEUVERS.remove(villager);
+            COOLDOWN_UNTIL.put(villager, gameTime + MANEUVER_COOLDOWN_TICKS);
+            return false;
+        }
+
+        Long cooldownUntil = COOLDOWN_UNTIL.get(villager);
+        if (cooldownUntil != null) {
+            if (gameTime < cooldownUntil) {
+                return false;
+            }
+            COOLDOWN_UNTIL.remove(villager);
         }
 
         Vec3 heading = navigationHeading(villager);
@@ -77,10 +91,22 @@ public final class VillagerTrafficService {
             return false;
         }
 
-        Vec3 sidestep = safeSidestep(level, villager, heading);
+        Vec3 otherHeading = navigationHeading(conflict);
+        ManeuverKind kind;
+        Vec3 sidestep = null;
+        int duration;
+        if (shouldUseRollingYield(heading, otherHeading)) {
+            kind = ManeuverKind.ROLLING_YIELD;
+            duration = HOLD_TICKS;
+        } else {
+            sidestep = safeSidestep(level, villager, heading);
+            kind = sidestep == null ? ManeuverKind.HOLD : ManeuverKind.SIDESTEP;
+            duration = sidestep == null ? HOLD_TICKS : SIDESTEP_TICKS;
+        }
         Maneuver maneuver = new Maneuver(
                 conflict.getUUID(),
-                gameTime + (sidestep == null ? HOLD_TICKS : SIDESTEP_TICKS),
+                gameTime + duration,
+                kind,
                 sidestep);
         MANEUVERS.put(villager, maneuver);
         return applyManeuver(level, villager, maneuver);
@@ -110,8 +136,7 @@ public final class VillagerTrafficService {
             return false;
         }
 
-        double alignment = horizontalDot(heading, otherHeading);
-        if (alignment >= SAME_DIRECTION_DOT) {
+        if (shouldUseRollingYield(heading, otherHeading)) {
             // On a shared route the trailing villager always yields to the one already ahead.
             return true;
         }
@@ -120,8 +145,41 @@ public final class VillagerTrafficService {
         return villager.getUUID().compareTo(other.getUUID()) > 0;
     }
 
+    static boolean shouldUseRollingYield(Vec3 heading, Vec3 otherHeading) {
+        return horizontalDot(heading, otherHeading) >= SAME_DIRECTION_DOT;
+    }
+
     private static boolean applyManeuver(ServerLevel level, Villager villager, Maneuver maneuver) {
-        Vec3 sidestep = maneuver.sidestep();
+        return switch (maneuver.kind()) {
+            case ROLLING_YIELD -> applyRollingYield(villager);
+            case SIDESTEP -> applySidestep(level, villager, maneuver.sidestep());
+            case HOLD -> {
+                applyQueuedHold(villager);
+                yield true;
+            }
+        };
+    }
+
+    private static boolean applyRollingYield(Villager villager) {
+        Path path = villager.getNavigation().getPath();
+        if (path == null || path.isDone()) {
+            return false;
+        }
+
+        Vec3 target = path.getNextEntityPos(villager);
+        double currentSpeedModifier = villager.getMoveControl().getSpeedModifier();
+        double speedModifier = Math.min(
+                ROLLING_YIELD_SPEED_MODIFIER,
+                Math.max(0.05D, currentSpeedModifier));
+        villager.getMoveControl().setWantedPosition(
+                target.x,
+                target.y,
+                target.z,
+                speedModifier);
+        return true;
+    }
+
+    private static boolean applySidestep(ServerLevel level, Villager villager, Vec3 sidestep) {
         if (sidestep != null
                 && horizontalDistanceSqr(villager.position(), sidestep) > SIDESTEP_REACHED_SQR
                 && canOccupy(level, villager, sidestep)) {
@@ -133,17 +191,16 @@ public final class VillagerTrafficService {
             return true;
         }
 
+        applyQueuedHold(villager);
+        return true;
+    }
+
+    static void applyQueuedHold(Villager villager) {
         villager.getMoveControl().setWantedPosition(
                 villager.getX(),
                 villager.getY(),
                 villager.getZ(),
                 0.0D);
-        villager.setSpeed(0.0F);
-        villager.setXxa(0.0F);
-        villager.setZza(0.0F);
-        Vec3 motion = villager.getDeltaMovement();
-        villager.setDeltaMovement(motion.x * 0.25D, motion.y, motion.z * 0.25D);
-        return true;
     }
 
     static Vec3 safeSidestep(ServerLevel level, Villager villager, Vec3 heading) {
@@ -229,6 +286,12 @@ public final class VillagerTrafficService {
         return dx * dx + dz * dz;
     }
 
-    private record Maneuver(UUID conflictId, long expiresAt, Vec3 sidestep) {
+    private enum ManeuverKind {
+        ROLLING_YIELD,
+        SIDESTEP,
+        HOLD
+    }
+
+    private record Maneuver(UUID conflictId, long expiresAt, ManeuverKind kind, Vec3 sidestep) {
     }
 }

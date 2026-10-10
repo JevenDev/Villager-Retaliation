@@ -11,5 +11,7 @@ public enum VillagerArmPose {
     SHIELD_LOWERED,
     THROWING_ITEM,
     CASTING_OR_POTION,
-    WORK_ITEM_USE
+    WORK_ITEM_USE,
+    CONSUMING_ITEM,
+    SWIMMING
 }

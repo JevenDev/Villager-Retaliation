@@ -9,6 +9,7 @@ import java.util.UUID;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.UseAnim;
 
 abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> implements VillagerPoseProvider<T> {
     private static final long SHIELD_BLOCK_POSE_GRACE_TICKS = 4L;
@@ -30,6 +31,10 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
             }
             if (VillagerRetaliationVillagerWeapons.isBowWeapon(useItem)) {
                 return VillagerArmPose.BOW_AND_ARROW;
+            }
+            UseAnim useAnimation = useItem.getUseAnimation();
+            if (useAnimation == UseAnim.EAT || useAnimation == UseAnim.DRINK) {
+                return VillagerArmPose.CONSUMING_ITEM;
             }
             return usingItemPose(villager);
         }
@@ -55,6 +60,9 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
         }
         if (isHoldingRangedWeapon(villager)) {
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
+        }
+        if (isFreshAnimationsSwimming(villager)) {
+            return VillagerArmPose.SWIMMING;
         }
         if (hasCustomHeldItemPose(villager)) {
             return heldItemPose(villager, attackTime);
@@ -139,5 +147,9 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
 
     protected boolean isAggressivelyPostured(T villager) {
         return villager.isAggressive() || villager.getTarget() != null;
+    }
+
+    private static boolean isFreshAnimationsSwimming(AbstractVillager villager) {
+        return !villager.isPassenger() && !villager.onGround() && villager.isInWater();
     }
 }
