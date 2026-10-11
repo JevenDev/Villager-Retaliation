@@ -53,7 +53,9 @@ public final class CampaignAuthoringGameTests {
     @GameTest(template = "empty", batch = "campaign_authoring")
     public static void campaignAndSceneSchemaArtifactsMatchRuntime(GameTestHelper helper) throws IOException {
         helper.assertValueEqual(JsonParser.parseString(Files.readString(projectFile("campaign-v1.schema.json"))), CampaignSchema.export(), "campaign schema artifact matches runtime");
-        helper.assertValueEqual(JsonParser.parseString(Files.readString(projectFile("scene-v1.schema.json"))), SceneSchema.sceneV1(), "scene schema artifact matches runtime");
+        var sceneArtifact = JsonParser.parseString(Files.readString(projectFile("scene-v1.schema.json"))).getAsJsonObject();
+        helper.assertValueEqual(com.jvn.villagerretaliation.gametest.NarrativeRegistrationGameTests.includeTestStepTypes(sceneArtifact),
+                SceneSchema.sceneV1(), "scene schema artifact plus exact registered test types matches runtime");
         helper.succeed();
     }
 

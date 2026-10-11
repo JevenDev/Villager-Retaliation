@@ -911,24 +911,16 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             String id,
             Set<String> aliases,
             Set<ConditionCapability> capabilities,
-            Class<? extends DialogueCondition> implementationType,
-            JsonObject schema
+            Class<? extends DialogueCondition> implementationType
     ) {
-        public ConditionTypeDescriptor(String id, Set<String> aliases, Set<ConditionCapability> capabilities,
-                Class<? extends DialogueCondition> implementationType) {
-            this(id, aliases, capabilities, implementationType, new JsonObject());
-        }
-
         public ConditionTypeDescriptor {
             id = normalizeType(id);
             aliases = aliases == null ? Set.of() : Set.copyOf(aliases);
             capabilities = capabilities == null ? Set.of() : Set.copyOf(capabilities);
-            schema = schema == null ? new JsonObject() : schema.deepCopy();
         }
 
-        @Override
         public JsonObject schema() {
-            return this.schema.deepCopy();
+            return ConditionRegistry.schema(this.implementationType);
         }
     }
 
@@ -1335,6 +1327,11 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             return Set.copyOf(result);
         }
 
+        private static JsonObject schema(Class<? extends DialogueCondition> implementationType) {
+            ConditionTypeRegistration registration = implementationType == null ? null : BY_IMPLEMENTATION.get(implementationType);
+            return registration == null ? new JsonObject() : registration.schema().deepCopy();
+        }
+
         private static Map<String, ConditionTypeRegistration> registrationsByAlias() {
             Map<String, ConditionTypeRegistration> byAlias = new LinkedHashMap<>();
             for (ConditionTypeRegistration registration : REGISTRATIONS) {
@@ -1366,7 +1363,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         private static ConditionTypeRegistration register(String id, Class<? extends DialogueCondition> implementationType,
                 Set<String> aliases, Set<ConditionCapability> capabilities, ConditionReader reader, JsonObject schema) {
             return new ConditionTypeRegistration(
-                    new ConditionTypeDescriptor(id, aliases, capabilities, implementationType, schema), reader);
+                    new ConditionTypeDescriptor(id, aliases, capabilities, implementationType), reader, schema);
         }
 
         private static JsonObject compoundSchema(boolean negated) {
@@ -1413,8 +1410,12 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
 
         private record ConditionTypeRegistration(
                 ConditionTypeDescriptor descriptor,
-                ConditionReader reader
+                ConditionReader reader,
+                JsonObject schema
         ) {
+            private ConditionTypeRegistration {
+                schema = schema == null ? new JsonObject() : schema.deepCopy();
+            }
         }
 
         @FunctionalInterface

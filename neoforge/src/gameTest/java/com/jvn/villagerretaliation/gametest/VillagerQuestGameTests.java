@@ -2331,8 +2331,8 @@ public final class VillagerQuestGameTests {
         }
         helper.assertValueEqual(
                 normalizeLineEndings(QuestRegistryMetadata.exportJson()),
-                checkedIn,
-                "quest registry metadata artifact drift");
+                normalizeLineEndings(NarrativeRegistrationGameTests.includeTestRegistryMetadata(checkedIn)),
+                "quest registry metadata artifact plus exact registered test descriptor drift");
 
         helper.succeed();
     }

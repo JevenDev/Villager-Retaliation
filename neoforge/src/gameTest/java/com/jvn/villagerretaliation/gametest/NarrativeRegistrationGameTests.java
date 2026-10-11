@@ -59,6 +59,35 @@ public final class NarrativeRegistrationGameTests {
 
     private NarrativeRegistrationGameTests() { }
 
+    public static JsonObject includeTestStepTypes(JsonObject productionSchema) {
+        JsonObject expected = productionSchema.deepCopy();
+        JsonObject type = expected.getAsJsonObject("properties").getAsJsonObject("steps")
+                .getAsJsonObject("items").getAsJsonObject("properties").getAsJsonObject("type");
+        var ids = new com.google.gson.JsonArray();
+        java.util.stream.Stream.concat(type.getAsJsonArray("enum").asList().stream().map(value -> value.getAsString()),
+                java.util.stream.Stream.of(STEP.toString(), ALIAS.toString())).sorted().forEach(ids::add);
+        type.add("enum", ids);
+        return expected;
+    }
+
+    public static String includeTestRegistryMetadata(String productionMetadata) {
+        JsonObject expected = json(productionMetadata);
+        JsonObject registries = expected.getAsJsonObject("registries");
+        var steps = registries.getAsJsonArray("scene_steps");
+        steps.add(json("""
+                {"id":"%s","aliases":["%s"],"live_capabilities":[],"snapshot_capabilities":[],
+                 "runtime_binding":"scene_executor","recovery":"naturally_idempotent","client_sync":"none",
+                 "title":"Registration fixture","description":"Registration fixture","browser_available":false,
+                 "schema":{"type":"object"}}
+                """.formatted(STEP, ALIAS)));
+        var ordered = new com.google.gson.JsonArray();
+        steps.asList().stream().sorted(java.util.Comparator.comparing(value -> value.getAsJsonObject().get("id").getAsString()))
+                .forEach(ordered::add);
+        registries.add("scene_steps", ordered);
+        return new com.google.gson.GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create().toJson(expected)
+                + System.lineSeparator();
+    }
+
     @SubscribeEvent
     public static void registerFixture(FMLCommonSetupEvent event) {
         VillagerRetaliationRegistries.SCENE_STEPS.register(new RuntimeTypeDescriptor(
@@ -92,6 +121,22 @@ public final class NarrativeRegistrationGameTests {
     @GameTest(template = "empty")
     public static void publicQuestDescriptorsMatchRuntimeRegistrations(GameTestHelper helper) {
         VillagerRetaliationRegistries.registerBuiltIns();
+        helper.assertValueEqual(java.util.Arrays.stream(DialogueCondition.ConditionTypeDescriptor.class.getRecordComponents())
+                        .map(java.lang.reflect.RecordComponent::getName).toList(),
+                List.of("id", "aliases", "capabilities", "implementationType"), "condition descriptor record shape remains compatible");
+        var compound = DialogueCondition.descriptors().stream().filter(value -> value.id().equals("all")).findFirst().orElseThrow();
+        Object descriptor = compound;
+        helper.assertTrue(descriptor instanceof DialogueCondition.ConditionTypeDescriptor(var id, var aliases, var capabilities, var implementationType)
+                        && id.equals(compound.id()) && aliases.equals(compound.aliases())
+                        && capabilities.equals(compound.capabilities()) && implementationType.equals(compound.implementationType()),
+                "four-component condition descriptor deconstruction remains source compatible");
+        var sameDescriptor = new DialogueCondition.ConditionTypeDescriptor(compound.id(), compound.aliases(),
+                compound.capabilities(), compound.implementationType());
+        helper.assertValueEqual(compound, sameDescriptor, "condition descriptor equality retains its original fields");
+        helper.assertValueEqual(compound.hashCode(), sameDescriptor.hashCode(), "condition descriptor hash code retains its original fields");
+        JsonObject schemaCopy = compound.schema();
+        schemaCopy.addProperty("type", "boolean");
+        helper.assertValueEqual(compound.schema().get("type").getAsString(), "object", "registered schemas remain defensive copies");
         assertMirror(helper, VillagerRetaliationRegistries.QUEST_ACTIONS,
                 VillagerActionRegistry.descriptors().stream().map(value -> value.id()).collect(Collectors.toSet()));
         assertMirror(helper, VillagerRetaliationRegistries.QUEST_CONDITIONS,

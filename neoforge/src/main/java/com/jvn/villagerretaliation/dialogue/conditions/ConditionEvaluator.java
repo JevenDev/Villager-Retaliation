@@ -41,6 +41,8 @@ public final class ConditionEvaluator {
             if (not.condition() instanceof DialogueCondition.Invalid) return ConditionOutcome.UNMET;
             return negate(evaluate(context, trigger, not.condition()));
         }
+        if (context == null && trigger != null && condition instanceof DialogueCondition.TriggerPayload payload)
+            return payload.matches(null, trigger) ? ConditionOutcome.MATCHED : ConditionOutcome.UNMET;
         return context == null ? ConditionOutcome.UNKNOWN : context.queries().evaluate(condition, trigger);
     }
 

@@ -119,6 +119,7 @@ public final class QuestPresentationGameTests {
         var progress = new VillagerQuestSavedData.QuestProgress();
         UUID issuer = UUID.randomUUID();
         progress.start(issuer, Level.OVERWORLD, null, 42L);
+        UUID originalRun = progress.beginRun(player.getUUID(), definition.id(), null);
         progress.setIssuer(issuer, "Mara", "minecraft:farmer", 2, Level.OVERWORLD, new BlockPos(12, 65, -4), "home");
         progress.setTarget(issuer, Level.OVERWORLD, new BlockPos(200, 64, 300), objective.id());
         var selected = ResourceLocation.parse("minecraft:carrot");
@@ -140,7 +141,7 @@ public final class QuestPresentationGameTests {
                 legacy, "later runtime mutations cannot change the captured presentation facts");
         helper.assertFalse(snapshot.objectiveComplete(objective.id()) || snapshot.visitedTarget(), "captured completion state stays unchanged");
         helper.assertValueEqual(QuestProgressSnapshot.resolvedItem(objective, snapshot), selected, "query retains the recorded random item");
-        helper.assertValueEqual(snapshot.questRunId(), progress.questRunId(), "query identifies its original run");
+        helper.assertValueEqual(snapshot.questRunId(), originalRun, "query identifies its original run");
         try { snapshot.resolvedObjectiveItems().clear(); helper.fail("query selections must be immutable"); }
         catch (UnsupportedOperationException expected) { }
         helper.succeed();

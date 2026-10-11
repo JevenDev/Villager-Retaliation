@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.dialogue.conditions.ConditionLeafAccess;
 import com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.gametest.framework.GameTest;
@@ -100,6 +101,31 @@ public final class ConditionEvaluationGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_condition_structure")
+    public static void savedTriggerPayloadNeedsNoParticipantContext(GameTestHelper helper) {
+        var snapshot = new QuestTriggerContext(QuestDefinition.TriggerEvent.GIFT, 42L, "before_reward",
+                Map.of("item", "minecraft:emerald", "item_count", "3", "reputation", "12"), null);
+        var trigger = QuestTriggerContext.load(snapshot.save());
+        var payload = new DialogueCondition.TriggerPayload(Set.of("gift"), Map.of(),
+                Map.of("item", Set.of("minecraft:emerald")), Map.of("gift_reaction", Set.of("disliked")), 10, 20);
+        var mismatch = new DialogueCondition.TriggerPayload(Set.of("gift"), Map.of(),
+                Map.of("item", Set.of("minecraft:bread")), Map.of(), null, null);
+        var expressions = List.of(payload, new DialogueCondition.AnyOf(List.of(LEAF, payload)),
+                new DialogueCondition.Not(mismatch), new DialogueCondition.AllOf(List.of(payload, new DialogueCondition.Not(mismatch))));
+        for (DialogueCondition expression : expressions) {
+            assertOutcome(helper, null, trigger, expression, ConditionOutcome.MATCHED);
+            helper.assertTrue(DialogueCondition.matchesAll(null, trigger, List.of(expression)),
+                    "saved event facts evaluate without a participant assembly");
+        }
+        assertOutcome(helper, null, trigger, mismatch, ConditionOutcome.UNMET);
+        assertOutcome(helper, null, trigger, new DialogueCondition.Not(payload), ConditionOutcome.UNMET);
+        assertOutcome(helper, null, trigger, new DialogueCondition.AllOf(List.of(payload, LEAF)), ConditionOutcome.UNKNOWN);
+        assertOutcome(helper, null, trigger, new DialogueCondition.Not(LEAF), ConditionOutcome.UNKNOWN);
+        assertOutcome(helper, null, null, payload, ConditionOutcome.UNKNOWN);
+        assertOutcome(helper, null, null, new DialogueCondition.Not(payload), ConditionOutcome.UNKNOWN);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_condition_structure")
     public static void personalHistoryMatchesDirectPlayerAndSavedComposition(GameTestHelper helper) {
         var player = helper.makeMockServerPlayerInLevel();
         var level = helper.getLevel();
@@ -168,8 +194,13 @@ public final class ConditionEvaluationGameTests {
     }
 
     private static void assertOutcome(GameTestHelper helper, ConditionContext context, DialogueCondition condition, ConditionOutcome expected) {
-        helper.assertValueEqual(ConditionEvaluator.evaluate(context, null, condition), expected, "condition outcome");
-        var trace = ConditionEvaluator.trace(context, null, condition);
+        assertOutcome(helper, context, null, condition, expected);
+    }
+
+    private static void assertOutcome(GameTestHelper helper, ConditionContext context, QuestTriggerContext trigger,
+            DialogueCondition condition, ConditionOutcome expected) {
+        helper.assertValueEqual(ConditionEvaluator.evaluate(context, trigger, condition), expected, "condition outcome");
+        var trace = ConditionEvaluator.trace(context, trigger, condition);
         helper.assertValueEqual(trace.outcome(), expected, "trace agrees with matching");
         if (expected == ConditionOutcome.MATCHED) helper.assertTrue(trace.firstUnmatched().isEmpty(),
                 "a matched expression does not expose rejected alternatives as failures");
