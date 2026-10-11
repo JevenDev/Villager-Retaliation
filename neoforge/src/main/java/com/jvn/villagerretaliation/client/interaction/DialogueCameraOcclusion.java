@@ -88,6 +88,10 @@ public final class DialogueCameraOcclusion {
     }
 
     public static Vec3 placement(Vec3 desired, Vec3 pivot, List<Entity> subjects, float partialTick) {
+        return placement(desired, pivot, subjects, partialTick, false);
+    }
+
+    public static Vec3 placement(Vec3 desired, Vec3 pivot, List<Entity> subjects, float partialTick, boolean ignoreEntityBlockers) {
         var minecraft = Minecraft.getInstance();
         boolean masking = supportsMasking();
         var candidates = new java.util.ArrayList<Vec3>();
@@ -102,15 +106,15 @@ public final class DialogueCameraOcclusion {
         Vec3 best = desired;
         double score = -1;
         for (var candidate : candidates) {
-            double visibility = score(candidate, subjects, partialTick);
+            double visibility = score(candidate, subjects, partialTick, ignoreEntityBlockers);
             if (visibility > score + 0.001) { best = candidate; score = visibility; }
             if (visibility >= subjects.size() * 3 + 1) break;
         }
         if (!masking) {
             publish(Set.of());
             hiddenEntities = Set.of();
-            if (!free(best)) best = pivot;
-            if (!free(best) || score(best, subjects, partialTick) <= 1) return null;
+            if (!free(best, subjects, ignoreEntityBlockers)) best = pivot;
+            if (!free(best, subjects, ignoreEntityBlockers) || score(best, subjects, partialTick, ignoreEntityBlockers) <= 1) return null;
             lastPosition = best;
             return best;
         }
@@ -119,11 +123,15 @@ public final class DialogueCameraOcclusion {
     }
 
     public static Vec3 track(Vec3 best, Vec3 pivot, List<Entity> subjects, List<Entity> participants, float partialTick) {
+        return track(best, pivot, subjects, participants, partialTick, false);
+    }
+
+    public static Vec3 track(Vec3 best, Vec3 pivot, List<Entity> subjects, List<Entity> participants, float partialTick, boolean ignoreEntityBlockers) {
         var minecraft = Minecraft.getInstance();
         if (!supportsMasking()) {
             publish(Set.of());
             hiddenEntities = Set.of();
-            return free(best) && score(best, subjects, partialTick) > 1 ? best : null;
+            return free(best, subjects, ignoreEntityBlockers) && score(best, subjects, partialTick, ignoreEntityBlockers) > 1 ? best : null;
         }
         long now = System.nanoTime();
         if (now < nextScan) return best;
@@ -173,14 +181,14 @@ public final class DialogueCameraOcclusion {
                 eye.add(-entity.getBbWidth() * 0.35, -entity.getBbHeight() * 0.25, 0));
     }
 
-    private static double score(Vec3 camera, List<Entity> subjects, float partialTick) {
+    private static double score(Vec3 camera, List<Entity> subjects, float partialTick, boolean ignoreEntityBlockers) {
         var minecraft = Minecraft.getInstance();
-        double score = free(camera) ? 1 : -100;
+        double score = free(camera, subjects, ignoreEntityBlockers) ? 1 : -100;
         for (var entity : subjects) for (var target : targets(entity, partialTick)) {
             var hidden = new HashSet<BlockPos>();
             collect(camera, target, hidden);
             // first-person shots can pull back through the player's hidden body
-            boolean entityBlocker = minecraft.level.getEntities(entity, new AABB(camera, target)).stream()
+            boolean entityBlocker = !ignoreEntityBlockers && minecraft.level.getEntities(entity, new AABB(camera, target)).stream()
                     .anyMatch(other -> (other != minecraft.player || DialogueCameraController.detached())
                             && !other.getBoundingBox().contains(camera)
                             && other.getBoundingBox().clip(camera, target).isPresent());
@@ -190,9 +198,14 @@ public final class DialogueCameraOcclusion {
     }
 
     private static boolean free(Vec3 position) {
+        return free(position, List.of(), false);
+    }
+
+    private static boolean free(Vec3 position, List<Entity> subjects, boolean ignoreEntityBlockers) {
         var level = Minecraft.getInstance().level;
         var box = new AABB(position, position).inflate(0.15);
-        if (!level.getEntities(Minecraft.getInstance().player, box, entity -> entity.isAlive() && !entity.isInvisible()).isEmpty())
+        if (!level.getEntities(Minecraft.getInstance().player, box, entity -> entity.isAlive() && !entity.isInvisible()
+                && (!ignoreEntityBlockers || subjects.contains(entity))).isEmpty())
             return false;
         for (var block : BlockPos.betweenClosed(BlockPos.containing(box.minX, box.minY, box.minZ),
                 BlockPos.containing(box.maxX, box.maxY, box.maxZ))) {

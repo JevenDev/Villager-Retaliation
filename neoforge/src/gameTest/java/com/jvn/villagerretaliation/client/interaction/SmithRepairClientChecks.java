@@ -68,6 +68,7 @@ final class SmithRepairClientChecks {
             require(screen.getMenu().status() == SmithRepairMenu.Status.EMPTY, "empty repair menu synchronized");
             require(screen.getMenu().getSlot(1).y == 47, "material slot follows old smithing texture");
             require(button(screen).getY() == screen.getGuiTop() + 68, "repair button sits below the smithing slots");
+            VillagerCameraEntityClientChecks.verify(screen, entityId);
             capture("repair-empty");
             var playerId = minecraft.player.getUUID();
             preparing = minecraft.getSingleplayerServer().submit(() -> {

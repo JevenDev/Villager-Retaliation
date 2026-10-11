@@ -179,7 +179,7 @@ public final class DialogueCameraController {
             var layout = VillagerTradeScreenLayout.of(trade);
             Vec3 position = DialogueCamera.clamp(layout.cameraPosition(trade, eye, aim, fov), minecraft.player.getPosition(partialTick));
             // ease toward the collision-adjusted destination instead of correcting after the spring
-            position = DialogueCameraOcclusion.placement(position, eye, List.of(speaker), partialTick);
+            position = DialogueCameraOcclusion.placement(position, eye, List.of(speaker), partialTick, true);
             if (position == null) {
                 clear();
                 return null;
@@ -201,7 +201,7 @@ public final class DialogueCameraController {
             pose = pose.interpolate(target, progress * progress * (3 - 2 * progress));
         }
         Vec3 adjusted = DialogueCameraOcclusion.track(pose.position(), minecraft.player.getEyePosition(partialTick),
-                List.of(speaker), List.of(speaker), partialTick);
+                List.of(speaker), List.of(speaker), partialTick, true);
         if (adjusted == null) {
             clear();
             return null;
