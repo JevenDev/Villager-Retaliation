@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -12,7 +11,7 @@ public final class VillagerInteractionHudHider {
     }
 
     public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
-        if (Minecraft.getInstance().screen instanceof MerchantScreen trade && VillagerTradeScreenLayout.of(trade).split()) {
+        if (VillagerTradeScreenLayout.hidesRecipeViewer(Minecraft.getInstance().screen)) {
             event.setCanceled(true);
             return;
         }

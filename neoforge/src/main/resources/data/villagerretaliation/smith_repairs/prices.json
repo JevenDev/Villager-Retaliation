@@ -1,0 +1,14 @@
+{
+  "fallback": 4,
+  "tiers": {
+    "wood": 1,
+    "leather": 1,
+    "stone": 2,
+    "chainmail": 2,
+    "iron": 3,
+    "gold": 3,
+    "diamond": 6,
+    "netherite": 10
+  },
+  "items": {}
+}

@@ -17,7 +17,7 @@ import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresent
 import java.lang.ref.WeakReference;
 import java.util.List;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -67,7 +67,8 @@ public final class DialogueCameraController {
     public static boolean synchronize() {
         var minecraft = Minecraft.getInstance();
         var screen = screen();
-        var trade = minecraft.screen instanceof MerchantScreen merchant ? merchant : null;
+        var trade = minecraft.screen instanceof AbstractContainerScreen<?> container
+                && VillagerTradeScreenLayout.of(container) != null ? container : null;
         if (minecraft.player == null
                 || minecraft.level == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
                 || minecraft.getCameraEntity() != minecraft.player
@@ -169,7 +170,8 @@ public final class DialogueCameraController {
     private static Pose updateTrade(net.minecraft.client.Camera camera, Entity speaker, float partialTick, double seconds) {
         var minecraft = Minecraft.getInstance();
         Pose target;
-        if (trading && minecraft.screen instanceof MerchantScreen trade) {
+        if (trading && minecraft.screen instanceof AbstractContainerScreen<?> trade
+                && VillagerTradeScreenLayout.of(trade) != null) {
             Vec3 eye = minecraft.player.getEyePosition(partialTick);
             Vec3 aim = VillagerTradeScreenLayout.focus(speaker, partialTick);
             double fov = VillagerTradeScreenLayout.targetFov(baseFov, eye.distanceTo(aim), speaker.getBbHeight());

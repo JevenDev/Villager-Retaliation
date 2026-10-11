@@ -384,6 +384,13 @@ public final class DialogueCameraClientSmoke {
             minecraft.resizeDisplay();
             VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.set(true);
             DialogueCameraController.clear();
+            minecraft.options.guiScale().set(1);
+            minecraft.resizeDisplay();
+            SmithRepairClientChecks.start(entityId);
+            phase = 18;
+        } else if (phase == 18 && SmithRepairClientChecks.tick()) {
+            minecraft.options.guiScale().set(tradeGuiScale);
+            minecraft.resizeDisplay();
             try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Dialogue camera client smoke passed" + System.lineSeparator()); }
             catch (IOException exception) { throw new UncheckedIOException(exception); }
             phase = 9;

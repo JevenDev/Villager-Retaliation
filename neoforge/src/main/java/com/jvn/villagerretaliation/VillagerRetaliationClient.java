@@ -150,6 +150,10 @@ public final class VillagerRetaliationClient {
     }
     private static void registerMenuScreens(RegisterMenuScreensEvent event) {
         event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.SMITH_REPAIR.get(),
+                com.jvn.villagerretaliation.client.inventory.SmithRepairScreen::new
+        );
+        event.register(
                 com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.VILLAGER_INVENTORY.get(),
                 com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen::new
         );

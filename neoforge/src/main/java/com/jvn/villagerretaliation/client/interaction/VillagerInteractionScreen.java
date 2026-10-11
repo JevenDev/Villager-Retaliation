@@ -4071,6 +4071,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     this::requestTrade,
                     true));
         }
+        if (!this.recruitedPartyVillager && this.minecraft != null && this.minecraft.level != null
+                && this.minecraft.level.getEntity(this.villagerEntityId) instanceof Villager smith
+                && com.jvn.villagerretaliation.repair.SmithRepairService.isSmith(smith)) {
+            buttons.add(new InteractionMenuButton(
+                    InteractionMenuAction.REPAIR,
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
+                    translate("root.repair"),
+                    translate("interaction_button.repair.description"),
+                    () -> sendToServer(new com.jvn.villagerretaliation.network.VillagerRepairRequestPayload(this.villagerEntityId)),
+                    true));
+        }
         if (this.reputationLevel != VillagerReputationLevel.FEARED
                 && hasQuestOptions()
                 && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
@@ -6542,6 +6553,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private enum InteractionMenuAction {
         TALK,
         TRADE,
+        REPAIR,
         ADVENTURES,
         PROFILE,
         STUDY,

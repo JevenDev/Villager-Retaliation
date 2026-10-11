@@ -36,6 +36,11 @@ public final class InteractionRequestValidator {
         );
     }
 
+    public static Optional<InteractionTargetContext> requireRepairConversation(ServerPlayer player, int entityId) {
+        return requireActiveConversation(player, entityId, "interaction.trade_unavailable",
+                "interaction.conversation_ended", false, false);
+    }
+
     public static Optional<InteractionTargetContext> requireRoutineChatConversation(ServerPlayer player, int entityId) {
         return requireActiveConversation(
                 player,

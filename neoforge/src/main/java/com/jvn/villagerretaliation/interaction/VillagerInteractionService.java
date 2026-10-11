@@ -556,6 +556,37 @@ public final class VillagerInteractionService {
         openTrading(player, villager, true);
     }
 
+    public static void handleRepairRequest(ServerPlayer player, int entityId) {
+        var target = InteractionRequestValidator.requireRepairConversation(player, entityId);
+        if (target.isEmpty()) return;
+        Villager villager = target.get().villager();
+        if (!canUseSmithRepair(player, villager)) {
+            sendVillagerNotice(player, villager, "interaction.trade_unavailable");
+            return;
+        }
+        focusVillagerOnPlayer(villager, player);
+        VillagerConversationService.endForPlayer(player, true);
+        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                (id, inventory, ignored) -> new com.jvn.villagerretaliation.inventory.SmithRepairMenu(id, inventory, villager),
+                net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.repair.title")), buffer -> {
+                    buffer.writeVarInt(villager.getId());
+                    buffer.writeResourceLocation(VillagerCurrencyResources.text(player.getServer()).iconSprite());
+                });
+    }
+
+    public static boolean canUseSmithRepair(ServerPlayer player, Villager villager) {
+        double distance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
+        return com.jvn.villagerretaliation.repair.SmithRepairService.isSmith(villager)
+                && villager.level() == player.level() && villager.isAlive() && !villager.isRemoved()
+                && !VillagerDownedService.isDowned(villager) && !villager.isSleeping()
+                && (villager.getTradingPlayer() == null || villager.getTradingPlayer() == player)
+                && !isCombatBusy(villager) && !VillagerRetaliationHandler.isHostileTowards(villager, player)
+                && !shouldRefuseDespisedConversation(villager, player)
+                && !VillagerBehaviorSuppressionPolicy.suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING)
+                && !VillagerBehaviorSuppressionPolicy.suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)
+                && player.isAlive() && !player.isSpectator() && player.distanceToSqr(villager) <= distance * distance;
+    }
+
     public static void handleRoutineChatToggle(ServerPlayer player, int entityId, boolean muted) {
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRoutineChatConversation(player, entityId);
         if (target.isEmpty()) {

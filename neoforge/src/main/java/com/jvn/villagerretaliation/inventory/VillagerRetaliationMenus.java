@@ -27,6 +27,9 @@ public final class VillagerRetaliationMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<VillagerRecipeFilterMenu>> RECIPE_FILTER =
             MENUS.register("recipe_filter", () -> IMenuTypeExtension.create(VillagerRecipeFilterMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<SmithRepairMenu>> SMITH_REPAIR =
+            MENUS.register("smith_repair", () -> IMenuTypeExtension.create(SmithRepairMenu::new));
+
     private VillagerRetaliationMenus() {
     }
 

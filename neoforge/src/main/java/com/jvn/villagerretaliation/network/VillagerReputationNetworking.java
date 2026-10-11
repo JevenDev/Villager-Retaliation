@@ -494,6 +494,13 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                VillagerRepairRequestPayload.TYPE,
+                VillagerRepairRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                VillagerInteractionService.handleRepairRequest(player, payload.entityId())))
+        );
+        network.playToServer(
                 VillagerTradeRequestPayload.TYPE,
                 VillagerTradeRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

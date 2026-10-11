@@ -103,6 +103,7 @@ public final class VillagerDataWarmup {
         SkillTradeResources.clearCache();
         SellPriceResources.clearCache();
         VillagerCurrencyResources.clearCache();
+        com.jvn.villagerretaliation.repair.SmithRepairPrices.clearCache();
         VillagerItemText.clearCache();
         VillagerNaturalJobArmorResources.clearCache();
         PlayerRaidLoadoutResources.clearCache();

@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -20,7 +21,12 @@ import net.minecraft.world.phys.Vec3;
 
 public final class VillagerTradeScreenLayout {
     private static final Camera CAMERA = new Camera(Target.CHARACTER, null);
+    private final int targetId;
     private AbstractVillager merchant;
+
+    public VillagerTradeScreenLayout() { this(-1); }
+    public VillagerTradeScreenLayout(int targetId) { this.targetId = targetId; }
+
     private boolean right;
     private boolean split;
 
@@ -32,17 +38,23 @@ public final class VillagerTradeScreenLayout {
         return ((Host) screen).villagerretaliation$tradeLayout();
     }
 
-    public void update(MerchantScreen screen) {
+    public static VillagerTradeScreenLayout of(Screen screen) {
+        return screen instanceof Host host ? host.villagerretaliation$tradeLayout() : null;
+    }
+
+    public void update(AbstractContainerScreen<?> screen) {
         var minecraft = Minecraft.getInstance();
         if (merchant == null && minecraft.player != null) {
-            merchant = VillagerTradingTargetFinder.findTradingVillagerOrSingleNearby(minecraft).orElse(null);
+            merchant = targetId >= 0
+                    ? minecraft.level != null && minecraft.level.getEntity(targetId) instanceof AbstractVillager villager ? villager : null
+                    : VillagerTradingTargetFinder.findTradingVillagerOrSingleNearby(minecraft).orElse(null);
             if (merchant != null) {
                 var rotation = ToucanCameraBasis.rotationToTarget(minecraft.player.getEyePosition(),
                         merchant.getEyePosition(), minecraft.player.getYRot(), minecraft.player.getXRot());
                 right = Mth.wrapDegrees(rotation.yaw() - minecraft.player.getYRot()) < 0;
             }
         }
-        int extension = VillagerRetaliationServerConfigClient.skillTradeFeaturesEnabled() ? 20 : 0;
+        int extension = screen instanceof MerchantScreen && VillagerRetaliationServerConfigClient.skillTradeFeaturesEnabled() ? 20 : 0;
         split = eligible() && fitsHalf(screen.width, screen.height, screen.getXSize(), screen.getYSize(), extension);
         int left = left(screen.width, screen.getXSize(), extension, right, split, merchantX(screen.width));
         int delta = left - screen.getGuiLeft();
@@ -56,7 +68,8 @@ public final class VillagerTradeScreenLayout {
     public boolean split() { return split; }
 
     public static boolean hidesRecipeViewer(Screen screen) {
-        return screen instanceof MerchantScreen trade && of(trade).split();
+        var layout = of(screen);
+        return layout != null && layout.split();
     }
 
     public static double targetFov(double baseFov, double distance, double height) {
@@ -76,7 +89,7 @@ public final class VillagerTradeScreenLayout {
                 && VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get();
     }
 
-    public DialogueCameraController.Frame frame(MerchantScreen screen) {
+    public DialogueCameraController.Frame frame(AbstractContainerScreen<?> screen) {
         update(screen);
         return !split ? null : new DialogueCameraController.Frame("trade/" + screen.getMenu().containerId
                 + "/" + merchant.getUUID(), CAMERA, merchant, merchant, List.of(merchant), false);
@@ -115,7 +128,7 @@ public final class VillagerTradeScreenLayout {
         return Math.clamp((1 + projected) * width * 0.5, right ? 0 : width * 0.5, right ? width * 0.5 : width);
     }
 
-    public Vec3 cameraPosition(MerchantScreen screen, Vec3 eye, Vec3 aim, double fov) {
+    public Vec3 cameraPosition(AbstractContainerScreen<?> screen, Vec3 eye, Vec3 aim, double fov) {
         var minecraft = Minecraft.getInstance();
         double fraction = Math.clamp((double) screen.getYSize() / screen.height * 1.25, 0.5, 0.7);
         double aspect = (double) minecraft.getWindow().getWidth() / Math.max(1, minecraft.getWindow().getHeight());
