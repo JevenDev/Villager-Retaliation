@@ -46,6 +46,7 @@ public final class VillagerDialogueCameraFocus {
                 ? activeProgress
                 : ClientVillagerConversationState.cameraReleaseProgress((float) event.getPartialTick());
         event.setFOV(ToucanCameraFov.zoomedFov(event.getFOV(), zoomAmount, progress));
+        DialogueCameraController.rememberFov(event);
     }
 
     private static double distanceAdjustedZoomAmount(ViewportEvent event) {

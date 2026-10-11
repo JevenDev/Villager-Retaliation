@@ -5,23 +5,20 @@ import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfig
 import com.jvn.villagerretaliation.client.interaction.DialogueCameraController;
 import com.jvn.villagerretaliation.client.villager.VillagerTradingTargetFinder;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.DialogueCamera;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target;
 import com.jvn.villagerretaliation.mixin.client.AbstractContainerScreenAccessor;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.phys.Vec3;
 
 public final class VillagerTradeScreenLayout {
-    private static final Camera CAMERA = new Camera(Target.SPEAKER, null, List.of(new DialogueCamera.Shot(
-            DialogueCamera.Preset.FIRST_PERSON, DialogueCamera.Anchor.PLAYER, DialogueCamera.Placement.RELATIVE,
-            DialogueCamera.Perspective.FIRST_PERSON, Vec3.ZERO, Target.CHARACTER, 55.0,
-            DialogueCamera.Transition.LERP, 0.35, DialogueCamera.Easing.SMOOTHSTEP, 0)));
+    private static final Camera CAMERA = new Camera(Target.CHARACTER, null);
     private AbstractVillager merchant;
     private boolean right;
     private boolean split;
@@ -56,6 +53,18 @@ public final class VillagerTradeScreenLayout {
     }
 
     public boolean split() { return split; }
+
+    public static boolean hidesRecipeViewer(Screen screen) {
+        return screen instanceof MerchantScreen trade && of(trade).split();
+    }
+
+    public static double targetFov(double baseFov, double distance, double height) {
+        double progress = Math.clamp((distance - 2) / 3, 0, 1);
+        progress *= progress * (3 - 2 * progress);
+        double zoomed = Mth.lerp(progress, baseFov, Math.min(baseFov, 55));
+        double fitted = Math.toDegrees(2 * Math.atan2(height * 0.75, Math.max(0.1, distance)));
+        return Math.max(zoomed, Math.min(baseFov, fitted));
+    }
 
     private boolean eligible() {
         var minecraft = Minecraft.getInstance();

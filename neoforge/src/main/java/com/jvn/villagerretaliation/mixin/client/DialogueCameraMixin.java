@@ -25,5 +25,6 @@ public abstract class DialogueCameraMixin {
             setPosition(pose.position());
             setRotation(pose.yaw(), pose.pitch(), 0);
         }
+        DialogueCameraController.rememberCamera((Camera) (Object) this);
     }
 }

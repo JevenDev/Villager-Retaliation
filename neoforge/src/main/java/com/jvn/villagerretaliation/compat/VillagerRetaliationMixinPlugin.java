@@ -19,6 +19,10 @@ public final class VillagerRetaliationMixinPlugin implements IMixinConfigPlugin 
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.endsWith(".TradeEmiOverlayMixin"))
+            return FMLLoader.getLoadingModList().getModFileById("emi") != null;
+        if (mixinClassName.endsWith(".TradeJeiOverlayMixin"))
+            return FMLLoader.getLoadingModList().getModFileById("jei") != null;
         if (mixinClassName.contains(".DialogueSodiumCamera"))
             return supportsSodiumDialogueCamera();
         // sodium replaces setupRender and already centers terrain on the active camera

@@ -43,6 +43,7 @@ public final class DialogueCameraClientSmoke {
     private static long started;
     private static long shownAt;
     private static int tradeGuiScale;
+    private static double tradeFov;
     private static long tradePackReadyAt;
     private static java.util.concurrent.CompletableFuture<Void> tradeResourceReload;
     private static boolean duplicate;
@@ -308,16 +309,40 @@ public final class DialogueCameraClientSmoke {
                 require(pixel == 0xFF12CD34,
                         "high-resolution resource packs supply the shifted vanilla trading background: " + Integer.toHexString(pixel));
             }
+            verifyRecipeViewer(screen, true);
             capture("trade-split");
+            tradeFov = currentTradeFov();
+            require(tradeFov < 95, "distant merchants receive a dynamic zoom");
+            minecraft.player.closeContainer();
+            shownAt = Util.getMillis();
+            phase = 15;
+        } else if (phase == 15 && Util.getMillis() - shownAt > 150) {
+            require(DialogueCameraController.active(), "closing trading keeps the camera alive during its return");
+            double returningFov = currentTradeFov();
+            require(returningFov > tradeFov && returningFov < 96,
+                    "the visible FOV interpolates back to normal after closing: " + returningFov);
+            phase = 16;
+        } else if (phase == 16 && Util.getMillis() - shownAt > 1400) {
+            require(!DialogueCameraController.active(), "closing trading eventually releases camera control");
+            require(Math.abs(currentTradeFov() - 96) < 0.001, "closing restores the configured FOV");
             minecraft.options.guiScale().set(3);
             minecraft.resizeDisplay();
+            preparing = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var villager = (Villager) server.overworld().getEntity(entityId);
+                villager.setTradingPlayer(player);
+                villager.openTradingScreen(player, villager.getDisplayName(), 1);
+                com.jvn.villagerretaliation.trade.VillagerTradeRefreshService.sendState(player, villager);
+                return entityId;
+            });
             shownAt = Util.getMillis();
             phase = 13;
-        } else if (phase == 13 && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen
-                && Util.getMillis() - shownAt > 500) {
+        } else if (phase == 13 && preparing.isDone() && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen
+                && Util.getMillis() - shownAt > 1400) {
             require(!DialogueCameraController.active(), "large GUI scales release the split camera");
             require(Math.abs(screen.getGuiLeft() - 20 + 148 - screen.width / 2) <= 1,
                     "large GUI scales center the complete trade panel");
+            verifyRecipeViewer(screen, false);
             capture("trade-large-gui-scale");
             minecraft.options.guiScale().set(1);
             minecraft.resizeDisplay();
@@ -339,6 +364,51 @@ public final class DialogueCameraClientSmoke {
             phase = 9;
             minecraft.stop();
         }
+    }
+
+    private static double currentTradeFov() {
+        var minecraft = Minecraft.getInstance();
+        var event = new net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov(
+                minecraft.gameRenderer, minecraft.gameRenderer.getMainCamera(), 1, 96, true);
+        DialogueCameraController.onComputeFov(event);
+        return event.getFOV();
+    }
+
+    private static void verifyRecipeViewer(net.minecraft.client.gui.screens.Screen screen, boolean hidden) {
+        try {
+            if (net.neoforged.fml.ModList.get().isLoaded("emi")) {
+                var type = Class.forName("dev.emi.emi.screen.EmiScreenBase");
+                var base = type.getMethod("of", net.minecraft.client.gui.screens.Screen.class).invoke(null, screen);
+                require((boolean) type.getMethod("isEmpty").invoke(base) == hidden,
+                        "EMI is suppressed only for immersive trading");
+            }
+            if (net.neoforged.fml.ModList.get().isLoaded("jei")) {
+                var runtime = Class.forName("mezz.jei.common.Internal").getMethod("getJeiRuntime").invoke(null);
+                var helper = Class.forName("mezz.jei.api.runtime.IJeiRuntime").getMethod("getScreenHelper").invoke(runtime);
+                var getProperties = Class.forName("mezz.jei.api.runtime.IScreenHelper")
+                        .getMethod("getGuiProperties", net.minecraft.client.gui.screens.Screen.class);
+                var properties = (java.util.Optional<?>) getProperties.invoke(helper, screen);
+                var inventory = new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player);
+                inventory.width = screen.width;
+                inventory.height = screen.height;
+                var standardProperties = (java.util.Optional<?>) getProperties.invoke(helper, inventory);
+                require(hidden ? properties.isEmpty() : properties.isEmpty() == standardProperties.isEmpty(),
+                        "JEI hides immersive trading and restores ordinary container behavior");
+            }
+            if (net.neoforged.fml.ModList.get().isLoaded("roughlyenoughitems")) {
+                var registryType = Class.forName("me.shedaniel.rei.api.client.registry.screen.ScreenRegistry");
+                var registry = registryType.getMethod("getInstance").invoke(null);
+                var deciders = (java.util.List<?>) registryType.getMethod("getDeciders", net.minecraft.client.gui.screens.Screen.class)
+                        .invoke(registry, screen);
+                var decision = net.minecraft.world.InteractionResult.PASS;
+                for (var decider : deciders) {
+                    decision = (net.minecraft.world.InteractionResult) Class.forName("me.shedaniel.rei.api.client.registry.screen.OverlayDecider")
+                            .getMethod("shouldScreenBeOverlaid", net.minecraft.client.gui.screens.Screen.class).invoke(decider, screen);
+                    if (decision != net.minecraft.world.InteractionResult.PASS) break;
+                }
+                require((decision == net.minecraft.world.InteractionResult.FAIL) == hidden, "REI is suppressed only for immersive trading");
+            }
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Recipe viewer fixture is unavailable", exception); }
     }
 
     private static java.util.concurrent.CompletableFuture<Void> prepareTradeResourcePack() {
@@ -413,6 +483,15 @@ public final class DialogueCameraClientSmoke {
                     require(Math.abs(target.dot(up)) < 0.001, "trade framing keeps the villager vertically centered");
                 }
             }
+        }
+        for (double fov : new double[] {40, 70, 96, 110}) {
+            double near = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, 1, 1.95);
+            double edge = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, 2.001, 1.95);
+            double far = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, 5, 1.95);
+            require(near == fov && Math.abs(edge - near) < 0.001, "close merchants avoid extra zoom without a threshold jump");
+            require(far <= fov && far >= Math.min(55, fov), "distant zoom respects the configured FOV");
+            require(com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, 3, 4) >= far,
+                    "tall merchants retain enough vertical space");
         }
         require(!com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.fitsHalf(1280, 170, 276, 166, 20),
                 "short windows use the centered fallback");

@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.client.inventory.VillagerAttributeFilterScree
 import com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen;
 import com.jvn.villagerretaliation.client.inventory.VillagerItemFilterScreen;
 import com.jvn.villagerretaliation.client.party.PartyInventoryOverlay;
+import com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout;
 import com.jvn.villagerretaliation.client.ui.ClientScreenArea;
 import com.jvn.villagerretaliation.compat.RecipeViewerFilterGhostSupport;
 import java.util.stream.Stream;
@@ -15,12 +16,15 @@ import me.shedaniel.rei.api.client.gui.drag.DraggedAcceptorResult;
 import me.shedaniel.rei.api.client.gui.drag.DraggingContext;
 import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.screen.ExclusionZones;
+import me.shedaniel.rei.api.client.registry.screen.OverlayDecider;
 import me.shedaniel.rei.api.client.registry.screen.ScreenRegistry;
 import me.shedaniel.rei.api.common.entry.EntryStack;
 import me.shedaniel.rei.api.common.entry.type.VanillaEntryTypes;
 import me.shedaniel.rei.forge.REIPluginClient;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 
 @REIPluginClient
@@ -40,6 +44,20 @@ public final class VillagerRetaliationReiPlugin implements REIClientPlugin {
     @Override
     public void registerScreens(ScreenRegistry registry) {
         registry.registerDraggableStackVisitor(new FilterGhostVisitor());
+        registry.registerDecider(new OverlayDecider() {
+            @Override
+            public <R extends Screen> boolean isHandingScreen(Class<R> screen) {
+                return MerchantScreen.class.isAssignableFrom(screen);
+            }
+
+            @Override
+            public <R extends Screen> InteractionResult shouldScreenBeOverlaid(R screen) {
+                return VillagerTradeScreenLayout.hidesRecipeViewer(screen) ? InteractionResult.FAIL : InteractionResult.PASS;
+            }
+
+            @Override
+            public double getPriority() { return 1000; }
+        });
     }
 
     private static final class FilterGhostVisitor implements DraggableStackVisitor<Screen> {

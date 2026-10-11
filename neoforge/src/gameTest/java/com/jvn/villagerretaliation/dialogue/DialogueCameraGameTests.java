@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.client.interaction.DialogueCameraTimeline;
 import com.jvn.villagerretaliation.client.interaction.DialogueCameraTimeline.Pose;
+import com.jvn.villagerretaliation.client.trade.TradeCameraMotion;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationSession;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
@@ -154,6 +155,37 @@ public final class DialogueCameraGameTests {
         helper.assertValueEqual(obstructed.update(0.1, destination, corrected), corrected,
                 "a sequence lerp starts at the currently rendered collision-corrected pose");
         rejected(helper, () -> timeline.update(Double.NaN, destination));
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_camera")
+    public static void tradingMotionEasesAndRetargetsAcrossFrameRates(GameTestHelper helper) {
+        var source = new Pose(Vec3.ZERO, 179, 0, 96);
+        var target = new Pose(new Vec3(2, 1, 0), -179, 20, 55);
+        var slow = new TradeCameraMotion(source);
+        var fast = new TradeCameraMotion(source);
+        helper.assertValueEqual(slow.update(0, target), source, "opening begins at the rendered view");
+        double previousFov = source.fov();
+        for (int step = 0; step < 30; step++) {
+            var sample = slow.update(1.0 / 30, target);
+            fast.update(1.0 / 60, target);
+            var equivalent = fast.update(1.0 / 60, target);
+            helper.assertTrue(sample.position().distanceTo(equivalent.position()) < 1.0E-6
+                            && Math.abs(sample.fov() - equivalent.fov()) < 1.0E-6,
+                    "motion is independent of frame rate");
+            helper.assertTrue(sample.fov() <= previousFov && sample.fov() >= target.fov(), "static zoom eases without overshooting");
+            helper.assertTrue(sample.yaw() >= 179 && sample.yaw() <= 181, "rotation follows the shortest yaw path");
+            previousFov = sample.fov();
+        }
+        var beforeClose = slow.pose();
+        helper.assertValueEqual(slow.update(0, source), beforeClose, "closing does not snap the current view");
+        var returning = slow.update(0.2, source);
+        helper.assertTrue(returning.fov() > beforeClose.fov() && returning.fov() < source.fov(), "closing smoothly widens FOV");
+        var restored = slow.update(1, source);
+        helper.assertTrue(restored.position().distanceTo(source.position()) < 0.001
+                        && Math.abs(restored.fov() - source.fov()) < 0.01, "the view converges back to its starting pose");
+        rejected(helper, () -> slow.update(Double.NaN, source));
+        rejected(helper, () -> slow.update(-1, source));
         helper.succeed();
     }
 

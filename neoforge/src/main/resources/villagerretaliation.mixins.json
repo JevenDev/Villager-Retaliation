@@ -111,6 +111,8 @@
     "client.SettlementLevelRendererMixin",
     "client.SettlementViewProjectionMixin",
     "client.SlotAccessor",
+    "client.TradeEmiOverlayMixin",
+    "client.TradeJeiOverlayMixin",
     "client.MerchantScreenMixin",
     "client.MerchantContainerMixin",
     "client.MerchantResultSlotMixin",
