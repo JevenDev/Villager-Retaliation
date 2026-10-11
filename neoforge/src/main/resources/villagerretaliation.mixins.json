@@ -70,6 +70,8 @@
     "VillagerGossipMixin",
     "VillagerJobInventoryMixin",
     "VillagerWorkAppearanceMixin",
+    "VillagerSmithRepairMixin",
+    "SmithRepairAiMixin",
     "VillagerMakeLoveMixin",
     "VillagerFamilyAccessor",
     "VillagerBrainTickMixin",

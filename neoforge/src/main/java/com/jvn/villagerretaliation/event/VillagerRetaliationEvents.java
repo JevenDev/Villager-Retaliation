@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.inventory.SmithRepairMenu;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
@@ -472,6 +473,7 @@ public final class VillagerRetaliationEvents {
         if (entity instanceof LivingEntity living) com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.onNativeTick(living);
         if (entity instanceof Villager villager) {
             VillagerDownedService.onVillagerTickPre(villager);
+            if (SmithRepairMenu.controlling(villager) != null) return;
             VillagerSleepHealingService.onVillagerTick(villager);
             VillagerStudyService.tick(villager);
             if (VillagerDownedService.isDowned(villager)) {
@@ -518,45 +520,57 @@ public final class VillagerRetaliationEvents {
                 return;
             }
             VillagerNaturalJobArmor.maybeRoll(villager);
-            VillagerConversationService.tickVillager(villager);
-            HiredVillagerContractService.onVillagerTickPost(villager);
-            if (villager.level() instanceof ServerLevel level) {
-                com.jvn.villagerretaliation.settlement.SettlementWorkforceService.reconcile(level, villager);
-            }
-            VillagerRecruitmentService.onVillagerTickPost(villager);
-            HiredVillagerWorkService.onVillagerTickPost(villager);
-            if (villager.level() instanceof ServerLevel level) {
+            boolean repairing = SmithRepairMenu.controlling(villager) != null;
+            if (repairing && villager.level() instanceof ServerLevel level) {
                 VillagerTaskNavigationUtil.tickVillagerWaterSafety(level, villager);
                 VillagerTaskNavigationUtil.tickPathDoors(level, villager);
                 VillagerTaskNavigationUtil.tickPathLadders(level, villager);
-                VillagerTaskNavigationUtil.tickHiredPathStepAssist(level, villager);
-                VillagerContainerClimbGuard.tick(villager);
+            }
+            if (!repairing) {
+                VillagerConversationService.tickVillager(villager);
+                HiredVillagerContractService.onVillagerTickPost(villager);
+                if (villager.level() instanceof ServerLevel level) {
+                    com.jvn.villagerretaliation.settlement.SettlementWorkforceService.reconcile(level, villager);
+                }
+                VillagerRecruitmentService.onVillagerTickPost(villager);
+                HiredVillagerWorkService.onVillagerTickPost(villager);
+                if (villager.level() instanceof ServerLevel level) {
+                    VillagerTaskNavigationUtil.tickVillagerWaterSafety(level, villager);
+                    VillagerTaskNavigationUtil.tickPathDoors(level, villager);
+                    VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+                    VillagerTaskNavigationUtil.tickHiredPathStepAssist(level, villager);
+                    VillagerContainerClimbGuard.tick(villager);
+                }
             }
             rememberWeatherEventNearVillager(villager);
-            if (villager.level() instanceof ServerLevel level) {
-                VillagerTradeMemory.ensureProfessionPoolIfNeeded(level, villager);
-                ForcedDialogueService.tickSharedForcedDialogueParticipant(level, villager);
-                ForcedDialogueService.maybeTriggerTradeRefreshReadyProximity(level, villager);
-                ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
+            if (villager.level() instanceof ServerLevel level) VillagerTradeMemory.ensureProfessionPoolIfNeeded(level, villager);
+            if (!repairing) {
+                if (villager.level() instanceof ServerLevel level) {
+                    ForcedDialogueService.tickSharedForcedDialogueParticipant(level, villager);
+                    ForcedDialogueService.maybeTriggerTradeRefreshReadyProximity(level, villager);
+                    ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
+                }
+                boolean recovering = com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerTickPost(villager);
+                if (!recovering) {
+                    VillagerRetaliationHandler.onEntityTickPost(event);
+                }
+                VillagerFleeBehaviorHandler.onEntityTickPost(event);
+                VillagerCombatSurvivalService.onVillagerTickPost(villager);
+                com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerTickPost(villager);
+                com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+                com.jvn.villagerretaliation.mount.VillagerMountTravelService.onVillagerTickPost(villager);
             }
-            boolean recovering = com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerTickPost(villager);
-            if (!recovering) {
-                VillagerRetaliationHandler.onEntityTickPost(event);
-            }
-            VillagerFleeBehaviorHandler.onEntityTickPost(event);
-            VillagerCombatSurvivalService.onVillagerTickPost(villager);
-            com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerTickPost(villager);
-            com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
-            com.jvn.villagerretaliation.mount.VillagerMountTravelService.onVillagerTickPost(villager);
             VillagerInventoryAccess.maybeOffloadInventoryOverflow(villager);
             VillagerWalletService.tickWallet(villager);
             VillagerSocialGraphService.onEntityTickPost(event);
             VillagerReputationEvents.onEntityTickPost(event);
             com.jvn.villagerretaliation.duel.DuelService.onVillagerTickPost(villager);
-            if (villager.level() instanceof ServerLevel level) {
-                com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.enforce(level, villager);
+            if (!repairing) {
+                if (villager.level() instanceof ServerLevel level) {
+                    com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.enforce(level, villager);
+                }
+                com.jvn.villagerretaliation.quest.follower.QuestFollowerService.tickMob(villager);
             }
-            com.jvn.villagerretaliation.quest.follower.QuestFollowerService.tickMob(villager);
             return;
         }
         if (entity instanceof net.minecraft.world.entity.Mob escortMob)

@@ -107,7 +107,8 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
         this.model = switch (this.currentRenderMode()) {
             case VR_DEFAULT -> shouldUseCombatTextureAndModel(villager, this.getAttackAnim(villager, partialTick)) ? this.combatModel : this.nonCombatModel;
             case HUMANOID_COMPAT -> this.humanoidModel;
-            case PACK_NATIVE -> this.vanillaModel;
+            case PACK_NATIVE -> com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isActive(villager)
+                    ? this.combatModel : this.vanillaModel;
         };
         boolean previousSprinting = villager.isSprinting();
         boolean talking = VillagerDialogueMouthAnimation.isTalking(villager);
@@ -134,7 +135,8 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     }
 
     private boolean shouldUseCombatTextureAndModel(T villager, float attackTime) {
-        boolean needsSideArmModel = VillagerDownedClientCache.isDowned(villager)
+        boolean needsSideArmModel = com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isActive(villager)
+                || VillagerDownedClientCache.isDowned(villager)
                 || this.isStudying(villager)
                 || this.poseProvider.shouldUseCombatModel(villager)
                 || attackTime > 0.0F

@@ -55,7 +55,9 @@ public final class SmithRepairScreen extends AbstractContainerScreen<SmithRepair
 
     private void updateButton() {
         repair.active = menu.status() == SmithRepairMenu.Status.READY;
-        repair.setMessage(Component.translatable("villagerretaliation.gui.repair.button", menu.cost()));
+        repair.setMessage(menu.isBusy()
+                ? Component.translatable("villagerretaliation.gui.repair." + menu.status().name().toLowerCase(Locale.ROOT))
+                : Component.translatable("villagerretaliation.gui.repair.button", menu.cost()));
         repair.setTooltip(Tooltip.create(Component.translatable("villagerretaliation.gui.repair.status."
                 + menu.status().name().toLowerCase(Locale.ROOT))));
     }
@@ -69,7 +71,7 @@ public final class SmithRepairScreen extends AbstractContainerScreen<SmithRepair
         int labelWidth = font.width(repair.getMessage());
         int iconX = repair.getX() + (repair.getWidth() - labelWidth) / 2 + 1;
         var sprite = minecraft.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(menu.currencyIcon());
-        graphics.blit(iconX, repair.getY() + 2, 0, 16, 16, sprite);
+        if (!menu.isBusy()) graphics.blit(iconX, repair.getY() + 2, 0, 16, 16, sprite);
         renderTooltip(graphics, mouseX, mouseY);
     }
 

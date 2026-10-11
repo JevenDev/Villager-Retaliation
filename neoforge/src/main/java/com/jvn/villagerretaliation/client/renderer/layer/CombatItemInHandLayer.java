@@ -45,15 +45,18 @@ public class CombatItemInHandLayer<T extends AbstractVillager> extends RenderLay
         if (!(this.getParentModel() instanceof VillagerRetaliationVillagerModel<?> combatModel)) {
             return;
         }
-        if (!this.poseProvider.shouldRenderHeldItem(villager)) {
+        boolean smithing = com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(villager);
+        if (!smithing && !this.poseProvider.shouldRenderHeldItem(villager)) {
             return;
         }
 
         boolean mainHandIsRight = villager.getMainArm() == HumanoidArm.RIGHT;
         ItemStack mainHandItem = VillagerRenderEquipmentState.visibleMainHand(villager);
-        ItemStack leftHandItem = mainHandIsRight ? villager.getOffhandItem() : mainHandItem;
-        ItemStack rightHandItem = mainHandIsRight ? mainHandItem : villager.getOffhandItem();
-        if (leftHandItem.isEmpty() && rightHandItem.isEmpty()) {
+        ItemStack offhandItem = com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isActive(villager)
+                ? ItemStack.EMPTY : villager.getOffhandItem();
+        ItemStack leftHandItem = mainHandIsRight ? offhandItem : mainHandItem;
+        ItemStack rightHandItem = mainHandIsRight ? mainHandItem : offhandItem;
+        if (!smithing && leftHandItem.isEmpty() && rightHandItem.isEmpty()) {
             return;
         }
 
@@ -80,7 +83,9 @@ public class CombatItemInHandLayer<T extends AbstractVillager> extends RenderLay
             MultiBufferSource buffer,
             int packedLight
     ) {
-        if (itemStack.isEmpty()) {
+        boolean hammer = com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(villager)
+                && arm == villager.getMainArm();
+        if (itemStack.isEmpty() && !hammer) {
             return;
         }
 
@@ -90,7 +95,11 @@ public class CombatItemInHandLayer<T extends AbstractVillager> extends RenderLay
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
         boolean leftArm = arm == HumanoidArm.LEFT;
         poseStack.translate((float) (leftArm ? -1 : 1) / 16.0F, 0.125F, -0.625F);
-        this.itemInHandRenderer.renderItem(villager, itemStack, displayContext, leftArm, poseStack, buffer, packedLight);
+        if (hammer) {
+            com.jvn.villagerretaliation.client.repair.SmithRepairRenderer.renderHammer(displayContext, leftArm, poseStack, buffer, packedLight);
+        } else {
+            this.itemInHandRenderer.renderItem(villager, itemStack, displayContext, leftArm, poseStack, buffer, packedLight);
+        }
         poseStack.popPose();
     }
 }

@@ -127,6 +127,13 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
             return;
         }
 
+        if (com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(villager)) {
+            this.setArmLayout(true);
+            com.jvn.villagerretaliation.client.repair.SmithRepairAnimation.apply(villager, this.head, this.rightArm, this.leftArm, ageInTicks);
+            this.syncRobe(villager);
+            return;
+        }
+
         if (villager instanceof net.minecraft.world.entity.npc.Villager studyingVillager
                 && VillagerStudyClientCache.isActive(studyingVillager)) {
             // a sub-pixel EMF marker lets compatibility packs preserve the study pose

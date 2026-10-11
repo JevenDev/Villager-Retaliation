@@ -29,6 +29,13 @@ public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetalia
     }
 
     @Override
+    public void render(Villager villager, float entityYaw, float partialTick, PoseStack poseStack,
+            net.minecraft.client.renderer.MultiBufferSource buffer, int packedLight) {
+        super.render(villager, entityYaw, partialTick, poseStack, buffer, packedLight);
+        com.jvn.villagerretaliation.client.repair.SmithRepairRenderer.render(villager, partialTick, poseStack, buffer);
+    }
+
+    @Override
     protected void scale(Villager villager, PoseStack poseStack, float partialTickTime) {
         float scale = 0.9375F * villager.getAgeScale();
         poseStack.scale(scale, scale, scale);

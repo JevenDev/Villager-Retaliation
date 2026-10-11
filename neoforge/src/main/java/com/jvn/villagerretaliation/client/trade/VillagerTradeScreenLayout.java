@@ -99,7 +99,10 @@ public final class VillagerTradeScreenLayout {
 
     private boolean eligible() {
         var minecraft = Minecraft.getInstance();
-        if (minecraft.player != null && merchant != null) {
+        // the repair menu validates distance from the interaction origin while the smith walks
+        boolean repairing = minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.SmithRepairScreen screen
+                && screen.getMenu().isBusy();
+        if (minecraft.player != null && merchant != null && !repairing) {
             // require a full block of return travel before re-entering split framing
             withinRange = minecraft.player.distanceToSqr(merchant) <= (withinRange ? 64 : 49);
         }
@@ -132,14 +135,33 @@ public final class VillagerTradeScreenLayout {
     }
 
     public static Vec3 focus(Entity merchant, float partialTick) {
-        return merchant.getPosition(partialTick).add(0, merchant.getBbHeight() * 0.6, 0);
+        Vec3 focus = merchant.getPosition(partialTick).add(0, merchant.getBbHeight() * 0.6, 0);
+        if (merchant instanceof net.minecraft.world.entity.npc.Villager smith
+                && com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(smith)) {
+            var state = (com.jvn.villagerretaliation.repair.SmithRepairAnimationState) smith;
+            return focus.lerp(com.jvn.villagerretaliation.repair.SmithRepairWorkstation.itemPosition(smith,
+                    state.villagerretaliation$repairStation()), 0.45);
+        }
+        return focus;
     }
 
     public Vec3 cameraPosition(AbstractContainerScreen<?> screen, Vec3 eye, Vec3 aim, double fov) {
         var minecraft = Minecraft.getInstance();
         double fraction = Math.clamp((double) screen.getYSize() / screen.height * 1.25, 0.5, 0.7);
         double aspect = (double) minecraft.getWindow().getWidth() / Math.max(1, minecraft.getWindow().getHeight());
-        return cameraPosition(eye, aim, minimumDistance(merchant.getBbHeight(), fov, aspect, fraction), minecraft.player.getYRot());
+        double minimum = minimumDistance(merchant.getBbHeight(), fov, aspect, fraction);
+        if (screen instanceof com.jvn.villagerretaliation.client.inventory.SmithRepairScreen
+                && merchant instanceof net.minecraft.world.entity.npc.Villager smith
+                && com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(smith)) {
+            var state = (com.jvn.villagerretaliation.repair.SmithRepairAnimationState) smith;
+            Vec3 forward = Vec3.atCenterOf(state.villagerretaliation$repairStation()).subtract(smith.position()).multiply(1, 0, 1).normalize();
+            Vec3 side = new Vec3(-forward.z, 0, forward.x);
+            if (side.dot(eye.subtract(aim)) < 0) side = side.scale(-1);
+            Vec3 direction = side.scale(0.86).add(forward.scale(0.5)).normalize();
+            double distance = Math.max(minimum, eye.subtract(aim).horizontalDistance());
+            return aim.add(direction.scale(distance)).add(0, Math.max(0.65, eye.y - aim.y), 0);
+        }
+        return cameraPosition(eye, aim, minimum, minecraft.player.getYRot());
     }
 
     public static double minimumDistance(double height, double fov, double aspect, double fraction) {

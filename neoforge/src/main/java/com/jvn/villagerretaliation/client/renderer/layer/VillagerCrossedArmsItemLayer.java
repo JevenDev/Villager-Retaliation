@@ -37,7 +37,8 @@ public class VillagerCrossedArmsItemLayer<T extends AbstractVillager> extends Re
             float netHeadYaw,
             float headPitch
     ) {
-        if (this.getParentModel() instanceof VillagerRetaliationVillagerModel<?>) {
+        if (com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(villager)
+                || this.getParentModel() instanceof VillagerRetaliationVillagerModel<?>) {
             return;
         }
 

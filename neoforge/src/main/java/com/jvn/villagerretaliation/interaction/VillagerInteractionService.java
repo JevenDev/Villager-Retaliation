@@ -117,6 +117,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerInteractionService {
@@ -575,6 +576,10 @@ public final class VillagerInteractionService {
     }
 
     public static boolean canUseSmithRepair(ServerPlayer player, Villager villager) {
+        return canUseSmithRepair(player, villager, villager.position());
+    }
+
+    public static boolean canUseSmithRepair(ServerPlayer player, Villager villager, Vec3 interactionOrigin) {
         double distance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return com.jvn.villagerretaliation.repair.SmithRepairService.isSmith(villager)
                 && villager.level() == player.level() && villager.isAlive() && !villager.isRemoved()
@@ -584,7 +589,7 @@ public final class VillagerInteractionService {
                 && !shouldRefuseDespisedConversation(villager, player)
                 && !VillagerBehaviorSuppressionPolicy.suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING)
                 && !VillagerBehaviorSuppressionPolicy.suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)
-                && player.isAlive() && !player.isSpectator() && player.distanceToSqr(villager) <= distance * distance;
+                && player.isAlive() && !player.isSpectator() && player.position().distanceToSqr(interactionOrigin) <= distance * distance;
     }
 
     public static void handleRoutineChatToggle(ServerPlayer player, int entityId, boolean muted) {

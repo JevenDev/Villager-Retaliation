@@ -80,6 +80,7 @@ public final class HumanoidCompatVillagerModel<T extends AbstractVillager> exten
         if (!this.freshAnimationProfile
                 || !villager.isAlive()
                 || this.riding
+                || com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(villager)
                 || VillagerDownedClientCache.isDowned(villager)
                 || villager instanceof Villager studyingVillager && VillagerStudyClientCache.isActive(studyingVillager)) {
             return;

@@ -17,6 +17,7 @@ public final class VillagerRetaliationClient {
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, (IConfigScreenFactory) VillagerRetaliationClient::createConfigScreen);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
         modEventBus.addListener(VillagerRetaliationClient::registerClientExtensions);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.repair.SmithRepairRenderer::registerModels);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintKeyMappings::register);

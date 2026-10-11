@@ -20,6 +20,10 @@ public final class VillagerRenderEquipmentState {
     }
 
     public static ItemStack visibleMainHand(AbstractVillager villager) {
+        if (com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isActive(villager)) {
+            return com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(villager) ? ItemStack.EMPTY
+                    : ((com.jvn.villagerretaliation.repair.SmithRepairAnimationState) villager).villagerretaliation$repairItem();
+        }
         ItemStack workItem = VillagerWorkAnimationClientCache.displayItem(villager);
         if (!workItem.isEmpty()) {
             return workItem;

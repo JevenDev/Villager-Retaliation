@@ -26,6 +26,16 @@ public abstract class LookControlMixin {
         if (!(this.mob instanceof Villager villager)) {
             return;
         }
+        if (com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isActive(villager)) {
+            var state = (com.jvn.villagerretaliation.repair.SmithRepairAnimationState) villager;
+            if (state.villagerretaliation$repairStarted() != com.jvn.villagerretaliation.repair.SmithRepairAnimationState.RETURNING) {
+                Vec3 item = com.jvn.villagerretaliation.repair.SmithRepairWorkstation.itemPosition(villager, state.villagerretaliation$repairStation());
+                ((LookControl) (Object) this).setLookAt(item.x, item.y, item.z, 30, 30);
+            } else if (villager.getTradingPlayer() != null) {
+                ((LookControl) (Object) this).setLookAt(villager.getTradingPlayer(), 30, 30);
+            }
+            return;
+        }
         BlockPos target = HiredVillagerFocusService.activeWorkLookTarget(villager);
         if (target != null) {
             Vec3 center = Vec3.atCenterOf(target);
