@@ -159,12 +159,15 @@ public final class DialogueCameraOcclusion {
     }
 
     private static double score(Vec3 camera, List<Entity> subjects, float partialTick) {
+        var minecraft = Minecraft.getInstance();
         double score = free(camera) ? 1 : -100;
         for (var entity : subjects) for (var target : targets(entity, partialTick)) {
             var hidden = new HashSet<BlockPos>();
             collect(camera, target, hidden);
-            boolean entityBlocker = Minecraft.getInstance().level.getEntities(entity, new AABB(camera, target)).stream()
-                    .anyMatch(other -> !other.getBoundingBox().contains(camera)
+            // first-person shots can pull back through the player's hidden body
+            boolean entityBlocker = minecraft.level.getEntities(entity, new AABB(camera, target)).stream()
+                    .anyMatch(other -> (other != minecraft.player || DialogueCameraController.detached())
+                            && !other.getBoundingBox().contains(camera)
                             && other.getBoundingBox().clip(camera, target).isPresent());
             if (hidden.isEmpty() && !entityBlocker) score++;
         }

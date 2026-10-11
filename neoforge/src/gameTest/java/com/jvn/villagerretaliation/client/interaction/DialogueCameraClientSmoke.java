@@ -301,9 +301,7 @@ public final class DialogueCameraClientSmoke {
             if (Util.getMillis() - tradePackReadyAt < 600) return;
             require(screen.getMenu().getOffers().size() == 1, "trade offers arrive through the normal merchant menu");
             require(DialogueCameraController.active(), "trading uses the shared camera when both halves fit");
-            require(screen.getGuiLeft() + screen.getXSize() < screen.width / 2
-                            || screen.getGuiLeft() - 20 > screen.width / 2,
-                    "the trading panel occupies one half of the screen");
+            verifyTradeFraming(screen);
             try (var image = net.minecraft.client.Screenshot.takeScreenshot(minecraft.getMainRenderTarget())) {
                 int pixel = image.getPixelRGBA(screen.getGuiLeft() + 274, screen.getGuiTop() + 2);
                 require(pixel == 0xFF12CD34,
@@ -313,6 +311,33 @@ public final class DialogueCameraClientSmoke {
             capture("trade-split");
             tradeFov = currentTradeFov();
             require(tradeFov < 95, "distant merchants receive a dynamic zoom");
+            preparing = server.submit(() -> {
+                var villager = (Villager) server.overworld().getEntity(entityId);
+                villager.setPos(15.5, 100, 16.5);
+                for (var position : BlockPos.betweenClosed(12, 100, 13, 19, 105, 14))
+                    server.overworld().setBlockAndUpdate(position, Blocks.AIR.defaultBlockState());
+                server.overworld().getEntity(blockers.join()).discard();
+                return entityId;
+            });
+            minecraft.options.setCameraType(CameraType.FIRST_PERSON);
+            minecraft.options.guiScale().set(2);
+            minecraft.resizeDisplay();
+            shownAt = Util.getMillis();
+            phase = 17;
+        } else if (phase == 17 && preparing.isDone()
+                && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen
+                && Util.getMillis() - shownAt > 1800) {
+            capture("trade-close");
+            verifyTradeFraming(screen);
+            tradeFov = currentTradeFov();
+            var villager = minecraft.level.getEntity(entityId);
+            double distance = minecraft.player.getEyePosition().distanceTo(
+                    com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.focus(villager, 1));
+            double expected = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(96, distance, villager.getBbHeight());
+            require(Math.abs(tradeFov - expected) < 0.2 && tradeFov < 90,
+                    "the rendered FOV changes even within two blocks: actual=" + tradeFov + ", expected=" + expected);
+            require(minecraft.gameRenderer.getMainCamera().getPosition().distanceTo(minecraft.player.getEyePosition()) > 0.5,
+                    "the camera pulls back instead of overfilling the screen at close range");
             minecraft.player.closeContainer();
             shownAt = Util.getMillis();
             phase = 15;
@@ -366,12 +391,38 @@ public final class DialogueCameraClientSmoke {
         }
     }
 
-    private static double currentTradeFov() {
+    private static void verifyTradeFraming(net.minecraft.client.gui.screens.inventory.MerchantScreen screen) {
         var minecraft = Minecraft.getInstance();
-        var event = new net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov(
-                minecraft.gameRenderer, minecraft.gameRenderer.getMainCamera(), 1, 96, true);
-        DialogueCameraController.onComputeFov(event);
-        return event.getFOV();
+        var camera = minecraft.gameRenderer.getMainCamera();
+        var villager = minecraft.level.getEntity(entityId);
+        Vec3 relative = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.focus(villager, 1).subtract(camera.getPosition());
+        Vec3 forward = Vec3.directionFromRotation(camera.getXRot(), camera.getYRot());
+        Vec3 horizontal = Vec3.directionFromRotation(0, camera.getYRot() + 90);
+        Vec3 up = horizontal.cross(forward);
+        double tangent = Math.tan(Math.toRadians(currentTradeFov()) / 2);
+        double aspect = (double) minecraft.getWindow().getWidth() / minecraft.getWindow().getHeight();
+        double merchantX = (1 + relative.dot(horizontal) / (relative.dot(forward) * aspect * tangent)) * screen.width / 2;
+        double panelCenter = screen.getGuiLeft() - 20 + 148;
+        boolean right = panelCenter > screen.width / 2.0;
+        require(Math.abs(panelCenter - (merchantX + (right ? screen.width : 0)) / 2) < 2,
+                "the menu sits halfway between the rendered villager and the opposite screen edge");
+        for (double height : new double[] {0, villager.getBbHeight()}) {
+            Vec3 point = villager.position().add(0, height, 0).subtract(camera.getPosition());
+            double projectedY = point.dot(up) / (point.dot(forward) * tangent);
+            require(Math.abs(projectedY) < 0.95, "the villager's head and feet fit in the rendered viewport: projected=" + projectedY
+                    + ", height=" + height + ", camera=" + camera.getPosition() + ", entity=" + villager.position()
+                    + ", fov=" + currentTradeFov() + ", rotation=" + camera.getYRot() + "/" + camera.getXRot());
+        }
+        require(com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.of(screen).split(),
+                "the immersive layout remains enabled when both sides fit");
+    }
+
+    private static double currentTradeFov() {
+        try {
+            var field = DialogueCameraController.class.getDeclaredField("renderedFov");
+            field.setAccessible(true);
+            return field.getDouble(null);
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
     }
 
     private static void verifyRecipeViewer(net.minecraft.client.gui.screens.Screen screen, boolean hidden) {
@@ -465,8 +516,14 @@ public final class DialogueCameraClientSmoke {
             for (boolean right : new boolean[] {false, true}) {
                 boolean split = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.fitsHalf(width, 360, 276, 166, 20);
                 int left = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.left(width, 276, 20, right, split);
-                if (split) require(Math.abs(left - 20 + 148 - (right ? width * 3 / 4 : width / 4)) <= 1,
-                        "the extended panel is centered in either screen half");
+                if (split) {
+                    require(Math.abs(left - 20 + 148 - width * (right ? 0.625 : 0.375)) <= 1,
+                            "the extended panel is centered between the villager and the opposite edge");
+                    double merchantX = width * (right ? 0.35 : 0.65);
+                    left = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.left(width, 276, 20, right, true, merchantX);
+                    require(Math.abs(left - 20 + 148 - (merchantX + (right ? width : 0)) / 2) <= 1,
+                            "the anchor follows the villager's projected screen position on either side");
+                }
             }
         }
         for (double aspect : new double[] {4.0 / 3, 16.0 / 9, 21.0 / 9}) {
@@ -486,12 +543,23 @@ public final class DialogueCameraClientSmoke {
         }
         for (double fov : new double[] {40, 70, 96, 110}) {
             double near = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, 1, 1.95);
-            double edge = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, 2.001, 1.95);
             double far = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, 5, 1.95);
-            require(near == fov && Math.abs(edge - near) < 0.001, "close merchants avoid extra zoom without a threshold jump");
-            require(far <= fov && far >= Math.min(55, fov), "distant zoom respects the configured FOV");
-            require(com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, 3, 4) >= far,
-                    "tall merchants retain enough vertical space");
+            require(near <= fov && (fov <= 40 || near < fov), "near merchants keep a gentle zoom without widening narrow FOV settings");
+            require(far <= near && far >= Math.min(55, fov), "distant zoom respects the configured FOV");
+            for (double distance : new double[] {1, 2, 3, 5}) {
+                double before = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, distance - 0.0001, 1.95);
+                double after = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.targetFov(fov, distance + 0.0001, 1.95);
+                require(Math.abs(after - before) < 0.01, "distance-based zoom has no threshold jumps");
+            }
+            double minimum = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.minimumDistance(1.95, near, 16.0 / 9, 0.6);
+            var aim = new Vec3(0, 1.17, 0);
+            var eye = new Vec3(0, 1.62, -0.5);
+            var pulled = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.cameraPosition(eye, aim, minimum, 0);
+            require(pulled.distanceTo(aim) >= minimum - 0.001 && pulled.y == eye.y,
+                    "close-range pullback keeps the villager in frame without changing camera height");
+            eye = new Vec3(0, 1.62, -8);
+            require(com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.cameraPosition(eye, aim, minimum, 0).equals(eye),
+                    "distant merchants do not pull the camera back unnecessarily");
         }
         require(!com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.fitsHalf(1280, 170, 276, 166, 20),
                 "short windows use the centered fallback");

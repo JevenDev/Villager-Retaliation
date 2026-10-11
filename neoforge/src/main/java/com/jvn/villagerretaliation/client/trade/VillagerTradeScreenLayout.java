@@ -14,6 +14,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.phys.Vec3;
 
@@ -43,7 +44,7 @@ public final class VillagerTradeScreenLayout {
         }
         int extension = VillagerRetaliationServerConfigClient.skillTradeFeaturesEnabled() ? 20 : 0;
         split = eligible() && fitsHalf(screen.width, screen.height, screen.getXSize(), screen.getYSize(), extension);
-        int left = left(screen.width, screen.getXSize(), extension, right, split);
+        int left = left(screen.width, screen.getXSize(), extension, right, split, merchantX(screen.width));
         int delta = left - screen.getGuiLeft();
         if (delta == 0) return;
         ((AbstractContainerScreenAccessor) screen).villagerretaliation$setLeftPos(left);
@@ -59,11 +60,10 @@ public final class VillagerTradeScreenLayout {
     }
 
     public static double targetFov(double baseFov, double distance, double height) {
-        double progress = Math.clamp((distance - 2) / 3, 0, 1);
+        double progress = Math.clamp((distance / Math.max(0.1, height) - 0.75) / 1.75, 0, 1);
         progress *= progress * (3 - 2 * progress);
-        double zoomed = Mth.lerp(progress, baseFov, Math.min(baseFov, 55));
-        double fitted = Math.toDegrees(2 * Math.atan2(height * 0.75, Math.max(0.1, distance)));
-        return Math.max(zoomed, Math.min(baseFov, fitted));
+        double nearFov = Math.min(baseFov, Math.max(40, baseFov * 0.85));
+        return Mth.lerp(progress, nearFov, Math.min(nearFov, 55));
     }
 
     private boolean eligible() {
@@ -87,9 +87,56 @@ public final class VillagerTradeScreenLayout {
     }
 
     public static int left(int width, int panelWidth, int extension, boolean right, boolean split) {
-        int center = split ? (right ? width * 3 / 4 : width / 4) : width / 2;
+        return left(width, panelWidth, extension, right, split, width * (right ? 0.25 : 0.75));
+    }
+
+    public static int left(int width, int panelWidth, int extension, boolean right, boolean split, double merchantX) {
+        int center = split ? (int) Math.round((merchantX + (right ? width : 0)) * 0.5) : width / 2;
         return Math.clamp(center - (panelWidth + extension) / 2 + extension,
                 Math.min(extension, Math.max(0, width - panelWidth)), Math.max(0, width - panelWidth));
+    }
+
+    public static Vec3 focus(Entity merchant, float partialTick) {
+        return merchant.getPosition(partialTick).add(0, merchant.getBbHeight() * 0.6, 0);
+    }
+
+    private double merchantX(int width) {
+        double fallback = width * (right ? 0.25 : 0.75);
+        var view = DialogueCameraController.renderedPose();
+        if (merchant == null || view == null) return fallback;
+        var minecraft = Minecraft.getInstance();
+        Vec3 relative = focus(merchant, minecraft.getTimer().getGameTimeDeltaPartialTick(false)).subtract(view.position());
+        Vec3 forward = Vec3.directionFromRotation(view.pitch(), view.yaw());
+        double depth = relative.dot(forward);
+        if (depth <= 0.01) return fallback;
+        double aspect = (double) minecraft.getWindow().getWidth() / Math.max(1, minecraft.getWindow().getHeight());
+        double projected = relative.dot(Vec3.directionFromRotation(0, view.yaw() + 90))
+                / (depth * aspect * Math.tan(Math.toRadians(view.fov()) / 2));
+        return Math.clamp((1 + projected) * width * 0.5, right ? 0 : width * 0.5, right ? width * 0.5 : width);
+    }
+
+    public Vec3 cameraPosition(MerchantScreen screen, Vec3 eye, Vec3 aim, double fov) {
+        var minecraft = Minecraft.getInstance();
+        double fraction = Math.clamp((double) screen.getYSize() / screen.height * 1.25, 0.5, 0.7);
+        double aspect = (double) minecraft.getWindow().getWidth() / Math.max(1, minecraft.getWindow().getHeight());
+        return cameraPosition(eye, aim, minimumDistance(merchant.getBbHeight(), fov, aspect, fraction), minecraft.player.getYRot());
+    }
+
+    public static double minimumDistance(double height, double fov, double aspect, double fraction) {
+        double tangent = Math.tan(Math.toRadians(fov) / 2);
+        // account for the reduced depth when the villager is framed to one side
+        double side = 0.5 * aspect * tangent;
+        return height * Math.sqrt(1 + side * side) / (2 * fraction * tangent);
+    }
+
+    public static Vec3 cameraPosition(Vec3 eye, Vec3 aim, double minimumDistance, float yaw) {
+        Vec3 horizontal = eye.subtract(aim).multiply(1, 0, 1);
+        double distance = horizontal.length();
+        Vec3 direction = distance < 0.001 ? Vec3.directionFromRotation(0, yaw).scale(-1) : horizontal.scale(1 / distance);
+        double vertical = eye.y - aim.y;
+        double required = Math.sqrt(Math.max(0, minimumDistance * minimumDistance - vertical * vertical));
+        double pullback = Math.max(distance, required);
+        return new Vec3(aim.x + direction.x * pullback, eye.y, aim.z + direction.z * pullback);
     }
 
     public ToucanCameraBasis.Rotation rotation(Vec3 position, Vec3 focus, float yaw, float pitch, double fov) {

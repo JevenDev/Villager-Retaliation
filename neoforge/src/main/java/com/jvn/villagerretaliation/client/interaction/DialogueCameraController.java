@@ -54,6 +54,9 @@ public final class DialogueCameraController {
     }
 
     public static boolean active() { return timeline != null || tradeMotion != null; }
+    public static Pose renderedPose() {
+        return pose != null ? pose : renderedLevel.get() == Minecraft.getInstance().level ? lastRendered : null;
+    }
 
     static VillagerInteractionScreen screen() {
         var screen = Minecraft.getInstance().screen;
@@ -167,10 +170,12 @@ public final class DialogueCameraController {
         var minecraft = Minecraft.getInstance();
         Pose target;
         if (trading && minecraft.screen instanceof MerchantScreen trade) {
-            Vec3 position = minecraft.player.getEyePosition(partialTick);
-            Vec3 aim = focus(speaker, partialTick);
-            double fov = VillagerTradeScreenLayout.targetFov(baseFov, position.distanceTo(aim), speaker.getBbHeight());
-            var rotation = VillagerTradeScreenLayout.of(trade).rotation(position, aim, camera.getYRot(), camera.getXRot(), fov);
+            Vec3 eye = minecraft.player.getEyePosition(partialTick);
+            Vec3 aim = VillagerTradeScreenLayout.focus(speaker, partialTick);
+            double fov = VillagerTradeScreenLayout.targetFov(baseFov, eye.distanceTo(aim), speaker.getBbHeight());
+            var layout = VillagerTradeScreenLayout.of(trade);
+            Vec3 position = DialogueCamera.clamp(layout.cameraPosition(trade, eye, aim, fov), minecraft.player.getPosition(partialTick));
+            var rotation = layout.rotation(position, aim, camera.getYRot(), camera.getXRot(), fov);
             target = new Pose(position, rotation.yaw(), rotation.pitch(), fov);
         } else {
             releaseSeconds += seconds;
