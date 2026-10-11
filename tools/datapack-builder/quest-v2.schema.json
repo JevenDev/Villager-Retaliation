@@ -990,9 +990,599 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 256
+              },
+              "camera": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "target"
+                    ],
+                    "properties": {
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "none"
+                        ]
+                      },
+                      "zoom": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 0.45
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "target": {
+                          "const": "none"
+                        }
+                      }
+                    },
+                    "then": {
+                      "not": {
+                        "required": [
+                          "zoom"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "preset"
+                    ],
+                    "properties": {
+                      "preset": {
+                        "enum": [
+                          "first_person",
+                          "third_person",
+                          "over_shoulder_left",
+                          "over_shoulder_right",
+                          "birds_eye",
+                          "behind",
+                          "telescope",
+                          "speaker_facing",
+                          "custom"
+                        ]
+                      },
+                      "anchor": {
+                        "enum": [
+                          "player",
+                          "speaker"
+                        ]
+                      },
+                      "placement": {
+                        "enum": [
+                          "relative",
+                          "fixed"
+                        ]
+                      },
+                      "perspective": {
+                        "enum": [
+                          "first_person",
+                          "third_person"
+                        ]
+                      },
+                      "offset": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -8,
+                          "maximum": 8
+                        }
+                      },
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "group"
+                        ]
+                      },
+                      "fov": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 110
+                      },
+                      "hold_seconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 600
+                      },
+                      "transition": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "cut"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type",
+                              "duration_seconds"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "lerp"
+                              },
+                              "duration_seconds": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 600
+                              },
+                              "easing": {
+                                "enum": [
+                                  "linear",
+                                  "smoothstep"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "preset": {
+                          "const": "custom"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "anchor",
+                        "offset",
+                        "perspective"
+                      ]
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "shots"
+                    ],
+                    "properties": {
+                      "shots": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 32,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "preset"
+                          ],
+                          "properties": {
+                            "preset": {
+                              "enum": [
+                                "first_person",
+                                "third_person",
+                                "over_shoulder_left",
+                                "over_shoulder_right",
+                                "birds_eye",
+                                "behind",
+                                "telescope",
+                                "speaker_facing",
+                                "custom"
+                              ]
+                            },
+                            "anchor": {
+                              "enum": [
+                                "player",
+                                "speaker"
+                              ]
+                            },
+                            "placement": {
+                              "enum": [
+                                "relative",
+                                "fixed"
+                              ]
+                            },
+                            "perspective": {
+                              "enum": [
+                                "first_person",
+                                "third_person"
+                              ]
+                            },
+                            "offset": {
+                              "type": "array",
+                              "minItems": 3,
+                              "maxItems": 3,
+                              "items": {
+                                "type": "number",
+                                "minimum": -8,
+                                "maximum": 8
+                              }
+                            },
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "group"
+                              ]
+                            },
+                            "fov": {
+                              "type": "number",
+                              "minimum": 10,
+                              "maximum": 110
+                            },
+                            "hold_seconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 600
+                            },
+                            "transition": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "type"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "const": "cut"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "type",
+                                    "duration_seconds"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "const": "lerp"
+                                    },
+                                    "duration_seconds": {
+                                      "type": "number",
+                                      "minimum": 0.001,
+                                      "maximum": 600
+                                    },
+                                    "easing": {
+                                      "enum": [
+                                        "linear",
+                                        "smoothstep"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "if": {
+                            "properties": {
+                              "preset": {
+                                "const": "custom"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": [
+                              "anchor",
+                              "offset",
+                              "perspective"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             }
           }
+        },
+        "camera": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "target"
+              ],
+              "properties": {
+                "target": {
+                  "enum": [
+                    "speaker",
+                    "character",
+                    "none"
+                  ]
+                },
+                "zoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.45
+                }
+              },
+              "if": {
+                "properties": {
+                  "target": {
+                    "const": "none"
+                  }
+                }
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "zoom"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "preset"
+              ],
+              "properties": {
+                "preset": {
+                  "enum": [
+                    "first_person",
+                    "third_person",
+                    "over_shoulder_left",
+                    "over_shoulder_right",
+                    "birds_eye",
+                    "behind",
+                    "telescope",
+                    "speaker_facing",
+                    "custom"
+                  ]
+                },
+                "anchor": {
+                  "enum": [
+                    "player",
+                    "speaker"
+                  ]
+                },
+                "placement": {
+                  "enum": [
+                    "relative",
+                    "fixed"
+                  ]
+                },
+                "perspective": {
+                  "enum": [
+                    "first_person",
+                    "third_person"
+                  ]
+                },
+                "offset": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": -8,
+                    "maximum": 8
+                  }
+                },
+                "target": {
+                  "enum": [
+                    "speaker",
+                    "character",
+                    "group"
+                  ]
+                },
+                "fov": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 110
+                },
+                "hold_seconds": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 600
+                },
+                "transition": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type"
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "cut"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type",
+                        "duration_seconds"
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "lerp"
+                        },
+                        "duration_seconds": {
+                          "type": "number",
+                          "minimum": 0.001,
+                          "maximum": 600
+                        },
+                        "easing": {
+                          "enum": [
+                            "linear",
+                            "smoothstep"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "if": {
+                "properties": {
+                  "preset": {
+                    "const": "custom"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "anchor",
+                  "offset",
+                  "perspective"
+                ]
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "shots"
+              ],
+              "properties": {
+                "shots": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 32,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "preset"
+                    ],
+                    "properties": {
+                      "preset": {
+                        "enum": [
+                          "first_person",
+                          "third_person",
+                          "over_shoulder_left",
+                          "over_shoulder_right",
+                          "birds_eye",
+                          "behind",
+                          "telescope",
+                          "speaker_facing",
+                          "custom"
+                        ]
+                      },
+                      "anchor": {
+                        "enum": [
+                          "player",
+                          "speaker"
+                        ]
+                      },
+                      "placement": {
+                        "enum": [
+                          "relative",
+                          "fixed"
+                        ]
+                      },
+                      "perspective": {
+                        "enum": [
+                          "first_person",
+                          "third_person"
+                        ]
+                      },
+                      "offset": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -8,
+                          "maximum": 8
+                        }
+                      },
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "group"
+                        ]
+                      },
+                      "fov": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 110
+                      },
+                      "hold_seconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 600
+                      },
+                      "transition": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "cut"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type",
+                              "duration_seconds"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "lerp"
+                              },
+                              "duration_seconds": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 600
+                              },
+                              "easing": {
+                                "enum": [
+                                  "linear",
+                                  "smoothstep"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "preset": {
+                          "const": "custom"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "anchor",
+                        "offset",
+                        "perspective"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
         },
         "responses": {
           "type": "array",
@@ -2263,9 +2853,599 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 256
+              },
+              "camera": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "target"
+                    ],
+                    "properties": {
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "none"
+                        ]
+                      },
+                      "zoom": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 0.45
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "target": {
+                          "const": "none"
+                        }
+                      }
+                    },
+                    "then": {
+                      "not": {
+                        "required": [
+                          "zoom"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "preset"
+                    ],
+                    "properties": {
+                      "preset": {
+                        "enum": [
+                          "first_person",
+                          "third_person",
+                          "over_shoulder_left",
+                          "over_shoulder_right",
+                          "birds_eye",
+                          "behind",
+                          "telescope",
+                          "speaker_facing",
+                          "custom"
+                        ]
+                      },
+                      "anchor": {
+                        "enum": [
+                          "player",
+                          "speaker"
+                        ]
+                      },
+                      "placement": {
+                        "enum": [
+                          "relative",
+                          "fixed"
+                        ]
+                      },
+                      "perspective": {
+                        "enum": [
+                          "first_person",
+                          "third_person"
+                        ]
+                      },
+                      "offset": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -8,
+                          "maximum": 8
+                        }
+                      },
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "group"
+                        ]
+                      },
+                      "fov": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 110
+                      },
+                      "hold_seconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 600
+                      },
+                      "transition": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "cut"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type",
+                              "duration_seconds"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "lerp"
+                              },
+                              "duration_seconds": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 600
+                              },
+                              "easing": {
+                                "enum": [
+                                  "linear",
+                                  "smoothstep"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "preset": {
+                          "const": "custom"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "anchor",
+                        "offset",
+                        "perspective"
+                      ]
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "shots"
+                    ],
+                    "properties": {
+                      "shots": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 32,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "preset"
+                          ],
+                          "properties": {
+                            "preset": {
+                              "enum": [
+                                "first_person",
+                                "third_person",
+                                "over_shoulder_left",
+                                "over_shoulder_right",
+                                "birds_eye",
+                                "behind",
+                                "telescope",
+                                "speaker_facing",
+                                "custom"
+                              ]
+                            },
+                            "anchor": {
+                              "enum": [
+                                "player",
+                                "speaker"
+                              ]
+                            },
+                            "placement": {
+                              "enum": [
+                                "relative",
+                                "fixed"
+                              ]
+                            },
+                            "perspective": {
+                              "enum": [
+                                "first_person",
+                                "third_person"
+                              ]
+                            },
+                            "offset": {
+                              "type": "array",
+                              "minItems": 3,
+                              "maxItems": 3,
+                              "items": {
+                                "type": "number",
+                                "minimum": -8,
+                                "maximum": 8
+                              }
+                            },
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "group"
+                              ]
+                            },
+                            "fov": {
+                              "type": "number",
+                              "minimum": 10,
+                              "maximum": 110
+                            },
+                            "hold_seconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 600
+                            },
+                            "transition": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "type"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "const": "cut"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "type",
+                                    "duration_seconds"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "const": "lerp"
+                                    },
+                                    "duration_seconds": {
+                                      "type": "number",
+                                      "minimum": 0.001,
+                                      "maximum": 600
+                                    },
+                                    "easing": {
+                                      "enum": [
+                                        "linear",
+                                        "smoothstep"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "if": {
+                            "properties": {
+                              "preset": {
+                                "const": "custom"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": [
+                              "anchor",
+                              "offset",
+                              "perspective"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             }
           }
+        },
+        "camera": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "target"
+              ],
+              "properties": {
+                "target": {
+                  "enum": [
+                    "speaker",
+                    "character",
+                    "none"
+                  ]
+                },
+                "zoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.45
+                }
+              },
+              "if": {
+                "properties": {
+                  "target": {
+                    "const": "none"
+                  }
+                }
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "zoom"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "preset"
+              ],
+              "properties": {
+                "preset": {
+                  "enum": [
+                    "first_person",
+                    "third_person",
+                    "over_shoulder_left",
+                    "over_shoulder_right",
+                    "birds_eye",
+                    "behind",
+                    "telescope",
+                    "speaker_facing",
+                    "custom"
+                  ]
+                },
+                "anchor": {
+                  "enum": [
+                    "player",
+                    "speaker"
+                  ]
+                },
+                "placement": {
+                  "enum": [
+                    "relative",
+                    "fixed"
+                  ]
+                },
+                "perspective": {
+                  "enum": [
+                    "first_person",
+                    "third_person"
+                  ]
+                },
+                "offset": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": -8,
+                    "maximum": 8
+                  }
+                },
+                "target": {
+                  "enum": [
+                    "speaker",
+                    "character",
+                    "group"
+                  ]
+                },
+                "fov": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 110
+                },
+                "hold_seconds": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 600
+                },
+                "transition": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type"
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "cut"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type",
+                        "duration_seconds"
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "lerp"
+                        },
+                        "duration_seconds": {
+                          "type": "number",
+                          "minimum": 0.001,
+                          "maximum": 600
+                        },
+                        "easing": {
+                          "enum": [
+                            "linear",
+                            "smoothstep"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "if": {
+                "properties": {
+                  "preset": {
+                    "const": "custom"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "anchor",
+                  "offset",
+                  "perspective"
+                ]
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "shots"
+              ],
+              "properties": {
+                "shots": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 32,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "preset"
+                    ],
+                    "properties": {
+                      "preset": {
+                        "enum": [
+                          "first_person",
+                          "third_person",
+                          "over_shoulder_left",
+                          "over_shoulder_right",
+                          "birds_eye",
+                          "behind",
+                          "telescope",
+                          "speaker_facing",
+                          "custom"
+                        ]
+                      },
+                      "anchor": {
+                        "enum": [
+                          "player",
+                          "speaker"
+                        ]
+                      },
+                      "placement": {
+                        "enum": [
+                          "relative",
+                          "fixed"
+                        ]
+                      },
+                      "perspective": {
+                        "enum": [
+                          "first_person",
+                          "third_person"
+                        ]
+                      },
+                      "offset": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -8,
+                          "maximum": 8
+                        }
+                      },
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "group"
+                        ]
+                      },
+                      "fov": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 110
+                      },
+                      "hold_seconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 600
+                      },
+                      "transition": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "cut"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type",
+                              "duration_seconds"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "lerp"
+                              },
+                              "duration_seconds": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 600
+                              },
+                              "easing": {
+                                "enum": [
+                                  "linear",
+                                  "smoothstep"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "preset": {
+                          "const": "custom"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "anchor",
+                        "offset",
+                        "perspective"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
         },
         "responses": {
           "type": "array",
@@ -2440,9 +3620,599 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 256
+              },
+              "camera": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "target"
+                    ],
+                    "properties": {
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "none"
+                        ]
+                      },
+                      "zoom": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 0.45
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "target": {
+                          "const": "none"
+                        }
+                      }
+                    },
+                    "then": {
+                      "not": {
+                        "required": [
+                          "zoom"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "preset"
+                    ],
+                    "properties": {
+                      "preset": {
+                        "enum": [
+                          "first_person",
+                          "third_person",
+                          "over_shoulder_left",
+                          "over_shoulder_right",
+                          "birds_eye",
+                          "behind",
+                          "telescope",
+                          "speaker_facing",
+                          "custom"
+                        ]
+                      },
+                      "anchor": {
+                        "enum": [
+                          "player",
+                          "speaker"
+                        ]
+                      },
+                      "placement": {
+                        "enum": [
+                          "relative",
+                          "fixed"
+                        ]
+                      },
+                      "perspective": {
+                        "enum": [
+                          "first_person",
+                          "third_person"
+                        ]
+                      },
+                      "offset": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -8,
+                          "maximum": 8
+                        }
+                      },
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "group"
+                        ]
+                      },
+                      "fov": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 110
+                      },
+                      "hold_seconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 600
+                      },
+                      "transition": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "cut"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type",
+                              "duration_seconds"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "lerp"
+                              },
+                              "duration_seconds": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 600
+                              },
+                              "easing": {
+                                "enum": [
+                                  "linear",
+                                  "smoothstep"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "preset": {
+                          "const": "custom"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "anchor",
+                        "offset",
+                        "perspective"
+                      ]
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "shots"
+                    ],
+                    "properties": {
+                      "shots": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 32,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "preset"
+                          ],
+                          "properties": {
+                            "preset": {
+                              "enum": [
+                                "first_person",
+                                "third_person",
+                                "over_shoulder_left",
+                                "over_shoulder_right",
+                                "birds_eye",
+                                "behind",
+                                "telescope",
+                                "speaker_facing",
+                                "custom"
+                              ]
+                            },
+                            "anchor": {
+                              "enum": [
+                                "player",
+                                "speaker"
+                              ]
+                            },
+                            "placement": {
+                              "enum": [
+                                "relative",
+                                "fixed"
+                              ]
+                            },
+                            "perspective": {
+                              "enum": [
+                                "first_person",
+                                "third_person"
+                              ]
+                            },
+                            "offset": {
+                              "type": "array",
+                              "minItems": 3,
+                              "maxItems": 3,
+                              "items": {
+                                "type": "number",
+                                "minimum": -8,
+                                "maximum": 8
+                              }
+                            },
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "group"
+                              ]
+                            },
+                            "fov": {
+                              "type": "number",
+                              "minimum": 10,
+                              "maximum": 110
+                            },
+                            "hold_seconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 600
+                            },
+                            "transition": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "type"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "const": "cut"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "type",
+                                    "duration_seconds"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "const": "lerp"
+                                    },
+                                    "duration_seconds": {
+                                      "type": "number",
+                                      "minimum": 0.001,
+                                      "maximum": 600
+                                    },
+                                    "easing": {
+                                      "enum": [
+                                        "linear",
+                                        "smoothstep"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "if": {
+                            "properties": {
+                              "preset": {
+                                "const": "custom"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": [
+                              "anchor",
+                              "offset",
+                              "perspective"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             }
           }
+        },
+        "camera": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "target"
+              ],
+              "properties": {
+                "target": {
+                  "enum": [
+                    "speaker",
+                    "character",
+                    "none"
+                  ]
+                },
+                "zoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.45
+                }
+              },
+              "if": {
+                "properties": {
+                  "target": {
+                    "const": "none"
+                  }
+                }
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "zoom"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "preset"
+              ],
+              "properties": {
+                "preset": {
+                  "enum": [
+                    "first_person",
+                    "third_person",
+                    "over_shoulder_left",
+                    "over_shoulder_right",
+                    "birds_eye",
+                    "behind",
+                    "telescope",
+                    "speaker_facing",
+                    "custom"
+                  ]
+                },
+                "anchor": {
+                  "enum": [
+                    "player",
+                    "speaker"
+                  ]
+                },
+                "placement": {
+                  "enum": [
+                    "relative",
+                    "fixed"
+                  ]
+                },
+                "perspective": {
+                  "enum": [
+                    "first_person",
+                    "third_person"
+                  ]
+                },
+                "offset": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": -8,
+                    "maximum": 8
+                  }
+                },
+                "target": {
+                  "enum": [
+                    "speaker",
+                    "character",
+                    "group"
+                  ]
+                },
+                "fov": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 110
+                },
+                "hold_seconds": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 600
+                },
+                "transition": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type"
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "cut"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type",
+                        "duration_seconds"
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "lerp"
+                        },
+                        "duration_seconds": {
+                          "type": "number",
+                          "minimum": 0.001,
+                          "maximum": 600
+                        },
+                        "easing": {
+                          "enum": [
+                            "linear",
+                            "smoothstep"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "if": {
+                "properties": {
+                  "preset": {
+                    "const": "custom"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "anchor",
+                  "offset",
+                  "perspective"
+                ]
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "shots"
+              ],
+              "properties": {
+                "shots": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 32,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "preset"
+                    ],
+                    "properties": {
+                      "preset": {
+                        "enum": [
+                          "first_person",
+                          "third_person",
+                          "over_shoulder_left",
+                          "over_shoulder_right",
+                          "birds_eye",
+                          "behind",
+                          "telescope",
+                          "speaker_facing",
+                          "custom"
+                        ]
+                      },
+                      "anchor": {
+                        "enum": [
+                          "player",
+                          "speaker"
+                        ]
+                      },
+                      "placement": {
+                        "enum": [
+                          "relative",
+                          "fixed"
+                        ]
+                      },
+                      "perspective": {
+                        "enum": [
+                          "first_person",
+                          "third_person"
+                        ]
+                      },
+                      "offset": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -8,
+                          "maximum": 8
+                        }
+                      },
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "group"
+                        ]
+                      },
+                      "fov": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 110
+                      },
+                      "hold_seconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 600
+                      },
+                      "transition": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "cut"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type",
+                              "duration_seconds"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "lerp"
+                              },
+                              "duration_seconds": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 600
+                              },
+                              "easing": {
+                                "enum": [
+                                  "linear",
+                                  "smoothstep"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "preset": {
+                          "const": "custom"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "anchor",
+                        "offset",
+                        "perspective"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
         },
         "responses": {
           "type": "array",
@@ -2622,9 +4392,599 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 256
+              },
+              "camera": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "target"
+                    ],
+                    "properties": {
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "none"
+                        ]
+                      },
+                      "zoom": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 0.45
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "target": {
+                          "const": "none"
+                        }
+                      }
+                    },
+                    "then": {
+                      "not": {
+                        "required": [
+                          "zoom"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "preset"
+                    ],
+                    "properties": {
+                      "preset": {
+                        "enum": [
+                          "first_person",
+                          "third_person",
+                          "over_shoulder_left",
+                          "over_shoulder_right",
+                          "birds_eye",
+                          "behind",
+                          "telescope",
+                          "speaker_facing",
+                          "custom"
+                        ]
+                      },
+                      "anchor": {
+                        "enum": [
+                          "player",
+                          "speaker"
+                        ]
+                      },
+                      "placement": {
+                        "enum": [
+                          "relative",
+                          "fixed"
+                        ]
+                      },
+                      "perspective": {
+                        "enum": [
+                          "first_person",
+                          "third_person"
+                        ]
+                      },
+                      "offset": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -8,
+                          "maximum": 8
+                        }
+                      },
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "group"
+                        ]
+                      },
+                      "fov": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 110
+                      },
+                      "hold_seconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 600
+                      },
+                      "transition": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "cut"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type",
+                              "duration_seconds"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "lerp"
+                              },
+                              "duration_seconds": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 600
+                              },
+                              "easing": {
+                                "enum": [
+                                  "linear",
+                                  "smoothstep"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "preset": {
+                          "const": "custom"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "anchor",
+                        "offset",
+                        "perspective"
+                      ]
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "shots"
+                    ],
+                    "properties": {
+                      "shots": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 32,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "preset"
+                          ],
+                          "properties": {
+                            "preset": {
+                              "enum": [
+                                "first_person",
+                                "third_person",
+                                "over_shoulder_left",
+                                "over_shoulder_right",
+                                "birds_eye",
+                                "behind",
+                                "telescope",
+                                "speaker_facing",
+                                "custom"
+                              ]
+                            },
+                            "anchor": {
+                              "enum": [
+                                "player",
+                                "speaker"
+                              ]
+                            },
+                            "placement": {
+                              "enum": [
+                                "relative",
+                                "fixed"
+                              ]
+                            },
+                            "perspective": {
+                              "enum": [
+                                "first_person",
+                                "third_person"
+                              ]
+                            },
+                            "offset": {
+                              "type": "array",
+                              "minItems": 3,
+                              "maxItems": 3,
+                              "items": {
+                                "type": "number",
+                                "minimum": -8,
+                                "maximum": 8
+                              }
+                            },
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "group"
+                              ]
+                            },
+                            "fov": {
+                              "type": "number",
+                              "minimum": 10,
+                              "maximum": 110
+                            },
+                            "hold_seconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 600
+                            },
+                            "transition": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "type"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "const": "cut"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "type",
+                                    "duration_seconds"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "const": "lerp"
+                                    },
+                                    "duration_seconds": {
+                                      "type": "number",
+                                      "minimum": 0.001,
+                                      "maximum": 600
+                                    },
+                                    "easing": {
+                                      "enum": [
+                                        "linear",
+                                        "smoothstep"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "if": {
+                            "properties": {
+                              "preset": {
+                                "const": "custom"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": [
+                              "anchor",
+                              "offset",
+                              "perspective"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             }
           }
+        },
+        "camera": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "target"
+              ],
+              "properties": {
+                "target": {
+                  "enum": [
+                    "speaker",
+                    "character",
+                    "none"
+                  ]
+                },
+                "zoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.45
+                }
+              },
+              "if": {
+                "properties": {
+                  "target": {
+                    "const": "none"
+                  }
+                }
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "zoom"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "preset"
+              ],
+              "properties": {
+                "preset": {
+                  "enum": [
+                    "first_person",
+                    "third_person",
+                    "over_shoulder_left",
+                    "over_shoulder_right",
+                    "birds_eye",
+                    "behind",
+                    "telescope",
+                    "speaker_facing",
+                    "custom"
+                  ]
+                },
+                "anchor": {
+                  "enum": [
+                    "player",
+                    "speaker"
+                  ]
+                },
+                "placement": {
+                  "enum": [
+                    "relative",
+                    "fixed"
+                  ]
+                },
+                "perspective": {
+                  "enum": [
+                    "first_person",
+                    "third_person"
+                  ]
+                },
+                "offset": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": -8,
+                    "maximum": 8
+                  }
+                },
+                "target": {
+                  "enum": [
+                    "speaker",
+                    "character",
+                    "group"
+                  ]
+                },
+                "fov": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 110
+                },
+                "hold_seconds": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 600
+                },
+                "transition": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type"
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "cut"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type",
+                        "duration_seconds"
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "lerp"
+                        },
+                        "duration_seconds": {
+                          "type": "number",
+                          "minimum": 0.001,
+                          "maximum": 600
+                        },
+                        "easing": {
+                          "enum": [
+                            "linear",
+                            "smoothstep"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "if": {
+                "properties": {
+                  "preset": {
+                    "const": "custom"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "anchor",
+                  "offset",
+                  "perspective"
+                ]
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "shots"
+              ],
+              "properties": {
+                "shots": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 32,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "preset"
+                    ],
+                    "properties": {
+                      "preset": {
+                        "enum": [
+                          "first_person",
+                          "third_person",
+                          "over_shoulder_left",
+                          "over_shoulder_right",
+                          "birds_eye",
+                          "behind",
+                          "telescope",
+                          "speaker_facing",
+                          "custom"
+                        ]
+                      },
+                      "anchor": {
+                        "enum": [
+                          "player",
+                          "speaker"
+                        ]
+                      },
+                      "placement": {
+                        "enum": [
+                          "relative",
+                          "fixed"
+                        ]
+                      },
+                      "perspective": {
+                        "enum": [
+                          "first_person",
+                          "third_person"
+                        ]
+                      },
+                      "offset": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -8,
+                          "maximum": 8
+                        }
+                      },
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "group"
+                        ]
+                      },
+                      "fov": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 110
+                      },
+                      "hold_seconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 600
+                      },
+                      "transition": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "cut"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "type",
+                              "duration_seconds"
+                            ],
+                            "properties": {
+                              "type": {
+                                "const": "lerp"
+                              },
+                              "duration_seconds": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 600
+                              },
+                              "easing": {
+                                "enum": [
+                                  "linear",
+                                  "smoothstep"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "preset": {
+                          "const": "custom"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "anchor",
+                        "offset",
+                        "perspective"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
         },
         "conditions": {
           "type": "array",

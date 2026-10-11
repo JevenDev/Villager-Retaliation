@@ -21,7 +21,8 @@ public record DialogueTextVariant(
         double chance,
         List<DialogueCondition> conditions,
         DialogueEntryMetadata metadata,
-        DialogueUsagePolicy usage
+        DialogueUsagePolicy usage,
+        com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera
 ) {
     public DialogueTextVariant {
         id = id == null ? "" : id.trim();
@@ -32,6 +33,16 @@ public record DialogueTextVariant(
         conditions = conditions == null ? List.of() : List.copyOf(conditions);
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
         usage = usage == null ? DialogueUsagePolicy.DEFAULT : usage;
+    }
+
+    public DialogueTextVariant(String id, String text, String textKey, int priority, int weight, double chance,
+            List<DialogueCondition> conditions, DialogueEntryMetadata metadata, DialogueUsagePolicy usage) {
+        this(id, text, textKey, priority, weight, chance, conditions, metadata, usage, null);
+    }
+
+    public DialogueTextVariant withDefaultCamera(com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera fallback) {
+        return camera != null || fallback == null ? this
+                : new DialogueTextVariant(id, text, textKey, priority, weight, chance, conditions, metadata, usage, fallback);
     }
 
     public boolean matches(DialogueContext context) {
@@ -106,7 +117,7 @@ public record DialogueTextVariant(
                         DatapackJsonReader.readDouble(object, "chance", 1.0D),
                         DialogueCondition.readList(location, context + " variant[" + index + "]", object, defaultQuestId),
                         metadata,
-                        DialogueUsagePolicy.read(object, inheritedUsage)));
+                        DialogueUsagePolicy.read(object, inheritedUsage), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(object)));
             }
             index++;
         }

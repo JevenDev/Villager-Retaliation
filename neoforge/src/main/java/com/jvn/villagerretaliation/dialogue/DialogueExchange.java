@@ -13,9 +13,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public record DialogueExchange(ConversationDefinition.SpeakerKind speaker, String text, String textKey) {
+public record DialogueExchange(ConversationDefinition.SpeakerKind speaker, String text, String textKey, com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera) {
+    public DialogueExchange(ConversationDefinition.SpeakerKind speaker, String text, String textKey) { this(speaker, text, textKey, null); }
     public static JsonObject schema() {
-        return JsonParser.parseString("""
+        var schema = JsonParser.parseString("""
                 {"type":"array","minItems":1,"maxItems":64,"items":{
                   "type":"object","additionalProperties":false,"required":["speaker","text"],"properties":{
                     "id":{"type":"string","minLength":1,"maxLength":256},
@@ -29,6 +30,8 @@ public record DialogueExchange(ConversationDefinition.SpeakerKind speaker, Strin
                     "text_key":{"type":"string","minLength":1,"maxLength":256}
                   }}}
                 """).getAsJsonObject();
+        schema.getAsJsonObject("items").getAsJsonObject("properties").add("camera", DialogueCamera.schema());
+        return schema;
     }
 
     public static List<DialogueExchange> read(JsonObject data) {
@@ -42,7 +45,7 @@ public record DialogueExchange(ConversationDefinition.SpeakerKind speaker, Strin
             var text = value.get("text");
             String key = value.has("text_key") ? value.get("text_key").getAsString()
                     : text.isJsonObject() ? text.getAsJsonObject().get("key").getAsString() : "";
-            result.add(new DialogueExchange(kind, text.isJsonPrimitive() ? text.getAsString() : "", key));
+            result.add(new DialogueExchange(kind, text.isJsonPrimitive() ? text.getAsString() : "", key, value.has("camera") ? DialogueCamera.read(value) : DialogueCamera.read(data)));
         }
         return List.copyOf(result);
     }
@@ -53,7 +56,7 @@ public record DialogueExchange(ConversationDefinition.SpeakerKind speaker, Strin
         String line = textKey.isBlank() ? text : VillagerDialogueResources.message(context, textKey).orElse(text);
         line = VillagerDialogueResources.resolveTemplate(line, DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements));
         return new DialogueSpeech(entity == null ? null : entity.getUUID(), entity == null ? -1 : entity.getId(),
-                entity == null ? "" : com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(entity).getString(), DialogueTextSegment.parse(line, DialogueTextEffects.NONE));
+                entity == null ? "" : com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(entity).getString(), DialogueTextSegment.parse(line, DialogueTextEffects.NONE), camera);
     }
 
     public static List<DialogueSpeech> resolve(List<DialogueExchange> exchanges, DialogueContext context, Map<String, String> replacements) {

@@ -953,6 +953,10 @@ public final class ForcedDialogueService {
                 sessionResponseReplacements(session, itemPayment.removal().replacements()));
         var exchanges = resolveForcedExchanges(player, villager, option.exchanges(), session.context(),
                 sessionResponseReplacements(session, itemPayment.removal().replacements()));
+        if (exchanges.isEmpty() && option.camera() != null && !response.isBlank())
+            exchanges = List.of(com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(villager,
+                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(response,
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), option.camera()));
         if (responseReplaced && !exchanges.isEmpty()) exchanges = com.jvn.villagerretaliation.dialogue.DialogueSpeech.replaceSpeakerReply(
                 exchanges, new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
                         VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(response,
@@ -1054,10 +1058,10 @@ public final class ForcedDialogueService {
         var exchanges = new ArrayList<>(leadingExchanges);
         exchanges.addAll(resolveForcedExchanges(player, villager, followUp.exchanges(), session.context(),
                 option.itemPayment().removal().replacements()));
-        if (!exchanges.isEmpty() && followUp.exchanges().isEmpty() && !line.isBlank())
+        if ((!exchanges.isEmpty() || followUp.camera() != null) && followUp.exchanges().isEmpty() && !line.isBlank())
             exchanges.add(new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
                     VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(line,
-                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE)));
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), followUp.camera()));
         openGeneratedOptionSet(player, villager, session, ForcedDialogueRuntime.definitionWithOptions(
                 session.definition().id() + "." + option.id() + ".follow_up", session.definition(),
                 exchanges.isEmpty() ? line : "", followUp.options(), followUp.leaveOption()));
@@ -1247,7 +1251,7 @@ public final class ForcedDialogueService {
                 option.reputationCondition(),
                 option.socialAttributeCondition(),
                 option.conditions(),
-                option.followUp(), option.exchanges());
+                option.followUp(), option.exchanges(), option.camera());
     }
 
     private static Optional<VillagerSpecialOrderService.QueueResult> specialOrderSelectionBlocker(
@@ -2556,7 +2560,7 @@ public final class ForcedDialogueService {
             return new com.jvn.villagerretaliation.dialogue.DialogueSpeech(speaker == null ? null : speaker.getUUID(),
                     speaker == null ? -1 : speaker.getId(), speaker == null ? "" : VillagerPresetNameRegistry.resolveDisplayName(speaker).getString(),
                     com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(text,
-                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE));
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), exchange.camera());
         }).toList();
     }
 
@@ -2564,14 +2568,19 @@ public final class ForcedDialogueService {
             ForcedDialogueContext context, String line) {
         if (!definition.output().exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager,
                 resolveForcedExchanges(player, villager, definition.output().exchanges(), context, Map.of()));
+        else if (!line.isBlank() && definition.output().camera() != null)
+            VillagerInteractionService.sendDialogueExchanges(player, villager, List.of(
+                    com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(villager,
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(line,
+                                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), definition.output().camera())));
         else if (!line.isBlank()) VillagerInteractionService.sendVillagerNotice(player, villager, line);
     }
 
     private static boolean openDialogue(ServerPlayer player, Villager villager, String line, List<DialogueOptionDefinition> options,
             boolean camera, ForcedDialogueDefinition definition, ForcedDialogueContext context) {
         if (!VillagerInteractionService.openForcedDialogue(player, villager, line, options, camera)) return false;
-        if (!definition.output().exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager,
-                resolveForcedExchanges(player, villager, definition.output().exchanges(), context, Map.of()));
+        if (!definition.output().exchanges().isEmpty() || definition.output().camera() != null)
+            sendDefinitionNotice(player, villager, definition, context, line);
         return true;
     }
 

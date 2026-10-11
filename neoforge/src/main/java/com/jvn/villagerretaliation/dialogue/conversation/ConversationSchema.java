@@ -49,6 +49,7 @@ public final class ConversationSchema {
         response.add("oneOf", exclusive("next", "check"));
         definitions.add("response", response);
         JsonObject node = object(List.of("id"), "id", id(), "exchanges", array(ref("exchange"), 0),
+                "camera", ConversationLinePresentation.cameraSchema(),
                 "effects", array(ref("effect"), 0), "responses", array(ref("response"), 1), "next", id(), "outcome", id());
         node.add("oneOf", exclusive("responses", "next", "outcome"));
         definitions.add("node", node);

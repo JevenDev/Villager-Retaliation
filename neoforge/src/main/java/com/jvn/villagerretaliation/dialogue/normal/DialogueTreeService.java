@@ -181,11 +181,17 @@ public final class DialogueTreeService {
             return Optional.empty();
         }
 
-        String responseTemplate = response.selectLine(context);
+        var selectedResponse = response.selectText(context);
+        String responseTemplate = selectedResponse.text();
+        var responseExchanges = response.exchanges();
+        if (responseExchanges.isEmpty() && selectedResponse.camera() != null && !responseTemplate.isBlank())
+            responseExchanges = List.of(new com.jvn.villagerretaliation.dialogue.DialogueExchange(
+                    com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.ROLE,
+                    responseTemplate, "", selectedResponse.camera()));
         ActionText responseActionText = executeActions(context, response.actions(), session.replacements(),
                 tree.id() + "/" + node.id() + "/response/" + response.id(),
                 new SceneContinuation.DialogueResume(tree.id(), response.end() ? "" : response.next(),
-                        true, responseTemplate, VillagerConversationService.isForced(context.player(), context.villager()), response.exchanges()));
+                        true, responseTemplate, VillagerConversationService.isForced(context.player(), context.villager()), responseExchanges));
         String responseLine = resolve(responseTemplate, context, responseActionText.replacements());
         String leadingText = firstNonBlank(responseLine, responseActionText.text());
         if (!responseActionText.outcome().success()) {
@@ -195,12 +201,12 @@ public final class DialogueTreeService {
         }
         if (!response.end() && !response.next().isBlank()) {
             return enterNodeResult(context, tree, response.next(), leadingText, responseActionText.replacements(),
-                    VillagerConversationService.isForced(context.player(), context.villager()), response.exchanges()).dialogue();
+                    VillagerConversationService.isForced(context.player(), context.villager()), responseExchanges).dialogue();
         }
 
         sessions(context).remove(key);
         return Optional.of(withExchanges(result(lineId(tree.id(), node.id(), response.id()), leadingText),
-                com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(response.exchanges(), context, responseActionText.replacements())));
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(responseExchanges, context, responseActionText.replacements())));
     }
 
     private static EntryResult enterNodeResult(DialogueContext context, DialogueTreeDefinition tree, String nodeId,
@@ -234,7 +240,8 @@ public final class DialogueTreeService {
             DialogueTreeDefinition tree, DialogueTreeDefinition.Node node, String leadingText,
             Map<String, String> replacements, String actionLineId,
             List<com.jvn.villagerretaliation.dialogue.DialogueExchange> leadingExchanges) {
-        String nodeLine = resolve(node.selectLine(context), context, replacements);
+        var selected = node.selectText(context);
+        String nodeLine = resolve(selected.text(), context, replacements);
         String text = firstNonBlank(leadingText, nodeLine);
         if (!node.end()) {
             sessions(context).put(key(context), new Session(UUID.randomUUID(), tree.id(), node.id(), context.level().getGameTime(), replacements));
@@ -246,7 +253,9 @@ public final class DialogueTreeService {
         if (!node.exchanges().isEmpty()) {
             if (exchanges.isEmpty() && !leadingText.isBlank()) exchanges.add(npcSpeech(context, leadingText));
             exchanges.addAll(com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(node.exchanges(), context, replacements));
-        } else if (!exchanges.isEmpty() && !nodeLine.isBlank()) exchanges.add(npcSpeech(context, nodeLine));
+        } else if ((!exchanges.isEmpty() || selected.camera() != null) && !nodeLine.isBlank())
+            exchanges.add(com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(),
+                    DialogueTextSegment.parse(nodeLine, DialogueTextEffects.NONE), selected.camera()));
         return withExchanges(result(resultLineId, text), exchanges);
     }
 

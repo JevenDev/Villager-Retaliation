@@ -91,7 +91,8 @@ public final class ConversationCompiler {
             Map<String, ConversationDefinition.Exchange> exchanges = new LinkedHashMap<>();
             JsonArray lines = array(value, "exchanges");
             for (int line = 0; line < lines.size(); line++) {
-                JsonObject exchange = lines.get(line).getAsJsonObject();
+                JsonObject exchange = lines.get(line).getAsJsonObject().deepCopy();
+                if (!exchange.has("camera") && value.has("camera")) exchange.add("camera", value.get("camera").deepCopy());
                 JsonObject speaker = exchange.getAsJsonObject("speaker");
                 String location = pointer + "/exchanges/" + line;
                 String exchangeId = string(exchange, "id");

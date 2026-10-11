@@ -136,7 +136,7 @@ public record DialogueLine(
                     .toList();
             List<DialogueTextVariant> candidates = fresh.isEmpty() ? this.textVariants : fresh;
             DialogueTextVariant selected = candidates.get(random.nextInt(candidates.size()));
-            return new SelectedText(selected.id(), selected.text(), selected.textKey());
+            return new SelectedText(selected.id(), selected.text(), selected.textKey(), selected.camera());
         }
         if (this.lines.isEmpty()) {
             return new SelectedText(this.id, "", this.textKey);
@@ -161,7 +161,7 @@ public record DialogueLine(
 
     public SelectedText selectText(DialogueContext context, List<String> recentDialogueIds) {
         return DialogueTextVariant.selectAndRecord(this.textVariants, context, recentDialogueIds)
-                .map(variant -> new SelectedText(variant.id(), variant.text(), variant.textKey()))
+                .map(variant -> new SelectedText(variant.id(), variant.text(), variant.textKey(), variant.camera()))
                 .orElseGet(() -> new SelectedText(this.id, "", ""));
     }
 
@@ -526,7 +526,9 @@ public record DialogueLine(
         return new Builder(id, requestType, lines);
     }
 
-    public record SelectedText(String id, String text, String textKey) {
+    public record SelectedText(String id, String text, String textKey,
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera) {
+        public SelectedText(String id, String text, String textKey) { this(id, text, textKey, null); }
         public SelectedText(String id, String text) {
             this(id, text, "");
         }

@@ -18,12 +18,12 @@ public final class ForcedDialogueExchangeGameTests {
     @GameTest(template = "empty", batch = "forced_dialogue_exchanges")
     public static void forcedOpeningsResponsesAndFollowUpsKeepOrderedSpeech(GameTestHelper helper) {
         var root = JsonParser.parseString("""
-                {"id":"speaker_fixture","trigger":"quest","exchanges":[
+                {"id":"speaker_fixture","trigger":"quest","camera":{"preset":"birds_eye"},"exchanges":[
                   {"speaker":{"type":"narrator"},"text":"A voice calls from the gate."},
                   {"speaker":{"type":"role","role":"provider"},"text":"Wait a moment."}],
-                 "options":[{"id":"answer","label":"Ask why","end_conversation":false,"exchanges":[
+                 "options":[{"id":"answer","label":"Ask why","end_conversation":false,"camera":{"preset":"over_shoulder_right"},"exchanges":[
                    {"speaker":{"type":"player"},"text":"What do you need?"}],
-                   "follow_up":{"exchanges":[{"speaker":{"type":"role","role":"provider"},"text":"Your help."}],
+                   "follow_up":{"camera":{"preset":"speaker_facing"},"exchanges":[{"speaker":{"type":"role","role":"provider"},"text":"Your help."}],
                      "options":[{"id":"leave","label":"Later","end_conversation":true}]}}]}
                 """).getAsJsonObject();
         var definition = ForcedDialogueResources.readEntry(ResourceLocation.parse("fixture:forced"), root, 0, null,
@@ -39,6 +39,9 @@ public final class ForcedDialogueExchangeGameTests {
         helper.assertValueEqual(answer.label().text(), "Ask why", "choice label is separate");
         helper.assertValueEqual(answer.exchanges().getFirst().speaker(), SpeakerKind.PLAYER, "response is player speech");
         helper.assertValueEqual(answer.followUp().exchanges().getFirst().text(), "Your help.", "follow-up retains its own sequence");
+        helper.assertValueEqual(definition.output().exchanges().getFirst().camera(), definition.output().camera(), "forced opening inherits its camera");
+        helper.assertValueEqual(answer.exchanges().getFirst().camera(), answer.camera(), "forced response inherits its camera");
+        helper.assertValueEqual(answer.followUp().exchanges().getFirst().camera(), answer.followUp().camera(), "follow-up inherits its camera");
         root.getAsJsonArray("exchanges").get(0).getAsJsonObject().getAsJsonObject("speaker").addProperty("type", "unknown");
         helper.assertTrue(ForcedDialogueResources.readEntry(ResourceLocation.parse("fixture:forced"), root, 0, null,
                 DialogueEntryMetadata.EMPTY, List.of(), "").isEmpty(), "malformed speech rejects its definition");

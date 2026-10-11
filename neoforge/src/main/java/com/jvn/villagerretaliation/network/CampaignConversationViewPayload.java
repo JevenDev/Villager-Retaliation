@@ -51,8 +51,15 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         public Member { if (id == null) throw new IllegalArgumentException("Missing conversation member"); bounded(name, MAX_LABEL_LENGTH); }
     }
     public record Line(String key, UUID speaker, int entityId, String name, String text, int part, int parts,
-            ConversationLinePresentation.Camera camera, ResourceLocation voice) {
+            ConversationLinePresentation.Camera camera, ResourceLocation voice, List<CameraSubject> subjects) {
+        public Line(String key, UUID speaker, int entityId, String name, String text, int part, int parts,
+                ConversationLinePresentation.Camera camera, ResourceLocation voice) {
+            this(key, speaker, entityId, name, text, part, parts, camera, voice, List.of());
+        }
+
         public Line {
+            subjects = List.copyOf(subjects);
+            if (subjects.size() > 64) throw new IllegalArgumentException("Too many camera subjects");
             if (part < 0 || parts < 1 || part >= parts) throw new IllegalArgumentException("Invalid conversation text page");
             bounded(key, 512); bounded(name, MAX_LABEL_LENGTH); bounded(text, MAX_TEXT_LENGTH);
             if (voice != null) bounded(voice.toString(), 256);
@@ -62,6 +69,12 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             this(key, speaker, entityId, name, text, part, parts, null, null);
         }
     }
+    public record CameraSubject(UUID id, int entityId) {
+        public CameraSubject {
+            if (id == null || entityId < 0) throw new IllegalArgumentException("Invalid camera subject");
+        }
+    }
+
     public record Modifier(String id, String label, int amount, boolean applied) {
         public Modifier {
             bounded(id, 256); bounded(label, MAX_LABEL_LENGTH);
@@ -195,14 +208,11 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             if (line.speaker() != null) buffer.writeUUID(line.speaker());
             buffer.writeVarInt(line.entityId()); buffer.writeUtf(line.name(), MAX_LABEL_LENGTH); buffer.writeUtf(line.text(), MAX_TEXT_LENGTH);
             buffer.writeVarInt(line.part()); buffer.writeVarInt(line.parts());
-            buffer.writeBoolean(line.camera() != null);
-            if (line.camera() != null) {
-                buffer.writeEnum(line.camera().target());
-                buffer.writeBoolean(line.camera().zoom() != null);
-                if (line.camera().zoom() != null) buffer.writeDouble(line.camera().zoom());
-            }
+            com.jvn.villagerretaliation.dialogue.DialogueCamera.write(buffer, line.camera());
             buffer.writeBoolean(line.voice() != null);
             if (line.voice() != null) buffer.writeUtf(line.voice().toString(), 256);
+            buffer.writeVarInt(line.subjects().size());
+            for (var subject : line.subjects()) { buffer.writeUUID(subject.id()); buffer.writeVarInt(subject.entityId()); }
         }
         buffer.writeBoolean(value.canControl()); buffer.writeBoolean(value.canTakeControl()); buffer.writeUtf(value.controller(), MAX_LABEL_LENGTH);
         buffer.writeVarInt(value.handover().size());
@@ -288,10 +298,11 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         String text = buffer.readUtf(MAX_TEXT_LENGTH);
         int part = buffer.readVarInt();
         int parts = buffer.readVarInt();
-        var camera = buffer.readBoolean() ? new ConversationLinePresentation.Camera(
-                buffer.readEnum(ConversationLinePresentation.Target.class), buffer.readBoolean() ? buffer.readDouble() : null) : null;
+        var camera = com.jvn.villagerretaliation.dialogue.DialogueCamera.read(buffer);
         var voice = buffer.readBoolean() ? ResourceLocation.parse(buffer.readUtf(256)) : null;
-        return new Line(key, speaker, entity, name, text, part, parts, camera, voice);
+        var subjects = new ArrayList<CameraSubject>();
+        for (int size = count(buffer, 64); size > 0; size--) subjects.add(new CameraSubject(buffer.readUUID(), buffer.readVarInt()));
+        return new Line(key, speaker, entity, name, text, part, parts, camera, voice, subjects);
     }
 
     private static List<Modifier> readModifiers(RegistryFriendlyByteBuf buffer) {

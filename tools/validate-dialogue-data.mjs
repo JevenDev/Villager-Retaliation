@@ -541,8 +541,8 @@ const dialogueTreeEntryKeys = new Set([
   "force_camera_towards_villager",
   "order"
 ]);
-const dialogueTreeNodeKeys = new Set(["id", "lines", "text", "exchanges", "metadata", "actions", "conditions", "responses", "end"]);
-const dialogueTreeResponseKeys = new Set(["id", "label", "metadata", "next", "request", "lines", "text", "exchanges", "actions", "conditions", "end", "order"]);
+const dialogueTreeNodeKeys = new Set(["id", "lines", "text", "exchanges", "camera", "metadata", "actions", "conditions", "responses", "end"]);
+const dialogueTreeResponseKeys = new Set(["id", "label", "metadata", "next", "request", "lines", "text", "exchanges", "camera", "actions", "conditions", "end", "order"]);
 const dialogueRequestTypes = new Set([
   "greeting",
   "question",
@@ -1731,6 +1731,9 @@ function checkDialogue(file, data) {
   for (const [section, entries] of Object.entries(sections)) {
     for (const [index, entry] of entries.entries()) {
       checkDialogueMetadata(file, entry, `${section}[${index}]`);
+      checkDialogueCamera(file, entry, `${section}[${index}]`);
+      for (const [variantIndex, variant] of (Array.isArray(entry.variants ?? entry.lines) ? entry.variants ?? entry.lines : []).entries())
+        checkDialogueCamera(file, variant, `${section}[${index}].variants[${variantIndex}]`);
       checkOptionalInteger(file, entry, `${section}[${index}]`, "weight", { min: 0 });
     }
   }
@@ -4756,7 +4759,14 @@ function checkDialogueTreeEntryFields(file, entry, location) {
   checkOptionalInteger(file, entry, location, "order");
 }
 
+function checkDialogueCamera(file, value, location) {
+  if (value?.camera === undefined) return;
+  for (const issue of validateConversationSchema(value.camera, questV2Schema.$defs.scene.properties.camera))
+    errors.push(`${relative(file)}: ${location}.camera${issue.pointer}: ${issue.message}`);
+}
+
 function checkDialogueExchanges(file, value, location) {
+  checkDialogueCamera(file, value, location);
   if (value.exchanges === undefined) return;
   const schema = questV2Schema.$defs.scene.properties.exchanges;
   for (const issue of validateConversationSchema(value.exchanges, schema)) {

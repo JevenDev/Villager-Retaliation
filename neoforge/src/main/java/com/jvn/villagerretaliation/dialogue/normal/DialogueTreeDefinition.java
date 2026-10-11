@@ -141,8 +141,15 @@ public record DialogueTreeDefinition(
             List<DialogueCondition> conditions,
             List<Response> responses,
             boolean end,
-            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera
     ) {
+        public Node(String id, List<String> lines, List<DialogueTextVariant> textVariants,
+                List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, List<Response> responses,
+                boolean end, List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges) {
+            this(id, lines, textVariants, actions, conditions, responses, end, exchanges, null);
+        }
+
         public Node(String id, List<String> lines, List<DialogueTextVariant> textVariants,
                 List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, List<Response> responses, boolean end) {
             this(id, lines, textVariants, actions, conditions, responses, end, List.of());
@@ -176,11 +183,10 @@ public record DialogueTreeDefinition(
             return this.lines.get(random.nextInt(this.lines.size()));
         }
 
-        public String selectLine(DialogueContext context) {
-            return DialogueTextVariant.selectAndRecord(this.textVariants, context, List.of())
-                    .map(variant -> variant.textKey().isBlank() ? variant.text()
-                            : VillagerDialogueResources.message(context, variant.textKey()).orElse(variant.text()))
-                    .orElse("");
+        public String selectLine(DialogueContext context) { return selectText(context).text(); }
+
+        public DialogueLine.SelectedText selectText(DialogueContext context) {
+            return selectedText(this.textVariants, context, this.camera);
         }
     }
 
@@ -198,8 +204,17 @@ public record DialogueTreeDefinition(
             boolean end,
             int order,
             int priority,
-            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera
     ) {
+        public Response(String id, String label, String labelKey, DialogueEntryMetadata metadata, String next,
+                DialogueRequestType requestType, List<String> lines, List<DialogueTextVariant> textVariants,
+                List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, boolean end, int order,
+                int priority, List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges) {
+            this(id, label, labelKey, metadata, next, requestType, lines, textVariants, actions, conditions, end,
+                    order, priority, exchanges, null);
+        }
+
         public Response(String id, String label, String labelKey, DialogueEntryMetadata metadata, String next,
                 DialogueRequestType requestType, List<String> lines, List<DialogueTextVariant> textVariants,
                 List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, boolean end, int order, int priority) {
@@ -273,12 +288,20 @@ public record DialogueTreeDefinition(
             return this.lines.get(random.nextInt(this.lines.size()));
         }
 
-        public String selectLine(DialogueContext context) {
-            return DialogueTextVariant.selectAndRecord(this.textVariants, context, List.of())
-                    .map(variant -> variant.textKey().isBlank() ? variant.text()
-                            : VillagerDialogueResources.message(context, variant.textKey()).orElse(variant.text()))
-                    .orElse("");
+        public String selectLine(DialogueContext context) { return selectText(context).text(); }
+
+        public DialogueLine.SelectedText selectText(DialogueContext context) {
+            return selectedText(this.textVariants, context, this.camera);
         }
+    }
+
+    private static DialogueLine.SelectedText selectedText(List<DialogueTextVariant> variants, DialogueContext context,
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera) {
+        return DialogueTextVariant.selectAndRecord(variants, context, List.of())
+                .map(variant -> new DialogueLine.SelectedText(variant.id(), variant.textKey().isBlank() ? variant.text()
+                        : VillagerDialogueResources.message(context, variant.textKey()).orElse(variant.text()), variant.textKey(),
+                        variant.camera() == null ? camera : variant.camera()))
+                .orElse(new DialogueLine.SelectedText("", "", "", camera));
     }
 
     private static String resolveLabel(DialogueContext context, String fallback, String key) {

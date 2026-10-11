@@ -70,7 +70,10 @@ public final class CampaignConversationPresentationGameTests {
             var current = send(leader, fixture, leaderView, Action.START, null, "campaign_fixture:mentor_conversation", "guidance", 0, 0);
             var listener = send(member, fixture, memberView, Action.TOPICS, null, "", "", 0, 0);
             helper.assertFalse(listener.session().canControl() || listener.session().canTakeControl(), "unchecked member remains a listener");
-            helper.assertValueEqual(listener.session().line(), current.session().line(), "listener receives the shared speaker and text");
+            current = send(leader, fixture, leaderView, Action.VIEW, current, "", "", 0, 0);
+            helper.assertValueEqual(listener.session().line(), current.session().line(), "listener receives the shared speaker, text, and subjects");
+            helper.assertTrue(listener.session().line().subjects().stream().anyMatch(value -> value.id().equals(member.getUUID())),
+                    "group cameras include the joined participant");
             var denied = send(member, fixture, memberView, Action.ADVANCE, listener, "", "", 0, 0);
             helper.assertValueEqual(denied.session().revision(), listener.session().revision(), "listener cannot advance");
             helper.assertTrue(send(outsider, fixture, UUID.randomUUID(), Action.TOPICS, null, "", "", 0, 0).session() == null, "outside party receives no conversation history");

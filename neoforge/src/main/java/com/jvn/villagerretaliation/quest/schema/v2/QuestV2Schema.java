@@ -324,6 +324,7 @@ public final class QuestV2Schema {
         properties.add("dialogue", objectMap(ref("#/$defs/dialogue_slot")));
         properties.add("scenes", arrayOf(ref("#/$defs/scene")));
         properties.add("exchanges", com.jvn.villagerretaliation.dialogue.DialogueExchange.schema());
+        properties.add("camera", com.jvn.villagerretaliation.dialogue.DialogueCamera.schema());
         properties.add("responses", arrayOf(ref("#/$defs/response")));
         properties.add("events", arrayOf(ref("#/$defs/event")));
         properties.add("on_enter", arrayOf(ref("#/$defs/action")));
@@ -457,6 +458,7 @@ public final class QuestV2Schema {
         properties.add("text_key", string());
         properties.add("lines", localizedLines());
         properties.add("exchanges", com.jvn.villagerretaliation.dialogue.DialogueExchange.schema());
+        properties.add("camera", com.jvn.villagerretaliation.dialogue.DialogueCamera.schema());
         properties.add("responses", arrayOf(ref("#/$defs/response")));
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
@@ -481,6 +483,7 @@ public final class QuestV2Schema {
         properties.add("text_key", string());
         properties.add("lines", localizedLines());
         properties.add("exchanges", com.jvn.villagerretaliation.dialogue.DialogueExchange.schema());
+        properties.add("camera", com.jvn.villagerretaliation.dialogue.DialogueCamera.schema());
         properties.add("responses", arrayOf(ref("#/$defs/response")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
@@ -504,6 +507,7 @@ public final class QuestV2Schema {
         properties.add("text_key", string());
         properties.add("lines", localizedLines());
         properties.add("exchanges", com.jvn.villagerretaliation.dialogue.DialogueExchange.schema());
+        properties.add("camera", com.jvn.villagerretaliation.dialogue.DialogueCamera.schema());
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
         properties.add("transition", ref("#/$defs/transition"));

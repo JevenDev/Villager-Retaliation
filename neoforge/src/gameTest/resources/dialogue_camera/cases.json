@@ -1,0 +1,32 @@
+[
+  {"name":"bird's-eye to shoulder in three seconds","valid":true,"camera":{"shots":[
+    {"preset":"birds_eye","hold_seconds":1},
+    {"preset":"over_shoulder_right","transition":{"type":"lerp","duration_seconds":3}}
+  ]}},
+  {"name":"following speaker-facing cut","valid":true,"camera":{"preset":"speaker_facing"}},
+  {"name":"custom fixed shot and FOV","valid":true,"camera":{"preset":"custom","anchor":"speaker","offset":[2,1,-3],"perspective":"third_person","placement":"fixed","fov":45}},
+  {"name":"smooth zoom","valid":true,"camera":{"preset":"telescope","fov":25,"transition":{"type":"lerp","duration_seconds":3,"easing":"smoothstep"}}},
+  {"name":"group framing","valid":true,"camera":{"preset":"behind","target":"group"}},
+  {"name":"legacy speaker zoom","valid":true,"camera":{"target":"speaker","zoom":0.3}},
+  {"name":"legacy character zoom","valid":true,"camera":{"target":"character","zoom":0}},
+  {"name":"legacy release","valid":true,"camera":{"target":"none"}},
+  {"name":"unknown field","valid":false,"camera":{"preset":"behind","typo":true}},
+  {"name":"unknown preset","valid":false,"camera":{"preset":"orbit"}},
+  {"name":"missing lerp duration","valid":false,"camera":{"preset":"behind","transition":{"type":"lerp"}}},
+  {"name":"zero lerp duration","valid":false,"camera":{"preset":"behind","transition":{"type":"lerp","duration_seconds":0}}},
+  {"name":"negative hold","valid":false,"camera":{"preset":"behind","hold_seconds":-1}},
+  {"name":"excessive hold","valid":false,"camera":{"preset":"behind","hold_seconds":601}},
+  {"name":"cut duration","valid":false,"camera":{"preset":"behind","transition":{"type":"cut","duration_seconds":1}}},
+  {"name":"unknown easing","valid":false,"camera":{"preset":"behind","transition":{"type":"lerp","duration_seconds":1,"easing":"bounce"}}},
+  {"name":"empty sequence","valid":false,"camera":{"shots":[]}},
+  {"name":"ambiguous single and sequence","valid":false,"camera":{"preset":"behind","shots":[{"preset":"behind"}]}},
+  {"name":"incomplete custom shot","valid":false,"camera":{"preset":"custom","offset":[1,2,3]}},
+  {"name":"short offset","valid":false,"camera":{"preset":"custom","anchor":"player","perspective":"first_person","offset":[1,2]}},
+  {"name":"out of range offset","valid":false,"camera":{"preset":"behind","offset":[9,0,0]}},
+  {"name":"narrow FOV","valid":false,"camera":{"preset":"behind","fov":9}},
+  {"name":"wide FOV","valid":false,"camera":{"preset":"behind","fov":111}},
+  {"name":"string FOV","valid":false,"camera":{"preset":"behind","fov":"70"}},
+  {"name":"legacy release with zoom","valid":false,"camera":{"target":"none","zoom":0.2}},
+  {"name":"mixed legacy and shot","valid":false,"camera":{"preset":"behind","zoom":0.2}},
+  {"name":"null camera","valid":false,"camera":null}
+]

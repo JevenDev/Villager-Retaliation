@@ -361,7 +361,7 @@ public final class DialogueTreeResources {
                 DialogueCondition.readList(location, context, node, nodeQuestId),
                 readResponses(location, context, node, nodeQuestId, treeId),
                 DatapackJsonReader.readBoolean(node, "end", false),
-                DialogueExchange.read(node)
+                DialogueExchange.read(node), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(node)
         );
     }
 
@@ -418,7 +418,7 @@ public final class DialogueTreeResources {
                         DatapackJsonReader.readBoolean(response, "end", false),
                         DatapackJsonReader.readInt(response, "order", index),
                         DatapackJsonReader.readInt(response, "priority", 0),
-                        DialogueExchange.read(response)
+                        DialogueExchange.read(response), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(response)
                 ));
             }
             index++;

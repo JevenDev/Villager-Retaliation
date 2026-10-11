@@ -102,7 +102,7 @@ public final class VillagerDialogueResources {
             "cooldown", "cooldown_ticks", "cooldown_seconds", "cooldown_days", "once", "max_uses", "anti_repeat", "scope", "usage");
     private static final Set<String> CONVERSATION_KEYS = Set.of(
             "id", "remove", "text", "lines", "variants", "professions", "dispositions",
-            "metadata",
+            "metadata", "camera",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
             "requires_ominous_banner", "village_allegiance", "village_allegiances",
@@ -123,7 +123,7 @@ public final class VillagerDialogueResources {
             "cooldown", "cooldown_ticks", "cooldown_seconds", "cooldown_days", "once", "max_uses", "anti_repeat", "scope", "usage");
     private static final Set<String> LINE_KEYS = Set.of(
             "id", "remove", "request", "text", "lines", "variants", "text_key", "option", "option_ids", "professions", "dispositions",
-            "metadata",
+            "metadata", "camera",
             "mood", "moods", "min_mood_intensity",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
@@ -232,10 +232,18 @@ public final class VillagerDialogueResources {
     }
 
     public static Optional<String> openingLine(DialogueContext context, DialogueDisposition disposition) {
-        return selectConversationLine(context, conversationCandidates(context, disposition, true));
+        return openingSpeech(context, disposition).map(com.jvn.villagerretaliation.dialogue.DialogueSpeech::text);
     }
 
     public static Optional<String> closingLine(DialogueContext context, DialogueDisposition disposition) {
+        return closingSpeech(context, disposition).map(com.jvn.villagerretaliation.dialogue.DialogueSpeech::text);
+    }
+
+    public static Optional<com.jvn.villagerretaliation.dialogue.DialogueSpeech> openingSpeech(DialogueContext context, DialogueDisposition disposition) {
+        return selectConversationLine(context, conversationCandidates(context, disposition, true));
+    }
+
+    public static Optional<com.jvn.villagerretaliation.dialogue.DialogueSpeech> closingSpeech(DialogueContext context, DialogueDisposition disposition) {
         return selectConversationLine(context, conversationCandidates(context, disposition, false));
     }
 
@@ -268,14 +276,14 @@ public final class VillagerDialogueResources {
         return dispositionSpecificCandidates.isEmpty() ? candidates : dispositionSpecificCandidates;
     }
 
-    private static Optional<String> selectConversationLine(
+    private static Optional<com.jvn.villagerretaliation.dialogue.DialogueSpeech> selectConversationLine(
             DialogueContext context,
             List<ConversationLine> candidates) {
         return CandidateArbitrator.select(
                         candidates.stream().map(candidate -> CandidateArbitrator.Candidate.eligible(
                                 candidate.id(), candidate, candidate.priority(), candidate.chance(), candidate.weight())).toList(),
                         context.random(), ignored -> true)
-                .map(candidate -> candidate.selectText(context));
+                .map(candidate -> candidate.selectSpeech(context));
     }
 
     public static Optional<String> message(DialogueContext context, String key) {
@@ -1168,15 +1176,17 @@ public final class VillagerDialogueResources {
             String ownerId,
             JsonObject entry,
             DialogueEntryMetadata metadata) {
+        var camera = com.jvn.villagerretaliation.dialogue.DialogueCamera.read(entry);
         DialogueUsagePolicy usage = DialogueUsagePolicy.read(entry, DialogueUsagePolicy.DEFAULT);
         JsonElement element = entry.has("variants") ? entry.get("variants") : entry.get("lines");
         List<DialogueTextVariant> variants = DialogueTextVariant.read(
                 location, systemName, context, ownerId, element, null, metadata, usage);
         if (!variants.isEmpty()) {
-            return variants;
+            return variants.stream().map(value -> value.withDefaultCamera(camera)).toList();
         }
         return DialogueTextVariant.legacy(
-                ownerId, readLines(entry), readString(entry, "text_key"), metadata, usage);
+                ownerId, readLines(entry), readString(entry, "text_key"), metadata, usage)
+                .stream().map(value -> value.withDefaultCamera(camera)).toList();
     }
 
     private static void readDialogueLines(
@@ -1236,6 +1246,8 @@ public final class VillagerDialogueResources {
                         resolvedId, entryLines, textKey, metadata,
                         DialogueUsagePolicy.read(entry, DialogueUsagePolicy.DEFAULT));
             }
+            var camera = com.jvn.villagerretaliation.dialogue.DialogueCamera.read(entry);
+            variants = variants.stream().map(value -> value.withDefaultCamera(camera)).toList();
             if (requestType.isEmpty() || variants.isEmpty()) {
                 index++;
                 continue;
@@ -1943,15 +1955,17 @@ public final class VillagerDialogueResources {
             double chance,
             DialogueEntryMetadata metadata,
             List<DialogueCondition> conditions) {
-        private String selectText(DialogueContext context) {
+        private com.jvn.villagerretaliation.dialogue.DialogueSpeech selectSpeech(DialogueContext context) {
             DialogueTextVariant variant = DialogueTextVariant.selectAndRecord(this.variants, context, List.of()).orElse(null);
             if (variant == null) {
-                return "";
+                return com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(), List.of(), null);
             }
             String text = variant.textKey().isBlank()
                     ? variant.text()
                     : message(context, variant.textKey()).orElse(variant.text());
-            return resolveTemplate(text, this.playerItemCondition.replacements(context.player()));
+            return com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(),
+                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(
+                            resolveTemplate(text, this.playerItemCondition.replacements(context.player())), com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), variant.camera());
         }
 
         private boolean matches(DialogueContext context, DialogueDisposition disposition) {

@@ -30,9 +30,9 @@ public final class QuestDialogueCompilationGameTests {
                 {"schema":"villagerretaliation:quest/v2","id":"villagerretaliation:speaker_quest",
                  "metadata":{"title":"Speakers","description":"A conversation","questline":"fixtures"},
                  "provider":{"type":"villagerretaliation:villager"},"entry_stage":"offer",
-                 "stages":[{"id":"offer","objectives":[],"dialogue":{"offer":{"exchanges":[
+                 "stages":[{"id":"offer","objectives":[],"dialogue":{"offer":{"camera":{"preset":"birds_eye"},"exchanges":[
                    {"speaker":{"type":"role","role":"provider"},"text":"Can you help?"}],
-                   "responses":[{"id":"accept","label":"Accept","end":true,"exchanges":[
+                   "responses":[{"id":"accept","label":"Accept","end":true,"camera":{"preset":"telescope"},"exchanges":[
                      {"speaker":{"type":"player"},"text":"I will help you."}]}]}}}]}
                 """);
         var envelope = QuestResourceEnvelope.read(id, raw).orElseThrow();
@@ -40,9 +40,14 @@ public final class QuestDialogueCompilationGameTests {
         var tree = QuestDialogueCompiler.compile(resource, envelope).tree(QuestDialogueCompiler.treeId(id)).orElseThrow();
         var node = tree.nodes().values().stream().filter(value -> !value.exchanges().isEmpty()).findFirst().orElseThrow();
         helper.assertValueEqual(node.exchanges().getFirst().text(), "Can you help?", "embedded scene preserves the NPC line");
+        helper.assertValueEqual(node.camera(), node.exchanges().getFirst().camera(), "quest validation retains the containing entry camera");
         helper.assertValueEqual(node.responses().getFirst().exchanges().getFirst().speaker(),
                 com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.PLAYER, "response is player speech");
         helper.assertValueEqual(node.responses().getFirst().label(), "Accept", "button label is independent of spoken text");
+        helper.assertValueEqual(node.exchanges().getFirst().camera().shots().getFirst().preset(),
+                com.jvn.villagerretaliation.dialogue.DialogueCamera.Preset.BIRDS_EYE, "quest scene camera is inherited");
+        helper.assertValueEqual(node.responses().getFirst().exchanges().getFirst().camera().shots().getFirst().preset(),
+                com.jvn.villagerretaliation.dialogue.DialogueCamera.Preset.TELESCOPE, "quest response camera is inherited");
         helper.succeed();
     }
 

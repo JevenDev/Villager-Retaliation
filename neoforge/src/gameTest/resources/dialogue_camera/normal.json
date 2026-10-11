@@ -1,0 +1,17 @@
+{
+  "lines": [
+    {
+      "id": "camera_line",
+      "request": "greeting",
+      "lines": ["The valley stretches below us."],
+      "camera": {
+        "shots": [
+          {"preset": "birds_eye", "hold_seconds": 1},
+          {"preset": "over_shoulder_right", "transition": {"type": "lerp", "duration_seconds": 3}, "fov": 60}
+        ]
+      }
+    }
+  ],
+  "openings": [{"id": "camera_opening", "lines": ["Welcome, {player_name}."], "camera": {"preset": "first_person"}}],
+  "closings": [{"id": "camera_closing", "lines": ["Until next time."], "camera": {"preset": "speaker_facing"}}]
+}

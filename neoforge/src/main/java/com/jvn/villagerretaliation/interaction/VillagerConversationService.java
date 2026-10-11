@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
@@ -186,7 +187,7 @@ public final class VillagerConversationService {
         if (villager.isSleeping()) {
             villager.stopSleeping();
         }
-        villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
+        facePlayer(villager, player);
         if (approachPlayerForForcedDialogue(villager, player)) {
             return;
         }
@@ -248,13 +249,26 @@ public final class VillagerConversationService {
         if (villager.isSleeping()) {
             villager.stopSleeping();
         }
-        villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
+        facePlayer(villager, player);
         if (session.forced() && approachPlayerForForcedDialogue(villager, player)) {
             return;
         }
         if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get() && !villager.getNavigation().isDone()) {
             VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         }
+    }
+
+    private static void facePlayer(Villager villager, ServerPlayer player) {
+        double dx = player.getX() - villager.getX();
+        double dz = player.getZ() - villager.getZ();
+        if (dx * dx + dz * dz < 1.0E-8) return;
+        float yaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90.0F;
+        float pitch = (float) -Math.toDegrees(Math.atan2(player.getEyeY() - villager.getEyeY(), Math.sqrt(dx * dx + dz * dz)));
+        villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
+        villager.setYRot(Mth.approachDegrees(villager.getYRot(), yaw, 30.0F));
+        villager.setYBodyRot(villager.getYRot());
+        villager.setYHeadRot(Mth.approachDegrees(villager.getYHeadRot(), yaw, 30.0F));
+        villager.setXRot(Mth.approachDegrees(villager.getXRot(), pitch, 30.0F));
     }
 
     private static boolean approachPlayerForForcedDialogue(Villager villager, ServerPlayer player) {

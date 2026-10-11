@@ -1,0 +1,19 @@
+{
+  "id": "fixture:camera_tree",
+  "entries": [{"id": "begin", "label": "Look around", "start": "valley"}],
+  "nodes": {
+    "valley": {
+      "lines": ["The valley stretches below us."],
+      "camera": {"shots": [
+        {"preset": "birds_eye", "hold_seconds": 1},
+        {"preset": "over_shoulder_right", "transition": {"type": "lerp", "duration_seconds": 3}}
+      ]},
+      "responses": [{"id": "continue", "label": "Go on", "next": "speaker"}]
+    },
+    "speaker": {
+      "lines": ["Now, about that journey."],
+      "camera": {"preset": "speaker_facing"},
+      "end": true
+    }
+  }
+}

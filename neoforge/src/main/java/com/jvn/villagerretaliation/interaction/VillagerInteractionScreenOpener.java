@@ -61,8 +61,11 @@ public final class VillagerInteractionScreenOpener {
                 level, player, villager, VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
         dialogueOptions = com.jvn.villagerretaliation.duel.DuelDialogueService.addAvailableOptions(
                 level, player, villager, dialogueOptions);
-        String greetingText = VillagerStudyDialogueService.openingLine(dialogueContext)
-                .orElseGet(() -> VillagerDialogueService.selectOpeningGreeting(dialogueContext));
+        var studyGreeting = VillagerStudyDialogueService.openingLine(dialogueContext);
+        var greeting = studyGreeting.isPresent() ? com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(villager,
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(studyGreeting.get(),
+                        com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), null)
+                : VillagerDialogueService.selectOpeningSpeech(dialogueContext);
         OpenVillagerInteractionPayload payload = createPayload(
                 level,
                 player,
@@ -77,7 +80,8 @@ public final class VillagerInteractionScreenOpener {
         VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
         trySendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
-        VillagerInteractionService.sendPersonalRoutineVillagerChat(player, villager, greetingText);
+        if (greeting.camera() == null) VillagerInteractionService.sendPersonalRoutineVillagerChat(player, villager, greeting.text());
+        else VillagerInteractionService.sendDialogueExchanges(player, villager, List.of(greeting));
     }
 
     public static void openCampaign(ServerPlayer player, Villager villager) {

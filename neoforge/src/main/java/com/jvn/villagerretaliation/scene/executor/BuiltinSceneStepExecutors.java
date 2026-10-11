@@ -323,7 +323,7 @@ public final class BuiltinSceneStepExecutors {
                                             return new com.jvn.villagerretaliation.dialogue.DialogueSpeech(speaker == null ? null : speaker.getUUID(),
                                                     speaker == null ? -1 : speaker.getId(), speaker == null ? "" : com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(speaker).getString(),
                                                     com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(line,
-                                                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE));
+                                                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), exchange.camera());
                                         }).toList();
                                         VillagerInteractionService.sendDialogueExchanges(player, provider, lines, 0);
                                     }

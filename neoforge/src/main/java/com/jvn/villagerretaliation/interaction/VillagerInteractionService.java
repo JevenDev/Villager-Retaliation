@@ -2564,7 +2564,7 @@ public final class VillagerInteractionService {
 
         ServerLevel level = player.serverLevel();
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
-        String goodbyeText = VillagerDialogueService.selectClosingGoodbye(createDialogueContext(
+        var goodbye = VillagerDialogueService.selectClosingSpeech(createDialogueContext(
                 level,
                 player,
                 villager,
@@ -2573,8 +2573,8 @@ public final class VillagerInteractionService {
                 reputation.level()
         ));
         VillagerAmbientIndicatorService.onConversationClosed(level, villager, player);
-        broadcastRoutineVillagerChat(level, villager, goodbyeText);
-        trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
+        broadcastRoutineVillagerChat(level, villager, goodbye.text());
+        trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbye.text(), false, goodbye.camera()));
         VillagerConversationService.endForPlayer(player, false);
     }
 

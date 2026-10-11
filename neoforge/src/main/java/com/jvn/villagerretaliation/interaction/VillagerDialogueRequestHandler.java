@@ -150,7 +150,7 @@ public final class VillagerDialogueRequestHandler {
         if (!result.exchanges().isEmpty()) {
             var paymentReplacements = itemPaymentResult.replacements();
             var exchanges = result.exchanges().stream().map(line -> new com.jvn.villagerretaliation.dialogue.DialogueSpeech(
-                    line.speaker(), line.entityId(), line.name(), resolveTemplate(line.segments(), paymentReplacements))).toList();
+                    line.speaker(), line.entityId(), line.name(), resolveTemplate(line.segments(), paymentReplacements), line.camera())).toList();
             if (responseTextReplaced) exchanges = com.jvn.villagerretaliation.dialogue.DialogueSpeech.replaceSpeakerReply(exchanges,
                     new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
                             com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), responseSegments));

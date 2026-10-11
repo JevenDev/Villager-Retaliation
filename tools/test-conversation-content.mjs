@@ -18,6 +18,18 @@ const conversation = await readJson(path.join(fixtureRoot, conversationPath));
 const quest = await readJson(path.join(fixtureRoot, ownerPath, "quest.json"));
 const locale = await readJson(path.join(fixtureRoot, ownerPath, "locales/en_us.json"));
 const campaign = await readJson(path.join(fixtureRoot, campaignPath));
+const cameraCases = await readJson(path.join(root, "neoforge/src/gameTest/resources/dialogue_camera/cases.json"));
+for (const entry of cameraCases) {
+  for (const cameraSchema of [schema.$defs.exchange.properties.camera, schema.$defs.node.properties.camera,
+    questSchema.$defs.scene.properties.camera, questSchema.$defs.scene.properties.exchanges.items.properties.camera]) {
+    const issues = validateConversationSchema(entry.camera, cameraSchema);
+    assert.equal(issues.length === 0, entry.valid, entry.name);
+  }
+}
+assert.deepEqual(schema.$defs.exchange.properties.camera, questSchema.$defs.scene.properties.camera, "shared camera schema");
+assert(validateConversationSchema({ shots: Array.from({ length: 33 }, () => ({ preset: "behind" })) },
+  schema.$defs.exchange.properties.camera).length > 0, "bounded shot sequences");
+
 const cases = await readJson(path.join(fixtureRoot, "conversation_cases.json"));
 const progression = await readJson(path.join(fixtureRoot, "data/campaign_fixture/quests/_shared/social_progression/training.json"));
 const context = { prefix: quest.localization_prefix, quest: quest.id, messages: locale.messages, campaign,
@@ -168,4 +180,4 @@ try {
   assert(path.basename(temporary).startsWith("conversation-content-"));
   await rm(temporary, { recursive: true, force: true });
 }
-console.log(`Conversation content checks passed (${cases.length} shared cases, schema parity, and CLI diagnostics).`);
+console.log(`Conversation content checks passed (${cases.length} shared cases, ${cameraCases.length} camera cases, schema parity, and CLI diagnostics).`);

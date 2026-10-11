@@ -148,27 +148,29 @@ public final class VillagerDialogueService {
         return resolveText(selected.get(), context, recentDialogueIds);
     }
 
-    public static String selectOpeningGreeting(DialogueContext context) {
+    public static String selectOpeningGreeting(DialogueContext context) { return selectOpeningSpeech(context).text(); }
+
+    public static com.jvn.villagerretaliation.dialogue.DialogueSpeech selectOpeningSpeech(DialogueContext context) {
         if (OminousBannerRecognition.isDisplaying(context.player())) {
             DialogueDisposition disposition = moodFor(context);
-            return resolveText(VillagerDialogueResources.openingLine(context, disposition).orElse("hello"), context);
+            return VillagerDialogueResources.openingSpeech(context, disposition).map(speech -> resolveSpeech(context, speech)).orElseGet(() -> plainSpeech(context, "hello"));
         }
         if (context.reputationLevel() != VillagerReputationLevel.FEARED) {
             Optional<String> giftMemory = selectOpeningGiftMemoryLine(context);
             if (giftMemory.isPresent()) {
-                return giftMemory.get();
+                return plainSpeech(context, giftMemory.get());
             }
             Optional<String> containerTheftMemory = selectOpeningContainerTheftMemoryLine(context);
             if (containerTheftMemory.isPresent()) {
-                return containerTheftMemory.get();
+                return plainSpeech(context, containerTheftMemory.get());
             }
             Optional<String> longAbsence = selectOpeningLongAbsenceLine(context);
             if (longAbsence.isPresent()) {
-                return longAbsence.get();
+                return plainSpeech(context, longAbsence.get());
             }
         }
         DialogueDisposition disposition = moodFor(context);
-        return resolveText(VillagerDialogueResources.openingLine(context, disposition).orElse("hello"), context);
+        return VillagerDialogueResources.openingSpeech(context, disposition).map(speech -> resolveSpeech(context, speech)).orElseGet(() -> plainSpeech(context, "hello"));
     }
 
     private static Optional<String> selectOpeningLongAbsenceLine(DialogueContext context) {
@@ -198,9 +200,21 @@ public final class VillagerDialogueService {
                 .or(() -> VillagerDialogueResources.message(context, "opening.return_after_absence", replacements));
     }
 
-    public static String selectClosingGoodbye(DialogueContext context) {
-        DialogueDisposition disposition = moodFor(context);
-        return resolveText(VillagerDialogueResources.closingLine(context, disposition).orElse("goodbye"), context);
+    public static String selectClosingGoodbye(DialogueContext context) { return selectClosingSpeech(context).text(); }
+
+    public static com.jvn.villagerretaliation.dialogue.DialogueSpeech selectClosingSpeech(DialogueContext context) {
+        return VillagerDialogueResources.closingSpeech(context, moodFor(context)).map(speech -> resolveSpeech(context, speech)).orElseGet(() -> plainSpeech(context, "goodbye"));
+    }
+
+    private static com.jvn.villagerretaliation.dialogue.DialogueSpeech resolveSpeech(DialogueContext context,
+            com.jvn.villagerretaliation.dialogue.DialogueSpeech speech) {
+        return com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(),
+                DialogueTextSegment.parse(resolveText(speech.text(), context), DialogueTextEffects.NONE), speech.camera());
+    }
+
+    private static com.jvn.villagerretaliation.dialogue.DialogueSpeech plainSpeech(DialogueContext context, String text) {
+        return com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(),
+                DialogueTextSegment.parse(resolveText(text, context), DialogueTextEffects.NONE), null);
     }
 
     public static String selectPacifyLine(DialogueContext context, VillagerPacificationResult result, PacifyPaymentOffer payment) {
@@ -967,7 +981,7 @@ public final class VillagerDialogueService {
 
     private static DialogueResult resolveText(DialogueLine line, DialogueContext context, List<String> recentDialogueIds) {
         DialogueLine.SelectedText selected = line.selectText(context, recentDialogueIds);
-        return DialogueResult.fromText(selected.id(), resolveSelectedText(selected, line, context), line.textEffects());
+        return DialogueResult.fromText(selected.id(), resolveSelectedText(selected, line, context), line.textEffects()).withCamera(selected.camera(), context);
     }
 
     private static String resolveSelectedText(
@@ -1092,6 +1106,12 @@ public final class VillagerDialogueService {
 
         public DialogueResult(String lineId, String text) {
             this(lineId, text, DialogueTextEffects.NONE, DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+        }
+
+        public DialogueResult withCamera(com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera, DialogueContext context) {
+            if (camera == null || text.isBlank()) return this;
+            return new DialogueResult(lineId, text, textEffects, textSegments, List.of(
+                    com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(), textSegments, camera)));
         }
 
         public static DialogueResult fromText(String lineId, String text, DialogueTextEffects textEffects) {

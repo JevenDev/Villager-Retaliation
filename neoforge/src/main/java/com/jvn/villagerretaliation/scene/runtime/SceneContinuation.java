@@ -242,6 +242,8 @@ public final class SceneContinuation {
                 line.putString("Speaker", exchange.speaker().name());
                 line.putString("Text", exchange.text());
                 line.putString("TextKey", exchange.textKey());
+                if (exchange.camera() != null) line.putString("Camera",
+                        com.jvn.villagerretaliation.dialogue.DialogueCamera.json(exchange.camera()).toString());
                 exchanges.add(line);
             }
             dialogue.put("Exchanges", exchanges);
@@ -492,9 +494,16 @@ public final class SceneContinuation {
             var line = (CompoundTag) raw;
             result.add(new com.jvn.villagerretaliation.dialogue.DialogueExchange(
                     com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.valueOf(line.getString("Speaker")),
-                    line.getString("Text"), line.getString("TextKey")));
+                    line.getString("Text"), line.getString("TextKey"), savedCamera(line)));
         }
         return List.copyOf(result);
+    }
+
+    private static com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera savedCamera(CompoundTag line) {
+        if (!line.contains("Camera", net.minecraft.nbt.Tag.TAG_STRING)) return null;
+        var entry = new com.google.gson.JsonObject();
+        entry.add("camera", com.google.gson.JsonParser.parseString(line.getString("Camera")));
+        return com.jvn.villagerretaliation.dialogue.DialogueCamera.read(entry);
     }
 
     public record DialogueResume(ResourceLocation treeId, String nodeId, boolean runActions, String leadingText, boolean forced,

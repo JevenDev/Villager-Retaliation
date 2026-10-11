@@ -226,7 +226,7 @@ public final class QuestDialogueCompiler {
                     textVariants(treeId + "/node/" + nodeId, lines, "", DialogueEntryMetadata.EMPTY),
                     List.of(), List.of(), compileResponses(resource, stage.id(), stage.responses(), stage,
                             responsesSource, stageResponsesEntryId(stage.id())), false,
-                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(stage.data())));
+                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(stage.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(stage.data())));
             addEntry(resource, stage.id(), entryId, titleCase(stage.id()), nodeId, responsesSource, null, entries);
             putBinding(
                     bindings,
@@ -259,7 +259,7 @@ public final class QuestDialogueCompiler {
                 compileResponses(resource, stageId, scene.responses(), stage, sceneSource.child("responses"),
                         stageSceneEntryId(stageId, scene.id())),
                 DatapackJsonReader.readBoolean(scene.data(), "end", false),
-                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(scene.data())));
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(scene.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(scene.data())));
     }
 
     private static List<DialogueTreeDefinition.Response> compileResponses(
@@ -288,7 +288,7 @@ public final class QuestDialogueCompiler {
                     DatapackJsonReader.readBoolean(response.data(), "end", false),
                     DatapackJsonReader.readInt(response.data(), "order", index),
                     DatapackJsonReader.readInt(response.data(), "priority", 0),
-                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(response.data())));
+                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(response.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(response.data())));
         }
         return List.copyOf(result);
     }

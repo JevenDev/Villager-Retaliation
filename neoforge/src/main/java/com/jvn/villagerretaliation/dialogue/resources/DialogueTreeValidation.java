@@ -42,7 +42,7 @@ public final class DialogueTreeValidation {
                     networkSafeOption(location, "dialogue tree node \"" + node.id() + "\" response \"" + response.id() + "\"",
                             DialogueTreeService.responseOptionId(tree.id(), response.id()), response.label())).toList();
             nodes.put(node.id(), new DialogueTreeDefinition.Node(node.id(), node.lines(), node.textVariants(),
-                    node.actions(), node.conditions(), responses, node.end(), node.exchanges()));
+                    node.actions(), node.conditions(), responses, node.end(), node.exchanges(), node.camera()));
         }
         return new DialogueTreeDefinition(tree.id(), tree.title(), tree.description(), tree.metadata(),
                 tree.conditions(), entries, nodes);

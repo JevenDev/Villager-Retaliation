@@ -171,7 +171,11 @@ public final class ConversationPresentationService {
                     ? linePresentation(definition, entry) : ConversationLinePresentation.EMPTY;
             line = new Line(entry.visit() + "/" + entry.exchange(), entry.speaker(), speaker == null ? -1 : speaker.getId(),
                     label(entry.name()), parts.get(part), part, parts.size(), presentation.camera(),
-                    presentation.voice(com.jvn.villagerretaliation.util.VillagerLocale.locale(player)));
+                    presentation.voice(com.jvn.villagerretaliation.util.VillagerLocale.locale(player)),
+                    java.util.stream.Stream.concat(snapshot.speakers().values().stream().map(value -> player.serverLevel().getEntity(value.entity())),
+                                    snapshot.participants().stream().map(value -> player.serverLevel().getEntity(value)))
+                            .filter(java.util.Objects::nonNull).distinct().limit(64)
+                            .map(value -> new com.jvn.villagerretaliation.network.CampaignConversationViewPayload.CameraSubject(value.getUUID(), value.getId())).toList());
         }
         Check check = null;
         if (snapshot.phase() == ConversationSession.Phase.CHECK || snapshot.phase() == ConversationSession.Phase.ROLLED) {
