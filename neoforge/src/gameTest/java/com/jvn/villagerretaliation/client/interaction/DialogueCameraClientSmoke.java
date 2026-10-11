@@ -44,6 +44,11 @@ public final class DialogueCameraClientSmoke {
     private static long shownAt;
     private static int tradeGuiScale;
     private static double tradeFov;
+    private static int tradeLeft;
+    private static int tradeMovementStep;
+    private static List<Integer> tradeWidgetXs;
+    private static Vec3 tradeCameraPosition;
+    private static boolean tradeCameraMoved;
     private static long tradePackReadyAt;
     private static java.util.concurrent.CompletableFuture<Void> tradeResourceReload;
     private static boolean duplicate;
@@ -338,6 +343,45 @@ public final class DialogueCameraClientSmoke {
                     "the rendered FOV changes even within two blocks: actual=" + tradeFov + ", expected=" + expected);
             require(minecraft.gameRenderer.getMainCamera().getPosition().distanceTo(minecraft.player.getEyePosition()) > 0.5,
                     "the camera pulls back instead of overfilling the screen at close range");
+            tradeLeft = screen.getGuiLeft();
+            tradeWidgetXs = screen.children().stream()
+                    .filter(net.minecraft.client.gui.components.AbstractWidget.class::isInstance)
+                    .map(child -> ((net.minecraft.client.gui.components.AbstractWidget) child).getX()).toList();
+            tradeCameraPosition = minecraft.gameRenderer.getMainCamera().getPosition();
+            tradeMovementStep = 0;
+            moveTradingVillager();
+            shownAt = Util.getMillis();
+            phase = 19;
+        } else if (phase == 19 && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen) {
+            com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.of(screen).update(screen);
+            require(screen.getGuiLeft() == tradeLeft, "villager movement cannot drag or swap the trading menu");
+            require(screen.children().stream().filter(net.minecraft.client.gui.components.AbstractWidget.class::isInstance)
+                            .map(child -> ((net.minecraft.client.gui.components.AbstractWidget) child).getX()).toList().equals(tradeWidgetXs),
+                    "trade buttons stay fixed while the camera tracks a moving villager");
+            require(DialogueCameraController.active(), "the camera continues tracking a pushed villager");
+            checkRange();
+            tradeCameraMoved |= minecraft.gameRenderer.getMainCamera().getPosition().distanceTo(tradeCameraPosition) > 0.1;
+            if (!preparing.isDone() || Util.getMillis() - shownAt < 500) return;
+            preparing.join();
+            if (++tradeMovementStep < 4) moveTradingVillager();
+            else {
+                require(tradeCameraMoved, "the camera follows movement while the menu stays anchored");
+                phase = 20;
+            }
+            shownAt = Util.getMillis();
+        } else if (phase == 20 && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen
+                && Util.getMillis() - shownAt > 1800) {
+            require(screen.getGuiLeft() == tradeLeft, "the menu remains anchored after movement settles");
+            verifyTradeFraming(screen);
+            capture("trade-after-movement");
+            VillagerCameraEntityClientChecks.verify(screen, entityId);
+            verifyTradeCorrections(screen);
+            shownAt = Util.getMillis();
+            phase = 21;
+        } else if (phase == 21 && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen
+                && Util.getMillis() - shownAt > 1800) {
+            verifyTradeFraming(screen);
+            tradeFov = currentTradeFov();
             minecraft.player.closeContainer();
             shownAt = Util.getMillis();
             phase = 15;
@@ -398,6 +442,97 @@ public final class DialogueCameraClientSmoke {
         }
     }
 
+    private static void verifyTradeCorrections(net.minecraft.client.gui.screens.inventory.MerchantScreen screen) {
+        var minecraft = Minecraft.getInstance();
+        var camera = minecraft.gameRenderer.getMainCamera();
+        var beforeReload = DialogueCameraController.renderedPose();
+        minecraft.levelRenderer.allChanged();
+        require(DialogueCameraController.active(), "renderer rebuilds keep the trade camera active");
+        require(DialogueCameraController.renderedPose().equals(beforeReload), "renderer rebuilds preserve the framed camera pose");
+        require(DialogueCameraOcclusion.snapshot(minecraft.level).blocks().isEmpty(), "renderer rebuilds clear stale blocker masks");
+        Vec3 before = DialogueCameraController.update(camera, 1).position();
+        BlockPos obstruction = BlockPos.containing(before);
+        var originalBlock = minecraft.level.getBlockState(obstruction);
+        try {
+            minecraft.level.setBlock(obstruction, Blocks.STONE.defaultBlockState(), 3);
+            Vec3 destination = DialogueCameraOcclusion.placement(before, minecraft.player.getEyePosition(),
+                    List.of(minecraft.level.getEntity(entityId)), 1, true);
+            require(destination != null && destination.distanceTo(before) > 0.1,
+                    "ignoring passing entities retains solid-block collision handling");
+            var corrected = DialogueCameraController.update(camera, 1);
+            require(corrected != null && corrected.position().distanceTo(before) < 0.1,
+                    "collision corrections ease into the camera instead of snapping after smoothing");
+        } finally {
+            minecraft.level.setBlock(obstruction, originalBlock, 3);
+        }
+        var layout = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.of(screen);
+        var villager = minecraft.level.getEntity(entityId);
+        Vec3 originalPosition = villager.position();
+        try {
+            var beforeStall = DialogueCameraController.renderedPose();
+            villager.setPos(originalPosition.add(1.5, 0, 0));
+            elapseCameraTime(2);
+            var afterStall = DialogueCameraController.update(camera, 1);
+            require(afterStall != null && afterStall.position().distanceTo(beforeStall.position()) < 0.3
+                            && Math.abs(net.minecraft.util.Mth.wrapDegrees(afterStall.yaw() - beforeStall.yaw())) < 10,
+                    "a delayed frame cannot skip the trade camera transition");
+            villager.setPos(originalPosition);
+            layout.update(screen);
+            int beforeLeft = screen.getGuiLeft();
+            elapseLayoutTime(layout, 2);
+            villager.setPos(minecraft.player.position().add(0, 0, 8.1));
+            layout.update(screen);
+            require(!layout.split(), "merchants beyond eight blocks release split framing");
+            int centeredLeft = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.left(
+                    screen.width, screen.getXSize(), 20, false, false);
+            require(Math.abs(screen.getGuiLeft() - beforeLeft) < Math.abs(centeredLeft - beforeLeft) / 2,
+                    "a delayed frame cannot snap the menu to the center");
+            for (double distance : new double[] {7.9, 8.1, 7.5}) {
+                villager.setPos(minecraft.player.position().add(0, 0, distance));
+                layout.update(screen);
+                require(!layout.split(), "small pushes around the range boundary cannot toggle split framing");
+            }
+            villager.setPos(minecraft.player.position().add(0, 0, 6.9));
+            layout.update(screen);
+            require(layout.split(), "split framing resumes once the villager crosses the re-entry deadzone");
+        } finally {
+            villager.setPos(originalPosition);
+            layout.update(screen);
+        }
+    }
+
+    private static void elapseCameraTime(double seconds) {
+        try {
+            var field = DialogueCameraController.class.getDeclaredField("lastNanos");
+            field.setAccessible(true);
+            field.setLong(null, System.nanoTime() - (long) (seconds * 1_000_000_000));
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
+    }
+
+    private static void elapseLayoutTime(com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout layout, double seconds) {
+        try {
+            var field = layout.getClass().getDeclaredField("lastLayoutNanos");
+            field.setAccessible(true);
+            field.setLong(layout, System.nanoTime() - (long) (seconds * 1_000_000_000));
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
+    }
+
+    private static void moveTradingVillager() {
+        var minecraft = Minecraft.getInstance();
+        int step = tradeMovementStep;
+        preparing = minecraft.getSingleplayerServer().submit(() -> {
+            var villager = (Villager) minecraft.getSingleplayerServer().overworld().getEntity(entityId);
+            Vec3 destination = switch (step) {
+                case 0 -> new Vec3(17, 100, 16.5);
+                case 1 -> new Vec3(14, 100, 16.5);
+                case 2 -> new Vec3(15.5, 100, 14.5);
+                default -> new Vec3(15.5, 100, 16.5);
+            };
+            villager.setPos(destination);
+            return entityId;
+        });
+    }
+
     private static void verifyTradeFraming(net.minecraft.client.gui.screens.inventory.MerchantScreen screen) {
         var minecraft = Minecraft.getInstance();
         var camera = minecraft.gameRenderer.getMainCamera();
@@ -411,8 +546,10 @@ public final class DialogueCameraClientSmoke {
         double merchantX = (1 + relative.dot(horizontal) / (relative.dot(forward) * aspect * tangent)) * screen.width / 2;
         double panelCenter = screen.getGuiLeft() - 20 + 148;
         boolean right = panelCenter > screen.width / 2.0;
-        require(Math.abs(panelCenter - (merchantX + (right ? screen.width : 0)) / 2) < 2,
-                "the menu sits halfway between the rendered villager and the opposite screen edge");
+        require(Math.abs(panelCenter - screen.width * (right ? 0.625 : 0.375)) <= 1,
+                "the menu is anchored halfway between the intended villager framing and the opposite edge");
+        require(right ? merchantX >= 0 && merchantX < screen.width * 0.5 : merchantX > screen.width * 0.5 && merchantX <= screen.width,
+                "the camera keeps the villager in the half opposite the anchored menu: projected=" + merchantX);
         for (double height : new double[] {0, villager.getBbHeight()}) {
             Vec3 point = villager.position().add(0, height, 0).subtract(camera.getPosition());
             double projectedY = point.dot(up) / (point.dot(forward) * tangent);

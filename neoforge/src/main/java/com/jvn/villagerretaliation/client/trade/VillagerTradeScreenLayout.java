@@ -29,6 +29,11 @@ public final class VillagerTradeScreenLayout {
 
     private boolean right;
     private boolean split;
+    private boolean withinRange = true;
+    private double anchorLeft = Double.NaN;
+    private long lastLayoutNanos;
+    private int layoutWidth;
+    private int layoutHeight;
 
     public interface Host {
         VillagerTradeScreenLayout villagerretaliation$tradeLayout();
@@ -56,7 +61,20 @@ public final class VillagerTradeScreenLayout {
         }
         int extension = screen instanceof MerchantScreen && VillagerRetaliationServerConfigClient.skillTradeFeaturesEnabled() ? 20 : 0;
         split = eligible() && fitsHalf(screen.width, screen.height, screen.getXSize(), screen.getYSize(), extension);
-        int left = left(screen.width, screen.getXSize(), extension, right, split, merchantX(screen.width));
+        // anchor to the settled framing so camera tracking never moves the click targets
+        int targetLeft = left(screen.width, screen.getXSize(), extension, right, split);
+        long now = System.nanoTime();
+        if (Double.isNaN(anchorLeft) || layoutWidth != screen.width || layoutHeight != screen.height) {
+            anchorLeft = targetLeft;
+        } else {
+            // keep a stalled frame from consuming the whole transition
+            double seconds = Math.clamp((now - lastLayoutNanos) / 1_000_000_000.0, 0, 0.05);
+            anchorLeft = Mth.lerp(-Math.expm1(-12 * seconds), anchorLeft, targetLeft);
+        }
+        lastLayoutNanos = now;
+        layoutWidth = screen.width;
+        layoutHeight = screen.height;
+        int left = (int) Math.round(anchorLeft);
         int delta = left - screen.getGuiLeft();
         if (delta == 0) return;
         ((AbstractContainerScreenAccessor) screen).villagerretaliation$setLeftPos(left);
@@ -81,9 +99,13 @@ public final class VillagerTradeScreenLayout {
 
     private boolean eligible() {
         var minecraft = Minecraft.getInstance();
+        if (minecraft.player != null && merchant != null) {
+            // require a full block of return travel before re-entering split framing
+            withinRange = minecraft.player.distanceToSqr(merchant) <= (withinRange ? 64 : 49);
+        }
         return minecraft.player != null && minecraft.level != null && merchant != null
                 && merchant.level() == minecraft.level && merchant.isAlive() && !merchant.isRemoved()
-                && minecraft.player.distanceToSqr(merchant) <= 64 && minecraft.player.isAlive()
+                && withinRange && minecraft.player.isAlive()
                 && !minecraft.player.isSpectator() && minecraft.getCameraEntity() == minecraft.player
                 && VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
                 && VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get();
@@ -111,21 +133,6 @@ public final class VillagerTradeScreenLayout {
 
     public static Vec3 focus(Entity merchant, float partialTick) {
         return merchant.getPosition(partialTick).add(0, merchant.getBbHeight() * 0.6, 0);
-    }
-
-    private double merchantX(int width) {
-        double fallback = width * (right ? 0.25 : 0.75);
-        var view = DialogueCameraController.renderedPose();
-        if (merchant == null || view == null) return fallback;
-        var minecraft = Minecraft.getInstance();
-        Vec3 relative = focus(merchant, minecraft.getTimer().getGameTimeDeltaPartialTick(false)).subtract(view.position());
-        Vec3 forward = Vec3.directionFromRotation(view.pitch(), view.yaw());
-        double depth = relative.dot(forward);
-        if (depth <= 0.01) return fallback;
-        double aspect = (double) minecraft.getWindow().getWidth() / Math.max(1, minecraft.getWindow().getHeight());
-        double projected = relative.dot(Vec3.directionFromRotation(0, view.yaw() + 90))
-                / (depth * aspect * Math.tan(Math.toRadians(view.fov()) / 2));
-        return Math.clamp((1 + projected) * width * 0.5, right ? 0 : width * 0.5, right ? width * 0.5 : width);
     }
 
     public Vec3 cameraPosition(AbstractContainerScreen<?> screen, Vec3 eye, Vec3 aim, double fov) {
