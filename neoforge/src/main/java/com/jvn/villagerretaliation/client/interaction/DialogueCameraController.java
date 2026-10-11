@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.toucanlib.client.camera.ToucanCameraBasis;
 import com.jvn.toucanlib.client.camera.ToucanCameraTargetPoints;
 import com.jvn.villagerretaliation.client.interaction.DialogueCameraTimeline.Pose;
+import com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueCamera;
 import com.jvn.villagerretaliation.dialogue.DialogueCamera.Anchor;
@@ -14,6 +15,7 @@ import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresent
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -54,7 +56,8 @@ public final class DialogueCameraController {
     public static boolean synchronize() {
         var minecraft = Minecraft.getInstance();
         var screen = screen();
-        if (screen == null || minecraft.player == null
+        var trade = minecraft.screen instanceof MerchantScreen merchant ? merchant : null;
+        if ((screen == null && trade == null) || minecraft.player == null
                 || minecraft.level == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
                 || minecraft.getCameraEntity() != minecraft.player
                 || !VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
@@ -65,7 +68,7 @@ public final class DialogueCameraController {
         }
         if (level != minecraft.level) clear();
         level = minecraft.level;
-        var next = screen.dialogueCameraFrame();
+        var next = trade == null ? screen.dialogueCameraFrame() : VillagerTradeScreenLayout.of(trade).frame(trade);
         if (next == null || !next.hold() && (next.camera() == null || next.camera().shots().isEmpty())) {
             clear();
             return false;
@@ -118,7 +121,7 @@ public final class DialogueCameraController {
         }
         adjusted = DialogueCamera.clamp(adjusted, player);
         if (!adjusted.equals(position)) {
-            var rotation = ToucanCameraBasis.rotationToTarget(adjusted, focus(target(timeline.shot(), speaker), partialTick), pose.yaw(), pose.pitch());
+            var rotation = rotation(adjusted, focus(target(timeline.shot(), speaker), partialTick), pose.yaw(), pose.pitch(), pose.fov());
             pose = new Pose(adjusted, rotation.yaw(), rotation.pitch(), pose.fov());
         } else pose = new Pose(position, pose.yaw(), pose.pitch(), pose.fov());
         return pose;
@@ -185,8 +188,14 @@ public final class DialogueCameraController {
                 if (shot.fov() == null) fov = Math.min(DialogueCamera.MAX_FOV, Math.max(fov, required));
             }
         }
-        var rotation = ToucanCameraBasis.rotationToTarget(position, aim, player.getYRot(), player.getXRot());
+        var rotation = rotation(position, aim, player.getYRot(), player.getXRot(), fov);
         return new Pose(position, rotation.yaw(), rotation.pitch(), fov);
+    }
+
+    private static ToucanCameraBasis.Rotation rotation(Vec3 position, Vec3 aim, float yaw, float pitch, double fov) {
+        return Minecraft.getInstance().screen instanceof MerchantScreen trade
+                ? VillagerTradeScreenLayout.of(trade).rotation(position, aim, yaw, pitch, fov)
+                : ToucanCameraBasis.rotationToTarget(position, aim, yaw, pitch);
     }
 
     private static Entity target(Shot shot, Entity speaker) {

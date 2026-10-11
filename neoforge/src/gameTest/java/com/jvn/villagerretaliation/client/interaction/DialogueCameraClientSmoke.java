@@ -42,6 +42,9 @@ public final class DialogueCameraClientSmoke {
     private static int perspective;
     private static long started;
     private static long shownAt;
+    private static int tradeGuiScale;
+    private static long tradePackReadyAt;
+    private static java.util.concurrent.CompletableFuture<Void> tradeResourceReload;
     private static boolean duplicate;
     private static float yaw;
     private static float pitch;
@@ -265,12 +268,157 @@ public final class DialogueCameraClientSmoke {
             shownAt = Util.getMillis();
             phase = 8;
         } else if (phase == 8 && Util.getMillis() - shownAt > 500) {
+            verifyTradeLayout();
+            tradeResourceReload = prepareTradeResourcePack();
+            tradeGuiScale = minecraft.options.guiScale().get();
+            minecraft.options.guiScale().set(1);
+            minecraft.resizeDisplay();
+            preparing = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var villager = (Villager) server.overworld().getEntity(entityId);
+                villager.setTradingPlayer(player);
+                var offers = new net.minecraft.world.item.trading.MerchantOffers();
+                offers.add(new net.minecraft.world.item.trading.MerchantOffer(new net.minecraft.world.item.trading.ItemCost(
+                        net.minecraft.world.item.Items.EMERALD, 1), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BREAD), 10, 1, 0));
+                villager.getOffers().clear();
+                villager.getOffers().addAll(offers);
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                        new com.jvn.villagerretaliation.network.ServerConfigSyncPayload(true, true, true, true,
+                                com.jvn.villagerretaliation.config.VillagerStatDisplayMode.PARTY_ONLY));
+                villager.openTradingScreen(player, net.minecraft.network.chat.Component.literal("Camera trade"), 1);
+                com.jvn.villagerretaliation.trade.VillagerTradeRefreshService.sendState(player, villager);
+                return entityId;
+            });
+            shownAt = Util.getMillis();
+            phase = 12;
+        } else if (phase == 12 && preparing.isDone() && tradeResourceReload.isDone()
+                && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen
+                && Util.getMillis() - shownAt > 1500) {
+            tradeResourceReload.join();
+            if (minecraft.getOverlay() != null) return;
+            if (tradePackReadyAt == 0) tradePackReadyAt = Util.getMillis();
+            if (Util.getMillis() - tradePackReadyAt < 600) return;
+            require(screen.getMenu().getOffers().size() == 1, "trade offers arrive through the normal merchant menu");
+            require(DialogueCameraController.active(), "trading uses the shared camera when both halves fit");
+            require(screen.getGuiLeft() + screen.getXSize() < screen.width / 2
+                            || screen.getGuiLeft() - 20 > screen.width / 2,
+                    "the trading panel occupies one half of the screen");
+            try (var image = net.minecraft.client.Screenshot.takeScreenshot(minecraft.getMainRenderTarget())) {
+                int pixel = image.getPixelRGBA(screen.getGuiLeft() + 274, screen.getGuiTop() + 2);
+                require(pixel == 0xFF12CD34,
+                        "high-resolution resource packs supply the shifted vanilla trading background: " + Integer.toHexString(pixel));
+            }
+            capture("trade-split");
+            minecraft.options.guiScale().set(3);
+            minecraft.resizeDisplay();
+            shownAt = Util.getMillis();
+            phase = 13;
+        } else if (phase == 13 && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen
+                && Util.getMillis() - shownAt > 500) {
+            require(!DialogueCameraController.active(), "large GUI scales release the split camera");
+            require(Math.abs(screen.getGuiLeft() - 20 + 148 - screen.width / 2) <= 1,
+                    "large GUI scales center the complete trade panel");
+            capture("trade-large-gui-scale");
+            minecraft.options.guiScale().set(1);
+            minecraft.resizeDisplay();
+            VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.set(false);
+            shownAt = Util.getMillis();
+            phase = 14;
+        } else if (phase == 14 && minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen screen
+                && Util.getMillis() - shownAt > 500) {
+            require(!DialogueCameraController.active(), "the camera accessibility setting also disables trade framing");
+            require(Math.abs(screen.getGuiLeft() - 20 + 148 - screen.width / 2) <= 1,
+                    "disabled cameras restore centered trading");
+            minecraft.setScreen(null);
+            minecraft.options.guiScale().set(tradeGuiScale);
+            minecraft.resizeDisplay();
+            VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.set(true);
             DialogueCameraController.clear();
             try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Dialogue camera client smoke passed" + System.lineSeparator()); }
             catch (IOException exception) { throw new UncheckedIOException(exception); }
             phase = 9;
             minecraft.stop();
         }
+    }
+
+    private static java.util.concurrent.CompletableFuture<Void> prepareTradeResourcePack() {
+        var minecraft = Minecraft.getInstance();
+        Path pack = Path.of(System.getProperty(OUTPUT), "resourcepacks", "trade-smoke");
+        Path texture = pack.resolve("assets/minecraft/textures/gui/container/villager.png");
+        try {
+            Files.createDirectories(texture.getParent());
+            Files.writeString(pack.resolve("pack.mcmeta"),
+                    "{\"pack\":{\"pack_format\":34,\"description\":\"Trade smoke fixture\"}}");
+            var location = net.minecraft.resources.ResourceLocation.withDefaultNamespace("textures/gui/container/villager.png");
+            try (var stream = minecraft.getResourceManager().getResourceOrThrow(location).open();
+                    var source = com.mojang.blaze3d.platform.NativeImage.read(stream);
+                    var image = new com.mojang.blaze3d.platform.NativeImage(1024, 512, false)) {
+                for (int y = 0; y < 512; y++) {
+                    for (int x = 0; x < 1024; x++) {
+                        int color = x / 2 >= 270 && x / 2 < 276 && y / 2 < 6
+                                ? 0xFF12CD34 : source.getPixelRGBA(x / 2, y / 2);
+                        image.setPixelRGBA(x, y, color);
+                    }
+                }
+                image.writeToFile(texture);
+            }
+        } catch (IOException exception) { throw new UncheckedIOException(exception); }
+        minecraft.getResourcePackRepository().reload();
+        var selected = new java.util.ArrayList<>(minecraft.getResourcePackRepository().getSelectedIds());
+        selected.add("file/trade-smoke");
+        minecraft.getResourcePackRepository().setSelected(selected);
+        return minecraft.reloadResourcePacks();
+    }
+
+    private static void verifyTradeLayout() {
+        var minecraft = Minecraft.getInstance();
+        var menu = new net.minecraft.world.inventory.MerchantMenu(123, minecraft.player.getInventory());
+        var offers = new net.minecraft.world.item.trading.MerchantOffers();
+        offers.add(new net.minecraft.world.item.trading.MerchantOffer(new net.minecraft.world.item.trading.ItemCost(
+                        net.minecraft.world.item.Items.EMERALD, 1), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BREAD), 10, 1, 0));
+        while (offers.size() < 9) offers.add(offers.getFirst());
+        menu.setOffers(offers);
+        var screen = new net.minecraft.client.gui.screens.inventory.MerchantScreen(menu,
+                minecraft.player.getInventory(), net.minecraft.network.chat.Component.literal("Trade layout"));
+        minecraft.setScreen(screen);
+        for (int width : new int[] {320, 426, 640, 854, 1280}) {
+            screen.resize(minecraft, width, 360);
+            com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.of(screen).update(screen);
+            require(screen.getGuiLeft() >= 20 && screen.getGuiLeft() + screen.getXSize() <= width,
+                    "trade background and refresh controls stay inside the scaled viewport");
+            var button = (net.minecraft.client.gui.components.AbstractWidget) screen.children().getFirst();
+            require(button.getX() == screen.getGuiLeft() + 5, "trade buttons follow the container origin after resizing");
+            screen.mouseClicked(screen.getGuiLeft() + 97, screen.getGuiTop() + 30, 0);
+            require(screen.mouseDragged(screen.getGuiLeft() + 97, screen.getGuiTop() + 150, 0, 0, 120),
+                    "the scrollbar accepts dragging at the shifted origin");
+            screen.mouseReleased(screen.getGuiLeft() + 97, screen.getGuiTop() + 150, 0);
+            for (boolean right : new boolean[] {false, true}) {
+                boolean split = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.fitsHalf(width, 360, 276, 166, 20);
+                int left = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.left(width, 276, 20, right, split);
+                if (split) require(Math.abs(left - 20 + 148 - (right ? width * 3 / 4 : width / 4)) <= 1,
+                        "the extended panel is centered in either screen half");
+            }
+        }
+        for (double aspect : new double[] {4.0 / 3, 16.0 / 9, 21.0 / 9}) {
+            for (float pitch : new float[] {-30, 0, 30}) {
+                for (boolean right : new boolean[] {false, true}) {
+                    var rotation = com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.rotation(0, pitch, 55, aspect, right);
+                    Vec3 target = Vec3.directionFromRotation(pitch, 0);
+                    Vec3 forward = Vec3.directionFromRotation(rotation.pitch(), rotation.yaw());
+                    Vec3 horizontal = Vec3.directionFromRotation(0, rotation.yaw() + 90);
+                    Vec3 up = horizontal.cross(forward);
+                    double projectedX = target.dot(horizontal) / target.dot(forward) / (aspect * Math.tan(Math.toRadians(55) / 2));
+                    require(Math.abs(projectedX - (right ? -0.5 : 0.5)) < 0.001,
+                            "the villager projects into the half opposite the trade panel");
+                    require(Math.abs(target.dot(up)) < 0.001, "trade framing keeps the villager vertically centered");
+                }
+            }
+        }
+        require(!com.jvn.villagerretaliation.client.trade.VillagerTradeScreenLayout.fitsHalf(1280, 170, 276, 166, 20),
+                "short windows use the centered fallback");
+        screen.resize(minecraft, minecraft.getWindow().getGuiScaledWidth(), minecraft.getWindow().getGuiScaledHeight());
+        capture("trade-layout");
+        minecraft.setScreen(null);
     }
 
     private static void beginSequence(VillagerInteractionScreen screen) {

@@ -2686,6 +2686,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void requestTrade() {
+        com.jvn.villagerretaliation.client.villager.VillagerTradingTargetFinder.acceptMerchantId(this.villagerEntityId);
         sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
     }
 

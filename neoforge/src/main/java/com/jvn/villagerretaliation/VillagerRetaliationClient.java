@@ -51,6 +51,8 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache::onEntitySize);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationDebugOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationTradeScreenOverlay::onScreenRender);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerTradingTargetFinder::onScreenClosing);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerTradingTargetFinder::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.trade.VillagerTradeRefreshButtons::onScreenRender);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.trade.VillagerTradeRefreshButtons::onMousePressed);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationHoverTooltipOverlay::onRenderGuiLayer);

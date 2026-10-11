@@ -5,8 +5,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 
 public final class VillagerTradingTargetFinder {
     public static final double DEFAULT_LOOKUP_RADIUS = 8.0D;
@@ -17,6 +20,14 @@ public final class VillagerTradingTargetFinder {
 
     public static void acceptMerchantId(int entityId) {
         syncedMerchantId = entityId;
+    }
+
+    public static void onScreenClosing(ScreenEvent.Closing event) {
+        if (event.getScreen() instanceof MerchantScreen) syncedMerchantId = null;
+    }
+
+    public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        syncedMerchantId = null;
     }
 
     public static List<AbstractVillager> nearbySorted(Minecraft minecraft) {
@@ -53,7 +64,9 @@ public final class VillagerTradingTargetFinder {
 
     public static Optional<AbstractVillager> findTradingVillagerOrSingleNearby(Minecraft minecraft, double lookupRadius) {
         if (minecraft.level != null && syncedMerchantId != null
-                && minecraft.level.getEntity(syncedMerchantId) instanceof AbstractVillager syncedMerchant) {
+                && minecraft.level.getEntity(syncedMerchantId) instanceof AbstractVillager syncedMerchant
+                && syncedMerchant.isAlive() && !syncedMerchant.isRemoved() && minecraft.player != null
+                && minecraft.player.distanceToSqr(syncedMerchant) <= lookupRadius * lookupRadius) {
             return Optional.of(syncedMerchant);
         }
         Optional<AbstractVillager> tradingVillager = findTradingVillager(minecraft, lookupRadius);

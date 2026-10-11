@@ -5,11 +5,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 
 public final class VillagerTradeScreenBackground {
-    private static final int VANILLA_WIDTH = 276;
     private static final int TEXTURE_WIDTH = 512;
     private static final int TEXTURE_HEIGHT = 256;
     private static final int EXTENDED_LEFT_WIDTH = 20;
-    private static final int EXTENDED_WIDTH = VANILLA_WIDTH + EXTENDED_LEFT_WIDTH;
     private static final int BACKGROUND_HEIGHT = 166;
 
     private VillagerTradeScreenBackground() {
@@ -22,7 +20,7 @@ public final class VillagerTradeScreenBackground {
                 screen.getGuiTop(),
                 0,
                 0,
-                EXTENDED_WIDTH,
+                EXTENDED_LEFT_WIDTH,
                 BACKGROUND_HEIGHT,
                 TEXTURE_WIDTH,
                 TEXTURE_HEIGHT);
