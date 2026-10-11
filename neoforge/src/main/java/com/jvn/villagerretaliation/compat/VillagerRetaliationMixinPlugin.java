@@ -19,9 +19,20 @@ public final class VillagerRetaliationMixinPlugin implements IMixinConfigPlugin 
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.contains(".DialogueSodiumCamera"))
+            return supportsSodiumDialogueCamera();
         // sodium replaces setupRender and already centers terrain on the active camera
         return !mixinClassName.equals("com.jvn.villagerretaliation.mixin.client.SettlementLevelRendererMixin")
                 || FMLLoader.getLoadingModList().getModFileById("sodium") == null;
+    }
+
+    public static boolean supportsSodiumDialogueCamera() {
+        var sodium = FMLLoader.getLoadingModList().getModFileById("sodium");
+        if (sodium == null) return false;
+        return sodium.getMods().stream().filter(mod -> mod.getModId().equals("sodium")).anyMatch(mod -> {
+            var version = mod.getVersion().toString();
+            return version.equals("0.8.13") || version.startsWith("0.8.13+");
+        });
     }
 
     @Override

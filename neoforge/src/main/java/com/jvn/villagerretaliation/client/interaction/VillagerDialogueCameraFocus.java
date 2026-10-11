@@ -28,6 +28,8 @@ public final class VillagerDialogueCameraFocus {
     }
 
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
+        DialogueCameraController.onComputeFov(event);
+        if (DialogueCameraController.active()) return;
         if (!VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
                 || !ClientVillagerConversationState.cameraActive()) {
             return;
@@ -51,7 +53,7 @@ public final class VillagerDialogueCameraFocus {
         Minecraft minecraft = Minecraft.getInstance();
         if (!ClientVillagerConversationState.active())
             return Double.isNaN(lastAuthoredZoom) ? zoomAmount : Math.min(zoomAmount, lastAuthoredZoom);
-        var cue = minecraft.screen instanceof VillagerInteractionScreen screen ? screen.campaignCameraCue() : null;
+        var cue = minecraft.screen instanceof VillagerInteractionScreen screen ? screen.dialogueCameraCue() : null;
         if (cue == null) lastAuthoredZoom = Double.NaN;
         if (minecraft.level == null) return zoomAmount;
         Entity target = cameraTarget(minecraft);
@@ -70,8 +72,8 @@ public final class VillagerDialogueCameraFocus {
     }
 
     private static Entity cameraTarget(Minecraft minecraft) {
-        if (minecraft.screen instanceof VillagerInteractionScreen screen && screen.campaignCameraCue() != null)
-            return screen.campaignCameraTarget();
+        if (minecraft.screen instanceof VillagerInteractionScreen screen && screen.dialogueCameraCue() != null)
+            return screen.dialogueCameraTarget();
         return minecraft.level == null ? null : minecraft.level.getEntity(ClientVillagerConversationState.focusedVillagerEntityId());
     }
 
@@ -87,9 +89,14 @@ public final class VillagerDialogueCameraFocus {
 
     public static void onClientTick(ClientTickEvent.Post event) {
         ClientVillagerConversationState.tickCameraRelease();
+        DialogueCameraController.tick();
     }
 
     public static void onComputeCameraAngles(ViewportEvent.ComputeCameraAngles event) {
+        if (DialogueCameraController.synchronize()) {
+            resetCameraTurn();
+            return;
+        }
         if (!VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get() || !shouldTurnCameraTowardsVillager()) {
             resetCameraTurn();
             return;

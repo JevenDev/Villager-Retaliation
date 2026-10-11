@@ -82,6 +82,17 @@
     "WorkAtPoiMixin"
   ],
   "client": [
+    "client.DialogueCameraMixin",
+    "client.DialogueCameraGuiMixin",
+    "client.DialogueCameraRegionMixin",
+    "client.DialogueCameraSectionMixin",
+    "client.DialogueCameraRebuildMixin",
+    "client.DialogueCameraReloadMixin",
+    "client.DialogueCameraEntityMixin",
+    "client.DialogueCameraBlockEntityMixin",
+    "client.DialogueSodiumCameraSliceMixin",
+    "client.DialogueSodiumCameraTaskMixin",
+    "client.DialogueSodiumCameraUploadMixin",
     "client.AbstractContainerScreenAccessor",
     "client.AbstractContainerScreenDuelMixin",
     "client.ChatComponentMixin",

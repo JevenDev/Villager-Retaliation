@@ -435,6 +435,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int replacementTransitionPreviousTop;
     private Button giftButton;
     private boolean closeAfterDialogueExchanges;
+    private static long nextDialogueCameraRevision;
+    private long dialogueCameraRevision = ++nextDialogueCameraRevision;
+    private List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> dialogueCameraBatch = List.of();
+    private final java.util.Map<java.util.UUID, Integer> dialogueCameraSubjects = new java.util.LinkedHashMap<>();
     private com.jvn.villagerretaliation.dialogue.DialogueSpeech dialogueSpeech;
     private final java.util.ArrayDeque<com.jvn.villagerretaliation.dialogue.DialogueSpeech> dialogueExchanges = new java.util.ArrayDeque<>();
     private String villagerDialogueText = "";
@@ -746,6 +750,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments) {
+        dialogueCameraRevision = ++nextDialogueCameraRevision;
+        dialogueCameraSubjects.clear();
+        dialogueCameraBatch = List.of();
         clearDialogueMouthAnimation();
         this.dialogueSpeech = null;
         this.closeAfterDialogueExchanges = false;
@@ -755,10 +762,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
-        if (exchanges.isEmpty()) return;
+        if (exchanges.isEmpty() || exchanges.equals(dialogueCameraBatch)) return;
+        dialogueCameraBatch = List.copyOf(exchanges);
         this.closeAfterDialogueExchanges = false;
         this.dialogueExchanges.clear();
         this.dialogueExchanges.addAll(exchanges);
+        dialogueCameraSubjects.clear();
+        for (var speech : exchanges) if (speech.speaker() != null)
+            dialogueCameraSubjects.put(speech.speaker(), speech.entityId());
         this.dialogueTextAnimationSkipped = true;
         showNextDialogueExchange();
     }
@@ -767,6 +778,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (trySkipDialogueTextAnimation()) return;
         clearDialogueMouthAnimation();
         this.dialogueSpeech = this.dialogueExchanges.removeFirst();
+        dialogueCameraRevision = ++nextDialogueCameraRevision;
         setDialogueText(this.dialogueSpeech.text(), this.dialogueSpeech.segments());
         rebuildOptionsKeepingListPosition();
     }
@@ -797,6 +809,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         target.acceptVillagerDialogue(this.villagerDialogueText, this.villagerDialogueTextSegments);
         target.dialogueSpeech = this.dialogueSpeech;
+        target.dialogueCameraRevision = this.dialogueCameraRevision;
+        target.dialogueCameraBatch = this.dialogueCameraBatch;
+        target.dialogueCameraSubjects.putAll(this.dialogueCameraSubjects);
         target.closeAfterDialogueExchanges = this.closeAfterDialogueExchanges;
         target.dialogueExchanges.addAll(this.dialogueExchanges);
         if (!target.dialogueExchanges.isEmpty() || target.closeAfterDialogueExchanges) target.rebuildOptionsKeepingListPosition();
@@ -6310,18 +6325,67 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return target;
     }
 
+    DialogueCameraController.Frame dialogueCameraFrame() {
+        if (this.closingWithAnimation) return null;
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null) return null;
+        var character = minecraft.level.getEntity(this.villagerEntityId);
+        var subjects = new java.util.LinkedHashSet<Entity>();
+        subjects.add(minecraft.player);
+        if (character != null) subjects.add(character);
+        var line = campaignPresentationLine();
+        if (this.page == DialoguePage.CAMPAIGN_CONVERSATION && !this.forcedDialogue) {
+            if (line == null) return this.campaignConversation.session() == null ? null
+                    : new DialogueCameraController.Frame("", null, null, character, List.copyOf(subjects), true,
+                            this.campaignConversation.session().phase() != com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.EXCHANGES);
+            for (var subject : line.subjects()) {
+                var entity = resolveCameraSubject(subject.id(), subject.entityId());
+                if (entity != null) subjects.add(entity);
+            }
+            return new DialogueCameraController.Frame(this.campaignConversation.session().id() + "/" + line.key(),
+                    line.camera(), dialogueSpeakerEntity(), character, List.copyOf(subjects), false);
+        }
+        for (var subject : dialogueCameraSubjects.entrySet()) {
+            var entity = resolveCameraSubject(subject.getKey(), subject.getValue());
+            if (entity != null && subjects.size() < 64) subjects.add(entity);
+        }
+        return new DialogueCameraController.Frame("dialogue/" + (dialogueSpeech == null ? dialogueCameraRevision : dialogueSpeech.presentationId()),
+                dialogueSpeech == null ? null : dialogueSpeech.camera(), dialogueSpeakerEntity(), character,
+                List.copyOf(subjects), false);
+    }
+
+    com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera dialogueCameraCue() {
+        return this.page == DialoguePage.CAMPAIGN_CONVERSATION ? campaignCameraCue()
+                : dialogueSpeech == null ? null : dialogueSpeech.camera();
+    }
+
+    Entity dialogueCameraTarget() {
+        var cue = dialogueCameraCue();
+        if (cue == null || cue.target() == com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target.NONE) return null;
+        return this.page == DialoguePage.CAMPAIGN_CONVERSATION ? campaignCameraTarget()
+                : cue.target() == com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target.CHARACTER
+                    ? Minecraft.getInstance().level.getEntity(this.villagerEntityId) : dialogueSpeakerEntity();
+    }
+
+    private Entity resolveCameraSubject(java.util.UUID id, int entityId) {
+        var level = Minecraft.getInstance().level;
+        if (level == null || id == null) return null;
+        var entity = level.getEntity(entityId);
+        if (entity != null && entity.getUUID().equals(id)) return entity;
+        for (var loaded : level.entitiesForRendering()) if (loaded.getUUID().equals(id)) return loaded;
+        return null;
+    }
+
     private Entity dialogueSpeakerEntity() {
         var level = Minecraft.getInstance().level;
         if (level == null) return null;
         var session = this.campaignConversation.session();
         if (this.page != DialoguePage.CAMPAIGN_CONVERSATION || session == null) {
             if (this.dialogueSpeech == null) return level.getEntity(this.villagerEntityId);
-            var speaker = level.getEntity(this.dialogueSpeech.entityId());
-            return speaker != null && speaker.getUUID().equals(this.dialogueSpeech.speaker()) ? speaker : null;
+            return resolveCameraSubject(this.dialogueSpeech.speaker(), this.dialogueSpeech.entityId());
         }
         if (session.history() != null || session.check() != null || session.line() == null || session.line().speaker() == null) return null;
-        var entity = level.getEntity(session.line().entityId());
-        return entity != null && entity.getUUID().equals(session.line().speaker()) ? entity : null;
+        return resolveCameraSubject(session.line().speaker(), session.line().entityId());
     }
 
     private String campaignSpeakerName() {

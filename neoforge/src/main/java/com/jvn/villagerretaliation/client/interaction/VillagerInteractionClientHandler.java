@@ -273,13 +273,19 @@ public final class VillagerInteractionClientHandler {
         Minecraft minecraft = Minecraft.getInstance();
         VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
         if (screen != null) {
-            screen.closeFromServer(payload.finishExchanges());
+            var entity = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
+            if (payload.camera() != null && entity != null && !payload.goodbyeText().isBlank()) {
+                screen.acceptDialogueExchanges(List.of(com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(entity,
+                        DialogueTextSegment.parse(payload.goodbyeText(), DialogueTextEffects.NONE), payload.camera())));
+                screen.closeFromServer(true);
+            } else screen.closeFromServer(payload.finishExchanges());
         }
         ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
         resetVillagerChatGroup(payload.entityId());
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        DialogueCameraController.clear();
         ClientVillagerConversationState.clear();
         resetVillagerChatGroup();
     }
