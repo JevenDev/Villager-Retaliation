@@ -83,6 +83,11 @@ public final class DialogueCameraOcclusion {
     public static boolean hides(Entity entity) { return hiddenEntities.contains(entity.getUUID()); }
 
     public static Vec3 resolve(Vec3 desired, Vec3 pivot, List<Entity> subjects, List<Entity> participants, float partialTick) {
+        Vec3 position = placement(desired, pivot, subjects, partialTick);
+        return position == null ? null : track(position, pivot, subjects, participants, partialTick);
+    }
+
+    public static Vec3 placement(Vec3 desired, Vec3 pivot, List<Entity> subjects, float partialTick) {
         var minecraft = Minecraft.getInstance();
         boolean masking = supportsMasking();
         var candidates = new java.util.ArrayList<Vec3>();
@@ -110,6 +115,16 @@ public final class DialogueCameraOcclusion {
             return best;
         }
         lastPosition = best;
+        return best;
+    }
+
+    public static Vec3 track(Vec3 best, Vec3 pivot, List<Entity> subjects, List<Entity> participants, float partialTick) {
+        var minecraft = Minecraft.getInstance();
+        if (!supportsMasking()) {
+            publish(Set.of());
+            hiddenEntities = Set.of();
+            return free(best) && score(best, subjects, partialTick) > 1 ? best : null;
+        }
         long now = System.nanoTime();
         if (now < nextScan) return best;
         nextScan = now + 50_000_000L;
