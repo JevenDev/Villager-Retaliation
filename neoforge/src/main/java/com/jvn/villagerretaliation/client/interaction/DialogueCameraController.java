@@ -146,7 +146,8 @@ public final class DialogueCameraController {
             clear();
             return null;
         }
-        if (tradeMotion != null) return updateTrade(camera, speaker, partialTick, seconds);
+        // resume a stalled trade transition from its last visible frame
+        if (tradeMotion != null) return updateTrade(camera, speaker, partialTick, Math.min(seconds, 0.05));
         pose = timeline.update(seconds, shot -> destination(shot, speaker, partialTick), pose);
         var minecraft = Minecraft.getInstance();
         Vec3 player = minecraft.player.getPosition(partialTick);

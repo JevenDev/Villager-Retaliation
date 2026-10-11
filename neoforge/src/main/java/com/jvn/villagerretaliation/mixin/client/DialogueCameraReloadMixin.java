@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.mixin.client;
 
-import com.jvn.villagerretaliation.client.interaction.DialogueCameraController;
+import com.jvn.villagerretaliation.client.interaction.DialogueCameraOcclusion;
 import net.minecraft.client.renderer.LevelRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,6 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class DialogueCameraReloadMixin {
     @Inject(method = "allChanged", at = @At("HEAD"))
     private void villagerretaliation$releaseMask(CallbackInfo callback) {
-        DialogueCameraController.clear();
+        DialogueCameraOcclusion.clear();
     }
 }
