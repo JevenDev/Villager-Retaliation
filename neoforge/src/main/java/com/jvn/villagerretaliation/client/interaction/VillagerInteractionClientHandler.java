@@ -223,6 +223,12 @@ public final class VillagerInteractionClientHandler {
         if (screen != null) screen.acceptCampaignConversation(payload);
     }
 
+    public static void acceptHealingState(com.jvn.villagerretaliation.network.VillagerHealingStatePayload payload) {
+        if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen) {
+            screen.updateHealingState(payload);
+        }
+    }
+
     public static void acceptCampaignConfirmation(com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         if (payload.entityId() < 0) {

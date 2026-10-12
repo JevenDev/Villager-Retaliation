@@ -330,6 +330,10 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Double> COMBAT_WEAPON_ENCHANT_CHANCE = bind("combat.combatWeaponEnchantChance", Double.class);
     public static final ConfigValue<Double> ARMORER_SHIELD_CHANCE_HARD = bind("combat.armorerShieldChanceHard", Double.class);
     public static final ConfigValue<Boolean> CLERICS_USE_POTIONS = bind("combat.clericsUsePotions", Boolean.class);
+    public static final ConfigValue<Integer> CLERIC_HEALING_PRICE = bind("combat.clericHealingPrice", Integer.class);
+    public static final ConfigValue<VillagerReputationLevel> CLERIC_FREE_HEALING_MIN_REPUTATION = bind("combat.clericFreeHealingMinReputation", VillagerReputationLevel.class);
+    public static final ConfigValue<Integer> CLERIC_FREE_HEALING_INTERVAL_TICKS = bind("combat.clericFreeHealingIntervalTicks", Integer.class);
+    public static final ConfigValue<Integer> PARTY_CLERIC_FREE_HEALING_INTERVAL_TICKS = bind("combat.partyClericFreeHealingIntervalTicks", Integer.class);
     public static final ConfigValue<Double> PASSIVE_CLERIC_ALLY_HEAL_RANGE = bind("combat.passiveClericAllyHealRange", Double.class);
     public static final ConfigValue<Double> PASSIVE_CLERIC_ALLY_HEAL_HEALTH_THRESHOLD = bind("combat.passiveClericAllyHealHealthThreshold", Double.class);
     public static final ConfigValue<Boolean> PASSIVE_CLERIC_ALLY_HEAL_REQUIRES_LINE_OF_SIGHT = bind("combat.passiveClericAllyHealRequiresLineOfSight", Boolean.class);

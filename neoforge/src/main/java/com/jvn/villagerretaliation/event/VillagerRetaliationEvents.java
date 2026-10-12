@@ -184,6 +184,7 @@ public final class VillagerRetaliationEvents {
             ClipboardWorkforceService.clearRuntimeState(player);
             HiredDebugPreviewService.clearRuntimeState(player);
             ServerboundRequestLimiter.clear(player.getUUID());
+            com.jvn.villagerretaliation.healing.ClericHealingRequestHandler.clear(player.getUUID());
         }
     }
 
@@ -245,6 +246,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.clearRuntimeState();
         ClipboardWorkforceService.clearRuntimeState();
         ServerRuntimeState.clear(event.getServer());
+        com.jvn.villagerretaliation.healing.ClericHealingRequestHandler.clear();
         com.jvn.villagerretaliation.sell.SellBoxMarketSyncService.clear();
         com.jvn.villagerretaliation.duel.DuelService.clearRuntimeState(event.getServer());
         VillagerProfileManager.clearRuntimeState();

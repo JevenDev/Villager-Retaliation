@@ -113,6 +113,10 @@ final class VillagerClericPotionHelper {
         return true;
     }
 
+    static int remainingThrowDelay(Villager villager) {
+        return ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
+    }
+
     static void clearState(Villager villager) {
         ATTACK_DELAY.remove(villager.getUUID());
         DRINKING_POTIONS.remove(villager.getUUID());
@@ -544,7 +548,11 @@ final class VillagerClericPotionHelper {
                 && !VillageAllegianceRelations.sameCanonical(level, villager, entity)) {
             return false;
         }
-        if (entity instanceof Player player && !canSupportPlayer(villager, player)) {
+        if (entity instanceof Player player && (player.isCreative() || player.isSpectator()
+                || ClericHealingService.isPartyCleric(villager) && !canSupportPlayer(villager, player))) {
+            return false;
+        }
+        if (!ClericHealingService.canAutomaticallyHeal(villager, entity)) {
             return false;
         }
         if (requireLineOfSight && !villager.hasLineOfSight(entity)) {
@@ -642,14 +650,17 @@ final class VillagerClericPotionHelper {
 
     private static boolean throwSplashPotionLikeWitch(Villager villager, LivingEntity target, ServerLevel level, ItemStack potionStack) {
         if (VillagerRetaliationPotionUtil.isHealingPotion(potionStack)
-                && !level.getEntitiesOfClass(
-                        LivingEntity.class,
-                        target.getBoundingBox().inflate(SPLASH_RADIUS),
-                        DuelService::isParticipant).isEmpty()) {
-            return false;
+                && !level.getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(SPLASH_RADIUS),
+                DuelService::isParticipant).isEmpty()) return false;
+        if (VillagerRetaliationPotionUtil.isHealingPotion(potionStack) && !target.isInvertedHealAndHarm()) {
+            return ClericHealingService.tryAutomaticHeal(villager, target);
         }
         potionStack = carriedOrGenerated(villager, potionStack);
         if (potionStack.isEmpty()) return false;
+        return launchSplashPotion(villager, target, level, potionStack);
+    }
+
+    static boolean launchSplashPotion(Villager villager, LivingEntity target, ServerLevel level, ItemStack potionStack) {
         ThrownPotion thrownPotion = new ThrownPotion(level, villager);
         thrownPotion.setItem(potionStack);
         double dx = target.getX() + target.getDeltaMovement().x - villager.getX();
@@ -657,7 +668,7 @@ final class VillagerClericPotionHelper {
         double dz = target.getZ() + target.getDeltaMovement().z - villager.getZ();
         double horizontal = Math.sqrt(dx * dx + dz * dz);
         thrownPotion.shoot(dx, dy + horizontal * 0.2D, dz, 0.75F, 8.0F);
-        level.addFreshEntity(thrownPotion);
+        if (!level.addFreshEntity(thrownPotion)) return false;
         villager.swing(InteractionHand.MAIN_HAND, true);
         villager.playSound(SoundEvents.WITCH_THROW, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
         VillagerRetaliationVillagerEquipment.setVisualMainHand(

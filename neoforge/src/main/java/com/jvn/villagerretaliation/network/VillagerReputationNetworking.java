@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "104";
+    private static final String PROTOCOL_VERSION = "105";
 
     private VillagerReputationNetworking() {
     }
@@ -473,6 +473,11 @@ public final class VillagerReputationNetworking {
                             payload.entityId()
                     )))
         );
+        network.playToServer(VillagerHealingRequestPayload.TYPE, VillagerHealingRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context,
+                        player -> com.jvn.villagerretaliation.healing.ClericHealingRequestHandler.handle(player, payload))));
+        network.safePlayToClientThreaded(VillagerHealingStatePayload.TYPE, VillagerHealingStatePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler", "acceptHealingState");
         network.playToServer(
                 VillagerDialogueRequestPayload.TYPE,
                 VillagerDialogueRequestPayload.STREAM_CODEC,

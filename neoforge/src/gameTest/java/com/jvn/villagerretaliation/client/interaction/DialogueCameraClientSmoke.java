@@ -433,6 +433,9 @@ public final class DialogueCameraClientSmoke {
             SmithRepairClientChecks.start(entityId);
             phase = 18;
         } else if (phase == 18 && SmithRepairClientChecks.tick()) {
+            ClericHealingClientChecks.start();
+            phase = 19;
+        } else if (phase == 19 && ClericHealingClientChecks.tick()) {
             minecraft.options.guiScale().set(tradeGuiScale);
             minecraft.resizeDisplay();
             try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Dialogue camera client smoke passed" + System.lineSeparator()); }

@@ -55,6 +55,8 @@ import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload
 import com.jvn.villagerretaliation.network.VillagerAllegianceActionPayload;
 import com.jvn.villagerretaliation.network.VillageAllegianceView;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerHealingRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerHealingStatePayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDuelRequestPayload;
@@ -379,6 +381,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final CampaignConversationScreenController campaignConversation = new CampaignConversationScreenController(new CampaignConversationHost());
     private final CampaignConversationMedia campaignMedia = new CampaignConversationMedia();
     private DialoguePage page = DialoguePage.ROOT;
+    private VillagerHealingStatePayload healingState;
+    private boolean awaitingHealingState;
+    private boolean healingConfirmationPending;
+    private int healingRefreshTicks;
     private com.jvn.villagerretaliation.network.CampaignQuestConfirmationPayload campaignConfirmation;
     private DialoguePage campaignReturnPage = DialoguePage.ROOT;
     private boolean awaitingCampaignConfirmation;
@@ -661,6 +667,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.campaignMedia.update(campaignSession == null ? null : campaignSession.id(), campaignPresentationLine());
         this.giftLimitFeedback.tick();
         tickSkillsProfileKeepAlive();
+        if (this.page == DialoguePage.HEAL && !this.closingWithAnimation && !this.awaitingHealingState
+                && --this.healingRefreshTicks <= 0) {
+            requestHealing(VillagerHealingRequestPayload.Action.OPEN);
+        }
         updateDialogueMouthAnimation();
         syncCameraFocusState();
         ClientVillagerConversationState.tickCameraFocus();
@@ -696,6 +706,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.awaitingForcedDialogueResponse = false;
         if (this.page == DialoguePage.TALK || this.page == DialoguePage.ADVENTURES) {
             rebuildOptionsKeepingListPosition();
+        }
+    }
+
+    public void updateHealingState(VillagerHealingStatePayload status) {
+        if (this.page != DialoguePage.HEAL || !matchesVillager(status.entityId())
+                || this.minecraft == null || this.minecraft.level == null
+                || this.minecraft.level.getEntity(status.entityId()) == null
+                || !this.minecraft.level.getEntity(status.entityId()).getUUID().equals(status.villagerId())) return;
+        boolean refreshDialogue = this.healingState == null || this.healingConfirmationPending
+                || !this.healingState.offer().sameTerms(status.offer());
+        this.healingState = status;
+        this.awaitingHealingState = false;
+        this.healingConfirmationPending = false;
+        if (refreshDialogue) {
+            boolean keyboardFocusVisible = this.keyboardOptionFocusVisible;
+            acceptVillagerDialogue(status.dialogue(), List.of());
+            rebuildOptionsKeepingListPosition();
+            this.keyboardOptionFocusVisible = keyboardFocusVisible;
         }
     }
 
@@ -1309,6 +1337,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addProfileOptions();
         } else if (this.page == DialoguePage.SKILLS) {
             addSkillsOptions();
+        } else if (this.page == DialoguePage.HEAL) {
+            addHealingOptions();
         } else if (this.page == DialoguePage.STUDY) {
             addStudyOptions();
         } else if (this.page == DialoguePage.ALLEGIANCE) {
@@ -2489,6 +2519,35 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.SKILLS);
     }
 
+    private void openHealingPage() {
+        this.healingState = null;
+        openPage(DialoguePage.HEAL);
+        acceptVillagerDialogue(translate("healing.loading"), List.of());
+        requestHealing(VillagerHealingRequestPayload.Action.OPEN);
+    }
+
+    private void requestHealing(VillagerHealingRequestPayload.Action action) {
+        if (this.awaitingHealingState) return;
+        this.awaitingHealingState = true;
+        this.healingConfirmationPending = action == VillagerHealingRequestPayload.Action.CONFIRM;
+        this.healingRefreshTicks = 20;
+        sendToServer(new VillagerHealingRequestPayload(this.villagerEntityId, action,
+                this.healingState == null ? VillagerHealingRequestPayload.NO_QUOTE : this.healingState.quoteId()));
+        if (this.healingConfirmationPending || this.healingState == null) {
+            boolean keyboardFocusVisible = this.keyboardOptionFocusVisible;
+            rebuildOptionsKeepingListPosition();
+            this.keyboardOptionFocusVisible = keyboardFocusVisible;
+        }
+    }
+
+    private void addHealingOptions() {
+        String label = this.healingState == null ? translate("healing.loading") : this.healingState.healLabel();
+        this.options.add(DialogueOption.enabled(label,
+                () -> requestHealing(VillagerHealingRequestPayload.Action.CONFIRM),
+                this.awaitingHealingState || this.healingState == null || !this.healingState.offer().available()));
+        addOption("recruit.nevermind", () -> openPage(DialoguePage.ROOT));
+    }
+
     private void openStudyPage() {
         this.profileRefreshRequested = false;
         requestProfileRefresh();
@@ -3284,6 +3343,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void openPage(DialoguePage page) {
         if (this.campaignConfirmation != null && page != DialoguePage.CAMPAIGN_CONFIRMATION) return;
         DialoguePage previousPage = this.page;
+        if (previousPage == DialoguePage.HEAL && page != DialoguePage.HEAL) {
+            sendToServer(new VillagerHealingRequestPayload(this.villagerEntityId,
+                    VillagerHealingRequestPayload.Action.CLOSE, VillagerHealingRequestPayload.NO_QUOTE));
+            this.awaitingHealingState = false;
+            this.healingConfirmationPending = false;
+        }
         int previousInteractionTop = interactionContainerTopForPage(previousPage) + interactionStateTransitionOffsetY();
         rememberCurrentPageOptionListPosition();
         this.page = page;
@@ -3989,17 +4054,21 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 INTERACTION_BUTTON_SIZE,
                 INTERACTION_BUTTON_SIZE
         );
-        graphics.blit(
-                button.icon(),
-                left,
-                top,
-                0,
-                0,
-                INTERACTION_BUTTON_SIZE,
-                INTERACTION_BUTTON_SIZE,
-                INTERACTION_BUTTON_SIZE,
-                INTERACTION_BUTTON_SIZE
-        );
+        if (button.id() == InteractionMenuAction.HEAL) {
+            graphics.blit(button.icon(), left + 8, top + 8, 0, 0, 11, 11, 11, 11);
+        } else {
+            graphics.blit(
+                    button.icon(),
+                    left,
+                    top,
+                    0,
+                    0,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE
+            );
+        }
         if (highlighted) {
             renderInteractionButtonHighlight(graphics, left, top, button.active());
         }
@@ -4070,6 +4139,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     translate("interaction_button.trade.description"),
                     this::requestTrade,
                     true));
+        }
+        if (this.minecraft != null && this.minecraft.level != null
+                && this.minecraft.level.getEntity(this.villagerEntityId) instanceof Villager cleric
+                && com.jvn.villagerretaliation.combat.ClericHealingService.isCleric(cleric)) {
+            buttons.add(new InteractionMenuButton(
+                    InteractionMenuAction.HEAL,
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_HEAL_TEXTURE,
+                    translate("root.heal"),
+                    translate("interaction_button.heal.description"),
+                    this::openHealingPage,
+                    !this.recruitedPartyVillager || this.partyVillagerAuthorized));
         }
         if (!this.recruitedPartyVillager && this.minecraft != null && this.minecraft.level != null
                 && this.minecraft.level.getEntity(this.villagerEntityId) instanceof Villager smith
@@ -6285,7 +6365,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static int interactionPageDepth(DialoguePage page) {
         return switch (page) {
             case ROOT -> 0;
-            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, STUDY, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT, CAMPAIGN_CONFIRMATION, CAMPAIGN_CONVERSATION -> 1;
+            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, STUDY, HEAL, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT, CAMPAIGN_CONFIRMATION, CAMPAIGN_CONVERSATION -> 1;
             case DUEL_LOADOUT, DUEL_WAGER, DUEL_CONFIRM, ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
             case HIRE_DURATION,
                     END_CONTRACT_CONFIRMATION,
@@ -6467,6 +6547,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         DUEL_LOADOUT,
         DUEL_WAGER,
         DUEL_CONFIRM,
+        HEAL,
         PROFILE,
         SKILLS,
         STUDY,
@@ -6553,6 +6634,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private enum InteractionMenuAction {
         TALK,
         TRADE,
+        HEAL,
         REPAIR,
         ADVENTURES,
         PROFILE,

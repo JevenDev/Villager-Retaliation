@@ -906,6 +906,17 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean clericsUsePotions = true;
 
+        @RangeConstraint(min = 0, max = 64)
+        public int clericHealingPrice = 3;
+
+        public VillagerReputationLevel clericFreeHealingMinReputation = VillagerReputationLevel.RESPECTED;
+
+        @RangeConstraint(min = 20, max = 20 * 60 * 60)
+        public int clericFreeHealingIntervalTicks = 24000;
+
+        @RangeConstraint(min = 20, max = 20 * 60 * 60)
+        public int partyClericFreeHealingIntervalTicks = 6000;
+
         @RangeConstraint(min = 1.0D, max = 64.0D, decimalPlaces = 1)
         public double passiveClericAllyHealRange = 12.0D;
 

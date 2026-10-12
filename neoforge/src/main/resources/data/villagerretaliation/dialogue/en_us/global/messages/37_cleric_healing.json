@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.healing"
+  },
+  "messages": [
+    {
+      "key": "interaction.healing.free",
+      "lines": [
+        "You have my help freely. Shall I tend your wounds?"
+      ],
+      "id": "global.messages.healing.free"
+    },
+    {
+      "key": "interaction.healing.paid",
+      "lines": [
+        "Another healing potion will cost {cost} {currency}. Shall I?"
+      ],
+      "id": "global.messages.healing.paid"
+    },
+    {
+      "key": "interaction.healing.supplied",
+      "lines": [
+        "I can use one of the healing potions you supplied. Shall I?"
+      ],
+      "id": "global.messages.healing.supplied"
+    },
+    {
+      "key": "interaction.healing.disabled",
+      "lines": [
+        "I cannot offer healing right now."
+      ],
+      "id": "global.messages.healing.disabled"
+    },
+    {
+      "key": "interaction.healing.refused",
+      "lines": [
+        "You will need to earn back my trust before I tend your wounds."
+      ],
+      "id": "global.messages.healing.refused"
+    },
+    {
+      "key": "interaction.healing.unauthorized",
+      "lines": [
+        "I reserve these supplies for my party."
+      ],
+      "id": "global.messages.healing.unauthorized"
+    },
+    {
+      "key": "interaction.healing.full_health",
+      "lines": [
+        "You are already in good health."
+      ],
+      "id": "global.messages.healing.full_health"
+    },
+    {
+      "key": "interaction.healing.cooldown",
+      "lines": [
+        "Give me another {time_remaining} seconds to prepare another throw."
+      ],
+      "id": "global.messages.healing.cooldown"
+    },
+    {
+      "key": "interaction.healing.supplies_depleted",
+      "lines": [
+        "I have no supplied splash potions of Healing left. I can prepare another free potion in {time_remaining} seconds."
+      ],
+      "id": "global.messages.healing.supplies_depleted"
+    },
+    {
+      "key": "interaction.healing.insufficient_funds",
+      "lines": [
+        "A healing potion costs {cost} {currency}. You do not have enough with you."
+      ],
+      "id": "global.messages.healing.insufficient_funds"
+    },
+    {
+      "key": "interaction.healing.unavailable",
+      "lines": [
+        "I cannot safely throw a healing potion right now."
+      ],
+      "id": "global.messages.healing.unavailable"
+    },
+    {
+      "key": "interaction.healing.changed",
+      "lines": [
+        "The healing offer has changed. Please check it before choosing again."
+      ],
+      "id": "global.messages.healing.changed"
+    },
+    {
+      "key": "interaction.healing.success",
+      "lines": [
+        "Here you are. Take care of yourself."
+      ],
+      "id": "global.messages.healing.success"
+    },
+    {
+      "key": "interaction.healing.option.free",
+      "lines": [
+        "Heal (Free)"
+      ],
+      "id": "global.messages.healing.option_free"
+    },
+    {
+      "key": "interaction.healing.option.paid",
+      "lines": [
+        "Heal ({cost} {currency})"
+      ],
+      "id": "global.messages.healing.option_paid"
+    },
+    {
+      "key": "interaction.healing.option.supplied",
+      "lines": [
+        "Heal (Supplied potion)"
+      ],
+      "id": "global.messages.healing.option_supplied"
+    },
+    {
+      "key": "interaction.healing.option.none",
+      "lines": [
+        "Heal (Unavailable)"
+      ],
+      "id": "global.messages.healing.option_none"
+    }
+  ]
+}

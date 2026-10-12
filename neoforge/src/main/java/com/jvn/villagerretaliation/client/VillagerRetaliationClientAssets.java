@@ -105,6 +105,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_talk");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_TRADE_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_trade");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_HEAL_TEXTURE =
+            texture("gui/villager_stats/villager_health_stat");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_DUEL_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_duel");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE =
