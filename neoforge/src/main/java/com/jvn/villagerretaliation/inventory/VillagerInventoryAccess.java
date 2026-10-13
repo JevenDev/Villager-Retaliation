@@ -31,6 +31,12 @@ public final class VillagerInventoryAccess {
     }
 
     public static boolean canAccess(ServerLevel level, Villager villager, ServerPlayer player) {
+        var party = com.jvn.villagerretaliation.party.PartyService
+                .getPartyForVillager(level, villager.getUUID()).orElse(null);
+        if (party != null) {
+            return com.jvn.villagerretaliation.party.CompanionAuthority
+                    .canEquip(player.getUUID(), party, party.villager(villager.getUUID()));
+        }
         return !villager.isBaby()
                 && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
                 >= VillagerReputationLevel.REVERED.trustRank();

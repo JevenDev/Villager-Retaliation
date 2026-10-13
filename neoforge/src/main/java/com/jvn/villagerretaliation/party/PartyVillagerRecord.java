@@ -45,6 +45,7 @@ public final class PartyVillagerRecord {
 
     private final UUID villagerId;
     private UUID recruiterId;
+    private UUID commanderId;
     private final UUID contractId;
     private final int recruitmentOrder;
     private PartyCommandMode commandMode;
@@ -89,6 +90,7 @@ public final class PartyVillagerRecord {
             BlockPos lastKnownPosition) {
         this.villagerId = villagerId;
         this.recruiterId = recruiterId;
+        this.commanderId = recruiterId;
         this.contractId = contractId;
         this.recruitmentOrder = Math.max(0, recruitmentOrder);
         this.commandMode = commandMode == null ? PartyCommandMode.FOLLOW : commandMode;
@@ -114,6 +116,14 @@ public final class PartyVillagerRecord {
 
     void transferRecruiter(UUID recruiterId) {
         if (recruiterId != null) this.recruiterId = recruiterId;
+    }
+
+    public UUID commanderId() {
+        return this.commanderId;
+    }
+
+    public void assignCommander(UUID commanderId) {
+        this.commanderId = Objects.requireNonNull(commanderId);
     }
 
     public UUID contractId() {
@@ -327,6 +337,7 @@ public final class PartyVillagerRecord {
         CompoundTag tag = new CompoundTag();
         tag.putUUID(TAG_VILLAGER, this.villagerId);
         tag.putUUID(TAG_RECRUITER, this.recruiterId);
+        tag.putUUID("Commander", this.commanderId);
         tag.putUUID(TAG_CONTRACT, this.contractId);
         tag.putInt(TAG_ORDER, this.recruitmentOrder);
         tag.putString(TAG_COMMAND, this.commandMode.name());
@@ -402,6 +413,7 @@ public final class PartyVillagerRecord {
                         ? new BlockPos(tag.getInt(TAG_LAST_X), tag.getInt(TAG_LAST_Y), tag.getInt(TAG_LAST_Z))
                         : null
         );
+        record.commanderId = tag.hasUUID("Commander") ? tag.getUUID("Commander") : record.recruiterId;
         if (tag.getBoolean(TAG_POLICY_OVERRIDES)) {
             if (tag.contains(TAG_COMBAT_MODE_OVERRIDE, Tag.TAG_STRING)) {
                 record.combatModeOverride = PartyCombatMode.byName(tag.getString(TAG_COMBAT_MODE_OVERRIDE));

@@ -48,9 +48,6 @@ public final class PartyVillagerContractService {
             return ContractResult.failure("villagerretaliation.party.error.villager_unavailable");
         }
         PartyRecord currentParty = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
-        if (currentParty != null && !currentParty.leaderId().equals(player.getUUID())) {
-            return ContractResult.failure("villagerretaliation.party.error.leader_only");
-        }
         if (currentParty != null && currentParty.villagers().size() >= PartyService.MAX_VILLAGERS) {
             return ContractResult.failure("villagerretaliation.party.error.villager_limit");
         }
@@ -131,7 +128,7 @@ public final class PartyVillagerContractService {
         }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
-        if (!isAuthorizedPartyMember(player, party, record)) {
+        if (!CompanionAuthority.canManage(player.getUUID(), party, record)) {
             return ContractResult.failure("villagerretaliation.party.error.not_in_party");
         }
         long now = level.getServer().overworld().getGameTime();
@@ -166,6 +163,7 @@ public final class PartyVillagerContractService {
         if (context == null) {
             return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
+        context.record().assignCommander(player.getUUID());
         context.record().setFollowing();
         PartyService.markChanged(context.level());
         VillagerRecruitmentService.applyPartyFollowing(context.level(), villager, player);
@@ -190,6 +188,14 @@ public final class PartyVillagerContractService {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
             return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
+        }
+        if (!CompanionAuthority.canManage(player.getUUID(), context.party(), context.record())) {
+            return ContractResult.failure("villagerretaliation.party.error.companion_owner_required");
+        }
+        if (com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(villager)
+                || com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)
+                || villager.hurtTime > 0) {
+            return ContractResult.failure("villagerretaliation.party.error.companion_in_combat");
         }
         PartyVillagerRecord removed = PartyService.removeVillager(context.level(), villager.getUUID());
         if (removed == null) {
@@ -533,11 +539,7 @@ public final class PartyVillagerContractService {
     }
 
     private static boolean isAuthorizedLeader(ServerPlayer player, PartyRecord party, PartyVillagerRecord record) {
-        return player != null
-                && party != null
-                && record != null
-                && party.hasAdminPrivileges(player.getUUID())
-                && party.playerIds().contains(player.getUUID());
+        return player != null && CompanionAuthority.canCommand(player.getUUID(), party, record);
     }
 
     private static ContractResult settingsChanged(PartyVillagerContext context, String messageKey) {
@@ -554,8 +556,7 @@ public final class PartyVillagerContractService {
     }
 
     private static boolean isAuthorizedInventoryUser(ServerPlayer player, PartyRecord party, PartyVillagerRecord record) {
-        return isAuthorizedPartyMember(player, party, record)
-                && party.hasAdminPrivileges(player.getUUID());
+        return player != null && CompanionAuthority.canEquip(player.getUUID(), party, record);
     }
 
     private static void expire(MinecraftServer server, PartyRecord party, PartyVillagerRecord record) {
@@ -598,12 +599,12 @@ public final class PartyVillagerContractService {
         if (record.commandMode() == PartyCommandMode.STAY) {
             ResourceLocation dimension = record.stayDimension();
             if (dimension != null && dimension.equals(level.dimension().location())) {
-                VillagerRecruitmentService.applyPartyStay(level, villager, party.leaderId(), record.stayPosition());
+                VillagerRecruitmentService.applyPartyStay(level, villager, record.commanderId(), record.stayPosition());
             } else {
                 VillagerRecruitmentService.clearPartyFollowing(villager);
             }
         } else {
-            VillagerRecruitmentService.applyPartyFollowing(level, villager, party.leaderId());
+            VillagerRecruitmentService.applyPartyFollowing(level, villager, record.commanderId());
         }
     }
 

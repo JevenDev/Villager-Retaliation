@@ -435,7 +435,9 @@ public final class PartyService {
         if (party.leaderId().equals(player.getUUID())) {
             return PartyResult.failure("villagerretaliation.party.error.leader_must_disband");
         }
-        return data.removePlayer(party, player.getUUID())
+        boolean removed = data.removePlayer(party, player.getUUID());
+        if (removed) separateCompanions(player.getServer(), data, party, player.getUUID());
+        return removed
                 ? PartyResult.success("villagerretaliation.party.player_left", party.id(), null)
                 : PartyResult.failure("villagerretaliation.party.error.not_in_party");
     }
@@ -452,9 +454,31 @@ public final class PartyService {
         if (party.leaderId().equals(playerId)) {
             return PartyResult.failure("villagerretaliation.party.error.leader_must_disband");
         }
-        return data.removePlayer(party, playerId)
+        boolean removed = data.removePlayer(party, playerId);
+        if (removed) separateCompanions(leader.getServer(), data, party, playerId);
+        return removed
                 ? PartyResult.success("villagerretaliation.party.player_removed", party.id(), null)
                 : PartyResult.failure("villagerretaliation.party.error.player_not_in_party");
+    }
+
+    private static void separateCompanions(MinecraftServer server, PartySavedData data, PartyRecord party, UUID playerId) {
+        PartyRecord personalParty = null;
+        for (PartyVillagerRecord record : List.copyOf(party.villagers())) {
+            if (record.recruiterId().equals(playerId)) {
+                if (personalParty == null) personalParty = data.createParty(playerId, serverGameTime(server));
+                data.removeVillager(party, record.villagerId());
+                record.assignCommander(playerId);
+                data.addVillager(personalParty, record);
+            } else if (record.commanderId().equals(playerId)) {
+                record.assignCommander(record.recruiterId());
+                data.changed();
+            }
+        }
+        PartyVillagerContractService.refreshCommandOwnership(server, party);
+        if (personalParty != null) {
+            PartyVillagerContractService.refreshCommandOwnership(server, personalParty);
+            PartySyncService.syncParty(server, personalParty.id());
+        }
     }
 
     public static OwnershipTransferResult transferVillagerOwnership(
@@ -515,9 +539,6 @@ public final class PartyService {
         }
         PartyRecord party = data.partyForPlayer(leaderId).orElse(null);
         boolean created = false;
-        if (party != null && !party.leaderId().equals(leaderId)) {
-            return PartyResult.failure("villagerretaliation.party.error.leader_only");
-        }
         if (party != null && party.villagers().size() >= MAX_VILLAGERS) {
             return PartyResult.failure("villagerretaliation.party.error.villager_limit");
         }
