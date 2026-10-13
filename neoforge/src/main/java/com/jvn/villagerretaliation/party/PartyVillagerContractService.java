@@ -567,6 +567,7 @@ public final class PartyVillagerContractService {
 
     public static void clearRuntimeState() {
         nextExpirationScanGameTime = Long.MIN_VALUE;
+        com.jvn.villagerretaliation.quest.QuestContributionService.clearRuntimeState();
     }
 
     private static PartyVillagerContext authorizedContext(ServerPlayer player, Villager villager) {

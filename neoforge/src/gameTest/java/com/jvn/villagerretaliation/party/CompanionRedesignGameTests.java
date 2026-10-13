@@ -1,6 +1,11 @@
 package com.jvn.villagerretaliation.party;
 
 import java.util.UUID;
+import java.util.List;
+import java.util.Set;
+import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
+import net.minecraft.world.level.Level;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -110,6 +115,79 @@ public final class CompanionRedesignGameTests {
         var loaded = CompanionSavedData.load(CompanionSavedData.get(helper.getLevel()).save(new net.minecraft.nbt.CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
         helper.assertValueEqual(loaded.find(villager).getCompound("Bonds").getInt(player.toString()), 5, "bond belongs to villager relationship across save/load");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void sharedTurnInRequiresSupplyConsentAndCurrentStack(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var level = helper.getLevel();
+        var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, new BlockPos(1, 2, 1));
+        player.setPos(villager.getX(), villager.getY(), villager.getZ());
+        player.getInventory().clearContent();
+        var data = PartySavedData.get(level);
+        var party = data.createParty(player.getUUID(), level.getGameTime());
+        var record = new PartyVillagerRecord(villager.getUUID(), player.getUUID(), UUID.randomUUID(), 0, PartyCommandMode.STAY,
+                level.dimension().location(), villager.blockPosition(), 0L, 24000L, 1, 32, "Companion", "", level.dimension().location(), villager.blockPosition());
+        data.addVillager(party, record);
+        var shared = new PartySharedQuestRecord(ResourceLocation.parse("villagerretaliation:supply_test"), villager.getUUID(), 0L);
+        shared.enroll(player.getUUID(), false);
+        party.addSharedQuest(shared);
+        var inventory = com.jvn.villagerretaliation.inventory.HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(4, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BONE, 5));
+        inventory.setItem(6, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BONE, 5));
+        var objective = itemObjective("bones", ResourceLocation.parse("minecraft:bone"), 5);
+        java.util.function.BiPredicate<QuestDefinition.Objective, net.minecraft.world.item.ItemStack> matcher = (obj, stack) -> stack.is(net.minecraft.world.item.Items.BONE);
+        helper.assertTrue(com.jvn.villagerretaliation.quest.PartyQuestService.planSharedItemSubmission(player, shared, List.of(objective), matcher).isEmpty(), "unoffered companion inventory is protected");
+        helper.assertTrue(!com.jvn.villagerretaliation.quest.QuestContributionService.offer(player, villager, shared.questId(), 4, 5), "equipped gear cannot be offered");
+        helper.assertTrue(com.jvn.villagerretaliation.quest.QuestContributionService.offer(player, villager, shared.questId(), 6, 5), "supplies can be designated");
+        var plan = com.jvn.villagerretaliation.quest.PartyQuestService.planSharedItemSubmission(player, shared, List.of(objective), matcher).orElseThrow();
+        inventory.setItem(6, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BONE, 5));
+        helper.assertTrue(!plan.remove(), "replacing a stack invalidates a planned turn-in");
+        helper.assertValueEqual(inventory.getItem(6).getCount(), 5, "replacement stays intact");
+        com.jvn.villagerretaliation.quest.QuestContributionService.offer(player, villager, shared.questId(), 6, 5);
+        var fresh = com.jvn.villagerretaliation.quest.PartyQuestService.planSharedItemSubmission(player, shared, List.of(objective), matcher).orElseThrow();
+        helper.assertTrue(fresh.remove(), "explicit current supplies are consumed");
+        helper.assertValueEqual(inventory.getItem(4).getCount(), 5, "equipped stack remains untouched");
+        helper.assertTrue(!fresh.remove(), "one-time plan cannot consume twice");
+        data.removeParty(party.id());
+        com.jvn.villagerretaliation.quest.QuestContributionService.clearRuntimeState();
+        helper.succeed();
+    }
+
+    private static QuestDefinition.Objective itemObjective(String id, ResourceLocation item, int count) {
+        return new QuestDefinition.Objective(
+                id,
+                QuestDefinition.ObjectiveType.ITEM_CHECK,
+                false,
+                null,
+                Level.OVERWORLD,
+                null,
+                8,
+                List.of(),
+                16,
+                8,
+                item,
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                null,
+                null,
+                QuestFactScope.PLAYER,
+                null,
+                Set.of(),
+                "",
+                Set.of(),
+                null,
+                null,
+                count,
+                true,
+                QuestDefinition.ItemRequirements.EMPTY,
+                List.of(),
+                QuestDefinition.ObjectiveTracker.EMPTY);
     }
 
     private static PartyVillagerRecord record(UUID owner) {

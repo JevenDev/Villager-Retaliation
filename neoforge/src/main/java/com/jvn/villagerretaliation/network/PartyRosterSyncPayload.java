@@ -95,6 +95,9 @@ public record PartyRosterSyncPayload(
             buffer.writeBoolean(villager.quickCommandsEnabled());
             buffer.writeBoolean(villager.weaponsUnequipped());
             buffer.writeBoolean(villager.assignedMount());
+            buffer.writeUUID(villager.recruiterId());
+            buffer.writeUUID(villager.commanderId());
+            buffer.writeBoolean(villager.commanderEquipmentAccess());
         }
     }
 
@@ -143,6 +146,9 @@ public record PartyRosterSyncPayload(
                     buffer.readEnum(PartyDropCollectionMode.class),
                     buffer.readBoolean(),
                     buffer.readBoolean(),
+                    buffer.readBoolean(),
+                    buffer.readUUID(),
+                    buffer.readUUID(),
                     buffer.readBoolean()));
         }
         return new PartyRosterSyncPayload(true, partyId, leaderName, recipientLeader,
@@ -176,6 +182,28 @@ public record PartyRosterSyncPayload(
             PartyDropCollectionMode dropCollectionMode,
             boolean quickCommandsEnabled,
             boolean weaponsUnequipped,
+            boolean assignedMount,
+            UUID recruiterId, UUID commanderId, boolean commanderEquipmentAccess) {
+        public VillagerEntry(UUID villagerId,
+            int entityId,
+            String name,
+            String professionKey,
+            String genderName,
+            PartyCommandMode commandMode,
+            boolean available,
+            int remainingDays,
+            long contractEndGameTime,
+            PartyCombatMode combatMode,
+            PartyAttackMode attackMode,
+            PartyDropCollectionMode dropCollectionMode,
+            boolean quickCommandsEnabled,
+            boolean weaponsUnequipped,
             boolean assignedMount) {
+            this(villagerId, entityId, name, professionKey, genderName, commandMode, available, remainingDays, contractEndGameTime, combatMode, attackMode, dropCollectionMode, quickCommandsEnabled, weaponsUnequipped, assignedMount, villagerId, villagerId, false);
+        }
+
+        public boolean canManage(UUID playerId) { return recruiterId.equals(playerId); }
+        public boolean canCommand(UUID playerId) { return recruiterId.equals(playerId) || commanderId.equals(playerId); }
+        public boolean canEquip(UUID playerId) { return canManage(playerId) || commanderEquipmentAccess && commanderId.equals(playerId); }
     }
 }

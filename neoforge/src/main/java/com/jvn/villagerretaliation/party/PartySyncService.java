@@ -112,7 +112,8 @@ public final class PartySyncService {
                     record.dropCollectionMode(),
                     record.quickCommandsEnabled(),
                     record.weaponsUnequipped(),
-                    VillagerMountAssignmentService.hasAssignment(server.overworld(), record.villagerId())));
+                    VillagerMountAssignmentService.hasAssignment(server.overworld(), record.villagerId()),
+                    record.recruiterId(), record.commanderId(), record.commanderEquipmentAccess()));
         }
         return new PartyRosterSnapshot(
                 party.id(),

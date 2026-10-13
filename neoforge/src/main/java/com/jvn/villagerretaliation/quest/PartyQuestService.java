@@ -221,10 +221,10 @@ public final class PartyQuestService {
             return Optional.empty();
         }
 
-        List<StackSource> sources = itemSources(level.getServer(), party, shared);
+        List<StackSource> sources = itemSources(submitter, party, shared);
         IdentityHashMap<ItemStack, Integer> available = new IdentityHashMap<>();
         for (StackSource source : sources) {
-            available.put(source.stack(), source.stack().getCount());
+            available.put(source.stack(), Math.min(source.stack().getCount(), source.permittedCount()));
         }
         List<Removal> removals = new ArrayList<>();
         List<ItemStack> submitted = new ArrayList<>();
@@ -251,44 +251,19 @@ public final class PartyQuestService {
         return Optional.of(new SubmissionPlan(List.copyOf(removals), List.copyOf(submitted), matcher));
     }
 
-    private static List<StackSource> itemSources(
-            MinecraftServer server,
-            PartyRecord party,
-            PartySharedQuestRecord shared) {
+    private static List<StackSource> itemSources(ServerPlayer submitter, PartyRecord party, PartySharedQuestRecord shared) {
         List<StackSource> sources = new ArrayList<>();
-        for (Map.Entry<UUID, PartySharedQuestRecord.Enrollment> entry : shared.enrollments().entrySet()) {
-            if (entry.getValue().pendingStart()) {
-                continue;
-            }
-            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-            if (player == null || PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
-                    .filter(current -> current.id().equals(party.id()))
-                    .isEmpty()) {
-                continue;
-            }
-            for (ItemStack stack : player.getInventory().items) {
-                if (!stack.isEmpty()) {
-                    sources.add(new StackSource(stack, player.getInventory()));
-                }
-            }
-            for (ItemStack stack : player.getInventory().offhand) {
-                if (!stack.isEmpty()) {
-                    sources.add(new StackSource(stack, player.getInventory()));
-                }
-            }
+        var inventory = submitter.getInventory();
+        for (int slot = 0; slot < inventory.items.size(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (!stack.isEmpty()) sources.add(new StackSource(stack, inventory, slot, stack.copy(), stack.getCount(),
+                    () -> submitter.isAlive() && shared.linked(submitter.getUUID())
+                            && PartyService.getPartyForPlayer(submitter.serverLevel(), submitter.getUUID()).map(partyRecord -> partyRecord.id().equals(party.id())).orElse(false),
+                    () -> { }, "Your inventory slot " + slot));
         }
-        for (PartyVillagerRecord villagerRecord : party.villagers()) {
-            Villager villager = VillagerEntityResolver.loaded(server, villagerRecord.villagerId());
-            if (villager == null || !villager.isAlive()) {
-                continue;
-            }
-            HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
-            for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-                ItemStack stack = inventory.getItem(slot);
-                if (!stack.isEmpty()) {
-                    sources.add(new StackSource(stack, inventory));
-                }
-            }
+        for (var contribution : QuestContributionService.contributions(submitter, party, shared)) {
+            sources.add(new StackSource(contribution.stack(), contribution.inventory(), contribution.slot(), contribution.stack().copy(),
+                    contribution.count(), contribution.valid(), contribution.consumed(), contribution.description()));
         }
         return sources;
     }
@@ -311,10 +286,18 @@ public final class PartyQuestService {
             return this.submittedStacks;
         }
 
+        public List<String> preview() {
+            return this.removals.stream().map(removal -> removal.count() + " x " + removal.source().stack().getHoverName().getString()
+                    + " from " + removal.source().description()).toList();
+        }
+
         public boolean remove() {
             IdentityHashMap<ItemStack, Integer> totals = new IdentityHashMap<>();
             for (Removal removal : this.removals) {
-                if (!this.matcher.test(removal.objective(), removal.source().stack())) {
+                var source = removal.source();
+                if (!source.valid().getAsBoolean() || source.container().getItem(source.slot()) != source.stack()
+                        || !ItemStack.isSameItemSameComponents(source.snapshot(), source.stack())
+                        || !this.matcher.test(removal.objective(), source.stack())) {
                     return false;
                 }
                 totals.merge(removal.source().stack(), removal.count(), Integer::sum);
@@ -332,11 +315,13 @@ public final class PartyQuestService {
                 changedContainers.put(removal.source().container(), Boolean.TRUE);
             }
             changedContainers.keySet().forEach(Container::setChanged);
+            this.removals.stream().map(Removal::source).distinct().forEach(source -> source.consumed().run());
             return true;
         }
     }
 
-    private record StackSource(ItemStack stack, Container container) {
+    private record StackSource(ItemStack stack, Container container, int slot, ItemStack snapshot, int permittedCount,
+            java.util.function.BooleanSupplier valid, Runnable consumed, String description) {
     }
 
     private record Removal(StackSource source, QuestDefinition.Objective objective, int count) {

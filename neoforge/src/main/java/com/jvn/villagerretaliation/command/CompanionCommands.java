@@ -52,6 +52,24 @@ final class CompanionCommands {
                     return villager != null && CompanionLifecycleService.setSafeHome(player, villager)
                             ? accepted(context.getSource(), "Agreed this safe location as home") : denied(context.getSource());
                 })))
+                .then(literal("offer").then(argument("quest", net.minecraft.commands.arguments.ResourceLocationArgument.id())
+                        .then(argument("slot", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 35))
+                                .then(argument("count", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 99)).executes(context ->
+                                        com.jvn.villagerretaliation.quest.QuestContributionService.offer(context.getSource().getPlayerOrException(), null,
+                                                net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "quest"),
+                                                com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "slot"),
+                                                com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "count")) ? 1 : denied(context.getSource()))))))
+                .then(literal("offersupplies").then(argument("villager", UuidArgument.uuid())
+                        .then(argument("quest", net.minecraft.commands.arguments.ResourceLocationArgument.id())
+                                .then(argument("slot", com.mojang.brigadier.arguments.IntegerArgumentType.integer(6, 41))
+                                        .then(argument("count", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 99)).executes(context -> {
+                                            var player = context.getSource().getPlayerOrException();
+                                            var villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                                            return villager != null && com.jvn.villagerretaliation.quest.QuestContributionService.offer(player, villager,
+                                                    net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "quest"),
+                                                    com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "slot"),
+                                                    com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "count")) ? 1 : denied(context.getSource());
+                                        }))))))
                 .then(setting("dimensionreturn", "AllowDimensionReturn"))
                 .then(setting("equipment", "CommanderEquipmentAccess"));
     }

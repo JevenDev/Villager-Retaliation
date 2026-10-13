@@ -191,6 +191,7 @@ public final class QuestInventoryService {
             if (issuer != null && !VillagerInventoryAccess.canAddItems(issuer, plan.submittedStacks())) {
                 return ItemHandInResult.NO_ROOM;
             }
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("Quest contribution: " + String.join(", ", plan.preview())));
             if (!plan.remove()) {
                 return ItemHandInResult.MISSING_ITEMS;
             }

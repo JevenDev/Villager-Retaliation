@@ -929,8 +929,7 @@ public final class PartyInventoryOverlay {
         if (index < PUSH_BUTTON_FIRST_GROUP_SIZE) {
             return PartyRosterClient.roster().recipientLeader() && index < partyMembers().size();
         }
-        return PartyRosterClient.hasAdminPrivileges()
-                && index - PUSH_BUTTON_FIRST_GROUP_SIZE < PartyRosterClient.roster().villagers().size();
+        return PartyRosterClient.canManage(index - PUSH_BUTTON_FIRST_GROUP_SIZE);
     }
 
     private static Bounds pushButtonBounds(InventoryScreen screen, int index) {
@@ -956,7 +955,7 @@ public final class PartyInventoryOverlay {
 
     private static void toggleVillagerQuickCommands(int villagerIndex) {
         var roster = PartyRosterClient.roster();
-        if (!PartyRosterClient.hasAdminPrivileges()
+        if (!PartyRosterClient.canManage(villagerIndex)
                 || villagerIndex < 0
                 || villagerIndex >= roster.villagers().size()) {
             return;
