@@ -19,7 +19,7 @@ final class SettlementBuildingDraft {
     final String label;
     BlockPos anchor;
     Rotation rotation = Rotation.NONE;
-    UUID builder;
+    UUID builder = com.jvn.villagerretaliation.settlement.SettlementProject.AUTOMATIC_BUILDER;
     boolean placed;
     boolean submitting;
     String failure = "";
@@ -89,8 +89,7 @@ final class SettlementBuildingDraft {
 
     boolean ready() {
         return this.placed && !this.pending && !this.dirty && !this.submitting && this.preview != null
-                && this.preview.failure().isEmpty() && this.preview.funds().compareTo(com.jvn.villagerretaliation.sell.CurrencyAmount.of(this.preview.price(), 1)) >= 0
-                && this.preview.builders().stream().anyMatch(candidate -> candidate.id().equals(this.builder));
+                && this.preview.failure().isEmpty();
     }
 
     void submitting() {

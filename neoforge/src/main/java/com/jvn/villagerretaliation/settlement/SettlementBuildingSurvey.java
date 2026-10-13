@@ -178,6 +178,14 @@ public final class SettlementBuildingSurvey {
     }
 
     static BedState inspectBed(ObservedBlocks blocks, SettlementArea area, BlockPos head) {
+        if (area != null && (area.max().getX() - area.min().getX() < 2
+                || area.max().getZ() - area.min().getZ() < 2)) return BedState.BLOCKED;
+        var structure = inspectBedStructure(blocks, area, head);
+        if (structure != BedState.AVAILABLE || area == null) return structure;
+        return blocks.housing.computeIfAbsent(area, key -> new SettlementHousingSurvey(blocks, key)).bed(head);
+    }
+
+    private static BedState inspectBedStructure(ObservedBlocks blocks, SettlementArea area, BlockPos head) {
         if (!blocks.observed(head)) {
             return blocks.blocked(head) ? BedState.BLOCKED : BedState.UNOBSERVED;
         }
@@ -199,9 +207,12 @@ public final class SettlementBuildingSurvey {
             return BedState.BLOCKED;
         }
         for (var pos : List.of(head, foot)) {
+            if (blocks.blocked(pos.below()) || blocks.observed(pos.below())
+                    && !blocks.getBlockState(pos.below()).isFaceSturdy(blocks, pos.below(), Direction.UP)) return BedState.BLOCKED;
             if (blocks.blocked(pos.above()) || blocks.observed(pos.above()) && !clearAbove(blocks, pos)) return BedState.BLOCKED;
         }
-        if (!blocks.observed(head.above()) || !blocks.observed(foot.above())) return BedState.UNOBSERVED;
+        if (!blocks.observed(head.above()) || !blocks.observed(foot.above())
+                || !blocks.observed(head.below()) || !blocks.observed(foot.below())) return BedState.UNOBSERVED;
         boolean unobservedExit = false;
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos headExit = head.relative(direction);
@@ -236,6 +247,7 @@ public final class SettlementBuildingSurvey {
         private final ServerLevel level;
         private final LevelChunk supplied;
         private final SettlementTerrainObservations terrain;
+        private final Map<SettlementArea, SettlementHousingSurvey> housing = new java.util.HashMap<>();
 
         ObservedBlocks(ServerLevel level, LevelChunk supplied) {
             this(level, supplied, null);

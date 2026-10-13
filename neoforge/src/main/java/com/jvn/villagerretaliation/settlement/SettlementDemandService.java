@@ -482,7 +482,7 @@ public final class SettlementDemandService {
         }
 
         private void stockReserves() {
-            for (var depot : SettlementStock.depots(this.town)) for (var target : depot.stockTargets()) {
+            for (var depot : SettlementStock.depots(this.town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER)) for (var target : depot.stockTargets()) {
                 var position = SettlementSupplyStock.positions(this.level, depot.position()).getFirst();
                 add(depot.id(), depot.area(), Kind.STOCK_RESERVE, target.sample().getHoverName().getString(),
                         WorkSupplyRequirement.exact("stock_reserve", target.sample(), target.count()),

@@ -24,7 +24,7 @@ public final class SettlementSupplyRecovery {
     public static List<Recovery> inspect(ServerLevel level, SettlementRecord town, SettlementDemandService.Snapshot demand) {
         var stock = demand.stock();
         var positions = new LinkedHashSet<BlockPos>();
-        SettlementStock.depots(town).forEach(depot -> positions.add(depot.position()));
+        SettlementStock.depots(town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER).forEach(depot -> positions.add(depot.position()));
         for (var plan : town.worksitePlans().values()) for (var link : plan.settings().storage().entries())
             positions.add(SettlementSupplyStock.positions(level, link.position()).getFirst());
         var contents = new java.util.LinkedHashMap<BlockPos, List<ItemStack>>();

@@ -472,11 +472,11 @@ public final class SettlementManagementScreen extends Screen {
                 action(0, "new_building", permits(SettlementPermission.BUILD)
                         && this.snapshot.header() != null && this.snapshot.header().projectLimit() > 0);
                 action(1, "cancel_project", permits(SettlementPermission.BUILD)
-                        && selected instanceof SettlementManagementPayload.Project project && project.status() == SettlementProject.Status.ACTIVE);
+                        && selected instanceof SettlementManagementPayload.Project project && (project.status() == SettlementProject.Status.ACTIVE || project.status() == SettlementProject.Status.PENDING));
                 action(2, "project_builder", selected != null);
                 action(3, "project_crew", selected instanceof SettlementManagementPayload.Project);
                 action(4, "policy.create", selected instanceof SettlementManagementPayload.Project);
-                this.actions[3].setMessage(Component.literal("Crew and priority"));
+                this.actions[3].setMessage(Component.literal("Construction crew"));
 
             }
             case TOWNS -> action(0, "open", selected != null);
@@ -951,6 +951,8 @@ public final class SettlementManagementScreen extends Screen {
     }
 
     private final class Rows extends ObjectSelectionList<Row> {
+        private SettlementManagementPayload.Project dragged;
+
         private Rows(int x, int y, int width, int height) {
             super(SettlementManagementScreen.this.minecraft, width, height, y, 32);
             setX(x);
@@ -959,6 +961,37 @@ public final class SettlementManagementScreen extends Screen {
 
         private void reset() {
             clearEntries();
+            this.dragged = null;
+        }
+
+        @Override
+        public boolean mouseClicked(double x, double y, int button) {
+            boolean handled = super.mouseClicked(x, y, button);
+            var row = getEntryAtPosition(x, y);
+            if (handled && button == 0 && permits(SettlementPermission.BUILD) && !submitting()
+                    && row != null && row.entry instanceof SettlementManagementPayload.Project project
+                    && project.status() == SettlementProject.Status.PENDING) this.dragged = project;
+            return handled;
+        }
+
+        @Override
+        public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
+            if (this.dragged != null && button == 0) return true;
+            return super.mouseDragged(x, y, button, dx, dy);
+        }
+
+        @Override
+        public boolean mouseReleased(double x, double y, int button) {
+            var source = this.dragged;
+            this.dragged = null;
+            var row = getEntryAtPosition(x, y);
+            if (source != null && button == 0 && row != null && row.entry instanceof SettlementManagementPayload.Project target) {
+                var command = pendingMove(source, target);
+                if (command != null && permits(SettlementPermission.BUILD) && !submitting()) submit(command);
+                super.mouseReleased(x, y, button);
+                return true;
+            }
+            return super.mouseReleased(x, y, button);
         }
 
         private void add(SettlementManagementPayload.Entry entry, Component primary, Component secondary) {
@@ -1051,6 +1084,10 @@ public final class SettlementManagementScreen extends Screen {
                 } else if (this.entry instanceof SettlementManagementPayload.Depot depot) {
                     depot.targets().forEach(target -> lines.add(text("target_row", target.name(), target.count())));
                 } else if (this.entry instanceof SettlementManagementPayload.Project project) {
+                    lines.add(Component.literal(project.status() == SettlementProject.Status.PENDING
+                            ? "Drag onto another pending project to change queue order."
+                            : project.status() == SettlementProject.Status.ACTIVE ? "Active construction cannot be moved or paused. Cancel to stop."
+                            : "Construction finished."));
                     lines.add(text("project_site", project.origin().toShortString()));
                     lines.add(Component.literal("Priority " + project.priority() + " / crew " + (project.assistants().size() + 1)));
                     lines.add(Component.literal("Lead: " + project.builderName()));
@@ -1073,5 +1110,12 @@ public final class SettlementManagementScreen extends Screen {
                 setTooltipForNextRenderPass(lines.stream().flatMap(line -> font.split(line, Math.min(300, SettlementManagementScreen.this.width - 24)).stream()).toList());
             }
         }
+    }
+
+    static SettlementManagementActionPayload.ReorderProject pendingMove(SettlementManagementPayload.Project source,
+                                                                        SettlementManagementPayload.Project target) {
+        if (source.status() != SettlementProject.Status.PENDING || target.status() != SettlementProject.Status.PENDING
+                || source.id().equals(target.id()) || source.crewRevision() != target.crewRevision()) return null;
+        return new SettlementManagementActionPayload.ReorderProject(source.id(), target.id(), source.crewRevision());
     }
 }

@@ -120,6 +120,12 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 buffer.writeUUID(start.resident());
                 buffer.writeUUID(start.blueprint());
             }
+            case ReorderProject project -> {
+                buffer.writeEnum(Kind.REORDER_PROJECT);
+                buffer.writeUUID(project.project());
+                buffer.writeUUID(project.before());
+                buffer.writeVarLong(project.revision());
+            }
             case ConfigureProject project -> {
                 buffer.writeEnum(Kind.CONFIGURE_PROJECT);
                 buffer.writeUUID(project.project());
@@ -312,6 +318,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 yield new ConfigureProject(project, revision, priority, assistants);
             }
             case CANCEL_PROJECT -> new CancelProject(buffer.readUUID());
+            case REORDER_PROJECT -> new ReorderProject(buffer.readUUID(), buffer.readUUID(), buffer.readVarLong());
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
             case AUTOMATIC_STAFFING -> new AutomaticStaffing(buffer.readBoolean() ? buffer.readUUID() : null);
             case RELEASE -> new Release(buffer.readUUID());
@@ -530,11 +537,11 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER, SAVE_EQUIPMENT
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER, SAVE_EQUIPMENT, REORDER_PROJECT
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter, SaveEquipment {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter, SaveEquipment, ReorderProject {
     }
 
     public record SaveRoute(UUID area, UUID resident, SettlementGuardOrder expected, SettlementGuardOrder route) implements Command {
@@ -671,6 +678,14 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             assistants = List.copyOf(assistants);
             if (revision < 0L || priority < 0 || priority > 9 || assistants.size() > 15
                     || new java.util.HashSet<>(assistants).size() != assistants.size()) throw new IllegalArgumentException("Invalid construction crew command");
+        }
+    }
+
+    public record ReorderProject(UUID project, UUID before, long revision) implements Command {
+        public ReorderProject {
+            Objects.requireNonNull(project);
+            Objects.requireNonNull(before);
+            if (revision < 0 || project.equals(before)) throw new IllegalArgumentException("Invalid pending project move");
         }
     }
 

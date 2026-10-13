@@ -153,8 +153,9 @@ public final class SettlementWorksiteLinksScreen extends VillagerWindowScreen {
             button.setMessage(Component.literal(this.font.plainSubstrByWidth(label.getString(), this.panelWidth - 12)));
             button.setTooltip(Tooltip.create(label));
             boolean compatible = !(entry instanceof SettlementManagementPayload.Depot depot)
-                    || this.parent.worksite().kind().role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER
-                    || (this.tab == 0 ? depot.purpose().providesSupplies() : depot.purpose().acceptsOutputs());
+                    || depot.purpose().permitsRole(this.parent.worksite().kind().role())
+                    && (this.parent.worksite().kind().role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER
+                    || (this.tab == 0 ? depot.purpose().providesSupplies() : depot.purpose().acceptsOutputs()));
             button.active = allowed && (selected(entry) || compatible && selectedCount() < SettlementWorksiteLinks.MAX_LINKS);
         }
         this.previous.active = ready() && this.offset > 0;

@@ -13,7 +13,10 @@ import net.minecraft.world.level.block.Rotation;
 public final class SettlementProject {
     private final UUID id;
     private final UUID area;
-    private final UUID builder;
+    /** Zero means the next available resident assigned to construction. */
+    public static final UUID AUTOMATIC_BUILDER = new UUID(0L, 0L);
+    private UUID builder;
+    private final UUID requestedBuilder;
     private final BlockPos min;
     private final BlockPos max;
     private CompoundTag task;
@@ -27,18 +30,50 @@ public final class SettlementProject {
     private boolean paymentDelivered;
     private boolean paymentRefunded;
     private SettlementConstructionCrew crew;
+    private CompoundTag materialEscrow = new CompoundTag();
+    private UUID authority;
+    private boolean paymentReserved;
+    private BuilderStructureScanner.StructurePlan checkedPlan;
+    private boolean checkedPlanMatches;
+
+    public CompoundTag materialEscrow() { return this.materialEscrow; }
+    public boolean pending() { return this.status == Status.PENDING; }
+    public boolean unfinished() { return active() || pending(); }
+    UUID authority() { return this.authority; }
+
+    void queue(UUID actor) {
+        this.status = Status.PENDING;
+        this.authority = Objects.requireNonNull(actor);
+        this.paymentReserved = false;
+    }
+
+    void activate(SettlementRecord town, UUID worker) {
+        if (!pending()) throw new IllegalStateException("Project already started");
+        this.builder = Objects.requireNonNull(worker);
+        this.previousArea = town.duties().get(worker);
+        this.previousSettings = town.workerSettings().get(worker);
+        this.status = Status.ACTIVE;
+        this.paymentReserved = true;
+        this.task.remove("BlockedReason");
+    }
+
+    boolean waitFor(String reason) {
+        if (!unfinished() || this.task.getString("BlockedReason").equals(reason)) return false;
+        this.task.putString("BlockedReason", reason);
+        return true;
+    }
 
     boolean settled(SettlementResidentState resident) {
-        return !active() && (this.site == null || !this.site.unsettled())
+        return !unfinished() && !SettlementConstructionMaterials.refundPending(this) && (this.site == null || !this.site.unsettled())
                 && (this.fee == 0 || this.paymentRefunded || this.paymentDelivered
                         && resident != null && resident.acknowledgesConstruction(this));
     }
 
     void summarize() {
-        if (active() || this.site != null && this.site.unsettled()) throw new IllegalStateException("Construction still has world obligations");
+        if (unfinished() || SettlementConstructionMaterials.refundPending(this) || this.site != null && this.site.unsettled()) throw new IllegalStateException("Construction still has world obligations");
         var summary = new CompoundTag();
         for (String key : java.util.List.of("JobId", "SettlementTown", "StructureId", "StructureLabel", "Origin", "Rotation",
-                "Phase", "PlacedIndex", "TotalBlocks", "PaidCurrency", "StartedGameTime", "MaterialSummary")) {
+                "Phase", "PlacedIndex", "TotalBlocks", "PaidCurrency", "StartedGameTime", "MaterialSummary", "TemplateFingerprint")) {
             if (this.task.contains(key)) summary.put(key, this.task.get(key).copy());
         }
         this.task = summary;
@@ -52,10 +87,12 @@ public final class SettlementProject {
         this.id = Objects.requireNonNull(id);
         this.area = Objects.requireNonNull(area);
         this.builder = Objects.requireNonNull(builder);
+        this.requestedBuilder = task.hasUUID("RequestedBuilder") ? task.getUUID("RequestedBuilder") : builder;
         this.min = min.immutable();
         this.max = max.immutable();
         this.task = task.copy();
         this.status = Objects.requireNonNull(status);
+        this.paymentReserved = status != Status.PENDING;
         if (min.getX() > max.getX() || min.getY() > max.getY() || min.getZ() > max.getZ()
                 || !id.equals(BuilderTaskState.jobId(state()).orElse(null))
                 || !task.hasUUID("SettlementTown") || ResourceLocation.tryParse(task.getString("StructureId")) == null
@@ -72,6 +109,7 @@ public final class SettlementProject {
         CompoundTag state = new CompoundTag();
         BuilderTaskState.start(state, plan.entry(), plan, origin, plan.rotation(), 0, now, id);
         BuilderTaskState.task(state).putUUID("SettlementTown", town.id().value());
+        BuilderTaskState.task(state).putString("TemplateFingerprint", BuilderStructureScanner.fingerprint(plan));
         return new SettlementProject(id, area, builder, origin.offset(plan.localMin()), origin.offset(plan.localMax()),
                 BuilderTaskState.task(state), Status.ACTIVE);
     }
@@ -128,7 +166,7 @@ public final class SettlementProject {
     int refundPayment() {
         if (this.fee == 0 || this.paymentEarned || this.paymentRefunded) return 0;
         this.paymentRefunded = true;
-        return this.fee;
+        return this.paymentReserved ? this.fee : 0;
     }
 
     SettlementConstructionSite site() {
@@ -155,6 +193,8 @@ public final class SettlementProject {
         return this.builder;
     }
 
+    UUID requestedBuilder() { return this.requestedBuilder; }
+
     public BlockPos min() {
         return this.min;
     }
@@ -172,7 +212,7 @@ public final class SettlementProject {
     }
 
     boolean reservesFootprint() {
-        return active() || this.site != null && this.site.unsettled();
+        return unfinished() || this.site != null && this.site.unsettled();
     }
 
     public String label() {
@@ -181,6 +221,14 @@ public final class SettlementProject {
 
     public ResourceLocation structure() {
         return ResourceLocation.parse(this.task.getString("StructureId"));
+    }
+
+    public boolean matchesPlan(BuilderStructureScanner.StructurePlan plan) {
+        if (plan != null && plan == this.checkedPlan) return this.checkedPlanMatches;
+        String fingerprint = this.task.getString("TemplateFingerprint");
+        this.checkedPlan = plan;
+        this.checkedPlanMatches = plan != null && (fingerprint.isEmpty() || fingerprint.equals(BuilderStructureScanner.fingerprint(plan)));
+        return this.checkedPlanMatches;
     }
 
     public BlockPos origin() {
@@ -223,6 +271,11 @@ public final class SettlementProject {
     }
 
     public String blocker() {
+        if (pending() && !this.task.getString("BlockedReason").isEmpty() && !this.task.getString("BlockedReason").equals("materials")) {
+            return this.task.getString("BlockedReason");
+        }
+        String materials = SettlementConstructionMaterials.blocker(this);
+        if (!materials.isEmpty()) return materials;
         if (this.site != null && this.site.conflict()) return "world_conflict";
         if (!active() && this.site != null && this.site.unsettled()) return "pending_world";
         return this.task.getString("BlockedReason");
@@ -238,6 +291,7 @@ public final class SettlementProject {
 
 
     public String missingMaterials() {
+        if (!this.materialEscrow.getString("Missing").isEmpty()) return this.materialEscrow.getString("Missing");
         return this.task.getString("MissingMaterials");
     }
 
@@ -269,6 +323,7 @@ public final class SettlementProject {
 
     boolean observe(CompoundTag state) {
         CompoundTag next = state.getCompound(BuilderTaskState.TASK_TAG).copy();
+        if (this.task.contains("TemplateFingerprint")) next.putString("TemplateFingerprint", this.task.getString("TemplateFingerprint"));
         if (this.crew != null) next.putInt("PlacedIndex", this.crew.next());
         if (!active() || next.equals(this.task) || !id.equals(BuilderTaskState.jobId(state).orElse(null))) {
             return false;
@@ -278,7 +333,7 @@ public final class SettlementProject {
     }
 
     boolean finish(Status status) {
-        if (!active() || status == Status.ACTIVE) {
+        if (!unfinished() || status == Status.ACTIVE || status == Status.PENDING || pending() && status != Status.CANCELLED) {
             return false;
         }
         this.status = status;
@@ -303,6 +358,7 @@ public final class SettlementProject {
         tag.putLong("Min", this.min.asLong());
         tag.putLong("Max", this.max.asLong());
         tag.put("Task", this.task.copy());
+        tag.getCompound("Task").putUUID("RequestedBuilder", this.requestedBuilder);
         if (this.site != null) tag.put("Site", this.site.save());
         tag.putString("Status", this.status.name());
         if (this.workplace != null) tag.put("Workplace", this.workplace.save());
@@ -313,6 +369,9 @@ public final class SettlementProject {
         tag.putBoolean("PaymentDelivered", this.paymentDelivered);
         tag.putBoolean("PaymentRefunded", this.paymentRefunded);
         if (this.crew != null) tag.put("Crew", this.crew.save());
+        tag.put("MaterialEscrow", this.materialEscrow.copy());
+        if (this.authority != null) tag.putUUID("Authority", this.authority);
+        tag.putBoolean("PaymentReserved", this.paymentReserved);
         return tag;
     }
 
@@ -328,6 +387,13 @@ public final class SettlementProject {
             project.crew = SettlementConstructionCrew.load(tag.getCompound("Crew"), project.builder, project.total(), project.task.getInt("PlacedIndex"));
         }
         project.fee = tag.getInt("Fee");
+        project.materialEscrow = tag.getCompound("MaterialEscrow").copy();
+        SettlementConstructionMaterials.validate(project.materialEscrow);
+        if (tag.hasUUID("Authority")) project.authority = tag.getUUID("Authority");
+        if (tag.contains("PaymentReserved")) project.paymentReserved = tag.getBoolean("PaymentReserved");
+        if (project.pending() && (project.authority == null || project.placed() != 0 || project.paymentReserved)) {
+            throw new IllegalArgumentException("Invalid queued construction project");
+        }
         project.paymentEarned = tag.getBoolean("PaymentEarned");
         project.paymentDelivered = tag.getBoolean("PaymentDelivered");
         project.paymentRefunded = tag.getBoolean("PaymentRefunded");
@@ -360,6 +426,6 @@ public final class SettlementProject {
     }
 
     public enum Status {
-        ACTIVE, COMPLETED, CANCELLED
+        ACTIVE, COMPLETED, CANCELLED, PENDING
     }
 }

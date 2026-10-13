@@ -43,32 +43,35 @@ public final class SettlementBuildingPlanner {
                 builders.add(new SettlementBuildingPreviewPayload.Builder(member.id(), name.substring(0, Math.min(128, name.length()))));
             }
         }
+        builders.add(new SettlementBuildingPreviewPayload.Builder(SettlementProject.AUTOMATIC_BUILDER, "Next available assigned builder"));
         builders.sort(Comparator.comparing(SettlementBuildingPreviewPayload.Builder::name).thenComparing(SettlementBuildingPreviewPayload.Builder::id));
-        var selected = request.builder() == null ? null : SettlementConstructionService.resolveBuilder(level, town, request.builder());
-        var inventory = selected == null ? null : HiredJobInventory.getJobInventory(selected);
-        var worker = selected == null ? null : town.workers().get(selected.getUUID());
-        var carried = worker == null ? List.<ItemStack>of() : worker.items(level.registryAccess());
-        var depots = SettlementStock.supplies(town).stream().filter(SettlementDepot::rulesObserved)
+        var selected = request.builder() == null || request.builder().equals(SettlementProject.AUTOMATIC_BUILDER) ? null : request.builder();
+        var storage = selected == null ? SettlementStorageLinks.AUTOMATIC : SettlementStorageService.effective(town, selected);
+        var duty = selected == null ? null : town.duties().get(selected);
+        var links = duty == null ? SettlementWorksiteLinks.AUTOMATIC : SettlementWorksiteService.links(town, duty, selected);
+        var depots = SettlementStock.supplies(town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER).stream()
+                .filter(SettlementDepot::rulesObserved)
+                .filter(depot -> storage.automatic() ? links.permitsSupply(depot.id())
+                        : storage.entries().stream().anyMatch(link -> link.position().equals(depot.position()) && link.purpose().supplies()))
+                .filter(depot -> !level.hasChunkAt(depot.position()) || SettlementStorageService.permitted(level, town,
+                        com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER,
+                        new SettlementStorageLinks.Link(depot.position(), SettlementStorageLinks.Purpose.SUPPLY, 0)))
                 .filter(depot -> BuilderWorker.builderMaterialStorageFilter(plan, origin).test(depot.position())).toList();
         var materials = new ArrayList<SettlementBuildingPreviewPayload.Material>();
-        for (var material : plan.materials()) {
-            int available = SettlementStock.count(depots, stack -> BuilderStructureScanner.sameMaterial(stack, material.item()));
-            if (worker != null) {
-                for (int slot : worker.supplySlots()) {
-                    var stack = carried.get(slot);
-                    if (BuilderStructureScanner.sameMaterial(stack, material.item())) available += stack.getCount();
-                }
-            } else if (inventory != null) {
-                for (int slot : inventory.supplySlots()) {
-                    var stack = inventory.getItem(slot);
-                    if (BuilderStructureScanner.sameMaterial(stack, material.item())) available += stack.getCount();
-                }
-            }
-            materials.add(new SettlementBuildingPreviewPayload.Material(material.item(), material.count(), available));
+        for (var material : com.jvn.villagerretaliation.interaction.work.builder.BuilderConstructionCost.requirements(plan)) {
+            int available = SettlementStock.count(depots, material::matches);
+            var item = material.tag() ? net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getTag(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, material.id()))
+                    .flatMap(tag -> tag.stream().findFirst()).map(holder -> new ItemStack(holder.value()))
+                    .orElseGet(() -> new ItemStack(net.minecraft.world.item.Items.BARRIER))
+                    : new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(material.id()));
+            String label = material.displayName();
+            materials.add(new SettlementBuildingPreviewPayload.Material(item, material.count(), available,
+                    label.substring(0, Math.min(256, label.length()))));
         }
         var blocks = plan.blocks().stream().map(block -> new SettlementBuildingPreviewPayload.PreviewBlock(block.localPos(), block.state())).toList();
         String failure = SettlementConstructionService.placementFailure(player, town, plan, origin);
-        if (failure.isEmpty() && request.builder() != null && builders.stream().noneMatch(builder -> builder.id().equals(request.builder()))) failure = "builder";
+
         return new SettlementBuildingPreviewPayload(request.town(), request.requestId(), request.structure(), request.anchor(), request.rotation(),
                 origin, plan.worldMin(origin), plan.worldMax(origin), plan.price(), town.economy().constructionFunds(),
                 failure, blocks, materials,

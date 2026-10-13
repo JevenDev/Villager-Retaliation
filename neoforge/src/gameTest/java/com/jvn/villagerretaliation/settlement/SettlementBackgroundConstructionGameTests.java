@@ -1071,6 +1071,15 @@ public final class SettlementBackgroundConstructionGameTests {
     }
 
     private static void scene(Fixture fixture, Map<BlockPos, BlockState> overrides) {
+        // Small bed-only blueprints furnish an existing livable area.
+        if (fixture.plan().blocks().size() <= 4 && fixture.plan().blocks().stream().anyMatch(block -> block.state().getBlock() instanceof BedBlock)) {
+            var furnished = new LinkedHashMap<BlockPos, BlockState>(overrides);
+            var door = Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.FACING, Direction.EAST);
+            furnished.putIfAbsent(fixture.origin().offset(-2, 0, -2), door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+            furnished.putIfAbsent(fixture.origin().offset(-2, 1, -2), door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+            furnished.putIfAbsent(fixture.origin().offset(-3, 2, -3), Blocks.SEA_LANTERN.defaultBlockState());
+            overrides = furnished;
+        }
         var site = fixture.site();
         for (int x = site.min().getX() >> 4; x <= site.max().getX() >> 4; x++) {
             for (int y = site.min().getY() >> 4; y <= site.max().getY() >> 4; y++) {

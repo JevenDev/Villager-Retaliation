@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderConstructionCost;
 import java.util.List;
 import java.util.Objects;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -27,6 +28,14 @@ public record BuilderStructureCatalogSyncPayload(List<BuilderStructureCatalog.En
             buffer.writeUtf(entry.category(), 96);
             buffer.writeUtf(entry.label(), 128);
             buffer.writeVarInt(entry.baseCost());
+            buffer.writeUtf(entry.houseSize(), 16);
+            buffer.writeEnum(entry.constructionCost().mode());
+            buffer.writeVarInt(entry.constructionCost().ingredients().size());
+            for (var ingredient : entry.constructionCost().ingredients()) {
+                buffer.writeResourceLocation(ingredient.id());
+                buffer.writeBoolean(ingredient.tag());
+                buffer.writeVarInt(ingredient.count());
+            }
         }
     }
 
@@ -35,11 +44,17 @@ public record BuilderStructureCatalogSyncPayload(List<BuilderStructureCatalog.En
         java.util.ArrayList<BuilderStructureCatalog.Entry> entries = new java.util.ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             ResourceLocation id = buffer.readResourceLocation();
-            BuilderStructureCatalog.Entry entry = new BuilderStructureCatalog.Entry(
-                    id,
-                    buffer.readUtf(96),
-                    buffer.readUtf(128),
-                    buffer.readVarInt());
+            String category = buffer.readUtf(96), label = buffer.readUtf(128);
+            int baseCost = buffer.readVarInt();
+            String houseSize = buffer.readUtf(16);
+            var mode = buffer.readEnum(BuilderConstructionCost.Mode.class);
+            int count = VillagerPayloads.readCollectionSize(buffer, BuilderConstructionCost.MAX_INGREDIENTS, "construction ingredients");
+            var ingredients = new java.util.ArrayList<BuilderConstructionCost.Ingredient>(count);
+            for (int material = 0; material < count; material++) {
+                ingredients.add(new BuilderConstructionCost.Ingredient(buffer.readResourceLocation(), buffer.readBoolean(), buffer.readVarInt()));
+            }
+            BuilderStructureCatalog.Entry entry = new BuilderStructureCatalog.Entry(id, category, label, baseCost,
+                    new BuilderConstructionCost(mode, ingredients), houseSize);
             entries.add(entry);
         }
         return new BuilderStructureCatalogSyncPayload(entries);

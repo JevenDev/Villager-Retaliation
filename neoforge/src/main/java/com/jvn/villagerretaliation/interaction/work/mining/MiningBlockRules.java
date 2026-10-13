@@ -191,6 +191,8 @@ public final class MiningBlockRules {
                 && !state.liquid()
                 && state.getDestroySpeed(level, pos) >= 0.0F
                 && !state.hasBlockEntity()
+                && state.is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK,
+                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "builder_clearable")))
                 && hasExcavationToolTag(state);
     }
 

@@ -78,7 +78,7 @@ public final class SettlementProjectScreen extends Screen {
             this.priority = (this.priority + 1) % 10;
             updateRows();
         }).bounds(this.left, this.top + 20, 128, 20).build());
-        this.priorityButton.setTooltip(Tooltip.create(Component.literal("Higher priorities run first. Carried materials remain with each builder.")));
+        this.priorityButton.setTooltip(Tooltip.create(Component.literal("Active construction cannot be reordered or paused. Cancel it to stop.")));
         int tabWidth = (this.panelWidth - 4) / 2;
         for (int index = 0; index < 2; index++) {
             boolean picking = index == 1;
@@ -189,7 +189,7 @@ public final class SettlementProjectScreen extends Screen {
         this.search.visible = this.choosing;
         this.search.active = this.choosing && !this.parent.submitting();
         this.priorityButton.setMessage(Component.literal("Priority: " + this.priority));
-        this.priorityButton.active = editable();
+        this.priorityButton.active = false;
         this.save.active = editable();
         this.previous.active = ready() && this.offset > 0;
         this.next.active = ready() && this.offset + this.rows.size() < total;

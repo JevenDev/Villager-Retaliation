@@ -202,6 +202,7 @@ public final class SettlementPopulationGameTests {
             level.getPoiManager().add(head, level.registryAccess().registryOrThrow(Registries.POINT_OF_INTEREST_TYPE)
                     .getHolderOrThrow(PoiTypes.HOME));
         }
+        SettlementHousingLivabilityGameTests.furnish(level, home, center.getY());
         SettlementBuildingService.refresh(level, town, home);
         var depot = town.registerDepot(leader.getUUID(), depotArea.id(), depotArea.min(), SettlementDepotPurpose.GENERAL);
         depot.setItem(0, new ItemStack(Items.BREAD, 64));

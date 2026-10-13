@@ -56,7 +56,8 @@ public final class SettlementWorkerConfigurationService {
             return false;
         }
         var area = town.workplace(areaId);
-        if (area == null || area.type().role() != settings.role()) {
+        if (area == null || area.type().role() != settings.role()
+                || !settings.enabled() && town.assignedProject(resident) != null) {
             return false;
         }
         var level = player.serverLevel();

@@ -37,6 +37,7 @@ public final class SettlementBuildingService {
             var level = server.getLevel(net.minecraft.resources.ResourceKey.create(
                     net.minecraft.core.registries.Registries.DIMENSION, town.dimension()));
             if (level != null) {
+                SettlementConstructionService.tickQueue(level, town);
                 for (var area : town.workplaces()) {
                     if (area.enabled()) enqueue(level, town, area);
                 }

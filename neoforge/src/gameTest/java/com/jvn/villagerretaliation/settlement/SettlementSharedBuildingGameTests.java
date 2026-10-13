@@ -157,6 +157,7 @@ public final class SettlementSharedBuildingGameTests {
 
     private static SettlementArea register(GameTestHelper helper, Fixture fixture, SettlementAreaType type, int priority) {
         var area = area(fixture, type, priority);
+        if (type == SettlementAreaType.HOME) SettlementHousingLivabilityGameTests.furnish(helper.getLevel(), area, area.min().getY());
         helper.assertTrue(SettlementBuildingService.register(fixture.leader(), fixture.town().id(), area),
                 "the building accepts its " + type + " designation");
         return area;

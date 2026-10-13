@@ -95,6 +95,10 @@ public final class SettlementManagementClient {
     }
 
     public static void acceptBuildingPreview(com.jvn.villagerretaliation.network.SettlementBuildingPreviewPayload payload) {
+        if (Minecraft.getInstance().screen instanceof SettlementBlueprintScreen catalog) {
+            catalog.acceptPreview(payload);
+            return;
+        }
         var current = current();
         if (current != null && current.snapshot().header() != null && current.snapshot().header().id().equals(payload.town())) {
             var draft = current.buildingDraft();

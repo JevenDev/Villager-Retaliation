@@ -40,6 +40,82 @@ public final class SettlementStorageGameTests {
     private SettlementStorageGameTests() { }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_storage")
+    public static void builderOnlyDepotsExcludeFoodAndBackgroundProduction(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var town = fixture.town();
+        try {
+            var depot = depot(helper, fixture, SettlementDepotPurpose.BUILDER_ONLY);
+            depot.setItem(0, new ItemStack(Items.BREAD, 16));
+            depot.observeRules(List.of());
+            helper.assertTrue(SettlementStock.supplies(town).isEmpty(), "unscoped food and stock consumers cannot draw construction stores");
+            helper.assertTrue(SettlementStock.take(town, stack -> true, 1).isEmpty(), "generic consumption preserves builder-only food");
+            helper.assertTrue(SettlementStock.supplies(town, HiredVillagerRole.BUILDER).contains(depot), "builders see construction stock");
+            helper.assertTrue(SettlementStock.depots(town, HiredVillagerRole.COURIER).contains(depot), "couriers can transport construction stock");
+            for (var role : HiredVillagerRole.values()) {
+                helper.assertValueEqual(SettlementStock.supplies(town, role).contains(depot),
+                        role == HiredVillagerRole.BUILDER || role == HiredVillagerRole.COURIER,
+                        "construction stock has explicit access for " + role);
+            }
+            var worker = SettlementWorkerState.capture(level, fixture.worker(), SettlementWorkforceService.duty(fixture.worker()).orElseThrow(), 0);
+            var supplies = SettlementProductionInventory.supplies(level, town, worker, worker.items(level.registryAccess()), List.of(depot));
+            helper.assertTrue(supplies.stream().noneMatch(supply -> supply.depot() != null), "background production rejects restricted depots even when explicitly passed");
+            helper.assertTrue(SettlementSupplyStock.storages(level, town, fixture.area().id(), false).isEmpty(), "farm demand excludes construction stores");
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            helper.assertValueEqual(restored.depots().get(depot.id()).purpose(), SettlementDepotPurpose.BUILDER_ONLY, "the role restriction survives reload");
+            helper.assertTrue(SettlementStock.supplies(restored).isEmpty(), "restored stock retains its access restriction");
+            depot.configure(SettlementDepotPurpose.GENERAL, 0);
+            helper.assertTrue(SettlementStock.supplies(town).contains(depot), "changing purpose invalidates the cached stock catalog");
+            helper.assertValueEqual(depot.getItem(0).getCount(), 16, "checking access never consumes stock");
+        } finally { fixture.worker().discard(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_storage")
+    public static void changingDepotPurposeRevokesLoadedWorkerAccess(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var town = fixture.town();
+        try {
+            var depot = depot(helper, fixture, SettlementDepotPurpose.GENERAL);
+            var configured = links(depot.position(), SettlementStorageLinks.Purpose.GENERAL, 0);
+            helper.assertValueEqual(save(fixture, null, configured), "", "a farmer may link shared depot storage");
+            depot.setItem(0, new ItemStack(Items.WHEAT, 16));
+            depot.configure(SettlementDepotPurpose.BUILDER_ONLY, 0);
+            var link = configured.entries().getFirst();
+            helper.assertFalse(SettlementStorageService.permitted(level, town, HiredVillagerRole.FARMING, link), "existing links do not override changed role restrictions");
+            helper.assertTrue(SettlementStorageService.permitted(level, town, HiredVillagerRole.BUILDER, link), "builders retain authorized access");
+            helper.assertTrue(SettlementStorageService.permitted(level, town, HiredVillagerRole.COURIER, link), "couriers retain authorized access");
+            helper.assertValueEqual(AssignedStorageService.transferItemsAtAssignedStorage(fixture.worker(), depot.position(), stack -> true, 4,
+                    stack -> ItemStack.EMPTY), 0, "native pickup rechecks role restrictions");
+            helper.assertValueEqual(AssignedStorageService.depositStackAtAssignedStorage(fixture.worker(), depot.position(), new ItemStack(Items.WHEAT, 3)).getCount(),
+                    3, "native output cannot bypass the role restriction");
+            helper.assertValueEqual(depot.getItem(0).getCount(), 16, "rejected transfers preserve inventory");
+            var worker = SettlementWorkerState.capture(level, fixture.worker(), SettlementWorkforceService.duty(fixture.worker()).orElseThrow(), 0);
+            helper.assertTrue(SettlementProductionInventory.supplies(level, town, worker, worker.items(level.registryAccess()), List.of(depot)).isEmpty(),
+                    "explicit links cannot leak construction stock into background jobs");
+            helper.assertTrue(SettlementSupplyStock.storages(level, town, fixture.area().id(), false).isEmpty(), "explicit farm demand excludes the restricted source");
+            helper.assertValueEqual(SettlementStorageService.snapshot(fixture.leader(), town, fixture.area().id().toString()).containers().getFirst().status(),
+                    "incompatible", "the editor explains retained incompatible links");
+            helper.assertValueEqual(SettlementStorageService.validate(fixture.leader(), town, HiredVillagerRole.FARMING,
+                    SettlementStorageLinks.AUTOMATIC, configured), "storage_incompatible", "new nonbuilder links are rejected");
+        } finally { fixture.worker().discard(); }
+        helper.succeed();
+    }
+
+    private static SettlementDepot depot(GameTestHelper helper, Fixture fixture, SettlementDepotPurpose purpose) {
+        var town = fixture.town();
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Construction store",
+                town.center().east(4), town.center().east(5).above(2), 0, true);
+        helper.assertTrue(town.putArea(town.leader(), area), "the storage area is registered");
+        var depot = town.registerDepot(town.leader(), area.id(), area.min(), purpose);
+        helper.getLevel().setBlockAndUpdate(depot.position(), com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+        ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) helper.getLevel().getBlockEntity(depot.position())).bind(town.id(), depot.id());
+        fixture.worker().setPos(depot.position().west().getBottomCenter());
+        return depot;
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_storage")
     public static void ordinaryStorageInheritsOverridesAndSurvivesReconciliation(GameTestHelper helper) {
         var fixture = fixture(helper);
         var town = fixture.town();

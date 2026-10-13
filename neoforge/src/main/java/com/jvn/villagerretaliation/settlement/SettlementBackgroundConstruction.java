@@ -55,7 +55,7 @@ final class SettlementBackgroundConstruction {
         }
         var entry = BuilderStructureCatalog.byId(level.getServer(), project.structure()).orElse(null);
         var plan = entry == null ? null : BuilderStructureScanner.scan(level, entry, project.rotation()).orElse(null);
-        if (plan == null || !plan.worldMin(project.origin()).equals(project.min()) || !plan.worldMax(project.origin()).equals(project.max())
+        if (plan == null || !project.matchesPlan(plan) || !plan.worldMin(project.origin()).equals(project.min()) || !plan.worldMax(project.origin()).equals(project.max())
                 || plan.blocks().size() != project.total()
                 || plan.blocks().size() > Math.max(128, VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get())) {
             worker.status("construction_plan_changed");
@@ -64,7 +64,7 @@ final class SettlementBackgroundConstruction {
         if (worker.status().equals("output_full")
                 && (!worker.settings().contains("AutoDepositOutputs") || worker.settings().getBoolean("AutoDepositOutputs"))
                 && SettlementBackgroundHauling.depositCarried(level, town, worker, elapsed, multiplier,
-                        SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList(), false)) return;
+                        SettlementStock.depots(town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER).stream().filter(SettlementDepot::rulesObserved).toList(), false)) return;
         var owner = worker.context(level, town);
         if (owner == null) {
             worker.status("awaiting_worker_observation");
@@ -79,11 +79,23 @@ final class SettlementBackgroundConstruction {
         project.restore(state);
         var before = state.copy();
         var inventory = HiredJobInventory.getJobInventory(owner);
-        var depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved)
+        var depots = SettlementStock.depots(town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER).stream().filter(SettlementDepot::rulesObserved)
                 .filter(depot -> BuilderWorker.builderMaterialStorageFilter(plan, project.origin()).test(depot.position())).toList();
         var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
         var view = new SettlementConstructionView(level, site);
         try {
+            if (SettlementConstructionMaterials.reserved(project)) {
+                var pickup = SettlementConstructionMaterials.collectionTarget(project);
+                if (pickup != null) {
+                    BuilderTaskState.setPhase(state, BuilderBuildPhase.COLLECTING_MATERIALS);
+                    worker.status("fetching_construction_materials");
+                    if (budget.spend(40.0D + 16.0D * Math.sqrt(worker.position().distSqr(pickup)))) {
+                        SettlementConstructionMaterials.collect(town, project, worker.id(), pickup);
+                        state.putLong(POSITION, pickup.asLong());
+                    }
+                    return;
+                }
+            }
             for (var block : plan.siteBlocks(view, project.origin())) {
                 var pos = plan.worldPos(project.origin(), block);
                 var current = site.getBlockState(pos);
@@ -109,7 +121,8 @@ final class SettlementBackgroundConstruction {
                 }
                 BuilderTaskState.setPlacedIndex(state, index);
                 if (index >= plan.blocks().size() && obstructions.isEmpty()) {
-                    if (depositLeftovers(level, town, worker, inventory, plan, budget)) return;
+                    if (!SettlementConstructionMaterials.reserved(project) && depositLeftovers(level, town, worker, inventory, plan, budget)) return;
+                    SettlementConstructionMaterials.complete(level, town, project);
                     project.observe(state);
                     town.finishProject(project.id(), SettlementProject.Status.COMPLETED);
                     SettlementConstructionService.synchronizePayments(town, owner);
@@ -162,7 +175,7 @@ final class SettlementBackgroundConstruction {
                 var current = site.getBlockState(group.materialPart().worldPos());
                 boolean consumes = material.requiresMaterial() && !BuilderStructureScanner.sameSchematicState(current, material.state())
                         && !BuilderStructureScanner.canTransformExisting(current, material.state());
-                if (consumes && inventory.findSupply(material::materialMatches).isEmpty()) {
+                if (!SettlementConstructionMaterials.reserved(project) && consumes && inventory.findSupply(material::materialMatches).isEmpty()) {
                     inventory.promoteOutputToSupply(material::materialMatches, 1);
                     if (inventory.findSupply(material::materialMatches).isEmpty()) {
                         fetch(level, town, worker, inventory, depots, material, site, project, plan, index, budget);
@@ -185,8 +198,17 @@ final class SettlementBackgroundConstruction {
                     worker.status("building");
                     return;
                 }
-                if (consumes && !inventory.consumeSupplyExactly(material::materialMatches, 1)) throw new IllegalStateException("Verified construction material disappeared");
-                site.queue(new SettlementConstructionPlacement(level, changes));
+                var placement = new SettlementConstructionPlacement(level, changes);
+                if (SettlementConstructionMaterials.reserved(project)) {
+                    placement.requireJournal();
+                    if (!SettlementConstructionMaterials.spend(level, town, project, group, changes)) {
+                        blocked(worker, "missing_construction_materials", "material_escrow_unavailable");
+                        return;
+                    }
+                } else if (consumes && !inventory.consumeSupplyExactly(material::materialMatches, 1)) {
+                    throw new IllegalStateException("Verified construction material disappeared");
+                }
+                site.queue(placement);
                 if (project.crew() != null) {
                     SettlementConstructionCoordination.refresh(town, project, plan, view);
                     project.crew().release(worker.id());
@@ -321,7 +343,7 @@ final class SettlementBackgroundConstruction {
         for (int slot : inventory.supplySlots()) {
             var stack = inventory.getItem(slot);
             if (stack.isEmpty() || plan.materials().stream().noneMatch(material -> BuilderStructureScanner.sameMaterial(stack, material.item()))) continue;
-            for (var depot : SettlementStock.outputs(town)) {
+            for (var depot : SettlementStock.outputs(town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER)) {
                 if (!SettlementWorksiteLinks.permitsOutput(worker.settings(), depot.id())) continue;
                 int count = Math.min(stack.getCount(), SettlementLogisticsService.framedAllowance(level, depot, stack,
                         com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation.RECEIVE, true));

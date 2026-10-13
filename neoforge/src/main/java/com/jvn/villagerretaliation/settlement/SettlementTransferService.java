@@ -78,6 +78,7 @@ public final class SettlementTransferService {
                 : SettlementStorageService.effective(town, worker);
         var depot = depot(town, endpoint);
         if (endpoint.depot() != null && depot == null) return false;
+        if (depot != null && !depot.purpose().permitsRole(workplace.type().role())) return false;
         if (!configured.automatic()) return configured.entries().stream().anyMatch(link ->
                 (source ? link.purpose().supplies() : link.purpose().outputs())
                 && SettlementSupplyStock.sameStorage(level, endpoint.position(), link.position())

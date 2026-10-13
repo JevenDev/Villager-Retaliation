@@ -118,6 +118,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN);
             return WorkResult.idle("interaction.work.builder.structure_unavailable", BuilderTaskState.replacements(context.state()));
         }
+        if (!SettlementConstructionService.templateMatches(villager, context.state(), plan.get())) {
+            BuilderTaskState.setBlocked(context.state(), "template_changed");
+            return WorkResult.idle("interaction.work.builder.template_changed", BuilderTaskState.replacements(context.state()));
+        }
 
         BlockPos origin = BuilderTaskState.origin(context.state());
         HiredWorkArea area = SettlementConstructionService.workArea(villager, context.state());
@@ -542,6 +546,26 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin,
             int startIndex) {
+        if (com.jvn.villagerretaliation.settlement.SettlementConstructionMaterials.managed(villager, context.state())) {
+            BlockPos source = com.jvn.villagerretaliation.settlement.SettlementConstructionMaterials.collectionTarget(villager, context.state());
+            if (source == null) {
+                BuilderTaskState.clearMissingMaterials(context.state());
+                return null;
+            }
+            HiredWorkerBrain.setStorageTarget(context, source);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            var movement = HiredStorageNavigationGoal.moveToStorageTarget(level, context, villager, source, BUILD_WALK_SPEED);
+            // Escrow already owns these stacks. A removed depot does not destroy the reserved parcel:
+            // the worker can recover it by reaching its recorded pickup location.
+            if (movement == HiredStorageNavigationGoal.Result.ARRIVED || villager.distanceToSqr(source.getCenter()) <= 16.0D) {
+                com.jvn.villagerretaliation.settlement.SettlementConstructionMaterials.collect(villager, context.state(), source);
+                HiredStorageNavigationGoal.clearStorageTarget(context);
+            } else if (movement == HiredStorageNavigationGoal.Result.FAILED) {
+                BuilderTaskState.setBlocked(context.state(), "builder_material_storage_unreachable");
+                return WorkResult.idle("interaction.work.builder.materials_unreachable", BuilderTaskState.replacements(context.state()));
+            }
+            return WorkResult.idle("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+        }
         MaterialBatch batch = SettlementConstructionService.cooperative(villager, context.state())
                 ? singleMaterialBatch(level, plan, origin, startIndex) : currentMaterialBatch(level, context, plan, origin, startIndex);
         if (batch.materials().isEmpty()) {
@@ -2613,6 +2637,20 @@ public final class BuilderWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             PlacementGroup group) {
+        if (com.jvn.villagerretaliation.settlement.SettlementConstructionMaterials.managed(villager, context.state())) {
+            var action = requiredToolAction(level, group);
+            var tool = action == BuilderStructureScanner.BuilderToolAction.NONE ? ItemStack.EMPTY
+                    : context.inventory().equipBestTool(stack -> BuilderStructureScanner.matchesToolAction(stack, action), stack -> 1.0D);
+            if (action != BuilderStructureScanner.BuilderToolAction.NONE && tool.isEmpty()) return false;
+            if (!com.jvn.villagerretaliation.settlement.SettlementConstructionMaterials.place(villager, context.state(), group)) return false;
+            faceBlock(villager, group.materialPart().worldPos());
+            swingWorkItem(level, villager, tool.isEmpty() ? group.materialBlock().requiredItem() : tool);
+            for (var part : group.parts()) {
+                HiredPathMemory.onBlockChanged(level, part.worldPos());
+                if (part.block().requiresToolAction()) damageTool(context, villager, tool);
+            }
+            return true;
+        }
         boolean consumesMaterial = placementGroupNeedsMaterial(level, group);
         BuilderStructureScanner.BuildBlock materialBlock = group.materialBlock();
         if (consumesMaterial && context.inventory().findSupply(materialBlock::materialMatches).isEmpty()) {
@@ -2691,7 +2729,9 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BuilderStructureScanner.StructurePlan plan) {
         Map<String, String> replacements = BuilderTaskState.replacements(context.state());
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.DEPOSITING_LEFTOVERS);
-        depositLeftoverMaterials(villager, context.inventory(), plan);
+        if (!com.jvn.villagerretaliation.settlement.SettlementConstructionMaterials.managed(villager, context.state())) {
+            depositLeftoverMaterials(villager, context.inventory(), plan);
+        }
         clearActiveBreakingTarget(level, context, villager);
         clearBuildSiteIntermediateNavigation(context);
         Optional<java.util.UUID> jobId = BuilderTaskState.jobId(context.state());

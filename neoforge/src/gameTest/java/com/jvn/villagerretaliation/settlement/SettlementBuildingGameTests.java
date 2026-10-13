@@ -101,6 +101,7 @@ public final class SettlementBuildingGameTests {
                 .getHolderOrThrow(PoiTypes.HOME));
         var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Home",
                 head.offset(-1, -1, -1), head.offset(1, 2, 2), 5, true);
+        SettlementHousingLivabilityGameTests.furnish(level, home, head.getY());
         helper.assertValueEqual(SettlementBuildingSurvey.inspect(level, home).beds().size(), 1,
                 "the survey counts the real usable bed");
         var cut = new SettlementArea(home.id(), SettlementAreaType.HOME, "Home",
@@ -169,6 +170,8 @@ public final class SettlementBuildingGameTests {
         var bed = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
         chunk.setBlockState(head, bed.setValue(BedBlock.PART, BedPart.HEAD), false);
         chunk.setBlockState(foot, bed.setValue(BedBlock.PART, BedPart.FOOT), false);
+        chunk.setBlockState(head.below(), Blocks.STONE.defaultBlockState(), false);
+        chunk.setBlockState(foot.below(), Blocks.STONE.defaultBlockState(), false);
         for (BlockPos wall : List.of(head.north(), head.west(), foot.west(), foot.south())) {
             chunk.setBlockState(wall, Blocks.STONE.defaultBlockState(), false);
         }
@@ -179,14 +182,18 @@ public final class SettlementBuildingGameTests {
         var data = new SettlementSavedData();
         var id = registry.create(0L, level.dimension().location(), head, "");
         var town = data.establish(registry, id, UUID.randomUUID(), head, 0L).orElseThrow();
-        var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Boundary home", head, foot.above(), 5, true);
+        var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Boundary home", head.offset(-1, 0, -1), foot.offset(3, 2, 1), 5, true);
         data.putArea(registry, id, town.leader(), home);
         town.recordSurvey(home.id(), new SettlementBuildingSurvey.Survey(0L, List.of(head), List.of(), true));
         SettlementBuildingService.refresh(level, town, home);
         helper.assertValueEqual(town.housingCapacity(), 1, "an unobserved exit does not erase previously verified housing");
         helper.assertFalse(level.hasChunkAt(head.east()), "the survey leaves the neighboring chunk unloaded");
         var neighbor = level.getChunk(Math.floorDiv(head.east().getX(), 16), Math.floorDiv(head.getZ(), 16));
-        neighbor.setBlockState(head.east().below(), Blocks.STONE.defaultBlockState(), false);
+        for (var pos : BlockPos.betweenClosed(head.offset(1, -1, -1), head.offset(3, -1, 2))) {
+            neighbor.setBlockState(pos, Blocks.STONE.defaultBlockState(), false);
+        }
+        SettlementHousingLivabilityGameTests.entrance(level, head.offset(2, 0, 0));
+        neighbor.setBlockState(head.offset(3, 2, 2), Blocks.SEA_LANTERN.defaultBlockState(), false);
         SettlementBuildingService.refresh(level, town, home);
         helper.assertValueEqual(town.housingCapacity(), 1, "a newly observed safe exit confirms the existing bed");
         neighbor.setBlockState(head.east(), Blocks.STONE.defaultBlockState(), false);

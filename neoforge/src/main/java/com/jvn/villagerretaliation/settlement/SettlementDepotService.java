@@ -105,6 +105,9 @@ public final class SettlementDepotService {
         if (depot == null) {
             return duty == null;
         }
+        if (!depot.purpose().permitsRole(com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.assignedRole(level, villager))) {
+            return false;
+        }
         SettlementArea area = town.areas().get(depot.area());
         if (area == null || !area.enabled() || !town.permits(record.hirerId(), SettlementPermission.LOGISTICS)) {
             return false;

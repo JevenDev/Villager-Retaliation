@@ -36,6 +36,8 @@ public final class BuilderStructureCatalog {
             "base_cost",
             "baseCost",
             "cost",
+            "construction_cost",
+            "house_size",
             "enabled",
             "remove"
     );
@@ -184,12 +186,27 @@ public final class BuilderStructureCatalog {
 
         String category = fallback(DatapackJsonReader.readString(entry, "category"), "Structures");
         int baseCost = Math.max(0, DatapackJsonReader.readInt(entry, "base_cost", "baseCost", readCostAlias(entry)));
+        BuilderConstructionCost constructionCost;
+        String houseSize = fallback(DatapackJsonReader.readString(entry, "house_size"), "").toLowerCase(Locale.ROOT);
+        try {
+            constructionCost = entry.has("construction_cost")
+                    ? BuilderConstructionCost.parse(entry.getAsJsonObject("construction_cost"))
+                    : BuilderConstructionCost.EXACT;
+            if (!Set.of("", "small", "medium", "large").contains(houseSize)) {
+                throw new IllegalArgumentException("house_size must be small, medium, or large");
+            }
+        } catch (RuntimeException exception) {
+            // A broken override must not leave a previously loaded, cheaper definition active.
+            structures.forEach(loaded::remove);
+            DatapackDiagnostics.warnSkippedEntry(location, "builder structures", "entry " + index, exception.getMessage());
+            return;
+        }
         for (ResourceLocation structure : structures) {
             String label = structures.size() == 1
                     ? fallback(DatapackJsonReader.readString(entry, "label"), labelFromId(structure, category))
                     : labelFromId(structure, category);
             LoadedEntry previous = loaded.put(structure, new LoadedEntry(
-                    new Entry(structure, category, label, baseCost),
+                    new Entry(structure, category, label, baseCost, constructionCost, houseSize),
                     location));
             if (previous != null) {
                 DatapackDiagnostics.warnDuplicateId(location, "builder structure", structure.toString(), previous.source());
@@ -457,12 +474,25 @@ public final class BuilderStructureCatalog {
         return value == null || value.isBlank() ? fallback : value;
     }
 
-    public record Entry(ResourceLocation id, String category, String label, int baseCost) {
+    public record Entry(ResourceLocation id, String category, String label, int baseCost,
+                        BuilderConstructionCost constructionCost, String houseSize) {
+        public Entry(ResourceLocation id, String category, String label, int baseCost) {
+            this(id, category, label, baseCost, BuilderConstructionCost.EXACT, "");
+        }
+
         public Entry {
             id = id == null ? ResourceLocation.withDefaultNamespace("missing") : id;
             category = category == null || category.isBlank() ? "Structures" : category.trim();
             label = label == null || label.isBlank() ? id.toString() : label.trim();
             baseCost = Math.max(0, baseCost);
+            constructionCost = constructionCost == null ? BuilderConstructionCost.EXACT : constructionCost;
+            houseSize = houseSize == null ? "" : houseSize;
+            if (houseSize.isBlank() && id.getNamespace().equals("minecraft") && id.getPath().startsWith("village/")) {
+                String path = id.getPath();
+                if (path.contains("_small_house_")) houseSize = "small";
+                else if (path.contains("_medium_house_")) houseSize = "medium";
+                else if (path.contains("_big_house_") || path.contains("_large_house_")) houseSize = "large";
+            }
         }
 
         public String menuLabel() {

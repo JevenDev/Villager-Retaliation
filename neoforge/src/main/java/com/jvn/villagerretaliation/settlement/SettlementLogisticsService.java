@@ -85,7 +85,7 @@ public final class SettlementLogisticsService {
             return current;
         }
         clear(villager);
-        List<SettlementDepot> depots = SettlementStock.depots(town).stream()
+        List<SettlementDepot> depots = SettlementStock.depots(town, HiredVillagerRole.COURIER).stream()
                 .filter(depot -> level.hasChunkAt(depot.position()))
                 .filter(depot -> !blocked(villager, depot.id())).toList();
         SettlementHaulTask selected = null;

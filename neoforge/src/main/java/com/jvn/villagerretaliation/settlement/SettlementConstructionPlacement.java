@@ -16,6 +16,8 @@ final class SettlementConstructionPlacement {
     private final UUID id;
     private final List<Part> parts;
     private boolean conflict;
+    private boolean journalRequired;
+    private boolean journaled;
     private final java.util.Map<net.minecraft.world.level.chunk.LevelChunk, Long> appliedRevisions = new java.util.WeakHashMap<>();
 
     private final java.util.Map<BlockPos, SettlementReceipt> receipts = new java.util.LinkedHashMap<>();
@@ -50,6 +52,13 @@ final class SettlementConstructionPlacement {
         return this.conflict;
     }
 
+    SettlementConstructionPlacement requireJournal() {
+        this.journalRequired = true;
+        return this;
+    }
+
+    void markJournaled() { this.journaled = true; }
+
     boolean reconcile(ServerLevel level, UUID project) {
         for (var part : this.parts) {
             var pos = part.position();
@@ -68,6 +77,10 @@ final class SettlementConstructionPlacement {
             }
             if (!part.after().getCollisionShape(chunk, pos).isEmpty()
                     && !level.getEntities((net.minecraft.world.entity.Entity) null, new AABB(pos), entity -> entity.isAlive() && !entity.isSpectator()).isEmpty()) return false;
+        }
+        if (this.journalRequired && !this.journaled) {
+            if (!SettlementConstructionJournal.persist(level, project, this.id)) return false;
+            this.journaled = true;
         }
         this.conflict = false;
         for (var part : this.parts) {
@@ -121,6 +134,7 @@ final class SettlementConstructionPlacement {
         var tag = new CompoundTag();
         tag.putUUID("Id", this.id);
         tag.putBoolean("Conflict", this.conflict);
+        tag.putBoolean("JournalRequired", this.journalRequired);
         var parts = new ListTag();
         for (var part : this.parts) {
             var entry = new CompoundTag();
@@ -153,6 +167,9 @@ final class SettlementConstructionPlacement {
             if (entry.contains("Receipt")) placement.receipts.put(BlockPos.of(entry.getLong("Position")), SettlementReceipt.load(entry.getCompound("Receipt")));
         }
         placement.conflict = tag.getBoolean("Conflict");
+        placement.journalRequired = tag.getBoolean("JournalRequired");
+        // A loaded pending receipt and its material ledger came from the same saved snapshot.
+        placement.journaled = placement.journalRequired;
         return placement;
     }
 

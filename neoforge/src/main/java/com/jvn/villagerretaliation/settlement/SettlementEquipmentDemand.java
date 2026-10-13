@@ -122,11 +122,11 @@ final class SettlementEquipmentDemand {
         var storage = SettlementStorageService.effective(town, resident);
         if (!storage.automatic()) return storage.entries().stream()
                 .filter(link -> link.purpose().supplies() && (SettlementStorageService.permitted(level, town, role, link)
-                        || !level.hasChunkAt(link.position()) && SettlementStock.supplies(town).stream()
+                        || !level.hasChunkAt(link.position()) && SettlementStock.supplies(town, role).stream()
                                 .anyMatch(depot -> depot.position().equals(link.position()))))
                 .map(link -> SettlementSupplyStock.positions(level, link.position()).getFirst()).distinct().toList();
         var links = SettlementWorksiteService.links(town, area, resident);
-        return SettlementStock.supplies(town).stream().filter(depot -> links.permitsSupply(depot.id()))
+        return SettlementStock.supplies(town, role).stream().filter(depot -> links.permitsSupply(depot.id()))
                 .map(depot -> SettlementSupplyStock.positions(level, depot.position()).getFirst()).distinct().toList();
     }
 }

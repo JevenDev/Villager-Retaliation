@@ -42,6 +42,11 @@ public final class BuilderSitePlanner {
             if (!level.hasChunkAt(worldPos)) {
                 return SiteResult.failed("interaction.work.builder.site_unloaded", worldPos);
             }
+            // Reserve a new site conservatively: matching state is not permission to
+            // appropriate an existing chest, machine, sign or other block entity.
+            if (level.getBlockEntity(worldPos) != null || player != null && !level.mayInteract(player, worldPos)) {
+                return SiteResult.failed("interaction.work.builder.blocked_existing", worldPos);
+            }
             PlacementCheck check = canReserveStartedAt(level, worldPos, block.state());
             if (!check.valid()) {
                 return SiteResult.failed(check.statusKey(), worldPos);
@@ -187,8 +192,7 @@ public final class BuilderSitePlanner {
                 || current.is(BlockTags.SMALL_FLOWERS)
                 || current.is(BlockTags.TALL_FLOWERS)
                 || current.is(BlockTags.SNOW)
-                || current.is(BlockTags.SAPLINGS)
-                || current.getCollisionShape(level, pos, CollisionContext.empty()).isEmpty();
+                || current.is(BlockTags.SAPLINGS);
     }
 
     private static boolean hasBlockingEntity(ServerLevel level, Villager villager, BlockPos pos) {

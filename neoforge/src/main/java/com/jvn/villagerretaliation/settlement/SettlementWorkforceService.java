@@ -85,7 +85,7 @@ public final class SettlementWorkforceService {
                 || hasPersonalCommitment(villager)) return false;
         SettlementArea area = town.workplace(areaId);
         if (area == null || area.type().role() == null
-                || !HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())
+                || area.type() != SettlementAreaType.CONSTRUCTION && !HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())
                 || area.type() == SettlementAreaType.CONSTRUCTION && town.stage().projects() == 0
                 || area.type() == SettlementAreaType.TRADING_POST
                         && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) {
@@ -115,7 +115,8 @@ public final class SettlementWorkforceService {
         SettlementRecord town = SettlementSavedData.get(level).get(townId).orElse(null);
         if (town == null || player == null || !player.isAlive() || player.isSpectator()
                 || player.level() != level || !town.dimension().equals(level.dimension().location())
-                || !town.leader().equals(player.getUUID()) || !town.duties().containsKey(resident)) {
+                || !town.leader().equals(player.getUUID()) || !town.duties().containsKey(resident)
+                || town.activeProject(resident) != null) {
             return false;
         }
         Villager villager = level.getEntity(resident) instanceof Villager loaded ? loaded : null;

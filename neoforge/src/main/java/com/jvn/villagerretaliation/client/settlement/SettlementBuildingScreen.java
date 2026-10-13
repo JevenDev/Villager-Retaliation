@@ -126,7 +126,6 @@ public final class SettlementBuildingScreen extends Screen {
         if (this.candidates.isEmpty()) graphics.drawString(this.font, SettlementManagementScreen.text("building_no_builders"), this.left + 6, this.top + 83, 0xB0B0B0);
         graphics.drawString(this.font, SettlementManagementScreen.text("building_materials"), this.left, this.materialTop - 14, 0xFFFFFF);
         String failure = this.draft.failure.isEmpty() && this.draft.preview != null ? this.draft.preview.failure() : this.draft.failure;
-        if (failure.isEmpty() && this.draft.preview != null && this.draft.preview.funds().compareTo(com.jvn.villagerretaliation.sell.CurrencyAmount.of(this.draft.preview.price(), 1)) < 0) failure = "funds";
         Component hint = this.draft.submitting ? SettlementManagementScreen.text("saving") : failure.isEmpty()
                 ? SettlementManagementScreen.text("building_supply_hint") : Component.translatableWithFallback("villagerretaliation.gui.settlement.failure." + failure,
                         SettlementManagementScreen.text("building_failure_" + failure).getString());
@@ -183,12 +182,12 @@ public final class SettlementBuildingScreen extends Screen {
     private final class MaterialRow extends ObjectSelectionList.Entry<MaterialRow> {
         private final SettlementBuildingPreviewPayload.Material material;
         MaterialRow(SettlementBuildingPreviewPayload.Material material) { this.material = material; }
-        @Override public Component getNarration() { return this.material.item().getHoverName(); }
+        @Override public Component getNarration() { return Component.literal(this.material.label()); }
         @Override public void render(GuiGraphics graphics, int index, int y, int x, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick) {
             graphics.renderItem(this.material.item(), x + 3, y + 1);
             String count = this.material.available() + " / " + this.material.required();
             int countWidth = font.width(count);
-            graphics.drawString(font, font.plainSubstrByWidth(this.material.item().getHoverName().getString(), width - countWidth - 34), x + 25, y + 5, 0xDDDDDD);
+            graphics.drawString(font, font.plainSubstrByWidth(this.material.label(), width - countWidth - 34), x + 25, y + 5, 0xDDDDDD);
             graphics.drawString(font, count, x + width - countWidth - 4, y + 5, this.material.available() < this.material.required() ? 0xE5AD76 : 0x9BC59B);
         }
     }

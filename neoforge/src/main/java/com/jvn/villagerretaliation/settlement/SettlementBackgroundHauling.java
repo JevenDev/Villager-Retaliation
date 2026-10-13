@@ -20,7 +20,7 @@ final class SettlementBackgroundHauling {
             worker.status("route_requires_loaded_worker");
             return;
         }
-        List<SettlementDepot> depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
+        List<SettlementDepot> depots = SettlementStock.depots(town, worker.role()).stream().filter(SettlementDepot::rulesObserved).toList();
         if (depositCarried(level, town, worker, elapsed, multiplier, depots, true)) {
             return;
         }
@@ -80,7 +80,8 @@ final class SettlementBackgroundHauling {
                 continue;
             }
             for (SettlementDepot destination : depots) {
-                if (!SettlementWorksiteLinks.permitsOutput(worker.settings(), destination.id())
+                if (!destination.purpose().permitsRole(worker.role())
+                        || !SettlementWorksiteLinks.permitsOutput(worker.settings(), destination.id())
                         || !com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.permitsDestination(worker.settings(), destination.position())
                         || (courier ? !destination.purpose().providesSupplies() : !destination.purpose().acceptsOutputs())) {
                     continue;

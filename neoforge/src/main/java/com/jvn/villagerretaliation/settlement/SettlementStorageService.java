@@ -74,6 +74,7 @@ public final class SettlementStorageService {
         if (links.automatic()) {
             var depots = resident == null ? SettlementWorksiteService.links(town, area.id()) : SettlementWorksiteService.links(town, area.id(), resident);
             for (var depot : town.depots().values()) {
+                if (!depot.purpose().permitsRole(area.type().role())) continue;
                 boolean courier = area.type().role() == HiredVillagerRole.COURIER;
                 if ((courier || depot.purpose().providesSupplies()) && depots.permitsSupply(depot.id())) {
                     entries.add(new SettlementStorageLinks.Link(depot.position(), SettlementStorageLinks.Purpose.SUPPLY, 9 - depot.priority()));
@@ -199,6 +200,7 @@ public final class SettlementStorageService {
         if (block instanceof SettlementDepotBlockEntity depotBlock) {
             var depot = depotBlock.inventory();
             if (depot == null || town.depots().get(depot.id()) != depot) return false;
+            if (!depot.purpose().permitsRole(role)) return false;
             var area = town.areas().get(depot.area());
             if (area == null || !area.enabled()) return false;
             return role == HiredVillagerRole.COURIER || (!link.purpose().supplies() || depot.purpose().providesSupplies())

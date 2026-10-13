@@ -184,27 +184,34 @@ public final class SettlementSupplyStock {
     }
 
     public static List<BlockPos> storages(ServerLevel level, SettlementRecord town, UUID area, boolean output) {
+        var workplace = town.workplace(area);
+        var role = workplace == null ? null : workplace.type().role();
         var plan = town.worksitePlans().get(area);
         if (plan != null && !plan.settings().storage().automatic()) {
             var result = new LinkedHashSet<BlockPos>();
             for (var link : plan.settings().storage().entries()) {
-                if (output ? link.purpose().outputs() : link.purpose().supplies()) result.add(positions(level, link.position()).getFirst());
+                if (!(output ? link.purpose().outputs() : link.purpose().supplies())) continue;
+                var depot = town.depots().values().stream().filter(value -> value.position().equals(link.position())).findFirst().orElse(null);
+                if (depot != null && !depot.purpose().permitsRole(role)) continue;
+                result.add(positions(level, link.position()).getFirst());
             }
             return List.copyOf(result);
         }
         var links = SettlementWorksiteService.links(town, area);
-        return (output ? SettlementStock.outputs(town) : SettlementStock.supplies(town)).stream()
+        return (output ? SettlementStock.outputs(town, role) : SettlementStock.supplies(town, role)).stream()
                 .filter(depot -> output ? links.permitsOutput(depot.id()) : links.permitsSupply(depot.id()))
                 .map(SettlementDepot::position).toList();
     }
 
     public static boolean workerOutput(ServerLevel level, SettlementRecord town, Villager worker, BlockPos position) {
         var area = town.duties().get(worker.getUUID());
+        var workplace = town.workplace(area);
+        if (workplace == null) return false;
         var storage = SettlementStorageService.effective(town, worker.getUUID());
-        if (storage.automatic()) return town.depots().values().stream().anyMatch(depot -> depot.position().equals(position)
+        if (storage.automatic()) return SettlementStock.outputs(town, workplace.type().role()).stream().anyMatch(depot -> depot.position().equals(position)
                 && SettlementWorksiteService.links(town, area, worker.getUUID()).permitsOutput(depot.id()));
         return storage.entries().stream().anyMatch(link -> link.purpose().outputs() && sameStorage(level, link.position(), position)
-                && SettlementStorageService.permitted(level, town, town.workplace(area).type().role(), link));
+                && SettlementStorageService.permitted(level, town, workplace.type().role(), link));
     }
 
     public static boolean permitsOutput(ServerLevel level, SettlementRecord town, UUID area, BlockPos position) {

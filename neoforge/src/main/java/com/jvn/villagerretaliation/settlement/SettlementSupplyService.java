@@ -167,11 +167,12 @@ final class SettlementSupplyService {
             if (settings != null && !settings.settings().storage().automatic()) {
                 for (var storage : settings.settings().storage().entries()) if (storage.purpose().supplies()) {
                     var source = town.depots().values().stream().filter(value -> value.position().equals(storage.position())).findFirst().orElse(null);
+                    if (source != null && !source.purpose().permitsRole(area.type().role())) continue;
                     input(links, supply, town, area, storage.position(), source == null ? null : source.id());
                 }
             } else {
                 var configured = SettlementWorksiteService.links(town, id);
-                for (var source : SettlementStock.supplies(town)) if (configured.permitsSupply(source.id())) {
+                for (var source : SettlementStock.supplies(town, area.type().role())) if (configured.permitsSupply(source.id())) {
                     input(links, supply, town, area, source.position(), source.id());
                 }
             }
@@ -210,6 +211,7 @@ final class SettlementSupplyService {
     private static boolean outputs(ServerLevel level, SettlementRecord town, SettlementArea area, Supply supply) {
         if (area.type() == SettlementAreaType.CONSTRUCTION || area.type() == SettlementAreaType.GUARD_POST) return false;
         var plan = town.worksitePlans().get(area.id());
+        if (supply.depot() != null && !town.depots().get(supply.depot()).purpose().permitsRole(area.type().role())) return false;
         if (plan != null && !plan.settings().storage().automatic()) return plan.settings().storage().entries().stream()
                 .anyMatch(link -> link.purpose().outputs() && SettlementSupplyStock.sameStorage(level, link.position(), supply.position()));
         return supply.depot() != null && SettlementWorksiteService.links(town, area.id()).permitsOutput(supply.depot())

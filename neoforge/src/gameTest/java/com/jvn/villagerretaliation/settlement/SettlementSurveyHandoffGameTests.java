@@ -91,9 +91,13 @@ public final class SettlementSurveyHandoffGameTests {
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(0L, level.dimension().location(), head, "");
         var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), head, 0L).orElseThrow();
-        var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Boundary home", head, head.south().above(), 5, true);
+        var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Boundary home", head.offset(-1, 0, -1), head.offset(3, 2, 2), 5, true);
         town.putArea(town.leader(), home);
-        set(neighbor, head.east().below(), Blocks.STONE.defaultBlockState());
+        for (var pos : BlockPos.betweenClosed(head.offset(1, -1, -1), head.offset(3, -1, 2))) set(neighbor, pos, Blocks.STONE.defaultBlockState());
+        var door = Blocks.OAK_DOOR.defaultBlockState().setValue(net.minecraft.world.level.block.DoorBlock.FACING, Direction.EAST);
+        set(neighbor, head.east(2), door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
+        set(neighbor, head.east(2).above(), door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+        set(neighbor, head.offset(3, 2, 2), Blocks.SEA_LANTERN.defaultBlockState());
         SettlementBuildingService.onChunkLoad(new ChunkEvent.Load(neighbor, false));
         helper.assertValueEqual(town.housingCapacity(), 1, "a supplied neighboring exit supports the real bed");
         set(neighbor, head.east(), Blocks.STONE.defaultBlockState());
@@ -139,6 +143,13 @@ public final class SettlementSurveyHandoffGameTests {
         var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, 0L).orElseThrow();
         var area = new SettlementArea(UUID.randomUUID(), type, "Handoff area", center, center.offset(4, 3, 4), 5, true);
         town.putArea(town.leader(), area);
+        if (type == SettlementAreaType.HOME) {
+            for (var pos : BlockPos.betweenClosed(center.below(), center.offset(4, -1, 4))) set(chunk, pos, Blocks.STONE.defaultBlockState());
+            var door = Blocks.OAK_DOOR.defaultBlockState().setValue(net.minecraft.world.level.block.DoorBlock.FACING, Direction.EAST);
+            set(chunk, center.offset(2, 0, 3), door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
+            set(chunk, center.offset(2, 1, 3), door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+            set(chunk, center.offset(4, 2, 4), Blocks.SEA_LANTERN.defaultBlockState());
+        }
         return new Fixture(town, area, chunk);
     }
 
@@ -146,6 +157,8 @@ public final class SettlementSurveyHandoffGameTests {
         var bed = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
         set(chunk, head, bed.setValue(BedBlock.PART, BedPart.HEAD));
         set(chunk, head.south(), bed.setValue(BedBlock.PART, BedPart.FOOT));
+        set(chunk, head.below(), Blocks.STONE.defaultBlockState());
+        set(chunk, head.south().below(), Blocks.STONE.defaultBlockState());
         set(chunk, head.north().below(), Blocks.STONE.defaultBlockState());
         set(chunk, head.west().below(), Blocks.STONE.defaultBlockState());
     }

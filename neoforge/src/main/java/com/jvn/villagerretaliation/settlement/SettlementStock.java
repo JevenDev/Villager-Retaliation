@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
@@ -10,15 +11,30 @@ public final class SettlementStock {
     }
 
     public static List<SettlementDepot> supplies(SettlementRecord town) {
-        return catalog(town).supplies;
+        return supplies(town, null);
+    }
+
+    public static List<SettlementDepot> supplies(SettlementRecord town, HiredVillagerRole role) {
+        var catalog = catalog(town);
+        return SettlementDepotPurpose.BUILDER_ONLY.permitsRole(role) ? catalog.supplies : catalog.sharedSupplies;
     }
 
     public static List<SettlementDepot> outputs(SettlementRecord town) {
-        return catalog(town).outputs;
+        return outputs(town, null);
+    }
+
+    public static List<SettlementDepot> outputs(SettlementRecord town, HiredVillagerRole role) {
+        var catalog = catalog(town);
+        return SettlementDepotPurpose.BUILDER_ONLY.permitsRole(role) ? catalog.outputs : catalog.sharedOutputs;
     }
 
     public static List<SettlementDepot> depots(SettlementRecord town) {
-        return catalog(town).depots;
+        return depots(town, null);
+    }
+
+    public static List<SettlementDepot> depots(SettlementRecord town, HiredVillagerRole role) {
+        var catalog = catalog(town);
+        return SettlementDepotPurpose.BUILDER_ONLY.permitsRole(role) ? catalog.depots : catalog.sharedDepots;
     }
 
     private static Catalog catalog(SettlementRecord town) {
@@ -31,6 +47,9 @@ public final class SettlementStock {
         final List<SettlementDepot> depots;
         final List<SettlementDepot> supplies;
         final List<SettlementDepot> outputs;
+        final List<SettlementDepot> sharedDepots;
+        final List<SettlementDepot> sharedSupplies;
+        final List<SettlementDepot> sharedOutputs;
 
         Catalog(SettlementRecord town) {
             this.entries = town.depots().values().stream().map(depot -> new Entry(depot, depot.priority(), depot.purpose(), active(town, depot))).toList();
@@ -38,6 +57,9 @@ public final class SettlementStock {
                     .sorted(Comparator.comparingInt(SettlementDepot::priority).reversed().thenComparing(SettlementDepot::id)).toList();
             this.supplies = this.depots.stream().filter(depot -> depot.purpose().providesSupplies()).toList();
             this.outputs = this.depots.stream().filter(depot -> depot.purpose().acceptsOutputs()).toList();
+            this.sharedDepots = this.depots.stream().filter(depot -> depot.purpose().permitsRole(null)).toList();
+            this.sharedSupplies = this.supplies.stream().filter(depot -> depot.purpose().permitsRole(null)).toList();
+            this.sharedOutputs = this.outputs.stream().filter(depot -> depot.purpose().permitsRole(null)).toList();
         }
 
         boolean matches(SettlementRecord town) {

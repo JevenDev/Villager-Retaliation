@@ -337,6 +337,7 @@ public final class SettlementCityAcceptanceScenario {
     private SettlementArea area(ServerPlayer player, SettlementAreaType type, String name, BlockPos min, BlockPos max) {
         SettlementTestPlots.claim(this.level, this.town, min, max);
         var area = new SettlementArea(UUID.randomUUID(), type, name, min, max, 5, true);
+        if (type == SettlementAreaType.HOME) SettlementHousingLivabilityGameTests.furnish(this.level, area, min.getY() + 1);
         require(SettlementBuildingService.register(player, this.town.id(), area), "the designated area registers: " + name);
         return area;
     }

@@ -227,6 +227,10 @@ public final class SettlementTerrainSurveyGameTests {
         states.putIfAbsent(fixture.head().west(), foot);
         states.putIfAbsent(fixture.head(), foot.setValue(BedBlock.PART, BedPart.HEAD));
         states.putIfAbsent(fixture.table(), Blocks.CRAFTING_TABLE.defaultBlockState());
+        var door = Blocks.OAK_DOOR.defaultBlockState().setValue(net.minecraft.world.level.block.DoorBlock.FACING, Direction.EAST);
+        states.putIfAbsent(fixture.origin().offset(1, 0, 0), door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, DoubleBlockHalf.LOWER));
+        states.putIfAbsent(fixture.origin().offset(1, 1, 0), door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, DoubleBlockHalf.UPPER));
+        states.putIfAbsent(fixture.origin().offset(4, 2, 4), Blocks.SEA_LANTERN.defaultBlockState());
         return snapshot(fixture.terrain().min(), fixture.terrain().max(), fixture.origin().getY(), states);
     }
 

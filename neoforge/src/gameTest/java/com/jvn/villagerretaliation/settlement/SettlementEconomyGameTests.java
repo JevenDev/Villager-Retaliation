@@ -141,6 +141,7 @@ public final class SettlementEconomyGameTests {
         for (BlockPos head : beds) {
             placeBed(helper, head);
         }
+        SettlementHousingLivabilityGameTests.furnish(helper.getLevel(), fixture.home(), fixture.home().min().getY());
         SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), fixture.home());
         fixture.depot().setItem(0, new ItemStack(Items.BREAD, 64));
         var supported = SettlementProgressionService.assess(helper.getLevel(), fixture.town());

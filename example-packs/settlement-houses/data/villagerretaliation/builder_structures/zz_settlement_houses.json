@@ -1,0 +1,32 @@
+{
+  "entries": [
+    {
+      "structure": "minecraft:village/plains/houses/plains_small_house_1",
+      "category": "House",
+      "house_size": "small",
+      "label": "Small — Vanilla plains example",
+      "construction_cost": {
+        "mode": "simplified",
+        "materials": [
+          { "tag": "minecraft:logs", "count": 32 },
+          { "item": "minecraft:cobblestone", "count": 64 },
+          { "item": "minecraft:glass", "count": 8 }
+        ]
+      }
+    },
+    {
+      "structure": "minecraft:village/plains/houses/plains_medium_house_1",
+      "category": "House",
+      "house_size": "medium",
+      "label": "Medium — Vanilla plains example",
+      "construction_cost": { "mode": "exact" }
+    },
+    {
+      "structure": "minecraft:village/plains/houses/plains_big_house_1",
+      "category": "House",
+      "house_size": "large",
+      "label": "Large — Vanilla plains example",
+      "construction_cost": { "mode": "exact" }
+    }
+  ]
+}

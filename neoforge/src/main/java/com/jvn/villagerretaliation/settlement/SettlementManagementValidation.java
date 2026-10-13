@@ -35,6 +35,7 @@ final class SettlementManagementValidation {
             case StartProject ignored -> SettlementPermission.BUILD;
             case CancelProject ignored -> SettlementPermission.BUILD;
             case ConfigureProject ignored -> SettlementPermission.BUILD;
+            case ReorderProject ignored -> SettlementPermission.BUILD;
             case SaveArea ignored -> SettlementPermission.BUILD;
             case RemoveArea ignored -> SettlementPermission.BUILD;
             case ClaimPlot ignored -> SettlementPermission.BUILD;
@@ -80,7 +81,10 @@ final class SettlementManagementValidation {
             case RemoveOrder order -> town.economy().orders().containsKey(order.id()) ? "" : "order_missing";
             case Applicant applicant -> town.applicants().containsKey(applicant.id()) ? "" : "applicant_missing";
             case CancelProject cancel -> !town.knowsProject(cancel.project()) ? "project_missing"
-                    : town.project(cancel.project()) == null || !town.project(cancel.project()).active() ? "project_finished" : "";
+                    : town.project(cancel.project()) == null || !town.project(cancel.project()).unfinished() ? "project_finished" : "";
+            case ReorderProject project -> town.constructionQueueRevision() != project.revision() ? "state_changed"
+                    : town.project(project.project()) == null || town.project(project.before()) == null ? "project_missing"
+                    : !town.project(project.project()).pending() || !town.project(project.before()).pending() ? "project_finished" : "";
             case ConfigureProject project -> !town.permits(player.getUUID(), SettlementPermission.STAFF) ? "permission_staff"
                     : town.project(project.project()) == null ? "project_missing"
                     : !town.project(project.project()).active() ? "project_finished"
@@ -130,12 +134,12 @@ final class SettlementManagementValidation {
             if (level != player.serverLevel()) return "resident_away";
             if (!(entity instanceof net.minecraft.world.entity.npc.Villager villager) || !villager.isAlive() || villager.isBaby()) return "resident_unavailable";
             if (SettlementWorkforceService.hasPersonalCommitment(villager)) return "personal_commitment";
-            return com.jvn.villagerretaliation.interaction.HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())
+            return area.type() == SettlementAreaType.CONSTRUCTION || com.jvn.villagerretaliation.interaction.HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())
                     ? "" : "role_unavailable";
         }
         var resident = town.residents().get(assign.resident());
         if (resident == null || !resident.availableForWork()) return "resident_unavailable";
-        return resident.availableRoles(player.serverLevel()).contains(area.type().role()) ? "" : "role_unavailable";
+        return area.type() == SettlementAreaType.CONSTRUCTION || resident.availableRoles(player.serverLevel()).contains(area.type().role()) ? "" : "role_unavailable";
     }
 
     static String rejected(Command command) {

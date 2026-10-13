@@ -608,6 +608,10 @@ public final class SettlementFamilyBirthGameTests {
             set(fixture, head, state.setValue(BedBlock.PART, BedPart.HEAD));
             set(fixture, head.south(), state.setValue(BedBlock.PART, BedPart.FOOT));
         }
+        var door = Blocks.OAK_DOOR.defaultBlockState().setValue(net.minecraft.world.level.block.DoorBlock.FACING, Direction.EAST);
+        set(fixture, center.south(4), door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
+        set(fixture, center.south(4).above(), door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+        set(fixture, center.offset(4, 2, 4), Blocks.SEA_LANTERN.defaultBlockState());
         town.recordSurvey(home.id(), new SettlementBuildingSurvey.Survey(level.getGameTime(), beds, List.of(), false,
                 java.util.Map.of(), List.of(), beds.stream().collect(java.util.stream.Collectors.toMap(pos -> pos, pos -> true))));
         observe(helper, fixture);

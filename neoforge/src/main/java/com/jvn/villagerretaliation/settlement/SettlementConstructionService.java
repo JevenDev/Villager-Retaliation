@@ -63,28 +63,11 @@ public final class SettlementConstructionService {
             return false;
         }
         project.reservePayment(plan.price());
-        SettlementBackgroundService.onActive(builder);
-        var duty = SettlementWorkforceService.duty(builder).orElse(null);
-        if (duty == null || duty.town() != town || !duty.area().id().equals(area.id())) return false;
-        var state = HiredWorkStateStore.state(builder);
-        if (BuilderTaskState.hasTask(state) || !town.startProject(player.getUUID(), project)) {
-            return false;
-        }
-        HiredWorkStateStore.pauseWork(level, builder, HiredVillagerRole.BUILDER, "interaction.work.builder.started", Map.of());
-        project.restore(state);
-        SettlementConstructionSiteService.observeArea(level, town, duty.area(), null);
-        state.remove("NextWorkGameTime");
-        state.remove("ProgressTicks");
+        project.queue(player.getUUID());
+        if (!town.queueProject(player.getUUID(), project)) return false;
         ConstructionBlueprintItem.updatePlacement(blueprint, level, plan, preview.origin(), preview.rotation());
         ConstructionBlueprintItem.markStarted(blueprint, builder, 0, level.getGameTime());
-        town.recordEvent(level.getGameTime(), SettlementEvent.Type.PROJECT_STARTED, project.label());
-        HiredWorkSession.invalidate(builder);
-        SettlementBackgroundService.onUnloaded(builder);
-        var care = town.residents().get(resident);
-        if (level.getEntity(resident) != builder && care != null) {
-            care.remember(builder);
-            town.changed();
-        }
+        tickQueue(level, town);
         return true;
     }
 
@@ -94,7 +77,7 @@ public final class SettlementConstructionService {
         var existing = town.project(request);
         if (existing != null) {
             var accepted = scan(player.serverLevel(), structure, rotation);
-            return accepted != null && existing.builder().equals(resident) && existing.structure().equals(structure)
+            return accepted != null && existing.requestedBuilder().equals(resident) && existing.structure().equals(structure)
                     && existing.rotation() == rotation && existing.origin().equals(origin(accepted, anchor)) ? "" : "duplicate";
         }
         var level = player.serverLevel();
@@ -104,35 +87,100 @@ public final class SettlementConstructionService {
         var origin = origin(plan, anchor);
         String failure = placementFailure(player, town, plan, origin);
         if (!failure.isEmpty()) return failure;
-        var builder = resolveBuilder(level, town, resident);
-        if (!eligible(level, town, builder)) return "builder";
-        var previous = town.workers().get(resident);
-        if (previous != null) previous.restore(builder);
-        reconcile(builder);
-        if (BuilderTaskState.hasTask(HiredWorkStateStore.state(builder))) return "builder";
+        if (resident == null) return "builder";
+        if (!resident.equals(SettlementProject.AUTOMATIC_BUILDER)
+                && !VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
+                        .map(record -> record.residents().containsKey(resident)).orElse(false)) return "builder";
         var area = workplace(level, town, plan, origin, request);
         if (area == null || !town.owns(area)) return "bounds";
         var project = SettlementProject.planned(town, area, resident, plan, origin, request, level.getGameTime());
-        if (town.economy().constructionFunds().compareTo(CurrencyAmount.of(plan.price(), 1)) < 0) return "funds";
-        if (!town.startProject(player.getUUID(), project)) return "capacity";
-        SettlementWorkforceService.reconcile(level, builder);
-        var state = HiredWorkStateStore.state(builder);
-        HiredWorkStateStore.pauseWork(level, builder, HiredVillagerRole.BUILDER, "interaction.work.builder.started", Map.of());
-        project.restore(state);
-        state.remove("NextWorkGameTime");
-        state.remove("ProgressTicks");
-        SettlementConstructionSiteService.observeArea(level, town, area, null);
-        town.recordEvent(level.getGameTime(), SettlementEvent.Type.PROJECT_STARTED, project.label());
-        HiredWorkSession.invalidate(builder);
-        SettlementBackgroundService.onUnloaded(builder);
-        var care = town.residents().get(resident);
-        if (care != null) care.remember(builder);
+        project.queue(player.getUUID());
+        if (!town.queueProject(player.getUUID(), project)) return "capacity";
+        tickQueue(level, town);
         return "";
     }
 
     static BuilderStructureScanner.StructurePlan scan(ServerLevel level, ResourceLocation structure, Rotation rotation) {
         var entry = BuilderStructureCatalog.byId(level.getServer(), structure).orElse(null);
         return entry == null ? null : BuilderStructureScanner.scan(level, entry, rotation).orElse(null);
+    }
+
+    /** Bounded, ordered dispatch. Waiting never edits the world or consumes partial resources. */
+    public static void tickQueue(ServerLevel level, SettlementRecord town) {
+        if (SettlementSavedData.get(level).readOnly() || !town.dimension().equals(level.dimension().location())) return;
+        for (var project : town.projects().values()) if (!project.unfinished()) SettlementConstructionMaterials.refund(level, town, project);
+        int available = town.stage().projects() - (int) town.projects().values().stream().filter(SettlementProject::active).count();
+        if (available <= 0) return;
+        for (var project : List.copyOf(town.projects().values())) {
+            if (!project.pending()) continue;
+            String blocker = "";
+            if (!town.permits(project.authority(), SettlementPermission.BUILD)) blocker = "permission";
+            var builder = project.builder().equals(SettlementProject.AUTOMATIC_BUILDER)
+                    ? town.duties().keySet().stream().map(id -> resolveBuilder(level, town, id))
+                            .filter(candidate -> eligible(level, town, candidate)).findFirst().orElse(null)
+                    : resolveBuilder(level, town, project.builder());
+            if (blocker.isEmpty() && !eligible(level, town, builder)) blocker = "builder";
+            if (blocker.isEmpty() && project.workplace() == null && !project.area().equals(town.duties().get(builder.getUUID()))) blocker = "builder";
+            if (blocker.isEmpty()) {
+                var previous = town.workers().get(builder.getUUID());
+                if (previous != null) previous.restore(builder);
+                reconcile(builder);
+                if (BuilderTaskState.hasTask(HiredWorkStateStore.state(builder))) blocker = "builder";
+            }
+            var plan = scan(level, project.structure(), project.rotation());
+            if (blocker.isEmpty() && (plan == null || plan.blocks().size() != project.total()
+                    || !plan.worldMin(project.origin()).equals(project.min()) || !plan.worldMax(project.origin()).equals(project.max()))) blocker = "prefab";
+            if (blocker.isEmpty() && !project.matchesPlan(plan)) blocker = "template_changed";
+            if (blocker.isEmpty() && !town.owns(project)) blocker = "bounds";
+            if (blocker.isEmpty() && protectedSite(level, town, project)) blocker = "blocked_existing";
+            if (blocker.isEmpty()) {
+                var site = BuilderSitePlanner.validateStartedSite(level, builder, plan, project.origin());
+                if (!site.valid()) blocker = site.statusKey().replace("interaction.work.builder.", "");
+            }
+            if (blocker.isEmpty() && town.economy().constructionFunds().compareTo(CurrencyAmount.of(project.fee(), 1)) < 0) blocker = "funds";
+            // This task marker delegates presentation to the escrow's current detailed blocker.
+            // It also lets a later builder/funds/site wait supersede a stale material diagnosis.
+            if (blocker.isEmpty() && !SettlementConstructionMaterials.reserve(level, town, project, plan, builder)) blocker = "materials";
+            if (!blocker.isEmpty()) {
+                if (project.waitFor(blocker)) town.changed();
+                // The queue is strict: later requests cannot consume supplies ahead of its head.
+                break;
+            }
+            if (!town.activateProject(project, builder.getUUID())) {
+                SettlementConstructionMaterials.refund(level, town, project);
+                if (project.waitFor("funds")) town.changed();
+                break;
+            }
+            SettlementBackgroundService.onActive(builder);
+            SettlementWorkforceService.reconcile(level, builder);
+            var state = HiredWorkStateStore.state(builder);
+            HiredWorkStateStore.pauseWork(level, builder, HiredVillagerRole.BUILDER, "interaction.work.builder.started", Map.of());
+            project.restore(state);
+            state.remove("NextWorkGameTime");
+            state.remove("ProgressTicks");
+            SettlementConstructionSiteService.observeArea(level, town, town.workplace(project.area()), null);
+            town.recordEvent(level.getGameTime(), SettlementEvent.Type.PROJECT_STARTED, project.label());
+            HiredWorkSession.invalidate(builder);
+            SettlementBackgroundService.onUnloaded(builder);
+            var care = town.residents().get(builder.getUUID());
+            if (care != null) care.remember(builder);
+            if (--available <= 0) break;
+        }
+    }
+
+    private static boolean protectedSite(ServerLevel level, SettlementRecord town, SettlementProject project) {
+        var footprint = new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)));
+        if (town.areas().values().stream().anyMatch(area -> area.type() != SettlementAreaType.CONSTRUCTION
+                && footprint.intersects(new AABB(Vec3.atLowerCornerOf(area.min()), Vec3.atLowerCornerOf(area.max().offset(1, 1, 1)))))) return true;
+        for (var pos : BlockPos.betweenClosed(project.min(), project.max())) {
+            if (level.hasChunkAt(pos) && level.getBlockEntity(pos) != null) return true;
+        }
+        return false;
+    }
+
+    public static boolean reorder(ServerPlayer player, SettlementRecord town, UUID project, UUID before, long revision) {
+        return canBuild(player, town) && !SettlementSavedData.get(player.serverLevel()).readOnly()
+                && town.reorderProject(player.getUUID(), project, before, revision);
     }
 
     static BlockPos origin(BuilderStructureScanner.StructurePlan plan, BlockPos anchor) {
@@ -145,27 +193,27 @@ public final class SettlementConstructionService {
                 || Math.abs(builder.getZ() - town.center().getZ()) > town.radius() + 16
                 || SettlementWorkforceService.hasPersonalCommitment(builder)
                 || !VillageAllegianceApi.canonicalPrimary(level, builder).filter(town.id()::equals).isPresent()
-                || !HiredVillagerRoles.availableRoles(level, builder).contains(HiredVillagerRole.BUILDER)
                 || town.activeProject(builder.getUUID()) != null || town.departures().containsKey(builder.getUUID())) return false;
         var area = town.workplace(town.duties().get(builder.getUUID()));
         var settings = town.effectiveWorkerSettings(builder.getUUID());
-        return area == null || area.type() == SettlementAreaType.CONSTRUCTION && area.enabled() && (settings == null || settings.options().get(SettlementWorkerSetting.ENABLED) == 1);
+        return area != null && area.type() == SettlementAreaType.CONSTRUCTION && area.enabled() && town.owns(area)
+                && (settings == null || settings.options().get(SettlementWorkerSetting.ENABLED) == 1);
     }
 
     static String placementFailure(ServerPlayer player, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin) {
         var level = player.serverLevel();
         var min = plan.worldMin(origin);
         var max = plan.worldMax(origin);
-        if (town.stage().projects() == 0 || town.projects().values().stream().filter(SettlementProject::active).count() >= town.stage().projects()) return "capacity";
+        if (town.stage().projects() == 0 || town.projects().values().stream().filter(SettlementProject::pending).count() >= SettlementRecord.CONSTRUCTION_QUEUE_LIMIT) return "capacity";
         if (!town.contains(min, max)
                 || level.isOutsideBuildHeight(min) || level.isOutsideBuildHeight(max)
                 || !level.getWorldBorder().isWithinBounds(min) || !level.getWorldBorder().isWithinBounds(max)) return "bounds";
         var footprint = new AABB(Vec3.atLowerCornerOf(min), Vec3.atLowerCornerOf(max.offset(1, 1, 1)));
         if (SettlementSavedData.get(level).settlements().stream().filter(other -> other.dimension().equals(town.dimension()))
-                .flatMap(other -> other.projects().values().stream().filter(other::owns)).anyMatch(project -> project.reservesFootprint()
+                .flatMap(other -> java.util.stream.Stream.concat(other.projects().values().stream(), other.projectHistory().values().stream()).filter(other::owns)).anyMatch(project -> (project.reservesFootprint() || project.status() == SettlementProject.Status.COMPLETED)
                 && new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)))
                         .intersects(footprint))) return "overlap";
-        if (town.areas().values().stream().anyMatch(area -> area.type().changesTerrain() && area.type() != SettlementAreaType.CONSTRUCTION
+        if (town.areas().values().stream().anyMatch(area -> area.type() != SettlementAreaType.CONSTRUCTION
                 && new AABB(Vec3.atLowerCornerOf(area.min()), Vec3.atLowerCornerOf(area.max().offset(1, 1, 1)))
                         .intersects(footprint))) return "overlap";
         if (SettlementSavedData.get(level).settlements().stream()
@@ -175,7 +223,7 @@ public final class SettlementConstructionService {
         var area = workplace(level, town, plan, origin, UUID.randomUUID());
         if (area == null || !town.owns(area)) return "bounds";
         var check = BuilderSitePlanner.validateSite(level, player, null, HiredWorkArea.fromBounds(area.min(), area.max(), true), plan, origin);
-        return check.valid() ? "" : "placement";
+        return check.valid() ? "" : check.statusKey().replace("interaction.work.builder.", "");
     }
 
     private static SettlementArea workplace(ServerLevel level, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin, UUID id) {
@@ -275,7 +323,7 @@ public final class SettlementConstructionService {
                 || SettlementSavedData.get(player.serverLevel()).get(town.id()).orElse(null) != town
                 || assistants == null || assistants.size() >= SettlementConstructionCrew.MAX_MEMBERS) return false;
         var project = town.projects().get(projectId);
-        if (project == null || !project.active() || project.crewRevision() != revision
+        if (project == null || !project.active() || project.crewRevision() != revision || project.priority() != priority
                 || project.workplace() == null && !town.worksitePlans().containsKey(project.area())) return false;
         for (var id : assistants) {
             if (id == null) return false;
@@ -285,7 +333,6 @@ public final class SettlementConstructionService {
             if (home == null || home.type() != SettlementAreaType.CONSTRUCTION || !home.enabled()
                     || !town.worksitePlans().containsKey(home.id()) || builder == null || !builder.isAlive() || builder.isBaby()
                     || VillagerDownedService.isDowned(builder) || SettlementWorkforceService.hasPersonalCommitment(builder)
-                    || !HiredVillagerRoles.availableRoles(player.serverLevel(), builder).contains(HiredVillagerRole.BUILDER)
                     || settings != null && settings.options().get(SettlementWorkerSetting.ENABLED) != 1) return false;
         }
         if (!project.configureCrew(revision, priority, assistants)) return false;
@@ -295,10 +342,11 @@ public final class SettlementConstructionService {
 
     public static boolean cancel(ServerPlayer player, SettlementRecord town, UUID projectId) {
         var project = town.projects().get(projectId);
-        if (!canBuild(player, town) || project == null || !project.active()) {
+        if (!canBuild(player, town) || project == null || !project.unfinished()) {
             return false;
         }
         town.finishProject(projectId, SettlementProject.Status.CANCELLED);
+        SettlementConstructionMaterials.refund(player.serverLevel(), town, project);
         town.recordEvent(player.serverLevel().getGameTime(), SettlementEvent.Type.PROJECT_CANCELLED, project.label());
         var members = new ArrayList<>(project.assistants());
         members.add(project.builder());
@@ -363,9 +411,15 @@ public final class SettlementConstructionService {
                 && builder.level().getWorldBorder().isWithinBounds(project.min()) && builder.level().getWorldBorder().isWithinBounds(project.max())
                 && project.town().equals(duty.town().id().value()) && duty.area().type() == SettlementAreaType.CONSTRUCTION
                 && project.within(duty.town().workplace(project.area())) && project.structure().equals(plan.entry().id()) && project.rotation() == plan.rotation()
+                && project.matchesPlan(plan)
                 && project.origin().equals(BuilderTaskState.origin(state))
                 && project.min().equals(project.origin().offset(plan.localMin())) && project.max().equals(project.origin().offset(plan.localMax()))
                 && project.total() == plan.blocks().size() && !SettlementWorkforceService.hasPersonalCommitment(builder);
+    }
+
+    public static boolean templateMatches(Villager builder, CompoundTag state, BuilderStructureScanner.StructurePlan plan) {
+        var project = project(builder, state);
+        return project == null || project.matchesPlan(plan);
     }
 
     public static void observe(Villager builder, CompoundTag state) {
@@ -374,7 +428,7 @@ public final class SettlementConstructionService {
         var town = town(builder, state);
         if (project.crew() != null) {
             var plan = scan((ServerLevel) builder.level(), project.structure(), project.rotation());
-            if (plan != null && plan.blocks().size() == project.total() && (project.site() == null || !project.site().pending())) {
+            if (plan != null && plan.blocks().size() == project.total() && project.matchesPlan(plan) && (project.site() == null || !project.site().pending())) {
                 SettlementConstructionCoordination.refresh(town, project, plan, (ServerLevel) builder.level());
             }
             if (!BuilderTaskState.blockedReason(state).isEmpty()) project.crew().release(builder.getUUID());
@@ -390,7 +444,9 @@ public final class SettlementConstructionService {
                 && (status == SettlementProject.Status.CANCELLED ? project.builder().equals(builder.getUUID())
                         : project.crew() == null || project.placed() == project.total())) {
             observe(builder, state);
+            if (status == SettlementProject.Status.COMPLETED) SettlementConstructionMaterials.complete((ServerLevel) builder.level(), town, project);
             town.finishProject(project.id(), status);
+            SettlementConstructionMaterials.refund((ServerLevel) builder.level(), town, project);
             synchronizePayments(town, builder);
             town.recordEvent(builder.level().getGameTime(), status == SettlementProject.Status.COMPLETED
                     ? SettlementEvent.Type.PROJECT_COMPLETED : SettlementEvent.Type.PROJECT_CANCELLED, project.label());
@@ -410,7 +466,7 @@ public final class SettlementConstructionService {
             if (current != null && current.active() && current.builder().equals(builder.getUUID())
                     && (duty == null || !current.area().equals(duty.area().id())
                             || !current.town().equals(duty.town().id().value()) || SettlementWorkforceService.hasPersonalCommitment(builder))) {
-                finish(builder, state, SettlementProject.Status.CANCELLED);
+                if (current.waitFor("builder")) town(builder, state).changed();
             }
             release(builder, state);
             HiredWorkStateStore.pauseWork(level, builder, HiredVillagerRole.BUILDER, "interaction.work.status.paused", Map.of());
@@ -490,6 +546,8 @@ public final class SettlementConstructionService {
     static boolean canBuild(ServerPlayer player, SettlementRecord town) {
         return player != null && town != null && player.isAlive() && !player.isSpectator()
                 && town.dimension().equals(player.level().dimension().location())
+                && !SettlementSavedData.get(player.serverLevel()).readOnly()
+                && SettlementSavedData.get(player.serverLevel()).get(town.id()).orElse(null) == town
                 && town.permits(player.getUUID(), SettlementPermission.BUILD);
     }
 }

@@ -199,6 +199,7 @@ public final class SettlementManyVillageProfileScenario {
 
     private SettlementArea area(ServerPlayer player, SettlementRecord town, SettlementAreaType type, BlockPos min, BlockPos max) {
         var area = new SettlementArea(UUID.randomUUID(), type, type.name(), min, max, 5, true);
+        if (type == SettlementAreaType.HOME) SettlementHousingLivabilityGameTests.furnish(this.level, area, min.getY() + 1);
         require(SettlementBuildingService.register(player, town.id(), area), "observed work area registers");
         return area;
     }

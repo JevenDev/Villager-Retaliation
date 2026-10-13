@@ -45,6 +45,7 @@ def dialogueCameraClientSmokeDirectory = layout.buildDirectory.dir("dialogue-cam
 def campaignConversationClientSmokeDirectory = layout.buildDirectory.dir("campaign-conversation-client-smoke/${System.currentTimeMillis()}")
 
 def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
+def constructionClientSmokeDirectory = layout.buildDirectory.dir("construction-client-smoke/${System.currentTimeMillis()}")
 def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
 def settlementManyVillageProfileDirectory = layout.buildDirectory.dir("settlement-many-village-profile/${System.currentTimeMillis()}")
 def settlementCityAcceptanceDirectory = layout.buildDirectory.dir("settlement-city-acceptance/${System.currentTimeMillis()}")
@@ -120,6 +121,14 @@ neoForge {
             gameDirectory.set(settlementClientSmokeDirectory)
             systemProperty 'villagerretaliation.settlementClientSmoke', settlementClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementViewSmoke', '--width', '1280', '--height', '720'
+        }
+
+        constructionClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(constructionClientSmokeDirectory)
+            systemProperty 'villagerretaliation.constructionClientSmoke', constructionClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'ConstructionSmoke', '--width', '1280', '--height', '720'
         }
 
         settlementTownProfile {
@@ -444,6 +453,25 @@ tasks.named('runSettlementMultiplayerHost') {
 tasks.named('runGameTestServer') {
     doFirst {
         delete(layout.buildDirectory.dir('gametest-run/world'))
+    }
+}
+
+// Dedicated construction acceptance; only generated test metadata is copied.
+tasks.named('runConstructionClientSmoke') {
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Run focused GameTests first to create isolated world metadata.')
+        copy {
+            from metadata
+            into new File(constructionClientSmokeDirectory.get().asFile, 'saves/ConstructionSmoke')
+        }
+        new File(constructionClientSmokeDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\n'
+    }
+    doLast {
+        def result = new File(constructionClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Settlement construction client smoke passed'))
+            throw new GradleException('Construction client acceptance did not finish. Inspect ' + constructionClientSmokeDirectory.get().asFile)
     }
 }
 

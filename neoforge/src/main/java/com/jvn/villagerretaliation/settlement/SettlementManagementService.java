@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
@@ -125,6 +127,8 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.CommissionBuilding build -> SettlementConstructionService.commission(player, town,
                     build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()).isEmpty();
             case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
+            case SettlementManagementActionPayload.ReorderProject project -> SettlementConstructionService.reorder(player, town,
+                    project.project(), project.before(), project.revision());
             case SettlementManagementActionPayload.ConfigureProject project -> SettlementConstructionService.configureCrew(player, town,
                     project.project(), project.revision(), project.priority(), project.assistants());
             case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
@@ -236,10 +240,11 @@ public final class SettlementManagementService {
             var supply = (SettlementManagementPayload.Supply) entry;
             return supply.shortage() > 0 ? 0 : supply.shortage() < 0 ? 1 : 2;
         }).thenComparing(entry -> ((SettlementManagementPayload.Supply) entry).storageName()).thenComparing(order);
-        if (request.page() == Page.PROJECTS) order = Comparator.<Entry>comparingInt(entry ->
-                ((SettlementManagementPayload.Project) entry).status() == SettlementProject.Status.ACTIVE ? 0 : 1)
-                .thenComparing(Comparator.<Entry>comparingInt(entry -> ((SettlementManagementPayload.Project) entry).priority()).reversed())
-                .thenComparing(order);
+        if (request.page() == Page.PROJECTS) order = Comparator.<Entry>comparingInt(entry -> switch (((SettlementManagementPayload.Project) entry).status()) {
+            case ACTIVE -> 0;
+            case PENDING -> 1;
+            default -> 2;
+        }); // Stable sort preserves the authoritative pending queue order.
         var filtered = (request.page() == Page.HISTORY ? matching : matching.sorted(order)).toList();
         int size = SettlementManagementRequestPayload.PAGE_SIZE;
         int index = Math.min(request.index(), Math.max(0, (filtered.size() - 1) / size));
@@ -304,18 +309,28 @@ public final class SettlementManagementService {
         }
     }
 
+    private static List<HiredVillagerRole> settlementRoles(ServerLevel level, Villager villager, SettlementResidentState care) {
+        var roles = new ArrayList<HiredVillagerRole>(villager == null ? care == null ? List.of() : care.availableRoles(level)
+                : HiredVillagerRoles.availableRoles(level, villager));
+        if ((villager != null && !villager.isBaby() || care != null && care.availableForWork()) && !roles.contains(HiredVillagerRole.BUILDER)) {
+            roles.add(HiredVillagerRole.BUILDER);
+        }
+        return List.copyOf(roles);
+    }
+
     private static void projects(ServerLevel level, SettlementRecord town, List<Entry> entries) {
         java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream()).forEach(project -> entries.add(new SettlementManagementPayload.Project(
                         project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.min(), project.max(), project.status(),
                         project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
                         project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),
                         project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())),
-                        project.priority(), project.crewRevision(), project.workplace() != null || town.worksitePlans().containsKey(project.area()),
+                        project.priority(), project.pending() ? town.constructionQueueRevision() : project.crewRevision(), project.workplace() != null || town.worksitePlans().containsKey(project.area()),
                         constructionName(level, project.builder()), project.assistants().stream()
                                 .map(id -> new SettlementManagementPayload.CrewMember(id, constructionName(level, id))).toList())));
     }
 
     private static String constructionName(ServerLevel level, UUID id) {
+        if (id.equals(SettlementProject.AUTOMATIC_BUILDER)) return "Next available builder";
         return display(level.getEntity(id) instanceof Villager member ? VillagerPresetNameRegistry.resolveDisplayName(member).getString()
                 : VillagerSocialGraphSavedData.get(level).knownName(id).orElse("Unknown builder"));
     }
@@ -361,7 +376,7 @@ public final class SettlementManagementService {
                     !detailed ? -1 : villager != null ? VillagerRecoveryService.captureRecoveryState(villager).food() : care == null ? -1 : care.food(),
                     !detailed ? -1.0F : villager != null ? villager.getHealth() : care == null ? -1.0F : care.health(),
                     work.status(),
-                    villager == null ? care == null ? List.of() : care.availableRoles(level) : HiredVillagerRoles.availableRoles(level, villager),
+                    settlementRoles(level, villager, care),
                     town.guardOrders().get(member.id()), detailed ? settings : null,
                     detailed && !personal ? SettlementBrewingService.snapshot(level, town, member.id()) : null, diagnostic, town.manuallyStaffed(member.id()),
                     !personal && town.worksitePlans().containsKey(town.duties().get(member.id())),

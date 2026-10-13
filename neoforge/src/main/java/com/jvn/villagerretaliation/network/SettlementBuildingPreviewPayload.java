@@ -65,6 +65,7 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
             ItemStack.STREAM_CODEC.encode(buffer, material.item());
             buffer.writeVarInt(material.required());
             buffer.writeVarInt(material.available());
+            buffer.writeUtf(material.label(), 256);
         }
         buffer.writeVarInt(payload.builders().size());
         for (var builder : payload.builders()) {
@@ -90,7 +91,7 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
         for (int index = 0; index < count; index++) blocks.add(new PreviewBlock(buffer.readBlockPos(), Block.stateById(buffer.readVarInt())));
         var materials = new ArrayList<Material>();
         count = VillagerPayloads.readCollectionSize(buffer, MAX_MATERIALS, "building preview materials");
-        for (int index = 0; index < count; index++) materials.add(new Material(ItemStack.STREAM_CODEC.decode(buffer), buffer.readVarInt(), buffer.readVarInt()));
+        for (int index = 0; index < count; index++) materials.add(new Material(ItemStack.STREAM_CODEC.decode(buffer), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(256)));
         var builders = new ArrayList<Builder>();
         count = VillagerPayloads.readCollectionSize(buffer, MAX_BUILDERS, "building preview builders");
         for (int index = 0; index < count; index++) builders.add(new Builder(buffer.readUUID(), buffer.readUtf(128)));
@@ -105,9 +106,12 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
         }
     }
 
-    public record Material(ItemStack item, int required, int available) {
+    public record Material(ItemStack item, int required, int available, String label) {
+        public Material(ItemStack item, int required, int available) {
+            this(item, required, available, item.getHoverName().getString());
+        }
         public Material {
-            if (item == null || item.isEmpty() || required <= 0 || available < 0) throw new IllegalArgumentException("Invalid building material");
+            if (item == null || item.isEmpty() || required <= 0 || available < 0 || label == null || label.length() > 256) throw new IllegalArgumentException("Invalid building material");
             item = item.copyWithCount(1);
         }
     }
