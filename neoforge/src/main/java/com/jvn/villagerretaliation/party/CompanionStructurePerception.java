@@ -174,8 +174,28 @@ public final class CompanionStructurePerception {
         }
         if (water > 0 && (distance > 12 || water > 16)) return false;
         if (level.getMaxLocalRawBrightness(position) < 4 && distance > 8) return false;
-        var hit = level.clip(new ClipContext(eyes,target,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,observer));
+        var hit = loadedView(level).clip(new ClipContext(eyes,target,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,observer));
         return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(position);
+    }
+
+    /** The voxel traversal itself cannot load a chunk, including tiny diagonal corner crossings. */
+    static net.minecraft.world.level.BlockGetter loadedView(ServerLevel level) {
+        return new net.minecraft.world.level.BlockGetter() {
+            @Override public BlockState getBlockState(BlockPos pos) {
+                var chunk=level.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4);
+                return chunk==null?net.minecraft.world.level.block.Blocks.BARRIER.defaultBlockState():chunk.getBlockState(pos);
+            }
+            @Override public net.minecraft.world.level.material.FluidState getFluidState(BlockPos pos) {
+                var chunk=level.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4);
+                return chunk==null?net.minecraft.world.level.material.Fluids.EMPTY.defaultFluidState():chunk.getFluidState(pos);
+            }
+            @Override public net.minecraft.world.level.block.entity.BlockEntity getBlockEntity(BlockPos pos) {
+                var chunk=level.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4);
+                return chunk==null?null:chunk.getBlockEntity(pos);
+            }
+            @Override public int getHeight(){return level.getHeight();}
+            @Override public int getMinBuildHeight(){return level.getMinBuildHeight();}
+        };
     }
 
     static boolean fresh(ServerLevel level,LivingEntity speaker,Evidence e) {
@@ -192,7 +212,20 @@ public final class CompanionStructurePerception {
             if(sampleChunk==null || !start.getBoundingBox().isInside(pos) || !material(sampleChunk.getBlockState(pos),e.materials().get(i))
                     || !visible(level,speaker,pos,CompanionAmbientResources.get().range()))return false;
         }
+        if(e.recognizer().equals("ocean_ruins") && !waterExterior(level,e.samples()))return false;
         return true;
+    }
+
+    static boolean waterExterior(ServerLevel level,List<BlockPos> samples) {
+        int wet=0;
+        for(var sample:samples) {
+            for(var direction:Direction.values()) {
+                var pos=sample.relative(direction);var chunk=level.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4);
+                if(chunk!=null && chunk.getFluidState(pos).is(net.minecraft.tags.FluidTags.WATER)) {wet++;break;}
+            }
+            if(wet>=3)return true;
+        }
+        return false;
     }
 
     /** Samples visible surfaces first, without asking the world to load any ray segment. */
@@ -208,7 +241,7 @@ public final class CompanionStructurePerception {
                 if(level.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4)==null) {loaded=false;break;}
             }
             if(!loaded)continue;
-            var hit=level.clip(new ClipContext(eyes,target,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,speaker));
+            var hit=loadedView(level).clip(new ClipContext(eyes,target,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,speaker));
             if(hit.getType()!=HitResult.Type.BLOCK)continue;
             for(int i=0;i<4 && origins.size()<128;i++) {
                 var cell=shape.cells().get((int)Math.floorMod(cursor*4+i,shape.cells().size()));
@@ -259,7 +292,7 @@ public final class CompanionStructurePerception {
                     var both=new ArrayList<>(samples);both.addAll(second);samples=List.copyOf(both);
                     materials.addAll(SHAPES.get("village").cells().stream().map(Cell::material).toList());
                 }
-                if (profile.recognizer().equals("ocean_ruins") && !level.getFluidState(origin.above()).is(net.minecraft.tags.FluidTags.WATER)) continue;
+                if (profile.recognizer().equals("ocean_ruins") && !waterExterior(level,samples)) continue;
                 String instance=CompanionAmbientLedger.get(level.getServer()).instance(level.dimension().location().toString(),id.toString(),start.getChunkPos().x,start.getChunkPos().z);
                 return Optional.of(new Evidence(instance,profile.pool(),profile.recognizer(),samples.getFirst(),samples,List.copyOf(materials),
                         id,start.getChunkPos().toLong(),level.dimension().location()));

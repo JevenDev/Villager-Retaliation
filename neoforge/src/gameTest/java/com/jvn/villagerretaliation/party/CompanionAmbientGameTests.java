@@ -224,8 +224,19 @@ public final class CompanionAmbientGameTests {
         var wall=h.absolutePos(new BlockPos(1,3,4));level.setBlockAndUpdate(wall,Blocks.STONE.defaultBlockState());
         h.assertFalse(CompanionStructurePerception.visible(level,v,target,16),"solid wall occludes sample");
         h.assertFalse(CompanionStructurePerception.visible(level,v,target,3),"beyond visual range");
+        var unloaded=new BlockPos(10000000,100,10000000);
+        h.assertTrue(level.getChunkSource().getChunkNow(unloaded.getX()>>4,unloaded.getZ()>>4)==null,"fixture chunk is absent");
+        h.assertTrue(CompanionStructurePerception.loadedView(level).getBlockState(unloaded).is(Blocks.BARRIER),"unknown ray voxel occludes without a world read");
+        h.assertTrue(level.getChunkSource().getChunkNow(unloaded.getX()>>4,unloaded.getZ()>>4)==null,"ray view never loads missing chunks");
         h.assertTrue(CompanionStructurePerception.profile(level,ResourceLocation.parse("example:unknown"))==null,"unknown registry identity skipped");
-        h.assertTrue(CompanionStructurePerception.profile(level,ResourceLocation.withDefaultNamespace("buried_treasure"))==null,"buried treasure opt-out");h.succeed();
+        h.assertTrue(CompanionStructurePerception.profile(level,ResourceLocation.withDefaultNamespace("buried_treasure"))==null,"buried treasure opt-out");
+        var ruin=List.of(target.offset(3,0,0),target.offset(3,1,0),target.offset(3,2,0));
+        for(var sample:ruin)level.setBlock(sample,Blocks.CUT_SANDSTONE.defaultBlockState(),2);
+        h.assertFalse(CompanionStructurePerception.waterExterior(level,ruin),"dry masonry is not underwater evidence");
+        for(var sample:ruin)level.setBlock(sample.north(),Blocks.WATER.defaultBlockState(),2);
+        h.assertTrue(CompanionStructurePerception.waterExterior(level,ruin),"water beside solid architecture qualifies without probing inside masonry");
+        for(var sample:ruin)level.setBlock(sample.north(),Blocks.AIR.defaultBlockState(),2);
+        h.assertFalse(CompanionStructurePerception.waterExterior(level,ruin),"draining the exposed ruin invalidates queued underwater context");h.succeed();
     }
 
     @GameTest(template="empty",batch="companion_ambient")
