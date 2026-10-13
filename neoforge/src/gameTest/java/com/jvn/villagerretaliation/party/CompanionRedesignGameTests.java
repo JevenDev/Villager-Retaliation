@@ -86,6 +86,32 @@ public final class CompanionRedesignGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void questUnlockDoesNotAutomaticallyRecruit(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, new BlockPos(1, 2, 1));
+        var json = com.google.gson.JsonParser.parseString("{\"type\":\"companion_unlock\",\"free\":true}").getAsJsonObject();
+        var actions = com.jvn.villagerretaliation.action.VillagerActionDefinition.readListOrInline(ResourceLocation.parse("villagerretaliation:test"), "test", json);
+        helper.assertValueEqual(actions.size(), 1, "data-driven unlock parses");
+        var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(helper.getLevel(), player, villager);
+        var result = com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(context, actions.getFirst(), java.util.Map.of());
+        helper.assertTrue(result.success(), "quest/dialogue grant executes");
+        helper.assertTrue(PartyService.getPartyForVillager(helper.getLevel(), villager.getUUID()).isEmpty(), "eligibility does not claim active membership");
+        helper.assertValueEqual(CompanionRelationshipService.recruitmentCost(helper.getLevel(), villager, player), 0, "free grant removes upfront cost");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void meaningfulBondCannotRepeatAndSurvivesSave(GameTestHelper helper) {
+        UUID player = UUID.randomUUID();
+        UUID villager = UUID.randomUUID();
+        helper.assertTrue(CompanionRelationshipService.experience(helper.getLevel(), villager, player, "quest/helped_home", 5), "first meaningful experience grows bond");
+        helper.assertTrue(!CompanionRelationshipService.experience(helper.getLevel(), villager, player, "quest/helped_home", 5), "repeating dialogue does not grind bond");
+        var loaded = CompanionSavedData.load(CompanionSavedData.get(helper.getLevel()).save(new net.minecraft.nbt.CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+        helper.assertValueEqual(loaded.find(villager).getCompound("Bonds").getInt(player.toString()), 5, "bond belongs to villager relationship across save/load");
+        helper.succeed();
+    }
+
     private static PartyVillagerRecord record(UUID owner) {
         return new PartyVillagerRecord(UUID.randomUUID(), owner, UUID.randomUUID(), 0,
                 PartyCommandMode.FOLLOW, null, null, 0L, 24000L, 1, 32, "Companion", "", ResourceLocation.parse("minecraft:overworld"), BlockPos.ZERO);

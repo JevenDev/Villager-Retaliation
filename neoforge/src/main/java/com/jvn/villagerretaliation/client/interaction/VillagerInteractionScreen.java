@@ -1822,12 +1822,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void addContractOptions() {
         if (this.recruitedPartyVillager) {
             this.options.add(DialogueOption.enabled(
-                    translate("party.remaining_days", this.partyRemainingDays),
+                    translate("party.companion_permanent"),
                     NO_ACTION));
         }
         addOption(this.recruitedPartyVillager ? "party.contract_days_left" : "recruit.contract_days_left",
                 () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
-        addOption("recruit.extend_contract", this::openContractExtensionPage);
+        if (!this.recruitedPartyVillager) addOption("recruit.extend_contract", this::openContractExtensionPage);
         if (this.hiredByPlayer && !this.oneOffBuilderJob) {
             addOption("recruit.end_hire", () -> {
                 openEndContractConfirmationPage();

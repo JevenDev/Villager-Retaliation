@@ -355,6 +355,9 @@ public final class VillagerRetaliationEvents {
         VillagerDownedService.onLivingDamagePost(event);
         if (event.getEntity() instanceof Villager companion && event.getNewDamage() > 0) {
             com.jvn.villagerretaliation.party.CompanionLifecycleService.damaged(companion);
+            if (companion.level() instanceof ServerLevel companionLevel && event.getSource().getEntity() instanceof ServerPlayer attacker) {
+                com.jvn.villagerretaliation.party.CompanionRelationshipService.betrayed(companionLevel, companion, attacker);
+            }
         }
     }
 

@@ -191,7 +191,7 @@ public final class VillagerInteractionScreenOpener {
         boolean partyVillagerAuthorized = partyVillager != null
                 && playerParty != null
                 && villagerParty.id().equals(playerParty.id())
-                && villagerParty.hasAdminPrivileges(player.getUUID());
+                && com.jvn.villagerretaliation.party.CompanionAuthority.canCommand(player.getUUID(), villagerParty, partyVillager);
         boolean partyVillagerPartyMember = villagerParty != null
                 && playerParty != null
                 && villagerParty.id().equals(playerParty.id());
@@ -199,8 +199,9 @@ public final class VillagerInteractionScreenOpener {
                 && !hiredAnyPlayer
                 && VillagerRecruitmentService.canRecruit(level, villager, player)
                 && (playerParty == null
-                || playerParty.leaderId().equals(player.getUUID())
-                && playerParty.villagers().size() < PartyService.MAX_VILLAGERS);
+                || playerParty.villagers().size() < PartyService.MAX_VILLAGERS)
+                && (com.jvn.villagerretaliation.party.CompanionLifecycleService.owner(level, villager.getUUID()) == null
+                || player.getUUID().equals(com.jvn.villagerretaliation.party.CompanionLifecycleService.owner(level, villager.getUUID())));
         int partyRemainingDays = partyVillager == null
                 ? 0
                 : partyVillager.remainingDays(level.getServer().overworld().getGameTime());

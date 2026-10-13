@@ -335,8 +335,9 @@ public record VillagerActionDefinition(
         boolean flashTracker = DatapackJsonReader.readBoolean(entry, "flash_tracker", true);
         QuestFactScope factScope = readFactScope(entry, kind, questId);
         ResourceLocation factTag = readFactTag(location, context, entry, kind);
-        String factKey = readFactKey(entry, kind);
-        String factValue = readFactValue(entry, kind);
+        String factKey = kind == Kind.COMPANION_BOND ? DatapackJsonReader.readString(entry, "experience_id") : readFactKey(entry, kind);
+        String factValue = kind == Kind.COMPANION_UNLOCK
+                ? (DatapackJsonReader.readBoolean(entry, "free", false) ? "free" : "paid") : readFactValue(entry, kind);
         CompiledQuestTransition questTransition = kind == Kind.QUEST_TRANSITION
                 ? CompiledQuestTransition.read(location, entry, questId)
                 : CompiledQuestTransition.EMPTY;
@@ -470,6 +471,7 @@ public record VillagerActionDefinition(
     }
 
     private static int readAmount(Kind kind, JsonObject entry) {
+        if (kind == Kind.COMPANION_UNLOCK) return DatapackJsonReader.readInt(entry, "minimum_reputation", 0);
         Integer explicitAmount = DatapackJsonReader.readNullableInt(entry, "amount");
         if (explicitAmount != null) {
             return explicitAmount;
@@ -707,6 +709,8 @@ public record VillagerActionDefinition(
 
     public enum Kind {
         NONE("none"),
+        COMPANION_UNLOCK("companion_unlock"),
+        COMPANION_BOND("companion_bond"),
         NOTIFICATION("notification"),
         TRACKER("tracker"),
         FORCED_DIALOGUE("forced_dialogue"),

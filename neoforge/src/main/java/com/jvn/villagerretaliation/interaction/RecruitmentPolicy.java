@@ -29,7 +29,8 @@ public final class RecruitmentPolicy {
                         .canTransferToPersonalHire(level, villager, player))) {
             return Decision.denied(DenialReason.SETTLEMENT_DUTY);
         }
-        if (!hasTrust(level, villager, player, VillagerReputationLevel.NEUTRAL)) {
+        if (!hasTrust(level, villager, player, VillagerReputationLevel.NEUTRAL)
+                && !com.jvn.villagerretaliation.party.CompanionRelationshipService.eligible(level, villager, player)) {
             return Decision.denied(DenialReason.INSUFFICIENT_REPUTATION);
         }
         VillagerAssignmentSnapshot assignment = VillagerAssignmentStore.snapshot(villager);

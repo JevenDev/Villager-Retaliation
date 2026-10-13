@@ -12,26 +12,8 @@
     {
       "key": "interaction.party.recruit_confirmation",
       "lines": [
-        "Would you like me in your party? The first day costs {cost} emeralds, and any extra days must be paid in advance.",
-        "I can join you for an opening payment of {cost} emeralds. You may purchase more time before each added day.",
-        "My place in the party begins at {cost} emeralds for one day. Longer service needs payment ahead of time.",
-        "So this is a recruitment offer. Pay {cost} emeralds for the first day, then arrange additional days in advance.",
-        "If I travel with you, the initial day is {cost} emeralds. Any extension is prepaid.",
-        "You can recruit me for {cost} emeralds to start. We will settle the cost of later days before they begin.",
-        "I am willing to take a party contract. The first day runs {cost} emeralds, with future days bought beforehand.",
-        "The price to bring me along is {cost} emeralds for day one. Keeping me longer requires advance payment.",
-        "Your party may have my service for {cost} emeralds at first. Additional time can be secured ahead of schedule.",
-        "To join your company, I ask {cost} emeralds for the opening day. Extra days are arranged before my term ends.",
-        "I'll travel under your leadership for {cost} emeralds on the first day. Each extension must be paid before it starts.",
-        "A first day with your party costs {cost} emeralds. If you need me beyond that, purchase the time in advance.",
-        "Recruiting me begins with {cost} emeralds. That covers one day, and longer terms are prepaid.",
-        "My party rate starts at {cost} emeralds for today. We can add paid days before the current time expires.",
-        "I can accept the invitation once you agree to {cost} emeralds for the first day. Later service is paid ahead.",
-        "Bring {cost} emeralds, and I will join for one day. You may extend our arrangement with advance payment.",
-        "The initial contract is simple. {cost} emeralds buys my first day, while any following days are purchased early.",
-        "Do you agree to {cost} emeralds for my first day in the party? More days will need to be covered beforehand.",
-        "I am ready to sign on at {cost} emeralds for one day. If the journey lasts longer, pay for that time in advance.",
-        "Your offer can begin with a {cost} emerald payment. I will serve for the first day, and we can prepay any others."
+        "I can travel with you for an upfront payment of {cost} emeralds. Once recruited, you can ask me to join again without paying again.",
+        "Would you like me in your party? Recruitment costs {cost} emeralds once. I will stay until we choose to part."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.recruit_confirmation.000"
     },

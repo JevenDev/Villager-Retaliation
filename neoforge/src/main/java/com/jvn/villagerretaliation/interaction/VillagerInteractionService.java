@@ -732,7 +732,7 @@ public final class VillagerInteractionService {
         boolean ownsPartyContract = recruitedParty != null
                 && partyVillager != null
                 && recruitedParty.playerIds().contains(player.getUUID())
-                && recruitedParty.hasAdminPrivileges(player.getUUID());
+                && com.jvn.villagerretaliation.party.CompanionAuthority.canCommand(player.getUUID(), recruitedParty, partyVillager);
         boolean belongsToPartyContract = recruitedParty != null
                 && partyVillager != null
                 && recruitedParty.playerIds().contains(player.getUUID());
@@ -1154,7 +1154,7 @@ public final class VillagerInteractionService {
             com.jvn.villagerretaliation.party.PartyVillagerRecord record) {
         if (action == VillagerRecruitRequestPayload.Action.PROMPT_PARTY_RECRUIT_CONFIRMATION) {
             sendVillagerNotice(player, villager, "interaction.party.recruit_confirmation", Map.of(
-                    "cost", Integer.toString(com.jvn.villagerretaliation.party.PartyVillagerContractService.DAILY_EMERALD_COST)));
+                    "cost", Integer.toString(com.jvn.villagerretaliation.party.CompanionRelationshipService.recruitmentCost(level, villager, player))));
             return true;
         }
         if (action == VillagerRecruitRequestPayload.Action.DECLINE_PARTY_RECRUIT_CONFIRMATION) {
@@ -1231,9 +1231,13 @@ public final class VillagerInteractionService {
             return true;
         }
         if (action == VillagerRecruitRequestPayload.Action.VIEW_CONTRACT) {
+            if (record.contractEndGameTime() == Long.MAX_VALUE) {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("villagerretaliation.party.companion_permanent"));
+                return true;
+            }
             sendVillagerNotice(player, villager, "interaction.party.contract_remaining", Map.of(
                     "time_remaining", Integer.toString(record.remainingDays(level.getServer().overworld().getGameTime())),
-                    "cost", Integer.toString(com.jvn.villagerretaliation.party.PartyVillagerContractService.DAILY_EMERALD_COST)));
+                    "cost", Integer.toString(com.jvn.villagerretaliation.party.CompanionRelationshipService.recruitmentCost(level, villager, player))));
             return true;
         }
         if (action == VillagerRecruitRequestPayload.Action.PROMPT_PARTY_DISMISS_CONFIRMATION) {

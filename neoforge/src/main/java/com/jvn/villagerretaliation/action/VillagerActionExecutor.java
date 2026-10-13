@@ -53,6 +53,7 @@ public final class VillagerActionExecutor {
         }
 
         return switch (action.kind()) {
+            case COMPANION_UNLOCK, COMPANION_BOND -> com.jvn.villagerretaliation.party.CompanionRelationshipService.execute(context, action).legacyResult();
             case FOLLOWER -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(context, action).legacyResult();
             case NOTIFICATION -> executeNotification(context, action, replacements);
             case TRACKER -> VillagerActionResult.tracker(action.flashTracker());

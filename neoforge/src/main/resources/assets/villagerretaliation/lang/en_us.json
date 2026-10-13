@@ -1,4 +1,10 @@
 {
+  "villagerretaliation.party.error.companion_owner_required": "Only the companion owner can manage this permission.",
+  "villagerretaliation.party.error.companion_in_combat": "Goodbye is unavailable during combat or recovery. Wait until it is safe.",
+  "villagerretaliation.party.error.companion_permanent": "This companion stays until you say goodbye. No renewal is needed.",
+  "villagerretaliation.party.error.companion_trust_required": "Rebuild this companion's trust before asking them to follow.",
+  "villagerretaliation.party.companion_permanent": "Persistent companion. No rental payments. Wait Here keeps their place. Goodbye returns them home.",
+  "villagerretaliation.gui.party.companion_permanent": "Persistent companion",
   "villagerretaliation.gui.root.heal": "Heal",
   "villagerretaliation.gui.interaction_button.heal.description": "Ask this cleric for a healing potion.",
   "villagerretaliation.gui.healing.loading": "Let me see what you need...",

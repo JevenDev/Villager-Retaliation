@@ -67,7 +67,19 @@ public final class PartyVillagerContractService {
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
             return ContractResult.failure("villagerretaliation.party.error.villager_unavailable");
         }
-        if (VillagerCurrencyPayment.count(player) < DAILY_EMERALD_COST) {
+        UUID companionOwner = CompanionLifecycleService.owner(level, villager.getUUID());
+        if (companionOwner != null && !companionOwner.equals(player.getUUID())) {
+            return ContractResult.failure("villagerretaliation.party.error.companion_owner_required");
+        }
+        if (com.jvn.villagerretaliation.quest.follower.QuestFollowerService.controls(villager) || !CompanionLifecycleService.canPart(villager)) {
+            return ContractResult.failure("villagerretaliation.party.error.companion_in_combat");
+        }
+        var personalState = CompanionSavedData.get(level).find(villager.getUUID());
+        if (personalState != null && personalState.getBoolean("TrustSuspended") && !CompanionRelationshipService.eligible(level, villager, player)) {
+            return ContractResult.failure("villagerretaliation.party.error.companion_trust_required");
+        }
+        int recruitmentCost = CompanionRelationshipService.recruitmentCost(level, villager, player);
+        if (VillagerCurrencyPayment.count(player) < recruitmentCost) {
             return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
         }
 
@@ -84,7 +96,7 @@ public final class PartyVillagerContractService {
                 now,
                 VillagerContractTime.endAfterDays(now, INITIAL_PAID_DAYS),
                 INITIAL_PAID_DAYS,
-                DAILY_EMERALD_COST,
+                recruitmentCost,
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager),
                 level.dimension().location(),
@@ -100,7 +112,7 @@ public final class PartyVillagerContractService {
         if (!membership.success()) {
             return ContractResult.failure(membership.messageKey());
         }
-        if (!VillagerCurrencyPayment.tryRemove(player, DAILY_EMERALD_COST)) {
+        if (!VillagerCurrencyPayment.tryRemove(player, recruitmentCost)) {
             PartyService.removeVillager(level, villager.getUUID());
             if (currentParty == null && membership.partyId() != null) {
                 PartyService.deleteParty(level, membership.partyId());
@@ -108,8 +120,15 @@ public final class PartyVillagerContractService {
             return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
         }
 
-        VillagerWalletService.addCurrency(villager, DAILY_EMERALD_COST);
+        VillagerWalletService.addCurrency(villager, recruitmentCost);
         attachEntityState(level, villager, membership.partyId(), record);
+        HiredVillagerContractService.takeOverJobInventoryOverflow(villager);
+        var companion = CompanionSavedData.get(level).find(villager.getUUID());
+        companion.putBoolean("Returning", false);
+        companion.putString("Status", "Active");
+        companion.putBoolean("TrustSuspended", false);
+        companion.putInt("BetrayalStrikes", 0);
+        CompanionSavedData.get(level).setDirty();
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         VillagerRecruitmentService.applyPartyFollowing(level, villager, player);
         com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
@@ -118,8 +137,8 @@ public final class PartyVillagerContractService {
                 "villagerretaliation.party.villager_recruited",
                 membership.partyId(),
                 record,
-                INITIAL_PAID_DAYS,
-                DAILY_EMERALD_COST);
+                0,
+                recruitmentCost);
     }
 
     public static ContractResult extend(ServerPlayer player, Villager villager, int requestedDays) {
@@ -167,7 +186,12 @@ public final class PartyVillagerContractService {
             return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         var companionState = CompanionSavedData.get(context.level()).find(villager.getUUID());
+        if (companionState != null && companionState.getBoolean("TrustSuspended")
+                && !CompanionRelationshipService.eligible(context.level(), villager, player)) {
+            return ContractResult.failure("villagerretaliation.party.error.companion_trust_required");
+        }
         if (companionState != null) {
+            companionState.putBoolean("TrustSuspended", false);
             companionState.putBoolean("Returning", false);
             companionState.putString("Status", "Active");
             CompanionSavedData.get(context.level()).setDirty();
@@ -359,6 +383,13 @@ public final class PartyVillagerContractService {
         VillagerWalletService.addCurrency(villager, cost);
         attachEntityState(level, villager, party.id(), record);
         HiredVillagerContractService.takeOverJobInventoryOverflow(villager);
+        HiredVillagerContractService.takeOverJobInventoryOverflow(villager);
+        var companion = CompanionSavedData.get(level).find(villager.getUUID());
+        companion.putBoolean("Returning", false);
+        companion.putString("Status", "Active");
+        companion.putBoolean("TrustSuspended", false);
+        companion.putInt("BetrayalStrikes", 0);
+        CompanionSavedData.get(level).setDirty();
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         VillagerRecruitmentService.applyPartyFollowing(level, villager, player);
         com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
