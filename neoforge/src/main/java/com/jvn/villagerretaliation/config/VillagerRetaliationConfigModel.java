@@ -269,6 +269,18 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 1.0D, max = 1024.0D, decimalPlaces = 1)
         public double maxFollowDistance = 32.0D;
 
+        @RangeConstraint(min = 0, max = 512)
+        public int companionRecruitmentCost = 32;
+
+        @RangeConstraint(min = 1, max = 1200)
+        public int companionDepartureMinimumTicks = 200;
+
+        @RangeConstraint(min = 200, max = 12000)
+        public int companionDepartureTimeoutTicks = 1200;
+
+        @RangeConstraint(min = 200, max = 12000)
+        public int companionDeathWaitTicks = 1200;
+
         @RangeConstraint(min = 0, max = 1000)
         public int greetingReputationGain = 1;
 

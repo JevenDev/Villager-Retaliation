@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -37,6 +38,8 @@ public final class VillagerInventoryAccess {
             return com.jvn.villagerretaliation.party.CompanionAuthority
                     .canEquip(player.getUUID(), party, party.villager(villager.getUUID()));
         }
+        UUID companionOwner = com.jvn.villagerretaliation.party.CompanionLifecycleService.owner(level, villager.getUUID());
+        if (companionOwner != null) return companionOwner.equals(player.getUUID());
         return !villager.isBaby()
                 && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
                 >= VillagerReputationLevel.REVERED.trustRank();

@@ -53,6 +53,8 @@ public final class PartyVillagerRecord {
     private BlockPos stayPosition;
     private long contractStartGameTime;
     private long contractEndGameTime;
+    private long legacyContractEndGameTime;
+    private boolean commanderEquipmentAccess;
     private int durationDays;
     private int emeraldsPaid;
     private String cachedName;
@@ -97,7 +99,8 @@ public final class PartyVillagerRecord {
         this.stayDimension = stayDimension;
         this.stayPosition = stayPosition == null ? null : stayPosition.immutable();
         this.contractStartGameTime = Math.max(0L, contractStartGameTime);
-        this.contractEndGameTime = Math.max(this.contractStartGameTime, contractEndGameTime);
+        this.contractEndGameTime = Long.MAX_VALUE;
+        this.legacyContractEndGameTime = contractEndGameTime;
         this.durationDays = Math.max(1, durationDays);
         this.emeraldsPaid = Math.max(0, emeraldsPaid);
         this.cachedName = safeText(cachedName, 128);
@@ -118,11 +121,16 @@ public final class PartyVillagerRecord {
         if (recruiterId != null) this.recruiterId = recruiterId;
     }
 
+    public boolean commanderEquipmentAccess() { return this.commanderEquipmentAccess; }
+
+    public void setCommanderEquipmentAccess(boolean enabled) { this.commanderEquipmentAccess = enabled; }
+
     public UUID commanderId() {
         return this.commanderId;
     }
 
     public void assignCommander(UUID commanderId) {
+        if (!Objects.equals(this.commanderId, commanderId)) this.commanderEquipmentAccess = false;
         this.commanderId = Objects.requireNonNull(commanderId);
     }
 
@@ -260,6 +268,7 @@ public final class PartyVillagerRecord {
     }
 
     public int remainingDays(long gameTime) {
+        if (this.contractEndGameTime == Long.MAX_VALUE) return 0;
         return com.jvn.villagerretaliation.interaction.VillagerContractTime.remainingDays(
                 gameTime,
                 this.contractEndGameTime);
@@ -349,6 +358,8 @@ public final class PartyVillagerRecord {
         }
         tag.putLong(TAG_CONTRACT_START, this.contractStartGameTime);
         tag.putLong(TAG_CONTRACT_END, this.contractEndGameTime);
+        tag.putLong("LegacyContractEnd", this.legacyContractEndGameTime);
+        tag.putBoolean("CommanderEquipmentAccess", this.commanderEquipmentAccess);
         tag.putInt(TAG_DURATION_DAYS, this.durationDays);
         tag.putInt(TAG_EMERALDS_PAID, this.emeraldsPaid);
         tag.putString(TAG_NAME, this.cachedName);
@@ -403,7 +414,7 @@ public final class PartyVillagerRecord {
                 stayDimension,
                 stayPosition,
                 tag.getLong(TAG_CONTRACT_START),
-                tag.getLong(TAG_CONTRACT_END),
+                tag.contains("LegacyContractEnd") ? tag.getLong("LegacyContractEnd") : tag.getLong(TAG_CONTRACT_END),
                 Math.max(1, tag.getInt(TAG_DURATION_DAYS)),
                 tag.getInt(TAG_EMERALDS_PAID),
                 tag.getString(TAG_NAME),
@@ -414,6 +425,7 @@ public final class PartyVillagerRecord {
                         : null
         );
         record.commanderId = tag.hasUUID("Commander") ? tag.getUUID("Commander") : record.recruiterId;
+        record.commanderEquipmentAccess = tag.getBoolean("CommanderEquipmentAccess");
         if (tag.getBoolean(TAG_POLICY_OVERRIDES)) {
             if (tag.contains(TAG_COMBAT_MODE_OVERRIDE, Tag.TAG_STRING)) {
                 record.combatModeOverride = PartyCombatMode.byName(tag.getString(TAG_COMBAT_MODE_OVERRIDE));

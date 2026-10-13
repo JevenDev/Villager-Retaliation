@@ -48,6 +48,7 @@ final class VrPlayerCommands {
                                 .executes(context -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.command(
                                         context.getSource().getPlayerOrException(), net.minecraft.commands.arguments.UuidArgument.getUuid(context, "actor"), false) ? 1 : 0))))
                 .then(party())
+                .then(CompanionCommands.root())
                 .then(SettlementCommands.root())
                 .then(duel());
     }

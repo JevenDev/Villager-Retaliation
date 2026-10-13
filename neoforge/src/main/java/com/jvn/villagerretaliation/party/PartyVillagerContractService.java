@@ -136,6 +136,9 @@ public final class PartyVillagerContractService {
             expire(level.getServer(), party, record);
             return ContractResult.failure("villagerretaliation.party.error.contract_inactive");
         }
+        if (record.contractEndGameTime() == Long.MAX_VALUE) {
+            return ContractResult.failure("villagerretaliation.party.error.companion_permanent");
+        }
         int extensionDays = record.availableExtensionDays(now, requestedDays);
         if (requestedDays <= 0 || extensionDays != requestedDays) {
             return ContractResult.failure("villagerretaliation.party.error.contract_maximum");
@@ -162,6 +165,12 @@ public final class PartyVillagerContractService {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
             return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
+        }
+        var companionState = CompanionSavedData.get(context.level()).find(villager.getUUID());
+        if (companionState != null) {
+            companionState.putBoolean("Returning", false);
+            companionState.putString("Status", "Active");
+            CompanionSavedData.get(context.level()).setDirty();
         }
         context.record().assignCommander(player.getUUID());
         context.record().setFollowing();
@@ -192,9 +201,7 @@ public final class PartyVillagerContractService {
         if (!CompanionAuthority.canManage(player.getUUID(), context.party(), context.record())) {
             return ContractResult.failure("villagerretaliation.party.error.companion_owner_required");
         }
-        if (com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(villager)
-                || com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)
-                || villager.hurtTime > 0) {
+        if (!CompanionLifecycleService.canPart(villager)) {
             return ContractResult.failure("villagerretaliation.party.error.companion_in_combat");
         }
         PartyVillagerRecord removed = PartyService.removeVillager(context.level(), villager.getUUID());
@@ -203,6 +210,7 @@ public final class PartyVillagerContractService {
         }
         rememberJobInventoryClaim(context.level(), villager, removed.contractId(), removed.recruiterId());
         cleanupEntity(villager);
+        CompanionLifecycleService.beginDeparture(context.level(), villager.getUUID(), "Said goodbye to owner");
         closeJobInventories(context.level().getServer(), villager.getId());
         PartySyncService.syncParty(context.level().getServer(), context.party().id());
         return ContractResult.success("villagerretaliation.party.villager_dismissed", context.party().id(), removed, 0, 0);
@@ -376,7 +384,7 @@ public final class PartyVillagerContractService {
         }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
-        return record == null || VillagerContractTime.isExpired(
+        return record == null || record.contractEndGameTime() == Long.MAX_VALUE || VillagerContractTime.isExpired(
                 level.getServer().overworld().getGameTime(), record.contractEndGameTime())
                 ? OptionalLong.empty()
                 : OptionalLong.of(record.contractEndGameTime());
@@ -480,6 +488,7 @@ public final class PartyVillagerContractService {
             return;
         }
         nextExpirationScanGameTime = now + EXPIRATION_SCAN_INTERVAL_TICKS;
+        CompanionLifecycleService.migrate(server);
         List<ExpiredContract> expired = new ArrayList<>();
         PartySavedData data = PartySavedData.get(server.overworld());
         for (PartyRecord party : data.partyRecords()) {
@@ -505,8 +514,16 @@ public final class PartyVillagerContractService {
             return List.of();
         }
         List<PartyVillagerRecord> villagers = List.copyOf(party.villagers());
+        for (PartyVillagerRecord record : villagers) {
+            Villager loaded = VillagerEntityResolver.loaded(level.getServer(), record.villagerId());
+            if (loaded != null && !CompanionLifecycleService.canPart(loaded)) {
+                leader.sendSystemMessage(Component.translatable("villagerretaliation.party.error.companion_in_combat"));
+                return List.of();
+            }
+        }
         PartyService.deleteParty(level, party.id());
         for (PartyVillagerRecord record : villagers) {
+            CompanionLifecycleService.beginDeparture(level, record.villagerId(), "Party disbanded");
             Villager loaded = VillagerEntityResolver.loaded(level.getServer(), record.villagerId());
             if (loaded != null) {
                 rememberJobInventoryClaimFromEntityState((ServerLevel) loaded.level(), loaded);
@@ -585,6 +602,7 @@ public final class PartyVillagerContractService {
         villager.getPersistentData().putUUID(PARTY_CONTRACT_ID_TAG, record.contractId());
         villager.getPersistentData().putUUID(PARTY_RECRUITER_ID_TAG, record.recruiterId());
         villager.setPersistenceRequired();
+        CompanionLifecycleService.associate(level, villager, record);
         VillagerBehaviorSuppressionPolicy.enforce(level, villager);
     }
 
@@ -593,6 +611,8 @@ public final class PartyVillagerContractService {
             Villager villager,
             PartyRecord party,
             PartyVillagerRecord record) {
+        var companionState = CompanionSavedData.get(level).find(villager.getUUID());
+        if (companionState != null && (companionState.getBoolean("Returning") || companionState.getString("Status").equals("At home"))) return;
         if (record.moveToReturnCommanderId() != null && !record.moveToHolding()) {
             return;
         }

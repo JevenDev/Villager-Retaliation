@@ -175,6 +175,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onPlayerLoggedOut(event);
         if (event.getEntity() instanceof ServerPlayer player) {
             com.jvn.villagerretaliation.duel.DuelService.onPlayerLogout(player);
+            com.jvn.villagerretaliation.party.CompanionLifecycleService.onLogout(player);
             PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
                     .ifPresent(party -> PartySyncService.syncPartyWithOfflinePlayer(
                             player.getServer(),
@@ -352,6 +353,9 @@ public final class VillagerRetaliationEvents {
             VillagerMoodService.recordVillagerDamaged(level, villager, event.getSource().getEntity());
         }
         VillagerDownedService.onLivingDamagePost(event);
+        if (event.getEntity() instanceof Villager companion && event.getNewDamage() > 0) {
+            com.jvn.villagerretaliation.party.CompanionLifecycleService.damaged(companion);
+        }
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
@@ -524,6 +528,7 @@ public final class VillagerRetaliationEvents {
             if (com.jvn.villagerretaliation.duel.DuelService.isParticipant(villager)) {
                 return;
             }
+            if (com.jvn.villagerretaliation.party.CompanionLifecycleService.tick(villager)) return;
             VillagerNaturalJobArmor.maybeRoll(villager);
             boolean repairing = SmithRepairMenu.controlling(villager) != null;
             if (repairing && villager.level() instanceof ServerLevel level) {

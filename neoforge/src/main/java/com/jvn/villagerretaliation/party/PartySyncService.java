@@ -106,7 +106,7 @@ public final class PartySyncService {
                     record.commandMode(),
                     loaded != null && loaded.isAlive() && !record.villagerId().equals(unavailableVillagerId),
                     record.remainingDays(now),
-                    record.contractEndGameTime(),
+                    record.contractEndGameTime() == Long.MAX_VALUE ? -1L : record.contractEndGameTime(),
                     record.combatMode(),
                     record.attackMode(),
                     record.dropCollectionMode(),

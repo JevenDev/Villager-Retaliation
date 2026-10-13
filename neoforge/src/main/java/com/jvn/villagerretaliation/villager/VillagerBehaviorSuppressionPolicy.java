@@ -37,7 +37,8 @@ public final class VillagerBehaviorSuppressionPolicy {
         }
         if (villager.level() instanceof ServerLevel level
                 && PartyVillagerContractService.isActivePartyVillager(level, villager)) {
-            return ControlState.PARTIED;
+            var state = com.jvn.villagerretaliation.party.CompanionSavedData.get(level).find(villager.getUUID());
+            if (state == null || !state.getString("Status").equals("At home")) return ControlState.PARTIED;
         }
         if (HiredVillagerContractService.hasActiveOrPendingContract(villager)) {
             return ControlState.HIRED;

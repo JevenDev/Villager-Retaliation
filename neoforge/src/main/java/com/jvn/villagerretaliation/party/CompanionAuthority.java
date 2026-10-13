@@ -16,7 +16,8 @@ public final class CompanionAuthority {
     }
 
     public static boolean canEquip(UUID playerId, PartyRecord party, PartyVillagerRecord record) {
-        return canManage(playerId, party, record);
+        return canManage(playerId, party, record) || member(playerId, party, record)
+                && record.commanderEquipmentAccess() && record.commanderId().equals(playerId);
     }
 
     private static boolean member(UUID playerId, PartyRecord party, PartyVillagerRecord record) {

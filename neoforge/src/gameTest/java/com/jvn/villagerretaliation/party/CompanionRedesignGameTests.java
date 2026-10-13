@@ -56,6 +56,36 @@ public final class CompanionRedesignGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void companionMigrationNeverDrainsOffline(GameTestHelper helper) {
+        var record = record(UUID.randomUUID());
+        helper.assertTrue(record.contractEndGameTime() == Long.MAX_VALUE, "paid rental migrates to persistent companion");
+        var loaded = PartyVillagerRecord.load(record.save());
+        helper.assertTrue(loaded.contractEndGameTime() == Long.MAX_VALUE, "persistent contract survives load");
+        helper.assertTrue(record.save().getLong("LegacyContractEnd") == 24000L, "historical paid expiry preserved");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void departurePersistsAndUnsafeHomeWaits(GameTestHelper helper) {
+        var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, new BlockPos(1, 2, 1));
+        var level = helper.getLevel();
+        var record = record(UUID.randomUUID());
+        var actual = new PartyVillagerRecord(villager.getUUID(), record.recruiterId(), record.contractId(), 0,
+                PartyCommandMode.FOLLOW, null, null, 0L, 24000L, 1, 32, "Companion", "", level.dimension().location(), villager.blockPosition());
+        CompanionLifecycleService.associate(level, villager, actual);
+        CompanionLifecycleService.beginDeparture(level, villager.getUUID(), "Goodbye");
+        villager.tickCount = 20;
+        CompanionLifecycleService.tick(villager);
+        var state = CompanionSavedData.get(level).find(villager.getUUID());
+        helper.assertValueEqual(state.getString("Status"), "Safe waiting", "missing home safely waits");
+        var loaded = CompanionSavedData.load(CompanionSavedData.get(level).save(new net.minecraft.nbt.CompoundTag(), level.registryAccess()), level.registryAccess());
+        helper.assertTrue(loaded.find(villager.getUUID()).getBoolean("Returning"), "return persists through unload/save/reload");
+        helper.assertValueEqual(loaded.find(villager.getUUID()).getUUID("Owner"), actual.recruiterId(), "personal owner persists after dismissal");
+        helper.assertTrue(villager.isAlive(), "waiting never removes or duplicates entity");
+        helper.succeed();
+    }
+
     private static PartyVillagerRecord record(UUID owner) {
         return new PartyVillagerRecord(UUID.randomUUID(), owner, UUID.randomUUID(), 0,
                 PartyCommandMode.FOLLOW, null, null, 0L, 24000L, 1, 32, "Companion", "", ResourceLocation.parse("minecraft:overworld"), BlockPos.ZERO);

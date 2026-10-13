@@ -18,6 +18,11 @@ public final class VillagerRetaliationConfig {
     private static boolean clientSyncObserversRegistered;
 
     public static final ConfigWrapper<?> CONFIG = loadConfig();
+    public static final ConfigValue<Integer> COMPANION_RECRUITMENT_COST = bind("dialogue.companionRecruitmentCost", Integer.class);
+    public static final ConfigValue<Integer> COMPANION_DEPARTURE_MIN_TICKS = bind("dialogue.companionDepartureMinimumTicks", Integer.class);
+    public static final ConfigValue<Integer> COMPANION_DEPARTURE_TIMEOUT_TICKS = bind("dialogue.companionDepartureTimeoutTicks", Integer.class);
+    public static final ConfigValue<Integer> COMPANION_DEATH_WAIT_TICKS = bind("dialogue.companionDeathWaitTicks", Integer.class);
+
     public static final ConfigValue<NewWorldMode> NEW_WORLD_MODE = bind("campaign.newWorldMode", NewWorldMode.class);
 
     public static final ConfigValue<Boolean> SETTLEMENT_STATE_NOTIFICATIONS = bind("settlements.stateNotifications", Boolean.class);

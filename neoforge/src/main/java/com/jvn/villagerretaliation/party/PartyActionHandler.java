@@ -313,8 +313,9 @@ public final class PartyActionHandler {
             return;
         }
         List<UUID> affectedPlayers = List.copyOf(party.playerIds());
-        PartyQuestService.detachAll(leader.serverLevel(), party);
         PartyVillagerContractService.disband(leader);
+        if (PartyService.getParty(leader.serverLevel(), party.id()).isPresent()) return;
+        PartyQuestService.detachAll(leader.serverLevel(), party);
         PartySyncService.clear(leader.getServer(), affectedPlayers);
         for (UUID playerId : affectedPlayers) {
             ServerPlayer affected = leader.getServer().getPlayerList().getPlayer(playerId);
