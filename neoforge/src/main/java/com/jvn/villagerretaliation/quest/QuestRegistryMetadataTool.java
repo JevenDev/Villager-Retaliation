@@ -11,6 +11,9 @@ public final class QuestRegistryMetadataTool {
                 ? Path.of(args[0])
                 : QuestRegistryMetadata.TOOLING_METADATA_PATH;
         QuestRegistryMetadata.write(output);
+        java.nio.file.Files.writeString(output.resolveSibling("companion-story.schema.json"),
+                new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(
+                        com.jvn.villagerretaliation.party.CompanionGrowthService.schema()) + "\n");
         System.out.println("Wrote quest registry metadata to " + output.toAbsolutePath());
     }
 }

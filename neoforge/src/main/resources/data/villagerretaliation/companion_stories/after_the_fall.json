@@ -1,0 +1,21 @@
+{
+  "title": "After the fall",
+  "text": "You stayed when I could not stand. Next time, I want to be ready. Should I learn to hold the line, or find a safer way through?",
+  "experience_id": "villagerretaliation:rescued",
+  "minimum_bond": 3,
+  "choices": [
+    {
+      "id": "hold_the_line",
+      "text": "We will learn to protect each other.",
+      "skill": "guarding",
+      "points": 4
+    },
+    {
+      "id": "find_a_way",
+      "text": "Let us learn when to take another path.",
+      "skill": "survival",
+      "points": 4
+    }
+  ],
+  "requirement": "Help this villager recover after being downed"
+}

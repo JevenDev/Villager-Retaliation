@@ -27,9 +27,14 @@ public final class CompanionRelationshipService {
         var data = CompanionSavedData.get(level);
         var state = data.getOrCreate(villagerId);
         var grants = state.getCompound("Eligibility");
-        var grant = new CompoundTag();
-        grant.putBoolean("Free", free);
-        grant.putInt("MinimumReputation", minimumReputation);
+        var grant = grants.getCompound(playerId.toString());
+        if (grant.getBoolean("Free") && !grant.contains("FreeMinimumReputation"))
+            grant.putInt("FreeMinimumReputation", grant.getInt("MinimumReputation"));
+        if (free) grant.putInt("FreeMinimumReputation", grant.contains("FreeMinimumReputation")
+                ? Math.min(grant.getInt("FreeMinimumReputation"), minimumReputation) : minimumReputation);
+        grant.putBoolean("Free", free || grant.getBoolean("Free"));
+        grant.putInt("MinimumReputation", grant.contains("MinimumReputation")
+                ? Math.min(grant.getInt("MinimumReputation"), minimumReputation) : minimumReputation);
         grants.put(playerId.toString(), grant);
         state.put("Eligibility", grants);
         data.setDirty();
@@ -52,7 +57,11 @@ public final class CompanionRelationshipService {
     public static int recruitmentCost(ServerLevel level, Villager villager, ServerPlayer player) {
         var state = CompanionSavedData.get(level).find(villager.getUUID());
         if (state != null && player.getUUID().equals(CompanionLifecycleService.owner(level, villager.getUUID())) && state.getBoolean("Recruited")) return 0;
-        if (eligible(level, villager, player) && state.getCompound("Eligibility").getCompound(player.getUUID().toString()).getBoolean("Free")) return 0;
+        if (state != null) {
+            var grant = state.getCompound("Eligibility").getCompound(player.getUUID().toString());
+            int required = grant.contains("FreeMinimumReputation") ? grant.getInt("FreeMinimumReputation") : grant.getInt("MinimumReputation");
+            if (grant.getBoolean("Free") && VillagerReputationManager.getReputation(level, villager, player.getUUID()) >= required) return 0;
+        }
         if (VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank() >= VillagerReputationLevel.REVERED.trustRank()) return 0;
         return com.jvn.villagerretaliation.config.VillagerRetaliationConfig.COMPANION_RECRUITMENT_COST.get();
     }
@@ -71,6 +80,7 @@ public final class CompanionRelationshipService {
         state.put("Bonds", bonds);
         data.setDirty();
         publishBond(level, villagerId, playerId, bonds.getInt(playerId.toString()));
+        CompanionGrowthService.rememberEvent(level, villagerId, playerId, experienceId);
         return true;
     }
 
@@ -95,6 +105,13 @@ public final class CompanionRelationshipService {
         state.putLong(key, now);
         data.setDirty();
         boolean changed = experience(level, villager.getUUID(), player.getUUID(), "rescue/" + now, 3);
+        if (changed) {
+            CompanionGrowthService.rememberEvent(level, villager.getUUID(), player.getUUID(), "villagerretaliation:rescued");
+            player.sendSystemMessage(Component.literal("Your companion remembers the rescue. ")
+                    .append(Component.literal("[Talk about it]").withStyle(style -> style.withColor(net.minecraft.ChatFormatting.GREEN)
+                            .withClickEvent(new net.minecraft.network.chat.ClickEvent(net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND,
+                                    "/vr companion stories " + villager.getUUID())))));
+        }
         var facts = VillagerQuestFacts.get(level);
         facts.setTag(QuestScopeKey.player(player.getUUID()), ResourceLocation.parse("villagerretaliation:companion_rescued"));
         facts.setVariable(QuestScopeKey.player(player.getUUID()), "rescued_companion", villager.getUUID().toString());

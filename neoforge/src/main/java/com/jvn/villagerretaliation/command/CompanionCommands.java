@@ -33,6 +33,32 @@ final class CompanionCommands {
                     }
                     return 1;
                 })
+                .then(literal("stories").then(argument("villager", UuidArgument.uuid()).executes(context -> {
+                    var player = context.getSource().getPlayerOrException();
+                    var villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                    return villager != null && com.jvn.villagerretaliation.party.CompanionGrowthService.describe(player, villager)
+                            ? 1 : denied(context.getSource());
+                })))
+                .then(literal("grow").then(argument("villager", UuidArgument.uuid())
+                        .then(argument("story", net.minecraft.commands.arguments.ResourceLocationArgument.id())
+                                .then(argument("choice", com.mojang.brigadier.arguments.StringArgumentType.word()).executes(context -> {
+                                    var player = context.getSource().getPlayerOrException();
+                                    var villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                                    if (villager != null && com.jvn.villagerretaliation.party.CompanionGrowthService.choose(player, villager,
+                                            net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "story"),
+                                            com.mojang.brigadier.arguments.StringArgumentType.getString(context, "choice"))) return 1;
+                                    context.getSource().sendFailure(Component.literal("This choice needs the owner nearby, a safe moment, the shared experience and bond. A remembered choice cannot be changed."));
+                                    return 0;
+                                })))))
+                .then(literal("service").then(argument("villager", UuidArgument.uuid())
+                        .then(argument("offer", net.minecraft.commands.arguments.ResourceLocationArgument.id()).executes(context -> {
+                            var player = context.getSource().getPlayerOrException();
+                            var villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                            if (villager != null && com.jvn.villagerretaliation.party.CompanionServiceOffers.accept(player, villager,
+                                    net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "offer").toString())) return 1;
+                            context.getSource().sendFailure(Component.literal("Service is unavailable: check the offer, reputation, distance and party space."));
+                            return 0;
+                        }))))
                 .then(literal("entrust").then(argument("villager", UuidArgument.uuid())
                         .then(argument("player", EntityArgument.player()).executes(context -> {
                             var player = context.getSource().getPlayerOrException();
@@ -54,7 +80,7 @@ final class CompanionCommands {
                     var player = context.getSource().getPlayerOrException();
                     Villager villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
                     return villager != null && CompanionLifecycleService.setSafeHome(player, villager)
-                            ? accepted(context.getSource(), "Agreed this safe location as home") : denied(context.getSource());
+                            ? accepted(context.getSource(), "Agreed this safe location as fallback; registered home preserved") : denied(context.getSource());
                 })))
                 .then(literal("offer").then(argument("quest", net.minecraft.commands.arguments.ResourceLocationArgument.id())
                         .then(argument("slot", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 35))

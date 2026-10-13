@@ -1,0 +1,22 @@
+{
+  "title": "A place to return",
+  "text": "I have work and people here, and a road I can choose to walk with you. I would like to bring something of this home on our next journey.",
+  "profession": "minecraft:farmer",
+  "experience_id": "villagerretaliation:returned_home",
+  "minimum_bond": 2,
+  "choices": [
+    {
+      "id": "tend_the_fields",
+      "text": "Keep your gift for growing things.",
+      "skill": "farming",
+      "points": 6
+    },
+    {
+      "id": "feed_the_road",
+      "text": "Help us make a meal worth coming home to.",
+      "skill": "cooking",
+      "points": 6
+    }
+  ],
+  "requirement": "Let this villager return safely home"
+}

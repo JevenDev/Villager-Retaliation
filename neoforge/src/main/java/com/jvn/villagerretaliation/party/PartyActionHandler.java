@@ -318,6 +318,10 @@ public final class PartyActionHandler {
         PartyQuestService.detachAll(leader.serverLevel(), party);
         PartySyncService.clear(leader.getServer(), affectedPlayers);
         for (UUID playerId : affectedPlayers) {
+            PartyService.getPartyForPlayer(leader.serverLevel(), playerId)
+                    .ifPresent(personal -> PartySyncService.syncParty(leader.getServer(), personal.id()));
+        }
+        for (UUID playerId : affectedPlayers) {
             ServerPlayer affected = leader.getServer().getPlayerList().getPlayer(playerId);
             if (affected != null) {
                 notice(affected, "villagerretaliation.party.disbanded");

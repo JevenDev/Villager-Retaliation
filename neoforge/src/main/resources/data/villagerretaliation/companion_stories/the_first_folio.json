@@ -1,0 +1,22 @@
+{
+  "title": "The first folio",
+  "text": "We bound those blank pages together. I can map a familiar road more carefully, or learn to read the unknown country beyond it.",
+  "profession": "minecraft:cartographer",
+  "experience_id": "villagerretaliation:first_folio",
+  "minimum_bond": 3,
+  "choices": [
+    {
+      "id": "careful_maps",
+      "text": "Make maps we can trust.",
+      "skill": "cartography",
+      "points": 6
+    },
+    {
+      "id": "unknown_country",
+      "text": "Learn how to bring us back from the unknown.",
+      "skill": "survival",
+      "points": 6
+    }
+  ],
+  "requirement": "Complete Blank Map Promise with this villager"
+}

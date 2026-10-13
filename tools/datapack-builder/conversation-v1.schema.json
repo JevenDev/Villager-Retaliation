@@ -779,6 +779,48 @@
             "properties": {
               "type": {
                 "enum": [
+                  "companion_service"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "service_id",
+              "duration_ticks"
+            ],
+            "properties": {
+              "service_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 128
+              },
+              "duration_ticks": {
+                "type": "integer",
+                "minimum": 200,
+                "maximum": 168000
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "minimum_reputation": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
                   "companion_bond"
                 ]
               }
@@ -1209,6 +1251,7 @@
             "campaign_standing",
             "clear_tag",
             "companion_bond",
+            "companion_service",
             "companion_unlock",
             "counter",
             "dialogue",
@@ -1283,6 +1326,7 @@
             "close",
             "close_branch",
             "companion_bond",
+            "companion_service",
             "companion_unlock",
             "complete",
             "consume",

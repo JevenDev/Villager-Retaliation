@@ -40,6 +40,14 @@ public final class PartyVillagerContractService {
     }
 
     public static ContractResult recruit(ServerPlayer player, Villager villager) {
+        return recruit(player, villager, null);
+    }
+
+    static ContractResult recruitTemporary(ServerPlayer player, Villager villager, net.minecraft.nbt.CompoundTag service) {
+        return recruit(player, villager, service);
+    }
+
+    private static ContractResult recruit(ServerPlayer player, Villager villager, net.minecraft.nbt.CompoundTag service) {
         if (player == null || villager == null || !(villager.level() instanceof ServerLevel level)) {
             return ContractResult.failure("villagerretaliation.party.error.villager_unavailable");
         }
@@ -78,7 +86,7 @@ public final class PartyVillagerContractService {
         if (personalState != null && personalState.getBoolean("TrustSuspended") && !CompanionRelationshipService.eligible(level, villager, player)) {
             return ContractResult.failure("villagerretaliation.party.error.companion_trust_required");
         }
-        int recruitmentCost = CompanionRelationshipService.recruitmentCost(level, villager, player);
+        int recruitmentCost = service == null ? CompanionRelationshipService.recruitmentCost(level, villager, player) : 0;
         if (VillagerCurrencyPayment.count(player) < recruitmentCost) {
             return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
         }
@@ -121,6 +129,14 @@ public final class PartyVillagerContractService {
         }
 
         VillagerWalletService.addCurrency(villager, recruitmentCost);
+        var personal = CompanionSavedData.get(level).getOrCreate(villager.getUUID());
+        if (service == null) {
+            personal.remove("ActiveService");
+        } else {
+            var term = service.copy();
+            term.putLong("End", now + service.getInt("Duration"));
+            personal.put("ActiveService", term);
+        }
         attachEntityState(level, villager, membership.partyId(), record);
         HiredVillagerContractService.takeOverJobInventoryOverflow(villager);
         var companion = CompanionSavedData.get(level).find(villager.getUUID());
@@ -237,6 +253,7 @@ public final class PartyVillagerContractService {
         villager.getPersistentData().putUUID(EXPIRED_PARTY_ID_TAG, context.party().id());
         rememberJobInventoryClaim(context.level(), villager, removed.contractId(), removed.recruiterId());
         cleanupEntity(villager);
+        CompanionSavedData.get(context.level()).find(villager.getUUID()).remove("ActiveService");
         CompanionLifecycleService.beginDeparture(context.level(), villager.getUUID(), "Said goodbye to owner");
         closeJobInventories(context.level().getServer(), villager.getId());
         PartySyncService.syncParty(context.level().getServer(), context.party().id());
@@ -536,7 +553,26 @@ public final class PartyVillagerContractService {
         for (ExpiredContract contract : expired) {
             expire(server, contract.party(), contract.villager());
         }
+        var serviceParties = new ArrayList<PartyRecord>();
+        data.partyRecords().forEach(serviceParties::add);
+        for (PartyRecord party : serviceParties) {
+            for (PartyVillagerRecord record : List.copyOf(party.villagers())) {
+                CompanionServiceOffers.maintain(server.overworld(), party, record);
+            }
+        }
         PartyService.pruneExpiredInvitations(server);
+    }
+
+    static void endTemporaryService(ServerLevel level, PartyRecord party, PartyVillagerRecord record, Villager villager) {
+        if (PartyService.removeVillager(level, record.villagerId()) == null) return;
+        rememberJobInventoryClaim(level, villager, record.contractId(), record.recruiterId());
+        cleanupEntity(villager);
+        CompanionSavedData.get(level).find(record.villagerId()).remove("ActiveService");
+        CompanionLifecycleService.beginDeparture(level, record.villagerId(), "Temporary service completed");
+        closeJobInventories(level.getServer(), villager.getId());
+        var owner = level.getServer().getPlayerList().getPlayer(record.recruiterId());
+        if (owner != null) owner.sendSystemMessage(Component.literal(villager.getName().getString() + " has finished their temporary service and is returning home."));
+        PartySyncService.syncParty(level.getServer(), party.id());
     }
 
     public static List<PartyVillagerRecord> disband(ServerPlayer leader) {
@@ -550,14 +586,29 @@ public final class PartyVillagerContractService {
         }
         List<PartyVillagerRecord> villagers = List.copyOf(party.villagers());
         for (PartyVillagerRecord record : villagers) {
+            if (!record.recruiterId().equals(leader.getUUID())) continue;
             Villager loaded = VillagerEntityResolver.loaded(level.getServer(), record.villagerId());
-            if (loaded != null && !CompanionLifecycleService.canPart(loaded)) {
+            if (loaded == null) {
+                leader.sendSystemMessage(Component.translatable("villagerretaliation.party.error.villager_unavailable"));
+                return List.of();
+            }
+            if (!CompanionLifecycleService.canPart(loaded)) {
                 leader.sendSystemMessage(Component.translatable("villagerretaliation.party.error.companion_in_combat"));
                 return List.of();
             }
         }
         PartyService.deleteParty(level, party.id());
+        var personalParties = new java.util.LinkedHashMap<UUID, PartyRecord>();
         for (PartyVillagerRecord record : villagers) {
+            if (!record.recruiterId().equals(leader.getUUID())) {
+                var personal = personalParties.computeIfAbsent(record.recruiterId(), owner ->
+                        PartySavedData.get(level).createParty(owner, level.getServer().overworld().getGameTime()));
+                record.assignCommander(record.recruiterId());
+                PartySavedData.get(level).addVillager(personal, record);
+                continue;
+            }
+            var state = CompanionSavedData.get(level).find(record.villagerId());
+            if (state != null) state.remove("ActiveService");
             CompanionLifecycleService.beginDeparture(level, record.villagerId(), "Party disbanded");
             Villager loaded = VillagerEntityResolver.loaded(level.getServer(), record.villagerId());
             if (loaded != null) {
@@ -565,6 +616,10 @@ public final class PartyVillagerContractService {
                 cleanupEntity(loaded);
                 closeJobInventories(level.getServer(), loaded.getId());
             }
+        }
+        for (var personal : personalParties.values()) {
+            refreshCommandOwnership(level.getServer(), personal);
+            PartySyncService.syncParty(level.getServer(), personal.id());
         }
         return villagers;
     }

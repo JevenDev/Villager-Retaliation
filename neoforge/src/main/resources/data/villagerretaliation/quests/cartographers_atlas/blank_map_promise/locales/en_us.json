@@ -41,7 +41,8 @@
     "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.offer.label": "Blank Map Promise",
     "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.offer.lines": [
       "Every atlas begins as a promise: enough paper to hold the world, enough ink to admit where we do not know it yet.",
-      "Bring me paper, a compass, and ink sacs. I will bind the first folio, and you can decide whether the blank space becomes a road."
+      "Bring me paper, a compass, and ink sacs. I will bind the first folio, and you can decide whether the blank space becomes a road.",
+      "If you want company for the fieldwork, I can spare one day. Ask me to join when there is room in your party; the choice is yours."
     ],
     "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.offer.response.accept.label": "Start the atlas",
     "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.offer.response.decline.label": "Another time",
@@ -94,7 +95,8 @@
     "quest.cartographers_atlas.blank_map_promise.stage.return.dialogue.turn_in.response.complete.label": "Bind the first folio",
     "quest.cartographers_atlas.blank_map_promise.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
     "quest.cartographers_atlas.blank_map_promise.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
-      "There. The first folio is bound. The atlas is still mostly empty, but now it knows how to begin."
+      "There. The first folio is bound. The atlas is still mostly empty, but now it knows how to begin.",
+      "After this, I would be glad to travel with you without a hiring fee. Say when you want me to join. We can talk about what these pages have taught us, too."
     ],
     "quest.cartographers_atlas.blank_map_promise.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
       "The binding is still short. Bring the missing paper, compass, or ink before I stitch the cover."

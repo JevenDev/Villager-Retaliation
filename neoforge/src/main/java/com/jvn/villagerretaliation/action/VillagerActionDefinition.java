@@ -335,8 +335,9 @@ public record VillagerActionDefinition(
         boolean flashTracker = DatapackJsonReader.readBoolean(entry, "flash_tracker", true);
         QuestFactScope factScope = readFactScope(entry, kind, questId);
         ResourceLocation factTag = readFactTag(location, context, entry, kind);
-        String factKey = kind == Kind.COMPANION_BOND ? DatapackJsonReader.readString(entry, "experience_id") : readFactKey(entry, kind);
-        String factValue = kind == Kind.COMPANION_UNLOCK
+        String factKey = kind == Kind.COMPANION_BOND ? DatapackJsonReader.readString(entry, "experience_id")
+                : kind == Kind.COMPANION_SERVICE ? DatapackJsonReader.readString(entry, "service_id") : readFactKey(entry, kind);
+        String factValue = kind == Kind.COMPANION_SERVICE ? Integer.toString(DatapackJsonReader.readInt(entry, "minimum_reputation", 0)) : kind == Kind.COMPANION_UNLOCK
                 ? (DatapackJsonReader.readBoolean(entry, "free", false) ? "free" : "paid") : readFactValue(entry, kind);
         CompiledQuestTransition questTransition = kind == Kind.QUEST_TRANSITION
                 ? CompiledQuestTransition.read(location, entry, questId)
@@ -471,6 +472,7 @@ public record VillagerActionDefinition(
     }
 
     private static int readAmount(Kind kind, JsonObject entry) {
+        if (kind == Kind.COMPANION_SERVICE) return DatapackJsonReader.readInt(entry, "duration_ticks", 0);
         if (kind == Kind.COMPANION_UNLOCK) return DatapackJsonReader.readInt(entry, "minimum_reputation", 0);
         Integer explicitAmount = DatapackJsonReader.readNullableInt(entry, "amount");
         if (explicitAmount != null) {
@@ -710,6 +712,7 @@ public record VillagerActionDefinition(
     public enum Kind {
         NONE("none"),
         COMPANION_UNLOCK("companion_unlock"),
+        COMPANION_SERVICE("companion_service"),
         COMPANION_BOND("companion_bond"),
         NOTIFICATION("notification"),
         TRACKER("tracker"),

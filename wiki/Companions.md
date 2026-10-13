@@ -1,6 +1,6 @@
 # Persistent companions and multiplayer parties
 
-A party supports four players and four active villager companions. Eligibility does not occupy a slot. A player chooses to recruit or rejoin a specific villager. Temporary quest escorts continue to use the existing follower directives and leases. They do not become permanent companions automatically.
+A party supports four players and four active villager companions. Eligibility does not occupy a slot. A player chooses to recruit or rejoin a specific villager. Companion service offers use those same four slots, with separate temporary terms. Existing scripted quest actors retain their follower directives and narrative leases; authors should use `companion_service` for an optional party companion.
 
 ## Recruitment and economy
 
@@ -16,6 +16,8 @@ Equipment access stays with the recruiter by default. `/vr companion equipment <
 
 Leaving or removal moves a player's owned companions into their personal party. Delegations to the departing member revert to the recruiter. A solo player can accept a party invitation and carry the same companion records back, subject to the combined four-villager cap. A rejected invitation leaves their personal party intact. A player cannot recruit or hire another player's associated companion.
 
+Disbanding says goodbye only to the leader's own companions, subject to the usual combat restriction. Those companions must be loaded so their safety can be checked. Other members' companions move to their owners' personal parties with the same active records, even if they are fighting or downed. The former leader cannot use disband to dismiss or take equipment from them. Their commands revert to their owners.
+
 ## Wait, separation and goodbye
 
 Wait Here retains an active slot. Logout waits safely for the assigned commander. Entrusted companions can continue with an online party member. Quick movement and loot orders pause while the assigned commander is unavailable. Another dimension produces a clear waiting reason and preserves the assignment.
@@ -24,11 +26,15 @@ After player death, a companion defends its position. After `dialogue.companionD
 
 Goodbye frees the active slot immediately. It is blocked while downed, in combat or within 200 ticks of receiving damage. The companion walks away before a safe return. The default minimum departure time is 200 ticks. The bounded path attempt is 1200 ticks, configured by `dialogue.companionDepartureMinimumTicks` and `dialogue.companionDepartureTimeoutTicks`.
 
-A hidden return requires every nearby non-spectating player to be farther than 32 blocks. Players within 64 blocks with line of sight also block it. The destination must be loaded, within the world border, supported by a safe floor, clear of collisions and fluids, and clear of nearby hostile mobs. Neither entities nor items are copied.
+A hidden return checks **all players, including spectators**, independently at departure and arrival. Anyone within 32 blocks blocks it, even through walls; anyone within 64 blocks with an unobstructed ray to the body or eyes blocks it. Arrival rays target the actual destination, not the villager's previous position. The destination must be loaded, within the world border and build height, supported by a safe floor, clear of collisions and fluids, and clear of nearby hostile mobs. Neither entities nor items are manually copied.
 
-Home comes from the villager's registered bed or known village registry. A missing bed, unloaded home chunk or unsafe destination produces Safe waiting with a reason. The return resumes when the destination becomes available. `/vr companion safehome <villager UUID>` agrees the nearby villager's current safe location as an alternative home.
+Home comes from the villager's registered bed or known village registry. A missing bed, archived village, unloaded home chunk or unsafe destination uses an explicitly agreed fallback if one is valid; otherwise it produces Safe waiting with a reason. `/vr companion safehome <villager UUID>` agrees a safe standing position near the nearby villager as a fallback and **preserves the registered home**. The owner must be within eight blocks and out of combat. No camp or settlement is invented. Old saves that already designated a home retain that designation.
 
-Cross-dimension home return requires explicit owner authorization through `/vr companion dimensionreturn <villager UUID> true`. It uses Minecraft's dimension transition with the same UUID and saved inventory. Without authorization the companion waits with the destination dimension in its reason. Unloaded companions resume when their real entity loads. No replacement entity is spawned to recover an unloaded companion.
+The departure clock advances only while the real villager is loaded and out of danger. After 200 ticks it may relocate only if both endpoints are unobserved and the destination is valid. After 1200 ticks it stops its bounded walk attempt and waits in place, checking again every 20 loaded ticks. A player who stays nearby can keep it waiting indefinitely; the timeout never overrides observation or safety. A villager that physically reaches home can visibly resume ordinary life. Combat pauses departure and retains normal defensive behavior. An unloaded entity is never replaced or force-loaded by the return service.
+
+Candidate standing positions are within four horizontal and two vertical blocks of home/fallback. Hazard checks also cover adjacent blocks, not just the floor: fire, lava, magma, cactus, campfires, berry bushes, wither roses, powder snow and adjacent fluids are rejected. Datapacks can extend `data/villagerretaliation/tags/block/unsafe_companion_return.json` for modded hazards. Unknown mod hazards are not automatically recognized.
+
+Cross-dimension home return requires explicit owner authorization through `/vr companion dimensionreturn <villager UUID> true`. Both destination terrain **and entity storage** must already be loaded. It uses Minecraft's dimension transition with the same UUID and saved inventory; the engine may replace the Java object during that transition. Without authorization or ready destination storage, the companion waits with a reason. Unloaded companions resume when their real entity loads. No replacement entity is spawned to recover an unloaded companion.
 
 `/vr companion` lists personal companions, status, reason and last-known dimension and position. Returning home, At home, Safe waiting and Unavailable are persisted separately from active party membership.
 
@@ -53,6 +59,53 @@ Amounts are 1 to 5. The unique experience identifier is a persistent receipt per
 A completed rescue grants 3 bond at most once per 24000 world ticks per player and villager. Rescue rewards are suppressed for a day after attacking the companion. Existing dialogue conditions can read the `villagerretaliation:companion_rescued` player tag and `rescued_companion` variable.
 
 Small reputation changes never erase the personal association. Direct attacks warn and reduce bond, with a 200-tick spacing to suppress repeated damage spam. Three such attacks suspend following until the recruiter restores Revered trust. Raiding the companion's home also suspends trust. Equipment and progression remain on the villager.
+
+## Chosen temporary service
+
+An authored quest or dialogue outcome can offer free, one-use service to its specific player and villager:
+
+```json
+{"type":"companion_service","service_id":"example:fieldwork","text":"Fieldwork","duration_ticks":24000,"minimum_reputation":0}
+```
+
+This only creates an offer. The notice links to `/vr companion stories <villager UUID>`, which previews the duration, reputation requirement and slot cost. The player chooses its Accept service link, or runs `/vr companion service <villager UUID> example:fieldwork`, while within eight blocks. Joining uses the existing ownership, availability, combat and four-slot checks. An unavailable/full party does not spend the offer. Service requires the ordinary neutral trust floor as well as its authored minimum reputation.
+
+Duration is 200–168000 overworld game ticks, starts on acceptance, and persists through restart/unloading. A repeated action with the same service ID cannot refresh or reuse it. The built-in fieldwork offer lasts 24000 ticks (one Minecraft day, nominally 20 real minutes). These are upfront free terms, not rent. An author should use a new stable ID for a different opportunity.
+
+Expiry is independent of quest completion or failure: this is a fixed period of availability promised by a quest outcome. It does not cancel permanent eligibility, previous recruitment, equipment, growth or bond. On expiry, goodbye occurs when the entity is loaded and can safely part; an unloaded, downed or fighting companion retains its active slot until then. Owners can end service early with ordinary goodbye. There is no automatic conversion to permanent companionship. A service-only relationship has no free-rejoining entitlement; normal recruitment still uses its own fee/reputation/grant terms. Existing personal association and equipment claims remain protected after service.
+
+## Playable personal stories and capability growth
+
+`/vr companion stories <villager UUID>` shows the nearby villager's recorded profession, personal bond, service offers, story requirements and completed choices. Available stories offer two clickable choices. The equivalent command is `/vr companion grow <villager UUID> <story ID> <choice ID>`. Only the associated owner can choose, within eight blocks, out of combat and with trust intact. Each story permits one choice **per villager**, persisted across dismissal, rejoining, save/load and dimension travel. Repeating dialogue, switching professions or changing players cannot stack both rewards.
+
+| Story | Real prerequisite | Choice and capability effect |
+| --- | --- | --- |
+| After the fall | Successful rescue; personal bond at least 3 | Guarding +4 (`hold_the_line`) or Survival +4 (`find_a_way`) |
+| A place to return | Farmer history; completed safe homecoming; bond at least 2 | Farming +6 (`tend_the_fields`) or Cooking +6 (`feed_the_road`) |
+| The first folio | Cartographer history; actual **Blank Map Promise** completion; bond at least 3 | Cartography +6 (`careful_maps`) or Survival +6 (`unknown_country`) |
+
+These increase the existing permanent skills and their existing gameplay effects, capped at the normal skill maximum. They do not introduce a class system or change jobs. The earliest profession observed by the companion/story system is saved as history; older companions without that field capture their current profession on reconciliation. Existing saved bond receipts and rescue history qualify. A completed safe return grants 2 bond once per player/villager. Repeated home trips cannot grind it.
+
+**Blank Map Promise** keeps its existing materials, stages and rewards. Starting it offers optional one-day fieldwork service. Completing it adds free recruitment eligibility (minimum reputation 0), 3 bond and the folio story. Neither starting nor completing it automatically recruits or converts service. Rescue and homecoming stories work outside that quest. Story choices currently use the server chat interface; the existing inventory and skill screens remain in place.
+
+Authors can add or override `data/<namespace>/companion_stories/<id>.json`. Reload validates the entire new registry before replacing it; invalid stories fail reload. The generated `tools/datapack-builder/companion-story.schema.json` describes the format. For example:
+
+```json
+{
+  "title": "The first folio",
+  "text": "What should we learn from our first journey?",
+  "profession": "minecraft:cartographer",
+  "experience_id": "example:shared_journey",
+  "requirement": "Complete the shared journey with this villager",
+  "minimum_bond": 3,
+  "choices": [
+    {"id":"maps","text":"Make maps we can trust.","skill":"cartography","points":6},
+    {"id":"paths","text":"Find a safe way home.","skill":"survival","points":6}
+  ]
+}
+```
+
+Omit `profession` for any profession. Use 2–4 choices, existing skill names, 1–10 points, and stable story/choice/experience IDs. Supply a readable `requirement` for players; internal experience IDs are not shown in the story menu. The optional service `text` names the offer. `companion_bond` records its experience for story requirements. Built-in event IDs are `villagerretaliation:rescued` and `villagerretaliation:returned_home`. Saved choices retain their original skill/point receipts even if content is later changed or removed. Display text is authored in these resources; there is no new dedicated story screen or full personal quest catalog.
 
 ## Equipment, supplies and quest contributions
 

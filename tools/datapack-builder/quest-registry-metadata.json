@@ -750,6 +750,45 @@
         ]
       },
       {
+        "id": "companion_service",
+        "aliases": [],
+        "kind": "companion_service",
+        "schema": {
+          "required": [
+            "service_id",
+            "duration_ticks"
+          ],
+          "properties": {
+            "service_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 128
+            },
+            "duration_ticks": {
+              "type": "integer",
+              "minimum": 200,
+              "maximum": 168000
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minimum_reputation": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          }
+        },
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ]
+      },
+      {
         "id": "companion_bond",
         "aliases": [],
         "kind": "companion_bond",
@@ -3353,6 +3392,49 @@
         }
       },
       {
+        "id": "villagerretaliation:companion_service",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Companion service",
+        "description": "Built-in Companion service type.",
+        "browser_available": true,
+        "schema": {
+          "properties": {
+            "service_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 128
+            },
+            "duration_ticks": {
+              "type": "integer",
+              "minimum": 200,
+              "maximum": 168000
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minimum_reputation": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          },
+          "required": [
+            "service_id",
+            "duration_ticks"
+          ]
+        }
+      },
+      {
         "id": "villagerretaliation:companion_unlock",
         "aliases": [],
         "live_capabilities": [
@@ -5341,6 +5423,7 @@
         "campaign_standing",
         "clear_tag",
         "companion_bond",
+        "companion_service",
         "companion_unlock",
         "counter",
         "dialogue",

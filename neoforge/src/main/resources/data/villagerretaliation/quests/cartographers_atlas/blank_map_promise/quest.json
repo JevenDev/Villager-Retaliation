@@ -16,6 +16,13 @@
           "scope": "player",
           "tag": "villagerretaliation:cartographers_atlas_started",
           "type": "set_tag"
+        },
+        {
+          "type": "companion_service",
+          "service_id": "villagerretaliation:folio_fieldwork",
+          "duration_ticks": 24000,
+          "minimum_reputation": 0,
+          "text": "Folio fieldwork"
         }
       ],
       "event": "started",
@@ -28,6 +35,16 @@
           "scope": "player",
           "tag": "villagerretaliation:cartographers_atlas_folio_bound",
           "type": "set_tag"
+        },
+        {
+          "type": "companion_unlock",
+          "free": true,
+          "minimum_reputation": 0
+        },
+        {
+          "type": "companion_bond",
+          "experience_id": "villagerretaliation:first_folio",
+          "amount": 3
         }
       ],
       "event": "completed",

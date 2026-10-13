@@ -29,6 +29,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class VillagerActionRegistry {
     private static final List<ActionTypeRegistration> REGISTRATIONS = List.of(
             register("companion_unlock", VillagerActionDefinition.Kind.COMPANION_UNLOCK, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
+            register("companion_service", VillagerActionDefinition.Kind.COMPANION_SERVICE, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
             register("companion_bond", VillagerActionDefinition.Kind.COMPANION_BOND, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
             register("follower", VillagerActionDefinition.Kind.FOLLOWER, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN)),
             register(
@@ -391,6 +392,11 @@ public final class VillagerActionRegistry {
             Set<String> aliases, Set<ActionCapability> capabilities) {
         ActionTypeDescriptor descriptor = new ActionTypeDescriptor(id, kind, aliases, capabilities);
         return switch (kind) {
+            case COMPANION_SERVICE -> registration(descriptor, action -> net.minecraft.resources.ResourceLocation.tryParse(action.factKey()) != null
+                            && action.factKey().length() <= 128 && action.amount() >= 200 && action.amount() <= 168000
+                            && Integer.parseInt(action.factValue()) >= 0 && Integer.parseInt(action.factValue()) <= 1000,
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.party.CompanionServiceOffers.execute(context, action),
+                    com.jvn.villagerretaliation.party.CompanionServiceOffers::schema, RecoveryMode.NATURALLY_IDEMPOTENT);
             case COMPANION_UNLOCK -> registration(descriptor, action -> action.amount() >= -1000 && action.amount() <= 1000,
                     (context, action, replacements, actor) -> com.jvn.villagerretaliation.party.CompanionRelationshipService.execute(context, action),
                     com.jvn.villagerretaliation.party.CompanionRelationshipService::unlockSchema, RecoveryMode.NATURALLY_IDEMPOTENT);

@@ -1,0 +1,77 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "text",
+    "experience_id",
+    "minimum_bond",
+    "choices"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "profession": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "experience_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "requirement": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "minimum_bond": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "choices": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "text",
+          "skill",
+          "points"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 64
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "skill": {
+            "type": "string"
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          }
+        }
+      }
+    }
+  }
+}

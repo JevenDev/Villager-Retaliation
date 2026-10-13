@@ -38,7 +38,8 @@ public final class CompanionLifecycleService {
         var state = data.getOrCreate(villager.getUUID());
         state.putUUID("Owner", record.recruiterId());
         state.putUUID("Commander", record.commanderId());
-        state.putBoolean("Recruited", true);
+        if (!state.contains("ActiveService")) state.putBoolean("Recruited", true);
+        CompanionGrowthService.rememberProfession(villager, state);
         captureHome(level, villager, state);
         rememberLocation(level, villager, state);
         data.setDirty();
@@ -77,7 +78,10 @@ public final class CompanionLifecycleService {
             VillageAllegianceEntityData.read(villager).flatMap(allegiance ->
                     VillageAllegianceRegistrySavedData.get(level).canonicalRecord(allegiance.primary()))
                     .filter(home -> !home.archived() && home.originDimension() != null)
-                    .ifPresent(home -> putHome(state, home.originDimension(), home.center()));
+                    .ifPresent(home -> {
+                        putHome(state, home.originDimension(), home.center());
+                        state.putUUID("HomeVillage", home.id().value());
+                    });
         }
         if (state.contains("HomeDimension")) CompanionSavedData.get(level).setDirty();
     }
@@ -92,15 +96,15 @@ public final class CompanionLifecycleService {
                 || !player.getUUID().equals(owner(player.serverLevel(), villager.getUUID()))
                 || !canPart(villager) || safeDestination(player.serverLevel(), villager, villager.blockPosition()) == null) return false;
         var state = CompanionSavedData.get(player.serverLevel()).find(villager.getUUID());
-        putHome(state, player.serverLevel().dimension().location(), villager.blockPosition());
-        state.putBoolean("HomeBed", false);
-        state.putString("Reason", "Safe home agreed with owner");
+        state.putString("FallbackDimension", player.serverLevel().dimension().location().toString());
+        state.putLong("FallbackPosition", safeDestination(player.serverLevel(), villager, villager.blockPosition()).asLong());
+        state.putString("Reason", "Safe fallback agreed with owner; registered home preserved");
         CompanionSavedData.get(player.serverLevel()).setDirty();
         return true;
     }
 
     public static boolean canPart(Villager villager) {
-        if (VillagerDownedService.isDowned(villager) || villager.hurtTime > 0
+        if (!villager.isAlive() || villager.isRemoved() || VillagerDownedService.isDowned(villager) || villager.hurtTime > 0
                 || VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)
                 || villager.getTarget() != null && villager.getTarget().isAlive()) return false;
         if (!(villager.level() instanceof ServerLevel level)) return false;
@@ -184,6 +188,10 @@ public final class CompanionLifecycleService {
         var record = party == null ? null : party.villager(villager.getUUID());
         if (!state.getBoolean("Returning")) {
             if (record == null || state.getString("Status").equals("At home")) return false;
+            if (state.contains("ActiveService") && level.getServer().overworld().getGameTime() >= state.getCompound("ActiveService").getLong("End")) {
+                status(data, state, "Finishing service", "Service ended; waiting for a safe goodbye (still occupies a slot)");
+                return false;
+            }
             var commander = level.getServer().getPlayerList().getPlayer(record.commanderId());
             if (record.commandMode() == PartyCommandMode.STAY) {
                 status(data, state, "Waiting here", "Wait Here keeps the active party slot");
@@ -215,46 +223,36 @@ public final class CompanionLifecycleService {
             com.jvn.villagerretaliation.interaction.VillagerRecruitmentService.clearPartyFollowing(villager);
         }
         int elapsed = state.getInt("DepartureTicks");
-        state.putInt("DepartureTicks", Math.min(12000, elapsed + 1));
+        state.putInt("DepartureTicks", elapsed == Integer.MAX_VALUE ? elapsed : elapsed + 1);
         if (villager.tickCount % 20 != 0) return true;
         data.setDirty();
-        ResourceLocation homeDimension = ResourceLocation.tryParse(state.getString("HomeDimension"));
-        ServerLevel homeLevel = homeDimension == null ? null : level.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, homeDimension));
-        BlockPos home = state.contains("HomePosition") ? BlockPos.of(state.getLong("HomePosition")) : null;
-        if (homeLevel == null || home == null) {
-            waitSafely(data, state, villager, "No registered home. Agree a safe home with /vr companion safehome");
+        HomeTarget target = resolveHome(level, villager, state, false);
+        if (target.destination() == null && state.contains("FallbackDimension")) {
+            HomeTarget fallback = resolveHome(level, villager, state, true);
+            if (fallback.destination() != null) target = fallback;
+            else target = new HomeTarget(null, null, target.reason() + "; fallback: " + fallback.reason());
+        }
+        if (target.destination() == null) {
+            waitSafely(data, state, villager, target.reason());
             return true;
         }
-        if (homeLevel != level && !state.getBoolean("AllowDimensionReturn")) {
-            waitSafely(data, state, villager, "Home is in " + homeDimension + ". Owner must authorize dimension return");
-            return true;
-        }
-        if (!homeLevel.hasChunkAt(home)) {
-            waitSafely(data, state, villager, "Home chunk is unloaded. Return resumes when it is loaded");
-            return true;
-        }
-        if (state.getBoolean("HomeBed") && !(homeLevel.getBlockState(home).getBlock() instanceof net.minecraft.world.level.block.BedBlock)) {
-            waitSafely(data, state, villager, "Registered home bed is missing. Agree a safe destination");
-            return true;
-        }
-        BlockPos destination = safeDestination(homeLevel, villager, home);
-        if (destination == null) {
-            waitSafely(data, state, villager, "Home is unsafe. Waiting for a safe destination");
-            return true;
-        }
+        ServerLevel homeLevel = target.level();
+        BlockPos destination = target.destination();
+        BlockPos home = destination;
+        state.putString("ReturnDestination", target.reason());
         if (homeLevel == level && villager.distanceToSqr(destination.getX() + 0.5D, destination.getY(), destination.getZ() + 0.5D) <= 9.0D) {
             finish(data, state, level, villager);
             return true;
         }
         if (elapsed >= VillagerRetaliationConfig.COMPANION_DEPARTURE_MIN_TICKS.get()
-                && unseen(level, villager.position(), villager) && unseen(homeLevel, net.minecraft.world.phys.Vec3.atCenterOf(destination), villager)) {
+                && unseen(level, villager.position(), villager) && unseen(homeLevel, net.minecraft.world.phys.Vec3.atBottomCenterOf(destination), villager)) {
             if (homeLevel == level) {
                 villager.teleportTo(destination.getX() + 0.5D, destination.getY(), destination.getZ() + 0.5D);
                 finish(data, state, level, villager);
             } else {
-                EntityReturn.move(villager, homeLevel, destination);
-                var moved = VillagerEntityResolver.loaded(level.getServer(), villager.getUUID());
-                if (moved != null && moved.level() == homeLevel) finish(data, state, homeLevel, moved);
+                var moved = EntityReturn.move(villager, homeLevel, destination);
+                if (moved instanceof Villager returned && returned.level() == homeLevel) finish(data, state, homeLevel, returned);
+                else waitSafely(data, state, villager, "Dimension transition unavailable; waiting for safe return");
             }
             return true;
         }
@@ -287,7 +285,9 @@ public final class CompanionLifecycleService {
         state.putBoolean("Returning", false);
         state.remove("DeathWaitStart");
         state.remove("WalkTarget");
-        status(data, state, "At home", "Returned safely and resumed village life");
+        status(data, state, "At home", "Returned safely to " + state.getString("ReturnDestination") + "; resumed village life");
+        if (state.hasUUID("Owner")) CompanionRelationshipService.experience(level, villager.getUUID(), state.getUUID("Owner"),
+                "villagerretaliation:returned_home", 2);
         VillagerCommandController.clear(villager);
         VillagerBehaviorSuppressionPolicy.restoreAfterRelease(level, villager);
         rememberLocation(level, villager, state);
@@ -307,9 +307,17 @@ public final class CompanionLifecycleService {
 
     static boolean unseen(ServerLevel level, net.minecraft.world.phys.Vec3 position, Villager villager) {
         for (var player : level.players()) {
-            if (player.isSpectator()) continue;
             double distance = player.distanceToSqr(position);
-            if (distance <= 1024.0D || distance <= 4096.0D && (villager.level() != level || player.hasLineOfSight(villager))) return false;
+            if (distance <= 1024.0D) return false;
+            if (distance <= 4096.0D) {
+                // Ray trace to the candidate position, including in the destination dimension.
+                // Testing line of sight to the source entity could visibly pop it into someone's home.
+                for (double height : new double[]{0.4D, villager.getEyeHeight()}) {
+                    var hit = level.clip(new net.minecraft.world.level.ClipContext(player.getEyePosition(), position.add(0, height, 0),
+                            net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, player));
+                    if (hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS) return false;
+                }
+            }
         }
         return true;
     }
@@ -318,16 +326,18 @@ public final class CompanionLifecycleService {
         for (int radius = 0; radius <= 4; radius++) {
             for (int dy = -2; dy <= 2; dy++) for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
                 BlockPos pos = home.offset(dx, dy, dz);
-                if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)) continue;
+                if (!level.hasChunkAt(pos) || pos.getY() <= level.getMinBuildHeight() || pos.getY() + villager.getBbHeight() >= level.getMaxBuildHeight()
+                        || !level.getWorldBorder().isWithinBounds(pos)) continue;
                 var floor = level.getBlockState(pos.below());
                 if (!floor.isFaceSturdy(level, pos.below(), net.minecraft.core.Direction.UP)
                         || floor.is(Blocks.MAGMA_BLOCK) || floor.is(Blocks.CACTUS) || floor.is(Blocks.CAMPFIRE)
                         || floor.is(Blocks.SOUL_CAMPFIRE) || !level.getBlockState(pos).isAir() || !level.getBlockState(pos.above()).isAir()
-                        || !level.getFluidState(pos).isEmpty()) continue;
+                        || !level.getFluidState(pos).isEmpty() || hazardousNeighbourhood(level, pos)) continue;
                 double half = villager.getBbWidth() / 2.0D;
                 AABB bounds = new AABB(pos.getX() + 0.5D - half, pos.getY(), pos.getZ() + 0.5D - half,
                         pos.getX() + 0.5D + half, pos.getY() + villager.getBbHeight(), pos.getZ() + 0.5D + half);
-                if (level.noCollision(villager, bounds) && !hasThreat(level, villager, new AABB(pos).inflate(16.0D))) return pos;
+                if (level.getWorldBorder().isWithinBounds(bounds) && level.noCollision(villager, bounds)
+                        && !hasThreat(level, villager, new AABB(pos).inflate(16.0D))) return pos;
             }
         }
         return null;
@@ -339,10 +349,44 @@ public final class CompanionLifecycleService {
     }
 
     private static final class EntityReturn {
-        static void move(Villager villager, ServerLevel target, BlockPos destination) {
-            villager.changeDimension(new net.minecraft.world.level.portal.DimensionTransition(target,
+        static net.minecraft.world.entity.Entity move(Villager villager, ServerLevel target, BlockPos destination) {
+            return villager.changeDimension(new net.minecraft.world.level.portal.DimensionTransition(target,
                     net.minecraft.world.phys.Vec3.atBottomCenterOf(destination), net.minecraft.world.phys.Vec3.ZERO,
                     villager.getYRot(), villager.getXRot(), net.minecraft.world.level.portal.DimensionTransition.DO_NOTHING));
         }
     }
+
+    private static HomeTarget resolveHome(ServerLevel source, Villager villager, CompoundTag state, boolean fallback) {
+        if (!fallback && state.hasUUID("HomeVillage")) {
+            var village = VillageAllegianceRegistrySavedData.get(source).canonicalRecord(
+                    new com.jvn.villagerretaliation.allegiance.VillageAllegianceId(state.getUUID("HomeVillage"))).orElse(null);
+            if (village == null || village.archived()) return new HomeTarget(null, null, "Registered village no longer exists. Agree a safe fallback");
+        }
+        String prefix = fallback ? "Fallback" : "Home";
+        var dimension = ResourceLocation.tryParse(state.getString(prefix + "Dimension"));
+        var level = dimension == null ? null : source.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, dimension));
+        if (level == null || !state.contains(prefix + "Position"))
+            return new HomeTarget(null, null, "No registered home. Agree a safe fallback with /vr companion safehome");
+        if (level != source && !state.getBoolean("AllowDimensionReturn"))
+            return new HomeTarget(null, null, "Home is in " + dimension + ". Owner must authorize dimension return");
+        var pos = BlockPos.of(state.getLong(prefix + "Position"));
+        if (!level.hasChunkAt(pos)) return new HomeTarget(null, null, "Home chunk is unloaded. Return resumes when it is loaded");
+        if (level != source && !level.areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(pos).toLong()))
+            return new HomeTarget(null, null, "Home entity storage is not loaded. Waiting for a safe dimension transition");
+        if (!fallback && state.getBoolean("HomeBed") && !(level.getBlockState(pos).getBlock() instanceof net.minecraft.world.level.block.BedBlock))
+            return new HomeTarget(null, null, "Registered home bed is missing. Agree a safe fallback");
+        var safe = safeDestination(level, villager, pos);
+        return new HomeTarget(level, safe, safe == null ? "Home is unsafe. Waiting for a safe destination"
+                : (fallback ? "agreed fallback" : "registered home") + " in " + dimension + " " + safe.toShortString());
+    }
+
+    private static boolean hazardousNeighbourhood(ServerLevel level, BlockPos pos) {
+        var hazards = net.minecraft.tags.TagKey.create(Registries.BLOCK, ResourceLocation.parse("villagerretaliation:unsafe_companion_return"));
+        for (var neighbour : BlockPos.betweenClosed(pos.offset(-1, -1, -1), pos.offset(1, 2, 1))) {
+            if (!level.hasChunkAt(neighbour) || level.getBlockState(neighbour).is(hazards) || !level.getFluidState(neighbour).isEmpty()) return true;
+        }
+        return false;
+    }
+
+    private record HomeTarget(ServerLevel level, BlockPos destination, String reason) { }
 }
