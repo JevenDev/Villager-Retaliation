@@ -108,7 +108,7 @@ final class SettlementLifecyclePlan {
         territory.putLongArray("Plots", owned.stream().sorted().mapToLong(Long::longValue).toArray());
         var economy = into.getCompound("Economy");
         var oldEconomy = from.getCompound("Economy");
-        for (String key : Set.of("Balance", "Reserve", "DailyBudget", "Spent")) {
+        for (String key : Set.of("Balance", "PendingDeposit", "Reserve", "DailyBudget", "Spent")) {
             economy.put(key, CurrencyAmount.load(economy.getCompound(key)).add(CurrencyAmount.load(oldEconomy.getCompound(key))).save());
         }
         var bankStocks = economy.getCompound("BankStorage").getList("Stocks", Tag.TAG_COMPOUND);

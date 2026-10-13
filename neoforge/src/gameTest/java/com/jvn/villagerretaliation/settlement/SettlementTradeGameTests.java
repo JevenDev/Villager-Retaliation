@@ -693,7 +693,7 @@ public final class SettlementTradeGameTests {
         helper.succeed();
     }
 
-    private static Fixture fixture(GameTestHelper helper) {
+    static Fixture fixture(GameTestHelper helper) {
         var level = helper.getLevel();
         BlockPos center = helper.absolutePos(new BlockPos(1, 2, 1));
         ServerPlayer leader = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "TradeSteward"));
@@ -725,7 +725,7 @@ public final class SettlementTradeGameTests {
         return new Fixture(town, area, depot, leader, clerk, station);
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, SettlementDepot depot,
+    record Fixture(SettlementRecord town, SettlementArea area, SettlementDepot depot,
                            ServerPlayer leader, Villager clerk, BlockPos station) {
     }
 }

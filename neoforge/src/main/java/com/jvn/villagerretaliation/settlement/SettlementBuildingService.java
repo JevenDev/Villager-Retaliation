@@ -36,7 +36,7 @@ public final class SettlementBuildingService {
         data.simulation.enqueue("buildings", SettlementWork.each(data.settlements(), town -> {
             var level = server.getLevel(net.minecraft.resources.ResourceKey.create(
                     net.minecraft.core.registries.Registries.DIMENSION, town.dimension()));
-            if (level != null) {
+            if (level != null && (town.autonomous()==null || AutonomousVillageService.loaded(level,town))) {
                 SettlementConstructionService.tickQueue(level, town);
                 for (var area : town.workplaces()) {
                     if (area.enabled()) enqueue(level, town, area);

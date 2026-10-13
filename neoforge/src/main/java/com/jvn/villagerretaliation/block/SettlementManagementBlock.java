@@ -40,6 +40,9 @@ public final class SettlementManagementBlock extends Block {
             } else if (result.status() == SettlementFoundingService.Status.INDEPENDENT_VILLAGE) {
                 var registry = VillageAllegianceRegistrySavedData.get(serverPlayer.serverLevel());
                 var village = registry.discoverAt(serverPlayer.serverLevel(), pos).orElse(null);
+                com.jvn.villagerretaliation.settlement.SettlementSavedData.get(serverPlayer.serverLevel()).get(village)
+                        .filter(town->town.autonomous()!=null).ifPresent(town->serverPlayer.displayClientMessage(Component.literal(
+                                com.jvn.villagerretaliation.settlement.AutonomousVillageService.describe(serverPlayer.serverLevel(),town)),false));
                 if (serverPlayer.isShiftKeyDown() && village != null
                         && SettlementLeadershipService.accept(serverPlayer, village, pos).isPresent()) {
                     serverPlayer.displayClientMessage(Component.translatable("settlement.villagerretaliation.leadership_accepted"), false);

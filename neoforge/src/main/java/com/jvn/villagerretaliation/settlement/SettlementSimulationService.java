@@ -160,7 +160,7 @@ public final class SettlementSimulationService {
         var background = new ArrayList<SettlementRecord>();
         var jobs = new ArrayList<Runnable>();
         jobs.add(SettlementWork.each(towns, town -> {
-            if (!town.territory().active()) return;
+            if (!town.territory().active() || town.autonomous()!=null) return;
             var level = server.getLevel(ResourceKey.create(Registries.DIMENSION, town.dimension()));
             if (level == null) return;
             (foreground(level, town) ? foreground : background).add(town);

@@ -86,6 +86,15 @@ public final class SettlementRecord {
     private SettlementSupportState support = new SettlementSupportState();
     private SettlementEconomy economy = new SettlementEconomy(this::changed);
     private UUID leader;
+    private AutonomousVillageState autonomous;
+
+    public AutonomousVillageState autonomous() { return autonomous; }
+    void autonomous(AutonomousVillageState state) { autonomous=state; changed(); }
+    void acceptAutonomousLeadership(UUID player) {
+        // Existing civic escrow/orders retain their issuer until naturally completed or cancelled.
+        delegates.put(leader,EnumSet.allOf(SettlementPermission.class));
+        autonomous=null; leader=player; changed();
+    }
     private LeadershipOffer leadershipOffer;
     private SettlementStage stage = SettlementStage.CAMP;
     private int radius = SettlementStage.CAMP.radius();
@@ -201,9 +210,9 @@ public final class SettlementRecord {
 
     public SettlementTerritory territory() { return this.territory; }
 
-    public boolean contains(BlockPos position) { return this.territory.contains(position); }
+    public boolean contains(BlockPos position) { return this.territory.contains(position) && (autonomous == null || autonomous.contains(position)); }
 
-    public boolean contains(BlockPos min, BlockPos max) { return this.territory.contains(min, max); }
+    public boolean contains(BlockPos min, BlockPos max) { return this.territory.contains(min, max) && (autonomous == null || autonomous.contains(min,max)); }
 
     public boolean owns(SettlementArea area) { return area != null && contains(area.min(), area.max()); }
 
@@ -1435,6 +1444,7 @@ public final class SettlementRecord {
         tag.putString("Dimension", this.dimension.toString());
         tag.putLong("Center", this.center.asLong());
         tag.putUUID("Leader", this.leader);
+        if (autonomous != null) tag.put("Autonomous", autonomous.save());
         if (this.leadershipOffer != null) {
             var offer = new CompoundTag();
             offer.putUUID("Id", this.leadershipOffer.id());
@@ -1703,6 +1713,11 @@ public final class SettlementRecord {
             }
         }
         if (!supportedServices.equals(SettlementStageRules.forStage(supportStage).services())) record.support.resetAdvancement();
+        if(tag.contains("Autonomous")) {
+            record.autonomous=AutonomousVillageState.load(tag.getCompound("Autonomous"));
+            for(long section:record.autonomous.sections) if(!record.territory.contains(net.minecraft.core.SectionPos.x(section),net.minecraft.core.SectionPos.z(section)))
+                throw new IllegalArgumentException("Autonomous boundary exceeds owned plots");
+        }
         record.economy = SettlementEconomy.load(tag.getCompound("Economy"), record::changed);
         record.economy.bank.load(tag.getCompound("Economy").getCompound("BankStorage"), provider);
         for (Tag raw : tag.getList("ResidentCare", Tag.TAG_COMPOUND)) {

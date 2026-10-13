@@ -39,7 +39,12 @@ final class SettlementCommands {
             }
             source.sendSuccess(() -> Component.literal("Use /vr settlement <town UUID> offer <successor UUID>, accept <offer UUID>, cancel <offer UUID>, dissolve, releasePlot <chunkX> <chunkZ>, relocate <x> <y> <z>, or merge <target UUID>. Territory changes return a preview and confirmation token."), false);
             return 1;
-        }).then(literal("confirm").then(argument("confirmation", UuidArgument.uuid()).executes(context -> {
+        }).then(literal("autonomy").executes(context -> {
+            var source=context.getSource();
+            var town=SettlementSavedData.get(source.getLevel()).at(source.getLevel().dimension().location(),BlockPos.containing(source.getPosition())).orElse(null);
+            source.sendSuccess(()->Component.literal(town==null?"No village here":com.jvn.villagerretaliation.settlement.AutonomousVillageService.describe(source.getLevel(),town)),false);
+            return town==null?0:1;
+        })).then(literal("confirm").then(argument("confirmation", UuidArgument.uuid()).executes(context -> {
             String failure = SettlementLifecycleService.confirm(context.getSource(), UuidArgument.getUuid(context, "confirmation"));
             if (!failure.isEmpty()) {
                 context.getSource().sendFailure(Component.literal(failure));
@@ -50,10 +55,20 @@ final class SettlementCommands {
         }))).then(argument("town", UuidArgument.uuid())
                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                         SettlementSavedData.get(context.getSource().getLevel()).settlements().stream()
-                                .filter(town -> context.getSource().hasPermission(2) || context.getSource().getEntity() != null
+                                .filter(town -> town.autonomous()!=null || context.getSource().hasPermission(2) || context.getSource().getEntity() != null
                                         && (town.leader().equals(context.getSource().getEntity().getUUID())
                                         || town.leadershipOffer() != null && town.leadershipOffer().successor().equals(context.getSource().getEntity().getUUID())))
                                 .map(town -> town.id().value().toString()), builder))
+                .then(literal("autonomy").executes(context -> {
+                    var source=context.getSource();var town=SettlementSavedData.get(source.getLevel()).get(new VillageAllegianceId(UuidArgument.getUuid(context,"town"))).orElse(null);
+                    if(town==null || !town.dimension().equals(source.getLevel().dimension().location())) return 0;
+                    source.sendSuccess(()->Component.literal(com.jvn.villagerretaliation.settlement.AutonomousVillageService.describe(source.getLevel(),town)),false);return 1;
+                }))
+                .then(literal("donateStorage").then(argument("position",BlockPosArgument.blockPos()).executes(context -> {
+                    var source=context.getSource();var town=SettlementSavedData.get(source.getLevel()).get(new VillageAllegianceId(UuidArgument.getUuid(context,"town"))).orElse(null);
+                    String result=com.jvn.villagerretaliation.settlement.AutonomousVillageService.donateStorage(source.getPlayerOrException(),town,BlockPosArgument.getLoadedBlockPos(context,"position"));
+                    source.sendSuccess(()->Component.literal(result),false);return 1;
+                })))
                 .then(literal("dissolve").executes(context -> lifecycle(context, Operation.DISSOLVE, null, null)))
                 .then(literal("abandon").executes(context -> lifecycle(context, Operation.DISSOLVE, null, null)))
                 .then(literal("releasePlot").then(argument("chunkX", IntegerArgumentType.integer(-1_874_999, 1_874_999))

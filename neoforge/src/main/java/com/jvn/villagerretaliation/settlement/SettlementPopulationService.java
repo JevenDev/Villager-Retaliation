@@ -68,7 +68,8 @@ public final class SettlementPopulationService {
 
     public static boolean canGrow(ServerLevel level, SettlementRecord town) {
         int population = VillageAllegianceRegistrySavedData.get(level).residentCount(town.id(), level.getGameTime());
-        return population < SettlementPopulationRequirements.growthTarget()
+        return population < (town.autonomous()==null ? SettlementPopulationRequirements.growthTarget()
+                : Math.min(SettlementPopulationRequirements.growthTarget(),AutonomousVillageRules.get(level.getServer()).population()))
                 && town.housingCapacity() > population
                 && SettlementFoodService.nutrition(town) >= (long) (population + 1) * SettlementFoodService.dailyNutrition()
                         * Math.clamp(VillagerRetaliationConfig.SETTLEMENT_FOOD_RESERVE_DAYS.get(), 1, 30);

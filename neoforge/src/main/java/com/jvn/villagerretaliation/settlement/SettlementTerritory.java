@@ -88,6 +88,10 @@ public final class SettlementTerritory {
         this.revision++;
     }
 
+    void autonomousCapacity(int remainingPaidClaims) {
+        int desired=Math.addExact(plots.size(),Math.max(0,remainingPaidClaims));
+        if(desired>capacity()) {grandfatheredCapacity=Math.addExact(grandfatheredCapacity,desired-capacity());revision++;}
+    }
     void advance(SettlementStage stage) {
         refresh(stage);
         if (this.rewards.add(stage)) {

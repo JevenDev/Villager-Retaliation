@@ -108,6 +108,7 @@ public final class SettlementConstructionService {
     /** Bounded, ordered dispatch. Waiting never edits the world or consumes partial resources. */
     public static void tickQueue(ServerLevel level, SettlementRecord town) {
         if (SettlementSavedData.get(level).readOnly() || !town.dimension().equals(level.dimension().location())) return;
+        if(town.autonomous()!=null && !AutonomousVillageService.loaded(level,town)) return;
         for (var project : town.projects().values()) if (!project.unfinished()) SettlementConstructionMaterials.refund(level, town, project);
         int available = town.stage().projects() - (int) town.projects().values().stream().filter(SettlementProject::active).count();
         if (available <= 0) return;
@@ -169,6 +170,7 @@ public final class SettlementConstructionService {
     }
 
     private static boolean protectedSite(ServerLevel level, SettlementRecord town, SettlementProject project) {
+        if(project.repairOf()!=null) return !AutonomousVillageMaintenance.safe(level,town,project);
         var footprint = new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)));
         if (town.areas().values().stream().anyMatch(area -> area.type() != SettlementAreaType.CONSTRUCTION
                 && footprint.intersects(new AABB(Vec3.atLowerCornerOf(area.min()), Vec3.atLowerCornerOf(area.max().offset(1, 1, 1)))))) return true;
@@ -188,6 +190,7 @@ public final class SettlementConstructionService {
     }
 
     static boolean eligible(ServerLevel level, SettlementRecord town, Villager builder) {
+        if (town.autonomous()!=null && (builder==null || level.getEntity(builder.getUUID())!=builder || !level.isPositionEntityTicking(builder.blockPosition()))) return false;
         if (builder == null || !builder.isAlive() || builder.isBaby() || VillagerDownedService.isDowned(builder)
                 || Math.abs(builder.getX() - town.center().getX()) > town.radius() + 16
                 || Math.abs(builder.getZ() - town.center().getZ()) > town.radius() + 16
@@ -201,7 +204,9 @@ public final class SettlementConstructionService {
     }
 
     static String placementFailure(ServerPlayer player, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin) {
-        var level = player.serverLevel();
+        return placementFailure(player.serverLevel(),player,town,plan,origin);
+    }
+    static String placementFailure(ServerLevel level, ServerPlayer player, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin) {
         var min = plan.worldMin(origin);
         var max = plan.worldMax(origin);
         if (town.stage().projects() == 0 || town.projects().values().stream().filter(SettlementProject::pending).count() >= SettlementRecord.CONSTRUCTION_QUEUE_LIMIT) return "capacity";
@@ -226,7 +231,7 @@ public final class SettlementConstructionService {
         return check.valid() ? "" : check.statusKey().replace("interaction.work.builder.", "");
     }
 
-    private static SettlementArea workplace(ServerLevel level, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin, UUID id) {
+    static SettlementArea workplace(ServerLevel level, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin, UUID id) {
         var min = plan.worldMin(origin);
         var max = plan.worldMax(origin);
         var border = level.getWorldBorder();

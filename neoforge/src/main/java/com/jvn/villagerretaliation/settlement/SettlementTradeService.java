@@ -181,6 +181,7 @@ public final class SettlementTradeService {
                 continue;
             }
             var entity = level.getEntity(resident.id());
+            if(town.autonomous()!=null && (entity==null || !level.isPositionEntityTicking(entity.blockPosition()))) continue;
             if (entity != null && level.isPositionEntityTicking(entity.blockPosition())) {
                 if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isSleeping()
                         || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null

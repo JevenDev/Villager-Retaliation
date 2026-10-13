@@ -20,6 +20,7 @@ public final class SettlementFoundingService {
         var data = SettlementSavedData.get(level);
         var existing = data.at(level.dimension().location(), center);
         if (existing.isPresent()) {
+            if(existing.get().autonomous()!=null && existing.get().contains(center)) return new Result(Status.INDEPENDENT_VILLAGE,Optional.empty());
             return existing.get().permits(player.getUUID(), SettlementPermission.VIEW)
                     ? new Result(Status.EXISTING_TOWN, existing) : new Result(Status.UNAVAILABLE, Optional.empty());
         }

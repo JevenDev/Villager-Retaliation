@@ -36,7 +36,7 @@ final class SettlementAutonomyService {
                 if (dimension == level && entity instanceof Villager resident) candidate = resident;
                 break;
             }
-            if (!found) {
+            if (!found && town.autonomous()==null) {
                 var state = town.residents().get(member.id());
                 if (state != null && state.availableForWork()) candidate = state.context(level);
             }

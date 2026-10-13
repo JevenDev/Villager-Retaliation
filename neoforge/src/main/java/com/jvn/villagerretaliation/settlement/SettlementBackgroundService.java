@@ -49,7 +49,7 @@ public final class SettlementBackgroundService {
             observe(level, villager, level.getGameTime());
             return;
         }
-        if (worker == null) {
+        if (town.autonomous()!=null || worker == null) {
             return;
         }
         int elapsed = worker.elapsed(now);

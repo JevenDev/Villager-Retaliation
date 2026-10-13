@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "cadence_ticks": 1200,
+  "sustained_observations": 3,
+  "population_target": 16,
+  "project_limit": 8,
+  "expansion_limit": 4,
+  "expansion_price": 32,
+  "reserve": 8,
+  "daily_budget": 16,
+  "income_interval": 2400,
+  "daily_income_cap": 8,
+  "funds_cap": 256,
+  "food_unit_price_limit": 2,
+  "catalog": {
+    "HOME": "minecraft:village/plains/houses/plains_small_house_1",
+    "FARM": "minecraft:village/plains/houses/plains_small_farm_1",
+    "WORKSHOP": "minecraft:village/plains/houses/plains_tool_smith_1",
+    "KITCHEN": "minecraft:village/plains/houses/plains_butcher_shop_1"
+  }
+}

@@ -34,7 +34,7 @@ public final class SettlementLeadershipService {
         var registry = VillageAllegianceRegistrySavedData.get(server.overworld());
         for (ServerLevel level : server.getAllLevels()) {
             for (AllegianceRecord village : registry.activeRecords(level.dimension().location())) {
-                if (!registry.isManaged(village.id()) && !village.residents().isEmpty()) {
+                if ((!registry.isManaged(village.id()) || autonomous(level,village.id())) && !village.residents().isEmpty()) {
                     observe(level, village);
                 }
             }
@@ -85,7 +85,7 @@ public final class SettlementLeadershipService {
         var level = player.serverLevel();
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var village = registry.canonicalRecord(id).orElse(null);
-        if (village == null || village.archived() || registry.isManaged(village.id())
+        if (village == null || village.archived() || registry.isManaged(village.id()) && !autonomous(level,village.id())
                 || !level.dimension().location().equals(village.originDimension())) {
             return Optional.empty();
         }
@@ -114,12 +114,21 @@ public final class SettlementLeadershipService {
         if (!status(player, village.id()).map(Status::eligible).orElse(false)) {
             return Optional.empty();
         }
+        var existing=SettlementSavedData.get(level).get(village.id()).orElse(null);
+        if(existing!=null && existing.autonomous()!=null) {
+            existing.acceptAutonomousLeadership(player.getUUID());
+            SettlementSavedData.get(level).claimed(registry,existing);
+            SettlementLeadershipSavedData.get(level).remove(village.id());
+            return Optional.of(existing);
+        }
         var town = SettlementSavedData.get(level).establish(registry, village.id(), player.getUUID(), table, level.getGameTime());
         if (town.isPresent()) {
             SettlementLeadershipSavedData.get(level).remove(village.id());
         }
         return town;
     }
+
+    private static boolean autonomous(ServerLevel level,VillageAllegianceId id) { return SettlementSavedData.get(level).get(id).map(town -> town.autonomous()!=null).orElse(false); }
 
     public record Status(VillageAllegianceId village, int adults, int reveredAdults,
                          SettlementLeadershipSavedData.Observation support, long requiredTicks, boolean eligible) {

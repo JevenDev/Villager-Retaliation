@@ -21,6 +21,12 @@ public final class SettlementEconomy {
     private final Map<ResourceLocation, MarketVolume> markets = new LinkedHashMap<>();
     private Map<UUID, SettlementTradeService.Result> lastResults = Map.of();
     private CurrencyAmount balance = CurrencyAmount.ZERO;
+    private CurrencyAmount pendingDeposit = CurrencyAmount.ZERO;
+    private boolean physicalIncome;
+    void physicalIncome() { physicalIncome=true; dirty.run(); }
+    public CurrencyAmount pendingDeposit() { return pendingDeposit; }
+    public CurrencyAmount physicalBalance() { return bank.value(); }
+    public CurrencyAmount virtualBalance() { return balance; }
     private CurrencyAmount reserve = CurrencyAmount.ZERO;
     private CurrencyAmount dailyBudget = CurrencyAmount.ZERO;
     private CurrencyAmount spent = CurrencyAmount.ZERO;
@@ -41,11 +47,13 @@ public final class SettlementEconomy {
     }
 
     public CurrencyAmount balance() {
-        return this.balance.add(this.bank.value());
+        return this.balance.add(this.bank.value(physicalIncome));
     }
 
     public void depositOverflow() {
-        var remainder = this.bank.deposit(this.balance);
+        var pending=bank.deposit(pendingDeposit,true);
+        if(!pending.equals(pendingDeposit)) { pendingDeposit=pending; dirty.run(); }
+        var remainder = this.bank.deposit(this.balance,physicalIncome);
         if (!this.balance.equals(remainder)) {
             this.balance = remainder;
             this.dirty.run();
@@ -85,7 +93,8 @@ public final class SettlementEconomy {
     }
 
     void credit(CurrencyAmount amount) {
-        this.balance = this.bank.deposit(this.balance.add(amount));
+        if(physicalIncome) pendingDeposit=bank.deposit(pendingDeposit.add(amount),true);
+        else this.balance = this.bank.deposit(this.balance.add(amount));
         this.dirty.run();
     }
 
@@ -104,7 +113,7 @@ public final class SettlementEconomy {
         }
         var virtual = this.balance.min(amount);
         var remainder = amount.subtract(virtual);
-        var removed = this.bank.withdraw(remainder);
+        var removed = this.bank.withdraw(remainder,physicalIncome);
         this.balance = this.balance.subtract(virtual).add(removed.subtract(remainder));
         this.dirty.run();
         return true;
@@ -212,6 +221,7 @@ public final class SettlementEconomy {
         CompoundTag tag = new CompoundTag();
         tag.putInt("Version", 1);
         tag.put("Balance", this.balance.save());
+        tag.put("PendingDeposit", pendingDeposit.save()); tag.putBoolean("PhysicalIncome",physicalIncome);
         tag.put("BankStorage", this.bank.save());
         tag.put("Reserve", this.reserve.save());
         tag.put("DailyBudget", this.dailyBudget.save());
@@ -251,6 +261,7 @@ public final class SettlementEconomy {
             throw new IllegalArgumentException("Unsupported settlement purchase accounting version");
         SettlementEconomy economy = new SettlementEconomy(dirty);
         economy.balance = CurrencyAmount.load(tag.getCompound("Balance"));
+        economy.pendingDeposit=CurrencyAmount.load(tag.getCompound("PendingDeposit")); economy.physicalIncome=tag.getBoolean("PhysicalIncome");
         economy.reserve = CurrencyAmount.load(tag.getCompound("Reserve"));
         economy.dailyBudget = CurrencyAmount.load(tag.getCompound("DailyBudget"));
         economy.spent = CurrencyAmount.load(tag.getCompound("Spent"));

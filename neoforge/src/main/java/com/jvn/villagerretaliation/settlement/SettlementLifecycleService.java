@@ -88,6 +88,8 @@ public final class SettlementLifecycleService {
         if (town == null || !town.id().equals(id) || !authorized(actor, town)) {
             return new Plan(null, null, null, null, "", List.of("Only the current leader or a permission-level 2 administrator can change this settlement."));
         }
+        if(town.autonomous()!=null || target!=null && target.autonomous()!=null)
+            return new Plan(null,town,target,null,"",List.of("Earn village leadership before manual settlement lifecycle changes."));
         var level = actor.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, town.dimension()));
         if (level == null || data.readOnly()) return new Plan(null, town, null, null, "", List.of("The settlement dimension or saved data is unavailable."));
         CompoundTag replacement = null;
@@ -148,6 +150,7 @@ public final class SettlementLifecycleService {
 
     private static void dissolutionBlockers(ServerLevel level, SettlementRecord town, List<String> blockers) {
         if (!town.economy().bank.stocks.isEmpty()) blockers.add("Unregister or mine every bank treasury before dissolution; its noncurrency items must also be retained.");
+        if (!town.economy().pendingDeposit().isZero()) blockers.add("Deposit pending income before dissolution; pending funds must be retained.");
         if (!town.economy().balance().equals(CurrencyAmount.ZERO)) blockers.add("Withdraw the treasury before dissolution.");
         if (town.depots().values().stream().anyMatch(depot -> !depot.isEmpty())) blockers.add("Empty every depot before dissolution. Its inventory belongs to the town.");
         if (town.projects().values().stream().anyMatch(SettlementProject::active)) blockers.add("Finish or cancel active construction in management first, then withdraw any refunded fees.");

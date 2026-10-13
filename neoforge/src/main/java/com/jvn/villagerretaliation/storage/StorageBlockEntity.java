@@ -21,6 +21,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     public UUID identity=UUID.randomUUID();
     public UUID treasury;
     public UUID inventoryOwner;
+    public UUID repairReceipt;
     public boolean issued, unlocked;
     public int damage;
     public long repairAfter;
@@ -46,7 +47,9 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     public SimpleContainer localInventory() { return local; }
     public List<StorageBlockEntity> group() { return VaultConnections.members(this); }
     public StorageBlockEntity lock() {
-        return group().stream().filter(StorageBlockEntity::controller).findFirst().orElse(null);
+        var lock=group().stream().filter(StorageBlockEntity::controller).findFirst().orElse(null);
+        if(lock!=null) BankTreasury.restoreAuthority(lock);
+        return lock;
     }
     public void assign(List<BlockPos> positions) {
         members=List.copyOf(positions); formed=true; setChanged();
@@ -132,6 +135,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         }
         if(level.getGameTime()%20==0) {
             VaultConnections.repairMembership(bank);
+            BankTreasury.reconcile(bank);
             bank.refreshProtection();
             if(bank.controller()) BankTreasury.depositOverflow(bank);
         }
@@ -149,6 +153,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         tag.putUUID("Identity",identity); tag.putBoolean("Issued",issued); tag.putBoolean("Unlocked",unlocked); tag.putBoolean("Formed",formed);
         tag.putInt("Damage",damage); tag.putLong("RepairAfter",repairAfter); tag.putLong("MiningAfter",miningAfter); tag.putInt("Fuse",fuse);
         tag.putLongArray("Members",members.stream().mapToLong(BlockPos::asLong).toArray());
+        if(repairReceipt!=null) tag.putUUID("RepairReceipt",repairReceipt);
         if(treasury!=null) tag.putUUID("Treasury",treasury);
         if(inventoryOwner!=null) tag.putUUID("InventoryOwner",inventoryOwner);
         // Registered stocks live ONLY in settlement saved data, next to the economy balance.
@@ -159,6 +164,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         if(tag.hasUUID("Identity")) identity=tag.getUUID("Identity");
         formed=tag.getBoolean("Formed"); issued=tag.getBoolean("Issued"); unlocked=tag.getBoolean("Unlocked"); damage=Math.max(0,Math.min(maxDamage(),tag.getInt("Damage")));
         repairAfter=tag.getLong("RepairAfter"); miningAfter=tag.getLong("MiningAfter"); fuse=tag.contains("Fuse")?tag.getInt("Fuse"):-1;
+        repairReceipt=tag.hasUUID("RepairReceipt")?tag.getUUID("RepairReceipt"):null;
         treasury=tag.hasUUID("Treasury")?tag.getUUID("Treasury"):null;
         inventoryOwner=tag.hasUUID("InventoryOwner")?tag.getUUID("InventoryOwner"):null;
         var positions=Arrays.stream(tag.getLongArray("Members")).mapToObj(BlockPos::of).sorted(VaultConnections.ORDER).toList();

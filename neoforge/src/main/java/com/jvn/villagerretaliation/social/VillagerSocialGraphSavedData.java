@@ -204,6 +204,7 @@ public class VillagerSocialGraphSavedData extends SavedData {
         VillagerProfile profile = ensureProfile(level, villager);
         boolean changed = profile.markDead(level, deathCause);
         changed |= markRomanticBondsWidowed(level, villager.getUUID(), deathCause);
+        com.jvn.villagerretaliation.settlement.AutonomousVillageService.rulerDied(level,villager.getUUID());
         if (changed) {
             setDirty();
         }
@@ -678,6 +679,17 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return changed;
     }
 
+    public boolean confirmedAlive(UUID id) { var profile=profiles.get(id); return profile!=null && profile.alive(); }
+    public boolean confirmedDead(UUID id) { var profile=profiles.get(id); return profile!=null && !profile.alive(); }
+    public Set<UUID> successionPartners(UUID subject, java.util.Collection<UUID> candidates) {
+        var result=new java.util.HashSet<>(relationships(subject,RelationshipType.SPOUSE));
+        result.removeIf(id->relationshipStage(subject,id).map(stage->stage==VillagerRelationshipStage.SEPARATED).orElse(false));
+        for(var id:candidates) {
+            var stage=relationshipStage(subject,id).orElse(null);
+            if(stage!=null && (stage.active() && stage.exclusive() || stage==VillagerRelationshipStage.WIDOWED)) result.add(id);
+        }
+        return result;
+    }
     private boolean isKnownAlive(UUID villagerId) {
         VillagerProfile profile = this.profiles.get(villagerId);
         return profile == null || profile.alive();

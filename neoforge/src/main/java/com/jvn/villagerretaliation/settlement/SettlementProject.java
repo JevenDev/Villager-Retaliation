@@ -32,6 +32,9 @@ public final class SettlementProject {
     private SettlementConstructionCrew crew;
     private CompoundTag materialEscrow = new CompoundTag();
     private UUID authority;
+    private UUID repairOf;
+    UUID repairOf() {return repairOf;}
+    void repairOf(UUID source) {repairOf=source;}
     private boolean paymentReserved;
     private BuilderStructureScanner.StructurePlan checkedPlan;
     private boolean checkedPlanMatches;
@@ -353,6 +356,7 @@ public final class SettlementProject {
     CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id);
+        if(repairOf!=null) tag.putUUID("RepairOf",repairOf);
         tag.putUUID("Area", this.area);
         tag.putUUID("Builder", this.builder);
         tag.putLong("Min", this.min.asLong());
@@ -386,6 +390,7 @@ public final class SettlementProject {
             if (!tag.contains("Crew", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid construction crew");
             project.crew = SettlementConstructionCrew.load(tag.getCompound("Crew"), project.builder, project.total(), project.task.getInt("PlacedIndex"));
         }
+        project.repairOf=tag.hasUUID("RepairOf")?tag.getUUID("RepairOf"):null;
         project.fee = tag.getInt("Fee");
         project.materialEscrow = tag.getCompound("MaterialEscrow").copy();
         SettlementConstructionMaterials.validate(project.materialEscrow);

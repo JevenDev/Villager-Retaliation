@@ -22,8 +22,9 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class SettlementSavedData extends SavedData {
     private net.minecraft.server.MinecraftServer bankServer;
+    final Map<UUID,SettlementRecord> bankOwners=new java.util.HashMap<>();
     private static final String DATA_NAME = "villagerretaliation_settlements";
-    private static final int FORMAT_VERSION = 73;
+    private static final int FORMAT_VERSION = 74;
     final SettlementSimulationService simulation = new SettlementSimulationService();
     final SettlementAllocationService allocation = new SettlementAllocationService();
     final Map<UUID, UUID> policyRequests = new java.util.HashMap<>();
@@ -41,7 +42,11 @@ public final class SettlementSavedData extends SavedData {
                         SettlementSavedData::load, DataFixTypes.LEVEL), DATA_NAME);
         if (data.bankServer != level.getServer()) {
             data.bankServer = level.getServer();
-            data.settlements.values().forEach(town -> town.economy().bank.bind(level.getServer(), level.registryAccess()));
+            data.bankOwners.clear();
+            data.settlements.values().forEach(town -> {
+                town.economy().bank.bind(level.getServer(), level.registryAccess());
+                town.economy().bank.stocks.keySet().forEach(id -> { if(data.bankOwners.putIfAbsent(id,town)!=null) throw new IllegalStateException("Duplicate bank identity"); });
+            });
         }
         return data;
     }
@@ -121,6 +126,27 @@ public final class SettlementSavedData extends SavedData {
         return Optional.of(town);
     }
 
+    Optional<SettlementRecord> establishAutonomous(ServerLevel level, VillageAllegianceRegistrySavedData.AllegianceRecord village) {
+        var registry=VillageAllegianceRegistrySavedData.get(level);
+        if(readOnly() || registry.isManaged(village.id()) || settlements.containsKey(village.id()) || village.footprintSections().isEmpty()
+                || village.footprintSections().size()>65536 || recovery.reserved(village.id())) return Optional.empty();
+        var town=new SettlementRecord(village.id(),village.originDimension(),village.center(),village.id().value(),level.getGameTime(),this::setDirty);
+        var state=new AutonomousVillageState(); state.sections.addAll(village.footprintSections()); town.autonomous(state);
+        // A natural village already has village services; this grants no money, items or residents.
+        town.advance(); town.advance();
+        var plots=new LinkedHashSet<Long>();
+        for(long section:state.sections) {
+            int x=SectionPos.x(section),z=SectionPos.z(section);
+            if(reserved(registry,town,x,z)) return Optional.empty();
+            plots.add(net.minecraft.world.level.ChunkPos.asLong(x,z));
+        }
+        town.migrateTerritory(plots, "");
+        town.economy().physicalIncome();
+        town.economy().bank.bind(level.getServer(),level.registryAccess());
+        settlements.put(town.id(),town); index(town); updateFootprint(registry,town); setDirty();
+        return Optional.of(town);
+    }
+
     public boolean putArea(VillageAllegianceRegistrySavedData registry, VillageAllegianceId id,
                            UUID actor, SettlementArea area) {
         SettlementRecord town = this.settlements.get(id);
@@ -188,6 +214,7 @@ public final class SettlementSavedData extends SavedData {
     }
 
     private static void updateFootprint(VillageAllegianceRegistrySavedData registry, SettlementRecord town) {
+        if(town.autonomous()!=null) { registry.manageAutonomous(town.id(),town.center(),town.autonomous().sections); return; }
         Set<Long> footprint = new LinkedHashSet<>();
         for (long plot : town.territory().plots()) {
             footprint.add(SectionPos.asLong(net.minecraft.world.level.ChunkPos.getX(plot),
@@ -334,6 +361,7 @@ public final class SettlementSavedData extends SavedData {
         if (retiredEntry != null) this.retired.put(source.id(), retiredEntry);
         this.ownership.values().forEach(plots -> plots.values().removeIf(id -> id.equals(source.id()) || target != null && id.equals(target.id())));
         if (next != null) index(next);
+        this.bankServer=null;
         this.simulation.invalidate();
         SettlementViewService.closeTown(source);
         if (target != null) SettlementViewService.closeTown(target);

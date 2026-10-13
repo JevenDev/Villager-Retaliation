@@ -30,7 +30,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class VillageAllegianceRegistrySavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_village_allegiances";
-    private static final int FORMAT_VERSION = 5;
+    private static final int FORMAT_VERSION = 6;
     private static final int DISCOVERY_RADIUS_BLOCKS = 128;
     private static final long RESIDENT_LAST_SEEN_REFRESH_TICKS = 1_200L;
     private static final long AUTO_MERGE_OBSERVATION_SPACING_TICKS = 100L;
@@ -39,6 +39,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     public static final long RESIDENT_ACTIVE_GRACE_TICKS = 72_000L;
 
     private final Map<VillageAllegianceId, AllegianceRecord> records = new LinkedHashMap<>();
+    private final Set<VillageAllegianceId> autonomousIdentities = new LinkedHashSet<>();
     private final Set<VillageAllegianceId> managedIdentities = new LinkedHashSet<>();
     private final Set<VillageAllegianceId> removedIdentities = new LinkedHashSet<>();
     private final Map<VillageAllegianceId, VillageAllegianceId> aliases = new LinkedHashMap<>();
@@ -134,6 +135,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                         .ifPresent(record -> data.removedIdentities.add(id));
             }
         }
+        for(var raw:tag.getList("AutonomousIdentities",Tag.TAG_COMPOUND)) { var entry=(CompoundTag)raw; if(entry.hasUUID("Id")) data.autonomousIdentities.add(new VillageAllegianceId(entry.getUUID("Id"))); }
         data.ensureNames();
         data.rebuildResidentIndex();
         return data;
@@ -190,6 +192,9 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             managedTags.add(entry);
         }
         tag.put("ManagedIdentities", managedTags);
+        var autonomousTags=new ListTag();
+        for(var id:autonomousIdentities) {var entry=new CompoundTag(); entry.putUUID("Id",id.value()); autonomousTags.add(entry);}
+        tag.put("AutonomousIdentities",autonomousTags);
         ListTag removedTags = new ListTag();
         for (VillageAllegianceId id : this.removedIdentities) {
             CompoundTag entry = new CompoundTag();
@@ -237,7 +242,15 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return canonical(id).filter(this.managedIdentities::contains).isPresent();
     }
 
+    public boolean manageAutonomous(VillageAllegianceId id, BlockPos center, Set<Long> footprint) {
+        if(autonomousIdentities.contains(id) && canonicalRecord(id).map(record->record.center().equals(center) && record.footprintSections().equals(footprint)).orElse(false)) return true;
+        boolean result=manage(id,center,footprint);
+        if(result && autonomousIdentities.add(id)) markFootprintChanged();
+        return result;
+    }
+
     public boolean manage(VillageAllegianceId id, BlockPos center, Set<Long> footprint) {
+        if(autonomousIdentities.remove(id)) markFootprintChanged();
         AllegianceRecord current = canonicalRecord(id).orElse(null);
         if (current == null || current.archived() || center == null || footprint == null) {
             return false;
@@ -327,7 +340,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     }
 
     public boolean contains(AllegianceRecord village, BlockPos position) {
-        if (!isManaged(village.id())) return village.footprintSections().contains(SectionPos.asLong(position));
+        if (!isManaged(village.id()) || autonomousIdentities.contains(village.id())) return village.footprintSections().contains(SectionPos.asLong(position));
         rebuildFootprintIndexIfNeeded();
         return this.managedColumnIndex.getOrDefault(village.originDimension(), Map.of())
                 .getOrDefault(new net.minecraft.world.level.ChunkPos(position).toLong(), List.of()).contains(village.id());
@@ -855,7 +868,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                     || canonical(record.id()).filter(record.id()::equals).isEmpty()) {
                 continue;
             }
-            boolean managed = isManaged(record.id());
+            boolean managed = isManaged(record.id()) && !autonomousIdentities.contains(record.id());
             Map<Long, List<VillageAllegianceId>> dimensionIndex = (managed ? this.managedColumnIndex : this.footprintIndex)
                     .computeIfAbsent(record.originDimension(), ignored -> new HashMap<>());
             for (long section : record.footprintSections()) {

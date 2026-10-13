@@ -55,7 +55,7 @@ public final class SettlementCareService {
                 state.observe(resident, town, level.getGameTime());
                 state.observeShortage(elapsed, housingShortage);
             }
-        } else if (state != null) {
+        } else if (state != null && town.autonomous()==null) {
             int elapsed = state.advance(level, town, now);
             state.observeShortage(elapsed, housingShortage);
             if (state.present() && state.age() >= 0 && !member.adult()) {

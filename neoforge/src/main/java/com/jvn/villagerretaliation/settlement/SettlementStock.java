@@ -73,6 +73,11 @@ public final class SettlementStock {
         }
 
         private static boolean active(SettlementRecord town, SettlementDepot depot) {
+            if(town.autonomous()!=null) {
+                var server=net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+                var level=server==null?null:server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,town.dimension()));
+                if(level==null || !level.hasChunkAt(depot.position())) return false;
+            }
             var area = town.areas().get(depot.area());
             return town.owns(area) && area.enabled();
         }
