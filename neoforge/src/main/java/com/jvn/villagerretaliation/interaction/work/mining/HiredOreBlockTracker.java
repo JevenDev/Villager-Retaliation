@@ -72,7 +72,7 @@ public final class HiredOreBlockTracker {
         if (state.isAir()) {
             return false;
         }
-        if (state.is(Tags.Blocks.ORES)) {
+        if (state.is(Tags.Blocks.ORES) || OreNodeDefinitions.extractions(state) > 0) {
             return true;
         }
         String path = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();

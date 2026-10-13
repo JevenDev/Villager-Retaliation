@@ -173,7 +173,9 @@ final class SettlementBackgroundMining {
                 worker.status("output_full");
                 return;
             }
-            if (!mine.change(Map.of(target.position(), block.getFluidState().createLegacyBlock()))) {
+            var section = mine.sections().get(SettlementTerrainSection.sectionOrigin(target.position()));
+            if (!section.extractOre(level, target.position(), tool)
+                    && !mine.change(Map.of(target.position(), block.getFluidState().createLegacyBlock()))) {
                 worker.status("mine_conflict");
                 return;
             }

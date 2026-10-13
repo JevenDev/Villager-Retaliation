@@ -62,6 +62,7 @@ public class VillagerRetaliation {
         VillagerSecondWindCompat.init();
         VillagerRetaliationConfig.init();
         com.jvn.villagerretaliation.settlement.SettlementChunkReceipts.register(modEventBus);
+        com.jvn.villagerretaliation.interaction.work.mining.OreNodes.register(modEventBus);
         com.jvn.villagerretaliation.campaign.CampaignBlockOwnership.register(modEventBus);
         com.jvn.villagerretaliation.campaign.CampaignGeneratedBlocks.register(modEventBus);
         com.jvn.villagerretaliation.scene.encounter.EncounterActorBirths.register(modEventBus);

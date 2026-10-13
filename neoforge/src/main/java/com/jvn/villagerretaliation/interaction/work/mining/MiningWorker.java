@@ -321,6 +321,11 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (mode.excavatesArea()) {
             MiningWorkerState.clearExcavationLayerCache(context);
         }
+        if (level.getBlockState(target.blockPos()).getBlock() == targetState.getBlock()) {
+            MiningWorkerState.set(context, MiningWorkerState.Phase.MINE_TARGET);
+            setTaskState(context, HiredWorkerTaskState.WORKING, target.blockPos());
+            return WorkResult.progressedWithPractice(miningStatusKey(mode, "working_target"), HiredWorkPractice.mining(level, target.blockPos(), targetState));
+        }
         HiredOreBlockTracker.onBlockBroken(level, target.blockPos());
         HiredWorkPlan.removeTarget(context, target.blockPos());
         var practice = HiredWorkPractice.mining(level, target.blockPos(), targetState);
@@ -1139,7 +1144,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         faceBlock(villager, target);
         swingWorkTool(villager);
-        if (!level.destroyBlock(target.blockPos(), false, villager)) {
+        if (!OreNodes.mine(level, target.blockPos(), villager, tool)) {
             return false;
         }
         for (ItemStack drop : drops) {
@@ -1153,7 +1158,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         HiredPathMemory.onBlockChanged(level, target.blockPos());
         level.destroyBlockProgress(villager.getId(), target.blockPos(), -1);
         damageTool(context, villager, tool, level, state, target.blockPos());
-        HiredPathMemory.rememberRecent(level, target.blockPos());
+        if (level.getBlockState(target.blockPos()).getBlock() != state.getBlock()) HiredPathMemory.rememberRecent(level, target.blockPos());
         return true;
     }
 

@@ -23,6 +23,8 @@ final class SettlementTerrainSection {
     private final BlockState[] blocks;
     private final java.util.List<SettlementTerrainTick> ticks = new ArrayList<>();
     private final java.util.List<SettlementTerrainDrop> drops = new ArrayList<>();
+    private CompoundTag oreNodes = new CompoundTag();
+    private CompoundTag baselineOreNodes = new CompoundTag();
     private long version;
     private long observationVersion;
     private boolean pending;
@@ -102,6 +104,7 @@ final class SettlementTerrainSection {
             int index = index(entry.getKey());
             if (this.blocks[index] != entry.getValue()) {
                 this.blocks[index] = entry.getValue();
+                if (this.baseline[index].getBlock() != entry.getValue().getBlock()) this.oreNodes.remove(Long.toString(entry.getKey().asLong()));
                 changed = true;
             }
         }
@@ -110,6 +113,16 @@ final class SettlementTerrainSection {
             this.observationVersion++;
             this.pending = true;
         }
+    }
+
+    boolean extractOre(net.minecraft.server.level.ServerLevel level, BlockPos position, net.minecraft.world.item.ItemStack tool) {
+        if (this.conflict || !contains(position)) return false;
+        int remaining = com.jvn.villagerretaliation.interaction.work.mining.OreNodes.remaining(this.oreNodes, position, state(position));
+        if (remaining <= 1 || com.jvn.villagerretaliation.interaction.work.mining.OreNodes.silkTouch(level, tool)) return false;
+        this.oreNodes.putInt(Long.toString(position.asLong()), remaining - 1);
+        this.version++;
+        this.pending = true;
+        return true;
     }
 
     void schedule(SettlementTerrainTick tick) {
@@ -192,6 +205,11 @@ final class SettlementTerrainSection {
             return false;
         }
         if (this.pending && applied < this.version) {
+            var currentNodes = com.jvn.villagerretaliation.interaction.work.mining.OreNodes.snapshot(chunk, this.min, this.max);
+            if (!this.oreNodes.equals(this.baselineOreNodes) && !currentNodes.equals(this.baselineOreNodes)) {
+                conflict(true);
+                return false;
+            }
             for (BlockPos position : BlockPos.betweenClosed(this.min, this.max)) {
                 int index = index(position);
                 if (this.blocks[index] != this.baseline[index] && chunk.getBlockState(position) != this.baseline[index]) {
@@ -219,6 +237,7 @@ final class SettlementTerrainSection {
                     onApplied.accept(position.immutable(), before);
                 }
             }
+            com.jvn.villagerretaliation.interaction.work.mining.OreNodes.apply(chunk, this.baselineOreNodes, this.oreNodes);
             this.ticks.stream().filter(tick -> !tick.fluid()).forEach(tick -> tick.apply(chunk));
             this.drops.forEach(drop -> SettlementTerrainDrops.queue(chunk, drop));
             SettlementChunkReceipts.applied(chunk, this.receiptKey, this.id, this.version);
@@ -238,6 +257,8 @@ final class SettlementTerrainSection {
     }
 
     private void refresh(LevelChunk chunk) {
+        this.oreNodes = com.jvn.villagerretaliation.interaction.work.mining.OreNodes.snapshot(chunk, this.min, this.max);
+        this.baselineOreNodes = this.oreNodes.copy();
         boolean changed = false;
         for (BlockPos position : BlockPos.betweenClosed(this.min, this.max)) {
             int index = index(position);
@@ -298,6 +319,8 @@ final class SettlementTerrainSection {
         tag.putLong("Version", this.version);
         tag.putBoolean("Pending", this.pending);
         tag.putBoolean("Conflict", this.conflict);
+        tag.put("OreNodes", this.oreNodes.copy());
+        tag.put("BaselineOreNodes", this.baselineOreNodes.copy());
         if (!this.ticks.isEmpty()) {
             var ticks = new ListTag();
             this.ticks.forEach(tick -> ticks.add(tick.save()));
@@ -356,6 +379,8 @@ final class SettlementTerrainSection {
             section.baseline[index] = palette.get(baseline[index]);
             section.blocks[index] = palette.get(blocks[index]);
         }
+        section.oreNodes = tag.getCompound("OreNodes").copy();
+        section.baselineOreNodes = tag.getCompound("BaselineOreNodes").copy();
         section.version = Math.max(0L, tag.getLong("Version"));
         section.pending = tag.getBoolean("Pending");
         section.conflict = tag.getBoolean("Conflict");
@@ -375,7 +400,7 @@ final class SettlementTerrainSection {
             }
             section.drops.add(drop);
         }
-        if (!section.pending && (!section.ticks.isEmpty() || !section.drops.isEmpty() || !Arrays.equals(section.baseline, section.blocks))) {
+        if (!section.pending && (!section.ticks.isEmpty() || !section.drops.isEmpty() || !Arrays.equals(section.baseline, section.blocks) || !section.oreNodes.equals(section.baselineOreNodes))) {
             throw new IllegalArgumentException("Changed terrain blocks require a pending revision");
         }
         return section;

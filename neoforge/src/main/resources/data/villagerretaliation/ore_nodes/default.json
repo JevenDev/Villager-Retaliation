@@ -1,0 +1,9 @@
+{
+  "tags": [
+    "c:ores"
+  ],
+  "blocks": [
+    "minecraft:ancient_debris"
+  ],
+  "extractions": 50
+}
