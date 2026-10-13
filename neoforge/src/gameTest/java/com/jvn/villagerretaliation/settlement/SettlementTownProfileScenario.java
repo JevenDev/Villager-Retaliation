@@ -69,6 +69,10 @@ public final class SettlementTownProfileScenario {
     }
 
     public static SettlementTownProfileScenario prepare(ServerPlayer player) {
+        return prepare(player, new BlockPos(1_024, -60, 1_024), true);
+    }
+
+    static SettlementTownProfileScenario prepare(ServerPlayer player, BlockPos center, boolean openView) {
         var level = player.serverLevel();
         player.setGameMode(GameType.SURVIVAL);
         level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
@@ -76,7 +80,6 @@ public final class SettlementTownProfileScenario {
         level.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, level.getServer());
         level.setDayTime(6_000L);
         level.setWeatherParameters(100_000, 0, false, false);
-        var center = new BlockPos(1_024, -60, 1_024);
         for (var position : BlockPos.betweenClosed(center.offset(-46, -1, -46), center.offset(62, 12, 46))) {
             var state = position.getY() == center.getY() - 1 ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState();
             if (!level.getBlockState(position).equals(state)) level.setBlock(position, state, 2);
@@ -89,7 +92,7 @@ public final class SettlementTownProfileScenario {
             level.setBlockAndUpdate(center.offset(-46, 0, z), Blocks.OAK_FENCE.defaultBlockState());
             level.setBlockAndUpdate(center.offset(62, 0, z), Blocks.OAK_FENCE.defaultBlockState());
         }
-        var body = new Vec3(0.5D, -60.0D, 0.5D);
+        var body = openView ? new Vec3(0.5D, -60.0D, 0.5D) : center.above(6).getCenter();
         level.setBlockAndUpdate(BlockPos.containing(body).below(), Blocks.STONE.defaultBlockState());
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(level.getGameTime(), level.dimension().location(), center, "Civic performance town");
@@ -179,10 +182,12 @@ public final class SettlementTownProfileScenario {
                 position = fixture.origins.get(index - 96).offset(-2, 0, 2);
             }
             var villager = EntityType.VILLAGER.create(level);
-            var uuid = UUID.randomUUID();
+            var uuid = UUID.nameUUIDFromBytes(("town-profile:" + center + ":" + index)
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
             villager.setUUID(new UUID(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits() & ~1L));
             villager.setPos(position.getBottomCenter());
             villager.setOnGround(true);
+            villager.getRandom().setSeed(center.asLong() + index);
             villager.setVillagerData(villager.getVillagerData().setProfession(profession));
             villager.setVillagerXp(1);
             VillagerPresetNameRegistry.setStoredGender(villager, VillagerGender.MALE);
@@ -217,9 +222,13 @@ public final class SettlementTownProfileScenario {
             for (var resident : members) if (!fixture.builders.contains(resident))
                 require(town.returnToAutomaticStaffing(offlineLeader, resident), "only the builders remain manually pinned");
         }
-        player.connection.teleport(body.x, body.y, body.z, 0.0F, 0.0F);
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        SettlementManagementService.open(player, id);
+        if (openView) {
+            player.connection.teleport(body.x, body.y, body.z, 0.0F, 0.0F);
+            SettlementManagementService.open(player, id);
+        } else {
+            player.setPos(body);
+        }
         return fixture;
     }
 
