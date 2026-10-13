@@ -3739,5 +3739,12 @@
   "villagerretaliation.gui.conversation.transaction_agreed": "Agreed price: %s %s",
   "villagerretaliation.gui.conversation.transaction_possible": "Possible payment: %s %s",
   "villagerretaliation.gui.conversation.transaction_pending": "Payment awaiting completion: %s %s",
-  "villagerretaliation.gui.conversation.transaction_paid": "Paid: %s %s"
+  "villagerretaliation.gui.conversation.transaction_paid": "Paid: %s %s",
+  "block.villagerretaliation.vault": "Vault",
+  "block.villagerretaliation.vault_controller": "Vault Controller",
+  "block.villagerretaliation.safe": "Safe",
+  "item.villagerretaliation.storage_key": "Key",
+  "item.villagerretaliation.key_mold": "Key Mold",
+  "item.villagerretaliation.key_cast": "Unfired Key Cast",
+  "container.villagerretaliation.bank_storage": "Bank Storage"
 }

@@ -21,6 +21,9 @@ public final class VillagerRetaliationCreativeTabs {
                     .displayItems((parameters, output) -> {
                         VillagerRetaliationBlocks.PAYMENT_BOXES.forEach(block -> output.accept(block.get()));
                         output.accept(VillagerRetaliationBlocks.SELL_BOX.get());
+                        output.accept(com.jvn.villagerretaliation.storage.StorageRegistry.VAULT.get());
+                        output.accept(com.jvn.villagerretaliation.storage.StorageRegistry.CONTROLLER.get());
+                        output.accept(com.jvn.villagerretaliation.storage.StorageRegistry.SAFE.get());
                         output.accept(VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get());
                         output.accept(VillagerRetaliationBlocks.SETTLEMENT_MANAGEMENT.get());
                         output.accept(VillagerRetaliationItems.CLIPBOARD.get());

@@ -21,8 +21,9 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 
 public final class SettlementSavedData extends SavedData {
+    private net.minecraft.server.MinecraftServer bankServer;
     private static final String DATA_NAME = "villagerretaliation_settlements";
-    private static final int FORMAT_VERSION = 72;
+    private static final int FORMAT_VERSION = 73;
     final SettlementSimulationService simulation = new SettlementSimulationService();
     final SettlementAllocationService allocation = new SettlementAllocationService();
     final Map<UUID, UUID> policyRequests = new java.util.HashMap<>();
@@ -34,10 +35,15 @@ public final class SettlementSavedData extends SavedData {
     private final Map<ResourceLocation, Map<Long, VillageAllegianceId>> ownership = new java.util.HashMap<>();
 
     public static SettlementSavedData get(ServerLevel level) {
-        return level.getServer().overworld().getDataStorage().computeIfAbsent(
+        var data = level.getServer().overworld().getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(() -> missing(level.getServer()
                         .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data")),
                         SettlementSavedData::load, DataFixTypes.LEVEL), DATA_NAME);
+        if (data.bankServer != level.getServer()) {
+            data.bankServer = level.getServer();
+            data.settlements.values().forEach(town -> town.economy().bank.bind(level.getServer(), level.registryAccess()));
+        }
+        return data;
     }
 
     static SettlementSavedData get(net.minecraft.world.level.storage.DimensionDataStorage storage, java.nio.file.Path directory) {
@@ -301,6 +307,7 @@ public final class SettlementSavedData extends SavedData {
         if (readOnly() || this.settlements.get(source.id()) != source
                 || target != null && this.settlements.get(target.id()) != target) throw new IllegalStateException("Stale settlement lifecycle");
         var next = replacement == null ? null : SettlementRecord.load(replacement, level.registryAccess(), this::setDirty);
+        if (next != null) next.economy().bank.bind(level.getServer(), level.registryAccess());
         var root = save(new CompoundTag(), level.registryAccess());
         var entries = root.getList("Settlements", Tag.TAG_COMPOUND);
         entries.removeIf(raw -> {

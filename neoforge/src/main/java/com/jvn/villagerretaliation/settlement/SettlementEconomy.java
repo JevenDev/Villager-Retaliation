@@ -14,6 +14,7 @@ public final class SettlementEconomy {
     public static final int MAX_ORDERS = 64;
     private static final int MAX_POLICY_ACCOUNTS = 1_024;
     private final Runnable dirty;
+    final BankTreasury.Account bank;
     private final Map<UUID, SettlementTradeOrder> orders = new LinkedHashMap<>();
     private final Map<UUID, CurrencyAmount> orderSpending = new LinkedHashMap<>();
     private final Map<UUID, CurrencyAmount> policySpending = new LinkedHashMap<>();
@@ -28,6 +29,7 @@ public final class SettlementEconomy {
 
     SettlementEconomy(Runnable dirty) {
         this.dirty = dirty;
+        this.bank = new BankTreasury.Account(dirty);
     }
 
     public Map<UUID, SettlementTradeService.Result> lastResults() {
@@ -39,7 +41,15 @@ public final class SettlementEconomy {
     }
 
     public CurrencyAmount balance() {
-        return this.balance;
+        return this.balance.add(this.bank.value());
+    }
+
+    public void depositOverflow() {
+        var remainder = this.bank.deposit(this.balance);
+        if (!this.balance.equals(remainder)) {
+            this.balance = remainder;
+            this.dirty.run();
+        }
     }
 
     public CurrencyAmount reserve() {
@@ -75,12 +85,12 @@ public final class SettlementEconomy {
     }
 
     void credit(CurrencyAmount amount) {
-        this.balance = this.balance.add(amount);
+        this.balance = this.bank.deposit(this.balance.add(amount));
         this.dirty.run();
     }
 
     public CurrencyAmount constructionFunds() {
-        return this.balance.subtractClamped(this.reserve);
+        return balance().subtractClamped(this.reserve);
     }
 
     boolean reserveConstruction(int fee) {
@@ -89,10 +99,13 @@ public final class SettlementEconomy {
     }
 
     boolean withdraw(CurrencyAmount amount) {
-        if (this.balance.compareTo(amount) < 0) {
+        if (balance().compareTo(amount) < 0) {
             return false;
         }
-        this.balance = this.balance.subtract(amount);
+        var virtual = this.balance.min(amount);
+        var remainder = amount.subtract(virtual);
+        var removed = this.bank.withdraw(remainder);
+        this.balance = this.balance.subtract(virtual).add(removed.subtract(remainder));
         this.dirty.run();
         return true;
     }
@@ -158,7 +171,7 @@ public final class SettlementEconomy {
     }
 
     private CurrencyAmount availableBudget(CurrencyAmount dailyLimit, CurrencyAmount paid) {
-        return this.balance.subtractClamped(this.reserve)
+        return balance().subtractClamped(this.reserve)
                 .min(this.dailyBudget.subtractClamped(this.spent))
                 .min(dailyLimit.subtractClamped(paid));
     }
@@ -179,7 +192,7 @@ public final class SettlementEconomy {
     private void debitPurchase(ResourceLocation group, int count, CurrencyAmount cost, CurrencyAmount budget) {
         if (count <= 0 || cost.compareTo(budget) > 0)
             throw new IllegalStateException("Validated settlement purchase exceeded its budget");
-        this.balance = this.balance.subtract(cost);
+        if (!withdraw(cost)) throw new IllegalStateException("Treasury changed during purchase");
         this.spent = this.spent.add(cost);
         MarketVolume volume = market(group);
         this.markets.put(group, new MarketVolume(Math.addExact(volume.bought(), count), volume.sold()));
@@ -189,7 +202,7 @@ public final class SettlementEconomy {
         if (count <= 0) {
             throw new IllegalArgumentException("Settlement sale quantity must be positive");
         }
-        this.balance = this.balance.add(income);
+        credit(income);
         MarketVolume volume = market(group);
         this.markets.put(group, new MarketVolume(volume.bought(), Math.addExact(volume.sold(), count)));
         this.dirty.run();
@@ -199,6 +212,7 @@ public final class SettlementEconomy {
         CompoundTag tag = new CompoundTag();
         tag.putInt("Version", 1);
         tag.put("Balance", this.balance.save());
+        tag.put("BankStorage", this.bank.save());
         tag.put("Reserve", this.reserve.save());
         tag.put("DailyBudget", this.dailyBudget.save());
         tag.put("Spent", this.spent.save());

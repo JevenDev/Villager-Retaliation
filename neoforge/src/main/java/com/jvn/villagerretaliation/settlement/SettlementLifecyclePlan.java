@@ -111,6 +111,9 @@ final class SettlementLifecyclePlan {
         for (String key : Set.of("Balance", "Reserve", "DailyBudget", "Spent")) {
             economy.put(key, CurrencyAmount.load(economy.getCompound(key)).add(CurrencyAmount.load(oldEconomy.getCompound(key))).save());
         }
+        var bankStocks = economy.getCompound("BankStorage").getList("Stocks", Tag.TAG_COMPOUND);
+        oldEconomy.getCompound("BankStorage").getList("Stocks", Tag.TAG_COMPOUND).forEach(stock -> bankStocks.add(stock.copy()));
+        var bankTag = new CompoundTag(); bankTag.put("Stocks", bankStocks); economy.put("BankStorage", bankTag);
         var orders = economy.getList("Orders", Tag.TAG_COMPOUND);
         oldEconomy.getList("Orders", Tag.TAG_COMPOUND).forEach(order -> orders.add(order.copy()));
         var markets = economy.getList("Markets", Tag.TAG_COMPOUND);
@@ -134,7 +137,7 @@ final class SettlementLifecyclePlan {
 
     static boolean emptyForRelocation(ServerLevel level, SettlementRecord town) {
         var tag = town.save(level.registryAccess());
-        return tag.getAllKeys().stream().filter(key -> tag.get(key) instanceof ListTag)
+        return town.economy().bank.stocks.isEmpty() && tag.getAllKeys().stream().filter(key -> tag.get(key) instanceof ListTag)
                 .filter(key -> !Set.of("Delegates", "History", "ProjectHistory", "SupportServices", "ManualDuties", "ManualDutyRevisions").contains(key))
                 .allMatch(key -> ((ListTag) tag.get(key)).isEmpty());
     }
@@ -143,6 +146,7 @@ final class SettlementLifecyclePlan {
         var chunk = new ChunkPos(plot);
         var min = new BlockPos(chunk.getMinBlockX(), -30_000_000, chunk.getMinBlockZ());
         var max = new BlockPos(chunk.getMaxBlockX(), 30_000_000, chunk.getMaxBlockZ());
+        if (town.economy().bank.stocks.values().stream().anyMatch(stock -> new ChunkPos(stock.position()).toLong() == plot)) return true;
         if (town.areas().values().stream().anyMatch(area -> overlaps(min, max, area.min(), area.max()))
                 || town.projects().values().stream().anyMatch(project -> overlaps(min, max, project.min(), project.max())
                         || project.workplace() != null && overlaps(min, max, project.workplace().min(), project.workplace().max())

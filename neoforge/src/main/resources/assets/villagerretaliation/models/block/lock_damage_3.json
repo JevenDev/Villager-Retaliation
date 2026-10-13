@@ -1,0 +1,24 @@
+{
+  "textures": {
+    "lock": "minecraft:block/redstone_block"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        6,
+        -0.1
+      ],
+      "to": [
+        10,
+        10,
+        0
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lock"
+        }
+      }
+    }
+  ]
+}

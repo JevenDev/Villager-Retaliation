@@ -38,7 +38,7 @@ public final class SettlementTradeService {
 
     public static boolean withdrawCurrency(ServerPlayer player, VillageAllegianceId id, int amount) {
         SettlementRecord town = manageable(player, id, SettlementPermission.TREASURY);
-        if (town == null || amount <= 0 || amount > 4_096
+        if (town == null || !town.leader().equals(player.getUUID()) || amount <= 0 || amount > 4_096
                 || !town.economy().withdraw(CurrencyAmount.of(amount, 1L))) {
             return false;
         }

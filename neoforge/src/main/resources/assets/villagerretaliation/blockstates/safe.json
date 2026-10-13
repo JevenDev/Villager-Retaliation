@@ -1,0 +1,200 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/safe",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "charge": "true"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/mounted_charge",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "damage": "1"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_1",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "damage": "2"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_2",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "damage": "3"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_3",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/safe",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "charge": "true"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/mounted_charge",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "damage": "1"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_1",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "damage": "2"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_2",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "damage": "3"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_3",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/safe",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "charge": "true"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/mounted_charge",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "damage": "1"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_1",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "damage": "2"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_2",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "damage": "3"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_3",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/safe",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "charge": "true"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/mounted_charge",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "damage": "1"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_1",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "damage": "2"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_2",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "damage": "3"
+      },
+      "apply": {
+        "model": "villagerretaliation:block/lock_damage_3",
+        "y": 270
+      }
+    }
+  ]
+}

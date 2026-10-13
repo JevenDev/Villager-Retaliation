@@ -1,0 +1,12 @@
+{
+  "type": "villagerretaliation:key_smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "villagerretaliation:key_cast"
+  },
+  "result": {
+    "id": "villagerretaliation:storage_key"
+  },
+  "experience": 0.0,
+  "cookingtime": 200
+}

@@ -147,6 +147,7 @@ public final class SettlementLifecycleService {
     }
 
     private static void dissolutionBlockers(ServerLevel level, SettlementRecord town, List<String> blockers) {
+        if (!town.economy().bank.stocks.isEmpty()) blockers.add("Unregister or mine every bank treasury before dissolution; its noncurrency items must also be retained.");
         if (!town.economy().balance().equals(CurrencyAmount.ZERO)) blockers.add("Withdraw the treasury before dissolution.");
         if (town.depots().values().stream().anyMatch(depot -> !depot.isEmpty())) blockers.add("Empty every depot before dissolution. Its inventory belongs to the town.");
         if (town.projects().values().stream().anyMatch(SettlementProject::active)) blockers.add("Finish or cancel active construction in management first, then withdraw any refunded fees.");

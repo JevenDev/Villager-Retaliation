@@ -66,6 +66,7 @@ public class VillagerRetaliation {
         com.jvn.villagerretaliation.campaign.CampaignBlockOwnership.register(modEventBus);
         com.jvn.villagerretaliation.campaign.CampaignGeneratedBlocks.register(modEventBus);
         com.jvn.villagerretaliation.scene.encounter.EncounterActorBirths.register(modEventBus);
+        com.jvn.villagerretaliation.storage.StorageRegistry.register(modEventBus);
         VillagerRetaliationBlocks.register(modEventBus);
         VillagerRetaliationBlockEntityTypes.register(modEventBus);
         VillagerRetaliationEntityTypes.register(modEventBus);

@@ -1704,6 +1704,7 @@ public final class SettlementRecord {
         }
         if (!supportedServices.equals(SettlementStageRules.forStage(supportStage).services())) record.support.resetAdvancement();
         record.economy = SettlementEconomy.load(tag.getCompound("Economy"), record::changed);
+        record.economy.bank.load(tag.getCompound("Economy").getCompound("BankStorage"), provider);
         for (Tag raw : tag.getList("ResidentCare", Tag.TAG_COMPOUND)) {
             var resident = SettlementResidentState.load((CompoundTag) raw);
             if (record.residents.putIfAbsent(resident.id(), resident) != null) {
