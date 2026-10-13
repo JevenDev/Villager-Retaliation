@@ -23,7 +23,7 @@ public final class SettlementSupplyStock {
     public static final class Snapshot {
         private final ServerLevel level;
         private final SettlementRecord town;
-        private final java.util.Map<BlockPos, List<ItemStack>> contents = new java.util.HashMap<>();
+        private final java.util.Map<BlockPos, java.util.Map<Product, Long>> contents = new java.util.HashMap<>();
         private final java.util.Map<Key, Facts> facts = new java.util.HashMap<>();
         private final java.util.Map<BlockPos, List<Commitment>> incoming = new java.util.HashMap<>();
         private final java.util.Map<BlockPos, List<Commitment>> outgoing = new java.util.HashMap<>();
@@ -78,14 +78,14 @@ public final class SettlementSupplyStock {
         public Facts observe(BlockPos position, ItemStack sample, HiredProductionQueue excluded) {
             var canonical = positions(this.level, position).getFirst();
             var key = new Key(canonical, HiredProductionStock.product(sample).copyWithCount(1), excluded);
-            if (!this.contents.containsKey(canonical)) this.contents.put(canonical, contents(this.level, this.town, canonical));
+            if (!this.contents.containsKey(canonical)) this.contents.put(canonical, summarize(contents(this.level, this.town, canonical)));
             return this.facts.computeIfAbsent(key, ignored -> facts(canonical, sample, excluded));
         }
 
         private Facts facts(BlockPos position, ItemStack sample, HiredProductionQueue excluded) {
             var items = this.contents.get(position);
             if (items == null) return new Facts(-1, -1, -1, "storage_unavailable");
-            long stored = items.stream().filter(stack -> HiredProductionStock.matches(sample, stack)).mapToLong(ItemStack::getCount).sum();
+            long stored = items.getOrDefault(new Product(sample), 0L);
             long inbound = 0;
             long outbound = 0;
             var sources = new ArrayList<Contribution>();
@@ -119,6 +119,21 @@ public final class SettlementSupplyStock {
                     VillagerFilterPolicy.TransferOperation.PROVIDE, stack -> HiredProductionStock.matches(sample, stack));
             return new Facts(stored, outbound, inbound, "available", sources);
         }
+    }
+
+    private static java.util.Map<Product, Long> summarize(List<ItemStack> contents) {
+        if (contents == null) return null;
+        var counts = new java.util.HashMap<Product, Long>();
+        for (var stack : contents) counts.merge(new Product(stack), (long) stack.getCount(), Long::sum);
+        return java.util.Map.copyOf(counts);
+    }
+
+    private record Product(ItemStack sample) {
+        Product { sample = HiredProductionStock.product(sample).copyWithCount(1); }
+        @Override public boolean equals(Object other) {
+            return other instanceof Product product && ItemStack.isSameItemSameComponents(sample, product.sample);
+        }
+        @Override public int hashCode() { return ItemStack.hashItemAndComponents(sample); }
     }
 
     private record Commitment(HiredProductionQueue queue, ItemStack sample, long count, Contribution source) { }

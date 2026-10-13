@@ -82,6 +82,8 @@ public final class ServerRuntimeState {
         HiredJobInventory.clearRuntimeState();
         HiredOreBlockTracker.clearRuntimeState();
         HiredPathMemory.clear();
+        com.jvn.villagerretaliation.settlement.SettlementSupplyTasks.clearRuntimeState();
+        com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeGeometry.clearRuntimeState();
         HiredRoleWorkerRegistry.clearRuntimeState();
         AssignedStorageService.clearRuntimeState();
         VillagerInventoryAccess.clearRuntimeState();

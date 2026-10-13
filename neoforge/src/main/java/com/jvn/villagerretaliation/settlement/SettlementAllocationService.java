@@ -42,7 +42,7 @@ public final class SettlementAllocationService {
         entry.planning = configuration;
         entry.planningExecution = execution;
         entry.planningVersion = version;
-        entry.pending = SettlementDemandService.plan(level, town, ready -> {
+        entry.pending = SettlementDemandService.planAsync(level, town, ready -> {
             if (version == entry.version && configuration.equals(Configuration.capture(town)) && execution.equals(Execution.capture(level, town))) {
                 entry.ready = ready;
                 entry.readyVersion = version;
@@ -277,7 +277,7 @@ public final class SettlementAllocationService {
                                  List<QueueConfiguration> production, List<QueueConfiguration> transfers,
                                  List<ProjectConfiguration> projects, List<DepotConfiguration> depots,
                                  UUID leader, Map<UUID, Set<SettlementPermission>> delegates, long supplyRevision, Map<UUID, Integer> policyPriorities,
-                                 Map<UUID, SettlementEquipmentPlan> equipmentPlans) {
+                                 Map<UUID, SettlementEquipmentPlan> equipmentPlans, long recipes) {
         boolean priorityChanged(Configuration next) {
             if (!this.equipmentPlans.equals(next.equipmentPlans)) return true;
             for (var policy : this.policyPriorities.entrySet())
@@ -301,7 +301,8 @@ public final class SettlementAllocationService {
                     town.depots().values().stream().map(depot -> new DepotConfiguration(depot.id(), depot.area(), depot.position(), depot.purpose(),
                             depot.priority(), depot.stockTargets())).toList(), town.leader(), Map.copyOf(town.delegates()), town.supplyRevision(),
                     town.supplyPolicies().values().stream().collect(java.util.stream.Collectors.toMap(SettlementSupplyPolicy::id,
-                            policy -> SettlementPolicyService.priority(town, policy))), Map.copyOf(town.equipmentPlans()));
+                            policy -> SettlementPolicyService.priority(town, policy))), Map.copyOf(town.equipmentPlans()),
+                    com.jvn.villagerretaliation.item.VillagerRecipeSemantics.revision());
         }
     }
 }

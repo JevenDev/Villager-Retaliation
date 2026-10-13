@@ -20,10 +20,10 @@ final class SettlementPolicyUrgency {
     static Runnable plan(ServerLevel level, SettlementRecord town, List<WorkSupplyAllocation.Request> requests,
                          List<WorkSupplyAllocation.Stock> offers, SettlementSupplyStock.Snapshot stock,
                          java.util.function.BiFunction<UUID, Long, List<WorkSupplyRequirement>> productionInputs,
-                         java.util.function.Consumer<WorkSupplyAllocation.Result> complete) {
+                         java.util.function.Consumer<WorkSupplyAllocation.Result> complete, boolean asynchronous) {
         var state = new State(level, town, requests, offers, stock, productionInputs);
         var jobs = new ArrayList<Runnable>();
-        jobs.add(state::allocate);
+        jobs.add(asynchronous ? state.backgroundAllocation() : state::allocate);
         var claimed = new HashSet<UUID>();
         town.supplyPolicies().values().stream()
                 .filter(policy -> policy.state() == SettlementSupplyPolicy.State.ACTIVE && SettlementPolicyExecution.authorized(town, policy))
@@ -56,6 +56,41 @@ final class SettlementPolicyUrgency {
 
         void allocate() {
             this.result = WorkSupplyAllocation.allocate(List.copyOf(this.requests.values()), this.offers);
+        }
+
+        Runnable backgroundAllocation() {
+            if ((long) this.requests.size() * this.offers.size() < 256) return this::allocate;
+            return SettlementWork.repeat(new java.util.function.BooleanSupplier() {
+                private WorkSupplyAllocation.Preparation capture;
+                private WorkSupplyAllocation.Prepared snapshot;
+                private java.util.concurrent.Future<WorkSupplyAllocation.Calculation> future;
+
+                @Override public boolean getAsBoolean() {
+                    if (this.snapshot == null) {
+                        if (this.capture == null) this.capture = WorkSupplyAllocation.begin(List.copyOf(requests.values()), offers);
+                        if (!this.capture.advance(128)) return false;
+                        this.snapshot = this.capture.finish();
+                        this.capture = null;
+                    }
+                    if (this.future == null) {
+                        this.future = SettlementSupplyTasks.submit(this.snapshot);
+                        return false;
+                    }
+                    if (!this.future.isDone()) return false;
+                    try {
+                        result = this.snapshot.finish(this.future.get());
+                    } catch (java.util.concurrent.CancellationException exception) {
+                        this.future = null;
+                        return false;
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted while collecting supply allocation", exception);
+                    } catch (java.util.concurrent.ExecutionException exception) {
+                        throw new IllegalStateException("Supply allocation failed", exception.getCause());
+                    }
+                    return true;
+                }
+            });
         }
 
         Runnable policy(SettlementSupplyPolicy policy, java.util.Set<UUID> claimed) {

@@ -10,19 +10,53 @@ public final class SettlementStock {
     }
 
     public static List<SettlementDepot> supplies(SettlementRecord town) {
-        return depots(town).stream().filter(depot -> depot.purpose().providesSupplies()).toList();
+        return catalog(town).supplies;
     }
 
     public static List<SettlementDepot> outputs(SettlementRecord town) {
-        return depots(town).stream().filter(depot -> depot.purpose().acceptsOutputs()).toList();
+        return catalog(town).outputs;
     }
 
     public static List<SettlementDepot> depots(SettlementRecord town) {
-        return town.depots().values().stream()
-                .filter(depot -> town.owns(town.areas().get(depot.area())) && town.areas().get(depot.area()).enabled())
-                .sorted(Comparator.comparingInt(SettlementDepot::priority).reversed().thenComparing(SettlementDepot::id))
-                .toList();
+        return catalog(town).depots;
     }
+
+    private static Catalog catalog(SettlementRecord town) {
+        if (town.stockCatalog == null || !town.stockCatalog.matches(town)) town.stockCatalog = new Catalog(town);
+        return town.stockCatalog;
+    }
+
+    static final class Catalog {
+        final List<Entry> entries;
+        final List<SettlementDepot> depots;
+        final List<SettlementDepot> supplies;
+        final List<SettlementDepot> outputs;
+
+        Catalog(SettlementRecord town) {
+            this.entries = town.depots().values().stream().map(depot -> new Entry(depot, depot.priority(), depot.purpose(), active(town, depot))).toList();
+            this.depots = this.entries.stream().filter(Entry::active).map(Entry::depot)
+                    .sorted(Comparator.comparingInt(SettlementDepot::priority).reversed().thenComparing(SettlementDepot::id)).toList();
+            this.supplies = this.depots.stream().filter(depot -> depot.purpose().providesSupplies()).toList();
+            this.outputs = this.depots.stream().filter(depot -> depot.purpose().acceptsOutputs()).toList();
+        }
+
+        boolean matches(SettlementRecord town) {
+            if (this.entries.size() != town.depots().size()) return false;
+            for (var entry : this.entries) {
+                var depot = town.depots().get(entry.depot.id());
+                if (depot != entry.depot || depot.priority() != entry.priority || depot.purpose() != entry.purpose
+                        || active(town, depot) != entry.active) return false;
+            }
+            return true;
+        }
+
+        private static boolean active(SettlementRecord town, SettlementDepot depot) {
+            var area = town.areas().get(depot.area());
+            return town.owns(area) && area.enabled();
+        }
+    }
+
+    private record Entry(SettlementDepot depot, int priority, SettlementDepotPurpose purpose, boolean active) { }
 
     public static int count(SettlementRecord town, Predicate<ItemStack> predicate) {
         return count(supplies(town), predicate);

@@ -39,6 +39,7 @@ public final class SettlementNavigationService {
 
     private static void observeChunk(ChunkEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !(event.getChunk() instanceof LevelChunk chunk)) return;
+        com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeGeometry.invalidate(level);
         for (var town : SettlementSavedData.get(level).settlements()) {
             if (town.dimension().equals(level.dimension().location())) observe(level, town, chunk);
         }

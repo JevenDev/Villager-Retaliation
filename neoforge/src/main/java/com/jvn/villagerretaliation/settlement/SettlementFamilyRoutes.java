@@ -43,6 +43,12 @@ final class SettlementFamilyRoutes implements BlockGetter {
 
     List<BlockPos> route(BlockPos start, BlockPos target, java.util.function.Predicate<BlockPos> allowed) {
         if (start == null || target == null || !allowed.test(start) || !allowed.test(target) || !safe(start)) return List.of();
+        var key = new Key(start.immutable(), target.immutable());
+        var cached = this.town.familyRoutes.get(key);
+        if (cached != null) {
+            if (valid(cached, allowed)) return cached;
+            this.town.familyRoutes.remove(key);
+        }
         var costs = new HashMap<BlockPos, Integer>();
         var previous = new HashMap<BlockPos, BlockPos>();
         var queue = new PriorityQueue<Step>(Comparator.comparingInt(Step::estimate).thenComparing(step -> step.position));
@@ -57,7 +63,10 @@ final class SettlementFamilyRoutes implements BlockGetter {
                 var path = new ArrayList<BlockPos>();
                 for (var position = current; position != null; position = previous.get(position)) path.add(position);
                 java.util.Collections.reverse(path);
-                return path;
+                var result = List.copyOf(path);
+                this.town.familyRoutes.put(key, result);
+                if (this.town.familyRoutes.size() > 256) this.town.familyRoutes.remove(this.town.familyRoutes.keySet().iterator().next());
+                return result;
             }
             if (step.cost >= 256) continue;
             for (var direction : Direction.Plane.HORIZONTAL) {
@@ -79,6 +88,22 @@ final class SettlementFamilyRoutes implements BlockGetter {
         }
         return List.of();
     }
+
+    private boolean valid(List<BlockPos> route, java.util.function.Predicate<BlockPos> allowed) {
+        for (int index = 0; index < route.size(); index++) {
+            var next = route.get(index);
+            if (Math.abs(next.getX() - this.town.center().getX()) > this.town.radius() + 16
+                    || Math.abs(next.getZ() - this.town.center().getZ()) > this.town.radius() + 16
+                    || !allowed.test(next) || !safe(next)) return false;
+            if (index == 0) continue;
+            var previous = route.get(index - 1);
+            if (next.getY() > previous.getY() && !clear(previous.above(2))
+                    || next.getY() < previous.getY() && !clear(next.above(2))) return false;
+        }
+        return true;
+    }
+
+    record Key(BlockPos start, BlockPos target) { }
 
     private static int distance(BlockPos first, BlockPos second) {
         return Math.max(Math.abs(first.getX() - second.getX()) + Math.abs(first.getZ() - second.getZ()),

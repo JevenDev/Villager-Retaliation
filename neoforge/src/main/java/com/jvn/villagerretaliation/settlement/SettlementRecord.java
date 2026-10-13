@@ -52,6 +52,8 @@ public final class SettlementRecord {
     private final java.util.ArrayDeque<UUID> projectMaintenance = new java.util.ArrayDeque<>();
     static final int PROJECT_HISTORY_LIMIT = 32;
     static final int PROJECT_MAINTENANCE_LIMIT = 8;
+    SettlementStock.Catalog stockCatalog;
+    final Map<SettlementFamilyRoutes.Key, List<BlockPos>> familyRoutes = new LinkedHashMap<>(64, 0.75F, true);
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();

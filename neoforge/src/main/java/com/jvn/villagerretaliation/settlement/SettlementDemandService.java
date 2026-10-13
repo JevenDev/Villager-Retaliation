@@ -55,6 +55,7 @@ public final class SettlementDemandService {
         private final Map<UUID, Long> started = new LinkedHashMap<>();
         private final Map<UUID, com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue> transfers = new LinkedHashMap<>();
         private WorkSupplyAllocation.Result allocation;
+        private boolean asynchronous;
         private final Map<UUID, Long> gathered = new LinkedHashMap<>();
         private final Map<UUID, java.util.function.BooleanSupplier> consumersCurrent = new LinkedHashMap<>();
         private final net.minecraft.server.level.ServerPlayer viewer;
@@ -169,7 +170,7 @@ public final class SettlementDemandService {
                             stock.claimed, stock.incoming, stock.known)).toList();
             return SettlementPolicyUrgency.plan(this.level, this.town, metadata.values().stream()
                     .map(demand -> new WorkSupplyAllocation.Request(demand.supply(), this.started.getOrDefault(demand.supply().id(), 0L))).toList(),
-                    offers, this.stock, this::protectedInputs, result -> applyAllocation(metadata, result));
+                    offers, this.stock, this::protectedInputs, result -> applyAllocation(metadata, result), this.asynchronous);
         }
 
         private List<WorkSupplyRequirement> protectedInputs(UUID order, long amount) {
@@ -692,6 +693,14 @@ public final class SettlementDemandService {
             do { work.run(); } while (!SettlementWork.complete(work));
         }
         return snapshot;
+    }
+
+    static Runnable planAsync(ServerLevel level, SettlementRecord town, java.util.function.Consumer<Snapshot> ready) {
+        var snapshot = new Snapshot(level, town, null);
+        snapshot.asynchronous = true;
+        var work = planning(snapshot, town);
+        work.add(() -> ready.accept(snapshot));
+        return new SettlementWork(work);
     }
 
     static Runnable plan(ServerLevel level, SettlementRecord town, java.util.function.Consumer<Snapshot> ready) {

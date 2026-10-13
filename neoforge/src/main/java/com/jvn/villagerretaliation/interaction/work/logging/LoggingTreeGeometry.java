@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /** Tree classification and bounded geometry discovery shared by target planning and harvesting. */
 public final class LoggingTreeGeometry {
+    private static final Map<ServerLevel, SharedDiscovery> SHARED = new java.util.IdentityHashMap<>();
     private static final int MAX_HORIZONTAL_DISTANCE = 12;
     private static final int MAX_VERTICAL_DISTANCE = 48;
     private static final int MAX_LEAF_BRIDGE_POSITIONS = 1536;
@@ -48,7 +49,36 @@ public final class LoggingTreeGeometry {
     }
 
     static DiscoveryCache discovery(ServerLevel level, Set<ResourceLocation> filters) {
-        return discovery(level, level::hasChunkAt, filters);
+        var key = filters == null ? Set.<ResourceLocation>of() : Set.copyOf(filters);
+        var shared = SHARED.computeIfAbsent(level, ignored -> new SharedDiscovery());
+        var caches = shared.caches;
+        var cache = caches.get(key);
+        if (cache == null) {
+            cache = new DiscoveryCache(new TreeView(level, level::hasChunkAt), key);
+            cache.shared = shared;
+            caches.put(key, cache);
+            if (caches.size() > 8) caches.remove(caches.keySet().iterator().next());
+        }
+        return cache;
+    }
+
+    public static void changed(net.minecraft.world.level.chunk.LevelChunk chunk, BlockState previous, BlockState replacement) {
+        if (previous == null || previous == replacement || !(chunk.getLevel() instanceof ServerLevel level)
+                || !level.getServer().isSameThread()) return;
+        invalidate(level);
+    }
+
+    public static void invalidate(ServerLevel level) {
+        var shared = SHARED.get(level);
+        if (shared != null) shared.generation++;
+    }
+
+    public static void clearRuntimeState() {
+        SHARED.values().forEach(shared -> {
+            shared.generation++;
+            shared.caches.values().forEach(DiscoveryCache::clear);
+        });
+        SHARED.clear();
     }
 
     public static DiscoveryCache discovery(BlockGetter blocks, Predicate<BlockPos> observed, Set<ResourceLocation> filters) {
@@ -493,6 +523,11 @@ public final class LoggingTreeGeometry {
                 || state.is(Blocks.WARPED_NYLIUM);
     }
 
+    private static final class SharedDiscovery {
+        private final java.util.LinkedHashMap<Set<ResourceLocation>, DiscoveryCache> caches = new java.util.LinkedHashMap<>(8, 0.75F, true);
+        private long generation;
+    }
+
     public static final class DiscoveryCache {
         private static final Candidate NOT_A_TREE = new Candidate(null, false);
 
@@ -501,6 +536,10 @@ public final class LoggingTreeGeometry {
         private final Map<Long, Candidate> byLog = new HashMap<>();
         private final Map<Long, BlockPos> harvestRootByLog = new HashMap<>();
         private int analysisCount;
+        private SharedDiscovery shared;
+        private long generation;
+        private long tick = Long.MIN_VALUE;
+        private long revision;
 
         private DiscoveryCache(TreeView level, Set<ResourceLocation> filters) {
             this.level = level;
@@ -528,7 +567,24 @@ public final class LoggingTreeGeometry {
             return this.analysisCount;
         }
 
+        private void clear() {
+            this.analysisCount = 0;
+            this.byLog.clear();
+            this.harvestRootByLog.clear();
+        }
+
         private Candidate candidate(BlockPos pos) {
+            if (this.shared != null && this.level.blocks instanceof ServerLevel server) {
+                var shared = SHARED.computeIfAbsent(server, ignored -> new SharedDiscovery());
+                if (this.shared != shared) clear();
+                this.shared = shared;
+                long current = com.jvn.villagerretaliation.item.VillagerRecipeSemantics.revision();
+                if (this.tick != server.getGameTime() || this.revision != current || this.generation != this.shared.generation
+                        || this.byLog.size() >= 8192) clear();
+                this.generation = this.shared.generation;
+                this.revision = current;
+                this.tick = server.getGameTime();
+            }
             Candidate cached = this.byLog.get(pos.asLong());
             if (cached != null) {
                 return cached;
