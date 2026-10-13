@@ -154,6 +154,228 @@ public final class CompanionRedesignGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "companion_rescue", timeoutTicks = 160)
+    public static void rescueCompletesAndDamageCancelsWithoutSpending(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, new BlockPos(1, 2, 1));
+        villager.setNoGravity(true);
+        player.setNoGravity(true);
+        player.setPos(villager.getX() + 1.0D, villager.getY(), villager.getZ());
+        player.setShiftKeyDown(true);
+        player.getInventory().clearContent();
+        player.getInventory().setItem(2, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BREAD, 2));
+        var record = new PartyVillagerRecord(villager.getUUID(), player.getUUID(), UUID.randomUUID(), 0, PartyCommandMode.FOLLOW,
+                null, null, 0L, 24000L, 1, 32, "Companion", "", level.dimension().location(), villager.blockPosition());
+        CompanionLifecycleService.associate(level, villager, record);
+        com.jvn.villagerretaliation.combat.downed.VillagerDownedService.enterDowned(level, villager,
+                new com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver.ProtectionResult(true, List.of("test")));
+        var requiresBread = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.REVIVE_REQUIRES_BREAD;
+        boolean original = requiresBread.get();
+        requiresBread.set(true);
+        try {
+            helper.assertTrue(com.jvn.villagerretaliation.combat.downed.VillagerReviveService.begin(player, villager), "deliberate help-up begins");
+        } finally { requiresBread.set(original); }
+        com.jvn.villagerretaliation.combat.downed.VillagerReviveService.damaged(player);
+        helper.assertTrue(!com.jvn.villagerretaliation.combat.downed.VillagerReviveService.isBeingHelped(villager), "damage interrupts channel");
+        helper.assertValueEqual(player.getInventory().getItem(2).getCount(), 2, "interrupted rescue uses no resources");
+        helper.assertTrue(com.jvn.villagerretaliation.combat.downed.VillagerReviveService.begin(player, villager), "safe retry begins");
+        helper.runAfterDelay(100L, () -> {
+            helper.assertTrue(!com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(villager), "four-second rescue completes");
+            helper.assertTrue(villager.getHealth() >= villager.getMaxHealth() * 0.25F, "existing recovery health rule preserved");
+            helper.assertValueEqual(CompanionRelationshipService.bond(level, villager.getUUID(), player.getUUID()), 3, "meaningful rescue grows personal bond");
+            helper.assertTrue(!CompanionRelationshipService.rescued(level, villager, player), "rescue reward cooldown prevents spam");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty")
+    public static void secondWindBridgeKeepsRecoveryHealthOverride(GameTestHelper helper) {
+        com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompatGameTests.adapterUsesVillagerTargetAfterReviverArgument(helper);
+    }
+
+    @GameTest(template = "empty")
+    public static void dimensionReturnRequiresExplicitConsentAndHomeSafety(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, new BlockPos(1, 2, 1));
+        var state = CompanionSavedData.get(level).getOrCreate(villager.getUUID());
+        state.putUUID("Owner", UUID.randomUUID());
+        state.putString("HomeDimension", "minecraft:the_nether");
+        state.putLong("HomePosition", villager.blockPosition().asLong());
+        CompanionLifecycleService.beginDeparture(level, villager.getUUID(), "Goodbye");
+        villager.tickCount = 20;
+        CompanionLifecycleService.tick(villager);
+        helper.assertTrue(state.getString("Reason").contains("authorize dimension return"), "cross-dimension return requires owner consent");
+        helper.assertTrue(villager.level() == level, "entity stays in its current dimension while waiting");
+        var pos = helper.absolutePos(new BlockPos(4, 2, 4));
+        level.setBlockAndUpdate(pos.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+        level.setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(pos.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        helper.assertTrue(CompanionLifecycleService.safeDestination(level, villager, pos) != null, "standing destination requires a solid floor and clear headroom");
+        var observer = helper.makeMockServerPlayerInLevel();
+        observer.setPos(villager.getX() + 10.0D, villager.getY(), villager.getZ());
+        helper.assertTrue(!CompanionLifecycleService.unseen(level, villager.position(), villager), "any nearby observer blocks hidden return");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void splitAndRejoinPreservePersonalMembership(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var owner = helper.makeMockServerPlayerInLevel();
+        var leader = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level, new com.mojang.authlib.GameProfile(UUID.randomUUID(), "companion_leader"));
+        var data = PartySavedData.get(level);
+        var party = data.createParty(leader.getUUID(), level.getGameTime());
+        data.addPlayer(party, owner.getUUID());
+        var companion = record(owner.getUUID());
+        data.addVillager(party, companion);
+        helper.assertTrue(PartyService.leaveParty(owner).success(), "owner leaves multiplayer party");
+        var personal = data.partyForPlayer(owner.getUUID()).orElseThrow();
+        helper.assertTrue(personal.villager(companion.villagerId()) == companion, "same record follows owner into personal party");
+        helper.assertTrue(party.villager(companion.villagerId()) == null, "original party releases its active slot");
+        var invitation = PartyService.sendInvitation(leader, owner);
+        helper.assertTrue(invitation.success(), "solo companion owner can be invited back");
+        helper.assertTrue(PartyService.acceptInvitation(owner, invitation.invitationId()).success(), "rejoin carries companion within party cap");
+        helper.assertTrue(party.villager(companion.villagerId()) == companion, "same companion record rejoins without duplication");
+        helper.assertValueEqual(companion.recruiterId(), owner.getUUID(), "personal association remains with owner");
+        data.removeParty(party.id());
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void logoutAndPlayerDeathKeepPredictableSlots(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, new BlockPos(1, 2, 1));
+        var data = PartySavedData.get(level);
+        var party = data.createParty(player.getUUID(), level.getGameTime());
+        var record = new PartyVillagerRecord(villager.getUUID(), player.getUUID(), UUID.randomUUID(), 0, PartyCommandMode.FOLLOW,
+                null, null, 0L, 24000L, 1, 32, "Companion", "", level.dimension().location(), villager.blockPosition());
+        data.addVillager(party, record);
+        CompanionLifecycleService.associate(level, villager, record);
+        CompanionLifecycleService.onLogout(player);
+        var state = CompanionSavedData.get(level).find(villager.getUUID());
+        helper.assertValueEqual(state.getString("Status"), "Waiting for commander", "logout uses safe waiting");
+        helper.assertValueEqual(party.villagers().size(), 1, "logout preserves active slot");
+        player.setHealth(0.0F);
+        state.putLong("DeathWaitStart", level.getServer().overworld().getGameTime() - 1200L);
+        villager.tickCount = 1;
+        CompanionLifecycleService.tick(villager);
+        helper.assertTrue(state.getBoolean("Returning"), "bounded death wait transitions to a safe return attempt");
+        helper.assertValueEqual(party.villagers().size(), 1, "death does not discard the association or slot");
+        player.setHealth(player.getMaxHealth());
+        data.removeParty(party.id());
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "companion_departure")
+    public static void hiddenReturnKeepsRealEntityAndBelongings(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var source = helper.absolutePos(new BlockPos(1024, 2, 1024));
+        var home = source.offset(16, 0, 0);
+        level.getChunkAt(source);
+        level.getChunkAt(home);
+        for (var pos : List.of(source, home)) {
+            level.setBlockAndUpdate(pos.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+            level.setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+            level.setBlockAndUpdate(pos.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        }
+        var villager = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+        villager.moveTo(source.getX() + 0.5D, source.getY(), source.getZ() + 0.5D, 0, 0);
+        villager.setNoAi(true);
+        level.addFreshEntity(villager);
+        var id = villager.getUUID();
+        var inventory = com.jvn.villagerretaliation.inventory.HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(6, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BREAD, 7));
+        var state = CompanionSavedData.get(level).getOrCreate(id);
+        state.putUUID("Owner", UUID.randomUUID());
+        state.putString("HomeDimension", level.dimension().location().toString());
+        state.putLong("HomePosition", home.asLong());
+        CompanionLifecycleService.beginDeparture(level, id, "Goodbye");
+        state.putInt("DepartureTicks", 200);
+        villager.tickCount = 20;
+        helper.assertTrue(CompanionLifecycleService.unseen(level, villager.position(), villager), "return fixture is out of sight of every nearby player");
+        CompanionLifecycleService.tick(villager);
+        helper.assertValueEqual(state.getString("Status"), "At home", "unseen safe return completes");
+        helper.assertTrue(villager.blockPosition().distSqr(home) < 9.0D, "real entity reaches registered home");
+        helper.assertTrue(level.getEntity(id) == villager, "same entity and UUID survive return");
+        helper.assertValueEqual(inventory.getItem(6).getCount(), 7, "belongings survive without copying or dropping");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "companion_recruitment")
+    public static void goodbyeRejoinIsChosenFreeAndDoesNotDuplicate(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, new BlockPos(1, 2, 1));
+        player.setPos(villager.getX() + 1, villager.getY(), villager.getZ());
+        player.getInventory().clearContent();
+        CompanionRelationshipService.unlock(level, villager.getUUID(), player.getUUID(), true, -1000);
+        helper.assertTrue(PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty(), "unlock waits for player recruitment choice");
+        helper.assertTrue(PartyVillagerContractService.recruit(player, villager).success(), "player chooses to join after free grant");
+        var inventory = com.jvn.villagerretaliation.inventory.HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(6, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BREAD, 7));
+        helper.assertTrue(PartyVillagerContractService.dismiss(player, villager).success(), "safe goodbye releases active slot");
+        helper.assertTrue(PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty(), "goodbye immediately frees party slot");
+        helper.assertValueEqual(CompanionLifecycleService.owner(level, villager.getUUID()), player.getUUID(), "personal association survives goodbye");
+        helper.assertTrue(PartyVillagerContractService.recruit(player, villager).success(), "same companion rejoins without payment");
+        var party = PartyService.getPartyForPlayer(level, player.getUUID()).orElseThrow();
+        helper.assertValueEqual(party.villagers().size(), 1, "rejoin creates exactly one active record");
+        helper.assertValueEqual(inventory.getItem(6).getCount(), 7, "rejoin preserves belongings");
+        helper.assertTrue(level.getEntity(villager.getUUID()) == villager, "rejoin retains the same villager entity");
+        PartySavedData.get(level).removeParty(party.id());
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void existingEquipmentAndPaymentRegression(GameTestHelper helper) {
+        PartyGameTests.recruitmentPaymentExtensionCommandsInventoryAndDismissalAreAuthoritative(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void existingConsentedFetchRegression(GameTestHelper helper) {
+        PartyGameTests.sharedFetchSubmissionConsumesPlayerAndVillagerStacksOnlyOnce(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void existingFetchCapacityRegression(GameTestHelper helper) {
+        PartyGameTests.sharedFetchCapacityFailurePreservesEveryContributor(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void existingUnloadedMigrationRegression(GameTestHelper helper) {
+        PartyGameTests.unloadedCompanionsPersistAcrossHistoricalExpiry(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void existingReleasedCompanionCombatRegression(GameTestHelper helper) {
+        PartyGameTests.killOnSightDoesNotTargetDismissedCompanion(helper);
+    }
+
+    @GameTest(template = "empty")
+    public static void legacyRenewalBecomesFreeRejoin(GameTestHelper helper) {
+        PartyGameTests.dismissedCompanionCanRejoinThroughLegacyRenewalWithoutPayment(helper);
+    }
+
+    @GameTest(template = "empty")
+    public static void partialOwnStackCannotBeConsumedBySamePlanTwice(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        player.getInventory().clearContent();
+        player.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BONE, 10));
+        var data = PartySavedData.get(helper.getLevel());
+        var party = data.createParty(player.getUUID(), 0L);
+        var shared = new PartySharedQuestRecord(ResourceLocation.parse("villagerretaliation:partial_count"), null, 0L);
+        shared.enroll(player.getUUID(), false);
+        party.addSharedQuest(shared);
+        var plan = com.jvn.villagerretaliation.quest.PartyQuestService.planSharedItemSubmission(player, shared,
+                List.of(itemObjective("bones", ResourceLocation.parse("minecraft:bone"), 5)),
+                (objective, stack) -> stack.is(net.minecraft.world.item.Items.BONE)).orElseThrow();
+        helper.assertTrue(plan.remove(), "first settlement removes the requested amount");
+        helper.assertTrue(!plan.remove(), "same plan cannot settle a partially remaining stack twice");
+        helper.assertValueEqual(player.getInventory().getItem(0).getCount(), 5, "unrequested items stay in the inventory");
+        data.removeParty(party.id());
+        helper.succeed();
+    }
+
     private static QuestDefinition.Objective itemObjective(String id, ResourceLocation item, int count) {
         return new QuestDefinition.Objective(
                 id,

@@ -332,7 +332,8 @@ public final class PartyService {
         if (inviterParty.isPresent() && inviterParty.get().playerIds().size() >= MAX_PLAYERS) {
             return PartyResult.failure("villagerretaliation.party.error.player_limit");
         }
-        if (data.partyForPlayer(target.getUUID()).isPresent()) {
+        PartyRecord targetParty = data.partyForPlayer(target.getUUID()).orElse(null);
+        if (targetParty != null && targetParty.playerIds().size() > 1) {
             return PartyResult.failure("villagerretaliation.party.error.player_already_in_party");
         }
         long now = serverGameTime(inviter.getServer());
@@ -362,7 +363,8 @@ public final class PartyService {
             data.removeInvitation(invitationId);
             return PartyResult.failure("villagerretaliation.party.invitation_expired");
         }
-        if (data.partyForPlayer(target.getUUID()).isPresent()) {
+        PartyRecord personalParty = data.partyForPlayer(target.getUUID()).orElse(null);
+        if (personalParty != null && personalParty.playerIds().size() > 1) {
             data.removeInvitation(invitationId);
             return PartyResult.failure("villagerretaliation.party.error.already_in_party");
         }
@@ -382,17 +384,27 @@ public final class PartyService {
             return PartyResult.failure("villagerretaliation.party.error.player_limit");
         }
 
+        if (personalParty != null && (personalParty.id().equals(party == null ? null : party.id())
+                || personalParty.villagers().size() + (party == null ? 0 : party.villagers().size()) > MAX_VILLAGERS)) {
+            return PartyResult.failure("villagerretaliation.party.error.villager_limit");
+        }
         boolean created = false;
         if (party == null) {
             party = data.createParty(invitation.inviterId(), now);
             created = true;
         }
+        if (personalParty != null) data.removeParty(personalParty.id());
         if (!data.addPlayer(party, target.getUUID())) {
             if (created) {
                 data.removeParty(party.id());
             }
             data.removeInvitation(invitationId);
             return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
+        }
+        if (personalParty != null) {
+            for (var companion : personalParty.villagers()) data.addVillager(party, companion);
+            com.jvn.villagerretaliation.quest.PartyQuestService.detachAll(target.serverLevel(), personalParty);
+            PartyVillagerContractService.refreshCommandOwnership(target.getServer(), party);
         }
         data.removeInvitation(invitationId);
         return PartyResult.success("villagerretaliation.party.invitation_accepted", party.id(), invitationId);

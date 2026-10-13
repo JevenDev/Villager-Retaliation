@@ -1,25 +1,18 @@
 package com.jvn.villagerretaliation.quest;
 
-import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartySharedQuestRecord;
-import com.jvn.villagerretaliation.party.PartyVillagerRecord;
-import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiPredicate;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 
 public final class PartyQuestService {
@@ -272,6 +265,7 @@ public final class PartyQuestService {
         private final List<Removal> removals;
         private final List<ItemStack> submittedStacks;
         private final BiPredicate<QuestDefinition.Objective, ItemStack> matcher;
+        private boolean consumed;
 
         private SubmissionPlan(
                 List<Removal> removals,
@@ -292,6 +286,7 @@ public final class PartyQuestService {
         }
 
         public boolean remove() {
+            if (this.consumed) return false;
             IdentityHashMap<ItemStack, Integer> totals = new IdentityHashMap<>();
             for (Removal removal : this.removals) {
                 var source = removal.source();
@@ -307,6 +302,7 @@ public final class PartyQuestService {
                     return false;
                 }
             }
+            this.consumed = true;
             Map<Container, Boolean> changedContainers = new IdentityHashMap<>();
             for (Map.Entry<ItemStack, Integer> entry : totals.entrySet()) {
                 entry.getKey().shrink(entry.getValue());

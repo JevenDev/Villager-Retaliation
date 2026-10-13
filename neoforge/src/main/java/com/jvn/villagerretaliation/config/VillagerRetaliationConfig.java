@@ -314,6 +314,8 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> MOB_DAMAGE_DOWNS_ELIGIBLE_VILLAGERS = bind("combat.mobDamageDownsEligibleVillagers", Boolean.class);
     public static final ConfigValue<Boolean> ENVIRONMENTAL_DAMAGE_DOWNS_ELIGIBLE_VILLAGERS = bind("combat.environmentalDamageDownsEligibleVillagers", Boolean.class);
     public static final ConfigValue<Integer> DOWNED_MINIMUM_TICKS = bind("combat.downedMinimumTicks", Integer.class);
+    public static final ConfigValue<Integer> REVIVE_HELP_TICKS = bind("combat.reviveHelpTicks", Integer.class);
+    public static final ConfigValue<Boolean> REVIVE_REQUIRES_BREAD = bind("combat.reviveRequiresBread", Boolean.class);
     public static final ConfigValue<Double> DOWNED_RECOVERY_HEALTH_PERCENT = bind("combat.downedRecoveryHealthPercent", Double.class);
     public static final ConfigValue<Double> DOWNED_THREAT_RADIUS = bind("combat.downedThreatRadius", Double.class);
     public static final ConfigValue<Integer> DOWNED_QUIET_TICKS = bind("combat.downedQuietTicks", Integer.class);

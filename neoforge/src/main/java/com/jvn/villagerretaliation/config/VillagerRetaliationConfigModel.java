@@ -869,6 +869,11 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 1, max = 20 * 60 * 10)
         public int downedMinimumTicks = 160;
 
+        @RangeConstraint(min = 20, max = 600)
+        public int reviveHelpTicks = 80;
+
+        public boolean reviveRequiresBread = false;
+
         @RangeConstraint(min = 0.01D, max = 1.0D, decimalPlaces = 2)
         public double downedRecoveryHealthPercent = 0.25D;
 

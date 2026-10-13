@@ -489,6 +489,7 @@ public final class PartyQuickCommandWheel {
     private static List<PartyRosterSyncPayload.VillagerEntry> commandableVillagers() {
         return PartyRosterClient.roster().villagers().stream()
                 .filter(PartyRosterSyncPayload.VillagerEntry::quickCommandsEnabled)
+                .filter(entry -> Minecraft.getInstance().player != null && entry.canCommand(Minecraft.getInstance().player.getUUID()))
                 .toList();
     }
 

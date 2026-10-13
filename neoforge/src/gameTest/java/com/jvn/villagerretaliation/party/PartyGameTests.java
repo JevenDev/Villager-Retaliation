@@ -1276,8 +1276,7 @@ public final class PartyGameTests {
             PartyQuickCommandService.onVillagerTickPost(villager);
             helper.assertFalse(PartyQuickCommandService.overridesRecruitmentMovement(villager),
                     "regroup should release its movement override within 2.5 blocks");
-            helper.assertValueEqual(record.contractEndGameTime() - record.contractStartGameTime(),
-                    VillagerContractTime.DAY_TICKS, "one paid contract day");
+            helper.assertValueEqual(record.contractEndGameTime(), Long.MAX_VALUE, "upfront recruitment lasts until goodbye");
             helper.assertValueEqual(record.emeraldsPaid(), 32, "per-villager prepaid amount");
             helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBeforeRecruitment + 32,
                     "initial party payment must credit the villager wallet");
@@ -1310,9 +1309,13 @@ public final class PartyGameTests {
             helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
                     "ordinary party members must not access villager inventories");
             helper.assertTrue(PartyService.setAdminPrivileges(leader, member.getUUID(), true).success(),
-                    "the leader should grant inventory access through admin privileges");
+                    "the leader may grant party administration privileges");
+            helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
+                    "party administration does not grant personal equipment access");
+            record.assignCommander(member.getUUID());
+            record.setCommanderEquipmentAccess(true);
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
-                    "party admins should share villager inventories");
+                    "owner can explicitly delegate equipment access to their commander");
             helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, outsider),
                     "unrelated player job-inventory denial");
             helper.assertTrue(PartyService.setPolicies(leader, null, null, false).success(),
@@ -1322,7 +1325,8 @@ public final class PartyGameTests {
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),
                     "inventory sharing policy never locks out the leader");
             helper.assertTrue(PartyService.setAdminPrivileges(leader, member.getUUID(), false).success(),
-                    "the leader should revoke admin inventory access");
+                    "the leader may revoke party administration");
+            record.assignCommander(leader.getUUID());
             helper.assertFalse(PartyService.setPolicies(
                     member, PartyCombatMode.SELF_DEFENSE, null, false).success(),
                     "ordinary members cannot change party policies");
@@ -1367,40 +1371,20 @@ public final class PartyGameTests {
             leader.getInventory().add(new ItemStack(Items.EMERALD, 96));
             long beforeExtension = record.contractEndGameTime();
             int walletBeforeExtension = VillagerWalletService.getCurrentEmeralds(villager);
-            PartyVillagerContractService.ContractResult extension =
-                    PartyVillagerContractService.extend(leader, villager, 3);
-            helper.assertTrue(extension.success(), "three-day extension should succeed");
-            helper.assertValueEqual(extension.emeraldCost(), 96, "three-day extension cost");
-            helper.assertValueEqual(record.contractEndGameTime(), beforeExtension + 3L * VillagerContractTime.DAY_TICKS,
-                    "exact three-day duration extension");
-            helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 0, "successful extension payment");
-            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBeforeExtension + 96,
-                    "party extension payment must credit the villager wallet");
-
+            helper.assertFalse(PartyVillagerContractService.extend(leader, villager, 3).success(),
+                    "persistent companions do not accept rental extensions");
+            helper.assertValueEqual(record.contractEndGameTime(), beforeExtension, "extension rejection preserves unlimited service");
+            helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 96, "extension rejection preserves owner payment");
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBeforeExtension,
+                    "extension rejection does not credit the wallet");
             member.getInventory().add(new ItemStack(Items.EMERALD, 32));
-            long beforeMemberExtension = record.contractEndGameTime();
-            helper.assertTrue(PartyVillagerContractService.extend(member, villager, 1).success(),
-                    "ordinary party members may prolong villager contracts");
-            helper.assertValueEqual(record.contractEndGameTime(), beforeMemberExtension + VillagerContractTime.DAY_TICKS,
-                    "member-paid contract extension duration");
-            helper.assertValueEqual(VillagerCurrencyPayment.count(member), 0,
-                    "member-paid extension consumes the member's emeralds");
+            helper.assertFalse(PartyVillagerContractService.extend(member, villager, 1).success(),
+                    "ordinary members cannot manage another player's companion");
+            helper.assertValueEqual(VillagerCurrencyPayment.count(member), 32, "rejected member payment preserved");
             outsider.getInventory().add(new ItemStack(Items.EMERALD, 32));
             helper.assertFalse(PartyVillagerContractService.extend(outsider, villager, 1).success(),
-                    "unrelated players cannot prolong party contracts");
-            helper.assertValueEqual(VillagerCurrencyPayment.count(outsider), 32,
-                    "rejected outsider extension does not consume emeralds");
-
-            leader.getInventory().add(new ItemStack(Items.EMERALD, 64));
-            long beforeFailedExtension = record.contractEndGameTime();
-            helper.assertFalse(PartyVillagerContractService.extend(leader, villager, 3).success(),
-                    "insufficient extension payment must fail");
-            helper.assertValueEqual(record.contractEndGameTime(), beforeFailedExtension,
-                    "failed extension duration rollback");
-            helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 64,
-                    "failed extension payment rollback");
-            helper.assertFalse(PartyVillagerContractService.extend(leader, villager, 30).success(),
-                    "extension beyond shared maximum must fail");
+                    "outsiders cannot prolong party companionship");
+            helper.assertValueEqual(VillagerCurrencyPayment.count(outsider), 32, "rejected outsider payment preserved");
 
             int balanceBeforeDismissal = VillagerCurrencyPayment.count(leader);
             HiredJobInventory partyInventory = HiredJobInventory.getJobInventory(villager);
@@ -1597,7 +1581,10 @@ public final class PartyGameTests {
 
             player.getInventory().setItem(0, new ItemStack(Items.BONE, 2));
             HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
-            jobInventory.setItem(0, new ItemStack(Items.BONE, 3));
+            jobInventory.setItem(6, new ItemStack(Items.BONE, 3));
+            player.setPos(villager.getX() + 1, villager.getY(), villager.getZ());
+            helper.assertTrue(com.jvn.villagerretaliation.quest.QuestContributionService.offer(player, villager, shared.questId(), 6, 3),
+                    "shared fetch supplies require explicit consent");
             QuestDefinition.Objective objective = itemObjective("submit_bones", Items.BONE.builtInRegistryHolder().key().location(), 5);
             PartyQuestService.SubmissionPlan plan = PartyQuestService.planSharedItemSubmission(
                             player,
@@ -1609,7 +1596,7 @@ public final class PartyGameTests {
                     "shared submitted count");
             helper.assertTrue(plan.remove(), "validated shared submission should remove its exact source stacks");
             helper.assertTrue(player.getInventory().getItem(0).isEmpty(), "player source stack consumed exactly once");
-            helper.assertTrue(jobInventory.getItem(0).isEmpty(), "villager job source stack consumed exactly once");
+            helper.assertTrue(jobInventory.getItem(6).isEmpty(), "villager job source stack consumed exactly once");
             helper.assertTrue(PartyQuestService.planSharedItemSubmission(
                             player,
                             shared,
@@ -1643,7 +1630,10 @@ public final class PartyGameTests {
             data.changed();
             player.getInventory().setItem(0, new ItemStack(Items.BONE, 2));
             HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(contributor);
-            jobInventory.setItem(0, new ItemStack(Items.BONE, 3));
+            jobInventory.setItem(6, new ItemStack(Items.BONE, 3));
+            player.setPos(contributor.getX() + 1, contributor.getY(), contributor.getZ());
+            helper.assertTrue(com.jvn.villagerretaliation.quest.QuestContributionService.offer(player, contributor, shared.questId(), 6, 3),
+                    "shared fetch supplies require explicit consent");
             QuestDefinition.Objective objective = itemObjective("submit_bones", Items.BONE.builtInRegistryHolder().key().location(), 5);
             List<ItemStack> full = VillagerInventoryAccess.captureFullInventory(issuer).stream()
                     .map(ignored -> new ItemStack(Items.STONE, 64)).toList();
@@ -1652,12 +1642,12 @@ public final class PartyGameTests {
                     player, issuer, List.of(objective), QuestDefinition.Objective::item, shared),
                     QuestInventoryService.ItemHandInResult.NO_ROOM, "issuer room is checked before a shared removal");
             helper.assertValueEqual(player.getInventory().getItem(0).getCount(), 2, "the submitter retains its source stack");
-            helper.assertValueEqual(jobInventory.getItem(0).getCount(), 3, "the party villager retains its contribution");
+            helper.assertValueEqual(jobInventory.getItem(6).getCount(), 3, "the party villager retains its contribution");
             VillagerInventoryAccess.replaceFullInventory(issuer, List.of());
             helper.assertValueEqual(QuestInventoryService.handInRequiredObjectiveItems(
                     player, issuer, List.of(objective), QuestDefinition.Objective::item, shared),
                     QuestInventoryService.ItemHandInResult.SUCCESS, "shared sources retain the existing aggregate plan");
-            helper.assertTrue(player.getInventory().getItem(0).isEmpty() && jobInventory.getItem(0).isEmpty(),
+            helper.assertTrue(player.getInventory().getItem(0).isEmpty() && jobInventory.getItem(6).isEmpty(),
                     "successful shared submission removes each contribution once");
             helper.assertValueEqual(VillagerInventoryAccess.captureFullInventory(issuer).stream()
                     .filter(stack -> stack.is(Items.BONE)).mapToInt(ItemStack::getCount).sum(), 5,
@@ -1674,7 +1664,7 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void unloadedVillagersPersistUntilAuthoritativeExpiryAndFreeOnlyExpiredSlots(GameTestHelper helper) {
+    public static void unloadedCompanionsPersistAcrossHistoricalExpiry(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         UUID leader = UUID.randomUUID();
         long now = level.getServer().overworld().getGameTime();
@@ -1705,9 +1695,9 @@ public final class PartyGameTests {
             PartyVillagerContractService.onServerTick(level.getServer());
             helper.assertTrue(PartyService.getPartyForVillager(level, futureVillager).isPresent(),
                     "temporarily unresolved future contract must remain in roster");
-            helper.assertTrue(PartyService.getPartyForVillager(level, expiredVillager).isEmpty(),
-                    "authoritatively expired unresolved contract must be removed");
-            helper.assertValueEqual(party.villagers().size(), 1, "expired villager frees exactly one slot");
+            helper.assertTrue(PartyService.getPartyForVillager(level, expiredVillager).isPresent(),
+                    "legacy expiry migrates without discarding an unloaded companion");
+            helper.assertValueEqual(party.villagers().size(), 2, "unloaded companions retain their active slots");
         } finally {
             PartyService.deleteParty(level, party.id());
             PartyVillagerContractService.clearRuntimeState();
@@ -2568,7 +2558,7 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void killOnSightDoesNotTargetVillagerReleasedByContractExpiry(GameTestHelper helper) {
+    public static void killOnSightDoesNotTargetDismissedCompanion(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_kos_expired_contract"));
         movePlayer(helper, leader, new BlockPos(12, 2, 12));
@@ -2605,6 +2595,9 @@ public final class PartyGameTests {
         PartyVillagerContractService.clearRuntimeState();
         PartyVillagerContractService.onServerTick(level.getServer());
 
+        PartyVillagerContractService.onVillagerLoaded(released);
+        leader.setPos(released.getX() + 1, released.getY(), released.getZ());
+        helper.assertTrue(PartyVillagerContractService.dismiss(leader, released).success(), "owner chooses goodbye");
         helper.assertTrue(PartyService.getPartyForVillager(level, released.getUUID()).isEmpty(),
                 "expired contract should release the villager from the active roster");
         helper.assertTrue(PartyVillagerContractService.hasExpiredContractWithParty(released, party.id()),
@@ -2625,7 +2618,7 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
-    public static void expiredPartyContractCanBeRenewedWhileInventoryIsRetained(GameTestHelper helper) {
+    public static void dismissedCompanionCanRejoinThroughLegacyRenewalWithoutPayment(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_expired_contract_renewal"));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
@@ -2641,6 +2634,9 @@ public final class PartyGameTests {
         inventory.markPlayerPlacedSupply(HiredJobInventory.MAINHAND_SLOT);
         PartyVillagerContractService.clearRuntimeState();
         PartyVillagerContractService.onServerTick(level.getServer());
+        PartyVillagerContractService.onVillagerLoaded(villager);
+        leader.setPos(villager.getX() + 1, villager.getY(), villager.getZ());
+        helper.assertTrue(PartyVillagerContractService.dismiss(leader, villager).success(), "owner chooses goodbye before rejoining");
         leader.getInventory().add(new ItemStack(Items.EMERALD, 96));
 
         helper.assertTrue(PartyVillagerContractService.canRenewExpiredContract(level, villager, leader),
@@ -2649,10 +2645,10 @@ public final class PartyGameTests {
                 PartyVillagerContractService.renewExpired(leader, villager, 3);
         helper.assertTrue(result.success(), "the three-day expired-contract renewal should succeed");
         helper.assertValueEqual(result.days(), 3, "renewed duration");
-        helper.assertValueEqual(result.emeraldCost(), 96, "renewed cost");
+        helper.assertValueEqual(result.emeraldCost(), 0, "rejoining an associated companion is free");
         helper.assertTrue(PartyVillagerContractService.isActivePartyVillager(level, villager),
                 "renewal should restore active party membership");
-        helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 0, "renewal payment");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 96, "rejoining preserves the wallet");
         helper.assertTrue(VillagerJobInventoryAuthorization.canAccess(level, villager, leader),
                 "renewal should preserve access to the party inventory");
         helper.succeed();

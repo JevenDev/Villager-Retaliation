@@ -82,6 +82,8 @@ public final class PartyQuickCommandService {
         List<PartyVillagerRecord> participants = party.villagers().stream()
                 .filter(PartyVillagerRecord::quickCommandsEnabled)
                 .filter(record -> CompanionAuthority.canCommand(player.getUUID(), party, record))
+                .filter(record -> payload.command() == PartyQuickCommand.STAY_HERE
+                        || !CompanionRelationshipService.trustSuspended(player.serverLevel(), record.villagerId()))
                 .filter(record -> switch (payload.command()) {
                     case RANGE, MELEE, UNEQUIP_WEAPONS, REEQUIP_WEAPONS, LOOT_CONTAINERS ->
                             CompanionAuthority.canEquip(player.getUUID(), party, record);
@@ -167,6 +169,11 @@ public final class PartyQuickCommandService {
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
         if (record == null || !record.quickCommandsEnabled() || !villager.isAlive()) {
+            clearAllOrders(villager);
+            return;
+        }
+        var assignedCommander = level.getServer().getPlayerList().getPlayer(record.commanderId());
+        if (assignedCommander == null || !assignedCommander.isAlive() || assignedCommander.serverLevel() != level) {
             clearAllOrders(villager);
             return;
         }
@@ -305,7 +312,8 @@ public final class PartyQuickCommandService {
             PartyRecord party,
             List<PartyVillagerRecord> participants,
             boolean enabled) {
-        if (!VillagerMountAssignmentService.featureAvailable()) {
+        if (!VillagerMountAssignmentService.featureAvailable()
+                || party.villagers().stream().anyMatch(record -> !CompanionAuthority.canCommand(player.getUUID(), party, record))) {
             return 0;
         }
         int affected = (int) participants.stream()
@@ -633,6 +641,7 @@ public final class PartyQuickCommandService {
         for (PartyVillagerRecord record : records) {
             record.setRegrouping(false);
             record.setFollowing();
+            CompanionLifecycleService.resume(player.serverLevel(), record.villagerId(), true);
             Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
             if (villager == null) {
                 clearMovementOrder(record.villagerId());
@@ -665,13 +674,14 @@ public final class PartyQuickCommandService {
                 continue;
             }
             BlockPos target = villager.blockPosition().immutable();
+            CompanionLifecycleService.resume(level, record.villagerId(), false);
             record.setStaying(level.dimension().location(), target);
             record.setRegrouping(false);
             clearMovementOrder(villager);
             MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
             com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
             VillagerRetaliationHandler.clearCustomTarget(villager);
-            VillagerRecruitmentService.applyPartyStay(level, villager, player.getUUID(), target);
+            VillagerRecruitmentService.applyPartyStay(level, villager, record.commanderId(), target);
             com.jvn.villagerretaliation.mount.VillagerMountTravelService
                     .stopAssignedMountNavigation(villager);
             affected++;
@@ -863,7 +873,7 @@ public final class PartyQuickCommandService {
             ServerPlayer commander) {
         record.setFollowing();
         record.setRegrouping(true);
-        replaceMovementOrder(villager, RuntimeOrder.regroup(commander.getUUID()));
+        replaceMovementOrder(villager, RuntimeOrder.regroup(record.commanderId()));
         VillagerRecruitmentService.applyPartyFollowing(level, villager, record.commanderId());
         PartyService.markChanged(level);
         syncRuntimeState(villager, party);

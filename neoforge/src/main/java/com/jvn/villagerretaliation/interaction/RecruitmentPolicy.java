@@ -24,6 +24,8 @@ public final class RecruitmentPolicy {
         Decision inputs = validInputs(level, villager, player);
         if (!inputs.allowed()) return inputs;
         if (villager.isBaby()) return Decision.denied(DenialReason.BABY);
+        var companionOwner = com.jvn.villagerretaliation.party.CompanionLifecycleService.owner(level, villager.getUUID());
+        if (companionOwner != null && !companionOwner.equals(player.getUUID())) return Decision.denied(DenialReason.OWNED_BY_ANOTHER_PLAYER);
         if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)
                 && !(transferCivicDuty && com.jvn.villagerretaliation.settlement.SettlementWorkforceService
                         .canTransferToPersonalHire(level, villager, player))) {

@@ -281,6 +281,7 @@ public final class VillagerRetaliationEvents {
         ForcedDialogueService.maybeTriggerPlayerAiming(event.getServer());
         VillagerInventoryAccess.onServerTick(event.getServer());
         PartyVillagerContractService.onServerTick(event.getServer());
+        com.jvn.villagerretaliation.combat.downed.VillagerReviveService.tick(event.getServer());
         SceneRuntime.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementViewService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementBuildingService.tick(event.getServer());
@@ -352,6 +353,7 @@ public final class VillagerRetaliationEvents {
             VillagerAmbientIndicatorService.onVillagerDamaged(level, villager, event.getSource().getEntity());
             VillagerMoodService.recordVillagerDamaged(level, villager, event.getSource().getEntity());
         }
+        if (event.getNewDamage() > 0) com.jvn.villagerretaliation.combat.downed.VillagerReviveService.damaged(event.getEntity());
         VillagerDownedService.onLivingDamagePost(event);
         if (event.getEntity() instanceof Villager companion && event.getNewDamage() > 0) {
             com.jvn.villagerretaliation.party.CompanionLifecycleService.damaged(companion);
@@ -692,6 +694,12 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (event.getEntity() instanceof ServerPlayer helperPlayer && event.getTarget() instanceof Villager patient
+                && com.jvn.villagerretaliation.combat.downed.VillagerReviveService.interact(helperPlayer, patient, event.getHand(), event.getItemStack())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+        }
         if (event.getHand() == InteractionHand.MAIN_HAND && event.getEntity() instanceof ServerPlayer escortPlayer
                 && (escortPlayer.isShiftKeyDown() || !(event.getTarget() instanceof Villager) && event.getItemStack().isEmpty())
                 && com.jvn.villagerretaliation.quest.follower.QuestFollowerService.interact(escortPlayer, event.getTarget())) {
@@ -892,6 +900,12 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (event.getEntity() instanceof ServerPlayer helperPlayer && event.getTarget() instanceof Villager patient
+                && com.jvn.villagerretaliation.combat.downed.VillagerReviveService.interact(helperPlayer, patient, event.getHand(), event.getItemStack())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+        }
         if (event.getTarget() instanceof Villager
                 && event.getEntity() instanceof Player player
                 && VillagerInteractionService.shouldDeferVillagerInteractionToHeldItem(player, event.getHand())) {
@@ -1110,6 +1124,18 @@ public final class VillagerRetaliationEvents {
                     .onEntityPermanentlyRemoved(event.getEntity());
         }
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
+            if (villager.level() instanceof ServerLevel companionLevel) {
+                var companionState = com.jvn.villagerretaliation.party.CompanionSavedData.get(companionLevel).find(villager.getUUID());
+                if (companionState != null) {
+                    com.jvn.villagerretaliation.party.CompanionLifecycleService.rememberLocation(companionLevel, villager, companionState);
+                    if (removalReason == Entity.RemovalReason.KILLED || removalReason == Entity.RemovalReason.DISCARDED) {
+                        companionState.putBoolean("Returning", false);
+                        companionState.putString("Status", "Unavailable");
+                        companionState.putString("Reason", "Entity permanently removed");
+                    }
+                }
+            }
+            com.jvn.villagerretaliation.combat.downed.VillagerReviveService.damaged(villager);
             VillagerDownedService.onVillagerUnloaded(villager);
             com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerUnloaded(villager);
             com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onUnloaded(villager);

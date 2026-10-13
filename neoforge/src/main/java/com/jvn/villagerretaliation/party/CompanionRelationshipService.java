@@ -1,7 +1,11 @@
 package com.jvn.villagerretaliation.party;
 
 import com.google.gson.JsonObject;
-import com.jvn.villagerretaliation.action.*;
+import com.jvn.villagerretaliation.action.ActionResult;
+import com.jvn.villagerretaliation.action.ActionStatus;
+import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.action.VillagerActionRegistry;
+import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
@@ -68,6 +72,11 @@ public final class CompanionRelationshipService {
         data.setDirty();
         publishBond(level, villagerId, playerId, bonds.getInt(playerId.toString()));
         return true;
+    }
+
+    public static boolean trustSuspended(ServerLevel level, UUID villagerId) {
+        var state = CompanionSavedData.get(level).find(villagerId);
+        return state != null && state.getBoolean("TrustSuspended");
     }
 
     public static int bond(ServerLevel level, UUID villagerId, UUID playerId) {

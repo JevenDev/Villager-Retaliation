@@ -3,11 +3,15 @@ package com.jvn.villagerretaliation.command;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
-import com.jvn.villagerretaliation.party.*;
+import com.jvn.villagerretaliation.party.CompanionAuthority;
+import com.jvn.villagerretaliation.party.CompanionLifecycleService;
+import com.jvn.villagerretaliation.party.CompanionSavedData;
+import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartySyncService;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.UuidArgument;

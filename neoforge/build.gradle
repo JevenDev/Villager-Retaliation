@@ -38,6 +38,7 @@ def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('
 def campaignScenarioPack = rootProject.file(providers.gradleProperty('campaignScenarioPack').orElse('neoforge/src/gameTest/resources/campaign_fixture').get())
 def campaignScenarioReports = layout.buildDirectory.dir("campaign-scenario-reports/${System.currentTimeMillis()}")
 def campaignConversationMultiplayerDirectory = layout.buildDirectory.dir("campaign-conversation-multiplayer/${System.currentTimeMillis()}")
+def companionClientSmokeDirectory = layout.buildDirectory.dir("companion-client-smoke/${System.currentTimeMillis()}")
 def dialogueCameraClientSmokeDirectory = layout.buildDirectory.dir("dialogue-camera-client-smoke/${System.currentTimeMillis()}")
 
 def campaignConversationClientSmokeDirectory = layout.buildDirectory.dir("campaign-conversation-client-smoke/${System.currentTimeMillis()}")
@@ -67,6 +68,14 @@ neoForge {
             gameDirectory.set(dialogueCameraClientSmokeDirectory)
             systemProperty 'villagerretaliation.dialogueCameraClientSmoke', dialogueCameraClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'DialogueCameraSmoke', '--width', '1280', '--height', '720'
+        }
+
+        companionClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(companionClientSmokeDirectory)
+            systemProperty 'villagerretaliation.companionClientSmoke', companionClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'CompanionSmoke', '--width', '1280', '--height', '720'
         }
 
         campaignConversationClientSmoke {
@@ -232,6 +241,26 @@ tasks.named('runDialogueCameraClientSmoke') {
         def result = new File(dialogueCameraClientSmokeDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Dialogue camera client smoke passed'))
             throw new GradleException("Dialogue camera client checks did not finish. Inspect ${dialogueCameraClientSmokeDirectory.get().asFile}")
+    }
+}
+
+tasks.named('runCompanionClientSmoke') {
+    dependsOn tasks.named('runGameTestServer')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Companion smoke requires generated GameTest metadata.')
+        copy {
+            from metadata
+            into new File(companionClientSmokeDirectory.get().asFile, 'saves/CompanionSmoke')
+        }
+        new File(companionClientSmokeDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\n'
+    }
+    doLast {
+        def result = new File(companionClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Companion client smoke passed')) {
+            throw new GradleException('Companion client smoke did not finish. Inspect ' + companionClientSmokeDirectory.get().asFile)
+        }
     }
 }
 

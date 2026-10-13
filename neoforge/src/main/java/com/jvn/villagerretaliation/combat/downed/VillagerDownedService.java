@@ -204,6 +204,7 @@ public final class VillagerDownedService {
             return;
         }
 
+        if (VillagerReviveService.isBeingHelped(villager)) return;
         if (now < state.getLong(RECOVERY_AT_KEY)) {
             return;
         }
@@ -256,6 +257,7 @@ public final class VillagerDownedService {
     public static void clearRuntimeState() {
         NEXT_THREAT_SCAN_TICKS.clear();
         PENDING_ABSORPTION_RESTORE.clear();
+        VillagerReviveService.clearRuntimeState();
     }
 
     public static boolean isDowned(Villager villager) {

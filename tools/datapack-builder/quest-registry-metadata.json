@@ -727,6 +727,58 @@
     ],
     "actions": [
       {
+        "id": "companion_unlock",
+        "aliases": [],
+        "kind": "companion_unlock",
+        "schema": {
+          "properties": {
+            "free": {
+              "type": "boolean"
+            },
+            "minimum_reputation": {
+              "type": "integer",
+              "minimum": -1000,
+              "maximum": 1000
+            }
+          }
+        },
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ]
+      },
+      {
+        "id": "companion_bond",
+        "aliases": [],
+        "kind": "companion_bond",
+        "schema": {
+          "required": [
+            "experience_id",
+            "amount"
+          ],
+          "properties": {
+            "experience_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "amount": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            }
+          }
+        },
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ]
+      },
+      {
         "id": "follower",
         "aliases": [],
         "kind": "follower",
@@ -3268,6 +3320,66 @@
         }
       },
       {
+        "id": "villagerretaliation:companion_bond",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Companion bond",
+        "description": "Built-in Companion bond type.",
+        "browser_available": true,
+        "schema": {
+          "properties": {
+            "experience_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "amount": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            }
+          },
+          "required": [
+            "experience_id",
+            "amount"
+          ]
+        }
+      },
+      {
+        "id": "villagerretaliation:companion_unlock",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Companion unlock",
+        "description": "Built-in Companion unlock type.",
+        "browser_available": true,
+        "schema": {
+          "properties": {
+            "free": {
+              "type": "boolean"
+            },
+            "minimum_reputation": {
+              "type": "integer",
+              "minimum": -1000,
+              "maximum": 1000
+            }
+          }
+        }
+      },
+      {
         "id": "villagerretaliation:counter",
         "aliases": [
           "villagerretaliation:add_counter",
@@ -5228,6 +5340,8 @@
         "campaign_reward",
         "campaign_standing",
         "clear_tag",
+        "companion_bond",
+        "companion_unlock",
         "counter",
         "dialogue",
         "draw_weapon",

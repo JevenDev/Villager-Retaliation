@@ -129,7 +129,10 @@ public final class CompanionLifecycleService {
         state.remove("WalkTarget");
         data.setDirty();
         var villager = VillagerEntityResolver.loaded(level.getServer(), villagerId);
-        if (villager != null) VillagerCommandController.clear(villager);
+        if (villager != null) {
+            PartyQuickCommandService.onVillagerUnloaded(villager);
+            VillagerCommandController.clear(villager);
+        }
     }
 
     public static void rememberLocation(ServerLevel level, Villager villager, CompoundTag state) {
@@ -155,6 +158,17 @@ public final class CompanionLifecycleService {
                 villager.getNavigation().stop();
             }
         }
+    }
+
+    public static void resume(ServerLevel level, UUID villagerId, boolean following) {
+        var data = CompanionSavedData.get(level);
+        var state = data.find(villagerId);
+        if (state == null) return;
+        state.putBoolean("Returning", false);
+        state.putString("Status", following ? "Active" : "Waiting here");
+        state.putString("Reason", following ? "Following assigned commander" : "Wait Here keeps the active party slot");
+        state.remove("DeathWaitStart");
+        data.setDirty();
     }
 
     public static boolean tick(Villager villager) {

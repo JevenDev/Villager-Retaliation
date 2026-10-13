@@ -6066,6 +6066,64 @@
             "properties": {
               "type": {
                 "enum": [
+                  "companion_unlock"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "free": {
+                "type": "boolean"
+              },
+              "minimum_reputation": {
+                "type": "integer",
+                "minimum": -1000,
+                "maximum": 1000
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "companion_bond"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "experience_id",
+              "amount"
+            ],
+            "properties": {
+              "experience_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "amount": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
                   "follower"
                 ]
               }
@@ -6463,6 +6521,8 @@
             "campaign_reward",
             "campaign_standing",
             "clear_tag",
+            "companion_bond",
+            "companion_unlock",
             "counter",
             "dialogue",
             "draw_weapon",
@@ -6535,6 +6595,8 @@
             "clear_tag",
             "close",
             "close_branch",
+            "companion_bond",
+            "companion_unlock",
             "complete",
             "consume",
             "counter",

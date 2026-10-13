@@ -90,7 +90,7 @@ public final class VillagerSecondWindCompat {
         Villager villager = villagerArgument(args);
         return switch (methodName) {
             case "isDowned", "canRevive" -> villager != null && VillagerDownedService.isDowned(villager);
-            case "revive" -> revive(villager);
+            case "revive" -> revive(villager, playerArgument(args));
             case "reviveHealthOverride" -> villager == null
                     ? OptionalDouble.empty()
                     : VillagerDownedService.recoveryHealth(villager);
@@ -107,9 +107,15 @@ public final class VillagerSecondWindCompat {
         return null;
     }
 
-    private static boolean revive(Villager villager) {
+    private static ServerPlayer playerArgument(Object[] args) {
+        if (args != null) for (Object argument : args) if (argument instanceof ServerPlayer player) return player;
+        return null;
+    }
+
+    private static boolean revive(Villager villager, ServerPlayer player) {
         if (villager == null || !VillagerDownedService.isDowned(villager)) return false;
         VillagerDownedService.recover(villager);
+        com.jvn.villagerretaliation.combat.downed.VillagerReviveService.externalRescue(player, villager);
         return !VillagerDownedService.isDowned(villager);
     }
 }
