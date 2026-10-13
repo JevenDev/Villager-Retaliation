@@ -369,6 +369,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int duelStakeIndex;
     private boolean duelStartPending;
     private final List<DialogueOption> options = new ArrayList<>();
+    private OptionListContext outgoingDialogueOptions;
+    private boolean dialogueOptionsHidden;
+    private long dialogueOptionsTransitionStartMillis = -1L;
+    private int renderOptionOffsetY;
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<GiftPreferenceView> giftPreferences = new ArrayList<>();
     private final VillagerFamilyTreeSnapshot familyTree;
@@ -782,7 +786,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments) {
-        boolean restoreOptions = this.automaticDialogue.active() || this.greetingRequest.pending();
+        boolean restoreOptions = this.automaticDialogue.active();
         cancelAutomaticDialogue();
         dialogueCameraRevision = ++nextDialogueCameraRevision;
         dialogueCameraSubjects.clear();
@@ -804,7 +808,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (this.greetingRequest.accept(payload.greetingRequestId(), Util.getMillis())) {
             if (payload.exchanges().isEmpty()) acceptVillagerDialogue(payload.text(), payload.textSegments());
             else acceptDialogueExchanges(payload.exchanges());
-            rebuildOptionsKeepingListPosition();
         }
     }
 
@@ -847,7 +850,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void tickAutomaticDialogue() {
-        if (this.greetingRequest.expire(Util.getMillis())) rebuildOptionsKeepingListPosition();
+        this.greetingRequest.expire(Util.getMillis());
         if (!this.automaticDialogue.active() || this.closingWithAnimation) return;
         if (this.page != DialoguePage.TALK) {
             cancelAutomaticDialogue();
@@ -856,13 +859,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         switch (this.automaticDialogue.poll(Util.getMillis(), isDialogueTextAnimationComplete(), !this.dialogueExchanges.isEmpty())) {
             case ADVANCE -> showNextDialogueExchange();
-            case FINISH -> {
-                this.dialogueCameraBatch = List.of();
-                if (this.closeAfterDialogueExchanges) closeFromServer();
-                else rebuildOptionsKeepingListPosition();
-            }
+            case FINISH -> finishAutomaticDialogue();
             case NONE -> { }
         }
+    }
+
+    private void finishAutomaticDialogue() {
+        this.automaticDialogue.cancel();
+        this.dialogueCameraBatch = List.of();
+        if (this.closeAfterDialogueExchanges) closeFromServer();
+        else rebuildOptionsKeepingListPosition();
     }
 
     private void cancelAutomaticDialogue() {
@@ -1064,6 +1070,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         double interactionMouseY = interactionMouseY(mouseY);
         double interactionContentMouseX = interactionContentMouseX(mouseX);
+        if (isPointInsideInteractionDialogueScrollArea(mouseX, interactionMouseY)
+                && tryAdvanceDialogueText()) {
+            return true;
+        }
         if (this.page == DialoguePage.GIFT
                 && (tryClickGiftPage(interactionContentMouseX, interactionMouseY)
                 || this.giftButton != null && this.giftButton.isMouseOver(interactionContentMouseX, interactionMouseY))) {
@@ -1379,9 +1389,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void rebuildOptions() {
+        boolean hideForDialogue = this.automaticDialogue.active();
+        if (hideForDialogue != this.dialogueOptionsHidden) {
+            this.outgoingDialogueOptions = hideForDialogue && !this.options.isEmpty() && usesInteractionOptionStack()
+                    ? new OptionListContext(true) : null;
+            this.dialogueOptionsHidden = hideForDialogue;
+            this.dialogueOptionsTransitionStartMillis = Util.getMillis();
+        }
         this.options.clear();
         this.optionLayoutVersion++;
-        if (this.automaticDialogue.active() || this.greetingRequest.pending()) {
+        if (this.automaticDialogue.active()) {
             // Automatic greetings reveal both speakers without adding a Continue choice.
         } else if (!this.dialogueExchanges.isEmpty()) {
             addOption("conversation.continue", this::showNextDialogueExchange);
@@ -2893,9 +2910,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     java.util.UUID beginGreetingRequest() {
         if (this.automaticDialogue.active() || this.greetingRequest.pending() || this.closingWithAnimation
                 || this.clipboardMenu || this.page != DialoguePage.TALK) return null;
-        java.util.UUID requestId = this.greetingRequest.begin(Util.getMillis());
-        rebuildOptionsKeepingListPosition();
-        return requestId;
+        return this.greetingRequest.begin(Util.getMillis());
     }
 
     private void tickMouseEasterEggs() {
@@ -3232,6 +3247,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void activateSelected() {
+        if (this.greetingRequest.pending()) return;
         if (usesRootIconMenu()) {
             List<InteractionMenuButton> buttons = interactionMenuButtons();
             int selectedIndex = selectedInteractionMenuButtonIndex(buttons);
@@ -3562,10 +3578,28 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderOptions(GuiGraphics graphics, int mouseX, int mouseY, int top) {
-        VillagerInteractionOptionList.render(this.optionListContext, graphics, mouseX, mouseY);
+        float progress = dialogueOptionsTransitionProgress();
+        if (progress >= 1.0F) this.outgoingDialogueOptions = null;
+        OptionListContext context = this.outgoingDialogueOptions != null ? this.outgoingDialogueOptions : this.optionListContext;
+        int distance = this.height - context.optionsTop() + INTERACTION_STATE_BOTTOM_ENTRANCE_PADDING;
+        this.renderOptionOffsetY = Math.round(distance * (this.dialogueOptionsHidden
+                ? easeInCubic(progress) : 1.0F - easeOutCubic(progress)));
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, this.renderOptionOffsetY, 0.0F);
+        VillagerInteractionOptionList.render(context, graphics,
+                progress < 1.0F ? -1 : mouseX, progress < 1.0F ? -1 : mouseY);
+        graphics.pose().popPose();
+        this.renderOptionOffsetY = 0;
+        if (progress < 1.0F || this.dialogueOptionsHidden) return;
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0 && hovered < this.options.size() && !this.options.get(hovered).reason().isBlank())
             renderInteractionTooltip(graphics, List.of(Component.literal(this.options.get(hovered).reason())), mouseX, mouseY);
+    }
+
+    private float dialogueOptionsTransitionProgress() {
+        if (this.dialogueOptionsTransitionStartMillis < 0L) return 1.0F;
+        return Mth.clamp((Util.getMillis() - this.dialogueOptionsTransitionStartMillis)
+                / INTERACTION_STATE_TRANSITION_DURATION_MILLIS, 0.0F, 1.0F);
     }
 
     private void renderProfilePage(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -4971,6 +5005,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return List.copyOf(dialogueLines);
     }
 
+    private boolean tryAdvanceDialogueText() {
+        if (trySkipDialogueTextAnimation()) return true;
+        if (!this.dialogueExchanges.isEmpty()) {
+            showNextDialogueExchange();
+            return true;
+        }
+        if (this.automaticDialogue.active()) {
+            finishAutomaticDialogue();
+            return true;
+        }
+        if (this.closeAfterDialogueExchanges) {
+            this.dialogueSpeech = null;
+            this.closeAfterDialogueExchanges = false;
+            closeFromServer();
+            return true;
+        }
+        return false;
+    }
+
     private boolean trySkipDialogueTextAnimation() {
         if (isDialogueTextAnimationComplete()) {
             return false;
@@ -5683,6 +5736,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean tryActivateHoveredOption(double mouseX, double mouseY) {
+        if (dialogueOptionsTransitionProgress() < 1.0F) return false;
         if (usesRootIconMenu()) {
             return false;
         }
@@ -6943,6 +6997,28 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private final class OptionListContext implements VillagerInteractionOptionList.Context {
+        private final List<DialogueOption> snapshot;
+        private final VillagerInteractionOptionList.LayoutCache snapshotLayout = new VillagerInteractionOptionList.LayoutCache();
+        private final int snapshotLeft, snapshotTop, snapshotWidth, snapshotViewportHeight;
+        private final float snapshotScroll;
+
+        private OptionListContext() {
+            this(false);
+        }
+
+        private OptionListContext(boolean capture) {
+            this.snapshot = capture ? List.copyOf(options) : null;
+            this.snapshotLeft = capture ? VillagerInteractionScreen.this.optionsLeft() : 0;
+            this.snapshotTop = capture ? VillagerInteractionScreen.this.optionsTop() : 0;
+            this.snapshotWidth = capture ? VillagerInteractionScreen.this.optionWidth() : 0;
+            this.snapshotViewportHeight = capture ? VillagerInteractionScreen.this.optionViewportHeight() : 0;
+            this.snapshotScroll = capture ? state.optionScroll() : 0.0F;
+        }
+
+        private List<DialogueOption> displayedOptions() {
+            return this.snapshot != null ? this.snapshot : options;
+        }
+
         @Override
         public long optionLayoutVersion() {
             return VillagerInteractionScreen.this.optionLayoutVersion;
@@ -6950,7 +7026,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public VillagerInteractionOptionList.LayoutCache optionLayout() {
-            return VillagerInteractionScreen.this.optionLayout;
+            return this.snapshot != null ? this.snapshotLayout : VillagerInteractionScreen.this.optionLayout;
         }
 
         @Override
@@ -6960,17 +7036,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int optionsLeft() {
-            return VillagerInteractionScreen.this.optionsLeft();
+            return this.snapshot != null ? this.snapshotLeft : VillagerInteractionScreen.this.optionsLeft();
         }
 
         @Override
         public int optionsTop() {
-            return VillagerInteractionScreen.this.optionsTop();
+            return this.snapshot != null ? this.snapshotTop : VillagerInteractionScreen.this.optionsTop();
         }
 
         @Override
         public int optionWidth() {
-            return VillagerInteractionScreen.this.optionWidth();
+            return this.snapshot != null ? this.snapshotWidth : VillagerInteractionScreen.this.optionWidth();
         }
 
         @Override
@@ -6985,27 +7061,27 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int optionCount() {
-            return VillagerInteractionScreen.this.options.size();
+            return displayedOptions().size();
         }
 
         @Override
         public String optionLabel(int index) {
-            return VillagerInteractionScreen.this.options.get(index).label();
+            return displayedOptions().get(index).label();
         }
 
         @Override
         public int selectedOption() {
-            return VillagerInteractionScreen.this.state.selectedOption();
+            return this.snapshot != null ? -1 : VillagerInteractionScreen.this.state.selectedOption();
         }
 
         @Override
         public float optionScroll() {
-            return VillagerInteractionScreen.this.state.optionScroll();
+            return this.snapshot != null ? this.snapshotScroll : VillagerInteractionScreen.this.state.optionScroll();
         }
 
         @Override
         public int optionViewportHeight() {
-            return VillagerInteractionScreen.this.optionViewportHeight();
+            return this.snapshot != null ? this.snapshotViewportHeight : VillagerInteractionScreen.this.optionViewportHeight();
         }
 
         @Override
@@ -7060,7 +7136,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int guiScissorOffsetY() {
-            return VillagerInteractionScreen.this.renderSlideOffsetY;
+            return VillagerInteractionScreen.this.renderSlideOffsetY + renderOptionOffsetY;
         }
 
         @Override
@@ -7080,12 +7156,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public boolean pixelOptionKeyboardFocusVisible() {
-            return VillagerInteractionScreen.this.keyboardOptionFocusVisible;
+            return this.snapshot == null && VillagerInteractionScreen.this.keyboardOptionFocusVisible;
         }
 
         @Override
         public String pixelOptionLabel(int index) {
-            return VillagerInteractionScreen.this.interactionOptionLabel(index);
+            return this.snapshot != null ? this.snapshot.get(index).label() : VillagerInteractionScreen.this.interactionOptionLabel(index);
         }
 
         @Override
@@ -7116,46 +7192,46 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public boolean pixelOptionHighlightActive(int index) {
             return index >= 0
-                    && index < VillagerInteractionScreen.this.options.size()
-                    && !VillagerInteractionScreen.this.options.get(index).locked();
+                    && index < displayedOptions().size()
+                    && !displayedOptions().get(index).locked();
         }
 
         @Override
         public ResourceLocation pixelOptionIconTexture(int index) {
-            return VillagerInteractionScreen.this.options.get(index).locked()
+            return displayedOptions().get(index).locked()
                     ? VillagerRetaliationClientAssets.INTERACTION_LOCKED_ICON_TEXTURE
                     : null;
         }
 
         @Override
         public int pixelOptionIconWidth(int index) {
-            return VillagerInteractionScreen.this.options.get(index).locked()
+            return displayedOptions().get(index).locked()
                     ? INTERACTION_LOCKED_ICON_WIDTH
                     : 0;
         }
 
         @Override
         public int pixelOptionIconHeight(int index) {
-            return VillagerInteractionScreen.this.options.get(index).locked()
+            return displayedOptions().get(index).locked()
                     ? INTERACTION_LOCKED_ICON_HEIGHT
                     : 0;
         }
 
         @Override
         public int pixelOptionIconTextGap(int index) {
-            return VillagerInteractionScreen.this.options.get(index).locked()
+            return displayedOptions().get(index).locked()
                     ? INTERACTION_LOCKED_ICON_TEXT_GAP
                     : 0;
         }
 
         @Override
         public boolean pixelOptionHasCheckbox(int index) {
-            return VillagerInteractionScreen.this.options.get(index).checkbox();
+            return displayedOptions().get(index).checkbox();
         }
 
         @Override
         public boolean pixelOptionChecked(int index) {
-            return VillagerInteractionScreen.this.options.get(index).checked();
+            return displayedOptions().get(index).checked();
         }
 
         @Override
@@ -7185,12 +7261,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public void updatePixelOptionDockScales(int hovered) {
-            VillagerInteractionScreen.this.updateInteractionOptionDockScales(hovered);
+            if (this.snapshot == null) VillagerInteractionScreen.this.updateInteractionOptionDockScales(hovered);
         }
 
         @Override
         public float pixelOptionDockScale(int index) {
-            return VillagerInteractionScreen.this.interactionOptionDockScale(index);
+            return this.snapshot != null ? 1.0F : VillagerInteractionScreen.this.interactionOptionDockScale(index);
         }
 
         @Override

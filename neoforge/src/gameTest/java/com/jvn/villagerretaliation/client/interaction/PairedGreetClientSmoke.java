@@ -57,6 +57,8 @@ public final class PairedGreetClientSmoke {
                 var level = server.overworld();
                 var player = server.getPlayerList().getPlayer(playerId);
                 for (var position : BlockPos.betweenClosed(5, 99, 5, 25, 99, 25)) level.setBlockAndUpdate(position, Blocks.STONE.defaultBlockState());
+                player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+                player.getInventory().clearContent();
                 player.teleportTo(15.5, 100, 15.5);
                 var villager = EntityType.VILLAGER.create(level);
                 villager.setNoAi(true); villager.setPos(15.5, 100, 18.5); level.addFreshEntity(villager);
@@ -76,9 +78,15 @@ public final class PairedGreetClientSmoke {
             phase = 2;
         } else if (phase == 2 && preparing.isDone() && minecraft.screen instanceof VillagerInteractionScreen screen) {
             talk(screen);
+            phaseStarted = now;
+            phase = 20;
+        } else if (phase == 20 && minecraft.screen instanceof VillagerInteractionScreen screen && now - phaseStarted > 1000) {
             originalOptions = options(screen);
             require(!originalOptions.isEmpty(), "original talk menu exists");
+            ordinaryReplyKeepsOptions(screen);
             screen.acceptDialogueExchanges(pair(), true, screen.beginGreetingRequest());
+            require(field(screen, "outgoingDialogueOptions") != null, "hidden options remain available for their exit animation");
+            require((float) invoke(screen, "dialogueOptionsTransitionProgress") < 1.0F, "option exit animates");
             phaseStarted = now; fullyRevealedAt = 0; phase = 3;
         } else if (phase == 3 && minecraft.screen instanceof VillagerInteractionScreen screen) {
             String text = (String) field(screen, "villagerDialogueText");
@@ -94,7 +102,10 @@ public final class PairedGreetClientSmoke {
                 previous = text;
             }
             boolean revealed = (boolean) invoke(screen, "isDialogueTextAnimationComplete");
-            if (revealed && fullyRevealedAt == 0) fullyRevealedAt = now;
+            if (revealed && fullyRevealedAt == 0) {
+                long readyAt = (long) field(automatic, "readyAt");
+                fullyRevealedAt = readyAt >= 0 ? readyAt - DialogueExchangeAutoAdvance.holdMillis(text.length()) : now;
+            }
             if(revealed && fullyRevealedAt!=0 && now-fullyRevealedAt>=200) {
                 String shot=text.equals(PLAYER)?"paired-player":"paired-npc";
                 if(captured.add(shot))capture(shot);
@@ -105,12 +116,15 @@ public final class PairedGreetClientSmoke {
                 require(playerAppearances == 1 && npcAppearances == 1, "player and NPC are displayed exactly once");
                 require(fullyRevealedAt != 0 && now - fullyRevealedAt >= DialogueExchangeAutoAdvance.holdMillis(NPC.length()) - 100, "NPC readable hold completes");
                 require(options(screen).equals(originalOptions), "original talk options return after final NPC hold");
+                require((float) invoke(screen, "dialogueOptionsTransitionProgress") < 1.0F, "restored options animate in");
                 screen.acceptDialogueExchanges(pair(), false);
                 phaseStarted = now; phase = 4;
             }
         } else if (phase == 4 && minecraft.screen instanceof VillagerInteractionScreen screen && now - phaseStarted > 6000) {
             require(field(screen, "villagerDialogueText").equals(PLAYER), "legacy manual exchange does not auto-advance");
             require(options(screen).size() == 1 && options(screen).getFirst().toLowerCase(java.util.Locale.ROOT).contains("continue"), "legacy Continue option is unchanged");
+            clickDialogue(screen);
+            require(field(screen, "villagerDialogueText").equals(NPC), "clicking revealed manual text advances the exchange");
             screen.acceptVillagerDialogue("Replacement notice.", List.of());
             require(!((DialogueExchangeAutoAdvance) field(screen, "automaticDialogue")).active(), "replacement notice cancels automatic state");
             require(((java.util.Collection<?>) field(screen, "dialogueExchanges")).isEmpty(), "replacement notice discards stale queued NPC speech");
@@ -136,11 +150,78 @@ public final class PairedGreetClientSmoke {
             screen.onClose();
             require(!((DialogueExchangeAutoAdvance) field(screen, "automaticDialogue")).active(), "Back during NPC line cancels playback");
             require(((java.util.Collection<?>) field(screen, "dialogueExchanges")).isEmpty(), "Back during NPC leaves no stale work");
+            talk(screen);
+            phaseStarted = now;
+            phase = 6;
+        } else if (phase == 6 && minecraft.screen instanceof VillagerInteractionScreen screen && now - phaseStarted > 400) {
+            originalOptions = options(screen);
+            require(!originalOptions.isEmpty(), "talk menu is ready for click advancement checks");
+            screen.acceptDialogueExchanges(pair(), true, screen.beginGreetingRequest());
+            require(!(boolean) invoke(screen, "isDialogueTextAnimationComplete"), "new player line starts animating");
+            clickDialogue(screen);
+            require(field(screen, "villagerDialogueText").equals(PLAYER), "first text click keeps the current line");
+            require((boolean) invoke(screen, "isDialogueTextAnimationComplete"), "first text click reveals the full line");
+            clickDialogue(screen);
+            require(field(screen, "villagerDialogueText").equals(NPC), "second text click advances to the NPC");
+            require(((DialogueExchangeAutoAdvance) field(screen, "automaticDialogue")).active(), "manual advance preserves automatic playback");
+            require(!(boolean) invoke(screen, "isDialogueTextAnimationComplete"), "advanced line still animates");
+            phase = 7;
+        } else if (phase == 7 && minecraft.screen instanceof VillagerInteractionScreen screen
+                && !((DialogueExchangeAutoAdvance) field(screen, "automaticDialogue")).active()) {
+            require(options(screen).equals(originalOptions), "automatic final hold still restores the menu after manual advance: " + options(screen) + " expected " + originalOptions
+                    + ", page=" + field(screen, "page") + ", text=" + field(screen, "villagerDialogueText"));
+            phaseStarted = now;
+            phase = 8;
+        } else if (phase == 8 && minecraft.screen instanceof VillagerInteractionScreen screen && now - phaseStarted > 400) {
+            screen.acceptDialogueExchanges(pair(), true, screen.beginGreetingRequest());
+            clickDialogue(screen);
+            clickDialogue(screen);
+            clickDialogue(screen);
+            require(((DialogueExchangeAutoAdvance) field(screen, "automaticDialogue")).active(), "revealing the final line keeps its hold active");
+            clickDialogue(screen);
+            require(!((DialogueExchangeAutoAdvance) field(screen, "automaticDialogue")).active(), "second final-line click finishes the exchange");
+            require(options(screen).equals(originalOptions), "manual finish restores the menu");
+            phaseStarted = now;
+            phase = 9;
+        } else if (phase == 9 && minecraft.screen instanceof VillagerInteractionScreen screen && now - phaseStarted > 400) {
+            require((float) invoke(screen, "dialogueOptionsTransitionProgress") == 1.0F, "option entrance finishes");
+            require(field(screen, "outgoingDialogueOptions") == null, "departed option snapshot is released");
+            capture("paired-menu-restored");
             minecraft.setScreen(null);
-            try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Paired Greet client smoke passed: actual typewriter, readable holds, exact sequence, original menu restoration, manual Continue, replacement and Back cancellation.\n"); }
+            try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Paired Greet client smoke passed: actual typewriter, readable holds, exact sequence, animated menu restoration, stable ordinary reply options, click reveal and advance, automatic continuation after clicks, manual Continue, replacement and Back cancellation.\n"); }
             catch (java.io.IOException exception) { throw new java.io.UncheckedIOException(exception); }
             phase = 99; minecraft.stop();
         }
+    }
+
+    private static void ordinaryReplyKeepsOptions(VillagerInteractionScreen screen) {
+        long layoutVersion = (long) field(screen, "optionLayoutVersion");
+        long transitionStarted = (long) field(screen, "dialogueOptionsTransitionStartMillis");
+        var state = (VillagerInteractionScreenState) field(screen, "state");
+        state.setSelectedOption(Math.min(1, originalOptions.size() - 1));
+        var position = state.captureOptionListPosition();
+        var request = screen.beginGreetingRequest();
+        require(request != null, "ordinary choice begins a correlated request");
+        require(options(screen).equals(originalOptions), "pending request keeps the menu visible");
+        require(!(boolean) field(screen, "dialogueOptionsHidden"), "pending request does not hide options");
+        require(screen.beginGreetingRequest() == null, "pending request still blocks duplicate choices");
+        screen.acceptGreetingNotice(new com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload(entityId,
+                "An ordinary reply.", "Resident", DialogueTextSegment.plain("An ordinary reply.", DialogueTextEffects.NONE),
+                List.of(), false, request));
+        require(field(screen, "villagerDialogueText").equals("An ordinary reply."), "ordinary reply updates the dialogue text");
+        require(options(screen).equals(originalOptions), "ordinary reply keeps the same options");
+        require((long) field(screen, "optionLayoutVersion") == layoutVersion, "ordinary reply does not rebuild the menu");
+        require((long) field(screen, "dialogueOptionsTransitionStartMillis") == transitionStarted,
+                "ordinary reply does not restart the option animation");
+        require(state.captureOptionListPosition().equals(position), "ordinary reply preserves selection and scroll");
+        require(!((PairedGreetingRequestState) field(screen, "greetingRequest")).pending(), "ordinary reply releases the pending request");
+    }
+
+    private static void clickDialogue(VillagerInteractionScreen screen) {
+        int left = (int) invoke(screen, "interactionContainerLeft");
+        int top = (int) invoke(screen, "interactionContainerTop");
+        int offsetY = (int) invoke(screen, "slideOffsetY") + (int) invoke(screen, "interactionStateTransitionOffsetY");
+        require(screen.mouseClicked(left + 100, top + 20 + offsetY, 0), "dialogue text click is handled");
     }
 
     private static List<DialogueSpeech> pair() {
