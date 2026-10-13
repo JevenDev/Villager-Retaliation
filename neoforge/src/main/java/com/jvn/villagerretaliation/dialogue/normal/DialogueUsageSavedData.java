@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.dialogue.normal;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -50,6 +52,16 @@ public final class DialogueUsageSavedData extends SavedData {
         return this.entries.getOrDefault(new Key(scope, dialogueId), Usage.EMPTY);
     }
 
+    /** Insertion order survives saving, and distinguishes uses within the same tick. */
+    public Optional<String> lastUsedAmong(String scope, Set<String> dialogueIds) {
+        for (Key key : this.entries.sequencedKeySet().reversed()) {
+            if (key.scope().equals(scope) && dialogueIds.contains(key.dialogueId())) {
+                return Optional.of(key.dialogueId());
+            }
+        }
+        return Optional.empty();
+    }
+
     public void remember(String scope, String dialogueId, long gameTime) {
         if (scope == null || scope.isBlank() || dialogueId == null || dialogueId.isBlank()) {
             return;
@@ -63,7 +75,10 @@ public final class DialogueUsageSavedData extends SavedData {
 
     private void trim() {
         while (this.entries.size() > MAX_ENTRIES) {
-            this.entries.remove(this.entries.keySet().iterator().next());
+            var oldest = this.entries.keySet().stream().filter(k -> !k.dialogueId().startsWith("paired_dialogue:")
+                    && !k.dialogueId().startsWith("paired_greeting:")).findFirst();
+            if (oldest.isEmpty()) return;
+            this.entries.remove(oldest.get());
         }
     }
 

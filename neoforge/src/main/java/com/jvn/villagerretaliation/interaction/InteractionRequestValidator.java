@@ -15,13 +15,19 @@ public final class InteractionRequestValidator {
     }
 
     public static Optional<InteractionTargetContext> requireDialogueConversation(ServerPlayer player, int entityId) {
+        return requireDialogueConversation(player, entityId, null);
+    }
+
+    public static Optional<InteractionTargetContext> requireDialogueConversation(ServerPlayer player, int entityId,
+            java.util.UUID greetingRequestId) {
         return requireActiveConversation(
                 player,
                 entityId,
                 "interaction.unavailable",
                 "interaction.conversation_ended",
                 true,
-                true
+                true,
+                greetingRequestId
         );
     }
 
@@ -99,9 +105,16 @@ public final class InteractionRequestValidator {
     public static void endConversationWithRefusal(
             InteractionTargetContext target,
             String refusalNoticeKey) {
+        endConversationWithRefusal(target, refusalNoticeKey, null);
+    }
+
+    public static void endConversationWithRefusal(InteractionTargetContext target, String refusalNoticeKey,
+            java.util.UUID greetingRequestId) {
+        if (greetingRequestId != null) VillagerInteractionService.sendVillagerNotice(
+                target.player(), target.villager(), refusalNoticeKey, greetingRequestId);
         VillagerConversationService.endForPlayer(target.player(), true);
         VillagerAmbientIndicatorService.onTradeRefused(target.villager());
-        VillagerInteractionService.sendVillagerNotice(target.player(), target.villager(), refusalNoticeKey);
+        if (greetingRequestId == null) VillagerInteractionService.sendVillagerNotice(target.player(), target.villager(), refusalNoticeKey);
     }
 
     private static Optional<InteractionTargetContext> requireActiveConversation(
@@ -111,11 +124,19 @@ public final class InteractionRequestValidator {
             String conversationEndedNoticeKey,
             boolean sendConversationEndedPayload,
             boolean allowForcedSessionTarget) {
+        return requireActiveConversation(player, entityId, unavailableNoticeKey, conversationEndedNoticeKey,
+                sendConversationEndedPayload, allowForcedSessionTarget, null);
+    }
+
+    private static Optional<InteractionTargetContext> requireActiveConversation(ServerPlayer player, int entityId,
+            String unavailableNoticeKey, String conversationEndedNoticeKey, boolean sendConversationEndedPayload,
+            boolean allowForcedSessionTarget, java.util.UUID greetingRequestId) {
         Optional<InteractionTargetContext> target = requireVillagerTarget(
                 player,
                 entityId,
                 unavailableNoticeKey,
-                allowForcedSessionTarget
+                allowForcedSessionTarget,
+                greetingRequestId
         );
         if (target.isEmpty()) {
             return Optional.empty();
@@ -124,10 +145,12 @@ public final class InteractionRequestValidator {
         if (VillagerConversationService.validate(player, context.villager())) {
             return Optional.of(context);
         }
+        if (greetingRequestId != null) VillagerInteractionService.sendVillagerNotice(
+                player, context.villager(), conversationEndedNoticeKey, greetingRequestId);
         if (sendConversationEndedPayload) {
             PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(entityId, ""));
         }
-        VillagerInteractionService.sendVillagerNotice(player, context.villager(), conversationEndedNoticeKey);
+        if (greetingRequestId == null) VillagerInteractionService.sendVillagerNotice(player, context.villager(), conversationEndedNoticeKey);
         return Optional.empty();
     }
 
@@ -136,15 +159,22 @@ public final class InteractionRequestValidator {
             int entityId,
             String unavailableNoticeKey,
             boolean allowForcedSessionTarget) {
+        return requireVillagerTarget(player, entityId, unavailableNoticeKey, allowForcedSessionTarget, null);
+    }
+
+    private static Optional<InteractionTargetContext> requireVillagerTarget(ServerPlayer player, int entityId,
+            String unavailableNoticeKey, boolean allowForcedSessionTarget, java.util.UUID greetingRequestId) {
         Entity entity = player.serverLevel().getEntity(entityId);
         if (!(entity instanceof Villager villager)) {
-            VillagerInteractionService.sendNotice(player, entityId, unavailableNoticeKey);
+            VillagerInteractionService.sendNotice(player, entityId, unavailableNoticeKey, greetingRequestId);
             return Optional.empty();
         }
         if (VillagerBehaviorSuppressionPolicy.suppresses(
                 villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)) {
+            if (greetingRequestId != null) VillagerInteractionService.sendVillagerNotice(
+                    player, villager, "interaction.incapacitated", greetingRequestId);
             VillagerConversationService.endForPlayer(player, true);
-            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.incapacitated");
+            if (greetingRequestId == null) VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.incapacitated");
             return Optional.empty();
         }
         boolean canUseNormalTarget = VillagerInteractionService.canUseInteractionSystem(player, villager);
@@ -152,7 +182,7 @@ public final class InteractionRequestValidator {
                 && VillagerConversationService.isForced(player, villager)
                 && ForcedDialogueService.hasSession(player, villager);
         if (!canUseNormalTarget && !forcedSessionTarget) {
-            VillagerInteractionService.sendNotice(player, entityId, unavailableNoticeKey);
+            VillagerInteractionService.sendNotice(player, entityId, unavailableNoticeKey, greetingRequestId);
             return Optional.empty();
         }
         return Optional.of(new InteractionTargetContext(player.serverLevel(), player, villager));

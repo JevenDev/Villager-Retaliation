@@ -3,29 +3,1349 @@
     {
       "id": "cleric_new_greeting_bottles",
       "request": "greeting",
-      "lines": [
-        "Mind the bottles. I would rather greet you than clean up glass.",
-        "Hello. Give me a moment to put this cork in.",
-        "You look well enough to stand, which is a good start.",
-        "Come in, but leave a clear path to the brewing stand.",
-        "Good to see you. Are you hurt or only visiting?",
-        "Watch your sleeve near that flame.",
-        "There you are. I was beginning to think the rain kept you away.",
-        "Welcome. The room smells worse than the remedies taste.",
-        "Careful by the shelf. I sorted those for a reason.",
-        "Hello. Sit if your legs are less steady than your voice.",
-        "You arrived between brews. That is fortunate.",
-        "Come closer if you need help, but not too close to the fire.",
-        "Good morning. I have clean water and a little time.",
-        "If you are here for a potion, tell me what happened first.",
-        "Welcome back. You look less troubled than last time.",
-        "Mind the cat. It believes this is its workplace.",
-        "Hello. I am listening, even if the stand is bubbling.",
-        "Settle in. I only have one dangerous bottle open today.",
-        "You caught me cleaning glass, which never seems to end.",
-        "Good to see a familiar face on a quiet day."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "Mind the bottles. I would rather greet you than clean up glass."
+        },
+        {
+          "id": "line_1",
+          "text": "Hello. Give me a moment to put this cork in."
+        },
+        {
+          "id": "line_2",
+          "text": "You look well enough to stand, which is a good start."
+        },
+        {
+          "id": "line_3",
+          "text": "Come in, but leave a clear path to the brewing stand."
+        },
+        {
+          "id": "line_4",
+          "text": "Good to see you. Are you hurt or only visiting?"
+        },
+        {
+          "id": "line_5",
+          "text": "Watch your sleeve near that flame."
+        },
+        {
+          "id": "line_6",
+          "text": "There you are. I was beginning to think the rain kept you away."
+        },
+        {
+          "id": "line_7",
+          "text": "Welcome. The room smells worse than the remedies taste."
+        },
+        {
+          "id": "line_8",
+          "text": "Careful by the shelf. I sorted those for a reason."
+        },
+        {
+          "id": "line_9",
+          "text": "Hello. Sit if your legs are less steady than your voice."
+        },
+        {
+          "id": "line_10",
+          "text": "You arrived between brews. That is fortunate."
+        },
+        {
+          "id": "line_11",
+          "text": "Come closer if you need help, but not too close to the fire."
+        },
+        {
+          "id": "line_12",
+          "text": "Good morning. I have clean water and a little time."
+        },
+        {
+          "id": "line_13",
+          "text": "If you are here for a potion, tell me what happened first."
+        },
+        {
+          "id": "line_14",
+          "text": "Welcome back. You look less troubled than last time."
+        },
+        {
+          "id": "line_15",
+          "text": "Mind the cat. It believes this is its workplace."
+        },
+        {
+          "id": "line_16",
+          "text": "Hello. I am listening, even if the stand is bubbling."
+        },
+        {
+          "id": "line_17",
+          "text": "Settle in. I only have one dangerous bottle open today."
+        },
+        {
+          "id": "line_18",
+          "text": "You caught me cleaning glass, which never seems to end."
+        },
+        {
+          "id": "line_19",
+          "text": "Good to see a familiar face on a quiet day."
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.1",
+          "text": "Hello. I'm delighted to have a word with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.2",
+          "text": "Good to see you. There's no need for ceremony on my account.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.3",
+          "text": "Hello there. I'd enjoy hearing whatever's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.4",
+          "text": "You're very welcome. A simple hello is quite enough of a reason.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.5",
+          "text": "Hello. It's a pleasure to have your company for a conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.6",
+          "text": "I'm glad to see you. We needn't find a grand subject.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.7",
+          "text": "Hello there. You have a willing listener in me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.8",
+          "text": "It's good to see you. Ordinary talk is welcome, too.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.9",
+          "text": "Hello. I'm pleased you've chosen to speak with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.royalty.10",
+          "text": "A very welcome hello to you. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.1",
+          "text": "Hello. I'm so pleased to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.2",
+          "text": "It's lovely to have a chance to talk with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.3",
+          "text": "Hello there. I'm glad of your company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.4",
+          "text": "You're welcome here for a word with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.5",
+          "text": "Hello. I look forward to hearing what you have to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.6",
+          "text": "It's a pleasure to see you. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.7",
+          "text": "Hello there. I'd be glad to talk for a little while.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.8",
+          "text": "I'm happy to see you. You have my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.9",
+          "text": "Hello. I welcome a conversation with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.revered.10",
+          "text": "Good to see you. I'm glad you came to speak.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.1",
+          "text": "Hello. I'm interested in hearing your thoughts.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.2",
+          "text": "Good to see you. I'll listen properly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.3",
+          "text": "Hello there. Say what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.4",
+          "text": "I'm pleased to speak with you. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.5",
+          "text": "Hello. You have my full attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.6",
+          "text": "Good to see you. We can speak plainly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.7",
+          "text": "Hello there. I'm ready to hear you out.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.8",
+          "text": "You're welcome to a word with me. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.9",
+          "text": "Hello. I'd be glad to hear your point of view.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.respected.10",
+          "text": "It's good to see you. Let's have a word.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.1",
+          "text": "Hello. No need to make this a serious occasion.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.2",
+          "text": "Good to see you. A little conversation suits me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.3",
+          "text": "Hello there. You needn't have a puzzle for me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.4",
+          "text": "I'm glad to see you. We can just talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.5",
+          "text": "Hello. Nothing remarkable required; I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.6",
+          "text": "Good to see you. You don't have to bring me a mystery.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.7",
+          "text": "Hello there. I could enjoy an ordinary conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.8",
+          "text": "You're welcome to chat. I won't insist on a learned subject.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.9",
+          "text": "Hello. It's nice to have a friendly word.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.trusted.10",
+          "text": "Good to see you. We can start without an introduction.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.1",
+          "text": "Hello there. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.2",
+          "text": "Hello. Go ahead and speak.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.3",
+          "text": "Good to see you. You have my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.4",
+          "text": "Hello there. We can have a word.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.5",
+          "text": "I'm listening, if you have something to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.6",
+          "text": "Hello. Say what brought you over.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.7",
+          "text": "Hello there. A word is fine.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.8",
+          "text": "You have my attention. Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.9",
+          "text": "Hello. We can begin with whatever you came to discuss.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.neutral.10",
+          "text": "Hello there. I'm ready to listen.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.1",
+          "text": "Hello. I'd prefer to keep this straightforward.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.2",
+          "text": "I'm listening. Don't expect a long personal conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.3",
+          "text": "Hello there. Say what you need to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.4",
+          "text": "We can have a brief word. That's all I'm offering.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.5",
+          "text": "Hello. I'd rather stick to the matter at hand.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.6",
+          "text": "You have my attention for the moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.7",
+          "text": "Hello there. I'm willing to hear the point.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.8",
+          "text": "I can listen without making this a friendly visit.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.9",
+          "text": "Hello. Let's keep things plain between us.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.suspicious.10",
+          "text": "A short conversation will do. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.1",
+          "text": "Hello. Keep this brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.2",
+          "text": "Say what you need. I'm not in the mood for company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.3",
+          "text": "I'm listening, but this isn't a friendly visit.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.4",
+          "text": "Hello. I'd rather not spend time chatting with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.5",
+          "text": "Get to the point. I have no wish for small talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.6",
+          "text": "I hear you. Say what's necessary.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.7",
+          "text": "Hello there. I don't want a long conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.8",
+          "text": "You can speak. Don't mistake that for a welcome to linger.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.9",
+          "text": "I'm willing to hear the matter, not pass the time.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.hostile.10",
+          "text": "A brief word, then. That's enough.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.1",
+          "text": "I don't welcome your company. Say what's necessary.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.2",
+          "text": "No small talk. Get to the point.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.3",
+          "text": "I'm not pleased to see you. Keep your words brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.4",
+          "text": "Say what you must, then leave me be.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.5",
+          "text": "I have no friendly greeting for you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.6",
+          "text": "This isn't a social visit I want. State your business.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.7",
+          "text": "I'm willing to hear only what needs saying.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.8",
+          "text": "Don't settle in for a conversation with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.9",
+          "text": "I don't want your company. If there's a matter to address, address it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.despised.10",
+          "text": "Make your point. I won't entertain a visit.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.1",
+          "text": "Hello. I'd like to keep this short, please.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.2",
+          "text": "I'm listening. I may not have much to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.3",
+          "text": "Hello there. I'll hear you from here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.4",
+          "text": "Yes, hello. A brief word would be best for me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.5",
+          "text": "I can listen for a moment. Please give me room.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.6",
+          "text": "Hello. I'd prefer a little distance while we speak.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.7",
+          "text": "You have my attention. I don't want a long conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.8",
+          "text": "Hello there. Please let me take this slowly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.9",
+          "text": "I'm listening to you. That's all I can offer just now.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cleric.base.greeting_ordinary.feared.10",
+          "text": "Hello. I'd like a moment to find my words.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {

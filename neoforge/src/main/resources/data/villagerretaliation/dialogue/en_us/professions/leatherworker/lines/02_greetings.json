@@ -3,29 +3,1069 @@
     {
       "id": "leatherworker_new_greeting_tannery",
       "request": "greeting",
-      "lines": [
-        "Mind the tannery. The smell is honest, at least.",
-        "Give the tannery room. Leatherwork works better without elbows in it.",
-        "Step carefully near the tannery. I would rather greet you than patch you up.",
-        "There you are. I was just near the cauldron, trying to keep the day sensible.",
-        "Mind the dye. It has a longer memory than most people.",
-        "Hello. If the smell bothers you, that means it is working.",
-        "You caught me with a needle in hand and patience on trial.",
-        "Step around the stretched hides. They are busy becoming useful.",
-        "Good timing. I was just checking seams.",
-        "Keep your sleeves clear unless you want them permanently improved.",
-        "I can talk while the leather softens.",
-        "Welcome. Do not sit on anything that looks unfinished.",
-        "If you came about boots, show me the damage first.",
-        "The tannery is calm today. That is suspicious but welcome.",
-        "Hello there. Try not to disturb the straps I just arranged.",
-        "I was measuring twice because mistakes here get expensive.",
-        "Stand where the floor is dry and tell me what you need.",
-        "Good to see you wearing things that still hold together.",
-        "I have thread, tools, and a little time.",
-        "Good timing. I was about to take a break from the tannery."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "Mind the tannery. The smell is honest, at least."
+        },
+        {
+          "id": "line_1",
+          "text": "Give the tannery room. Leatherwork works better without elbows in it."
+        },
+        {
+          "id": "line_2",
+          "text": "Step carefully near the tannery. I would rather greet you than patch you up."
+        },
+        {
+          "id": "line_3",
+          "text": "There you are. I was just near the cauldron, trying to keep the day sensible."
+        },
+        {
+          "id": "line_4",
+          "text": "Mind the dye. It has a longer memory than most people."
+        },
+        {
+          "id": "line_5",
+          "text": "Hello. If the smell bothers you, that means it is working."
+        },
+        {
+          "id": "line_6",
+          "text": "You caught me with a needle in hand and patience on trial."
+        },
+        {
+          "id": "line_7",
+          "text": "Step around the stretched hides. They are busy becoming useful."
+        },
+        {
+          "id": "line_8",
+          "text": "Good timing. I was just checking seams."
+        },
+        {
+          "id": "line_9",
+          "text": "Keep your sleeves clear unless you want them permanently improved."
+        },
+        {
+          "id": "line_10",
+          "text": "I can talk while the leather softens."
+        },
+        {
+          "id": "line_11",
+          "text": "Welcome. Do not sit on anything that looks unfinished."
+        },
+        {
+          "id": "line_12",
+          "text": "If you came about boots, show me the damage first."
+        },
+        {
+          "id": "line_13",
+          "text": "The tannery is calm today. That is suspicious but welcome."
+        },
+        {
+          "id": "line_14",
+          "text": "Hello there. Try not to disturb the straps I just arranged."
+        },
+        {
+          "id": "line_15",
+          "text": "I was measuring twice because mistakes here get expensive."
+        },
+        {
+          "id": "line_16",
+          "text": "Stand where the floor is dry and tell me what you need."
+        },
+        {
+          "id": "line_17",
+          "text": "Good to see you wearing things that still hold together."
+        },
+        {
+          "id": "line_18",
+          "text": "I have thread, tools, and a little time."
+        },
+        {
+          "id": "line_19",
+          "text": "Good timing. I was about to take a break from the tannery."
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.1",
+          "text": "Oh, hello! It's lovely to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.2",
+          "text": "Hello! I'm delighted to see you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.3",
+          "text": "Well met. It's wonderful to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.4",
+          "text": "Hello! I hope things are being kind to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.5",
+          "text": "Ah, hello. I'm very pleased to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.6",
+          "text": "Hello there, and my very best to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.7",
+          "text": "It's good to see you. I wish you nothing but happiness.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.8",
+          "text": "Well, hello! This is a pleasure.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.9",
+          "text": "Hello. I hope there's something good in your day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.royalty.10",
+          "text": "A pleasure to see you. Be well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.1",
+          "text": "Hello, and I hope you're well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.2",
+          "text": "It's a pleasure to see you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.3",
+          "text": "Well met. My best wishes to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.4",
+          "text": "Hello. I hope life is kind to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.5",
+          "text": "Ah, it's you. What a pleasure.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.6",
+          "text": "Hello there. I wish you a pleasant day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.7",
+          "text": "Hello! I hope life is treating you well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.8",
+          "text": "My regards to you. I hope all is well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.9",
+          "text": "Hello. All the best to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.revered.10",
+          "text": "Well met, and be well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.1",
+          "text": "Hello there, and all the best.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.2",
+          "text": "Well met. I hope things go well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.3",
+          "text": "Good to see you. I wish you well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.4",
+          "text": "Hello. My regards to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.5",
+          "text": "Ah, hello. A pleasure to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.6",
+          "text": "My best to you. Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.7",
+          "text": "Well met, and a pleasant day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.8",
+          "text": "Hello. I wish you a good day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.9",
+          "text": "Hello. I hope things are going your way.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.respected.10",
+          "text": "Greetings. I wish you the best.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.1",
+          "text": "Oh, hello! Good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.2",
+          "text": "Hey there. I'm glad it's you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.3",
+          "text": "Hello, you. Lovely to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.4",
+          "text": "Well, hello! Nice to see you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.5",
+          "text": "Hello there. Hope things are going well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.6",
+          "text": "Ah, hello. This is nice.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.7",
+          "text": "Hey. It's good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.8",
+          "text": "Hello! I hope the day's treating you kindly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.9",
+          "text": "Well met. I'm glad you're here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.trusted.10",
+          "text": "Hello, and here's hoping for a pleasant day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.1",
+          "text": "Hello. A pleasant day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.2",
+          "text": "Greetings. I hope you're well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.3",
+          "text": "Well met. All the best.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.4",
+          "text": "Hello there. Be well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.5",
+          "text": "Oh, hello. Good wishes to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.6",
+          "text": "Hello. I hope your day goes well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.7",
+          "text": "Hello to you. Have a pleasant day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.8",
+          "text": "Greetings to you. Be well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.9",
+          "text": "Hello. May your day be a pleasant one.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.neutral.10",
+          "text": "Well met. Take care of yourself.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.1",
+          "text": "Hm. Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.2",
+          "text": "Hello. Let's keep this civil.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.3",
+          "text": "Ah. Greetings, then.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.4",
+          "text": "Hello. I'd rather keep things cordial.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.5",
+          "text": "Greetings. I hope there won't be any trouble.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.6",
+          "text": "Hello. I'm not quite at ease with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.7",
+          "text": "Well met. Let's be civil with one another.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.8",
+          "text": "Hello, then. I'd rather not have a quarrel.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.9",
+          "text": "Hello. I hope we can get along.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.suspicious.10",
+          "text": "Mm. Greetings to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.1",
+          "text": "Oh, hello. I don't want any trouble.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.2",
+          "text": "Hello there. Please, let's keep this civil.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.3",
+          "text": "Greetings. I wish you no harm.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.4",
+          "text": "Hello. I don't want to quarrel with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.5",
+          "text": "Ah... hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.6",
+          "text": "Hello to you. I mean no trouble.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.7",
+          "text": "Hello. I'd rather there were no quarrel.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.8",
+          "text": "Well... hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.9",
+          "text": "Hello. Please let us be civil.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "leatherworker.base.greeting_ordinary.feared.10",
+          "text": "Hello. Be well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {

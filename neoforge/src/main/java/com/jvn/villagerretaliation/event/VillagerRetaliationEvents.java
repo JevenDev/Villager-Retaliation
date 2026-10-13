@@ -240,6 +240,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerStopping(ServerStoppingEvent event) {
+        com.jvn.villagerretaliation.party.CompanionAmbientLedger.close(event.getServer());
         com.jvn.villagerretaliation.social.VillagerBirthService.clearRuntimeState();
         gameTestOriginSeeded = false;
         com.jvn.villagerretaliation.settlement.SettlementViewService.clear(event.getServer());
@@ -256,6 +257,8 @@ public final class VillagerRetaliationEvents {
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
                 com.jvn.villagerretaliation.party.CompanionGrowthService::reload);
+        event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
+                com.jvn.villagerretaliation.party.CompanionAmbientResources::reload);
         event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
                 com.jvn.villagerretaliation.interaction.work.mining.OreNodeDefinitions::reload);
         event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
@@ -275,6 +278,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
+        com.jvn.villagerretaliation.party.CompanionAmbientService.tick(event.getServer());
         com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker.tick();
         com.jvn.villagerretaliation.quest.follower.QuestFollowerService.maintain(event.getServer());
         com.jvn.villagerretaliation.social.VillagerBirthService.finishAcceptedSpawns();
@@ -415,6 +419,7 @@ public final class VillagerRetaliationEvents {
             return;
         }
         HiredCombatSkillPracticeService.onKill(event);
+        com.jvn.villagerretaliation.party.CompanionAmbientService.onDeath(event.getEntity());
         EncounterService.onDeath(event.getEntity());
         SceneLifecycleIntegration.onActorDeath(event.getEntity());
         com.jvn.villagerretaliation.quest.follower.QuestFollowerService.died(event.getEntity());

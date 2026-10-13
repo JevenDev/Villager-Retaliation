@@ -3,29 +3,1349 @@
     {
       "id": "cartographer_new_greeting_table",
       "request": "greeting",
-      "lines": [
-        "Keep your hands off the map table unless you know where they are going.",
-        "Give the map table room. Mapping works better without elbows in it.",
-        "Step carefully near the map table. I would rather greet you than patch you up.",
-        "There you are. I was just near the map table, trying to keep the day sensible.",
-        "Mind the table. The ink is fresh and unforgiving.",
-        "Hello. If you moved the compass, please confess gently.",
-        "You caught me between one road and the next mistake.",
-        "Step lightly. I am trying to keep the world flat for a moment.",
-        "Good timing. The map was getting too confident.",
-        "Welcome. Try not to lean on the wet corner.",
-        "I have ink on my fingers and a little time for questions.",
-        "If you came with directions, I already doubt them politely.",
-        "There you are. I was just arguing with a coastline.",
-        "Stand where you are. I need the light more than the company.",
-        "Hello. The road can wait if you cannot.",
-        "Keep clear of the quills unless you want to become a landmark.",
-        "I am listening, though half my mind is still north of here.",
-        "Come closer, but do not breathe on the ink.",
-        "The table is crowded, but I can make room for a short talk.",
-        "Come in. I was giving a stubborn road another look."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "Keep your hands off the map table unless you know where they are going."
+        },
+        {
+          "id": "line_1",
+          "text": "Give the map table room. Mapping works better without elbows in it."
+        },
+        {
+          "id": "line_2",
+          "text": "Step carefully near the map table. I would rather greet you than patch you up."
+        },
+        {
+          "id": "line_3",
+          "text": "There you are. I was just near the map table, trying to keep the day sensible."
+        },
+        {
+          "id": "line_4",
+          "text": "Mind the table. The ink is fresh and unforgiving."
+        },
+        {
+          "id": "line_5",
+          "text": "Hello. If you moved the compass, please confess gently."
+        },
+        {
+          "id": "line_6",
+          "text": "You caught me between one road and the next mistake."
+        },
+        {
+          "id": "line_7",
+          "text": "Step lightly. I am trying to keep the world flat for a moment."
+        },
+        {
+          "id": "line_8",
+          "text": "Good timing. The map was getting too confident."
+        },
+        {
+          "id": "line_9",
+          "text": "Welcome. Try not to lean on the wet corner."
+        },
+        {
+          "id": "line_10",
+          "text": "I have ink on my fingers and a little time for questions."
+        },
+        {
+          "id": "line_11",
+          "text": "If you came with directions, I already doubt them politely."
+        },
+        {
+          "id": "line_12",
+          "text": "There you are. I was just arguing with a coastline."
+        },
+        {
+          "id": "line_13",
+          "text": "Stand where you are. I need the light more than the company."
+        },
+        {
+          "id": "line_14",
+          "text": "Hello. The road can wait if you cannot."
+        },
+        {
+          "id": "line_15",
+          "text": "Keep clear of the quills unless you want to become a landmark."
+        },
+        {
+          "id": "line_16",
+          "text": "I am listening, though half my mind is still north of here."
+        },
+        {
+          "id": "line_17",
+          "text": "Come closer, but do not breathe on the ink."
+        },
+        {
+          "id": "line_18",
+          "text": "The table is crowded, but I can make room for a short talk."
+        },
+        {
+          "id": "line_19",
+          "text": "Come in. I was giving a stubborn road another look."
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.1",
+          "text": "Hello. I'm very glad to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.2",
+          "text": "Welcome. A conversation with you sounds rather pleasant.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.3",
+          "text": "Good to see you. I'm happy to give you my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.4",
+          "text": "Hello there. I've time to listen, if you'd like to talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.5",
+          "text": "You're very welcome to speak with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.6",
+          "text": "Hello. I like having the chance to hear what you think.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.7",
+          "text": "I'm pleased it's you. We can take a moment to talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.8",
+          "text": "Welcome. You don't need an elaborate reason to say hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.9",
+          "text": "Hello. I'm glad of your company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.royalty.10",
+          "text": "Good to see you. I'm quite content to begin with a simple hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.1",
+          "text": "Hello. It's a pleasure to speak with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.2",
+          "text": "Welcome. I'll be glad to listen.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.3",
+          "text": "Good to see you. I appreciate a chance for a quiet word.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.4",
+          "text": "Hello there. You're welcome to stay for a conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.5",
+          "text": "I'm pleased to have your attention for a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.6",
+          "text": "Hello. It's good to have a little time with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.7",
+          "text": "Welcome. I'm happy we have a chance to talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.8",
+          "text": "Good to see you. There's room for an ordinary chat, too.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.9",
+          "text": "Hello. I'm glad you chose to speak with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.revered.10",
+          "text": "A very welcome hello to you. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.1",
+          "text": "Hello. I'm ready to hear what you have to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.2",
+          "text": "Good to see you. I can give this my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.3",
+          "text": "Welcome. Your thoughts are worth hearing.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.4",
+          "text": "Hello there. I'm happy to talk something through.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.5",
+          "text": "We can take a moment. I'm interested in your view.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.6",
+          "text": "Hello. I'm happy to hear your thoughts.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.7",
+          "text": "Good to see you. There's time for a proper conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.8",
+          "text": "Welcome. I don't mind stopping for a word with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.9",
+          "text": "Hello. I appreciate you coming to speak with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.respected.10",
+          "text": "I'm glad to talk with you. We can begin wherever you prefer.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.1",
+          "text": "Oh, hello. Good to see you about.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.2",
+          "text": "Hello there. I can spare you a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.3",
+          "text": "I'm glad it's you. Go on, I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.4",
+          "text": "Hello. No need for a formal introduction between us.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.5",
+          "text": "Good to see you. A bit of conversation would suit me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.6",
+          "text": "You can have a word with me, certainly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.7",
+          "text": "Hello. I'm comfortable talking with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.8",
+          "text": "There you are. Hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.9",
+          "text": "Good to see you. We don't need to make an occasion of it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.trusted.10",
+          "text": "Hello. I'm happy to stop and chat.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.1",
+          "text": "Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.2",
+          "text": "Good day. I can talk for a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.3",
+          "text": "Hello there. You can have a word with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.4",
+          "text": "We can have a word, yes.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.5",
+          "text": "Hello to you. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.6",
+          "text": "I can spare a little time for a conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.7",
+          "text": "Hello. You have a moment of my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.8",
+          "text": "Certainly, we can speak.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.9",
+          "text": "Hello. There's no harm in a brief chat.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.neutral.10",
+          "text": "Good day. Say what you came to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.1",
+          "text": "Hello. I'd prefer to keep this brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.2",
+          "text": "I'm listening, but don't expect a long conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.3",
+          "text": "You can say what you need to. I'll decide how much to add.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.4",
+          "text": "Hello. A little space would suit me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.5",
+          "text": "We can exchange a few words. That's all for now.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.6",
+          "text": "I'll hear you out. I may not have much to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.7",
+          "text": "Hello. Let's start with the reason you wanted to speak.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.8",
+          "text": "I'm willing to listen for a moment. Take that as far as it goes.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.9",
+          "text": "You have my attention. Please be clear about what you want.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.suspicious.10",
+          "text": "Hello. I haven't agreed to anything by speaking with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.1",
+          "text": "Make this brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.2",
+          "text": "I'm not pleased to be talking with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.3",
+          "text": "If there's something necessary, say it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.4",
+          "text": "I don't want a social visit from you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.5",
+          "text": "You have a moment. Don't stretch it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.6",
+          "text": "I'm in no mood to make you welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.7",
+          "text": "State your business and leave the pleasantries.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.8",
+          "text": "I can hear you. That doesn't mean I want company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.9",
+          "text": "Say what you need without making this personal.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.hostile.10",
+          "text": "I have very little patience for a conversation with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.1",
+          "text": "I don't welcome your company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.2",
+          "text": "Keep this to whatever actually needs saying.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.3",
+          "text": "I have no wish to exchange greetings with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.4",
+          "text": "Don't mistake my attention for an invitation to stay.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.5",
+          "text": "I won't pretend I'm pleased to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.6",
+          "text": "I want no more conversation than is necessary.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.7",
+          "text": "Spare me an attempt at friendly chatter.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.8",
+          "text": "I would rather you left me alone.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.9",
+          "text": "You won't get a warm reception from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.despised.10",
+          "text": "I'm not interested in spending time with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.1",
+          "text": "Hello. I'd prefer some room between us.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.2",
+          "text": "I'm listening. I'd like this to be a short conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.3",
+          "text": "Please say what you need. I'm rather uneasy.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.4",
+          "text": "Hello. I'd feel better with some space between us.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.5",
+          "text": "I can answer briefly. Please don't press me to say more.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.6",
+          "text": "I'm here. There's no need to come any closer.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.7",
+          "text": "Please keep your voice calm. I'm finding this difficult.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.8",
+          "text": "Hello. I don't want a long exchange.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.9",
+          "text": "I'll try to speak clearly. I'd rather not be hurried.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "cartographer.base.greeting_ordinary.feared.10",
+          "text": "You have my attention. Please let me choose when I'm finished.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {

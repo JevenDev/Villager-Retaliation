@@ -3,34 +3,1089 @@
     {
       "id": "shepherd_new_greeting_loom",
       "request": "greeting",
-      "lines": [
-        "Mind the loom. Threads tangle faster when people crowd them.",
-        "Give the loom room. Woolwork works better without elbows in it.",
-        "Step carefully near the loom. I would rather greet you than patch you up.",
-        "There you are. I was just near the loom, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one.",
-        "Mind the wool baskets. They shed onto everyone equally.",
-        "Hello. If you left a gate open, tell me before I guess.",
-        "You caught me between counting and counting again.",
-        "Step lightly. The flock is suspicious of sudden importance.",
-        "Good timing. The loom is behaving for once.",
-        "Come closer, but do not startle the lambs.",
-        "I can talk while the wool settles.",
-        "Welcome. Try not to stand where the sheep want to be.",
-        "The day is calm, which means I am checking the fences twice.",
-        "Speak up. The flock has been answering questions nobody asked.",
-        "Hello there. Leave the dye pots to those with fewer regrets.",
-        "I was sorting wool by color and mood. Mostly color.",
-        "Stand by the post and tell me what you need.",
-        "Good to see you without a trail of escaped sheep.",
-        "You have my attention until someone bleats like a crisis."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "Mind the loom. Threads tangle faster when people crowd them."
+        },
+        {
+          "id": "line_1",
+          "text": "Give the loom room. Woolwork works better without elbows in it."
+        },
+        {
+          "id": "line_2",
+          "text": "Step carefully near the loom. I would rather greet you than patch you up."
+        },
+        {
+          "id": "line_3",
+          "text": "There you are. I was just near the loom, trying to keep the day sensible."
+        },
+        {
+          "id": "line_4",
+          "text": "Morning. Or afternoon. The work makes the hours blur if I let it."
+        },
+        {
+          "id": "line_5",
+          "text": "Good to see you walking in calmly. That usually means nothing is on fire yet."
+        },
+        {
+          "id": "line_6",
+          "text": "If you need me, speak up. If you need gossip, speak quieter."
+        },
+        {
+          "id": "line_7",
+          "text": "You caught me before the next little disaster. That is rare timing."
+        },
+        {
+          "id": "line_8",
+          "text": "Hello. Try not to bring the whole village into this unless it is important."
+        },
+        {
+          "id": "line_9",
+          "text": "I have a moment. Not a long one, but a real one."
+        },
+        {
+          "id": "line_10",
+          "text": "Mind the wool baskets. They shed onto everyone equally."
+        },
+        {
+          "id": "line_11",
+          "text": "Hello. If you left a gate open, tell me before I guess."
+        },
+        {
+          "id": "line_12",
+          "text": "You caught me between counting and counting again."
+        },
+        {
+          "id": "line_13",
+          "text": "Step lightly. The flock is suspicious of sudden importance."
+        },
+        {
+          "id": "line_14",
+          "text": "Good timing. The loom is behaving for once."
+        },
+        {
+          "id": "line_15",
+          "text": "Come closer, but do not startle the lambs."
+        },
+        {
+          "id": "line_16",
+          "text": "I can talk while the wool settles."
+        },
+        {
+          "id": "line_17",
+          "text": "Welcome. Try not to stand where the sheep want to be."
+        },
+        {
+          "id": "line_18",
+          "text": "The day is calm, which means I am checking the fences twice."
+        },
+        {
+          "id": "line_19",
+          "text": "Speak up. The flock has been answering questions nobody asked."
+        },
+        {
+          "id": "line_20",
+          "text": "Hello there. Leave the dye pots to those with fewer regrets."
+        },
+        {
+          "id": "line_21",
+          "text": "I was sorting wool by color and mood. Mostly color."
+        },
+        {
+          "id": "line_22",
+          "text": "Stand by the post and tell me what you need."
+        },
+        {
+          "id": "line_23",
+          "text": "Good to see you without a trail of escaped sheep."
+        },
+        {
+          "id": "line_24",
+          "text": "You have my attention until someone bleats like a crisis."
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.1",
+          "text": "I'm very glad to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.2",
+          "text": "Hello. Your company is a pleasure.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.3",
+          "text": "A warm welcome to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.4",
+          "text": "It's lovely to have you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.5",
+          "text": "Hello. This is a pleasant moment already.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.6",
+          "text": "I welcome your company gladly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.7",
+          "text": "Good to see a face I'm so fond of.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.8",
+          "text": "Hello, and very happily so.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.9",
+          "text": "I'm pleased we have a moment together.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.royalty.10",
+          "text": "It's a real pleasure to greet you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.1",
+          "text": "Good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.2",
+          "text": "Hello. I'm glad you're here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.3",
+          "text": "Your company is very welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.4",
+          "text": "A warm hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.5",
+          "text": "It's pleasant to have a moment with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.6",
+          "text": "Hello, and welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.7",
+          "text": "I'm pleased to see you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.8",
+          "text": "A good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.9",
+          "text": "I'm glad to greet you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.revered.10",
+          "text": "It's nice to have your company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.1",
+          "text": "Hello. A pleasure to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.2",
+          "text": "You're welcome with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.3",
+          "text": "Good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.4",
+          "text": "Hello. I'm pleased to greet you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.5",
+          "text": "It's good to have a moment together.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.6",
+          "text": "Welcome. I'm glad you're here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.7",
+          "text": "Hello. Your company is appreciated.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.8",
+          "text": "A pleasant day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.9",
+          "text": "Good to see you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.respected.10",
+          "text": "I'm glad we have a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.1",
+          "text": "Hello, you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.2",
+          "text": "Good to see a familiar face I like.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.3",
+          "text": "There you are. Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.4",
+          "text": "Glad to see you. No grand greeting necessary.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.5",
+          "text": "Hello. I'll keep the welcome simple.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.6",
+          "text": "It's nice to have your company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.7",
+          "text": "A perfectly ordinary hello, with pleasure behind it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.8",
+          "text": "Good to see you, plainly enough.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.9",
+          "text": "Hello. This suits me nicely.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.trusted.10",
+          "text": "A welcome face for a quiet moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.1",
+          "text": "Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.2",
+          "text": "Good day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.3",
+          "text": "Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.4",
+          "text": "Well, hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.5",
+          "text": "A good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.6",
+          "text": "Greetings.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.7",
+          "text": "Hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.8",
+          "text": "Hello. I'm here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.9",
+          "text": "A pleasant day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.neutral.10",
+          "text": "Hello, then.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.1",
+          "text": "Hello. Let's keep things simple.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.2",
+          "text": "I see you. A brief greeting will do.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.3",
+          "text": "Good day. I'm not feeling familiar.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.4",
+          "text": "Hello. Give me a little space.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.5",
+          "text": "A civil hello, at least.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.6",
+          "text": "You're here. I acknowledge that.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.7",
+          "text": "Hello. We needn't pretend to know each other better than we do.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.8",
+          "text": "I can greet you without making this a long visit.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.9",
+          "text": "Good day. Let's not rush into anything more.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.suspicious.10",
+          "text": "Hello. I'm keeping my distance for now.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.1",
+          "text": "Hello. Please give me some space.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.2",
+          "text": "I see you. I'd like things to stay quiet.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.3",
+          "text": "Good day. Please keep a little distance.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.4",
+          "text": "Hello. I'm not comfortable with a long visit.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.5",
+          "text": "I'm here. Please don't crowd me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.6",
+          "text": "A brief hello is enough for me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.7",
+          "text": "Hello. I'd rather not be put on the spot.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.8",
+          "text": "I see you're here. Let's keep this calm.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.9",
+          "text": "Good day. I need a little room.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "shepherd.base.greeting_ordinary.feared.10",
+          "text": "Hello. Please let me choose how much company I have.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {

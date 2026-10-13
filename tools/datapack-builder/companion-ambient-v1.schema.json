@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "companion-ambient-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "cooldown_ticks",
+    "combat_quiet_ticks",
+    "dialogue_quiet_ticks",
+    "range",
+    "dwell_ticks",
+    "profiles",
+    "pools"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "cooldown_ticks": {
+      "type": "integer",
+      "minimum": 200,
+      "maximum": 72000
+    },
+    "combat_quiet_ticks": {
+      "type": "integer",
+      "minimum": 200,
+      "maximum": 12000
+    },
+    "dialogue_quiet_ticks": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 12000
+    },
+    "range": {
+      "type": "integer",
+      "minimum": 8,
+      "maximum": 64
+    },
+    "dwell_ticks": {
+      "type": "integer",
+      "minimum": 20,
+      "maximum": 60
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "structures",
+          "tags",
+          "enabled",
+          "pool",
+          "recognizer"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "structures": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "pool": {
+            "type": "string"
+          },
+          "recognizer": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pools": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "text",
+            "weight"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "weight": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000
+            }
+          }
+        }
+      }
+    }
+  }
+}

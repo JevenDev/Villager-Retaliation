@@ -12,10 +12,19 @@ public record VillagerInteractionNoticePayload(
         String text,
         String speakerLabel,
         List<DialogueTextSegment> textSegments,
-        List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) implements CustomPacketPayload {
+        List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges,
+        boolean autoAdvance,
+        java.util.UUID greetingRequestId) implements CustomPacketPayload {
     public VillagerInteractionNoticePayload {
         exchanges = List.copyOf(exchanges);
         if (exchanges.size() > com.jvn.villagerretaliation.dialogue.DialogueSpeech.MAX_EXCHANGES) throw new IllegalArgumentException("Too many dialogue exchanges");
+        if (autoAdvance && exchanges.size() != 2) throw new IllegalArgumentException("Automatic greeting requires exactly two speeches");
+        if (autoAdvance && greetingRequestId == null) throw new IllegalArgumentException("Automatic greeting requires a request token");
+    }
+
+    public VillagerInteractionNoticePayload(int entityId, String text, String speakerLabel,
+            List<DialogueTextSegment> textSegments, List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+        this(entityId, text, speakerLabel, textSegments, exchanges, false, null);
     }
 
     public VillagerInteractionNoticePayload(int entityId, String text, String speakerLabel, List<DialogueTextSegment> textSegments) {
@@ -46,6 +55,9 @@ public record VillagerInteractionNoticePayload(
         buffer.writeUtf(truncate(payload.speakerLabel(), 128), 128);
         DialogueTextSegment.writeList(buffer, textSegments);
         com.jvn.villagerretaliation.dialogue.DialogueSpeech.writeList(buffer, payload.exchanges());
+        buffer.writeBoolean(payload.autoAdvance());
+        buffer.writeBoolean(payload.greetingRequestId() != null);
+        if (payload.greetingRequestId() != null) buffer.writeUUID(payload.greetingRequestId());
     }
 
     private static VillagerInteractionNoticePayload decode(RegistryFriendlyByteBuf buffer) {
@@ -54,7 +66,9 @@ public record VillagerInteractionNoticePayload(
                 buffer.readUtf(512),
                 buffer.readUtf(128),
                 DialogueTextSegment.readList(buffer),
-                com.jvn.villagerretaliation.dialogue.DialogueSpeech.readList(buffer)
+                com.jvn.villagerretaliation.dialogue.DialogueSpeech.readList(buffer),
+                buffer.readBoolean(),
+                buffer.readBoolean() ? buffer.readUUID() : null
         );
     }
 

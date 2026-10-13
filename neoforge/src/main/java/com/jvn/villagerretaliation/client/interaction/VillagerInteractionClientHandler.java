@@ -255,9 +255,13 @@ public final class VillagerInteractionClientHandler {
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (payload.greetingRequestId() != null) {
+            if (screen != null) screen.acceptGreetingNotice(payload);
+            return;
+        }
         if (screen != null) {
             if (payload.exchanges().isEmpty()) screen.acceptVillagerDialogue(payload.text(), payload.textSegments());
-            else screen.acceptDialogueExchanges(payload.exchanges());
+            else screen.acceptDialogueExchanges(payload.exchanges(), payload.autoAdvance(), payload.greetingRequestId());
             return;
         }
         if (payload.exchanges().isEmpty()) {

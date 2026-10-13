@@ -1095,9 +1095,24 @@ public final class VillagerDialogueService {
             String text,
             DialogueTextEffects textEffects,
             List<DialogueTextSegment> textSegments,
-            List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+            List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges,
+            List<PairedDialogueService.Outcome> outcomes) {
         public DialogueResult {
+            outcomes = List.copyOf(outcomes);
             exchanges = List.copyOf(exchanges);
+        }
+
+        public DialogueResult(String lineId, String text, DialogueTextEffects effects, List<DialogueTextSegment> segments,
+                List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+            this(lineId, text, effects, segments, exchanges, List.of());
+        }
+
+        public DialogueResult withOutcome(String branch, Map<String, String> tokens) {
+            return withOutcomes(List.of(new PairedDialogueService.Outcome(branch, tokens)));
+        }
+
+        public DialogueResult withOutcomes(List<PairedDialogueService.Outcome> values) {
+            return new DialogueResult(lineId, text, textEffects, textSegments, exchanges, values);
         }
 
         public DialogueResult(String lineId, String text, DialogueTextEffects textEffects, List<DialogueTextSegment> textSegments) {

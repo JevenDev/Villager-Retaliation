@@ -3,29 +3,1421 @@
     {
       "id": "farmer_new_greeting_rows",
       "request": "greeting",
-      "lines": [
-        "Stay off the rows if you can. The crops remember boots.",
-        "Give the fields room. Farming works better without elbows in it.",
-        "Step carefully near the fields. I would rather greet you than patch you up.",
-        "There you are. I was just near the fields, trying to keep the day sensible.",
-        "Mind the rows. I just convinced them to behave.",
-        "Hello. If this is about trampling crops, choose your words carefully.",
-        "You caught me with dirt on my hands and work on my mind.",
-        "The fields can wait a breath. What do you need?",
-        "Step where the path is. The soil and I both appreciate it.",
-        "Morning. The crops are judging the weather and so am I.",
-        "I have a moment before the next chore notices me.",
-        "Come by the fence, not through the wheat.",
-        "Good to see you arriving without a herd behind you.",
-        "The day is growing whether I am ready or not.",
-        "Speak up. The wind has been answering for people all morning.",
-        "Hello there. If you brought rain, please be specific about how much.",
-        "I was counting seedlings. Try not to distract me into starting over.",
-        "Stand clear of the compost and we can talk like civilized folk.",
-        "You have my attention until the field steals it back.",
-        "Mind the rows and come closer if you need something."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "Stay off the rows if you can. The crops remember boots."
+        },
+        {
+          "id": "line_1",
+          "text": "Give the fields room. Farming works better without elbows in it."
+        },
+        {
+          "id": "line_2",
+          "text": "Step carefully near the fields. I would rather greet you than patch you up."
+        },
+        {
+          "id": "line_3",
+          "text": "There you are. I was just near the fields, trying to keep the day sensible."
+        },
+        {
+          "id": "line_4",
+          "text": "Mind the rows. I just convinced them to behave."
+        },
+        {
+          "id": "line_5",
+          "text": "Hello. If this is about trampling crops, choose your words carefully."
+        },
+        {
+          "id": "line_6",
+          "text": "You caught me with dirt on my hands and work on my mind."
+        },
+        {
+          "id": "line_7",
+          "text": "The fields can wait a breath. What do you need?"
+        },
+        {
+          "id": "line_8",
+          "text": "Step where the path is. The soil and I both appreciate it."
+        },
+        {
+          "id": "line_9",
+          "text": "Morning. The crops are judging the weather and so am I."
+        },
+        {
+          "id": "line_10",
+          "text": "I have a moment before the next chore notices me."
+        },
+        {
+          "id": "line_11",
+          "text": "Come by the fence, not through the wheat."
+        },
+        {
+          "id": "line_12",
+          "text": "Good to see you arriving without a herd behind you."
+        },
+        {
+          "id": "line_13",
+          "text": "The day is growing whether I am ready or not."
+        },
+        {
+          "id": "line_14",
+          "text": "Speak up. The wind has been answering for people all morning."
+        },
+        {
+          "id": "line_15",
+          "text": "Hello there. If you brought rain, please be specific about how much."
+        },
+        {
+          "id": "line_16",
+          "text": "I was counting seedlings. Try not to distract me into starting over."
+        },
+        {
+          "id": "line_17",
+          "text": "Stand clear of the compost and we can talk like civilized folk."
+        },
+        {
+          "id": "line_18",
+          "text": "You have my attention until the field steals it back."
+        },
+        {
+          "id": "line_19",
+          "text": "Mind the rows and come closer if you need something."
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.1",
+          "text": "It's good to see you. I've got time for a word.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.2",
+          "text": "Hello there. You're welcome to stop and talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.3",
+          "text": "A visit from you is a pleasant thing.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.4",
+          "text": "Hello. I'm glad we have a chance to speak.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.5",
+          "text": "Come and have a word, if you'd like.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.6",
+          "text": "I'm pleased to see you. Take your time.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.7",
+          "text": "Hello. There's no need to rush on my account.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.8",
+          "text": "Good to see you here. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.9",
+          "text": "You've got my attention, gladly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.royalty.10",
+          "text": "Hello there. I'd enjoy a little company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.1",
+          "text": "Hello. It's a pleasure to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.2",
+          "text": "I'm glad you've stopped to speak.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.3",
+          "text": "Good to see you. I can spare a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.4",
+          "text": "Hello there. I'd be happy to hear you out.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.5",
+          "text": "You're welcome here for a conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.6",
+          "text": "Hello. I appreciate you taking a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.7",
+          "text": "I'm pleased you've come over.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.8",
+          "text": "Hello to you. Let's have a word.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.9",
+          "text": "I'd welcome a little conversation with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.revered.10",
+          "text": "Hello. You have my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.1",
+          "text": "Hello. I'll hear what you have to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.2",
+          "text": "Good to see you. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.3",
+          "text": "Hello there. We can talk for a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.4",
+          "text": "I'm glad to have a word with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.5",
+          "text": "Hello. Tell me what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.6",
+          "text": "A moment for you is time well spent.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.7",
+          "text": "Hello there. I'm ready to listen.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.8",
+          "text": "Good to see you. I'm happy to talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.9",
+          "text": "Hello. Let's hear it, then.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.respected.10",
+          "text": "You can count on a proper hearing.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.1",
+          "text": "Oh, hello. I've got a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.2",
+          "text": "There you are. Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.3",
+          "text": "Hello. Go on, I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.4",
+          "text": "Good to see you. Have a word.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.5",
+          "text": "Hello there. No need to stand on ceremony.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.6",
+          "text": "Well, hello. We can talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.7",
+          "text": "You've caught me with time to listen.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.8",
+          "text": "Hello. Say what you came to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.9",
+          "text": "All right, hello. I'm here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.trusted.10",
+          "text": "Nice to have a little company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.1",
+          "text": "Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.2",
+          "text": "Oh, hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.3",
+          "text": "Good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.4",
+          "text": "I've got a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.5",
+          "text": "You have my attention now.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.6",
+          "text": "Hello there. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.7",
+          "text": "All right. We can have a word.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.8",
+          "text": "Hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.9",
+          "text": "I'm available for a short conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.neutral.10",
+          "text": "Hello. Take a moment if you need one.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.1",
+          "text": "Hello. Let's keep this straightforward.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.2",
+          "text": "I'll hear you out. That's all for now.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.3",
+          "text": "Hello. Be clear about what you need.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.4",
+          "text": "I'm listening, though I haven't agreed to anything.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.5",
+          "text": "A short conversation will do.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.6",
+          "text": "Hello. You can get to the point.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.7",
+          "text": "I can give you a moment, cautiously.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.8",
+          "text": "Say your piece. I'll decide after that.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.9",
+          "text": "Hello. I'd rather avoid personal questions.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.suspicious.10",
+          "text": "I'll listen before I make up my mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.1",
+          "text": "State your business.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.2",
+          "text": "You can speak. Keep it brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.3",
+          "text": "I'm not in the mood for pleasantries.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.4",
+          "text": "If there's a point, get to it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.5",
+          "text": "Hello. That's enough of an opening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.6",
+          "text": "I have little appetite for a chat with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.7",
+          "text": "Say what you need to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.8",
+          "text": "Let's make this a short conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.9",
+          "text": "I can listen without making small talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.hostile.10",
+          "text": "I'm here. Get on with it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.1",
+          "text": "I have no interest in a friendly chat with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.2",
+          "text": "Necessary business only.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.3",
+          "text": "Keep this to what needs saying.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.4",
+          "text": "Don't expect a warm welcome from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.5",
+          "text": "I'm willing to hear the matter, not exchange pleasantries.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.6",
+          "text": "There'll be no casual conversation between us.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.7",
+          "text": "Make your purpose clear, then leave me to myself.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.8",
+          "text": "I don't want your company. State the matter.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.9",
+          "text": "I have nothing friendly to offer you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.despised.10",
+          "text": "Keep personal talk out of this.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.1",
+          "text": "Hello. Please give me a little room.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.2",
+          "text": "I'm listening. There's no need to come closer.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.3",
+          "text": "Hello. I'd like to keep this calm.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.4",
+          "text": "Please say what you need from there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.5",
+          "text": "I can hear you. Take it slowly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.6",
+          "text": "Hello. A short conversation would be enough for me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.7",
+          "text": "I'm here. Please be clear about what you're asking.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.8",
+          "text": "I'd rather talk with some space between us.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.9",
+          "text": "Hello. Let me listen before I answer.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "farmer.base.greeting_ordinary.feared.10",
+          "text": "Please give me a moment to collect myself.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "paired_greet.wellbeing.royalty.content",
+          "text": "I'm feeling content. It's kind of you to ask.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            },
+            {
+              "type": "mood",
+              "mood": "content"
+            }
+          ]
+        },
+        {
+          "id": "paired_greet.wellbeing.revered.content",
+          "text": "I'm feeling content. Thank you for asking.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            },
+            {
+              "type": "mood",
+              "mood": "content"
+            }
+          ]
+        },
+        {
+          "id": "paired_greet.wellbeing.trusted.content",
+          "text": "I'm feeling <aqua>content</aqua>, thanks for asking.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            },
+            {
+              "type": "mood",
+              "mood": "content"
+            }
+          ]
+        },
+        {
+          "id": "paired_greet.wellbeing.neutral.content",
+          "text": "I'm feeling content, thank you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            },
+            {
+              "type": "mood",
+              "mood": "content"
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {

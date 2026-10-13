@@ -38,7 +38,18 @@ interface VillagerInteractionSessionScreen {
 
     void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments);
 
-    void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges);
+    void acceptGreetingNotice(com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload payload);
+
+    default void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+        acceptDialogueExchanges(exchanges, false, null);
+    }
+
+    default void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, boolean autoAdvance) {
+        acceptDialogueExchanges(exchanges, autoAdvance, null);
+    }
+
+    void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, boolean autoAdvance,
+            java.util.UUID greetingRequestId);
 
     void copyCurrentDialogueTo(VillagerInteractionScreen target);
 

@@ -3,29 +3,1209 @@
     {
       "id": "fisherman_new_greeting_dock",
       "request": "greeting",
-      "lines": [
-        "Step lightly on the dock. Loose boards like to announce strangers.",
-        "Give the dock room. Fishing works better without elbows in it.",
-        "Step carefully near the dock. I would rather greet you than patch you up.",
-        "There you are. I was just near the dock, trying to keep the day sensible.",
-        "Watch your step. The dock is slick and proud of it.",
-        "Hello. If you came for fish, lower your voice.",
-        "You caught me before the line did.",
-        "Mind the net. It catches ankles when the fish refuse.",
-        "Morning. The water is pretending to be calm.",
-        "I have a moment while the river ignores me.",
-        "Stand there, unless you trust your balance more than I do.",
-        "Good to see someone dry for a change.",
-        "The boat is tied, the line is set, and I can talk.",
-        "If this is urgent, say so before the bobber moves.",
-        "Hello. Do not lean on that barrel unless you want a story.",
-        "The wind is carrying half my patience away today.",
-        "Come closer, but leave the net alone.",
-        "I was counting hooks. I can start again after you speak.",
-        "You have my ear until the water steals it.",
-        "Good timing. I was about to take a break from the dock."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "Step lightly on the dock. Loose boards like to announce strangers."
+        },
+        {
+          "id": "line_1",
+          "text": "Give the dock room. Fishing works better without elbows in it."
+        },
+        {
+          "id": "line_2",
+          "text": "Step carefully near the dock. I would rather greet you than patch you up."
+        },
+        {
+          "id": "line_3",
+          "text": "There you are. I was just near the dock, trying to keep the day sensible."
+        },
+        {
+          "id": "line_4",
+          "text": "Watch your step. The dock is slick and proud of it."
+        },
+        {
+          "id": "line_5",
+          "text": "Hello. If you came for fish, lower your voice."
+        },
+        {
+          "id": "line_6",
+          "text": "You caught me before the line did."
+        },
+        {
+          "id": "line_7",
+          "text": "Mind the net. It catches ankles when the fish refuse."
+        },
+        {
+          "id": "line_8",
+          "text": "Morning. The water is pretending to be calm."
+        },
+        {
+          "id": "line_9",
+          "text": "I have a moment while the river ignores me."
+        },
+        {
+          "id": "line_10",
+          "text": "Stand there, unless you trust your balance more than I do."
+        },
+        {
+          "id": "line_11",
+          "text": "Good to see someone dry for a change."
+        },
+        {
+          "id": "line_12",
+          "text": "The boat is tied, the line is set, and I can talk."
+        },
+        {
+          "id": "line_13",
+          "text": "If this is urgent, say so before the bobber moves."
+        },
+        {
+          "id": "line_14",
+          "text": "Hello. Do not lean on that barrel unless you want a story."
+        },
+        {
+          "id": "line_15",
+          "text": "The wind is carrying half my patience away today."
+        },
+        {
+          "id": "line_16",
+          "text": "Come closer, but leave the net alone."
+        },
+        {
+          "id": "line_17",
+          "text": "I was counting hooks. I can start again after you speak."
+        },
+        {
+          "id": "line_18",
+          "text": "You have my ear until the water steals it."
+        },
+        {
+          "id": "line_19",
+          "text": "Good timing. I was about to take a break from the dock."
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.1",
+          "text": "Hello. I'm very glad you came over.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.2",
+          "text": "It's good to see you. An ordinary hello will do nicely.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.3",
+          "text": "Hello there. You needn't have an important reason to speak to me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.4",
+          "text": "You're welcome to a conversation with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.5",
+          "text": "Good to see you. I'm happy to hear what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.6",
+          "text": "Hello. I enjoy a chance to speak with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.7",
+          "text": "I'm pleased to see you. No need for a grand introduction.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.8",
+          "text": "Hello there. You have my attention and my good wishes.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.9",
+          "text": "It's a pleasure. We can start with something simple.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.royalty.10",
+          "text": "Hello. I'd be glad to hear you out.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.1",
+          "text": "Hello. It's a real pleasure to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.2",
+          "text": "I'm glad you've come to speak with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.3",
+          "text": "Hello there. I'd welcome a few words with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.4",
+          "text": "Good to see you. I'm listening with interest.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.5",
+          "text": "You're very welcome to speak your mind here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.6",
+          "text": "Hello. I'm pleased to have your attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.7",
+          "text": "It's good to hear from you, whatever the subject.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.8",
+          "text": "Hello there. I'd like to hear what you have to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.9",
+          "text": "I'm happy to talk with someone I think well of.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.revered.10",
+          "text": "Hello. I appreciate you coming over.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.1",
+          "text": "Hello. I'll give you a proper hearing.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.2",
+          "text": "Good to see you. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.3",
+          "text": "Hello there. I'm interested in your thoughts.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.4",
+          "text": "You have my attention. Say what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.5",
+          "text": "Hello. I'm happy to discuss something with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.6",
+          "text": "I'm pleased you've come over to talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.7",
+          "text": "Hello there. I'll listen before I offer an opinion.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.8",
+          "text": "Good to see you. No need to hurry your opening words.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.9",
+          "text": "Hello. I welcome your point of view.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.respected.10",
+          "text": "We can speak plainly. It's good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.1",
+          "text": "Hello there. No speech needed; just say hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.2",
+          "text": "Good to see you. We can skip the formalities.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.3",
+          "text": "Hello. I'm glad of a friendly conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.4",
+          "text": "There you are. Say whatever's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.5",
+          "text": "Hello there. Nothing remarkable required.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.6",
+          "text": "I'm happy to chat. A small subject is fine by me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.7",
+          "text": "Good to see you. You don't have to make this about fish.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.8",
+          "text": "Hello. I don't mind an ordinary bit of talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.9",
+          "text": "Come to talk, then. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.trusted.10",
+          "text": "Hello there. You can be yourself with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.1",
+          "text": "Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.2",
+          "text": "Hello. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.3",
+          "text": "Yes, I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.4",
+          "text": "Hello. You have my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.5",
+          "text": "We can talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.6",
+          "text": "Hello there. Say what you came to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.7",
+          "text": "I'm listening, if there's something on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.8",
+          "text": "Hello. No need for an introduction just to speak.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.9",
+          "text": "You can tell me what you came to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.neutral.10",
+          "text": "Hello. Let's hear it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.1",
+          "text": "I'll hear what you have to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.2",
+          "text": "Hello. Keep this straightforward.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.3",
+          "text": "You can speak. I'll listen.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.4",
+          "text": "Let's start with why you wanted to talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.5",
+          "text": "Hello. I'd rather get to the point.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.6",
+          "text": "I'm listening, without promising agreement.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.7",
+          "text": "Say what you mean, please.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.8",
+          "text": "We can have a short conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.9",
+          "text": "Hello. Plain words will do.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.suspicious.10",
+          "text": "Tell me the reason for coming over.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.1",
+          "text": "Make this brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.2",
+          "text": "I don't feel like chatting with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.3",
+          "text": "Get to the reason you wanted me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.4",
+          "text": "I'm not in the mood for pleasantries with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.5",
+          "text": "Say your piece. Keep it short.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.6",
+          "text": "I would rather avoid a long conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.7",
+          "text": "You have my attention, not my enthusiasm.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.8",
+          "text": "If there's something to say, say it plainly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.9",
+          "text": "Let's get through this without the friendly talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.hostile.10",
+          "text": "I'm willing to hear the point, nothing more.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.1",
+          "text": "Yes. I hear you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.2",
+          "text": "Hello. Please say what you need to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.3",
+          "text": "I'm listening. I'd like to keep this short.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.4",
+          "text": "Let me find the words, please.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.5",
+          "text": "Hello. I'll try to answer clearly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.6",
+          "text": "You have my attention. Please give me a moment.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.7",
+          "text": "I can hear you. There's no need to repeat it yet.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.8",
+          "text": "I'd rather speak a little at a time.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.9",
+          "text": "Hello. I don't have much to say myself.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "fisherman.personal_topic.greeting_ordinary.feared.10",
+          "text": "I'll listen. Please let me finish if I answer.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {

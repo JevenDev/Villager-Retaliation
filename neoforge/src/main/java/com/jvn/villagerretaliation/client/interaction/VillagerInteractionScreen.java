@@ -447,6 +447,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final java.util.Map<java.util.UUID, Integer> dialogueCameraSubjects = new java.util.LinkedHashMap<>();
     private com.jvn.villagerretaliation.dialogue.DialogueSpeech dialogueSpeech;
     private final java.util.ArrayDeque<com.jvn.villagerretaliation.dialogue.DialogueSpeech> dialogueExchanges = new java.util.ArrayDeque<>();
+    private final DialogueExchangeAutoAdvance automaticDialogue = new DialogueExchangeAutoAdvance();
+    private final PairedGreetingRequestState greetingRequest = new PairedGreetingRequestState();
     private String villagerDialogueText = "";
     private List<DialogueTextSegment> villagerDialogueTextSegments = List.of();
     private int dialogueLineScroll;
@@ -662,6 +664,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             finishClosingAnimation();
             return;
         }
+        tickAutomaticDialogue();
         if (!this.forcedDialogue && !this.clipboardMenu && !this.closingWithAnimation) this.campaignConversation.tick();
         var campaignSession = this.campaignConversation.session();
         this.campaignMedia.update(campaignSession == null ? null : campaignSession.id(), campaignPresentationLine());
@@ -765,6 +768,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             rebuildOptionsKeepingListPosition();
             return;
         }
+        cancelAutomaticDialogue();
         this.dialogueSpeech = null;
         this.dialogueExchanges.clear();
         this.closeAfterDialogueExchanges = false;
@@ -778,6 +782,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments) {
+        boolean restoreOptions = this.automaticDialogue.active() || this.greetingRequest.pending();
+        cancelAutomaticDialogue();
         dialogueCameraRevision = ++nextDialogueCameraRevision;
         dialogueCameraSubjects.clear();
         dialogueCameraBatch = List.of();
@@ -786,11 +792,37 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.closeAfterDialogueExchanges = false;
         this.dialogueExchanges.clear();
         setDialogueText(text, textSegments);
+        if (restoreOptions) rebuildOptionsKeepingListPosition();
+    }
+
+    @Override
+    public void acceptGreetingNotice(com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload payload) {
+        if (!matchesVillager(payload.entityId()) || this.closingWithAnimation
+                || this.clipboardMenu || this.page != DialoguePage.TALK) return;
+        if (payload.autoAdvance()) {
+            acceptDialogueExchanges(payload.exchanges(), true, payload.greetingRequestId());
+        } else if (this.greetingRequest.accept(payload.greetingRequestId(), Util.getMillis())) {
+            if (payload.exchanges().isEmpty()) acceptVillagerDialogue(payload.text(), payload.textSegments());
+            else acceptDialogueExchanges(payload.exchanges());
+            rebuildOptionsKeepingListPosition();
+        }
     }
 
     @Override
     public void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
+        acceptDialogueExchanges(exchanges, false, null);
+    }
+
+    @Override
+    public void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, boolean autoAdvance,
+            java.util.UUID requestId) {
+        if (autoAdvance && (this.closingWithAnimation || this.clipboardMenu
+                || this.page != DialoguePage.TALK || exchanges.size() != 2)) return;
         if (exchanges.isEmpty() || exchanges.equals(dialogueCameraBatch)) return;
+        if (autoAdvance && !this.greetingRequest.accept(requestId, Util.getMillis())) return;
+        this.automaticDialogue.cancel();
+        this.greetingRequest.cancel();
+        if (autoAdvance) this.automaticDialogue.start();
         dialogueCameraBatch = List.copyOf(exchanges);
         this.closeAfterDialogueExchanges = false;
         this.dialogueExchanges.clear();
@@ -803,12 +835,47 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void showNextDialogueExchange() {
+        if (this.dialogueExchanges.isEmpty()) return;
         if (trySkipDialogueTextAnimation()) return;
         clearDialogueMouthAnimation();
         this.dialogueSpeech = this.dialogueExchanges.removeFirst();
         dialogueCameraRevision = ++nextDialogueCameraRevision;
         setDialogueText(this.dialogueSpeech.text(), this.dialogueSpeech.segments());
+        if (this.automaticDialogue.active()) this.automaticDialogue.lineStarted(
+                this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length()));
         rebuildOptionsKeepingListPosition();
+    }
+
+    private void tickAutomaticDialogue() {
+        if (this.greetingRequest.expire(Util.getMillis())) rebuildOptionsKeepingListPosition();
+        if (!this.automaticDialogue.active() || this.closingWithAnimation) return;
+        if (this.page != DialoguePage.TALK) {
+            cancelAutomaticDialogue();
+            rebuildOptionsKeepingListPosition();
+            return;
+        }
+        switch (this.automaticDialogue.poll(Util.getMillis(), isDialogueTextAnimationComplete(), !this.dialogueExchanges.isEmpty())) {
+            case ADVANCE -> showNextDialogueExchange();
+            case FINISH -> {
+                this.dialogueCameraBatch = List.of();
+                if (this.closeAfterDialogueExchanges) closeFromServer();
+                else rebuildOptionsKeepingListPosition();
+            }
+            case NONE -> { }
+        }
+    }
+
+    private void cancelAutomaticDialogue() {
+        if (!this.automaticDialogue.active() && !this.greetingRequest.pending()) return;
+        this.automaticDialogue.cancel();
+        this.greetingRequest.cancel();
+        this.dialogueExchanges.clear();
+        this.dialogueSpeech = null;
+        this.dialogueCameraBatch = List.of();
+        this.dialogueCameraSubjects.clear();
+        this.closeAfterDialogueExchanges = false;
+        this.villagerDialogueText = "";
+        this.villagerDialogueTextSegments = List.of();
     }
 
     private void setDialogueText(String text, List<DialogueTextSegment> textSegments) {
@@ -832,7 +899,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void copyCurrentDialogueTo(VillagerInteractionScreen target) {
-        if (target == null || this.villagerDialogueText.isBlank()) {
+        boolean automatic = this.automaticDialogue.active() || this.greetingRequest.pending();
+        if (target == null || this.villagerDialogueText.isBlank() && !automatic
+                || automatic && target.villagerEntityId != this.villagerEntityId) {
             return;
         }
         target.acceptVillagerDialogue(this.villagerDialogueText, this.villagerDialogueTextSegments);
@@ -842,7 +911,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         target.dialogueCameraSubjects.putAll(this.dialogueCameraSubjects);
         target.closeAfterDialogueExchanges = this.closeAfterDialogueExchanges;
         target.dialogueExchanges.addAll(this.dialogueExchanges);
-        if (!target.dialogueExchanges.isEmpty() || target.closeAfterDialogueExchanges) target.rebuildOptionsKeepingListPosition();
+        if (this.automaticDialogue.active() || this.greetingRequest.pending()) {
+            target.automaticDialogue.copyFrom(this.automaticDialogue);
+            target.greetingRequest.copyFrom(this.greetingRequest);
+            target.page = this.page;
+            target.dialogueTextAnimationStartMillis = this.dialogueTextAnimationStartMillis;
+            target.dialogueTextAnimationSkipped = this.dialogueTextAnimationSkipped;
+        }
+        if (!target.dialogueExchanges.isEmpty() || target.closeAfterDialogueExchanges || target.automaticDialogue.active()
+                || target.greetingRequest.pending()) target.rebuildOptionsKeepingListPosition();
     }
 
     @Override
@@ -952,6 +1029,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
         if (isConfirmKey(keyCode)) {
+            if (this.automaticDialogue.active()) {
+                trySkipDialogueTextAnimation();
+                return true;
+            }
             if (this.page == DialoguePage.GIFT) {
                 requestGift();
             } else {
@@ -1115,6 +1196,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             super.removed();
             return;
         }
+
+        cancelAutomaticDialogue();
 
         if (!this.replacingFromServer) {
             this.campaignConversation.close();
@@ -1298,7 +1381,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void rebuildOptions() {
         this.options.clear();
         this.optionLayoutVersion++;
-        if (!this.dialogueExchanges.isEmpty()) {
+        if (this.automaticDialogue.active() || this.greetingRequest.pending()) {
+            // Automatic greetings reveal both speakers without adding a Continue choice.
+        } else if (!this.dialogueExchanges.isEmpty()) {
             addOption("conversation.continue", this::showNextDialogueExchange);
         } else if (this.closeAfterDialogueExchanges) {
             addOption("conversation.continue", () -> {
@@ -2791,13 +2876,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void requestDialogue(String optionId) {
+        if (this.automaticDialogue.active() || this.greetingRequest.pending()) return;
         if (this.forcedDialogue) {
             if (this.awaitingForcedDialogueResponse) {
                 return;
             }
             this.awaitingForcedDialogueResponse = true;
         }
-        sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, optionId));
+        boolean statusLeave = this.forcedDialogue && FORCED_LEAVE_OPTION_ID.equals(optionId)
+                && this.dialogueOptions.stream().anyMatch(o -> o.id().startsWith("trade_refresh.special_order.status."));
+        java.util.UUID requestId = (statusLeave || com.jvn.villagerretaliation.dialogue.normal.PairedGreetingService.supportsOptionId(optionId))
+                ? beginGreetingRequest() : null;
+        sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, optionId, requestId));
+    }
+
+    java.util.UUID beginGreetingRequest() {
+        if (this.automaticDialogue.active() || this.greetingRequest.pending() || this.closingWithAnimation
+                || this.clipboardMenu || this.page != DialoguePage.TALK) return null;
+        java.util.UUID requestId = this.greetingRequest.begin(Util.getMillis());
+        rebuildOptionsKeepingListPosition();
+        return requestId;
     }
 
     private void tickMouseEasterEggs() {
@@ -3017,6 +3115,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.closingWithAnimation) {
             return;
         }
+        cancelAutomaticDialogue();
         this.closingWithAnimation = true;
         this.draggingScrollbar = false;
         this.draggingSkillScrollbar = false;
@@ -3342,6 +3441,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openPage(DialoguePage page) {
         if (this.campaignConfirmation != null && page != DialoguePage.CAMPAIGN_CONFIRMATION) return;
+        if (page != this.page) cancelAutomaticDialogue();
         DialoguePage previousPage = this.page;
         if (previousPage == DialoguePage.HEAL && page != DialoguePage.HEAL) {
             sendToServer(new VillagerHealingRequestPayload(this.villagerEntityId,

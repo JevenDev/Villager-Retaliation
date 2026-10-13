@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "paired-dialogue-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "pairs"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "pairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "option",
+          "request",
+          "audience",
+          "reputation",
+          "familiarity",
+          "branch",
+          "player",
+          "npc",
+          "owners",
+          "tokens",
+          "group"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "option": {
+            "enum": [
+              "adult_family",
+              "adult_general_question",
+              "adult_gift_preferences",
+              "adult_insult",
+              "adult_joke",
+              "adult_relationships",
+              "adult_share_story",
+              "adult_story",
+              "apologize_for_harm",
+              "baby_family",
+              "baby_gift_preferences",
+              "baby_greeting",
+              "baby_insult",
+              "baby_joke",
+              "baby_question",
+              "baby_share_story",
+              "baby_story",
+              "baby_today_question",
+              "cartographer_map_report",
+              "combat_survival_report",
+              "cured_recognition",
+              "gear_report",
+              "gift_advice_followup",
+              "mount.ownership",
+              "raid_victory_acknowledgement",
+              "recruitment_followup",
+              "recruitment_left_behind",
+              "story_hint_report",
+              "trade_refresh.special_order.status",
+              "village_defense_report",
+              "village_event_report",
+              "weaponsmith_inspect_weapon"
+            ]
+          },
+          "request": {
+            "enum": [
+              "apology",
+              "combat_survival_report",
+              "cured_recognition",
+              "gear_report",
+              "gift_advice_followup",
+              "gift_preferences",
+              "greeting",
+              "insult",
+              "joke",
+              "map_report",
+              "question",
+              "raid_victory_acknowledgement",
+              "recruitment_followup",
+              "share_story",
+              "story",
+              "story_hint_report",
+              "village_defense_report",
+              "village_event_report"
+            ]
+          },
+          "audience": {
+            "enum": [
+              "adult",
+              "child",
+              "either"
+            ]
+          },
+          "reputation": {
+            "enum": [
+              "despised",
+              "feared",
+              "hostile",
+              "neutral",
+              "respected",
+              "revered",
+              "royalty",
+              "suspicious",
+              "trusted"
+            ]
+          },
+          "familiarity": {
+            "enum": [
+              "first",
+              "familiar",
+              "either"
+            ]
+          },
+          "branch": {
+            "type": "string"
+          },
+          "player": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "npc": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "owners": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "tokens": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            }
+          },
+          "group": {
+            "enum": [
+              "social-child",
+              "guarded-events",
+              "dynamic-results",
+              "inspection-orders"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

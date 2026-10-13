@@ -16,6 +16,18 @@ public final class DialogueUsageService {
         if (effective.cooldownTicks() <= 0L && effective.maxUses() <= 0) {
             return true;
         }
+        DialogueUsageSavedData.Usage usage = usage(context, dialogueId, effective);
+        if (effective.maxUses() > 0 && usage.count() >= effective.maxUses()) {
+            return false;
+        }
+        return effective.cooldownTicks() <= 0L
+                || usage.lastUsedGameTime() == Long.MIN_VALUE
+                || context.level().getGameTime() >= usage.lastUsedGameTime() + effective.cooldownTicks();
+    }
+
+    public static DialogueUsageSavedData.Usage usage(DialogueContext context, String dialogueId, DialogueUsagePolicy policy) {
+        if (context == null || dialogueId == null || dialogueId.isBlank()) return DialogueUsageSavedData.Usage.EMPTY;
+        DialogueUsagePolicy effective = policy == null ? DialogueUsagePolicy.DEFAULT : policy;
         DialogueUsageSavedData.Usage usage = DialogueUsageSavedData.get(context.level())
                 .usage(scopeKey(context, effective.scope()), dialogueId);
         if (usage.count() == 0 && effective.scope() == DialogueUsagePolicy.Scope.PLAYER_VILLAGER) {
@@ -23,12 +35,14 @@ public final class DialogueUsageService {
                     context.level(), context.villager(), context.player(), dialogueId);
             usage = new DialogueUsageSavedData.Usage(legacy.count(), legacy.lastUsedGameTime());
         }
-        if (effective.maxUses() > 0 && usage.count() >= effective.maxUses()) {
-            return false;
-        }
-        return effective.cooldownTicks() <= 0L
-                || usage.lastUsedGameTime() == Long.MIN_VALUE
-                || context.level().getGameTime() >= usage.lastUsedGameTime() + effective.cooldownTicks();
+        return usage;
+    }
+
+    public static java.util.Optional<String> lastUsedAmong(
+            DialogueContext context, java.util.Set<String> dialogueIds, DialogueUsagePolicy policy) {
+        if (context == null || dialogueIds == null || dialogueIds.isEmpty()) return java.util.Optional.empty();
+        DialogueUsagePolicy effective = policy == null ? DialogueUsagePolicy.DEFAULT : policy;
+        return DialogueUsageSavedData.get(context.level()).lastUsedAmong(scopeKey(context, effective.scope()), dialogueIds);
     }
 
     public static void record(DialogueContext context, String dialogueId, DialogueUsagePolicy policy) {

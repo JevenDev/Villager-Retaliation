@@ -22,7 +22,9 @@
           "service_id": "villagerretaliation:folio_fieldwork",
           "duration_ticks": 24000,
           "minimum_reputation": 0,
-          "text": "Folio fieldwork"
+          "text": {
+            "key": "#companion.service_label"
+          }
         }
       ],
       "event": "started",

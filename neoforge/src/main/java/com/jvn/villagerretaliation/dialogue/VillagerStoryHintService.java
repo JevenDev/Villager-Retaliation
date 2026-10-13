@@ -87,7 +87,7 @@ public final class VillagerStoryHintService {
                     return new VillagerDialogueService.DialogueResult(
                             "cartographer_map_report_" + category + "_" + report.structureId().getPath(),
                             text
-                    );
+                    ).withOutcome("claimed_structure", Map.of("target", targetName));
                 });
     }
 
@@ -114,7 +114,7 @@ public final class VillagerStoryHintService {
                     return new VillagerDialogueService.DialogueResult(
                             "story_hint_report_" + report.kind().name().toLowerCase(Locale.ROOT) + "_" + report.targetId().getPath(),
                             text
-                    );
+                    ).withOutcome("claimed_discovery", Map.of("target", targetName));
                 });
     }
 
@@ -135,7 +135,7 @@ public final class VillagerStoryHintService {
                     return new VillagerDialogueService.DialogueResult(
                             "share_story_" + report.targetId().getPath() + "_" + result.lineId(),
                             VillagerDialogueResources.resolveTemplate(result.text(), replacements)
-                    );
+                    ).withOutcome(context.reputationLevel() == VillagerReputationLevel.FEARED ? "claimed_feared_fallback" : "claimed_visit", Map.of("target", targetName));
                 });
     }
 

@@ -3,34 +3,991 @@
     {
       "id": "unemployed_new_greeting_site",
       "request": "greeting",
-      "lines": [
-        "If you see a spare job site, do mention it kindly.",
-        "Give me a little room. Looking useful is hard enough without bumping elbows.",
-        "Step carefully near the job site I have not found yet. I would rather greet you than patch you up.",
-        "There you are. I was just near the village square, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one.",
-        "Hello. If there is work, I am listening carefully.",
-        "You caught me between possibilities.",
-        "I was looking useful in case anyone noticed.",
-        "Good timing. I was almost busy by accident.",
-        "Come over. I have time, which is either a gift or a warning.",
-        "If you need help, start with the honest version.",
-        "Welcome. I am not tied to a station, so words travel easier.",
-        "I have two hands and no current excuse.",
-        "The square is full of tasks pretending not to see me.",
-        "Speak up. I was about to choose a direction at random.",
-        "Hello there. Did someone send you or did the day just get ideas?",
-        "I was checking which chores looked loneliest.",
-        "Stand wherever. My workplace has not been assigned yet.",
-        "Good to see you while I am between important errands.",
-        "You have my attention before someone borrows it."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "If you see a spare job site, do mention it kindly."
+        },
+        {
+          "id": "line_1",
+          "text": "Give me a little room. Looking useful is hard enough without bumping elbows."
+        },
+        {
+          "id": "line_2",
+          "text": "Step carefully near the job site I have not found yet. I would rather greet you than patch you up."
+        },
+        {
+          "id": "line_3",
+          "text": "There you are. I was just near the village square, trying to keep the day sensible."
+        },
+        {
+          "id": "line_4",
+          "text": "Morning. Or afternoon. The work makes the hours blur if I let it."
+        },
+        {
+          "id": "line_5",
+          "text": "Good to see you walking in calmly. That usually means nothing is on fire yet."
+        },
+        {
+          "id": "line_6",
+          "text": "If you need me, speak up. If you need gossip, speak quieter."
+        },
+        {
+          "id": "line_7",
+          "text": "You caught me before the next little disaster. That is rare timing."
+        },
+        {
+          "id": "line_8",
+          "text": "Hello. Try not to bring the whole village into this unless it is important."
+        },
+        {
+          "id": "line_9",
+          "text": "I have a moment. Not a long one, but a real one."
+        },
+        {
+          "id": "line_10",
+          "text": "Hello. If there is work, I am listening carefully."
+        },
+        {
+          "id": "line_11",
+          "text": "You caught me between possibilities."
+        },
+        {
+          "id": "line_12",
+          "text": "I was looking useful in case anyone noticed."
+        },
+        {
+          "id": "line_13",
+          "text": "Good timing. I was almost busy by accident."
+        },
+        {
+          "id": "line_14",
+          "text": "Come over. I have time, which is either a gift or a warning."
+        },
+        {
+          "id": "line_15",
+          "text": "If you need help, start with the honest version."
+        },
+        {
+          "id": "line_16",
+          "text": "Welcome. I am not tied to a station, so words travel easier."
+        },
+        {
+          "id": "line_17",
+          "text": "I have two hands and no current excuse."
+        },
+        {
+          "id": "line_18",
+          "text": "The square is full of tasks pretending not to see me."
+        },
+        {
+          "id": "line_19",
+          "text": "Speak up. I was about to choose a direction at random."
+        },
+        {
+          "id": "line_20",
+          "text": "Hello there. Did someone send you or did the day just get ideas?"
+        },
+        {
+          "id": "line_21",
+          "text": "I was checking which chores looked loneliest."
+        },
+        {
+          "id": "line_22",
+          "text": "Stand wherever. My workplace has not been assigned yet."
+        },
+        {
+          "id": "line_23",
+          "text": "Good to see you while I am between important errands."
+        },
+        {
+          "id": "line_24",
+          "text": "You have my attention before someone borrows it."
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.1",
+          "text": "Good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.2",
+          "text": "Hello. It is a pleasure to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.3",
+          "text": "A very good day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.4",
+          "text": "Hello. A pleasant day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.5",
+          "text": "Hello there. I wish you a pleasant day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.6",
+          "text": "It is good to greet you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.7",
+          "text": "Hello, and a good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.8",
+          "text": "A pleasure to see you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.9",
+          "text": "Good day. I am glad to say hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.royalty.10",
+          "text": "Hello. My good wishes to you today.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.1",
+          "text": "Hello. It's good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.2",
+          "text": "A good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.3",
+          "text": "Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.4",
+          "text": "I'm glad to greet you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.5",
+          "text": "Good day. A pleasant moment to say hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.6",
+          "text": "Hello, and my good wishes.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.7",
+          "text": "It's pleasant to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.8",
+          "text": "A warm hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.9",
+          "text": "Good day. I'm pleased to greet you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.revered.10",
+          "text": "Hello. I wish you a pleasant day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.1",
+          "text": "Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.2",
+          "text": "Good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.3",
+          "text": "Good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.4",
+          "text": "Hello. A pleasant day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.5",
+          "text": "I'm glad to say hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.6",
+          "text": "Good day. It's nice to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.7",
+          "text": "Hello, and good wishes.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.8",
+          "text": "A pleasure to greet you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.9",
+          "text": "Hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.respected.10",
+          "text": "Good day. I wish you well.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.1",
+          "text": "Hello there!",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.2",
+          "text": "Good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.3",
+          "text": "Hello, you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.4",
+          "text": "Well, hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.5",
+          "text": "A good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.6",
+          "text": "Hi there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.7",
+          "text": "Hello. Nice to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.8",
+          "text": "Good day!",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.9",
+          "text": "Glad to say hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.trusted.10",
+          "text": "Hello, and a pleasant day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.neutral.1",
+          "text": "Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.neutral.2",
+          "text": "Good day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.neutral.3",
+          "text": "Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.neutral.4",
+          "text": "A good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.neutral.5",
+          "text": "Hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.neutral.6",
+          "text": "Good day, then.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.neutral.7",
+          "text": "A greeting to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.neutral.9",
+          "text": "Good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.suspicious.1",
+          "text": "Hello. I'll keep this brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.suspicious.3",
+          "text": "A brief hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.suspicious.4",
+          "text": "Hello there. I have little to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.suspicious.6",
+          "text": "Hello. No long conversation just now.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.suspicious.7",
+          "text": "I can offer a greeting.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.suspicious.9",
+          "text": "Hello, then.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.hostile.9",
+          "text": "That's my greeting.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.despised.4",
+          "text": "I acknowledge you with a greeting.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.despised.9",
+          "text": "You have my greeting.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.feared.1",
+          "text": "Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.feared.3",
+          "text": "Hello there. Please keep this brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.feared.4",
+          "text": "A quiet hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.feared.5",
+          "text": "Good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.feared.7",
+          "text": "A brief greeting.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "unemployed.base.greeting_ordinary.feared.9",
+          "text": "Good day. I haven't much to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {

@@ -39,16 +39,29 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class VillagerDialogueRequestHandler {
+    private static final Map<ServerPlayer, java.util.Set<java.util.UUID>> ACCEPTED_REQUESTS = new java.util.WeakHashMap<>();
     private VillagerDialogueRequestHandler() {
     }
 
     public static void handle(ServerPlayer player, int entityId, String optionId) {
+        handle(player, entityId, optionId, null);
+    }
+
+    public static void handle(ServerPlayer player, int entityId, String optionId, java.util.UUID greetingRequestId) {
+        com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.withRequest(greetingRequestId,
+                () -> handleCorrelated(player, entityId, optionId, greetingRequestId));
+    }
+
+    private static void handleCorrelated(ServerPlayer player, int entityId, String optionId, java.util.UUID greetingRequestId) {
+        if (!com.jvn.villagerretaliation.dialogue.normal.PairedGreetingService.supportsOptionId(optionId)) greetingRequestId = null;
         InteractionTargetContext target = InteractionRequestValidator
-                .requireDialogueConversation(player, entityId)
+                .requireDialogueConversation(player, entityId, greetingRequestId)
                 .orElse(null);
         if (target == null) {
             return;
         }
+        // A retransmitted automatic exchange must not execute its original action again.
+        if (greetingRequestId != null && !ACCEPTED_REQUESTS.computeIfAbsent(player, ignored -> new java.util.HashSet<>()).add(greetingRequestId)) return;
         Villager villager = target.villager();
         if (ForcedDialogueService.handleDialogueRequest(player, villager, optionId)) {
             return;
@@ -64,7 +77,7 @@ public final class VillagerDialogueRequestHandler {
             return;
         }
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, player)) {
-            InteractionRequestValidator.endConversationWithRefusal(target, "interaction.refuse_despised");
+            InteractionRequestValidator.endConversationWithRefusal(target, "interaction.refuse_despised", greetingRequestId);
             return;
         }
         VillagerInteractionService.focusVillagerOnPlayer(villager, player);
@@ -84,7 +97,10 @@ public final class VillagerDialogueRequestHandler {
                 ? DialogueTreeService.activeOptions(context).orElse(List.of()).stream().filter(option -> option.id().equals(optionId)).findFirst()
                 : VillagerDialogueResources.dialogueOption(context, optionId)).orElse(null);
         if (dialogueOption == null) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.unknown_dialogue_option");
+            String unknown = VillagerDialogueResources.message(context, "interaction.unknown_dialogue_option")
+                    .orElse("interaction.unknown_dialogue_option");
+            VillagerInteractionService.sendPersonalVillagerChat(player, villager, unknown,
+                    DialogueTextSegment.parse(unknown, com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), greetingRequestId);
             VillagerInteractionService.sendDialogueReputation(player, villager, level);
             return;
         }
@@ -103,7 +119,8 @@ public final class VillagerDialogueRequestHandler {
                         itemPayment.removal().replacements()
                 );
                 VillagerInteractionService.sendDialogueReputation(player, villager, level);
-                VillagerInteractionService.sendPersonalVillagerChat(player, villager, failureText);
+                VillagerInteractionService.sendPersonalVillagerChat(player, villager, failureText,
+                        DialogueTextSegment.parse(failureText, com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), greetingRequestId);
                 return;
             }
             itemPaymentResult = paymentResult.get();
@@ -141,6 +158,19 @@ public final class VillagerDialogueRequestHandler {
             responseText = DialogueTextSegment.plainText(responseSegments);
         }
         responseText = DialogueTextSegment.plainText(responseSegments);
+        // Bind only the final, unchanged NPC reply. Payment/reputation overrides keep
+        // their legacy response rather than answering an unrelated player opener.
+        var ordinaryResult = greetingRequestId == null ? result : com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.attach(
+                context, dialogueOption, result, reputationEffect, responseTextReplaced);
+        var pairedResult = greetingRequestId == null ? result : ordinaryResult != result ? ordinaryResult : com.jvn.villagerretaliation.dialogue.normal.PairedGreetingService.attach(
+                context, dialogueOption, result, responseTextReplaced);
+        boolean automaticGreeting = pairedResult != result;
+        result = pairedResult;
+        if (automaticGreeting) {
+            responseTextReplaced = false;
+            responseText = result.text();
+            responseSegments = result.textSegments();
+        }
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         claimTrackerReports(level, villager, player, requestType);
         if (forcedTree) VillagerInteractionService.sendForcedDialogueReputation(player, villager,
@@ -154,9 +184,9 @@ public final class VillagerDialogueRequestHandler {
             if (responseTextReplaced) exchanges = com.jvn.villagerretaliation.dialogue.DialogueSpeech.replaceSpeakerReply(exchanges,
                     new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
                             com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), responseSegments));
-            VillagerInteractionService.sendDialogueExchanges(player, villager, exchanges);
+            VillagerInteractionService.sendDialogueExchanges(player, villager, exchanges, automaticGreeting, greetingRequestId);
         } else {
-            VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText, responseSegments);
+            VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText, responseSegments, greetingRequestId);
         }
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
@@ -198,7 +228,7 @@ public final class VillagerDialogueRequestHandler {
             if (discoveries.isEmpty()) {
                 return new VillagerDialogueService.DialogueResult(
                         "gift_preference_known",
-                        giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", ""));
+                        giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", "")).withOutcome("already_known", Map.of());
             }
             String response = discoveries.stream()
                     .map(discovery -> giftAdviceLine(
@@ -208,19 +238,23 @@ public final class VillagerDialogueRequestHandler {
                             discovery.subject()))
                     .filter(line -> !line.isBlank())
                     .collect(java.util.stream.Collectors.joining("\n"));
-            return new VillagerDialogueService.DialogueResult("gift_preference_discovery", response);
+            return new VillagerDialogueService.DialogueResult("gift_preference_discovery", response).withOutcomes(discoveries.stream()
+                    .map(d -> new com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.Outcome(
+                            d.adviceKind().name().toLowerCase(java.util.Locale.ROOT), Map.of("gift_item", d.itemName(), "gift_subject", d.subject()))).toList());
         }
         if (requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP) {
             return VillagerInteractionTracker
                     .claimUnreportedGiftAdviceResult(context.level(), context.villager(), context.player())
-                    .map(report -> new VillagerDialogueService.DialogueResult(
-                            "gift_advice_followup_" + (report.liked() ? "liked" : "disliked"),
-                            giftAdviceFollowupLine(context, report)
-                    ))
+                    .map(report -> {
+                        var tokens=giftAdviceFollowupTokens(context,report);
+                        return new VillagerDialogueService.DialogueResult(
+                                "gift_advice_followup_"+(report.liked()?"liked":"disliked"),
+                                giftAdviceFollowupLine(context,report,tokens)).withOutcome(report.liked()?"liked":"disliked",tokens);
+                    })
                     .orElseGet(() -> new VillagerDialogueService.DialogueResult(
                             "gift_advice_followup_missing",
                             VillagerDialogueResources.message(context, "gift_advice_followup.missing").orElse("")
-                    ));
+                    ).withOutcome("missing", Map.of()));
         }
         if (requestType == DialogueRequestType.MAP_REPORT) {
             return VillagerStoryHintService
@@ -228,7 +262,7 @@ public final class VillagerDialogueRequestHandler {
                     .orElseGet(() -> new VillagerDialogueService.DialogueResult(
                             "cartographer_map_report_missing",
                             VillagerDialogueResources.message(context, "cartographer_map_report.missing").orElse("")
-                    ));
+                    ).withOutcome("missing", Map.of()));
         }
         if (requestType == DialogueRequestType.STORY_HINT_REPORT) {
             return VillagerStoryHintService
@@ -236,7 +270,7 @@ public final class VillagerDialogueRequestHandler {
                     .orElseGet(() -> new VillagerDialogueService.DialogueResult(
                             "story_hint_report_missing",
                             VillagerDialogueResources.message(context, "story_hint_report.missing").orElse("")
-                    ));
+                    ).withOutcome("missing", Map.of()));
         }
         if (requestType == DialogueRequestType.SHARE_STORY) {
             return VillagerStoryHintService
@@ -244,7 +278,7 @@ public final class VillagerDialogueRequestHandler {
                     .orElseGet(() -> new VillagerDialogueService.DialogueResult(
                             "share_story_missing",
                             VillagerDialogueResources.message(context, "share_story.missing").orElse("")
-                    ));
+                    ).withOutcome("missing", Map.of()));
         }
         if (requestType == DialogueRequestType.STORY) {
             Optional<VillagerDialogueService.DialogueResult> raidStory = VillagerRaidDialogueService.selectRaidStory(context);
@@ -274,6 +308,15 @@ public final class VillagerDialogueRequestHandler {
 
     private static String giftAdviceFollowupLine(
             DialogueContext context,
+            VillagerInteractionTracker.GiftAdviceResultReport report, Map<String,String> replacements) {
+        String key = report.liked() ? "gift_advice_followup.liked" : "gift_advice_followup.disliked";
+        return VillagerDialogueResources
+                .professionPriorityMessage(context, key, replacements)
+                .or(() -> VillagerDialogueResources.message(context, key, replacements))
+                .orElse("");
+    }
+
+    private static Map<String, String> giftAdviceFollowupTokens(DialogueContext context,
             VillagerInteractionTracker.GiftAdviceResultReport report) {
         VillagerProfession testedProfession = professionFromKey(report.testedProfessionKey());
         String professionName = report.testedProfessionName() == null || report.testedProfessionName().isBlank()
@@ -284,7 +327,7 @@ public final class VillagerDialogueRequestHandler {
                 : VillagerGiftKnowledgeService
                         .randomLikedGiftName(context.level(), testedProfession, report.itemId(), context.locale(), context.random())
                         .orElse("something useful");
-        Map<String, String> replacements = Map.of(
+        return Map.of(
                 "gift_item", giftAdviceItemName(context, report),
                 "gift_subject", VillagerInteractionTextUtil.withIndefiniteArticle(professionName),
                 "tested_villager", report.testedVillagerName() == null || report.testedVillagerName().isBlank()
@@ -292,11 +335,6 @@ public final class VillagerDialogueRequestHandler {
                         : report.testedVillagerName(),
                 "alternative_gift", alternativeGift
         );
-        String key = report.liked() ? "gift_advice_followup.liked" : "gift_advice_followup.disliked";
-        return VillagerDialogueResources
-                .professionPriorityMessage(context, key, replacements)
-                .or(() -> VillagerDialogueResources.message(context, key, replacements))
-                .orElse("");
     }
 
     private static String giftAdviceItemName(

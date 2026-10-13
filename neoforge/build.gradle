@@ -38,6 +38,7 @@ def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('
 def campaignScenarioPack = rootProject.file(providers.gradleProperty('campaignScenarioPack').orElse('neoforge/src/gameTest/resources/campaign_fixture').get())
 def campaignScenarioReports = layout.buildDirectory.dir("campaign-scenario-reports/${System.currentTimeMillis()}")
 def campaignConversationMultiplayerDirectory = layout.buildDirectory.dir("campaign-conversation-multiplayer/${System.currentTimeMillis()}")
+def pairedGreetClientSmokeDirectory = layout.buildDirectory.dir("paired-greet-client-smoke/${System.currentTimeMillis()}")
 def companionClientSmokeDirectory = layout.buildDirectory.dir("companion-client-smoke/${System.currentTimeMillis()}")
 def dialogueCameraClientSmokeDirectory = layout.buildDirectory.dir("dialogue-camera-client-smoke/${System.currentTimeMillis()}")
 
@@ -68,6 +69,14 @@ neoForge {
             gameDirectory.set(dialogueCameraClientSmokeDirectory)
             systemProperty 'villagerretaliation.dialogueCameraClientSmoke', dialogueCameraClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'DialogueCameraSmoke', '--width', '1280', '--height', '720'
+        }
+
+        pairedGreetClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(pairedGreetClientSmokeDirectory)
+            systemProperty 'villagerretaliation.pairedGreetClientSmoke', pairedGreetClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'PairedGreetSmoke', '--width', '1280', '--height', '720'
         }
 
         companionClientSmoke {
@@ -688,4 +697,23 @@ tasks.register('campaignFixturePack', Zip) {
     from('src/gameTest/resources/campaign_fixture')
     archiveFileName = 'campaign-fixture.zip'
     destinationDirectory = layout.buildDirectory.dir('distributions')
+}
+
+// Isolated smoke world; never copy or alter the user's saves.
+tasks.named('runPairedGreetClientSmoke') {
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Run focused GameTests first to create isolated world metadata.')
+        copy {
+            from metadata
+            into new File(pairedGreetClientSmokeDirectory.get().asFile, 'saves/PairedGreetSmoke')
+        }
+        new File(pairedGreetClientSmokeDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\n'
+    }
+    doLast {
+        def result = new File(pairedGreetClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Paired Greet client smoke passed'))
+            throw new GradleException('Paired dialogue native checks did not finish. Inspect ' + pairedGreetClientSmokeDirectory.get().asFile)
+    }
 }

@@ -3,29 +3,1349 @@
     {
       "id": "butcher_new_greeting_smoke",
       "request": "greeting",
-      "lines": [
-        "If you smell <wavy>smoke</wavy>, that is supper being planned properly.",
-        "Give the smokehouse room. Butchery works better without elbows in it.",
-        "Step carefully near the smokehouse. I would rather greet you than patch you up.",
-        "There you are. I was just near the smoker, trying to keep the day sensible.",
-        "Come in, but mind the hooks and the smoke.",
-        "Morning. If you are hungry, you picked a dangerous place to stand.",
-        "I have clean hands, sharp tools, and a little time.",
-        "Step around the table. It has work on it.",
-        "Hello. The smokehouse is behaving, so I can talk.",
-        "You caught me before the next batch needs turning.",
-        "If you need something wrapped, wait until I finish this thought.",
-        "Careful where you lean. Everything has a purpose here.",
-        "Good to see you without a complaint about stew.",
-        "I can spare a moment while the smoke does its part.",
-        "Speak up. The cleaver is louder than manners today.",
-        "Welcome, if you washed your hands or at least your intentions.",
-        "I was counting stores. Try not to make me start again.",
-        "The day smells busy. What do you need?",
-        "Stand clear of the block and tell me your business.",
-        "You caught me between the smokehouse and the chopping block."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "If you smell <wavy>smoke</wavy>, that is supper being planned properly."
+        },
+        {
+          "id": "line_1",
+          "text": "Give the smokehouse room. Butchery works better without elbows in it."
+        },
+        {
+          "id": "line_2",
+          "text": "Step carefully near the smokehouse. I would rather greet you than patch you up."
+        },
+        {
+          "id": "line_3",
+          "text": "There you are. I was just near the smoker, trying to keep the day sensible."
+        },
+        {
+          "id": "line_4",
+          "text": "Come in, but mind the hooks and the smoke."
+        },
+        {
+          "id": "line_5",
+          "text": "Morning. If you are hungry, you picked a dangerous place to stand."
+        },
+        {
+          "id": "line_6",
+          "text": "I have clean hands, sharp tools, and a little time."
+        },
+        {
+          "id": "line_7",
+          "text": "Step around the table. It has work on it."
+        },
+        {
+          "id": "line_8",
+          "text": "Hello. The smokehouse is behaving, so I can talk."
+        },
+        {
+          "id": "line_9",
+          "text": "You caught me before the next batch needs turning."
+        },
+        {
+          "id": "line_10",
+          "text": "If you need something wrapped, wait until I finish this thought."
+        },
+        {
+          "id": "line_11",
+          "text": "Careful where you lean. Everything has a purpose here."
+        },
+        {
+          "id": "line_12",
+          "text": "Good to see you without a complaint about stew."
+        },
+        {
+          "id": "line_13",
+          "text": "I can spare a moment while the smoke does its part."
+        },
+        {
+          "id": "line_14",
+          "text": "Speak up. The cleaver is louder than manners today."
+        },
+        {
+          "id": "line_15",
+          "text": "Welcome, if you washed your hands or at least your intentions."
+        },
+        {
+          "id": "line_16",
+          "text": "I was counting stores. Try not to make me start again."
+        },
+        {
+          "id": "line_17",
+          "text": "The day smells busy. What do you need?"
+        },
+        {
+          "id": "line_18",
+          "text": "Stand clear of the block and tell me your business."
+        },
+        {
+          "id": "line_19",
+          "text": "You caught me between the smokehouse and the chopping block."
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.1",
+          "text": "Hello. I'm very glad to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.2",
+          "text": "Good to see you. You don't need a grand reason to say hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.3",
+          "text": "Hello there. A little ordinary conversation would be welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.4",
+          "text": "I'm pleased you've come to speak with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.5",
+          "text": "Hello. I'm happy to hear what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.6",
+          "text": "It's a pleasure to see you. We can keep things simple.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.7",
+          "text": "Good to see you. You have my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.8",
+          "text": "Hello there. I'm glad of your company for a conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.9",
+          "text": "Hello. A chat with you would be welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.royalty.10",
+          "text": "Hello. It's nice to have a chance to talk with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.1",
+          "text": "Hello. It's good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.2",
+          "text": "I'm glad you've come to talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.3",
+          "text": "Hello there. I'm pleased to hear from you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.4",
+          "text": "Good to see you. I'd welcome a conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.5",
+          "text": "Hello. I'm happy to listen.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.6",
+          "text": "It's pleasant to see you. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.7",
+          "text": "Hello there. You have a friendly ear here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.8",
+          "text": "I'm pleased to have a word with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.9",
+          "text": "Good to see you. An ordinary hello is quite enough.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.revered.10",
+          "text": "Hello. It's a pleasure to talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.1",
+          "text": "Hello. I'm interested in what you have to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.2",
+          "text": "Good to see you. Speak your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.3",
+          "text": "Hello there. I'll hear you out.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.4",
+          "text": "Hello there. You have my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.5",
+          "text": "I'm pleased to speak with you. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.6",
+          "text": "Hello. We can get straight to the subject if you like.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.7",
+          "text": "Good to see you. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.8",
+          "text": "Hello there. A straightforward conversation suits me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.9",
+          "text": "I'm happy to give your thoughts a hearing.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.respected.10",
+          "text": "Hello. Say what you'd like to discuss.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.1",
+          "text": "Hello. You don't have to make this about supper.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.2",
+          "text": "Good to see you. No elaborate introduction needed.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.3",
+          "text": "Hello there. Plain conversation suits me nicely.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.4",
+          "text": "I'm glad to see a friendly face. Go on.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.5",
+          "text": "Hello. A small subject will do; it needn't be an occasion.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.6",
+          "text": "Good to see you. We can spare each other the speeches.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.7",
+          "text": "Hello there. I can talk about more than food, if necessary.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.8",
+          "text": "I'm happy to chat. You needn't bring a grand topic with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.9",
+          "text": "Hello. It's nice to have a bit of company in a conversation.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.trusted.10",
+          "text": "Good to see you. Just say what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.1",
+          "text": "Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.2",
+          "text": "Good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.3",
+          "text": "Hello. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.4",
+          "text": "You have my attention.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.5",
+          "text": "Hello. Go ahead.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.6",
+          "text": "Hello. Say what you have in mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.7",
+          "text": "Hello there. Say what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.8",
+          "text": "Good to see you. We can talk.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.9",
+          "text": "Hello. You can speak plainly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.neutral.10",
+          "text": "I'm ready to hear you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.1",
+          "text": "Hello. Be clear about what you want to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.2",
+          "text": "I'm listening. Just tell me what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.3",
+          "text": "Hello there. I'd rather not guess what you mean.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.4",
+          "text": "Go ahead. I can hear you out.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.5",
+          "text": "Hello. A straightforward question is easiest to answer.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.6",
+          "text": "You have my attention. Say what you're here to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.7",
+          "text": "Hello there. Let's keep the meaning clear.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.8",
+          "text": "I'm willing to listen before giving an answer.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.9",
+          "text": "Hello. No need for a long introduction.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.suspicious.10",
+          "text": "Go on, then. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.1",
+          "text": "Hello. Get to the point.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.2",
+          "text": "You have my attention. Keep it brief.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.3",
+          "text": "Go ahead. Say what you need to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.4",
+          "text": "Hello. Plain words will do.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.5",
+          "text": "I'm listening. Don't make a speech of it.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.6",
+          "text": "Say your piece, then.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.7",
+          "text": "Hello there. Keep the conversation straightforward.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.8",
+          "text": "You can speak. I'd prefer a short introduction.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.9",
+          "text": "All right. I'm listening to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.hostile.10",
+          "text": "Hello. Start with what you're after.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.1",
+          "text": "Say what you've come to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.2",
+          "text": "I'm listening. Keep it to the point.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.3",
+          "text": "You can get to your question.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.4",
+          "text": "Hello. No ceremony needed.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.5",
+          "text": "Give me the short version of what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.6",
+          "text": "Go ahead. Spare me the grand opening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.7",
+          "text": "Say it plainly. I'm listening.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.8",
+          "text": "You have my attention for the question.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.9",
+          "text": "All right. Get to the subject.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.despised.10",
+          "text": "Hello. Keep the introduction short.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.1",
+          "text": "Hello. I'm listening to what you want to say.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.2",
+          "text": "I'm here. Please say what's on your mind.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.3",
+          "text": "Hello there. I'd like to understand you clearly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.4",
+          "text": "Go ahead. I'll listen.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.5",
+          "text": "Hello. A plain question would help me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.6",
+          "text": "You have my attention. I hope I can answer clearly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.7",
+          "text": "Hello there. I'm ready to hear what you mean.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.8",
+          "text": "I'm listening. There's no need to hurry your words.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.9",
+          "text": "Hello. Please begin wherever makes sense to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "butcher.base.greeting_ordinary.feared.10",
+          "text": "All right. I can hear you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {

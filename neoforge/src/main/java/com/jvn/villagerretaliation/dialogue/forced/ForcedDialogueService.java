@@ -751,7 +751,9 @@ public final class ForcedDialogueService {
         List<VillagerSpecialOrderService.ActiveOrderStatus> activeOrders =
                 VillagerSpecialOrderService.activeOrderStatuses(level, villager, player.getUUID());
         if (activeOrders.isEmpty()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, "trade_refresh.special_order_status_empty");
+            String empty = tradeRefreshLine(level, villager, player, "trade_refresh.special_order_status_empty", Map.of());
+            if (!com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.sendOrder(player, villager, "root_no_active_orders", Map.of(), empty))
+                VillagerInteractionService.sendVillagerNotice(player, villager, empty);
             return true;
         }
         Optional<ForcedDialogueDefinition> optionDefinition = tradeRefreshOptionDefinitionById(
@@ -761,7 +763,8 @@ public final class ForcedDialogueService {
                 TRADE_REFRESH_SPECIAL_ORDER_STATUS_OPTIONS_ID);
         if (optionDefinition.isEmpty()) {
             String fallback = tradeRefreshLine(level, villager, player, "trade_refresh.special_order_status_select", Map.of());
-            VillagerInteractionService.sendVillagerNotice(player, villager, fallback);
+            if (!com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.sendOrder(player, villager, "root_definition_missing", Map.of(), fallback))
+                VillagerInteractionService.sendVillagerNotice(player, villager, fallback);
             return true;
         }
 
@@ -774,7 +777,7 @@ public final class ForcedDialogueService {
                 optionDefinition.get(),
                 activeOrders);
         ForcedDialogueContext context = tradeRefreshContext(level, villager, player, Map.of());
-        updateTradeRefreshSession(player, villager, definition, context, -1, "");
+        updateTradeRefreshSession(player, villager, definition, context, -1, "paired_status", "choose_active_order", Map.of());
         return true;
     }
 
@@ -965,7 +968,11 @@ public final class ForcedDialogueService {
             exchanges = List.of(new com.jvn.villagerretaliation.dialogue.DialogueSpeech(villager.getUUID(), villager.getId(),
                     VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(response,
                             com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE)));
-        if (option.followUp().isEmpty() || aggro || exchanges.isEmpty()) {
+        boolean pairedStatusLeave = "paired_status".equals(session.tradeRefreshDefinitionId()) && !aggro
+                && option.endConversation() && !responseReplaced && exchanges.isEmpty()
+                && com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.sendOrder(player, villager,
+                        "leave_status_discussion", Map.of(), response);
+        if (!pairedStatusLeave && (option.followUp().isEmpty() || aggro || exchanges.isEmpty())) {
             if (!exchanges.isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager, exchanges);
             else if (!response.isBlank()) VillagerInteractionService.broadcastForcedVillagerChat(
                     player.serverLevel(), villager, response, VillagerInteractionService.villagerSpeakerLabel(villager));
@@ -1000,7 +1007,7 @@ public final class ForcedDialogueService {
         }
         if (option.endConversation() || forceEndConversation) {
             FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true, !aggro && !exchanges.isEmpty());
+            VillagerConversationService.endForPlayer(player, true, !aggro && (!exchanges.isEmpty() || pairedStatusLeave));
         } else {
             VillagerInteractionService.sendForcedDialogueReputation(
                     player,
@@ -1364,6 +1371,12 @@ public final class ForcedDialogueService {
                 VillagerSpecialOrderService.activeOrderStatus(level, villager, player.getUUID(), offerIndex);
         if (selectedStatus.isEmpty()) {
             FORCED_SESSIONS.remove(player.getUUID());
+            String fallback=tradeRefreshLine(level,villager,player,"trade_refresh.special_order_status_empty",Map.of());
+            if (com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.sendOrder(player,villager,
+                    "selected_order_no_longer_active",Map.of(),fallback)) {
+                VillagerConversationService.endForPlayer(player,true,true);
+                return;
+            }
             VillagerConversationService.endForPlayer(player, true);
             openTradeRefreshDialogue(level, villager, player, "trade_refresh.special_order_status_empty", Map.of());
             return;
@@ -1377,6 +1390,12 @@ public final class ForcedDialogueService {
                 player,
                 TRADE_REFRESH_SPECIAL_ORDER_STATUS_OPTIONS_ID);
         if (optionDefinition.isEmpty()) {
+            String fallback=tradeRefreshLine(level,villager,player,"trade_refresh.special_order_status",selectedStatus.get().replacements());
+            if (com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.sendOrder(player,villager,
+                    selectedStatus.get().daysRemaining()==0?"selected_order_zero_day_timing":"selected_order_wait_remaining",selectedStatus.get().replacements(),fallback)) {
+                VillagerInteractionService.sendDialogueReputation(player,villager,level);
+                return;
+            }
             openTradeRefreshDialogue(level, villager, player, "trade_refresh.special_order_status", selectedStatus.get().replacements());
             return;
         }
@@ -1389,7 +1408,8 @@ public final class ForcedDialogueService {
                 optionDefinition.get(),
                 activeOrders);
         ForcedDialogueContext context = tradeRefreshContext(level, villager, player, selectedStatus.get().replacements());
-        updateTradeRefreshSession(player, villager, definition, context, -1, "");
+        updateTradeRefreshSession(player, villager, definition, context, -1, "paired_status",
+                selectedStatus.get().daysRemaining() == 0 ? "selected_order_zero_day_timing" : "selected_order_wait_remaining", selectedStatus.get().replacements());
     }
 
     private static ForcedDialogueDefinition specialOrderStatusDefinition(
@@ -1474,6 +1494,11 @@ public final class ForcedDialogueService {
             ForcedDialogueContext context,
             int offerIndex,
             String definitionId) {
+        updateTradeRefreshSession(player, villager, definition, context, offerIndex, definitionId, "", Map.of());
+    }
+
+    private static void updateTradeRefreshSession(ServerPlayer player, Villager villager, ForcedDialogueDefinition definition,
+            ForcedDialogueContext context, int offerIndex, String definitionId, String pairedBranch, Map<String, String> pairedTokens) {
         ServerLevel level = player.serverLevel();
         FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                 villager.getUUID(),
@@ -1486,7 +1511,9 @@ public final class ForcedDialogueService {
                 offerIndex,
                 definitionId));
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
-        if (!line.isBlank()) {
+        boolean paired = !pairedBranch.isEmpty() && com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService.sendOrder(
+                player, villager, pairedBranch, pairedTokens, line);
+        if (!paired && !line.isBlank()) {
             VillagerInteractionService.broadcastForcedVillagerChat(
                     level,
                     villager,

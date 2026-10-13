@@ -1,0 +1,3301 @@
+{
+  "metadata": {
+    "notes": "Integration-authored PLAYER questions paired with unchanged existing NPC reputation-question responses. Exact adult_question option identity is required; Greet and other options must not consume these rows. No new NPC wording, menu options, cameras, quests, actions or conversion credit. First/familiar reflects actual contact snapshot only; the player questions claim no prior meeting, help, stories, deeds, residence, travel or access permission.",
+    "source_resource": "dialogue/en_us/global/lines/10_reputation.json",
+    "unchanged_source_sha256": "d105e9144ccff0be196bf69d6d8895ca1e66dd9ea67f7c14690cd2f38ded4471",
+    "assessed_variants": 60,
+    "paired_variants": 33,
+    "unpaired_variants": 27,
+    "player_pair_records": 240,
+    "paired_tier_contact_states": 120,
+    "intent_rule": "Current-social-regard responses receive current-regard questions. Advisory responses receive prospective social-advice questions. Per-line intent is recorded below; metaphors never authorize a world action or establish biography.",
+    "variant_inventory": [
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_0",
+        "npc_text": "We do not know what kind of neighbor you are yet. Villages learn quickly.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_1",
+        "npc_text": "We will see what kind of neighbor you choose to be.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_2",
+        "npc_text": "Neutral is not empty. It is the village still watching.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_3",
+        "npc_text": "You have time to become welcome. You also have time to become trouble.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_4",
+        "npc_text": "Around here, reputation starts small and grows from repeated choices.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_5",
+        "npc_text": "No one has decided much about you yet. That can be a gift.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_6",
+        "npc_text": "The village is waiting to see which habits you bring with you.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_7",
+        "npc_text": "You are still a question here, not an answer.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_8",
+        "npc_text": "Do right by people, and they will notice. Do wrong, and they will notice faster.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_9",
+        "npc_text": "For now, you are someone passing through. What comes next is up to you.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "unpaired",
+        "reason": "Unguarded traveler circumstances: someone passing through."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_10",
+        "npc_text": "People are still deciding what to make of you.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_11",
+        "npc_text": "You have neither earned trust nor given us a reason to close the gates.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "unpaired",
+        "reason": "Neutral reputation does not prove absence of prior misconduct or reasons for gate restrictions."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_12",
+        "npc_text": "Most villagers will judge your next choice for what it is.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_13",
+        "npc_text": "You are welcome to trade while the usual rules are respected.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "unpaired",
+        "reason": "Trade permission requires actual trade-availability checks."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_14",
+        "npc_text": "A few kind acts would be noticed quickly.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_15",
+        "npc_text": "People know your face, but not your character yet.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "unpaired",
+        "reason": "Recognition by others is not established by reputation or this contact snapshot."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_16",
+        "npc_text": "The village is giving you room to show your intentions.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_17",
+        "npc_text": "No one expects trouble from you, though no one assumes loyalty either.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_18",
+        "npc_text": "You stand at the easiest point to shape your reputation.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_neutral_question_1#line_19",
+        "npc_text": "Ordinary courtesy goes a long way when people are unsure.",
+        "allowed_tiers": [
+          "neutral"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_0",
+        "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_1",
+        "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_2",
+        "npc_text": "People weigh your words because your actions gave them reason to.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Prior actions explicitly caused the response."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_3",
+        "npc_text": "You have earned a place in the village's better conversations.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event.",
+        "figurative_limit": "Place in better conversations describes current esteem, not a recorded prior conversation."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_4",
+        "npc_text": "A good name is a tool. Use it carefully.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_5",
+        "npc_text": "People here expect more from you now, because you have shown you can give it.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Previously demonstrated capacity to give."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_6",
+        "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event.",
+        "figurative_limit": "Opening doors describes social regard only, not actual entry permission, locks or housing access."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_7",
+        "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_8",
+        "npc_text": "The village has seen enough from you to listen first.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Village previously observed enough conduct."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_9",
+        "npc_text": "Keep walking the way that earned this respect, and it will hold.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Previously demonstrated behavioral path."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_10",
+        "npc_text": "People listen when you offer an opinion.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_11",
+        "npc_text": "You have shown enough good judgment to earn a fair hearing.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Previously demonstrated good judgment."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_12",
+        "npc_text": "Neighbors trust you with work they would not give a stranger.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Entrusted work implies an unsupported work relationship."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_13",
+        "npc_text": "Your help has been noticed beyond the people who received it.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Actual help received and noticed beyond recipients."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_14",
+        "npc_text": "The village expects you to keep acting with care.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Keep acting with care presupposes prior careful conduct."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_15",
+        "npc_text": "A few doors open faster when people know it is you.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event.",
+        "figurative_limit": "Faster opening doors describes social regard only, not actual entry permission, locks or housing access."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_16",
+        "npc_text": "Your name comes up kindly around the workstations.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_17",
+        "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "advice",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_18",
+        "npc_text": "People have begun asking whether you will stay longer.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Longer stay implies duration and a specific conversation."
+      },
+      {
+        "npc_variant_id": "reputation_respected_question_1#line_19",
+        "npc_text": "You are no longer just another traveler passing through.",
+        "allowed_tiers": [
+          "respected",
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Prior traveler status and transition."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_0",
+        "npc_text": "Some players pass through villages like weather. You left roots.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event.",
+        "figurative_limit": "Roots describes current social belonging only, not literal settlement, residence or travel history."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_1",
+        "npc_text": "You made yourself part of the village instead of passing through it.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Travel or residence history implied by becoming part of village rather than passing through."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_2",
+        "npc_text": "People speak of you like someone whose footsteps belong here.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_3",
+        "npc_text": "Your help has settled into the village like a well-built wall.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Previous help."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_4",
+        "npc_text": "You are remembered here for more than one good deed.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "More than one good deed."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_5",
+        "npc_text": "The village does not give that kind of regard lightly.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_6",
+        "npc_text": "You have become part of the stories people use to feel safer.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Specific stories used for reassurance."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_7",
+        "npc_text": "When your name comes up, most faces soften before anyone says why.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_8",
+        "npc_text": "You have done enough good here that people measure others against it.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Prior good deeds."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_9",
+        "npc_text": "A village knows the difference between a visitor and someone who stayed in the ways that matter.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Prior staying."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_10",
+        "npc_text": "People tell stories about what you have done for us.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Stories about deeds for village."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_11",
+        "npc_text": "Your name makes frightened villagers feel steadier.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Actually frightened villagers and their emotional response are additional unguarded state."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_12",
+        "npc_text": "The village remembers every time you chose to help.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Remembered help episodes."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_13",
+        "npc_text": "You have earned a welcome at nearly every door.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event.",
+        "figurative_limit": "Welcome at doors describes social regard only, not actual entry permission, locks or housing access."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_14",
+        "npc_text": "Neighbors ask what you would do when trouble starts.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Neighbors consulting player example during trouble."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_15",
+        "npc_text": "Children try to copy the brave parts of your stories.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Children imitating previously told stories."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_16",
+        "npc_text": "Your word can settle doubts that mine cannot.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_17",
+        "npc_text": "Respect like this was built one choice at a time.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Particular cumulative history of choices."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_18",
+        "npc_text": "People save a place for you at important gatherings.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "unpaired",
+        "reason": "Reserved places at important gatherings."
+      },
+      {
+        "npc_variant_id": "reputation_revered_question_1#line_19",
+        "npc_text": "Even the cautious villagers speak well of you.",
+        "allowed_tiers": [
+          "revered",
+          "royalty"
+        ],
+        "disposition": "paired",
+        "intent": "current_social_regard",
+        "reason": "Current social regard or prospective social advice fits an actual reputation-only owner without assuming a prior deed, meeting or event."
+      }
+    ],
+    "prior_files_unchanged_sha256": {
+      "02_baseline_greet_salutations.json": "66c7010705660c94ee7e0284d5f688d59b0217612635ed92cce406bcd6960754",
+      "01_ordinary_greet_extension.json": "37debf9c3c1750a6e3484b90c1353023fafcb282d0785ad73d0e887e6d22e78a",
+      "00_greet_pairs.json": "4fcc3aa36ab4e7251fafb1ee09f3c5691e51585dc05e967c4ff858ca569ec6c6"
+    },
+    "unsupported": "All27held variants remain NPC-only in both contact states. Reputation does not substitute for deed/story/travel/residence/recognition/trade/event gates. No names or time templates are needed for this intent."
+  },
+  "pairs": [
+    {
+      "id": "reputation_neutral_question_1.line_0.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_0",
+      "npc_text": "We do not know what kind of neighbor you are yet. Villages learn quickly.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_0.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_0",
+      "npc_text": "We do not know what kind of neighbor you are yet. Villages learn quickly.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_0.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_0",
+      "npc_text": "We do not know what kind of neighbor you are yet. Villages learn quickly.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_0.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_0",
+      "npc_text": "We do not know what kind of neighbor you are yet. Villages learn quickly.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_1.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_1",
+      "npc_text": "We will see what kind of neighbor you choose to be.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_1.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_1",
+      "npc_text": "We will see what kind of neighbor you choose to be.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_1.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_1",
+      "npc_text": "We will see what kind of neighbor you choose to be.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_1.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_1",
+      "npc_text": "We will see what kind of neighbor you choose to be.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_2.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_2",
+      "npc_text": "Neutral is not empty. It is the village still watching.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_2.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_2",
+      "npc_text": "Neutral is not empty. It is the village still watching.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_2.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_2",
+      "npc_text": "Neutral is not empty. It is the village still watching.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_2.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_2",
+      "npc_text": "Neutral is not empty. It is the village still watching.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_3.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_3",
+      "npc_text": "You have time to become welcome. You also have time to become trouble.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_3.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_3",
+      "npc_text": "You have time to become welcome. You also have time to become trouble.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_3.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_3",
+      "npc_text": "You have time to become welcome. You also have time to become trouble.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_3.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_3",
+      "npc_text": "You have time to become welcome. You also have time to become trouble.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_4.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_4",
+      "npc_text": "Around here, reputation starts small and grows from repeated choices.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_4.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_4",
+      "npc_text": "Around here, reputation starts small and grows from repeated choices.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_4.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_4",
+      "npc_text": "Around here, reputation starts small and grows from repeated choices.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_4.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_4",
+      "npc_text": "Around here, reputation starts small and grows from repeated choices.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_5.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_5",
+      "npc_text": "No one has decided much about you yet. That can be a gift.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_5.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_5",
+      "npc_text": "No one has decided much about you yet. That can be a gift.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_5.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_5",
+      "npc_text": "No one has decided much about you yet. That can be a gift.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_5.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_5",
+      "npc_text": "No one has decided much about you yet. That can be a gift.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_6.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_6",
+      "npc_text": "The village is waiting to see which habits you bring with you.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_6.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_6",
+      "npc_text": "The village is waiting to see which habits you bring with you.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_6.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_6",
+      "npc_text": "The village is waiting to see which habits you bring with you.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_6.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_6",
+      "npc_text": "The village is waiting to see which habits you bring with you.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_7.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_7",
+      "npc_text": "You are still a question here, not an answer.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_7.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_7",
+      "npc_text": "You are still a question here, not an answer.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_7.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_7",
+      "npc_text": "You are still a question here, not an answer.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_7.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_7",
+      "npc_text": "You are still a question here, not an answer.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_8.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_8",
+      "npc_text": "Do right by people, and they will notice. Do wrong, and they will notice faster.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_8.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_8",
+      "npc_text": "Do right by people, and they will notice. Do wrong, and they will notice faster.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_8.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_8",
+      "npc_text": "Do right by people, and they will notice. Do wrong, and they will notice faster.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_8.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_8",
+      "npc_text": "Do right by people, and they will notice. Do wrong, and they will notice faster.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_10.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_10",
+      "npc_text": "People are still deciding what to make of you.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_10.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_10",
+      "npc_text": "People are still deciding what to make of you.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_10.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_10",
+      "npc_text": "People are still deciding what to make of you.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_10.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_10",
+      "npc_text": "People are still deciding what to make of you.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_12.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_12",
+      "npc_text": "Most villagers will judge your next choice for what it is.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_12.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_12",
+      "npc_text": "Most villagers will judge your next choice for what it is.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_12.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_12",
+      "npc_text": "Most villagers will judge your next choice for what it is.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_12.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_12",
+      "npc_text": "Most villagers will judge your next choice for what it is.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_14.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_14",
+      "npc_text": "A few kind acts would be noticed quickly.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_14.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_14",
+      "npc_text": "A few kind acts would be noticed quickly.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_14.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_14",
+      "npc_text": "A few kind acts would be noticed quickly.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_14.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_14",
+      "npc_text": "A few kind acts would be noticed quickly.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_16.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_16",
+      "npc_text": "The village is giving you room to show your intentions.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_16.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_16",
+      "npc_text": "The village is giving you room to show your intentions.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_16.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_16",
+      "npc_text": "The village is giving you room to show your intentions.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_16.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_16",
+      "npc_text": "The village is giving you room to show your intentions.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_17.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_17",
+      "npc_text": "No one expects trouble from you, though no one assumes loyalty either.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_17.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_17",
+      "npc_text": "No one expects trouble from you, though no one assumes loyalty either.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_17.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_17",
+      "npc_text": "No one expects trouble from you, though no one assumes loyalty either.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people here make of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_17.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_17",
+      "npc_text": "No one expects trouble from you, though no one assumes loyalty either.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_18.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_18",
+      "npc_text": "You stand at the easiest point to shape your reputation.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_18.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_18",
+      "npc_text": "You stand at the easiest point to shape your reputation.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_18.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_18",
+      "npc_text": "You stand at the easiest point to shape your reputation.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_18.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_18",
+      "npc_text": "You stand at the easiest point to shape your reputation.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_19.neutral.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_19",
+      "npc_text": "Ordinary courtesy goes a long way when people are unsure.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_19.neutral.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_19",
+      "npc_text": "Ordinary courtesy goes a long way when people are unsure.",
+      "reputation_level": "neutral",
+      "familiarity": "first",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_19.neutral.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_19",
+      "npc_text": "Ordinary courtesy goes a long way when people are unsure.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_neutral_question_1.line_19.neutral.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_neutral_question_1",
+      "npc_variant_id": "reputation_neutral_question_1#line_19",
+      "npc_text": "Ordinary courtesy goes a long way when people are unsure.",
+      "reputation_level": "neutral",
+      "familiarity": "familiar",
+      "player": "How can I make a good impression here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_0.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_0",
+      "npc_text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_1.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_1",
+      "npc_text": "Respect is useful. Be careful not to spend it carelessly.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_3.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_3",
+      "npc_text": "You have earned a place in the village's better conversations.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_4.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_4",
+      "npc_text": "A good name is a tool. Use it carefully.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_6.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_6",
+      "npc_text": "Respect makes doors easier to open, but it also makes mistakes louder.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_7.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_7",
+      "npc_text": "You are trusted enough that your choices reach farther than you may think.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_10.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_10",
+      "npc_text": "People listen when you offer an opinion.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_15.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_15",
+      "npc_text": "A few doors open faster when people know it is you.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How do I stand with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_16.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_16",
+      "npc_text": "Your name comes up kindly around the workstations.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.respected.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.respected.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "respected",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.respected.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.respected.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "respected",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How should I handle the respect people give me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_respected_question_1.line_17.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_respected_question_1",
+      "npc_variant_id": "reputation_respected_question_1#line_17",
+      "npc_text": "Respect makes mistakes easier to discuss, not easier to ignore.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What should I keep in mind with people here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_0.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_0",
+      "npc_text": "Some players pass through villages like weather. You left roots.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_0.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_0",
+      "npc_text": "Some players pass through villages like weather. You left roots.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_0.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_0",
+      "npc_text": "Some players pass through villages like weather. You left roots.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_0.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_0",
+      "npc_text": "Some players pass through villages like weather. You left roots.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_0.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_0",
+      "npc_text": "Some players pass through villages like weather. You left roots.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_0.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_0",
+      "npc_text": "Some players pass through villages like weather. You left roots.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_0.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_0",
+      "npc_text": "Some players pass through villages like weather. You left roots.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_0.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_0",
+      "npc_text": "Some players pass through villages like weather. You left roots.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_2.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_2",
+      "npc_text": "People speak of you like someone whose footsteps belong here.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_2.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_2",
+      "npc_text": "People speak of you like someone whose footsteps belong here.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_2.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_2",
+      "npc_text": "People speak of you like someone whose footsteps belong here.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_2.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_2",
+      "npc_text": "People speak of you like someone whose footsteps belong here.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_2.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_2",
+      "npc_text": "People speak of you like someone whose footsteps belong here.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_2.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_2",
+      "npc_text": "People speak of you like someone whose footsteps belong here.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_2.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_2",
+      "npc_text": "People speak of you like someone whose footsteps belong here.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_2.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_2",
+      "npc_text": "People speak of you like someone whose footsteps belong here.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_5.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_5",
+      "npc_text": "The village does not give that kind of regard lightly.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_5.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_5",
+      "npc_text": "The village does not give that kind of regard lightly.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_5.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_5",
+      "npc_text": "The village does not give that kind of regard lightly.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_5.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_5",
+      "npc_text": "The village does not give that kind of regard lightly.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_5.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_5",
+      "npc_text": "The village does not give that kind of regard lightly.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_5.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_5",
+      "npc_text": "The village does not give that kind of regard lightly.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_5.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_5",
+      "npc_text": "The village does not give that kind of regard lightly.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_5.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_5",
+      "npc_text": "The village does not give that kind of regard lightly.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_7.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_7",
+      "npc_text": "When your name comes up, most faces soften before anyone says why.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_7.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_7",
+      "npc_text": "When your name comes up, most faces soften before anyone says why.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_7.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_7",
+      "npc_text": "When your name comes up, most faces soften before anyone says why.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_7.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_7",
+      "npc_text": "When your name comes up, most faces soften before anyone says why.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_7.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_7",
+      "npc_text": "When your name comes up, most faces soften before anyone says why.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_7.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_7",
+      "npc_text": "When your name comes up, most faces soften before anyone says why.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_7.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_7",
+      "npc_text": "When your name comes up, most faces soften before anyone says why.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_7.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_7",
+      "npc_text": "When your name comes up, most faces soften before anyone says why.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_13.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_13",
+      "npc_text": "You have earned a welcome at nearly every door.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_13.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_13",
+      "npc_text": "You have earned a welcome at nearly every door.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_13.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_13",
+      "npc_text": "You have earned a welcome at nearly every door.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_13.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_13",
+      "npc_text": "You have earned a welcome at nearly every door.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_13.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_13",
+      "npc_text": "You have earned a welcome at nearly every door.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_13.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_13",
+      "npc_text": "You have earned a welcome at nearly every door.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_13.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_13",
+      "npc_text": "You have earned a welcome at nearly every door.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_13.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_13",
+      "npc_text": "You have earned a welcome at nearly every door.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_16.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_16",
+      "npc_text": "Your word can settle doubts that mine cannot.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_16.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_16",
+      "npc_text": "Your word can settle doubts that mine cannot.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_16.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_16",
+      "npc_text": "Your word can settle doubts that mine cannot.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_16.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_16",
+      "npc_text": "Your word can settle doubts that mine cannot.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_16.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_16",
+      "npc_text": "Your word can settle doubts that mine cannot.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_16.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_16",
+      "npc_text": "Your word can settle doubts that mine cannot.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_16.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_16",
+      "npc_text": "Your word can settle doubts that mine cannot.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_16.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_16",
+      "npc_text": "Your word can settle doubts that mine cannot.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_19.revered.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_19",
+      "npc_text": "Even the cautious villagers speak well of you.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_19.revered.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_19",
+      "npc_text": "Even the cautious villagers speak well of you.",
+      "reputation_level": "revered",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_19.revered.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_19",
+      "npc_text": "Even the cautious villagers speak well of you.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "What do people think of me around here?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_19.revered.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_19",
+      "npc_text": "Even the cautious villagers speak well of you.",
+      "reputation_level": "revered",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_19.royalty.first.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_19",
+      "npc_text": "Even the cautious villagers speak well of you.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_19.royalty.first.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_19",
+      "npc_text": "Even the cautious villagers speak well of you.",
+      "reputation_level": "royalty",
+      "familiarity": "first",
+      "player": "How do people here see me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_19.royalty.familiar.1",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_19",
+      "npc_text": "Even the cautious villagers speak well of you.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "What's the village's opinion of me?",
+      "weight": 1
+    },
+    {
+      "id": "reputation_revered_question_1.line_19.royalty.familiar.2",
+      "option_id": "adult_question",
+      "owner_id": "reputation_revered_question_1",
+      "npc_variant_id": "reputation_revered_question_1#line_19",
+      "npc_text": "Even the cautious villagers speak well of you.",
+      "reputation_level": "royalty",
+      "familiarity": "familiar",
+      "player": "How do people here see me?",
+      "weight": 1
+    }
+  ]
+}

@@ -139,8 +139,14 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     }
 
     @Override
-    public void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges) {
-        this.interactionScreen.acceptDialogueExchanges(exchanges);
+    public void acceptDialogueExchanges(List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, boolean autoAdvance,
+            java.util.UUID greetingRequestId) {
+        this.interactionScreen.acceptDialogueExchanges(exchanges, autoAdvance, greetingRequestId);
+    }
+
+    @Override
+    public void acceptGreetingNotice(com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload payload) {
+        this.interactionScreen.acceptGreetingNotice(payload);
     }
 
     @Override

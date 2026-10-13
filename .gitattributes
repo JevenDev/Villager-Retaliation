@@ -6,3 +6,6 @@ src/generated/**/*.json text eol=lf
 example-packs/dialogue-folder-template/** text eol=lf
 tools/datapack-builder/wiki-snapshot.js text eol=lf
 wiki/*/site-data.js text eol=lf
+
+# Frozen paired source packages have byte-level regression checks.
+neoforge/src/main/resources/data/villagerretaliation/paired_greetings/**/*.json text eol=lf

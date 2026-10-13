@@ -479,6 +479,10 @@ public final class VillagerInteractionService {
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
+        handleDialogueRequest(player, entityId, optionId, null);
+    }
+
+    public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId, java.util.UUID greetingRequestId) {
         if (com.jvn.villagerretaliation.duel.DuelDialogueService.handle(player, entityId, optionId)) {
             return;
         }
@@ -494,7 +498,7 @@ public final class VillagerInteractionService {
         if (handleConstructionBlueprintDialogueRequest(player, entityId, optionId)) {
             return;
         }
-        VillagerDialogueRequestHandler.handle(player, entityId, optionId);
+        VillagerDialogueRequestHandler.handle(player, entityId, optionId, greetingRequestId);
     }
 
     public static void handleMouseEasterEggRequest(
@@ -3074,18 +3078,29 @@ public final class VillagerInteractionService {
     }
 
     public static void sendNotice(ServerPlayer player, int entityId, String text) {
+        sendNotice(player, entityId, text, null);
+    }
+
+    public static void sendNotice(ServerPlayer player, int entityId, String text, java.util.UUID greetingRequestId) {
         String resolvedText = VillagerDialogueResources
                 .globalMessage(player.getServer(), player.getRandom(), text, VillagerLocale.locale(player))
                 .orElse(text);
-        trySendToPlayer(player, new VillagerInteractionNoticePayload(entityId, resolvedText, ""));
+        var segments = DialogueTextSegment.parse(resolvedText, DialogueTextEffects.NONE);
+        trySendToPlayer(player, new VillagerInteractionNoticePayload(entityId, DialogueTextSegment.plainText(segments), "",
+                segments, List.of(), false, greetingRequestId));
     }
 
     public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text) {
+        sendVillagerNotice(player, villager, text, (java.util.UUID) null);
+    }
+
+    public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text, java.util.UUID greetingRequestId) {
         String resolvedText = text;
         if (villager.level() instanceof ServerLevel level) {
             resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text).orElse(text);
         }
-        sendPersonalVillagerChat(player, villager, resolvedText);
+        sendPersonalVillagerChat(player, villager, resolvedText,
+                DialogueTextSegment.parse(resolvedText, DialogueTextEffects.NONE), greetingRequestId);
     }
 
     public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text, Map<String, String> replacements) {
@@ -3216,12 +3231,24 @@ public final class VillagerInteractionService {
 
     public static void sendDialogueExchanges(ServerPlayer player, Villager provider,
             List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, double radius) {
+        sendDialogueExchanges(player, provider, exchanges, radius, false, null);
+    }
+
+    public static void sendDialogueExchanges(ServerPlayer player, Villager provider,
+            List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, boolean autoAdvance, java.util.UUID greetingRequestId) {
+        sendDialogueExchanges(player, provider, exchanges, VillagerRetaliationConfig.SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS.get()
+                ? configuredVillagerChatBroadcastRadius() : 0, autoAdvance, greetingRequestId);
+    }
+
+    private static void sendDialogueExchanges(ServerPlayer player, Villager provider,
+            List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, double radius, boolean autoAdvance, java.util.UUID greetingRequestId) {
         if (exchanges.isEmpty()) return;
         var first = exchanges.getFirst();
-        trySendToPlayer(player, new VillagerInteractionNoticePayload(provider == null ? -1 : provider.getId(), first.text(), first.name(), first.segments(), exchanges));
+        trySendToPlayer(player, new VillagerInteractionNoticePayload(provider == null ? -1 : provider.getId(), first.text(), first.name(), first.segments(), exchanges, autoAdvance, greetingRequestId));
         if (provider != null && radius > 0) {
             for (var nearby : player.serverLevel().players()) {
                 if (nearby == player || nearby.distanceToSqr(provider) > radius * radius) continue;
+                // Observers receive ordinary public speech, never another player's request token.
                 trySendToPlayer(nearby, new VillagerInteractionNoticePayload(provider.getId(), first.text(), first.name(), first.segments(), exchanges));
             }
         }
@@ -3264,6 +3291,12 @@ public final class VillagerInteractionService {
         sendPersonalVillagerChat(player, villager, text, textSegments, configuredVillagerChatBroadcastRadius(), false);
     }
 
+    public static void sendPersonalVillagerChat(ServerPlayer player, Villager villager, String text,
+            List<DialogueTextSegment> textSegments, java.util.UUID greetingRequestId) {
+        sendPersonalVillagerChat(player, villager, text, textSegments,
+                configuredVillagerChatBroadcastRadius(), false, greetingRequestId);
+    }
+
     private static void sendPersonalVillagerChat(
             ServerPlayer player,
             Villager villager,
@@ -3271,6 +3304,12 @@ public final class VillagerInteractionService {
             List<DialogueTextSegment> textSegments,
             double nearbyBroadcastRadius,
             boolean forceLocalBroadcast) {
+        sendPersonalVillagerChat(player, villager, text, textSegments, nearbyBroadcastRadius, forceLocalBroadcast, null);
+    }
+
+    private static void sendPersonalVillagerChat(ServerPlayer player, Villager villager, String text,
+            List<DialogueTextSegment> textSegments, double nearbyBroadcastRadius, boolean forceLocalBroadcast,
+            java.util.UUID greetingRequestId) {
         if (text == null || text.isBlank()) {
             return;
         }
@@ -3278,7 +3317,7 @@ public final class VillagerInteractionService {
                 villager.getId(),
                 text,
                 "",
-                textSegments
+                textSegments, List.of(), false, greetingRequestId
         );
         trySendToPlayer(player, payload);
         if (VillagerRetaliationConfig.SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS.get()

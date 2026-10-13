@@ -229,6 +229,8 @@ public final class VillagerDialogueResources {
     public static void clearCache() {
         cachedDialoguePools = CachedDialoguePools.empty();
         cachedBundleMessages = CachedBundleMessages.empty();
+        PairedGreetingResources.clearCache();
+        PairedDialogueResources.clearCache();
     }
 
     public static Optional<String> openingLine(DialogueContext context, DialogueDisposition disposition) {

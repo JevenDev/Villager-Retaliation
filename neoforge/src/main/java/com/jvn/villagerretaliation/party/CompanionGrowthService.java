@@ -126,8 +126,16 @@ public final class CompanionGrowthService {
         choices.put(id.toString(), receipt);
         state.put("GrowthChoices", choices);
         CompanionSavedData.get(level).setDirty();
+        if(id.equals(ResourceLocation.parse("villagerretaliation:a_place_to_return"))) CompanionAmbientService.claimHomecomingStory(villager);
         player.sendSystemMessage(Component.literal(story.title() + ": " + choice.text() + " (+" + increase + " " + choice.skill().serializedName() + ")"));
         return true;
+    }
+
+    static boolean ownsHomecoming(Villager villager, ServerPlayer player) {
+        var level=player.serverLevel();var state=CompanionSavedData.get(level).find(villager.getUUID());
+        var id=ResourceLocation.parse("villagerretaliation:a_place_to_return");var story=stories.get(id);
+        return state!=null && story!=null && player.getUUID().equals(CompanionLifecycleService.owner(level,villager.getUUID()))
+                && !state.getCompound("GrowthChoices").contains(id.toString()) && ready(level,villager,player,state,story);
     }
 
     public static boolean describe(ServerPlayer player, Villager villager) {

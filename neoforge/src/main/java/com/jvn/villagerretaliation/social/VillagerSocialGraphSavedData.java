@@ -347,6 +347,16 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return relationshipSnapshot(level, villager.getUUID());
     }
 
+    /** Read-only same-bond identity for dialogue; never substitutes a display fallback or guesses age. */
+    public Optional<String> adultPartnerName(UUID subject, Set<VillagerRelationshipStage> stages) {
+        if (knownBaby(subject).orElse(true)) return Optional.empty();
+        return this.romanticBonds.values().stream().filter(b -> b.includes(subject) && stages.contains(b.stage()))
+                .sorted(java.util.Comparator.comparing(b -> b.other(subject).toString()))
+                .filter(b -> !knownBaby(b.other(subject)).orElse(true))
+                .map(b -> knownName(b.other(subject)).orElse(""))
+                .filter(com.jvn.villagerretaliation.dialogue.normal.PairedDialogueService::safe).findFirst();
+    }
+
     public VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, UUID villagerId) {
         if (villagerId == null) {
             return VillagerRelationshipSnapshot.EMPTY;

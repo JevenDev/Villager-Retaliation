@@ -1,0 +1,1587 @@
+{
+  "version": 1,
+  "cooldown_ticks": 2400,
+  "combat_quiet_ticks": 200,
+  "dialogue_quiet_ticks": 100,
+  "range": 48,
+  "dwell_ticks": 20,
+  "profiles": [
+    {
+      "id": "jungle_temple",
+      "structures": [
+        "minecraft:jungle_pyramid"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "jungle_temple",
+      "recognizer": "jungle_temple"
+    },
+    {
+      "id": "desert_pyramid",
+      "structures": [
+        "minecraft:desert_pyramid"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "desert_pyramid",
+      "recognizer": "desert_pyramid"
+    },
+    {
+      "id": "village",
+      "structures": [
+        "minecraft:village_desert",
+        "minecraft:village_plains",
+        "minecraft:village_savanna",
+        "minecraft:village_snowy",
+        "minecraft:village_taiga"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "village",
+      "recognizer": "village"
+    },
+    {
+      "id": "pillager_outpost",
+      "structures": [
+        "minecraft:pillager_outpost"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "pillager_outpost",
+      "recognizer": "pillager_outpost"
+    },
+    {
+      "id": "woodland_mansion",
+      "structures": [
+        "minecraft:mansion"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "woodland_mansion",
+      "recognizer": "woodland_mansion"
+    },
+    {
+      "id": "swamp_hut",
+      "structures": [
+        "minecraft:swamp_hut"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "swamp_hut",
+      "recognizer": "swamp_hut"
+    },
+    {
+      "id": "igloo",
+      "structures": [
+        "minecraft:igloo"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "igloo",
+      "recognizer": "igloo"
+    },
+    {
+      "id": "ruined_portal",
+      "structures": [
+        "minecraft:ruined_portal",
+        "minecraft:ruined_portal_desert",
+        "minecraft:ruined_portal_jungle",
+        "minecraft:ruined_portal_mountain",
+        "minecraft:ruined_portal_nether",
+        "minecraft:ruined_portal_ocean",
+        "minecraft:ruined_portal_swamp"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "ruined_portal",
+      "recognizer": "ruined_portal"
+    },
+    {
+      "id": "shipwreck",
+      "structures": [
+        "minecraft:shipwreck",
+        "minecraft:shipwreck_beached"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "shipwreck",
+      "recognizer": "shipwreck"
+    },
+    {
+      "id": "ocean_ruins",
+      "structures": [
+        "minecraft:ocean_ruin_cold",
+        "minecraft:ocean_ruin_warm"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "ocean_ruins",
+      "recognizer": "ocean_ruins"
+    },
+    {
+      "id": "ocean_monument",
+      "structures": [
+        "minecraft:monument"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "ocean_monument",
+      "recognizer": "ocean_monument"
+    },
+    {
+      "id": "mineshaft",
+      "structures": [
+        "minecraft:mineshaft",
+        "minecraft:mineshaft_mesa"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "mineshaft",
+      "recognizer": "mineshaft"
+    },
+    {
+      "id": "stronghold",
+      "structures": [
+        "minecraft:stronghold"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "stronghold",
+      "recognizer": "stronghold"
+    },
+    {
+      "id": "ancient_city",
+      "structures": [
+        "minecraft:ancient_city"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "ancient_city",
+      "recognizer": "ancient_city"
+    },
+    {
+      "id": "trail_ruins",
+      "structures": [
+        "minecraft:trail_ruins"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "trail_ruins",
+      "recognizer": "trail_ruins"
+    },
+    {
+      "id": "trial_chambers",
+      "structures": [
+        "minecraft:trial_chambers"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "trial_chambers",
+      "recognizer": "trial_chambers"
+    },
+    {
+      "id": "nether_fortress",
+      "structures": [
+        "minecraft:fortress"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "nether_fortress",
+      "recognizer": "nether_fortress"
+    },
+    {
+      "id": "bastion_remnant",
+      "structures": [
+        "minecraft:bastion_remnant"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "bastion_remnant",
+      "recognizer": "bastion_remnant"
+    },
+    {
+      "id": "nether_fossil",
+      "structures": [
+        "minecraft:nether_fossil"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "nether_fossil",
+      "recognizer": "nether_fossil"
+    },
+    {
+      "id": "end_city",
+      "structures": [
+        "minecraft:end_city"
+      ],
+      "tags": [],
+      "enabled": true,
+      "pool": "end_city",
+      "recognizer": "end_city"
+    },
+    {
+      "id": "buried_treasure_disabled",
+      "structures": [
+        "minecraft:buried_treasure"
+      ],
+      "tags": [],
+      "enabled": false,
+      "pool": "",
+      "recognizer": ""
+    }
+  ],
+  "pools": {
+    "ancient_city": [
+      {
+        "id": "ancient_city_01",
+        "text": "Ancient city {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_02",
+        "text": "Look {direction}. Those are ancient city ruins.",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_03",
+        "text": "Worked deepslate city ruins {direction}. An ancient city.",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_04",
+        "text": "We've come within sight of an ancient city.",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_05",
+        "text": "That exposed citywork {direction} is worth noticing.",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_06",
+        "text": "An ancient city. Shall we take our time?",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_07",
+        "text": "An ancient city. We can see enough of the architecture to tell.",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_08",
+        "text": "There's an ancient city in view from here.",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_09",
+        "text": "That citywork {direction} is worth pausing to look at.",
+        "weight": 1
+      },
+      {
+        "id": "ancient_city_10",
+        "text": "Before we go farther, we're within sight of ancient city ruins.",
+        "weight": 1
+      }
+    ],
+    "bastion_remnant": [
+      {
+        "id": "bastion_remnant_01",
+        "text": "Bastion remnant {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_02",
+        "text": "That blackstone mass {direction} is a bastion remnant.",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_03",
+        "text": "That built blackstone bulk {direction} is a bastion remnant.",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_04",
+        "text": "We've come within sight of a bastion.",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_05",
+        "text": "I can make out part of a bastion remnant.",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_06",
+        "text": "A bastion. Shall we give it some room?",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_07",
+        "text": "A bastion. Quite a mass of blackstone, even like this.",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_08",
+        "text": "That bastion remnant {direction} is worth noting.",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_09",
+        "text": "The shape of that blackstone construction gives the bastion away.",
+        "weight": 1
+      },
+      {
+        "id": "bastion_remnant_10",
+        "text": "There's a bastion remnant in view from here.",
+        "weight": 1
+      }
+    ],
+    "companion_returns_alone": [
+      {
+        "id": "companion_returns_alone_01",
+        "text": "I'm back. There you are.",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_02",
+        "text": "Hello again. Just got home.",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_03",
+        "text": "Back at my place, then. And here you are.",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_04",
+        "text": "I've just arrived. Hello again.",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_05",
+        "text": "Here I am, back at my place.",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_06",
+        "text": "We parted ways, and now we're meeting here.",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_07",
+        "text": "You're here too. I've just come back.",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_08",
+        "text": "Made it home. What brings you here?",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_09",
+        "text": "The trip back is done. Hello again.",
+        "weight": 1
+      },
+      {
+        "id": "companion_returns_alone_10",
+        "text": "Looks like we're meeting again at my place.",
+        "weight": 1
+      }
+    ],
+    "desert_pyramid": [
+      {
+        "id": "desert_pyramid_01",
+        "text": "Desert pyramid {direction}. Hard to miss from here.",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_02",
+        "text": "Those markings {direction} belong to a desert pyramid.",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_03",
+        "text": "The sandstone and orange pattern {direction}: a desert pyramid.",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_04",
+        "text": "Look {direction}. We've come across a desert pyramid.",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_05",
+        "text": "A desert pyramid. Shall we take a look from outside?",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_06",
+        "text": "I can see a desert pyramid {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_07",
+        "text": "That pyramid has a very deliberate shape to it.",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_08",
+        "text": "We could head toward the desert pyramid, if you like.",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_09",
+        "text": "A desert pyramid. We can look at the outside before deciding anything else.",
+        "weight": 1
+      },
+      {
+        "id": "desert_pyramid_10",
+        "text": "Let's get our bearings. There's a desert pyramid {direction}.",
+        "weight": 1
+      }
+    ],
+    "end_city": [
+      {
+        "id": "end_city_01",
+        "text": "End city {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "end_city_02",
+        "text": "Those purpur towers {direction} are part of an End city.",
+        "weight": 1
+      },
+      {
+        "id": "end_city_03",
+        "text": "Purpur towers branching out {direction}. An End city.",
+        "weight": 1
+      },
+      {
+        "id": "end_city_04",
+        "text": "We've come within sight of an End city.",
+        "weight": 1
+      },
+      {
+        "id": "end_city_05",
+        "text": "I can make out an End city from here.",
+        "weight": 1
+      },
+      {
+        "id": "end_city_06",
+        "text": "An End city. Shall we go closer?",
+        "weight": 1
+      },
+      {
+        "id": "end_city_07",
+        "text": "An End city. Quite a way to build upward.",
+        "weight": 1
+      },
+      {
+        "id": "end_city_08",
+        "text": "That End city {direction} gives us a landmark.",
+        "weight": 1
+      },
+      {
+        "id": "end_city_09",
+        "text": "Those branching towers make the End city easy to pick out.",
+        "weight": 1
+      },
+      {
+        "id": "end_city_10",
+        "text": "We could stop to look over the End city before choosing a way on.",
+        "weight": 1
+      }
+    ],
+    "generic_built": [
+      {
+        "id": "generic_built_01",
+        "text": "See that {direction}? Someone built it.",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_02",
+        "text": "I can make out a structure {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_03",
+        "text": "Something built {direction}. Can't tell what it is.",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_04",
+        "text": "Have a look {direction}. There's a structure there.",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_05",
+        "text": "That shape {direction} looks man-made.",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_06",
+        "text": "Someone's handiwork, {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_07",
+        "text": "Whatever that is, it's been built.",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_08",
+        "text": "Any idea what that structure {direction} is?",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_09",
+        "text": "That wasn't shaped by the weather.",
+        "weight": 1
+      },
+      {
+        "id": "generic_built_10",
+        "text": "Look {direction}. Someone put that together.",
+        "weight": 1
+      }
+    ],
+    "generic_ruined_masonry": [
+      {
+        "id": "generic_ruined_masonry_01",
+        "text": "Ruined stonework {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_02",
+        "text": "See what's left of that masonry {direction}?",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_03",
+        "text": "That was built once. Now look at the stonework.",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_04",
+        "text": "The masonry {direction} has come apart.",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_05",
+        "text": "You can still make out a structure in those ruins.",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_06",
+        "text": "Take a look {direction}. That stonework's ruined.",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_07",
+        "text": "That isn't just loose rock. It's ruined masonry.",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_08",
+        "text": "Whatever that stone structure was, it's in ruins now.",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_09",
+        "text": "See that {direction}? Broken masonry.",
+        "weight": 1
+      },
+      {
+        "id": "generic_ruined_masonry_10",
+        "text": "There's enough stonework left to make out part of the structure.",
+        "weight": 1
+      }
+    ],
+    "generic_wooden_wreck": [
+      {
+        "id": "generic_wooden_wreck_01",
+        "text": "There's a wooden wreck {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_02",
+        "text": "Can you see the broken frame {direction}?",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_03",
+        "text": "That wood was part of something built. It's wrecked now.",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_04",
+        "text": "Have a look at what's left of that woodwork.",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_05",
+        "text": "Wooden wreckage {direction}. What was it, I wonder?",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_06",
+        "text": "The frame {direction} is broken apart.",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_07",
+        "text": "See those timbers? There's still some framework there.",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_08",
+        "text": "That's a wreck, judging by the broken woodwork.",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_09",
+        "text": "You can still trace part of the frame through that wreckage.",
+        "weight": 1
+      },
+      {
+        "id": "generic_wooden_wreck_10",
+        "text": "Look {direction}. That wooden structure hasn't held together.",
+        "weight": 1
+      }
+    ],
+    "igloo": [
+      {
+        "id": "igloo_01",
+        "text": "Igloo {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "igloo_02",
+        "text": "There's an igloo in view.",
+        "weight": 1
+      },
+      {
+        "id": "igloo_03",
+        "text": "That rounded snow roof {direction} is an igloo.",
+        "weight": 1
+      },
+      {
+        "id": "igloo_04",
+        "text": "We've come across an igloo.",
+        "weight": 1
+      },
+      {
+        "id": "igloo_05",
+        "text": "That snow dome {direction} is an igloo.",
+        "weight": 1
+      },
+      {
+        "id": "igloo_06",
+        "text": "I can make out an igloo from here.",
+        "weight": 1
+      },
+      {
+        "id": "igloo_07",
+        "text": "An igloo. The doorway gives it away.",
+        "weight": 1
+      },
+      {
+        "id": "igloo_08",
+        "text": "Have you spotted the igloo {direction}?",
+        "weight": 1
+      },
+      {
+        "id": "igloo_09",
+        "text": "A shelter-shaped snow dome {direction}. An igloo.",
+        "weight": 1
+      },
+      {
+        "id": "igloo_10",
+        "text": "The igloo {direction} is a useful landmark from here.",
+        "weight": 1
+      }
+    ],
+    "jungle_temple": [
+      {
+        "id": "jungle_temple_01",
+        "text": "Heads up, jungle temple {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_02",
+        "text": "That's a jungle temple {direction}. Worth a closer look?",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_03",
+        "text": "Those mossy stone walls {direction} belong to a jungle temple.",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_04",
+        "text": "Jungle temple, {direction}. Shall we go around it?",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_05",
+        "text": "Have a look {direction}. That's a jungle temple.",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_06",
+        "text": "We've come upon a jungle temple.",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_07",
+        "text": "The stepped roof gives that jungle temple away.",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_08",
+        "text": "A jungle temple. We can decide whether to stop.",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_09",
+        "text": "That temple's stonework is a change from the trees.",
+        "weight": 1
+      },
+      {
+        "id": "jungle_temple_10",
+        "text": "Before we move on, there's a jungle temple {direction}.",
+        "weight": 1
+      }
+    ],
+    "mineshaft": [
+      {
+        "id": "mineshaft_01",
+        "text": "Mineshaft {direction}. I can see the timber supports.",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_02",
+        "text": "Those supports {direction} belong to a mineshaft.",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_03",
+        "text": "Timber supports across a passage {direction}. A mineshaft.",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_04",
+        "text": "Look {direction}. There's a mine passage.",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_05",
+        "text": "A mineshaft. Which way do you want to go?",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_06",
+        "text": "I can make out part of a mineshaft from here.",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_07",
+        "text": "A mineshaft. Those supports make it clear this isn't just a cave.",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_08",
+        "text": "There's a mineshaft passage opening into view.",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_09",
+        "text": "You can follow the worked passage by its timber frames.",
+        "weight": 1
+      },
+      {
+        "id": "mineshaft_10",
+        "text": "Before we carry on, there's a mineshaft {direction}.",
+        "weight": 1
+      }
+    ],
+    "nether_fortress": [
+      {
+        "id": "nether_fortress_01",
+        "text": "Nether fortress {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_02",
+        "text": "Those nether-brick spans {direction} belong to a fortress.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_03",
+        "text": "Those nether-brick spans {direction} make a fortress.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_04",
+        "text": "We've come within sight of a fortress.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_05",
+        "text": "I can make out a Nether fortress from here.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_06",
+        "text": "A fortress. Shall we pick our route carefully?",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_07",
+        "text": "A fortress. Its bridges give us something solid to pick out.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_08",
+        "text": "That fortress {direction} gives us a landmark.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_09",
+        "text": "That isn't a natural ridge. It's a Nether fortress.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fortress_10",
+        "text": "We can decide whether to go closer to the fortress.",
+        "weight": 1
+      }
+    ],
+    "nether_fossil": [
+      {
+        "id": "nether_fossil_01",
+        "text": "Fossil bones {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_02",
+        "text": "Look {direction}. Those are fossil remains.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_03",
+        "text": "Those exposed bone shapes {direction} form a fossil.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_04",
+        "text": "I can make out a fossil {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_05",
+        "text": "We've come upon a set of fossil bones.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_06",
+        "text": "That bone formation {direction} is a fossil.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_07",
+        "text": "A fossil. You can still trace the shape through the bones.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_08",
+        "text": "A fossil. Do you want a closer look?",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_09",
+        "text": "That isn't a single loose bone. It's a fossil formation.",
+        "weight": 1
+      },
+      {
+        "id": "nether_fossil_10",
+        "text": "Before we move on, there's a fossil in view.",
+        "weight": 1
+      }
+    ],
+    "ocean_monument": [
+      {
+        "id": "ocean_monument_01",
+        "text": "Ocean monument {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_02",
+        "text": "That's an ocean monument in view.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_03",
+        "text": "That patterned prismarine facade {direction} belongs to an ocean monument.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_04",
+        "text": "We've come within sight of an ocean monument.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_05",
+        "text": "That prismarine building {direction} is a monument.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_06",
+        "text": "An ocean monument. Shall we keep our distance?",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_07",
+        "text": "A monument. Quite a shape to see through the water.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_08",
+        "text": "There's an ocean monument in view.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_09",
+        "text": "That prismarine construction makes the monument stand out.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_monument_10",
+        "text": "We can decide whether to approach that ocean monument.",
+        "weight": 1
+      }
+    ],
+    "ocean_ruins": [
+      {
+        "id": "ocean_ruins_01",
+        "text": "Ocean ruins {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_02",
+        "text": "There's old masonry {direction}, beneath the water.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_03",
+        "text": "Built stonework under the water {direction}. Ocean ruins.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_04",
+        "text": "I can make out ruins on the seabed.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_05",
+        "text": "We've come within sight of ocean ruins.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_06",
+        "text": "Those ruins {direction} are visible from here.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_07",
+        "text": "Ocean ruins. You can still see part of the old layout.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_08",
+        "text": "Have you noticed the masonry {direction}?",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_09",
+        "text": "That masonry isn't part of the natural seabed.",
+        "weight": 1
+      },
+      {
+        "id": "ocean_ruins_10",
+        "text": "We could take another look at those submerged ruins.",
+        "weight": 1
+      }
+    ],
+    "pillager_outpost": [
+      {
+        "id": "pillager_outpost_01",
+        "text": "Pillager outpost {direction}. Keep that in mind.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_02",
+        "text": "That tower {direction} is a pillager outpost.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_03",
+        "text": "That watchtower is a pillager outpost. We can choose another way.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_04",
+        "text": "I can make out a pillager outpost {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_05",
+        "text": "Look {direction}. That's an outpost.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_06",
+        "text": "We've come within sight of a pillager outpost.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_07",
+        "text": "The tower makes that outpost easy to pick out.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_08",
+        "text": "I'd keep an eye on that outpost {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_09",
+        "text": "A pillager outpost. Seeing the tower is enough for me to suggest a little distance.",
+        "weight": 1
+      },
+      {
+        "id": "pillager_outpost_10",
+        "text": "Have you seen the outpost {direction}?",
+        "weight": 1
+      }
+    ],
+    "returning_together": [
+      {
+        "id": "returning_together_01",
+        "text": "Here we are. Back at my place.",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_02",
+        "text": "That's me home, then.",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_03",
+        "text": "We've made it back to my place.",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_04",
+        "text": "Home again. You've come back with me.",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_05",
+        "text": "All that traveling, and now I'm home.",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_06",
+        "text": "So, here's my place.",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_07",
+        "text": "Back at my place. Shall we stop a moment?",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_08",
+        "text": "That's the journey back done.",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_09",
+        "text": "Home again. What do you make of the trip?",
+        "weight": 1
+      },
+      {
+        "id": "returning_together_10",
+        "text": "I'm home. And you're still with me.",
+        "weight": 1
+      }
+    ],
+    "reunited_at_home": [
+      {
+        "id": "reunited_at_home_01",
+        "text": "Hello again. I came back here after we parted.",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_02",
+        "text": "You've found me at home.",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_03",
+        "text": "Together again, this time at my place.",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_04",
+        "text": "What brings you here? I came home after we split up.",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_05",
+        "text": "There you are. My trip back is done.",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_06",
+        "text": "After our time on the road, here we are at my place.",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_07",
+        "text": "Were you looking for me? I'm back here now.",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_08",
+        "text": "Home again. How have you been since we split up?",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_09",
+        "text": "Here's where I came after we parted ways.",
+        "weight": 1
+      },
+      {
+        "id": "reunited_at_home_10",
+        "text": "Well, we're in the same place again.",
+        "weight": 1
+      }
+    ],
+    "ruined_portal": [
+      {
+        "id": "ruined_portal_01",
+        "text": "Ruined portal {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_02",
+        "text": "There's a broken portal frame in view.",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_03",
+        "text": "That broken obsidian frame {direction} is a ruined portal.",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_04",
+        "text": "We've come upon a ruined portal.",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_05",
+        "text": "That broken frame {direction} is worth noticing.",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_06",
+        "text": "I can make out a ruined portal from here.",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_07",
+        "text": "A portal frame, but broken. We can take a closer look from here.",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_08",
+        "text": "Have you seen the portal remains {direction}?",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_09",
+        "text": "The frame is still recognizable, even in pieces.",
+        "weight": 1
+      },
+      {
+        "id": "ruined_portal_10",
+        "text": "There's a ruined portal in view. Your call whether we stop.",
+        "weight": 1
+      }
+    ],
+    "shipwreck": [
+      {
+        "id": "shipwreck_01",
+        "text": "Shipwreck {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_02",
+        "text": "I can see the remains of a ship {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_03",
+        "text": "That broken hull {direction} is a shipwreck.",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_04",
+        "text": "We've come across a wreck.",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_05",
+        "text": "That broken hull {direction} belonged to a ship.",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_06",
+        "text": "A shipwreck. Do you want a closer look?",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_07",
+        "text": "A wreck. You can still follow the shape of the hull.",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_08",
+        "text": "There's enough of a hull there to make out a ship.",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_09",
+        "text": "That's ship-shaped timberwork, even with pieces missing.",
+        "weight": 1
+      },
+      {
+        "id": "shipwreck_10",
+        "text": "Before we move on, there's a wreck in view.",
+        "weight": 1
+      }
+    ],
+    "stronghold": [
+      {
+        "id": "stronghold_01",
+        "text": "Stronghold stonework {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_02",
+        "text": "That exposed stonework {direction} is part of a stronghold.",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_03",
+        "text": "That laid stonework {direction} isn't natural cave wall. It's a stronghold.",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_04",
+        "text": "Look {direction}. I can make out stronghold masonry.",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_05",
+        "text": "We've reached visible stronghold stonework.",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_06",
+        "text": "A stronghold. Shall we take this slowly?",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_07",
+        "text": "A stronghold. We can see this part; the rest is another question.",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_08",
+        "text": "There's more than natural stone here. That's a stronghold.",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_09",
+        "text": "The stone-brick construction {direction} belongs to a stronghold.",
+        "weight": 1
+      },
+      {
+        "id": "stronghold_10",
+        "text": "Stronghold in view. Your call where we go next.",
+        "weight": 1
+      }
+    ],
+    "swamp_hut": [
+      {
+        "id": "swamp_hut_01",
+        "text": "Swamp hut {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_02",
+        "text": "There's a swamp hut in view.",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_03",
+        "text": "That raised little roof {direction} is a swamp hut.",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_04",
+        "text": "Look {direction}. A swamp hut.",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_05",
+        "text": "We've come across a swamp hut.",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_06",
+        "text": "I can make out a swamp hut from here.",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_07",
+        "text": "A swamp hut. Small enough that we might have walked past it.",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_08",
+        "text": "Have you noticed the hut {direction}?",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_09",
+        "text": "You can pick out the supports under that swamp hut.",
+        "weight": 1
+      },
+      {
+        "id": "swamp_hut_10",
+        "text": "We could pass by the swamp hut, if you'd rather keep moving.",
+        "weight": 1
+      }
+    ],
+    "trail_ruins": [
+      {
+        "id": "trail_ruins_01",
+        "text": "Trail ruins {direction}. Some of the structure is exposed.",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_02",
+        "text": "That exposed masonry {direction} is part of trail ruins.",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_03",
+        "text": "Those worked fragments {direction} are exposed trail ruins.",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_04",
+        "text": "I can make out the exposed part of trail ruins.",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_05",
+        "text": "Trail ruins in view. Shall we look closer?",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_06",
+        "text": "Those trail ruins {direction} are worth noticing.",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_07",
+        "text": "Trail ruins. Just the visible part is enough to catch the eye.",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_08",
+        "text": "Have you noticed the trail ruins {direction}?",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_09",
+        "text": "There's a built pattern to those fragments. Trail ruins.",
+        "weight": 1
+      },
+      {
+        "id": "trail_ruins_10",
+        "text": "There's part of a trail ruin visible from here.",
+        "weight": 1
+      }
+    ],
+    "trial_chambers": [
+      {
+        "id": "trial_chambers_01",
+        "text": "Trial chamber {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_02",
+        "text": "That copper-and-tuff construction {direction} is a trial chamber.",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_03",
+        "text": "Copper set into tuff construction {direction}. A trial chamber.",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_04",
+        "text": "Look {direction}. I can make out a trial chamber.",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_05",
+        "text": "A trial chamber. Shall we approach slowly?",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_06",
+        "text": "There's an exposed trial chamber in view.",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_07",
+        "text": "A trial chamber. That combination of materials is distinctive.",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_08",
+        "text": "We could take a look at this part of the trial chambers.",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_09",
+        "text": "We can make out the chamber architecture from here.",
+        "weight": 1
+      },
+      {
+        "id": "trial_chambers_10",
+        "text": "We're looking into part of the trial chambers.",
+        "weight": 1
+      }
+    ],
+    "village": [
+      {
+        "id": "village_01",
+        "text": "There's a village {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "village_02",
+        "text": "Village in view. Shall we head that way?",
+        "weight": 1
+      },
+      {
+        "id": "village_03",
+        "text": "Those buildings form a village {direction}.",
+        "weight": 1
+      },
+      {
+        "id": "village_04",
+        "text": "Those buildings {direction} are a village.",
+        "weight": 1
+      },
+      {
+        "id": "village_05",
+        "text": "We've come within sight of a village.",
+        "weight": 1
+      },
+      {
+        "id": "village_06",
+        "text": "Look {direction}; there's a village in view.",
+        "weight": 1
+      },
+      {
+        "id": "village_07",
+        "text": "A village. We can choose whether to turn toward it.",
+        "weight": 1
+      },
+      {
+        "id": "village_08",
+        "text": "Have you noticed the village {direction}?",
+        "weight": 1
+      },
+      {
+        "id": "village_09",
+        "text": "Several buildings together {direction}. A village.",
+        "weight": 1
+      },
+      {
+        "id": "village_10",
+        "text": "Before we go farther, there's a village {direction}.",
+        "weight": 1
+      }
+    ],
+    "woodland_mansion": [
+      {
+        "id": "woodland_mansion_01",
+        "text": "Woodland mansion {direction}. That's quite a building.",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_02",
+        "text": "Look {direction}. There's a woodland mansion.",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_03",
+        "text": "That dark-oak facade {direction} belongs to a woodland mansion.",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_04",
+        "text": "We've come upon a mansion.",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_05",
+        "text": "That woodland mansion {direction} makes a clear landmark.",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_06",
+        "text": "A mansion. Do you want to go closer?",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_07",
+        "text": "A mansion like that takes up quite a stretch of the view.",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_08",
+        "text": "There's a woodland mansion in view.",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_09",
+        "text": "That's a woodland mansion. I wouldn't choose our next turn without noticing it.",
+        "weight": 1
+      },
+      {
+        "id": "woodland_mansion_10",
+        "text": "We could keep our distance from the mansion, if you prefer.",
+        "weight": 1
+      }
+    ]
+  }
+}

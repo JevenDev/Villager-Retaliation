@@ -3,34 +3,1369 @@
     {
       "id": "nitwit_new_greeting_corner",
       "request": "greeting",
-      "lines": [
-        "Hello. I was keeping this corner company.",
-        "Give the sunny corner some room. It gets shy around elbows.",
-        "Step carefully near the sunny corner. I would rather greet you than patch you up.",
-        "There you are. I was wondering who owned those footsteps.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one.",
-        "Hello. I was thinking about corners.",
-        "You arrived at a good time, unless you meant to arrive earlier.",
-        "Hi. I am busy in a way that is hard to document.",
-        "Careful where you stand. That shadow was using the spot.",
-        "Hello there. I was just supervising the air.",
-        "I have a moment. I had several, actually.",
-        "Good to see you. I think I saw you first, unless you did.",
-        "Come closer if you are not carrying a serious face.",
-        "I was watching a barrel. It blinked first in spirit.",
-        "Hello. The day seems mostly assembled.",
-        "If you need help, I can point with confidence.",
-        "You caught me between thoughts. Wide space, that.",
-        "Stand anywhere. I have not assigned the ground today.",
-        "Hi. Did you bring news or just footsteps?",
-        "I am listening with both ears and a spare guess."
-      ],
-      "weight": 26
+      "weight": 26,
+      "variants": [
+        {
+          "id": "line_0",
+          "text": "Hello. I was keeping this corner company."
+        },
+        {
+          "id": "line_1",
+          "text": "Give the sunny corner some room. It gets shy around elbows."
+        },
+        {
+          "id": "line_2",
+          "text": "Step carefully near the sunny corner. I would rather greet you than patch you up."
+        },
+        {
+          "id": "line_3",
+          "text": "There you are. I was wondering who owned those footsteps."
+        },
+        {
+          "id": "line_4",
+          "text": "Morning. Or afternoon. The work makes the hours blur if I let it."
+        },
+        {
+          "id": "line_5",
+          "text": "Good to see you walking in calmly. That usually means nothing is on fire yet."
+        },
+        {
+          "id": "line_6",
+          "text": "If you need me, speak up. If you need gossip, speak quieter."
+        },
+        {
+          "id": "line_7",
+          "text": "You caught me before the next little disaster. That is rare timing."
+        },
+        {
+          "id": "line_8",
+          "text": "Hello. Try not to bring the whole village into this unless it is important."
+        },
+        {
+          "id": "line_9",
+          "text": "I have a moment. Not a long one, but a real one."
+        },
+        {
+          "id": "line_10",
+          "text": "Hello. I was thinking about corners."
+        },
+        {
+          "id": "line_11",
+          "text": "You arrived at a good time, unless you meant to arrive earlier."
+        },
+        {
+          "id": "line_12",
+          "text": "Hi. I am busy in a way that is hard to document."
+        },
+        {
+          "id": "line_13",
+          "text": "Careful where you stand. That shadow was using the spot."
+        },
+        {
+          "id": "line_14",
+          "text": "Hello there. I was just supervising the air."
+        },
+        {
+          "id": "line_15",
+          "text": "I have a moment. I had several, actually."
+        },
+        {
+          "id": "line_16",
+          "text": "Good to see you. I think I saw you first, unless you did."
+        },
+        {
+          "id": "line_17",
+          "text": "Come closer if you are not carrying a serious face."
+        },
+        {
+          "id": "line_18",
+          "text": "I was watching a barrel. It blinked first in spirit."
+        },
+        {
+          "id": "line_19",
+          "text": "Hello. The day seems mostly assembled."
+        },
+        {
+          "id": "line_20",
+          "text": "If you need help, I can point with confidence."
+        },
+        {
+          "id": "line_21",
+          "text": "You caught me between thoughts. Wide space, that."
+        },
+        {
+          "id": "line_22",
+          "text": "Stand anywhere. I have not assigned the ground today."
+        },
+        {
+          "id": "line_23",
+          "text": "Hi. Did you bring news or just footsteps?"
+        },
+        {
+          "id": "line_24",
+          "text": "I am listening with both ears and a spare guess."
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.1",
+          "text": "Hello. It's a pleasure to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.2",
+          "text": "Ah, hello. I'm very glad of your company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.3",
+          "text": "Good to see you. You're welcome with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.4",
+          "text": "Hello there. I'm happy to see you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.5",
+          "text": "A very good hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.6",
+          "text": "Hello. It's lovely to have you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.7",
+          "text": "There you are. A welcome sight.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.8",
+          "text": "Hello to you. I'm glad we've met here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.9",
+          "text": "Good to see you. A warm welcome from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.royalty.10",
+          "text": "Hello. I was pleased the moment I saw you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "royalty"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.1",
+          "text": "Hello. I'm glad to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.2",
+          "text": "Good to see you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.3",
+          "text": "Oh, hello. You're very welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.4",
+          "text": "Hello there. It's nice having you around.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.5",
+          "text": "A friendly hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.6",
+          "text": "Hello. I'm pleased we crossed paths.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.7",
+          "text": "Good to see you. I mean that.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.8",
+          "text": "Ah, hello. It's a pleasure.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.9",
+          "text": "Hello to you. I'm happy we've met.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.revered.10",
+          "text": "Hello. It's good having your company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "revered"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.1",
+          "text": "Hello. It's good to meet you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.2",
+          "text": "Good to see you. Welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.3",
+          "text": "Hello there. I'm pleased to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.4",
+          "text": "Ah, hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.5",
+          "text": "Hello. A pleasure to meet here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.6",
+          "text": "Good to see you about.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.7",
+          "text": "Hello. You're welcome here with me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.8",
+          "text": "A good hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.9",
+          "text": "Hello there. It's nice to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.respected.10",
+          "text": "Hello. I'm glad our paths crossed.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "respected"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.1",
+          "text": "Oh, hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.2",
+          "text": "Hello. Nice to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.3",
+          "text": "Ah, it's you. Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.4",
+          "text": "Good to see you, truly.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.5",
+          "text": "Hello there. You're welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.6",
+          "text": "Well, hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.7",
+          "text": "Hello. Glad to see you about.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.8",
+          "text": "There you are. Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.9",
+          "text": "Hello, you. Good to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.trusted.10",
+          "text": "Ah, hello. Nice meeting you here.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "trusted"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.1",
+          "text": "Hello there.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.2",
+          "text": "Oh, hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.3",
+          "text": "Hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.4",
+          "text": "Good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.5",
+          "text": "Ah. Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.6",
+          "text": "Well, hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.7",
+          "text": "Hello. A good day to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.8",
+          "text": "Greetings to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.9",
+          "text": "Hello there. Good day.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.neutral.10",
+          "text": "A hello from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "neutral"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.1",
+          "text": "Hello. I'll keep a little to myself.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.2",
+          "text": "I see you. Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.3",
+          "text": "Hello. I'll keep my thoughts to myself.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.4",
+          "text": "A hello will do for now.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.5",
+          "text": "Hello. Don't expect a very warm welcome from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.6",
+          "text": "Well, hello. I'm keeping my own counsel.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.7",
+          "text": "Hello. I'm not very talkative with you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.8",
+          "text": "I can offer you a hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.9",
+          "text": "Hello. That's enough of a greeting from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.suspicious.10",
+          "text": "I've noticed you. Hello, then.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "suspicious"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.1",
+          "text": "Hello. I'm not pleased to see you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.2",
+          "text": "It's you. I have no warm greeting.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.3",
+          "text": "I see you. That's the welcome you'll get from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.4",
+          "text": "Hello. I don't enjoy your company.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.5",
+          "text": "You have my attention, if not my welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.6",
+          "text": "Hello, then. I won't pretend to be delighted.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.7",
+          "text": "I've seen you. There's no need for a friendly greeting.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.8",
+          "text": "It's you. I'll leave the welcome at that.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.9",
+          "text": "Hello. I'm not feeling welcoming toward you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.hostile.10",
+          "text": "Hello. I'm happier keeping to myself.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "hostile"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.1",
+          "text": "It's you. You're no welcome sight to me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.2",
+          "text": "I've seen you. I have no greeting to offer.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.3",
+          "text": "I have no welcome for you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.4",
+          "text": "You won't get a friendly hello from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.5",
+          "text": "I see you. I would rather not.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.6",
+          "text": "There's nothing warm in my greeting to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.7",
+          "text": "It's you. I won't pretend I'm glad.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.8",
+          "text": "It's you. I'll leave it at that.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.9",
+          "text": "You're here. I can't say that pleases me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.despised.10",
+          "text": "I've noticed you. Don't look to me for a welcome.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "despised"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.1",
+          "text": "Hello. I'm feeling uneasy.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.2",
+          "text": "I see you. Hello, then.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.3",
+          "text": "Hello. I don't have much to say just now.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.4",
+          "text": "A quiet hello from me.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.5",
+          "text": "Hello. I'm finding it hard to feel at ease.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.6",
+          "text": "Oh. Hello to you.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.7",
+          "text": "Hello. I'll keep my greeting short.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.8",
+          "text": "I've noticed you. Hello.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.9",
+          "text": "Hello there. I'm a little tense.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        },
+        {
+          "id": "nitwit.base.greeting_ordinary.feared.10",
+          "text": "Hello. That's all I can manage for a greeting.",
+          "conditions": [
+            {
+              "type": "reputation",
+              "level": "feared"
+            },
+            {
+              "type": "villager_age",
+              "adult": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "metadata": {
