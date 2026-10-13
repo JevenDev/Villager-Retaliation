@@ -272,6 +272,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
+        com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker.tick();
         com.jvn.villagerretaliation.quest.follower.QuestFollowerService.maintain(event.getServer());
         com.jvn.villagerretaliation.social.VillagerBirthService.finishAcceptedSpawns();
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onServerTick(event.getServer());

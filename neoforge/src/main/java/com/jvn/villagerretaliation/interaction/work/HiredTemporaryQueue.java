@@ -15,6 +15,8 @@ public record HiredTemporaryQueue(UUID owner, UUID issuer, UUID worksite, HiredV
     public static final String STATE_TAG = "TemporaryWork";
     public static final String PENDING_TAG = "TemporaryWorkAfterTree";
     public static final int MAX_TASKS = 16;
+    private static final com.google.common.cache.Cache<CompoundTag, Cached> CACHE = com.google.common.cache.CacheBuilder.newBuilder()
+            .weakKeys().maximumSize(256).build();
 
     public HiredTemporaryQueue {
         Objects.requireNonNull(owner);
@@ -92,6 +94,11 @@ public record HiredTemporaryQueue(UUID owner, UUID issuer, UUID worksite, HiredV
         }
         if (!state.contains(STATE_TAG, Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid temporary queue tag");
         CompoundTag tag = state.getCompound(STATE_TAG);
+        var cached = CACHE.getIfPresent(tag);
+        if (cached != null && cached.source.equals(tag)) {
+            HiredTemporaryEntities.validate(state, cached.queue.current());
+            return cached.queue;
+        }
         if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 1 || !tag.hasUUID("Owner")
                 || !tag.hasUUID("Issuer") || tag.contains("Worksite") && !tag.hasUUID("Worksite")
                 || !tag.contains("Role", Tag.TAG_STRING) || !tag.contains("HomeMin", Tag.TAG_LONG)
@@ -103,8 +110,12 @@ public record HiredTemporaryQueue(UUID owner, UUID issuer, UUID worksite, HiredV
         List<HiredTemporaryTask> tasks = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) tasks.add(HiredTemporaryTask.load(entries.getCompound(i)));
         HiredTemporaryEntities.validate(state, tasks.getFirst());
-        return new HiredTemporaryQueue(tag.getUUID("Owner"), tag.getUUID("Issuer"),
+        var queue = new HiredTemporaryQueue(tag.getUUID("Owner"), tag.getUUID("Issuer"),
                 tag.hasUUID("Worksite") ? tag.getUUID("Worksite") : null, HiredVillagerRole.valueOf(tag.getString("Role")),
                 BlockPos.of(tag.getLong("HomeMin")), BlockPos.of(tag.getLong("HomeMax")), tasks);
+        CACHE.put(tag, new Cached(tag.copy(), queue));
+        return queue;
     }
+
+    private record Cached(CompoundTag source, HiredTemporaryQueue queue) { }
 }

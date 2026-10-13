@@ -14,7 +14,7 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class OreNodeDefinitions {
-    private static volatile List<Definition> definitions = List.of();
+    private static volatile Lookup lookup = new Lookup(List.of());
 
     private OreNodeDefinitions() { }
 
@@ -28,7 +28,7 @@ public final class OreNodeDefinitions {
             }
         }
         loaded.sort(Comparator.comparingInt(Definition::priority).reversed().thenComparing(Definition::id));
-        definitions = List.copyOf(loaded);
+        lookup = new Lookup(List.copyOf(loaded));
     }
 
     static Definition parse(ResourceLocation id, JsonObject json) {
@@ -51,8 +51,21 @@ public final class OreNodeDefinitions {
 
     public static int extractions(BlockState state) {
         if (state.isAir() || state.hasBlockEntity()) return 0;
-        for (var definition : definitions) if (definition.matches(state)) return definition.extractions();
-        return 0;
+        var current = lookup;
+        return current.counts.computeIfAbsent(state, block -> {
+            for (var definition : current.definitions) if (definition.matches(block)) return definition.extractions();
+            return 0;
+        });
+    }
+
+    public static void onTagsUpdated(net.neoforged.neoforge.event.TagsUpdatedEvent event) {
+        if (!event.shouldUpdateStaticData()) return;
+        lookup = new Lookup(lookup.definitions);
+        HiredOreBlockTracker.clearRuntimeState();
+    }
+
+    private record Lookup(List<Definition> definitions, java.util.concurrent.ConcurrentMap<BlockState, Integer> counts) {
+        Lookup(List<Definition> definitions) { this(definitions, new java.util.concurrent.ConcurrentHashMap<>()); }
     }
 
     record Definition(ResourceLocation id, List<ResourceLocation> blocks, List<TagKey<net.minecraft.world.level.block.Block>> tags,

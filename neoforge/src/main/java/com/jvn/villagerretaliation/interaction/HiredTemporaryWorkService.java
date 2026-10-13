@@ -219,7 +219,7 @@ public final class HiredTemporaryWorkService {
         var queue = queue(context.state());
         if (queue == null || queue.role() != HiredVillagerRole.MINING) return;
         boolean excavation = HiredMiningMode.fromState(context.state()).excavatesArea();
-        var scan = com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan.collect(context, MINING_SCAN, 768,
+        var scan = com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan.findAny(context, MINING_SCAN, 768,
                 pos -> com.jvn.villagerretaliation.interaction.work.mining.MiningTaskRules.permits(level, context, pos) && (excavation
                         ? com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules.isMineableExcavationBlock(level, context, pos)
                         : com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules.isMineableOre(level, pos)));
@@ -236,7 +236,7 @@ public final class HiredTemporaryWorkService {
         if (queue == null || !queue.current().kind().forest()) return;
         var filters = com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters.selectedFilterIds(context.state());
         var trees = com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeGeometry.discovery(level, level::hasChunkAt, filters);
-        var scan = com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan.collect(context, "TemporaryForestCompletionScan", 768,
+        var scan = com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan.findAny(context, "TemporaryForestCompletionScan", 768,
                 pos -> level.getBlockState(pos).is(net.minecraft.tags.BlockTags.LOGS)
                         && trees.isNaturalTree(pos));
         if (!scan.candidates().isEmpty()) context.state().remove("TemporaryForestCompletionScan");

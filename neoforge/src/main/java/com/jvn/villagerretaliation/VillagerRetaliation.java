@@ -100,6 +100,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onServerStopping)
                 .listener(VillagerRetaliationEvents::onAddReloadListeners)
                 .listener(com.jvn.villagerretaliation.interaction.work.mining.OreNodes::syncCatalog)
+                .listener(com.jvn.villagerretaliation.interaction.work.mining.OreNodeDefinitions::onTagsUpdated)
                 .listener(VillagerSkillTradeEvents::onVillagerTrades)
                 .listener(VillagerSkillTradeEvents::onWandererTrades)
                 .listener(VillagerRetaliationCommands::onRegisterCommands)

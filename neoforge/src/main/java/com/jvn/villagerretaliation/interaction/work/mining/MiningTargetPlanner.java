@@ -625,7 +625,8 @@ final class MiningTargetPlanner {
         if (target == null) {
             context.state().putLong(
                     MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG,
-                    level.getGameTime() + MiningWorkerState.noTargetScanCooldownTicks());
+                    level.getGameTime() + (HiredOreBlockTracker.ready(level, center, context.horizontalSearchRadius())
+                            ? MiningWorkerState.noTargetScanCooldownTicks() : 1));
         } else {
             context.state().remove(MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG);
         }

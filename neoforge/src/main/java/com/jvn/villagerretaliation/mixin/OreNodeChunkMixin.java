@@ -22,5 +22,7 @@ public abstract class OreNodeChunkMixin {
     @Inject(method = "setBlockState", at = @At("RETURN"))
     private void villagerretaliation$invalidateOre(BlockPos position, BlockState state, boolean moving, CallbackInfoReturnable<BlockState> callback) {
         OreNodes.changed((LevelChunk) (Object) this, position, callback.getReturnValue(), state);
+        com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker.onBlockChanged(
+                (LevelChunk) (Object) this, position, callback.getReturnValue(), state);
     }
 }

@@ -14,6 +14,15 @@ public final class HiredWorkAreaScan {
             String cursorTag,
             int maxPositions,
             Predicate<BlockPos> candidateFilter) {
+        return collect(context, cursorTag, maxPositions, candidateFilter, Integer.MAX_VALUE);
+    }
+
+    public static Result findAny(HiredWorkContext context, String cursorTag, int maxPositions, Predicate<BlockPos> candidateFilter) {
+        return collect(context, cursorTag, maxPositions, candidateFilter, 1);
+    }
+
+    private static Result collect(HiredWorkContext context, String cursorTag, int maxPositions,
+                                  Predicate<BlockPos> candidateFilter, int maxCandidates) {
         int safeMaxPositions = Math.max(1, maxPositions);
         int sizeX = Math.max(1, context.workMax().getX() - context.workMin().getX() + 1);
         int sizeY = Math.max(1, context.workMax().getY() - context.workMin().getY() + 1);
@@ -32,7 +41,7 @@ public final class HiredWorkAreaScan {
             }
             index = (index + 1L) % totalPositions;
             visited++;
-            if (index == 0L) {
+            if (index == 0L || candidates.size() >= maxCandidates) {
                 break;
             }
         }
