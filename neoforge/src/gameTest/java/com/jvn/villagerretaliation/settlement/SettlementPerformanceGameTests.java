@@ -170,6 +170,53 @@ public final class SettlementPerformanceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void inheritedSettingsReuseImmutableInputsAndObserveEdits(GameTestHelper helper) {
+        var oak = net.minecraft.resources.ResourceLocation.withDefaultNamespace("oak_log");
+        var birch = net.minecraft.resources.ResourceLocation.withDefaultNamespace("birch_log");
+        var worksite = SettlementWorkerSettings.capture(com.jvn.villagerretaliation.interaction.HiredVillagerRole.LOGGING,
+                new net.minecraft.nbt.CompoundTag()).withFilters(java.util.Set.of(oak), java.util.Set.of())
+                .with(SettlementWorkerSetting.ENABLED, 1);
+        var saved = worksite.save();
+        var resident = worksite.withOverrides(0);
+        helper.assertTrue(resident == worksite.withOverrides(0), "repeated inheritance reuses immutable settings");
+        var initial = resident.resolve(worksite);
+        helper.assertTrue(initial == resident.resolve(worksite), "unchanged worksite settings reuse their resolved value");
+        var changed = worksite.withFilters(java.util.Set.of(birch), java.util.Set.of()).with(SettlementWorkerSetting.ENABLED, 0);
+        helper.assertFalse(resident.resolve(changed).enabled(), "a changed worksite immediately disables inherited work");
+        helper.assertValueEqual(resident.resolve(changed).logs(), java.util.Set.of(birch), "changed filters immediately reach the worker");
+        helper.assertTrue(resident.with(SettlementWorkerSetting.ENABLED, 1).resolve(changed).enabled(), "personal overrides retain priority");
+        helper.assertValueEqual(worksite.save(), saved, "memoization never changes serialized configuration");
+        helper.assertValueEqual(resident.resolve(worksite).logs(), java.util.Set.of(oak), "returning to a previous worksite restores its settings");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "field_chunk_neighbors")
+    public static void fieldObservationCoversNegativeChunkCornersAndWaterEdits(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var position = new BlockPos(-513, -58, -513);
+        for (var sample : BlockPos.betweenClosed(position.offset(-4, 0, -4), position.offset(4, 2, 4))) {
+            level.setBlock(sample, sample.getY() == position.getY() ? Blocks.FARMLAND.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
+        }
+        var first = position.offset(-4, 0, -4);
+        var second = position.offset(4, 1, 4);
+        level.setBlock(first, Blocks.WATER.defaultBlockState(), 2);
+        level.setBlock(second, Blocks.WATER.defaultBlockState(), 2);
+        var chunk = level.getChunkAt(position);
+        var plot = SettlementFieldPlot.capture(level, UUID.randomUUID(), position, chunk, level.getGameTime());
+        var saved = plot.save();
+        helper.assertTrue(saved.getBoolean("EnvironmentKnown"), "the full neighborhood spans four available chunks");
+        helper.assertValueEqual(java.util.Arrays.stream(saved.getLongArray("WaterSources")).boxed().collect(java.util.stream.Collectors.toSet()),
+                java.util.Set.of(first.asLong(), second.asLong()), "both water levels and opposite corners are observed");
+        level.setBlock(second, Blocks.AIR.defaultBlockState(), 2);
+        plot.observeEnvironment(level, chunk);
+        helper.assertValueEqual(java.util.Arrays.stream(plot.save().getLongArray("WaterSources")).boxed().toList(),
+                List.of(first.asLong()), "water removal in a neighboring chunk is observed immediately");
+        helper.assertValueEqual(plot.save().getList("Environment", net.minecraft.nbt.Tag.TAG_COMPOUND).size(), 9,
+                "the crop and soil neighborhood retains all nine cells");
+        helper.succeed();
+    }
+
     private static SettlementRecord town(GameTestHelper helper) {
         return new SettlementRecord(VillageAllegianceId.random(), helper.getLevel().dimension().location(),
                 helper.absolutePos(new BlockPos(2, 2, 2)), UUID.randomUUID(), helper.getLevel().getGameTime(), () -> {});

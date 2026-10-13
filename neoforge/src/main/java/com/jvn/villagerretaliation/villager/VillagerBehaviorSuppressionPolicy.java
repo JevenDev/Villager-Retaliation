@@ -53,8 +53,12 @@ public final class VillagerBehaviorSuppressionPolicy {
     }
 
     public static boolean suppresses(Villager villager, Behavior behavior) {
+        return suppresses(villager, behavior, state(villager));
+    }
+
+    private static boolean suppresses(Villager villager, Behavior behavior, ControlState state) {
         if (villager != null && behavior == Behavior.BREEDING && VillagerBreedingPolicy.naturalFamiliesEnabled()
-                && state(villager) == ControlState.HIRED && villager.level() instanceof ServerLevel level) {
+                && state == ControlState.HIRED && villager.level() instanceof ServerLevel level) {
             return !VillagerBreedingPolicy.evaluateParent(level, villager).allowed();
         }
         if (villager != null
@@ -62,7 +66,7 @@ public final class VillagerBehaviorSuppressionPolicy {
                 && HiredVillagerFocusService.isOnDutyGuard(level, villager)) {
             return true;
         }
-        return SUPPRESSED.get(state(villager)).contains(behavior);
+        return SUPPRESSED.get(state).contains(behavior);
     }
 
     /**
@@ -80,9 +84,6 @@ public final class VillagerBehaviorSuppressionPolicy {
         if (villager.isTrading() || VillagerConversationService.isConversing(villager)) {
             return false;
         }
-        if (HiredVillagerFocusService.shouldUseVanillaRest(level, villager)) {
-            return false;
-        }
         return HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager);
     }
 
@@ -93,10 +94,10 @@ public final class VillagerBehaviorSuppressionPolicy {
             return;
         }
 
-        if (suppresses(villager, Behavior.BREEDING)) {
+        if (suppresses(villager, Behavior.BREEDING, state)) {
             VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
         }
-        if (suppresses(villager, Behavior.GOSSIPING)) {
+        if (suppresses(villager, Behavior.GOSSIPING, state)) {
             Brain<Villager> brain = villager.getBrain();
             if (!villager.isTrading() && !VillagerConversationService.isConversing(villager)) {
                 brain.eraseMemory(MemoryModuleType.INTERACTION_TARGET);
@@ -104,16 +105,16 @@ public final class VillagerBehaviorSuppressionPolicy {
             brain.eraseMemory(MemoryModuleType.NEAREST_VISIBLE_ADULT);
             brain.eraseMemory(MemoryModuleType.VISIBLE_VILLAGER_BABIES);
         }
-        if (suppresses(villager, Behavior.VANILLA_ITEM_PICKUP)) {
+        if (suppresses(villager, Behavior.VANILLA_ITEM_PICKUP, state)) {
             villager.getBrain().eraseMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
         }
-        if (suppresses(villager, Behavior.JOB_SITE_CLAIMING)) {
+        if (suppresses(villager, Behavior.JOB_SITE_CLAIMING, state)) {
             releasePotentialJobSite(level, villager);
         }
-        if (suppresses(villager, Behavior.SLEEPING) && villager.isSleeping()) {
+        if (villager.isSleeping() && suppresses(villager, Behavior.SLEEPING, state)) {
             villager.stopSleeping();
         }
-        if (suppresses(villager, Behavior.TRADING) && villager.isTrading()) {
+        if (villager.isTrading() && suppresses(villager, Behavior.TRADING, state)) {
             villager.setTradingPlayer(null);
         }
     }

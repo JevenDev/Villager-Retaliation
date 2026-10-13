@@ -881,11 +881,13 @@ public final class AssignedStorageService {
                     level, ownerId, VillagerFilterPolicy.TransferOperation.RECEIVE);
             OutputCapacityPlanner outputPlanner = outputCapacityPlan(level, villager).planner(inbound);
             List<ItemStack> outbound = new ArrayList<>();
+            List<ItemStack> unavailable = new ArrayList<>();
             int plannedTotal = 0;
             Container container = input.container();
             for (int slot = 0; slot < container.getContainerSize() && plannedTotal < maximum; slot++) {
                 ItemStack stack = container.getItem(slot);
-                if (stack.isEmpty() || !mayWithdraw.test(stack)) {
+                if (stack.isEmpty() || !mayWithdraw.test(stack)
+                        || unavailable.stream().anyMatch(previous -> ItemStack.matches(previous, stack))) {
                     continue;
                 }
                 int allowance = sourceAllowance(
@@ -894,10 +896,13 @@ public final class AssignedStorageService {
                         Math.min(maximum - plannedTotal, stack.getCount()),
                         allowance);
                 if (requested <= 0) {
+                    // reservations only grow during this plan, so a rejected stack cannot gain capacity
+                    unavailable.add(stack.copy());
                     continue;
                 }
                 OutputCapacityProposal proposal = outputPlanner.propose(stack, requested);
                 if (proposal.total() <= 0) {
+                    unavailable.add(stack.copy());
                     continue;
                 }
                 outputPlanner.commit(proposal, stack, proposal.total());

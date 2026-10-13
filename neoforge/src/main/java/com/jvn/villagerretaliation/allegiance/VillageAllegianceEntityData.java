@@ -53,15 +53,27 @@ public final class VillageAllegianceEntityData {
             return Optional.empty();
         }
         var cached = READS.get(entity);
+        // compare the payload too so direct and nested NBT edits take effect immediately
+        if (cached != null && (!cached.contextual || cached.time == entity.level().getGameTime()
+                && cached.dimension.equals(entity.level().dimension().location())
+                && cached.position.equals(entity.blockPosition())) && cached.tag.matches(tag)) return cached.data;
         long time = entity.level().getGameTime();
         var dimension = entity.level().dimension().location();
         var position = entity.blockPosition();
-        // compare the payload too so direct and nested NBT edits take effect immediately
-        if (cached != null && cached.time == time && cached.dimension.equals(dimension)
-                && cached.position.equals(position) && cached.tag.matches(tag)) return cached.data;
-        var data = Optional.of(readPayload(tag, entity));
-        READS.put(entity, new CachedRead(new CompoundTagSnapshot(tag), time, dimension, position.immutable(), data));
+        var decoded = readPayload(tag);
+        var data = Optional.of(decoded == null ? conservativeUnknown(entity) : decoded);
+        var snapshot = new CompoundTagSnapshot(tag, VERSION, STATE, PRIMARY, SOURCE, CONFIDENCE,
+                ASSIGNED_TIME, ORIGIN_DIMENSION, ORIGIN_X, ORIGIN_Y, ORIGIN_Z, PROTECTED_PARENTS);
+        READS.put(entity, new CachedRead(snapshot, new CompoundTagSnapshot(tag, VERSION, STATE, PRIMARY, SOURCE, CONFIDENCE),
+                decoded == null, time, dimension, position.immutable(), data));
         return data;
+    }
+
+    static Optional<VillageAllegianceId> readPrimary(Entity entity, CompoundTag tag) {
+        var cached = READS.get(entity);
+        // origin and history do not affect whether the saved primary id is valid
+        var data = cached != null && cached.primaryTag.matches(tag) ? cached.data : read(entity);
+        return data.filter(VillageAllegianceData::isKnown).map(VillageAllegianceData::primary);
     }
 
     public static void write(Entity entity, VillageAllegianceData data) {
@@ -273,16 +285,16 @@ public final class VillageAllegianceEntityData {
         return tags;
     }
 
-    private static VillageAllegianceData readPayload(CompoundTag tag, Entity entity) {
+    private static VillageAllegianceData readPayload(CompoundTag tag) {
         int version = tag.getInt(VERSION);
         if (version <= 0 || version > VillageAllegianceData.CURRENT_VERSION) {
-            return conservativeUnknown(entity);
+            return null;
         }
         AllegianceState state = enumValue(AllegianceState.class, tag.getString(STATE));
         AllegianceAssignmentSource source = enumValue(AllegianceAssignmentSource.class, tag.getString(SOURCE));
         AllegianceConfidence confidence = enumValue(AllegianceConfidence.class, tag.getString(CONFIDENCE));
         if (state == null || source == null || confidence == null) {
-            return conservativeUnknown(entity);
+            return null;
         }
         ResourceLocation dimension = ResourceLocation.tryParse(tag.getString(ORIGIN_DIMENSION));
         BlockPos position = new BlockPos(tag.getInt(ORIGIN_X), tag.getInt(ORIGIN_Y), tag.getInt(ORIGIN_Z));
@@ -301,14 +313,14 @@ public final class VillageAllegianceEntityData {
             return VillageAllegianceData.unaffiliated(source, assignedTime, dimension, position);
         }
         if (!tag.hasUUID(PRIMARY)) {
-            return conservativeUnknown(entity);
+            return null;
         }
         try {
             return VillageAllegianceData.known(
                     new VillageAllegianceId(tag.getUUID(PRIMARY)), source, confidence,
                     assignedTime, dimension, position, parents);
         } catch (RuntimeException ignored) {
-            return conservativeUnknown(entity);
+            return null;
         }
     }
 
@@ -335,7 +347,7 @@ public final class VillageAllegianceEntityData {
         }
     }
 
-    private record CachedRead(CompoundTagSnapshot tag, long time, ResourceLocation dimension, BlockPos position,
+    private record CachedRead(CompoundTagSnapshot tag, CompoundTagSnapshot primaryTag, boolean contextual, long time, ResourceLocation dimension, BlockPos position,
                               Optional<VillageAllegianceData> data) {
     }
 

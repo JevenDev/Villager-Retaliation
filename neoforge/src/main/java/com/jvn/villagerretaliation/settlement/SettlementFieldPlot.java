@@ -222,31 +222,43 @@ public final class SettlementFieldPlot {
                 this.nearbyCrops.add(Blocks.AIR.defaultBlockState());
             }
         }
-        int index = 0;
+        int minChunkX = (this.position.getX() - 4) >> 4;
+        int minChunkZ = (this.position.getZ() - 4) >> 4;
+        int width = ((this.position.getX() + 4) >> 4) - minChunkX + 1;
+        int depth = ((this.position.getZ() + 4) >> 4) - minChunkZ + 1;
+        var neighbors = new LevelChunk[width * depth];
         boolean known = true;
-        for (int x = -4; x <= 4; x++) {
-            for (int z = -4; z <= 4; z++) {
-                BlockPos sample = this.position.offset(x, 0, z);
-                var neighbor = chunk(level, chunk, sample);
+        for (int x = 0; x < width; x++) {
+            for (int z = 0; z < depth; z++) {
+                int chunkX = minChunkX + x;
+                int chunkZ = minChunkZ + z;
+                var neighbor = chunk != null && chunk.getPos().x == chunkX && chunk.getPos().z == chunkZ
+                        ? chunk : level.getChunkSource().getChunkNow(chunkX, chunkZ);
+                neighbors[x * depth + z] = neighbor;
                 known &= neighbor != null;
-                if (Math.abs(x) <= 1 && Math.abs(z) <= 1) {
-                    if (neighbor != null) {
-                        this.nearbySoil.set(index, neighbor.getBlockState(sample));
-                        this.nearbyCrops.set(index, neighbor.getBlockState(sample.above()));
-                    }
-                    index++;
+            }
+        }
+        int index = 0;
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                var sample = this.position.offset(x, 0, z);
+                var neighbor = neighbors[((sample.getX() >> 4) - minChunkX) * depth + (sample.getZ() >> 4) - minChunkZ];
+                if (neighbor != null) {
+                    this.nearbySoil.set(index, neighbor.getBlockState(sample));
+                    this.nearbyCrops.set(index, neighbor.getBlockState(sample.above()));
                 }
+                index++;
             }
         }
         this.environmentKnown |= known;
         this.waterSources.removeIf(sample -> chunk(level, chunk, sample) != null);
         for (BlockPos sample : BlockPos.betweenClosed(this.position.offset(-4, 0, -4), this.position.offset(4, 1, 4))) {
-            var neighbor = chunk(level, chunk, sample);
+            var neighbor = neighbors[((sample.getX() >> 4) - minChunkX) * depth + (sample.getZ() >> 4) - minChunkZ];
             if (neighbor != null && neighbor.getFluidState(sample).is(net.minecraft.tags.FluidTags.WATER)) {
                 this.waterSources.add(sample.immutable());
             }
         }
-        var ownChunk = chunk(level, chunk, this.position);
+        var ownChunk = neighbors[((this.position.getX() >> 4) - minChunkX) * depth + (this.position.getZ() >> 4) - minChunkZ];
         if (ownChunk == null) return;
         this.skyLight = level.getBrightness(LightLayer.SKY, this.position.above());
         this.blockLight = level.getBrightness(LightLayer.BLOCK, this.position.above());

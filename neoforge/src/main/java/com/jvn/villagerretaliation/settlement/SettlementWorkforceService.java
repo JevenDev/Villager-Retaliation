@@ -161,11 +161,10 @@ public final class SettlementWorkforceService {
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
             return Optional.empty();
         }
-        UUID townId = VillagerAssignmentStore.civicSettlement(villager).orElse(null);
-        UUID areaId = VillagerAssignmentStore.civicArea(villager).orElse(null);
-        if (townId == null || areaId == null) {
-            return Optional.empty();
-        }
+        var assignment = VillagerAssignmentStore.civicAssignment(villager).orElse(null);
+        if (assignment == null) return Optional.empty();
+        UUID townId = assignment.settlement();
+        UUID areaId = assignment.area();
         SettlementRecord town = SettlementSavedData.get(level).get(new VillageAllegianceId(townId)).orElse(null);
         if (town == null || !town.dimension().equals(level.dimension().location())
                 || !areaId.equals(town.duties().get(villager.getUUID()))
@@ -181,9 +180,11 @@ public final class SettlementWorkforceService {
     }
 
     public static boolean onDuty(ServerLevel level, Villager villager) {
-        return duty(villager).map(duty -> duty.area().enabled()
-                && (duty.town().effectiveWorkerSettings(villager.getUUID()) == null || duty.town().effectiveWorkerSettings(villager.getUUID()).enabled())
-                && workingHours(level.getDayTime(), villager.getUUID(), duty.area().type().role())).orElse(false);
+        return duty(villager).map(duty -> {
+            var settings = duty.town().effectiveWorkerSettings(villager.getUUID());
+            return duty.area().enabled() && (settings == null || settings.enabled())
+                    && workingHours(level.getDayTime(), villager.getUUID(), duty.area().type().role());
+        }).orElse(false);
     }
 
     public static boolean workingHours(long dayTime, UUID resident, HiredVillagerRole role) {

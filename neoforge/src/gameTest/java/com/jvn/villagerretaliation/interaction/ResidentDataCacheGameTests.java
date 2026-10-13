@@ -21,6 +21,29 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class ResidentDataCacheGameTests {
     @GameTest(template = "empty")
+    public static void civicAssignmentCacheObservesBothReferencesAndState(GameTestHelper helper) {
+        var villager = EntityType.VILLAGER.create(helper.getLevel());
+        VillagerAssignmentStore.assignCivic(villager, UUID.randomUUID(), UUID.randomUUID(), HiredVillagerRole.MINING, 0);
+        var first = VillagerAssignmentStore.civicAssignment(villager).orElseThrow();
+        helper.assertTrue(first == VillagerAssignmentStore.civicAssignment(villager).orElseThrow(), "unchanged civic references reuse their decoded UUIDs");
+        var tag = villager.getPersistentData().getCompound("VillagerRetaliationAssignment");
+        tag.getIntArray("Settlement")[0] ^= 1;
+        helper.assertFalse(first.settlement().equals(VillagerAssignmentStore.civicAssignment(villager).orElseThrow().settlement()), "in-place settlement edits take effect");
+        tag.getIntArray("SettlementArea")[0] ^= 1;
+        helper.assertFalse(first.area().equals(VillagerAssignmentStore.civicAssignment(villager).orElseThrow().area()), "in-place worksite edits take effect");
+        tag.remove("SettlementArea");
+        helper.assertTrue(VillagerAssignmentStore.civicAssignment(villager).isEmpty(), "incomplete civic assignments are rejected");
+        tag.putUUID("SettlementArea", first.area());
+        tag.putString("State", "HIRED");
+        helper.assertTrue(VillagerAssignmentStore.civicAssignment(villager).isEmpty(), "personal assignments cannot reuse civic duties");
+        tag.putString("State", "CIVIC");
+        helper.assertTrue(VillagerAssignmentStore.civicAssignment(villager).isPresent(), "restored civic assignments are immediately visible");
+        villager.getPersistentData().remove("VillagerRetaliationAssignment");
+        helper.assertTrue(VillagerAssignmentStore.civicAssignment(villager).isEmpty(), "removed assignments never return cached duties");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void staggeredWorkerGroupsCannotStarveEachOther(GameTestHelper helper) {
         var first = new UUID(0, 1);
         var second = new UUID(0, 2);
@@ -81,6 +104,50 @@ public final class ResidentDataCacheGameTests {
             helper.assertValueEqual(VillageAllegianceEntityData.read(villager).orElseThrow().assignedGameTime(), helper.getLevel().getGameTime(), "malformed fallback follows game time");
             helper.succeed();
         });
+    }
+
+    @GameTest(template = "empty")
+    public static void validAllegianceSurvivesTickAndPositionChanges(GameTestHelper helper) {
+        var villager = EntityType.VILLAGER.create(helper.getLevel());
+        var id = VillageAllegianceId.random();
+        VillageAllegianceEntityData.write(villager, VillageAllegianceData.known(id,
+                AllegianceAssignmentSource.EXPLICIT_API, AllegianceConfidence.AUTHORITATIVE, 0,
+                helper.getLevel().dimension().location(), BlockPos.ZERO, List.of()));
+        var initial = VillageAllegianceEntityData.read(villager).orElseThrow();
+        villager.setPos(20, 10, 20);
+        helper.runAfterDelay(1, () -> {
+            helper.assertTrue(initial == VillageAllegianceEntityData.read(villager).orElseThrow(), "valid saved data remains reusable across ticks and movement");
+            var tag = villager.getPersistentData().getCompound(VillageAllegianceEntityData.ROOT_TAG);
+            tag.putInt("OriginX", 25);
+            helper.assertValueEqual(VillageAllegianceEntityData.read(villager).orElseThrow().originPosition().getX(), 25, "saved origin edits still invalidate the cache");
+            tag.remove("DataVersion");
+            helper.assertValueEqual(VillageAllegianceEntityData.read(villager).orElseThrow().state(), AllegianceState.UNKNOWN, "removing a required field restores the conservative fallback");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty")
+    public static void primaryLookupRetainsValidationAndImmediateEdits(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var villager = EntityType.VILLAGER.create(level);
+        var first = VillageAllegianceId.random();
+        var second = VillageAllegianceId.random();
+        var registry = com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(level);
+        registry.ensureRecord(second, 0, level.dimension().location(), BlockPos.ZERO);
+        com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.assignKnown(level, villager, first, AllegianceAssignmentSource.EXPLICIT_API);
+        var tag = villager.getPersistentData().getCompound(VillageAllegianceEntityData.ROOT_TAG);
+        helper.assertValueEqual(com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.canonicalPrimary(level, villager).orElseThrow(), first, "initial primary is known");
+        tag.putInt("OriginX", 25);
+        helper.assertValueEqual(com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.canonicalPrimary(level, villager).orElseThrow(), first, "origin edits do not change primary identity");
+        helper.assertValueEqual(VillageAllegianceEntityData.read(villager).orElseThrow().originPosition().getX(), 25, "full reads still observe origin edits");
+        tag.remove("Source");
+        helper.assertTrue(com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.canonicalPrimary(level, villager).isEmpty(), "malformed metadata cannot retain cached membership");
+        tag.putString("Source", AllegianceAssignmentSource.EXPLICIT_API.name());
+        tag.putUUID("Primary", second.value());
+        helper.assertValueEqual(com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.canonicalPrimary(level, villager).orElseThrow(), second, "changing primary immediately updates membership");
+        tag.putString("State", AllegianceState.UNAFFILIATED.name());
+        helper.assertTrue(com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.canonicalPrimary(level, villager).isEmpty(), "unaffiliated state overrides an old primary field");
+        helper.succeed();
     }
 
     @GameTest(template = "empty")

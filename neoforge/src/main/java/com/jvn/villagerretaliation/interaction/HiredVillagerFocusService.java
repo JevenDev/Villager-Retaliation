@@ -47,16 +47,14 @@ public final class HiredVillagerFocusService {
             return;
         }
         suppressClaimedJobSiteBlockNavigation(level, villager, state, role);
-        if (shouldSuppressSocialDistractionsForHiredJob(level, villager, state, role)) {
-            suppressIdleAttentionBehavior(villager, HiredWorkerBrain.snapshot(state, level.getGameTime()));
+        var worker = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        if (shouldSuppressSocialDistractionsForHiredJob(level, villager, state, role, worker)) {
+            suppressIdleAttentionBehavior(villager, worker);
         }
     }
 
     public static boolean shouldSuppressVanillaBrainTick(ServerLevel level, Villager villager) {
         if (shouldSkipHiredFocus(level, villager)) {
-            return false;
-        }
-        if (shouldUseVanillaRest(level, villager)) {
             return false;
         }
 
@@ -137,13 +135,13 @@ public final class HiredVillagerFocusService {
             return;
         }
         suppressClaimedJobSiteBlockNavigation(level, villager, context.state(), role);
-        if (shouldSuppressSocialDistractionsForHiredJob(level, villager, context.state(), role)) {
-            suppressIdleAttentionBehavior(villager, HiredWorkerBrain.snapshot(context.state(), level.getGameTime()));
+        var worker = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
+        if (shouldSuppressSocialDistractionsForHiredJob(level, villager, context.state(), role, worker)) {
+            suppressIdleAttentionBehavior(villager, worker);
         }
-        if (!shouldSuppressForActiveHiredJob(level, villager, context.state(), role)) {
+        if (!shouldSuppressForActiveHiredJob(level, villager, context.state(), role, worker)) {
             return;
         }
-        HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
         maintainWorkLookTarget(villager, worker);
         suppressProfessionJobSiteBehavior(level, villager, context, role);
     }
@@ -273,7 +271,13 @@ public final class HiredVillagerFocusService {
         if (role == null) {
             return false;
         }
-        HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        return shouldSuppressSocialDistractionsForHiredJob(level, villager, state, role,
+                HiredWorkerBrain.snapshot(state, level.getGameTime()));
+    }
+
+    private static boolean shouldSuppressSocialDistractionsForHiredJob(
+            ServerLevel level, Villager villager, CompoundTag state, HiredVillagerRole role,
+            HiredWorkerBrain.Snapshot worker) {
         return hasAssignedRoute(role, state)
                 || shouldLetFarmerBrainHandleFields(level, villager, worker, role)
                 || shouldSuppressForActiveHiredJob(level, villager, state, role, worker);
@@ -305,14 +309,13 @@ public final class HiredVillagerFocusService {
 
     private static HiredVillagerRole activeWorkerRole(ServerLevel level, Villager villager, CompoundTag state) {
         if (!state.getBoolean("Enabled")
-                || shouldUseVanillaRest(level, villager)
                 || VillagerRetaliationVillagerBrainUtil.hasThreatMemories(villager.getBrain())
                 || HiredVillagerContractService.isAwaitingAutoPayment(level, villager)
                 || VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
             return null;
         }
         VillagerWorkAuthority contract = VillagerWorkAuthority.resolve(level, villager);
-        if (!contract.canWork(level, villager)) {
+        if (!contract.canWork(level, villager) || !contract.civic() && shouldUseVanillaRest(level, villager)) {
             return null;
         }
         HiredVillagerRole role = contract.role();

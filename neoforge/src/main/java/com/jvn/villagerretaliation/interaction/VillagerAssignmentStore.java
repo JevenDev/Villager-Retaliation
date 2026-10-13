@@ -58,6 +58,9 @@ public final class VillagerAssignmentStore {
     private static final java.util.concurrent.ConcurrentMap<Villager, CachedSnapshot> SNAPSHOTS =
             new com.google.common.collect.MapMaker().weakKeys().makeMap();
 
+    private static final java.util.concurrent.ConcurrentMap<Villager, CachedCivicAssignment> CIVIC_ASSIGNMENTS =
+            new com.google.common.collect.MapMaker().weakKeys().makeMap();
+
     private VillagerAssignmentStore() {
     }
 
@@ -160,6 +163,22 @@ public final class VillagerAssignmentStore {
         VillagerWorkAppearance.refresh(villager);
         return snapshot(villager);
     }
+
+    public static Optional<CivicAssignment> civicAssignment(Villager villager) {
+        if (villager == null || !(villager.getPersistentData().get(ASSIGNMENT_TAG) instanceof CompoundTag tag)) return Optional.empty();
+        var cached = CIVIC_ASSIGNMENTS.get(villager);
+        if (cached != null && cached.tag.matches(tag)) return cached.assignment;
+        Optional<CivicAssignment> assignment = Optional.empty();
+        if (VillagerAssignmentState.CIVIC.name().equals(tag.getString(STATE_TAG))
+                && tag.hasUUID(SETTLEMENT_TAG) && tag.hasUUID(AREA_TAG)) {
+            assignment = Optional.of(new CivicAssignment(tag.getUUID(SETTLEMENT_TAG), tag.getUUID(AREA_TAG)));
+        }
+        CIVIC_ASSIGNMENTS.put(villager, new CachedCivicAssignment(new CompoundTagSnapshot(tag, STATE_TAG, SETTLEMENT_TAG, AREA_TAG), assignment));
+        return assignment;
+    }
+
+    public record CivicAssignment(UUID settlement, UUID area) { }
+    private record CachedCivicAssignment(CompoundTagSnapshot tag, Optional<CivicAssignment> assignment) { }
 
     public static Optional<UUID> civicSettlement(Villager villager) {
         return civicReference(villager, SETTLEMENT_TAG);

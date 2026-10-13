@@ -144,8 +144,7 @@ public final class SettlementLogisticsService {
             List<SettlementDepot> sources = sources(depots, destination, position);
             for (SettlementDepot source : sources) {
                 if (!links.permitsSupply(source.id())) continue;
-                for (int slot = 0; slot < source.getContainerSize(); slot++) {
-                    ItemStack sample = source.getItem(slot);
+                for (ItemStack sample : distinctSamples(source)) {
                     if (sample.isEmpty() || !destination.purpose().accepts(sample)
                             || !mayWithdraw.test(sample)) {
                         continue;
@@ -169,8 +168,7 @@ public final class SettlementLogisticsService {
             if (source.purpose() != SettlementDepotPurpose.OUTPUT || !links.permitsSupply(source.id())) {
                 continue;
             }
-            for (int slot = 0; slot < source.getContainerSize(); slot++) {
-                ItemStack sample = source.getItem(slot);
+            for (ItemStack sample : distinctSamples(source)) {
                 if (sample.isEmpty() || !mayWithdraw.test(sample)
                         || source.count(stack -> ItemStack.isSameItemSameComponents(stack, sample))
                                 <= Math.max(0, source.stockTarget(sample))
@@ -192,6 +190,15 @@ public final class SettlementLogisticsService {
             }
         }
         return null;
+    }
+
+    private static List<ItemStack> distinctSamples(SettlementDepot source) {
+        var samples = new ArrayList<ItemStack>();
+        for (int slot = 0; slot < source.getContainerSize(); slot++) {
+            var sample = source.getItem(slot);
+            if (!sample.isEmpty() && samples.stream().noneMatch(previous -> ItemStack.matches(previous, sample))) samples.add(sample);
+        }
+        return samples;
     }
 
     static int framedAllowance(ServerLevel level, SettlementDepot depot, ItemStack sample,

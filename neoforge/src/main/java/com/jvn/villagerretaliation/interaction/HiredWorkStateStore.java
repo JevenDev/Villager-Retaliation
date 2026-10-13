@@ -32,10 +32,10 @@ public final class HiredWorkStateStore {
 
     public static CompoundTag state(Villager villager) {
         CompoundTag persistentData = villager.getPersistentData();
-        if (!persistentData.contains(TAG, Tag.TAG_COMPOUND)) {
-            persistentData.put(TAG, new CompoundTag());
-        }
-        return persistentData.getCompound(TAG);
+        if (persistentData.get(TAG) instanceof CompoundTag state) return state;
+        var state = new CompoundTag();
+        persistentData.put(TAG, state);
+        return state;
     }
 
     public static void initializeDefaults(CompoundTag state, Villager villager) {

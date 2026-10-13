@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import java.util.Optional;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.npc.Villager;
 
 /** Persistence boundary for the authoritative hire contract representation. */
@@ -10,12 +10,12 @@ public final class HireContractStore {
     private HireContractStore() { }
 
     public static Optional<HireContract> load(Villager villager) {
-        if (!exists(villager)) return Optional.empty();
-        return Optional.of(new HireContract(villager.getPersistentData().getCompound(CONTRACT_TAG)));
+        return villager != null && villager.getPersistentData().get(CONTRACT_TAG) instanceof CompoundTag tag
+                ? Optional.of(new HireContract(tag)) : Optional.empty();
     }
 
     public static boolean exists(Villager villager) {
-        return villager != null && villager.getPersistentData().contains(CONTRACT_TAG, Tag.TAG_COMPOUND);
+        return villager != null && villager.getPersistentData().get(CONTRACT_TAG) instanceof CompoundTag;
     }
 
     public static void save(Villager villager, HireContract contract) {

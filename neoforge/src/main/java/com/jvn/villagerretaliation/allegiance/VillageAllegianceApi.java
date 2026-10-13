@@ -92,9 +92,10 @@ public final class VillageAllegianceApi {
 
     /** Resolves an entity's primary ID through the current server-global alias graph. */
     public static Optional<VillageAllegianceId> canonicalPrimary(ServerLevel level, Entity entity) {
-        return get(entity)
-                .filter(VillageAllegianceData::isKnown)
-                .flatMap(data -> VillageAllegianceRegistrySavedData.get(level).canonical(data.primary()));
+        var primary = entity != null && entity.getPersistentData().get(VillageAllegianceEntityData.ROOT_TAG) instanceof net.minecraft.nbt.CompoundTag tag
+                ? VillageAllegianceEntityData.readPrimary(entity, tag)
+                : providerData(entity).filter(VillageAllegianceData::isKnown).map(VillageAllegianceData::primary);
+        return primary.flatMap(id -> VillageAllegianceRegistrySavedData.get(level).canonical(id));
     }
 
     public static Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> village(

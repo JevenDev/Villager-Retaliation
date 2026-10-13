@@ -30,6 +30,8 @@ public final class SettlementWorkerSettings {
     private final SettlementStorageLinks storage;
     private final CompoundTag saved;
     private final int overrides;
+    private volatile Resolution resolution;
+    private volatile OverrideChange overrideChange;
 
     public SettlementWorkerSettings(HiredVillagerRole role, Map<SettlementWorkerSetting, Integer> options,
                                     Set<ResourceLocation> logs, Set<ResourceLocation> animals) {
@@ -135,8 +137,16 @@ public final class SettlementWorkerSettings {
     }
 
     public SettlementWorkerSettings withOverrides(int overrides) {
-        return new SettlementWorkerSettings(this.role, this.options, this.logs, this.animals, overrides, this.fishingSpots, this.storage);
+        if (overrides == this.overrides) return this;
+        var cached = this.overrideChange;
+        if (cached != null && cached.overrides == overrides) return cached.settings;
+        var settings = new SettlementWorkerSettings(this.role, this.options, this.logs, this.animals, overrides, this.fishingSpots, this.storage);
+        this.overrideChange = new OverrideChange(overrides, settings);
+        return settings;
     }
+
+    private record OverrideChange(int overrides, SettlementWorkerSettings settings) { }
+    private record Resolution(SettlementWorkerSettings worksite, SettlementWorkerSettings settings) { }
 
     public SettlementWorkerSettings withFilters(Set<ResourceLocation> logs, Set<ResourceLocation> animals) {
         int mask = this.role == HiredVillagerRole.LOGGING ? LOGS_OVERRIDE
@@ -157,13 +167,17 @@ public final class SettlementWorkerSettings {
 
     public SettlementWorkerSettings resolve(SettlementWorkerSettings worksite) {
         if (this.role != worksite.role) throw new IllegalArgumentException("Worksite role changed");
+        var cached = this.resolution;
+        if (cached != null && cached.worksite == worksite) return cached.settings;
         var effective = new EnumMap<SettlementWorkerSetting, Integer>(SettlementWorkerSetting.class);
         worksite.options.forEach((setting, value) -> effective.put(setting, overrides(setting) ? this.options.get(setting) : value));
-        return new SettlementWorkerSettings(this.role, effective,
+        var settings = new SettlementWorkerSettings(this.role, effective,
                 (this.overrides & LOGS_OVERRIDE) != 0 ? this.logs : worksite.logs,
                 (this.overrides & ANIMALS_OVERRIDE) != 0 ? this.animals : worksite.animals, this.overrides,
                 (this.overrides & FISHING_SPOTS_OVERRIDE) != 0 ? this.fishingSpots : worksite.fishingSpots,
                 (this.overrides & SettlementStorageLinks.OVERRIDE) != 0 ? this.storage : worksite.storage);
+        this.resolution = new Resolution(worksite, settings);
+        return settings;
     }
 
     public static int allOverrides(HiredVillagerRole role) {

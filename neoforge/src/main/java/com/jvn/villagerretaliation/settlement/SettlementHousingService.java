@@ -51,14 +51,18 @@ public final class SettlementHousingService {
     }
 
     private static boolean member(ServerLevel level, SettlementRecord town, UUID resident) {
-        if (town.departures().containsKey(resident) || !VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
-                .map(record -> record.residents().containsKey(resident)).orElse(false)) return false;
+        if (!registered(level, town, resident)) return false;
         for (var dimension : level.getServer().getAllLevels()) {
             var entity = dimension.getEntity(resident);
             if (entity != null) return entity instanceof Villager villager && villager.isAlive()
                     && com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.canonicalPrimary(dimension, villager).filter(town.id()::equals).isPresent();
         }
         return true;
+    }
+
+    private static boolean registered(ServerLevel level, SettlementRecord town, UUID resident) {
+        return !town.departures().containsKey(resident) && VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
+                .map(record -> record.residents().containsKey(resident)).orElse(false);
     }
 
     private static void applyLoaded(ServerLevel level, SettlementRecord town, UUID resident) {
@@ -145,7 +149,10 @@ public final class SettlementHousingService {
     public static void reconcile(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level) || !villager.isAlive()) return;
         var town = SettlementWorkforceService.home(level, villager).orElse(null);
-        if (town == null || !member(level, town, villager.getUUID())) return;
+        if (town == null) return;
+        if (level.getEntity(villager.getUUID()) == villager) {
+            if (!registered(level, town, villager.getUUID())) return;
+        } else if (!member(level, town, villager.getUUID())) return;
         var home = town.homes().get(villager.getUUID());
         if (home != null && home.bed() != null && !usable(town, home.bed())) {
             town.assignHome(villager.getUUID(), null);

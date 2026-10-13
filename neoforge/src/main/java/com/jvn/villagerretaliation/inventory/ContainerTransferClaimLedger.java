@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
 final class ContainerTransferClaimLedger {
     private static final long CLAIM_TTL_TICKS = 20L * 10L;
     private static final Map<ClaimKey, Claim> CLAIMS = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Long> EARLIEST_EXPIRY = new HashMap<>();
 
     private ContainerTransferClaimLedger() {
     }
@@ -45,6 +46,7 @@ final class ContainerTransferClaimLedger {
             CLAIMS.put(
                     new ClaimKey(level.dimension(), pos, owner, operation),
                     new Claim(stacks, expiresAt));
+            EARLIEST_EXPIRY.merge(level.dimension(), expiresAt, Math::min);
         }
     }
 
@@ -141,6 +143,7 @@ final class ContainerTransferClaimLedger {
 
     static void clear() {
         CLAIMS.clear();
+        EARLIEST_EXPIRY.clear();
     }
 
     static int activeClaimCount() {
@@ -149,9 +152,19 @@ final class ContainerTransferClaimLedger {
 
     private static void cleanup(ServerLevel level) {
         long gameTime = level.getGameTime();
-        CLAIMS.entrySet().removeIf(entry ->
-                entry.getKey().dimension().equals(level.dimension())
-                        && entry.getValue().expiresAt() <= gameTime);
+        var earliest = EARLIEST_EXPIRY.get(level.dimension());
+        if (earliest == null || earliest > gameTime) return;
+        Long next = null;
+        var entries = CLAIMS.entrySet().iterator();
+        while (entries.hasNext()) {
+            var entry = entries.next();
+            if (!entry.getKey().dimension().equals(level.dimension())) continue;
+            long expiresAt = entry.getValue().expiresAt();
+            if (expiresAt <= gameTime) entries.remove();
+            else next = next == null ? expiresAt : Math.min(next, expiresAt);
+        }
+        if (next == null) EARLIEST_EXPIRY.remove(level.dimension());
+        else EARLIEST_EXPIRY.put(level.dimension(), next);
     }
 
     private static List<ItemStack> copyNonEmpty(List<ItemStack> stacks) {
