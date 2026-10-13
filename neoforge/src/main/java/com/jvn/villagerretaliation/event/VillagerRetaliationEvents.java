@@ -656,6 +656,7 @@ public final class VillagerRetaliationEvents {
             com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onArrowEntityLoaded(arrow);
         }
         if (event.getEntity() instanceof Villager villager && event.getLevel() instanceof ServerLevel level) {
+            com.jvn.villagerretaliation.interaction.HiredWorkDecisionScheduler.onJoined(level, villager);
             HiredVillagerIndex.update(level, villager);
             com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations.onLoaded(villager);
             VillagerDownedService.onVillagerLoaded(villager);
@@ -1067,6 +1068,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof Villager villager && event.getLevel() instanceof ServerLevel level) {
+            com.jvn.villagerretaliation.interaction.HiredWorkDecisionScheduler.onLeft(level, villager);
+        }
         com.jvn.villagerretaliation.campaign.CampaignCharacterService.onRemoved(event.getEntity());
         if (event.getEntity() instanceof net.minecraft.world.entity.projectile.Projectile projectile) {
             com.jvn.villagerretaliation.settlement.SettlementProjectileService.onUnloaded(projectile);

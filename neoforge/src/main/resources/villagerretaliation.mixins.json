@@ -9,6 +9,7 @@
     "CampaignPlayerLoadMixin",
     "CampaignBlockOwnershipMixin",
     "OreNodeChunkMixin",
+    "WorkerRecipeReloadMixin",
     "CampaignBlockEntityOwnershipMixin",
     "AbstractArrowAccessor",
     "ProjectileCombatAccessor",

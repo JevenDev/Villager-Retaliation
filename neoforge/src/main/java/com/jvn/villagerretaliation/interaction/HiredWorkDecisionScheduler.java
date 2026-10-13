@@ -5,7 +5,7 @@ import com.jvn.villagerretaliation.debug.HiredStressGridService;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.TreeMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -23,6 +23,7 @@ import net.minecraft.world.entity.npc.Villager;
  */
 public final class HiredWorkDecisionScheduler {
     private static final Map<ServerLevel, TickBudget> LEVEL_BUDGETS = new IdentityHashMap<>();
+    private static final Map<ServerLevel, Map<UUID, Villager>> ROSTERS = new IdentityHashMap<>();
     private static final Map<UUID, Long> DEFERRED_BY_WORKER = new HashMap<>();
 
     private HiredWorkDecisionScheduler() {
@@ -71,19 +72,17 @@ public final class HiredWorkDecisionScheduler {
 
     public static void clearRuntimeState() {
         LEVEL_BUDGETS.clear();
+        ROSTERS.clear();
         DEFERRED_BY_WORKER.clear();
     }
 
     private static TickBudget resetForTick(ServerLevel level, TickBudget previous) {
         List<UUID> due = new ArrayList<>();
-        for (Entity entity : level.getAllEntities()) {
-            if (entity instanceof Villager candidate
-                    && canRequestDecision(level, candidate)
-                    && isDecisionOpportunity(level, candidate)) {
+        for (Villager candidate : ROSTERS.computeIfAbsent(level, HiredWorkDecisionScheduler::roster).values()) {
+            if (isDecisionOpportunity(level, candidate) && canRequestDecision(level, candidate)) {
                 due.add(candidate.getUUID());
             }
         }
-        due.sort(Comparator.naturalOrder());
 
         int limit = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_DECISION_BUDGET.get());
         int eligible = due.size();
@@ -105,6 +104,25 @@ public final class HiredWorkDecisionScheduler {
         long totalDeferred = (previous == null ? 0L : previous.totalDeferred) + deferred;
         int nextCursor = eligible == 0 ? cursor : (start + Math.max(1, admitted)) % eligible;
         return new TickBudget(level.getGameTime(), limit, eligible, deferred, totalDeferred, nextCursor, winners);
+    }
+
+    public static void onJoined(ServerLevel level, Villager villager) {
+        var roster = ROSTERS.get(level);
+        if (roster != null) roster.put(villager.getUUID(), villager);
+    }
+
+    public static void onLeft(ServerLevel level, Villager villager) {
+        var roster = ROSTERS.get(level);
+        if (roster != null) roster.remove(villager.getUUID(), villager);
+        DEFERRED_BY_WORKER.remove(villager.getUUID());
+    }
+
+    private static Map<UUID, Villager> roster(ServerLevel level) {
+        var roster = new TreeMap<UUID, Villager>();
+        for (Entity entity : level.getAllEntities()) {
+            if (entity instanceof Villager villager) roster.put(villager.getUUID(), villager);
+        }
+        return roster;
     }
 
     private static boolean canRequestDecision(ServerLevel level, Villager villager) {

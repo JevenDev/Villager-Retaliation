@@ -96,7 +96,7 @@ final class SettlementBackgroundCrafting {
                 }
                 filter = order.recipe().filter(level);
             }
-            for (var recipe : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
+            for (var recipe : com.jvn.villagerretaliation.interaction.work.WorkCraftingRecipes.producing(level, target.stack().getItem())) {
                 ItemStack output = recipe.value().getResultItem(level.registryAccess());
                 if (output.isEmpty() || !output.is(target.stack().getItem())
                         || !HiredProcessingRecipeFilter.allowsCraftingRecipe(level, filter, recipe, output)) {

@@ -257,7 +257,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         int attempts = mode == Mode.FORCED_ROUND_ROBIN ? 1 : targets.size();
         for (int offset = 0; offset < attempts; offset++) {
             Target target = targets.get((start + offset) % targets.size());
-            for (RecipeHolder<CraftingRecipe> holder : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
+            for (RecipeHolder<CraftingRecipe> holder : WorkCraftingRecipes.producing(level, target.stack().getItem())) {
                 CraftingRecipe recipe = holder.value();
                 ItemStack result = recipe.getResultItem(level.registryAccess());
                 if (recipe.isSpecial() || result.isEmpty() || !result.is(target.stack().getItem())

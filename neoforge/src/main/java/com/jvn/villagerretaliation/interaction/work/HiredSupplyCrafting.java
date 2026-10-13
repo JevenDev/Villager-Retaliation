@@ -100,7 +100,7 @@ public final class HiredSupplyCrafting {
 
     private static boolean craftCarriedSupplyItem(
             ServerLevel level, HiredWorkContext context, Item item, boolean hasCraftingTable) {
-        for (RecipeHolder<CraftingRecipe> holder : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
+        for (RecipeHolder<CraftingRecipe> holder : WorkCraftingRecipes.producing(level, item)) {
             CraftingRecipe recipe = holder.value();
             if (recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)
                     || !recipe.getResultItem(level.registryAccess()).is(item)) continue;
@@ -283,7 +283,7 @@ public final class HiredSupplyCrafting {
             if (depth >= MAX_CRAFTING_DEPTH || !visiting.add(item)) {
                 return false;
             }
-            for (RecipeHolder<CraftingRecipe> holder : this.level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
+            for (RecipeHolder<CraftingRecipe> holder : WorkCraftingRecipes.producing(this.level, item)) {
                 CraftingRecipe recipe = holder.value();
                 if (recipe.isSpecial() || !canUseRecipe(recipe, this.hasCraftingTable)) {
                     continue;

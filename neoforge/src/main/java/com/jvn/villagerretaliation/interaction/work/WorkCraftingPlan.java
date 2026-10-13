@@ -101,7 +101,7 @@ public final class WorkCraftingPlan {
             State completed = selectStack(recipe, trial, narrowed, visiting, depth, grid, width, height, slot, index);
             if (completed != null) return completed;
         }
-        for (RecipeHolder<CraftingRecipe> candidate : this.recipes) {
+        for (RecipeHolder<CraftingRecipe> candidate : required == null ? this.recipes : WorkCraftingRecipes.producing(this.level, required)) {
             ItemStack advertised = candidate.value().getResultItem(this.level.registryAccess());
             if (!matches(advertised, ingredient, required)) continue;
             State produced = craft(candidate.value(), trial, Map.of(), visiting, depth + 1);
