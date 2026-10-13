@@ -1,8 +1,8 @@
 package com.jvn.villagerretaliation.settlement;
 
+import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -11,7 +11,7 @@ import net.minecraft.world.level.ChunkPos;
 public final class SettlementTerritory {
     public static final int MAX_CHUNK = 1_874_999;
     private final ChunkPos foundingChunk;
-    private final Set<Long> plots = new LinkedHashSet<>();
+    private final LongLinkedOpenHashSet plots = new LongLinkedOpenHashSet();
     private final Set<SettlementStage> rewards = EnumSet.noneOf(SettlementStage.class);
     private int freeClaims;
     private int paidPurchases;

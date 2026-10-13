@@ -34,8 +34,10 @@ public final class SettlementSavedData extends SavedData {
     private final Map<ResourceLocation, Map<Long, VillageAllegianceId>> ownership = new java.util.HashMap<>();
 
     public static SettlementSavedData get(ServerLevel level) {
-        return get(level.getServer().overworld().getDataStorage(), level.getServer()
-                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data"));
+        return level.getServer().overworld().getDataStorage().computeIfAbsent(
+                new SavedData.Factory<>(() -> missing(level.getServer()
+                        .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data")),
+                        SettlementSavedData::load, DataFixTypes.LEVEL), DATA_NAME);
     }
 
     static SettlementSavedData get(net.minecraft.world.level.storage.DimensionDataStorage storage, java.nio.file.Path directory) {
@@ -45,6 +47,7 @@ public final class SettlementSavedData extends SavedData {
     }
 
     public Optional<SettlementRecord> get(VillageAllegianceId id) {
+        if (!this.retired.containsKey(id)) return Optional.ofNullable(this.settlements.get(id));
         var visited = new java.util.HashSet<VillageAllegianceId>();
         while (this.retired.containsKey(id)) {
             if (!visited.add(id)) return Optional.empty();

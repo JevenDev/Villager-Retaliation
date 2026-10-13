@@ -18,7 +18,17 @@ public enum HiredVillagerRole {
     SMELTER("smelter"),
     COURIER("courier");
 
+    private static final java.util.Map<String, HiredVillagerRole> BY_NAME = names();
     private final String serializedName;
+
+    private static java.util.Map<String, HiredVillagerRole> names() {
+        var names = new java.util.HashMap<String, HiredVillagerRole>();
+        for (var value : values()) {
+            names.put(value.serializedName, value);
+            names.put(value.name().toLowerCase(Locale.ROOT), value);
+        }
+        return java.util.Map.copyOf(names);
+    }
 
     HiredVillagerRole(String serializedName) {
         this.serializedName = serializedName;
@@ -45,11 +55,9 @@ public enum HiredVillagerRole {
             return null;
         }
         String normalized = value.trim().toLowerCase(Locale.ROOT);
-        for (HiredVillagerRole role : values()) {
-            if (role.serializedName.equals(normalized) || role.name().equalsIgnoreCase(normalized)) {
-                return role;
-            }
-        }
+        var known = BY_NAME.get(normalized);
+        if (known != null) return known;
+        for (var candidate : values()) if (candidate.name().equalsIgnoreCase(normalized)) return candidate;
         return null;
     }
 }

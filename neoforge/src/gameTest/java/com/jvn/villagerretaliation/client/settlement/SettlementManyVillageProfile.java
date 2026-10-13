@@ -28,6 +28,8 @@ public final class SettlementManyVillageProfile {
     private static final int SAMPLE_TICKS = 1_200;
     private static final List<Long> BASELINE = new ArrayList<>();
     private static final List<Long> ENABLED = new ArrayList<>();
+    private static final List<String> FAILURES = new ArrayList<>();
+    private static final List<com.jvn.villagerretaliation.settlement.SettlementSimulationService.Metrics> SCHEDULER = new ArrayList<>();
     private static final LinkedHashMap<String, SettlementManyVillageProfileScenario.Snapshot> SNAPSHOTS = new LinkedHashMap<>();
     private static volatile SettlementManyVillageProfileScenario fixture;
     private static volatile Stage stage = Stage.PREPARING;
@@ -85,6 +87,7 @@ public final class SettlementManyVillageProfile {
         if (stage == Stage.BASELINE || stage == Stage.ENABLED) {
             (stage == Stage.BASELINE ? BASELINE : ENABLED).add(duration);
             require(fixture.ready(), "every measured tick has 50 native residents and 95 completely unloaded villages");
+            if (stage == Stage.ENABLED) SCHEDULER.add(com.jvn.villagerretaliation.settlement.SettlementSimulationService.metrics(event.getServer().overworld()));
         }
         if (stageTicks % 200 == 0) LogUtils.getLogger().info("Many-village profile {} tick {}, native {}, unloaded {}",
                 stage, stageTicks, fixture.tickingResidents(), fixture.unloadedVillages());
@@ -112,12 +115,14 @@ public final class SettlementManyVillageProfile {
                 var end = fixture.snapshot();
                 SNAPSHOTS.put("enabledEnd", end);
                 var start = SNAPSHOTS.get("enabledStart");
-                for (int index = 0; index < 95; index++) require(end.deliveries().get(index) > start.deliveries().get(index),
-                        "every unloaded village completes physical hauling during measurement: " + index);
-                for (int index = 0; index < 950; index++) require(end.careTimes().get(index) - start.careTimes().get(index) >= 800L,
-                        "every background resident advances throughout measurement: " + index);
-                require(end.completedCycles() - start.completedCycles() >= 500L,
-                        "the scheduler completes at least five cycles per village on average: " + (end.completedCycles() - start.completedCycles()));
+                for (int index = 0; index < 95; index++) if (end.deliveries().get(index) <= start.deliveries().get(index))
+                    FAILURES.add("Village " + index + " did not haul during measurement");
+                for (int index = 0; index < 950; index++) {
+                    long elapsed = end.careTimes().get(index) - start.careTimes().get(index);
+                    if (elapsed < 800L) FAILURES.add("Resident " + index + " advanced only " + elapsed + " ticks");
+                }
+                if (end.completedCycles() - start.completedCycles() < 500L)
+                    FAILURES.add("Only " + (end.completedCycles() - start.completedCycles()) + " cycles completed");
                 VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.set(originalCap);
                 stage = Stage.DONE;
             }
@@ -136,7 +141,7 @@ public final class SettlementManyVillageProfile {
         var baseline = statistics(BASELINE);
         var enabled = statistics(ENABLED);
         double delta = enabled.p95Millis() - baseline.p95Millis();
-        boolean passed = enabled.p95Millis() < 50.0D && delta <= 5.0D;
+        boolean passed = enabled.p95Millis() < 50.0D && delta <= 5.0D && FAILURES.isEmpty();
         var report = new LinkedHashMap<String, Object>();
         report.put("scenario", "100 managed villages with 10 residents and 10 beds each. Two couriers per village move finite depot stock. Five villages remain near one stationary player and 95 stay unloaded.");
         report.put("measurement", "Same integrated server, world and machine. Highest-priority server pre-tick to lowest-priority post-tick. Benchmark probes excluded. 600 baseline warmup ticks and 400 enabled warmup ticks.");
@@ -146,6 +151,8 @@ public final class SettlementManyVillageProfile {
         report.put("cap100", enabled);
         report.put("p95DeltaMillis", delta);
         report.put("gatesPassed", passed);
+        report.put("failedChecks", FAILURES);
+        report.put("scheduler", SCHEDULER);
         report.put("snapshots", SNAPSHOTS);
         try {
             var output = Path.of(System.getProperty(OUTPUT));

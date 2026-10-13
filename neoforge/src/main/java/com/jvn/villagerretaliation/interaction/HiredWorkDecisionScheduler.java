@@ -19,11 +19,12 @@ import net.minecraft.world.entity.npc.Villager;
 
 /**
  * Per-level admission control for expensive hired-worker decisions. The due set is resolved once
- * per level tick, then a rotating window is selected before entity iteration can influence who wins.
+ * per level tick, then the least recently selected workers receive the available slots.
  */
 public final class HiredWorkDecisionScheduler {
     private static final Map<ServerLevel, TickBudget> LEVEL_BUDGETS = new IdentityHashMap<>();
     private static final Map<ServerLevel, Map<UUID, Villager>> ROSTERS = new IdentityHashMap<>();
+    private static final Map<UUID, Long> LAST_SELECTED = new HashMap<>();
     private static final Map<UUID, Long> DEFERRED_BY_WORKER = new HashMap<>();
 
     private HiredWorkDecisionScheduler() {
@@ -74,6 +75,7 @@ public final class HiredWorkDecisionScheduler {
         LEVEL_BUDGETS.clear();
         ROSTERS.clear();
         DEFERRED_BY_WORKER.clear();
+        LAST_SELECTED.clear();
     }
 
     private static TickBudget resetForTick(ServerLevel level, TickBudget previous) {
@@ -87,23 +89,30 @@ public final class HiredWorkDecisionScheduler {
         int limit = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_DECISION_BUDGET.get());
         int eligible = due.size();
         int admitted = Math.min(limit, eligible);
-        int cursor = previous == null ? 0 : previous.nextCursor;
-        int start = eligible == 0 ? 0 : Math.floorMod(cursor, eligible);
-        Set<UUID> winners = new HashSet<>();
-        for (int index = 0; index < admitted; index++) {
-            winners.add(due.get((start + index) % eligible));
-        }
+        Set<UUID> winners = select(due, LAST_SELECTED, admitted, level.getGameTime());
 
         int deferred = Math.max(0, eligible - admitted);
         if (deferred > 0) {
             for (int index = admitted; index < eligible; index++) {
-                UUID deferredWorker = due.get((start + index) % eligible);
+                UUID deferredWorker = due.get(index);
                 DEFERRED_BY_WORKER.merge(deferredWorker, 1L, Long::sum);
             }
         }
         long totalDeferred = (previous == null ? 0L : previous.totalDeferred) + deferred;
-        int nextCursor = eligible == 0 ? cursor : (start + Math.max(1, admitted)) % eligible;
-        return new TickBudget(level.getGameTime(), limit, eligible, deferred, totalDeferred, nextCursor, winners);
+        return new TickBudget(level.getGameTime(), limit, eligible, deferred, totalDeferred, winners);
+    }
+
+    static Set<UUID> select(List<UUID> due, Map<UUID, Long> lastSelected, int limit, long now) {
+        // a shared index can starve workers when staggered groups have different sizes
+        due.sort(java.util.Comparator.<UUID>comparingLong(id -> lastSelected.getOrDefault(id, Long.MIN_VALUE))
+                .thenComparing(java.util.Comparator.naturalOrder()));
+        Set<UUID> winners = new HashSet<>();
+        for (int index = 0; index < Math.min(limit, due.size()); index++) {
+            UUID id = due.get(index);
+            winners.add(id);
+            lastSelected.put(id, now);
+        }
+        return winners;
     }
 
     public static void onJoined(ServerLevel level, Villager villager) {
@@ -115,6 +124,7 @@ public final class HiredWorkDecisionScheduler {
         var roster = ROSTERS.get(level);
         if (roster != null) roster.remove(villager.getUUID(), villager);
         DEFERRED_BY_WORKER.remove(villager.getUUID());
+        LAST_SELECTED.remove(villager.getUUID());
     }
 
     private static Map<UUID, Villager> roster(ServerLevel level) {
@@ -162,18 +172,16 @@ public final class HiredWorkDecisionScheduler {
         private final int eligible;
         private final int deferred;
         private final long totalDeferred;
-        private final int nextCursor;
         private final Set<UUID> winners;
         private int granted;
 
         private TickBudget(long gameTime, int limit, int eligible, int deferred, long totalDeferred,
-                int nextCursor, Set<UUID> winners) {
+                Set<UUID> winners) {
             this.gameTime = gameTime;
             this.limit = limit;
             this.eligible = eligible;
             this.deferred = deferred;
             this.totalDeferred = totalDeferred;
-            this.nextCursor = nextCursor;
             this.winners = winners;
         }
     }

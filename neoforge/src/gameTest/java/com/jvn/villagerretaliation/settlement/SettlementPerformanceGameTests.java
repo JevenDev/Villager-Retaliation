@@ -113,6 +113,63 @@ public final class SettlementPerformanceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "territory_lookup")
+    public static void territoryLookupPreservesNegativeBoundsAndSaveOrder(GameTestHelper helper) {
+        var center = new BlockPos(-1, 64, -1);
+        var territory = new SettlementTerritory(center);
+        territory.start();
+        helper.assertTrue(territory.contains(new BlockPos(-32, 64, -32)), "negative boundary belongs to chunk minus two");
+        helper.assertFalse(territory.contains(new BlockPos(-33, 64, -32)), "the block beyond the negative boundary is outside");
+        helper.assertTrue(territory.contains(new BlockPos(-32, 0, -32), new BlockPos(15, 100, 15)), "all original chunks cover the full bounds");
+        helper.assertFalse(territory.contains(new BlockPos(-32, 0, -32), new BlockPos(16, 100, 15)), "bounds outside the last chunk are rejected");
+        var saved = territory.save();
+        var restored = SettlementTerritory.load(center, saved);
+        helper.assertValueEqual(List.copyOf(restored.plots()), List.copyOf(territory.plots()), "save round trips retain plot iteration order");
+        helper.assertValueEqual(restored.save(), saved, "the serialized territory format stays unchanged");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "construction_supply_range")
+    public static void constructionOnlyReservesMaterialsWithinBuilderReach(GameTestHelper helper) {
+        var town = town(helper);
+        while (town.stage() != SettlementStage.CITY) town.advance();
+        var level = helper.getLevel();
+        var center = town.center();
+        var entry = com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog.byId(level.getServer(),
+                net.minecraft.resources.ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1")).orElseThrow();
+        var plan = com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner.scan(level, entry,
+                net.minecraft.world.level.block.Rotation.NONE).orElseThrow();
+        var origin = center.east(8);
+        var far = center.east(96);
+        SettlementTestPlots.claim(level, town, center.offset(-8, -2, -8), far.offset(8, 16, 16));
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "House", plan.worldMin(origin), plan.worldMax(origin), 5, true);
+        helper.assertTrue(town.putArea(town.leader(), area), "construction area registers");
+        for (var position : List.of(center, far)) {
+            var store = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Materials", position, position.offset(2, 2, 2), 5, true);
+            helper.assertTrue(town.putArea(town.leader(), store), "material storage registers");
+            var depot = town.registerDepot(town.leader(), store.id(), position, SettlementDepotPurpose.MATERIALS);
+            depot.observeRules(List.of());
+            for (var material : plan.materials()) depot.addItem(material.item().copyWithCount(material.count()));
+        }
+        var builder = UUID.randomUUID();
+        helper.assertTrue(town.assignDuty(builder, area.id()), "builder receives the site");
+        var project = SettlementProject.create(town, area.id(), builder, plan, origin, UUID.randomUUID(), 0);
+        helper.assertTrue(town.startProject(town.leader(), project), "construction starts");
+        var radius = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_BUILDER_MATERIAL_STORAGE_RADIUS;
+        int previous = radius.get();
+        try {
+            radius.set(32);
+            var demands = SettlementDemandService.inspect(level, town).demands().stream()
+                    .filter(demand -> demand.consumer().equals(project.id())).toList();
+            helper.assertFalse(demands.isEmpty(), "the unfinished house requests actual construction materials");
+            for (var demand : demands) helper.assertValueEqual(demand.sources(), List.of(center),
+                    "a project must not reserve supplies in a depot its builder cannot use");
+        } finally {
+            radius.set(previous);
+        }
+        helper.succeed();
+    }
+
     private static SettlementRecord town(GameTestHelper helper) {
         return new SettlementRecord(VillageAllegianceId.random(), helper.getLevel().dimension().location(),
                 helper.absolutePos(new BlockPos(2, 2, 2)), UUID.randomUUID(), helper.getLevel().getGameTime(), () -> {});

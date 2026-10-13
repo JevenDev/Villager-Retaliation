@@ -250,6 +250,18 @@ public final class SettlementTownProfileScenario {
         return count;
     }
 
+    public List<String> builderDiagnostics() {
+        var diagnostics = new ArrayList<String>();
+        for (var id : this.builders) {
+            if (this.level.getEntity(id) instanceof Villager villager) {
+                diagnostics.add(id + " " + com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.snapshot(
+                        com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager), this.level.getGameTime())
+                        + " " + com.jvn.villagerretaliation.interaction.HiredWorkDecisionScheduler.debugSnapshot(this.level, villager));
+            }
+        }
+        return diagnostics;
+    }
+
     public void beginActive(ServerPlayer player) {
         demand(player, 512, 0);
     }

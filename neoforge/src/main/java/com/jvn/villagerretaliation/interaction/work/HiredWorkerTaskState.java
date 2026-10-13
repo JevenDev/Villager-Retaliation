@@ -23,7 +23,17 @@ public enum HiredWorkerTaskState {
     NO_WORK_AREA("no_work_area"),
     PAUSED_MISSING_TOOL("paused_missing_tool");
 
+    private static final java.util.Map<String, HiredWorkerTaskState> BY_NAME = names();
     private final String id;
+
+    private static java.util.Map<String, HiredWorkerTaskState> names() {
+        var names = new java.util.HashMap<String, HiredWorkerTaskState>();
+        for (var value : values()) {
+            names.put(value.id, value);
+            names.put(value.name().toLowerCase(Locale.ROOT), value);
+        }
+        return java.util.Map.copyOf(names);
+    }
 
     HiredWorkerTaskState(String id) {
         this.id = id;
@@ -74,11 +84,9 @@ public enum HiredWorkerTaskState {
         if (alias != null) {
             return alias;
         }
-        for (HiredWorkerTaskState state : values()) {
-            if (state.id.equals(normalized) || state.name().equalsIgnoreCase(normalized)) {
-                return state;
-            }
-        }
+        var known = BY_NAME.get(normalized);
+        if (known != null) return known;
+        for (var candidate : values()) if (candidate.name().equalsIgnoreCase(normalized)) return candidate;
         return IDLE;
     }
 

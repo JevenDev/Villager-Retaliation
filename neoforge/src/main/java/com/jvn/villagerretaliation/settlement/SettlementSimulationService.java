@@ -13,7 +13,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 
 public final class SettlementSimulationService {
-    static final int MAX_STEPS_PER_TICK = 64;
+    private static final int MIN_STEPS_PER_TICK = 64;
+    static final int MAX_STEPS_PER_TICK = 256;
     private static final long BUDGET_NANOS = 3_000_000L;
     private final Map<VillageAllegianceId, Entry> entries = new LinkedHashMap<>();
     private List<Entry> scheduled = List.of();
@@ -120,7 +121,9 @@ public final class SettlementSimulationService {
         if (now >= this.refreshAt || currentDay != this.day || cap != this.limit) refresh(server, now, currentDay, cap);
         this.lastSteps = 0;
         int idle = 0;
-        while (this.lastSteps < MAX_STEPS_PER_TICK && idle < this.scheduled.size() + 2
+        // large rosters can exhaust cheap work units before reaching the time budget
+        int stepLimit = Math.clamp(this.scheduled.size() * 4, MIN_STEPS_PER_TICK, MAX_STEPS_PER_TICK);
+        while (this.lastSteps < stepLimit && idle < this.scheduled.size() + 2
                 && System.nanoTime() - started < BUDGET_NANOS) {
             this.auxiliaryTurn = !this.auxiliaryTurn;
             long stepStarted = System.nanoTime();

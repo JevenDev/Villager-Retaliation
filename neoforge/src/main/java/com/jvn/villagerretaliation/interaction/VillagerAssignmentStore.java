@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.util.CompoundTagSnapshot;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -54,14 +55,28 @@ public final class VillagerAssignmentStore {
     private static final String STAY_ANCHOR_Y_KEY = "VillagerRetaliationStayAnchorY";
     private static final String STAY_ANCHOR_Z_KEY = "VillagerRetaliationStayAnchorZ";
 
+    private static final java.util.concurrent.ConcurrentMap<Villager, CachedSnapshot> SNAPSHOTS =
+            new com.google.common.collect.MapMaker().weakKeys().makeMap();
+
     private VillagerAssignmentStore() {
     }
 
     public static VillagerAssignmentSnapshot snapshot(Villager villager) {
-        if (villager == null || !villager.getPersistentData().contains(ASSIGNMENT_TAG, Tag.TAG_COMPOUND)) {
+        if (villager == null || !(villager.getPersistentData().get(ASSIGNMENT_TAG) instanceof CompoundTag tag)) {
             return VillagerAssignmentSnapshot.unassigned(0L);
         }
-        CompoundTag tag = villager.getPersistentData().getCompound(ASSIGNMENT_TAG);
+        var cached = SNAPSHOTS.get(villager);
+        // compare saved contents instead of trusting revisions from external NBT edits
+        if (cached != null && cached.tag.matches(tag)) return cached.snapshot;
+        var snapshot = readSnapshot(villager, tag);
+        SNAPSHOTS.put(villager, new CachedSnapshot(new CompoundTagSnapshot(tag), snapshot));
+        return snapshot;
+    }
+
+    private record CachedSnapshot(CompoundTagSnapshot tag, VillagerAssignmentSnapshot snapshot) {
+    }
+
+    private static VillagerAssignmentSnapshot readSnapshot(Villager villager, CompoundTag tag) {
         CompoundTag original = tag.copy();
         migrateAndValidate(villager, tag);
         if (!tag.equals(original)) {
@@ -155,12 +170,11 @@ public final class VillagerAssignmentStore {
     }
 
     private static Optional<UUID> civicReference(Villager villager, String key) {
-        if (villager == null || !villager.getPersistentData().contains(ASSIGNMENT_TAG, Tag.TAG_COMPOUND)) {
-            return Optional.empty();
-        }
-        CompoundTag tag = villager.getPersistentData().getCompound(ASSIGNMENT_TAG);
-        return VillagerAssignmentState.CIVIC.name().equals(tag.getString(STATE_TAG)) && tag.hasUUID(key)
-                ? Optional.of(tag.getUUID(key)) : Optional.empty();
+        if (villager == null || !(villager.getPersistentData().get(ASSIGNMENT_TAG) instanceof CompoundTag tag)
+                || !(tag.get(STATE_TAG) instanceof net.minecraft.nbt.StringTag state)
+                || !VillagerAssignmentState.CIVIC.name().equals(state.getAsString())) return Optional.empty();
+        return tag.get(key) instanceof net.minecraft.nbt.IntArrayTag uuid && uuid.size() == 4
+                ? Optional.of(net.minecraft.nbt.NbtUtils.loadUUID(uuid)) : Optional.empty();
     }
 
     public static VillagerAssignmentSnapshot setCommand(

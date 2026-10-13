@@ -658,6 +658,7 @@ public final class SettlementDemandService {
             var sources = SettlementSupplyStock.storages(this.level, this.town, project.area(), false);
             var plan = SettlementConstructionService.scan(this.level, project.structure(), project.rotation());
             if (plan == null) { unknown(project.id(), project.area(), Kind.PROJECT, project.label(), sources, "prefab_unavailable"); return; }
+            sources = sources.stream().filter(BuilderWorker.builderMaterialStorageFilter(plan, project.origin())).toList();
             var requirements = new LinkedHashMap<net.minecraft.world.item.Item, Long>();
             var visited = new java.util.HashSet<BlockPos>();
             for (int index = 0; index < plan.blocks().size(); index++) {

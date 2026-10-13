@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.allegiance;
 
+import com.jvn.villagerretaliation.util.CompoundTagSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -41,14 +42,26 @@ public final class VillageAllegianceEntityData {
     private static final String PENDING_ATTEMPTS = "Attempts";
     private static final String PENDING_NEXT_ATTEMPT = "NextAttemptGameTime";
 
+    private static final java.util.concurrent.ConcurrentMap<Entity, CachedRead> READS =
+            new com.google.common.collect.MapMaker().weakKeys().makeMap();
+
     private VillageAllegianceEntityData() {
     }
 
     public static Optional<VillageAllegianceData> read(Entity entity) {
-        if (entity == null || !entity.getPersistentData().contains(ROOT_TAG, Tag.TAG_COMPOUND)) {
+        if (entity == null || !(entity.getPersistentData().get(ROOT_TAG) instanceof CompoundTag tag)) {
             return Optional.empty();
         }
-        return Optional.of(readPayload(entity.getPersistentData().getCompound(ROOT_TAG), entity));
+        var cached = READS.get(entity);
+        long time = entity.level().getGameTime();
+        var dimension = entity.level().dimension().location();
+        var position = entity.blockPosition();
+        // compare the payload too so direct and nested NBT edits take effect immediately
+        if (cached != null && cached.time == time && cached.dimension.equals(dimension)
+                && cached.position.equals(position) && cached.tag.matches(tag)) return cached.data;
+        var data = Optional.of(readPayload(tag, entity));
+        READS.put(entity, new CachedRead(new CompoundTagSnapshot(tag), time, dimension, position.immutable(), data));
+        return data;
     }
 
     public static void write(Entity entity, VillageAllegianceData data) {
@@ -320,6 +333,10 @@ public final class VillageAllegianceEntityData {
         } catch (IllegalArgumentException ignored) {
             return null;
         }
+    }
+
+    private record CachedRead(CompoundTagSnapshot tag, long time, ResourceLocation dimension, BlockPos position,
+                              Optional<VillageAllegianceData> data) {
     }
 
     public record PendingAssignmentData(
