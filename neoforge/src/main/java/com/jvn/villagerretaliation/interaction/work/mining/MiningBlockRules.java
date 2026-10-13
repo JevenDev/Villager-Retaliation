@@ -81,7 +81,8 @@ public final class MiningBlockRules {
             ServerLevel level,
             HiredWorkContext context,
             BlockPos pos) {
-        return !MiningHazardManager.isProtectedBarrier(context, pos)
+        return MiningTaskRules.permits(level, context, pos)
+                && !MiningHazardManager.isProtectedBarrier(context, pos)
                 && isMineableExcavationBlock(level, pos);
     }
 
@@ -225,7 +226,7 @@ public final class MiningBlockRules {
                 || state.is(Blocks.WALL_TORCH);
     }
 
-    private static boolean isExposed(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
+    public static boolean isExposed(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             if (!observed.test(pos.relative(direction))) {
                 continue;

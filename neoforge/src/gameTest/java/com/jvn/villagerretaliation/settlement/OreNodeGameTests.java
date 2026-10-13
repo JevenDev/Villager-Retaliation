@@ -113,6 +113,47 @@ public final class OreNodeGameTests {
     }
 
     @GameTest(template = "empty", batch = "ore_nodes")
+    public static void backgroundWorkersProduceFiniteNodeLootAndReconcileDepletion(GameTestHelper helper) {
+        SettlementMiningWorkGameTests.fixture(helper, fixture -> {
+            var nodes = new CompoundTag();
+            nodes.putInt(Long.toString(fixture.ore().asLong()), 0);
+            OreNodes.apply(fixture.chunk(), new CompoundTag(), nodes);
+            SettlementMineService.observeArea(helper.getLevel(), fixture.town(), fixture.area(), fixture.chunk());
+            int chunks = helper.getLevel().getChunkSource().getLoadedChunksCount();
+            for (int now = 200; now <= 60000; now += 200) SettlementBackgroundService.update(helper.getLevel(), fixture.town(), now);
+            int iron = fixture.worker().items(helper.getLevel().registryAccess()).stream().filter(stack -> stack.is(Items.RAW_IRON))
+                    .mapToInt(ItemStack::getCount).sum();
+            helper.assertValueEqual(iron, 102, "one natural iron node and two placed ores yield their finite reserves: " + fixture.worker().status());
+            helper.assertTrue(fixture.mine().getBlockState(fixture.ore()).isAir(), "background node depleted");
+            helper.assertValueEqual(helper.getLevel().getChunkSource().getLoadedChunksCount(), chunks, "node extraction does not load terrain");
+            SettlementMineService.onChunkLoad(new net.neoforged.neoforge.event.level.ChunkEvent.Load(fixture.chunk(), false));
+            helper.assertTrue(fixture.chunk().getBlockState(fixture.ore()).isAir(), "depletion reaches physical terrain");
+            helper.assertTrue(OreNodes.snapshot(fixture.chunk(), fixture.ore(), fixture.ore()).isEmpty(), "depleted metadata removed");
+        });
+    }
+
+    @GameTest(template = "empty", batch = "ore_nodes")
+    public static void differentDepositsInOneSectionDoNotConflict(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var first = ore(helper, true);
+        var second = first.east();
+        level.setBlockAndUpdate(second, Blocks.DIAMOND_ORE.defaultBlockState());
+        var chunk = level.getChunkAt(first);
+        var nodes = new CompoundTag();
+        nodes.putInt(Long.toString(second.asLong()), 0);
+        OreNodes.apply(chunk, new CompoundTag(), nodes);
+        var section = SettlementTerrainSection.capture("Mine", UUID.randomUUID(), first, second, chunk);
+        var tool = new ItemStack(Items.DIAMOND_PICKAXE);
+        section.extractOre(level, first, tool);
+        OreNodes.mine(level, second, helper.spawn(EntityType.VILLAGER, new BlockPos(3, 2, 1)), tool);
+        helper.assertTrue(section.reconcile(chunk), "independent deposits reconcile independently");
+        var result = OreNodes.snapshot(chunk, first, second);
+        helper.assertValueEqual(OreNodes.remaining(result, first, chunk.getBlockState(first)), 9, "background use retained");
+        helper.assertValueEqual(OreNodes.remaining(result, second, chunk.getBlockState(second)), 9, "neighbor live use retained");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "ore_nodes")
     public static void dataDefinitionsIncludeDefaultAndSpecificOreTags(GameTestHelper helper) {
         helper.assertValueEqual(OreNodeDefinitions.extractions(Blocks.COAL_ORE.defaultBlockState()), 100, "coal override");
         helper.assertValueEqual(OreNodeDefinitions.extractions(Blocks.DEEPSLATE_IRON_ORE.defaultBlockState()), 100, "iron variants use tag");

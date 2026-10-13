@@ -57,6 +57,16 @@ public final class HiredTemporaryWorkService {
             return "Worker permission changed";
         }
         if (task != null && task.kind().role() != authority.role()) return "Incompatible worker role";
+        if (task != null && task.kind() == HiredTemporaryTask.Kind.ORE
+                && !com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules.isMineableOre(level, task.target()))
+            return "Select an exposed ore deposit";
+        if (task != null && !task.material().isEmpty()) {
+            String selector = task.material();
+            var registry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BLOCK);
+            var id = net.minecraft.resources.ResourceLocation.parse(selector.startsWith("#") ? selector.substring(1) : selector);
+            if (selector.startsWith("#") ? registry.getTag(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK, id)).isEmpty()
+                    : !registry.containsKey(id)) return "Unknown mining material or block tag";
+        }
         var state = HiredWorkStateStore.state(villager);
         var home = HiredWorkArea.fromState(state, villager.blockPosition());
         var current = queue(state);
@@ -65,7 +75,7 @@ public final class HiredTemporaryWorkService {
         if (task != null && previous != null) {
             var taskId = task.id();
             var repeated = previous.tasks().stream().filter(existing -> existing.id().equals(taskId)).findFirst().orElse(null);
-            if (repeated != null) return repeated.equals(task) || task.kind() == HiredTemporaryTask.Kind.TREE
+            if (repeated != null) return repeated.equals(task) || (task.kind() == HiredTemporaryTask.Kind.TREE || task.kind() == HiredTemporaryTask.Kind.ORE)
                     && repeated.kind() == task.kind() && Objects.equals(repeated.target(), task.target())
                     || task.kind().entityTarget() && repeated.kind() == task.kind() && Objects.equals(repeated.entity(), task.entity())
                     ? "" : "Task identifier is already in use";
@@ -79,16 +89,26 @@ public final class HiredTemporaryWorkService {
             if (!task.area().contains(living.blockPosition())) return "Selected target leaves task bounds";
         }
         if (task != null && task.kind() == HiredTemporaryTask.Kind.TREE) {
-            if (!level.hasChunkAt(task.target()) || authority.civic() && !duty.town().contains(task.target())
+            if (!level.hasChunkAt(task.target()) || authority.civic() && !com.jvn.villagerretaliation.settlement.SettlementExpeditions.permits(level, duty.town(), task)
                     || !authority.civic() && (!home.usable() || !home.contains(task.target()))) return "Selected tree is outside available work bounds";
             task = treeTask(level, state, task, authority.civic() ? null : home);
             if (task == null) return "No matching natural tree at the selected block";
         }
+        if (task != null && task.kind() == HiredTemporaryTask.Kind.ORE) {
+            if (!authority.civic() && (!home.usable() || !home.contains(task.target()))) return "Selected ore leaves the worker's assigned bounds";
+            var min = task.target().offset(-2, -1, -2);
+            var max = task.target().offset(2, 2, 2);
+            if (!authority.civic()) {
+                min = HiredWorkArea.maxPos(min, home.min());
+                max = HiredWorkArea.minPos(max, home.max());
+            }
+            task = new HiredTemporaryTask(task.id(), task.kind(), min, max, 1, task.target());
+        }
         if (task != null && (level.isOutsideBuildHeight(task.min()) || level.isOutsideBuildHeight(task.max())
                 || !level.getWorldBorder().isWithinBounds(task.min()) || !level.getWorldBorder().isWithinBounds(task.max())
-                || authority.civic() && !duty.town().contains(task.min(), task.max())
+                || authority.civic() && !com.jvn.villagerretaliation.settlement.SettlementExpeditions.permits(level, duty.town(), task)
                 || !authority.civic() && (!home.usable() || !home.contains(task.min()) || !home.contains(task.max())))) {
-            return authority.civic() ? "Task leaves settlement or world bounds" : "Task leaves the worker's assigned bounds";
+            return authority.civic() ? "Task leaves expedition bounds or enters another settlement" : "Task leaves the worker's assigned bounds";
         }
         if (append && previous != null && previous.tasks().size() >= HiredTemporaryQueue.MAX_TASKS) return "Temporary queue is full";
         if (append && previous != null && !valid(level, villager, authority, previous)) return "Assignment changed since the queue was created";
@@ -164,7 +184,7 @@ public final class HiredTemporaryWorkService {
             var duty = SettlementWorkforceService.duty(villager).orElse(null);
             return duty != null && duty.town().id().value().equals(queue.owner()) && duty.area().id().equals(queue.worksite())
                     && duty.town().permits(queue.issuer(), SettlementPermission.STAFF)
-                    && queue.tasks().stream().allMatch(task -> duty.town().contains(task.min(), task.max()));
+                    && queue.tasks().stream().allMatch(task -> com.jvn.villagerretaliation.settlement.SettlementExpeditions.permits(level, duty.town(), task));
         }
         var home = HiredWorkArea.fromState(HiredWorkStateStore.state(villager), villager.blockPosition());
         return queue.worksite() == null && authority.owner().filter(queue.owner()::equals).isPresent()
@@ -196,18 +216,31 @@ public final class HiredTemporaryWorkService {
     }
 
     public static void finishExcavation(ServerLevel level, com.jvn.villagerretaliation.interaction.work.HiredWorkContext context) {
-        if (!active(context.state(), HiredTemporaryTask.Kind.EXCAVATE)) return;
+        var queue = queue(context.state());
+        if (queue == null || queue.role() != HiredVillagerRole.MINING) return;
         boolean excavation = HiredMiningMode.fromState(context.state()).excavatesArea();
         var scan = com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan.collect(context, MINING_SCAN, 768,
-                pos -> excavation
+                pos -> com.jvn.villagerretaliation.interaction.work.mining.MiningTaskRules.permits(level, context, pos) && (excavation
                         ? com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules.isMineableExcavationBlock(level, context, pos)
-                        : com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules.isMineableOre(level, pos));
+                        : com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules.isMineableOre(level, pos)));
         if (!scan.candidates().isEmpty()) context.state().remove(MINING_SCAN);
         else if (scan.completedFullPass()) context.state().putBoolean(FINISHED, true);
     }
 
     public static void finishPatch(CompoundTag state) {
         if (active(state, HiredTemporaryTask.Kind.FARM_PATCH)) state.putBoolean(FINISHED, true);
+    }
+
+    public static void finishForest(ServerLevel level, com.jvn.villagerretaliation.interaction.work.HiredWorkContext context) {
+        var queue = queue(context.state());
+        if (queue == null || !queue.current().kind().forest()) return;
+        var filters = com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters.selectedFilterIds(context.state());
+        var trees = com.jvn.villagerretaliation.interaction.work.logging.LoggingTreeGeometry.discovery(level, level::hasChunkAt, filters);
+        var scan = com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan.collect(context, "TemporaryForestCompletionScan", 768,
+                pos -> level.getBlockState(pos).is(net.minecraft.tags.BlockTags.LOGS)
+                        && trees.isNaturalTree(pos));
+        if (!scan.candidates().isEmpty()) context.state().remove("TemporaryForestCompletionScan");
+        else if (scan.completedFullPass()) context.state().putBoolean(FINISHED, true);
     }
 
     public static void finishTree(CompoundTag state) {
@@ -253,6 +286,7 @@ public final class HiredTemporaryWorkService {
         session.state().remove(FINISHED);
         session.state().remove("NextWorkGameTime");
         session.state().remove(MINING_SCAN);
+        session.state().remove("TemporaryForestCompletionScan");
         HiredTemporaryEntities.clear(session.state());
     }
 

@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 
 public record SettlementViewWindow(BlockPos center, int radius, double x, double z, float height, List<ChunkPos> chunks) {
-    public static final int BORDER = 16;
+    public static final int BORDER = SettlementExpeditions.RANGE;
     public static final int MAX_CHUNKS = 121;
     public static final float MIN_HEIGHT = 8.0F;
     public static final float MAX_HEIGHT = 64.0F;
@@ -59,10 +59,11 @@ public record SettlementViewWindow(BlockPos center, int radius, double x, double
             double nearest = Double.POSITIVE_INFINITY;
             double selectedX = x;
             double selectedZ = z;
+            int borderChunks = BORDER / 16;
             for (long plot : town.territory().plots()) {
                 var owned = new ChunkPos(plot);
-                for (int dx = -1; dx <= 1; dx++) {
-                    for (int dz = -1; dz <= 1; dz++) {
+                for (int dx = -borderChunks; dx <= borderChunks; dx++) {
+                    for (int dz = -borderChunks; dz <= borderChunks; dz++) {
                         var candidate = new ChunkPos(owned.x + dx, owned.z + dz);
                         if (!SettlementTerritory.validChunk(candidate.x, candidate.z) || !allowed.test(candidate)) continue;
                         double cx = Math.clamp(x, Math.max(minX, candidate.getMinBlockX()),
@@ -104,12 +105,7 @@ public record SettlementViewWindow(BlockPos center, int radius, double x, double
 
     static boolean nearTerritory(SettlementRecord town, ChunkPos chunk) {
         if (!SettlementTerritory.validChunk(chunk.x, chunk.z)) return false;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                if (town.territory().contains(chunk.x + dx, chunk.z + dz)) return true;
-            }
-        }
-        return false;
+        return SettlementExpeditions.near(town, chunk.x, chunk.z);
     }
 
     public net.minecraft.world.phys.Vec3 focus(double x, double z) {

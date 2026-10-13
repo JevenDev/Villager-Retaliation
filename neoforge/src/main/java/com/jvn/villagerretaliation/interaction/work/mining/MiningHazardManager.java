@@ -132,10 +132,15 @@ public final class MiningHazardManager {
     public static BlockPos horizontalFloorTarget(BlockGetter level, Predicate<BlockPos> observed,
                                                  HiredWorkContext context, Vec3 origin) {
         int floorY = context.workMin().getY() - 1;
+        var queue = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.queue(context.state());
+        var stairs = queue != null && queue.current().kind().staircase() ? queue.current() : null;
         List<BlockPos> holes = new ArrayList<>();
         for (int x = context.workMin().getX(); x <= context.workMax().getX(); x++) {
             for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
-                BlockPos floor = new BlockPos(x, floorY, z);
+                int y = stairs == null ? floorY : stairs.target().getY() - 1
+                        - Math.abs(stairs.max().getX() - stairs.min().getX() > stairs.max().getZ() - stairs.min().getZ()
+                        ? x - stairs.target().getX() : z - stairs.target().getZ());
+                BlockPos floor = new BlockPos(x, y, z);
                 if (canReplaceWithFill(level, observed, floor)) {
                     holes.add(floor);
                 }

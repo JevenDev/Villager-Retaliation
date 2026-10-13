@@ -101,6 +101,7 @@ final class MiningTargetPlanner {
         boolean horizontal = mode.excavatesHorizontally();
         boolean neededShaftTarget = !horizontal && MiningExcavationSupport.isNeededLadderShaftTarget(level, context, pos);
         return context.isInsideWorkArea(pos)
+                && MiningTaskRules.permits(level, context, pos)
                 && (!horizontal || !MiningHorizontalStairPlan.isReservedSupport(context, villager, pos))
                 && !this.worker.isTemporarilyAvoidedTargetForPlanner(level, villager, pos)
                 && (neededShaftTarget
@@ -698,6 +699,7 @@ final class MiningTargetPlanner {
             BlockPos pos,
             BlockPos anchor) {
         return context.isInsideWorkArea(pos)
+                && MiningTaskRules.permits(level, context, pos)
                 && isInsideMiningPocket(context, pos, anchor)
                 && !this.worker.isTemporarilyAvoidedTargetForPlanner(level, villager, pos)
                 && MiningBlockRules.isMineableOre(level, pos);

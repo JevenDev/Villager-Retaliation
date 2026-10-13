@@ -54,6 +54,15 @@ public enum HiredMiningMode {
     }
 
     public static HiredMiningMode fromState(CompoundTag state) {
+        var queue = HiredTemporaryWorkService.queue(state);
+        if (queue != null && queue.role() == HiredVillagerRole.MINING) {
+            switch (queue.current().kind()) {
+                case ORE, ORE_AREA -> { return EXPOSED_ORES; }
+                case TUNNEL, STAIRCASE, STAIRCASE_PROSPECT -> { return HORIZONTAL_EXCAVATION; }
+                case QUARRY -> { return EXCAVATE_AREA; }
+                default -> { }
+            }
+        }
         HiredMiningMode mode = bySerializedName(state.getString(STATE_TAG));
         return mode == null ? EXPOSED_ORES : mode;
     }

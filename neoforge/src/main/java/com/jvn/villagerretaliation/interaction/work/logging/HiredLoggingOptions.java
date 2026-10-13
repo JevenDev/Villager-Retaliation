@@ -48,10 +48,14 @@ public final class HiredLoggingOptions {
     }
 
     public static boolean bonemealSaplings(CompoundTag state) {
+        var queue = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.queue(state);
+        if (queue != null && queue.current().kind().forest()) return false;
         return enabled(state, BONEMEAL_SAPLINGS_OPTION);
     }
 
     public static boolean plantSaplings(CompoundTag state) {
+        var queue = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.queue(state);
+        if (queue != null && queue.current().kind().forest()) return queue.current().kind() == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FOREST_REPLANT;
         return enabled(state, PLANT_SAPLINGS_OPTION);
     }
 

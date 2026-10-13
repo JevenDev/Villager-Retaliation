@@ -72,7 +72,7 @@ public final class SettlementViewCamera {
                     : ((dz > 0 ? chunk.getMaxBlockZ() + 1.0D : chunk.getMinBlockZ()) - z) / dz;
             distance = Math.max(distance + 0.0001D, Math.min(endX, endZ));
         }
-        return limit;
+        return Math.max(0.0D, limit - 0.001D);
     }
 
     private static double axisLimit(double focus, int center, int radius, double direction) {

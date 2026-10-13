@@ -26,6 +26,15 @@ public final class OreNodes {
 
     public static void register(IEventBus bus) { TYPES.register(bus); }
 
+    public static void syncCatalog(net.neoforged.neoforge.event.OnDatapackSyncEvent event) {
+        if (event.getPlayer() == null) HiredOreBlockTracker.clearRuntimeState();
+        var blocks = net.minecraft.core.registries.BuiltInRegistries.BLOCK.stream()
+                .filter(block -> HiredOreBlockTracker.isTrackedOre(block.defaultBlockState()))
+                .map(net.minecraft.core.registries.BuiltInRegistries.BLOCK::getKey).toList();
+        var payload = new com.jvn.villagerretaliation.network.OreNodeCatalogPayload(blocks);
+        event.getRelevantPlayers().forEach(player -> com.jvn.villagerretaliation.network.VillagerReputationNetworking.sendOreNodeCatalog(player, payload));
+    }
+
     public static void generated(LevelChunk chunk) {
         if (chunk.getLevel().isClientSide() || chunk.hasData(NODES)) return;
         var data = chunk.getData(NODES);
@@ -79,6 +88,18 @@ public final class OreNodes {
             if (nodes.contains(key)) snapshot.putInt(key, nodes.getInt(key));
         }
         return snapshot;
+    }
+
+    public static boolean canApply(LevelChunk chunk, CompoundTag baseline, CompoundTag updated) {
+        if (baseline.equals(updated)) return true;
+        var nodes = chunk.hasData(NODES) ? chunk.getData(NODES) : new CompoundTag();
+        var keys = new java.util.HashSet<>(baseline.getAllKeys());
+        keys.addAll(updated.getAllKeys());
+        for (String key : keys) {
+            if (!java.util.Objects.equals(baseline.get(key), updated.get(key))
+                    && !java.util.Objects.equals(baseline.get(key), nodes.get(key))) return false;
+        }
+        return true;
     }
 
     public static void apply(LevelChunk chunk, CompoundTag baseline, CompoundTag updated) {

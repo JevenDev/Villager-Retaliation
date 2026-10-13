@@ -617,7 +617,7 @@ public final class HiredTemporaryWorkGameTests {
         helper.succeed();
     }
 
-    private static Personal logger(GameTestHelper helper) {
+    static Personal logger(GameTestHelper helper) {
         var fixture = personal(helper, HiredVillagerRole.LOGGING);
         var villager = fixture.villager();
         var level = helper.getLevel();
@@ -647,7 +647,7 @@ public final class HiredTemporaryWorkGameTests {
         return new HiredTemporaryTask(UUID.randomUUID(), kind, pos, pos, quantity);
     }
 
-    private static Personal personal(GameTestHelper helper, HiredVillagerRole role) {
+    static Personal personal(GameTestHelper helper, HiredVillagerRole role) {
         var level = helper.getLevel();
         var owner = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "TaskOwner"));
         var villager = EntityType.VILLAGER.create(level);
@@ -675,6 +675,6 @@ public final class HiredTemporaryWorkGameTests {
         }
     }
 
-    private record Personal(ServerPlayer owner, Villager villager) {
+    record Personal(ServerPlayer owner, Villager villager) {
     }
 }

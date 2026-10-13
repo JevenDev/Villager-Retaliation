@@ -123,6 +123,7 @@ public final class SettlementManagementClient {
             case SettlementProjectScreen form -> form.parent();
             case SettlementWorksiteAdoptionScreen form -> form.previous().parent();
             case SettlementTemporaryTaskScreen form -> form.parent();
+            case SettlementResourceOrderScreen form -> form.parent();
             case SettlementWorksiteLinksScreen form -> form.parent().parent();
             case SettlementBlueprintScreen blueprints -> blueprints.parent();
             case SettlementBuildingScreen building -> building.parent();

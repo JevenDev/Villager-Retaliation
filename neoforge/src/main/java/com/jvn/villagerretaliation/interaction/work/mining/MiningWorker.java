@@ -1155,7 +1155,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
         });
-        HiredPathMemory.onBlockChanged(level, target.blockPos());
+        if (level.getBlockState(target.blockPos()).getBlock() != state.getBlock()) HiredPathMemory.onBlockChanged(level, target.blockPos());
         level.destroyBlockProgress(villager.getId(), target.blockPos(), -1);
         damageTool(context, villager, tool, level, state, target.blockPos());
         if (level.getBlockState(target.blockPos()).getBlock() != state.getBlock()) HiredPathMemory.rememberRecent(level, target.blockPos());
@@ -1176,9 +1176,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             BlockPos target,
             HiredMiningMode mode) {
-        return mode.excavatesArea()
+        return MiningTaskRules.permits(level, context, target) && (mode.excavatesArea()
                 ? MiningBlockRules.isMineableExcavationBlock(level, context, target)
-                : MiningBlockRules.isMineableOre(level, target);
+                : MiningBlockRules.isMineableOre(level, target));
     }
 
     private boolean hasLineOfSightToTarget(ServerLevel level, Villager villager, HiredPathTarget target) {

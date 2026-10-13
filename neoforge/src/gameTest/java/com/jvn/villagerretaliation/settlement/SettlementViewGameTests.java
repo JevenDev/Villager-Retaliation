@@ -592,16 +592,21 @@ public final class SettlementViewGameTests {
         var fixture = fixture(helper);
         var center = new ChunkPos(fixture.town().center());
         var plots = new java.util.LinkedHashSet<Long>();
-        for (int x = 0; x <= 12; x++) plots.add(ChunkPos.asLong(center.x + x, center.z));
-        for (int z = 0; z <= 12; z++) plots.add(ChunkPos.asLong(center.x + 12, center.z + z));
+        int length = 2 * (SettlementExpeditions.RANGE / 16) + 4;
+        for (int x = 0; x <= length; x++) plots.add(ChunkPos.asLong(center.x + x, center.z));
+        for (int z = 0; z <= length; z++) plots.add(ChunkPos.asLong(center.x + length, center.z + z));
         var tag = fixture.town().save(helper.getLevel().registryAccess());
         var territory = tag.getCompound("Territory");
         territory.putLongArray("Plots", plots.stream().mapToLong(Long::longValue).toArray());
         territory.putInt("GrandfatheredCapacity", plots.size());
         var town = SettlementRecord.load(tag, helper.getLevel().registryAccess(), () -> {});
-        var gap = new ChunkPos(center.x + 6, center.z + 6);
+        var gap = new ChunkPos(center.x + length / 2, center.z + length / 2);
         var window = SettlementViewWindow.around(town, gap.getMiddleBlockX(), gap.getMiddleBlockZ(), 64);
-        helper.assertFalse(window.chunks().contains(gap), "the empty middle of a bent claim stays outside the stream");
+        helper.assertFalse(window.chunks().contains(gap), "the gap beyond expedition range stays outside the stream");
+        var clamped = new ChunkPos(BlockPos.containing(window.x(), 0, window.z()));
+        helper.assertValueEqual(plots.stream().map(ChunkPos::new)
+                .mapToInt(plot -> Math.max(Math.abs(plot.x - clamped.x), Math.abs(plot.z - clamped.z))).min().orElseThrow(),
+                SettlementExpeditions.RANGE / 16, "camera clamps at the expedition edge without jumping back to town");
         helper.assertTrue(window.chunks().stream().allMatch(chunk -> SettlementViewWindow.nearTerritory(town, chunk)),
                 "every camera chunk belongs to the claim or the bounded border");
         var focus = window.focus(gap.getMiddleBlockX(), gap.getMiddleBlockZ());
@@ -609,8 +614,8 @@ public final class SettlementViewGameTests {
         double offset = SettlementViewCamera.boundaryOffset(window, window.x(), window.z(), 1, 0);
         helper.assertTrue(window.contains(BlockPos.containing(window.x() + offset, 0, window.z())),
                 "the camera orbit cannot cross a missing part of the territory window");
-        var distant = SettlementViewWindow.around(town, (center.x + 12) * 16.0D, (center.z + 12) * 16.0D, 32);
-        helper.assertTrue(distant.chunks().contains(new ChunkPos(center.x + 12, center.z + 12)),
+        var distant = SettlementViewWindow.around(town, (center.x + length) * 16.0D, (center.z + length) * 16.0D, 32);
+        helper.assertTrue(distant.chunks().contains(new ChunkPos(center.x + length, center.z + length)),
                 "a distant legitimate claim remains reachable");
         helper.succeed();
     }

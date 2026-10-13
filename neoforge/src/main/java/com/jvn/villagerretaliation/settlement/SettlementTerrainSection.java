@@ -205,8 +205,7 @@ final class SettlementTerrainSection {
             return false;
         }
         if (this.pending && applied < this.version) {
-            var currentNodes = com.jvn.villagerretaliation.interaction.work.mining.OreNodes.snapshot(chunk, this.min, this.max);
-            if (!this.oreNodes.equals(this.baselineOreNodes) && !currentNodes.equals(this.baselineOreNodes)) {
+            if (!com.jvn.villagerretaliation.interaction.work.mining.OreNodes.canApply(chunk, this.baselineOreNodes, this.oreNodes)) {
                 conflict(true);
                 return false;
             }

@@ -243,6 +243,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
             }
+            com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.finishForest(level, context);
             if (roamInsideWorkArea(level, villager, context, 0.4D)) {
                 return WorkResult.progressed("interaction.work.logging.roaming");
             }

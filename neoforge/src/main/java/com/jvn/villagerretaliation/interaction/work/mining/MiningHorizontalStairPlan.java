@@ -97,7 +97,9 @@ public final class MiningHorizontalStairPlan {
     }
 
     private static boolean needsStairs(HiredWorkContext context) {
-        return context.workMax().getY() - context.workMin().getY() + 1 > GROUND_REACHABLE_HEIGHT;
+        var queue = com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.queue(context.state());
+        return (queue == null || !queue.current().kind().staircase())
+                && context.workMax().getY() - context.workMin().getY() + 1 > GROUND_REACHABLE_HEIGHT;
     }
 
     private static void ensureInitialized(HiredWorkContext context, BlockPos origin) {

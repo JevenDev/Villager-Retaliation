@@ -32,7 +32,12 @@ public final class OreNodeDefinitions {
     }
 
     static Definition parse(ResourceLocation id, JsonObject json) {
-        int extractions = GsonHelper.getAsInt(json, "extractions");
+        int extractions;
+        try {
+            extractions = GsonHelper.getAsBigDecimal(json, "extractions").intValueExact();
+        } catch (ArithmeticException exception) {
+            throw new IllegalArgumentException("Ore extractions must be a whole number", exception);
+        }
         if (extractions < 1 || extractions > 100_000) throw new IllegalArgumentException("Ore extractions must be between 1 and 100000");
         var blocks = new ArrayList<ResourceLocation>();
         var tags = new ArrayList<TagKey<net.minecraft.world.level.block.Block>>();

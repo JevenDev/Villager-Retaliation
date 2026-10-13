@@ -151,6 +151,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private boolean residentChecked;
     private UUID selectedArea;
     private BlockPos selectedBlock;
+    private com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind resourceKind;
+    private com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask resourcePreview;
+    private BlockPos resourceTarget;
+    private SettlementResourceSurvey resourceSurvey;
     private BlockPos dragStart;
     private UUID dragEntity;
     private BlockPos dragEnd;
@@ -740,6 +744,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void keepAlive() {
+        if (this.resourceSurvey != null && this.minecraft.level != null) this.resourceSurvey.tick(this.minecraft.level);
         long now = Util.getMillis();
         if (now >= this.nextViewRequest && (this.moved || now >= this.keepAliveAt)) {
             PacketDistributor.sendToServer(new SettlementViewRequestPayload(this.session, nextRequestId(),
@@ -1154,7 +1159,54 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 targets, null, null, task, append));
     }
 
+    private List<SettlementViewBatchPayload.Target> resourceWorkers(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind kind) {
+        return this.selection.residents().stream().map(this.roster::get).filter(java.util.Objects::nonNull)
+                .filter(resident -> !resident.baby() && this.areas.containsKey(resident.area())
+                        && this.areas.get(resident.area()).kind().role() == kind.role())
+                .map(resident -> new SettlementViewBatchPayload.Target(resident.id(), resident.area())).toList();
+    }
+
+    boolean issueResourceOrder(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask task, boolean append) {
+        var workers = resourceWorkers(task.kind());
+        if (workers.isEmpty() || this.commands.busy() || !permits(SettlementPermission.STAFF)) return false;
+        submitTemporaryTask(workers, task, append);
+        return true;
+    }
+
+    void previewResourceOrder(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask task) {
+        this.resourcePreview = task;
+        this.resourceSurvey = task == null ? null : new SettlementResourceSurvey(this.minecraft.level, task);
+    }
+
+    String resourceSurveySummary() { return this.resourceSurvey == null ? "Preview shown in the world" : this.resourceSurvey.summary(); }
+
+    private void resourceOrder(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind kind) {
+        var position = this.resourceTarget;
+        if (position == null) return;
+        if (kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TREE
+                || kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.ORE) {
+            issueResourceOrder(new com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask(UUID.randomUUID(), kind, position, position, 1, position), shiftDown());
+        } else if (kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TUNNEL || kind.staircase()) {
+            this.popup = null;
+            SettlementViewClient.openPanels(this);
+            this.minecraft.setScreen(new SettlementResourceOrderScreen(this, kind, position, position, shiftDown()));
+        } else {
+            enterMode(Mode.TASK_AREA);
+            this.resourceKind = kind;
+            this.guardFeedback = Component.literal("Drag the work area. Release to review. Right-click cancels");
+        }
+    }
+
     private void openTemporaryTaskPicker() {
+        if (this.resourceKind != null) {
+            var kind = this.resourceKind;
+            var start = this.dragStart;
+            var end = this.dragEnd;
+            enterMode(Mode.SELECT);
+            SettlementViewClient.openPanels(this);
+            this.minecraft.setScreen(new SettlementResourceOrderScreen(this, kind, start, end, shiftDown()));
+            return;
+        }
         var min = com.jvn.villagerretaliation.interaction.HiredWorkArea.minPos(this.dragStart, this.dragEnd);
         var max = com.jvn.villagerretaliation.interaction.HiredWorkArea.maxPos(this.dragStart, this.dragEnd).above(2);
         var targets = this.selection.residents().stream().map(id -> new SettlementViewBatchPayload.Target(id,
@@ -1424,6 +1476,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void enterMode(Mode mode) {
+        this.resourceKind = null;
+        this.resourcePreview = null;
+        this.resourceSurvey = null;
         clearControls();
         this.boxX = -1;
         this.boxDragging = false;
@@ -2067,6 +2122,23 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 }
             }
         }
+        if (this.resourceSurvey != null) {
+            for (var position : this.resourceSurvey.highlights()) LevelRenderer.renderLineBox(pose, lines, new AABB(position).inflate(0.01D), 0.9F, 0.75F, 0.2F, 0.9F);
+        }
+        if (this.resourcePreview != null) {
+            var task = this.resourcePreview;
+            if (task.kind().staircase()) {
+                boolean xAxis = task.max().getX() - task.min().getX() >= task.max().getZ() - task.min().getZ();
+                int start = xAxis ? task.min().getX() : task.min().getZ();
+                int end = xAxis ? task.max().getX() : task.max().getZ();
+                for (int coordinate = start; coordinate <= end; coordinate++) {
+                    int y = task.target().getY() - Math.abs(coordinate - (xAxis ? task.target().getX() : task.target().getZ()));
+                    var a = new BlockPos(xAxis ? coordinate : task.min().getX(), y, xAxis ? task.min().getZ() : coordinate);
+                    var b = new BlockPos(xAxis ? coordinate : task.max().getX(), y + 2, xAxis ? task.max().getZ() : coordinate);
+                    LevelRenderer.renderLineBox(pose, lines, new SettlementViewBounds(a, b).box(), 0.3F, 0.9F, 0.6F, 0.8F);
+                }
+            } else LevelRenderer.renderLineBox(pose, lines, new SettlementViewBounds(task.min(), task.max()).box(), 0.3F, 0.9F, 0.6F, 0.8F);
+        }
         if (this.interaction.is(Mode.TASK_AREA) && this.dragStart != null && this.dragEnd != null) {
             var min = com.jvn.villagerretaliation.interaction.HiredWorkArea.minPos(this.dragStart, this.dragEnd);
             var max = com.jvn.villagerretaliation.interaction.HiredWorkArea.maxPos(this.dragStart, this.dragEnd).above(2);
@@ -2353,6 +2425,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         } else if (hit.resident() != null) {
             if (!this.selection.contains(hit.resident())) select(hit, null);
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.RESIDENT, hit.resident()), x, y);
+        } else if (hit.position() != null && this.editingArea == null && permits(SettlementPermission.STAFF)
+                && (!resourceWorkers(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.ORE).isEmpty()
+                || !resourceWorkers(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FOREST).isEmpty())) {
+            this.resourceTarget = hit.position().immutable();
+            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.RESOURCE, null), x, y);
         } else if (this.editingArea != null && editedBounds().box().clip(ray.origin(), ray.end()).isPresent()) {
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DRAFT, this.editingArea.id()), x, y);
         } else {
@@ -2378,6 +2455,27 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         List<SettlementViewPopup.Action> actions = new ArrayList<>();
         boolean ready = !this.commands.busy();
         switch (target.kind()) {
+            case RESOURCE -> {
+                details.add(Component.literal("Resource work"));
+                if (this.resourceTarget != null) {
+                    var state = this.minecraft.level.getBlockState(this.resourceTarget);
+                    details.add(state.getBlock().getName());
+                    for (var kind : List.of(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TREE,
+                            com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FOREST,
+                            com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.ORE,
+                            com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.ORE_AREA,
+                            com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.QUARRY,
+                            com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TUNNEL,
+                            com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.STAIRCASE)) {
+                        if (kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TREE
+                                && !state.is(net.minecraft.tags.BlockTags.LOGS) && !state.is(net.minecraft.tags.BlockTags.LEAVES)) continue;
+                        if (kind == com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.ORE
+                                && !OreNodeCatalogClient.isOre(state)) continue;
+                        int workers = resourceWorkers(kind).size();
+                        if (workers > 0) actions.add(menuAction(Component.literal(kind.label() + " (" + workers + ")"), ready, () -> resourceOrder(kind)));
+                    }
+                }
+            }
             case FILTERS -> {
                 details.add(Component.literal("Choose a filter"));
                 for (var filter : this.browser.filters(this.snapshots.entries(this.browser.page))) {

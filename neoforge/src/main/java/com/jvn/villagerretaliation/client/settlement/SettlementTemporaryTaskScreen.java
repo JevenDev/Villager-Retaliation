@@ -53,7 +53,7 @@ public final class SettlementTemporaryTaskScreen extends VillagerTaskScreen {
         this.bounds.clear();
         initWindow(360, 204);
         addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(this.kind.label()), button -> {
-            this.kind = HiredTemporaryTask.Kind.values()[(this.kind.ordinal() + 1) % HiredTemporaryTask.Kind.values().length];
+            this.kind = HiredTemporaryTask.Kind.values()[(this.kind.ordinal() + 1) % (HiredTemporaryTask.Kind.COLLECT.ordinal() + 1)];
             button.setMessage(Component.literal(this.kind.label()));
             this.quantity.active = this.kind == HiredTemporaryTask.Kind.FISH;
             this.bounds.forEach(field -> field.active = editableBounds());

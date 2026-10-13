@@ -89,6 +89,7 @@ public final class SettlementViewClientSmoke {
     private static Villager issueFarmer;
     private static long started;
     private static int phase;
+    private static boolean resourceFormsChecked;
     private static int ticks;
     private static double originalX;
     private static double originalZ;
@@ -222,6 +223,18 @@ public final class SettlementViewClientSmoke {
             if (++ticks < 30 || screen.getNarrationMessage().getString().contains("Overview stale / loading")) {
                 return;
             }
+            if (!resourceFormsChecked) {
+                resourceFormsChecked = true;
+                SettlementViewClient.openPanels(screen);
+                minecraft.setScreen(new SettlementResourceOrderScreen(screen,
+                        com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.STAIRCASE,
+                        fixture.center(), fixture.center(), false));
+                minecraft.screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                        .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow().setValue("4");
+                ticks = 0;
+                phase = 900;
+                return;
+            }
             require(minecraft.getCameraEntity() instanceof Marker, "the view owns a separate camera");
             require(minecraft.options.getCameraType() == CameraType.FIRST_PERSON, "the view removes third person camera collision");
             require(minecraft.player.position().distanceToSqr(body) < 4.0D, "the player's body stayed at its original location");
@@ -237,6 +250,30 @@ public final class SettlementViewClientSmoke {
             require(screen.contextPopup().buttons().size() == 2, "the menu includes both shared designations");
             ticks = 0;
             phase = 91;
+        } else if (phase == 900 && minecraft.screen instanceof SettlementResourceOrderScreen screen && ++ticks >= 5) {
+            require(SettlementViewClient.connectedPanel(), "resource form retains the camera session");
+            require(OreNodeCatalogClient.isOre(Blocks.DIAMOND_ORE.defaultBlockState()), "server ore catalog reaches the client");
+            capture("staircase-resource-order");
+            screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(button -> button.getMessage().getString().equals("Seek ores at bottom: off")).findFirst().orElseThrow().onPress();
+            require(screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .anyMatch(button -> button.getMessage().getString().equals("Seek ores at bottom: on")), "prospecting toggle works");
+            screen.onClose();
+            require(minecraft.screen instanceof SettlementViewScreen, "resource form returns to RTS view");
+            var view = (SettlementViewScreen) minecraft.screen;
+            SettlementViewClient.openPanels(view);
+            minecraft.setScreen(new SettlementResourceOrderScreen(view,
+                    com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FOREST,
+                    fixture.center().offset(-4, 0, -4), fixture.center().offset(4, 0, 4), false));
+            ticks = 0;
+            phase = 901;
+        } else if (phase == 901 && minecraft.screen instanceof SettlementResourceOrderScreen screen && ++ticks >= 20) {
+            capture("forest-resource-order");
+            screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(button -> button.getMessage().getString().equals("Replant: off")).findFirst().orElseThrow().onPress();
+            screen.onClose();
+            ticks = 0;
+            phase = 3;
         } else if (phase == 91 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
             capture("shared-use-choice");
             clickContextAction(screen, 0);

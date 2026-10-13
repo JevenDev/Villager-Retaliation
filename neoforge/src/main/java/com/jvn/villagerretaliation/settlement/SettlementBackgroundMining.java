@@ -186,7 +186,8 @@ final class SettlementBackgroundMining {
                 VillagerEquipmentDurability.hurtTool(equipped, owner, EquipmentSlot.MAINHAND);
             }
             context.inventory().syncMainHandEquipment();
-            MiningWorkerState.mined(level, context, target.position());
+            if (mine.getBlockState(target.position()).getBlock() == block.getBlock()) context.setProgressTicks(0);
+            else MiningWorkerState.mined(level, context, target.position());
             BlockPos stance = target.stance();
             if (!com.jvn.villagerretaliation.interaction.work.mining.MiningSafety.isSafePathPosition(mine, mine::observed, stance)
                     && com.jvn.villagerretaliation.interaction.work.mining.MiningSafety.isSafePathPosition(mine, mine::observed, stance.below())) {
