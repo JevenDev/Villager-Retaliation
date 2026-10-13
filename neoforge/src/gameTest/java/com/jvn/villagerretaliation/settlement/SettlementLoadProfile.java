@@ -30,7 +30,8 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 
 @GameTestHolder("settlement_load_profile")
 public final class SettlementLoadProfile {
-    private static final int WARMUP = 400;
+    private static final int WARMUP = 800;
+    private static final int WORK_WARMUP = 400;
     private static final int SAMPLES = 1_200;
 
     private SettlementLoadProfile() {
@@ -55,6 +56,7 @@ public final class SettlementLoadProfile {
         private final List<ChunkPos> forced = new ArrayList<>();
         private final List<SettlementTownProfileScenario.Snapshot> initial = new ArrayList<>();
         private final long[] samples = new long[SAMPLES];
+        private final List<Window> windows = new ArrayList<>();
         private final Consumer<ServerTickEvent.Pre> before = this::beforeTick;
         private final Consumer<ServerTickEvent.Post> after = this::afterTick;
         private final Path output = Path.of(System.getProperty("villagerretaliation.settlementLoadProfileOutput"));
@@ -63,6 +65,7 @@ public final class SettlementLoadProfile {
         private long nextTickAt;
         private long started;
         private long measuredAt;
+        private long windowAt;
         private int tick;
         private boolean cleaned;
 
@@ -114,10 +117,9 @@ public final class SettlementLoadProfile {
             if (this.cleaned || this.started == 0L || event.getServer() != this.helper.getLevel().getServer()) return;
             long duration = System.nanoTime() - this.started;
             this.tick++;
-            if (this.tick == WARMUP) {
+            if (this.tick == WARMUP - WORK_WARMUP) {
                 for (int index = 0; index < this.towns.size(); index++) {
                     this.towns.get(index).beginActive(this.players.get(index));
-                    this.initial.add(this.towns.get(index).snapshot(this.players.get(index)));
                 }
                 try {
                     Files.createDirectories(this.output);
@@ -128,12 +130,25 @@ public final class SettlementLoadProfile {
                 } catch (java.text.ParseException exception) {
                     throw new IllegalStateException(exception);
                 }
+            }
+            if (this.tick == WARMUP) {
+                for (int index = 0; index < this.towns.size(); index++) {
+                    this.initial.add(this.towns.get(index).snapshot(this.players.get(index)));
+                }
                 this.measuredAt = System.nanoTime();
+                this.windowAt = this.measuredAt;
             }
             if (this.tick > WARMUP) {
                 this.samples[this.tick - WARMUP - 1] = duration;
                 int ticking = this.towns.stream().mapToInt(SettlementTownProfileScenario::tickingResidents).sum();
                 this.helper.assertTrue(ticking == this.population, "every sample retains the entire living AI-enabled population: " + ticking);
+                int measured = this.tick - WARMUP;
+                if (measured % 200 == 0) {
+                    long now = System.nanoTime();
+                    this.windows.add(new Window(measured, Arrays.stream(this.samples, measured - 200, measured)
+                            .average().orElseThrow() / 1_000_000.0D, 200_000_000_000.0D / (now - this.windowAt)));
+                    this.windowAt = now;
+                }
             }
             if (this.tick % 200 == 0) LogUtils.getLogger().info("Settlement load profile {} residents tick {}", this.population, this.tick);
             if (this.tick != WARMUP + SAMPLES) return;
@@ -152,21 +167,29 @@ public final class SettlementLoadProfile {
                 if (snapshot.placed() <= initial.placed()) failures.add("Town " + index + " did not build: " + snapshot + ", initial=" + initial);
                 if (snapshot.wheat() <= 0 || snapshot.bread() >= 512) failures.add("Town " + index + " did not farm or consume food");
             }
-            writeReport(snapshots, elapsed, failures);
+            boolean performancePassed = writeReport(snapshots, elapsed, failures);
             this.helper.assertTrue(failures.isEmpty(), String.join("\n", failures));
+            this.helper.assertTrue(!Boolean.getBoolean("villagerretaliation.settlementLoadProfileRequire20Tps") || performancePassed,
+                    "every measured 200-tick window must average below 50 ms and sustain at least 19.9 TPS");
             cleanup();
             this.helper.succeed();
         }
 
-        private void writeReport(List<SettlementTownProfileScenario.Snapshot> snapshots, double elapsed, List<String> failures) {
+        private boolean writeReport(List<SettlementTownProfileScenario.Snapshot> snapshots, double elapsed, List<String> failures) {
             long[] sorted = this.samples.clone();
             Arrays.sort(sorted);
             var report = new LinkedHashMap<String, Object>();
             report.put("workloadPassed", failures.isEmpty());
+            boolean performancePassed = this.paced && SAMPLES / elapsed >= 19.9D
+                    && this.windows.stream().allMatch(window -> window.meanMs < 50.0D && window.tps >= 19.9D);
+            report.put("performancePassed", performancePassed);
+            report.put("performanceGate", "Each 200-tick window averages below 50 ms and reaches 20 TPS within 0.5% measurement tolerance.");
+            report.put("windows", this.windows);
             report.put("failures", failures);
             report.put("population", this.population);
             report.put("settlements", this.towns.size());
             report.put("warmupTicks", WARMUP);
+            report.put("activeWorkWarmupTicks", WORK_WARMUP);
             report.put("sampleTicks", SAMPLES);
             report.put("paced", this.paced);
             report.put("measurement", "ServerTickEvent.Pre through Post, excluding population probes and pacing. "
@@ -195,7 +218,10 @@ public final class SettlementLoadProfile {
                 throw new UncheckedIOException(exception);
             }
             LogUtils.getLogger().info("Settlement load profile results: {}", report);
+            return performancePassed;
         }
+
+        private record Window(int endTick, double meanMs, double tps) { }
 
         private void cleanup() {
             if (this.cleaned) return;

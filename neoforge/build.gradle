@@ -177,6 +177,7 @@ neoForge {
             systemProperty 'villagerretaliation.campaignScenarioReports', campaignScenarioReports.get().asFile.absolutePath
             systemProperty 'villagerretaliation.settlementLoadProfile', providers.gradleProperty('settlementLoadProfile').orElse('0').get()
             systemProperty 'villagerretaliation.settlementLoadProfilePaced', providers.gradleProperty('settlementLoadProfilePaced').orElse('false').get()
+            systemProperty 'villagerretaliation.settlementLoadProfileRequire20Tps', providers.gradleProperty('settlementLoadProfileRequire20Tps').orElse('false').get()
             systemProperty 'villagerretaliation.settlementLoadProfileOutput', providers.gradleProperty('settlementLoadProfileOutput').orElse('settlement-load-profile').get()
             systemProperty 'villagerretaliation.villageLifeProfile', providers.gradleProperty('villageLifeProfile').orElse('false').get()
             systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
