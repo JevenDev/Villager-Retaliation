@@ -36,6 +36,11 @@ public final class BankStorageGameTests {
                     .defaultBlockState().setValue(StorageBlock.FACING,facing));
         var bank=(StorageBlockEntity)h.getLevel().getBlockEntity(controller); VaultConnections.merge(bank); return bank;
     }
+    public static Container display(StorageBlockEntity bank) {
+        var client=new StorageBlockEntity(bank.getBlockPos(),bank.getBlockState());
+        client.handleUpdateTag(bank.getUpdateTag(bank.getLevel().registryAccess()),bank.getLevel().registryAccess());
+        return client.vaultDisplay();
+    }
     public static ServerPlayer player(GameTestHelper h,StorageBlockEntity bank) {
         var p=FakePlayerFactory.get(h.getLevel(),new GameProfile(UUID.randomUUID(),"BankTest")); p.setPos(bank.getBlockPos().getCenter()); return p;
     }
@@ -72,6 +77,44 @@ public final class BankStorageGameTests {
         h.assertValueEqual(bank.getOpenNess(1),0F,"door returns fully shut");
         h.assertValueEqual(bank.identity,identity,"visual update preserves safe identity");
         h.assertValueEqual(bank.inventory().getItem(53).getCount(),7,"visual update preserves stored items"); h.succeed();
+    }
+    @GameTest(template="empty") public static void vaultDisplayAggregatesMembersWithoutChangingStoredStacks(GameTestHelper h) {
+        var bank=vault(h,new BlockPos(2,3,1),Direction.NORTH); var members=bank.group();
+        members.getFirst().inventory().setItem(26,new ItemStack(Items.DIAMOND,3));
+        members.getLast().inventory().setItem(26,new ItemStack(Items.DIAMOND,7));
+        bank.inventory().setItem(0,new ItemStack(Items.GOLD_BLOCK,64));
+        var named=new ItemStack(Items.DIAMOND,2); named.set(DataComponents.CUSTOM_NAME,Component.literal("Keepsake"));
+        bank.inventory().setItem(1,named);
+        var registries=h.getLevel().registryAccess(); var tag=bank.getUpdateTag(registries);
+        h.assertFalse(tag.contains("Items") || tag.contains("Identity") || tag.contains("Members"),"display sync excludes persistent storage and lock data");
+        var client=new StorageBlockEntity(bank.getBlockPos(),bank.getBlockState());
+        client.localInventory().setItem(26,new ItemStack(Items.EMERALD,11)); var identity=client.identity;
+        client.onDataPacket(null,bank.getUpdatePacket(),registries);
+        h.assertValueEqual(client.vaultDisplay().getItem(0).getCount(),10,"matching stacks across first and last members share a pile");
+        h.assertTrue(client.vaultDisplay().getItem(1).is(Items.GOLD_BLOCK),"block items keep their actual model");
+        h.assertTrue(ItemStack.matches(client.vaultDisplay().getItem(2),named),"components remain distinct and survive packet sync");
+        h.assertValueEqual(client.localInventory().getItem(26).getCount(),11,"display packets preserve local inventory");
+        h.assertValueEqual(client.identity,identity,"display packets preserve key identity");
+        h.assertFalse(bank.saveWithoutMetadata(registries).contains("VaultDisplay"),"display summaries are never saved as inventory");
+        h.assertValueEqual(members.getFirst().inventory().getItem(26).getCount(),3,"aggregation leaves original counts untouched");
+        h.runAfterDelay(6,()->{
+            h.assertValueEqual(bank.vaultDisplay().getItem(0).getCount(),10,"server ticks publish contents without opening a menu");
+            members.getFirst().inventory().clearContent(); members.getLast().inventory().clearContent(); bank.inventory().clearContent();
+            bank.getUpdateTag(registries);
+            h.runAfterDelay(6,()->{h.assertTrue(bank.vaultDisplay().isEmpty(),"chunk snapshots do not suppress periodic display updates"); h.succeed();});
+        });
+    }
+    @GameTest(template="empty") public static void vaultDisplayBoundsDistinctPilesAndClearsIncompleteVaults(GameTestHelper h) {
+        var bank=vault(h,new BlockPos(2,3,1),Direction.WEST); var first=bank.group().getFirst();
+        var items=List.of(Items.DIAMOND,Items.EMERALD,Items.GOLD_INGOT,Items.IRON_INGOT,Items.COPPER_INGOT,
+                Items.GOLD_BLOCK,Items.IRON_BLOCK,Items.DIAMOND_BLOCK,Items.COAL,Items.REDSTONE,Items.LAPIS_LAZULI);
+        for(int i=0;i<items.size();i++) first.inventory().setItem(i,new ItemStack(items.get(i),64));
+        bank.group().getLast().inventory().setItem(26,new ItemStack(Items.DIAMOND,64));
+        var registries=h.getLevel().registryAccess(); var tag=bank.getUpdateTag(registries);
+        h.assertValueEqual(tag.getList("VaultDisplay",net.minecraft.nbt.Tag.TAG_COMPOUND).size(),9,"summary is bounded to nine representative piles");
+        h.assertValueEqual(display(bank).getItem(0).getCount(),64,"large quantities cap visual density");
+        h.getLevel().destroyBlock(bank.group().getLast().getBlockPos(),false);
+        h.assertTrue(display(bank).isEmpty(),"incomplete vault has no display contents"); h.succeed();
     }
     @GameTest(template="empty") public static void mountedChargeLeavesSafeBreachedUntilRepair(GameTestHelper h) {
         var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get());

@@ -22,9 +22,11 @@ public final class VaultRenderer {
     private static final ModelResourceLocation CHARGE=model("mounted_charge");
     private static final ModelResourceLocation[] DAMAGE={model("lock_damage_1"),model("lock_damage_2"),model("lock_damage_3")};
     private final BlockRenderDispatcher blockRenderer;
+    private final VaultContentsRenderer contentsRenderer;
 
     public VaultRenderer(BlockEntityRendererProvider.Context context) {
         blockRenderer=context.getBlockRenderDispatcher();
+        contentsRenderer=new VaultContentsRenderer(context);
     }
     private static ModelResourceLocation model(String name) {
         return ModelResourceLocation.standalone(VillagerRetaliation.id("block/"+name));
@@ -52,6 +54,7 @@ public final class VaultRenderer {
         draw(BODY,8,poses,buffer,light,overlay);
         draw(HINGE_MOUNTS,10,poses,buffer,light,overlay);
         float openness=bank.getOpenNess(partialTick), breach=bank.getBreachProgress(partialTick);
+        if(openness>0.25F || breach>0) contentsRenderer.render(bank,poses,buffer,light,overlay);
         float sag=breach*breach, impulse=SafeRenderer.blastImpulse(breach);
         if(breach>0) {
             looseHinge(LOWER_HINGE,9,sag,poses,buffer,light,overlay);

@@ -70,6 +70,11 @@ public final class BankTreasuryGameTests {
         var town=SettlementSavedData.get(h.getLevel()).establish(registry,id,leader.getUUID(),bank.getBlockPos(),h.getLevel().getGameTime()).orElseThrow();
         bank.inventory().setItem(0,new ItemStack(Items.EMERALD,13));
         h.assertTrue(BankTreasury.register(leader,bank),"complete vault registers all member stocks");
+        h.assertTrue(bank.localInventory().isEmpty(),"registered stock lives outside the block inventory");
+        h.assertValueEqual(BankStorageGameTests.display(bank).countItem(Items.EMERALD),13,"vault displays authoritative treasury stock");
+        bank.inventory().removeItem(0,3);
+        h.assertValueEqual(BankStorageGameTests.display(bank).countItem(Items.EMERALD),10,"treasury withdrawals update displayed contents");
+        bank.inventory().setItem(0,new ItemStack(Items.EMERALD,13));
         var removed=bank.group().getFirst().getBlockPos(); h.getLevel().destroyBlock(removed,true);
         h.assertFalse(bank.vaultFormed(),"missing member disables treasury access");
         h.assertFalse(bank.allowed(leader),"incomplete treasury cannot open");

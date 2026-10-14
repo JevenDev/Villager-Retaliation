@@ -240,7 +240,16 @@ public final class BankStorageClientSmoke {
                 pending=server.submit(()->{
                     var p=server.getPlayerList().getPlayer(uuid); var level=p.serverLevel(); p.closeContainer();
                     var bank=(StorageBlockEntity)level.getBlockEntity(VAULT_CONTROLLER);
-                    bank.unlocked=true; bank.changedLock(); bank.inventory().setItem(26,new ItemStack(Items.DIAMOND,5));
+                    bank.unlocked=true; bank.changedLock();
+                    for(var member:bank.group()) member.inventory().clearContent();
+                    bank.inventory().setItem(26,new ItemStack(Items.DIAMOND,5));
+                    var first=bank.group().getFirst(); var last=bank.group().getLast();
+                    first.inventory().setItem(0,new ItemStack(Items.DIAMOND,64));
+                    first.inventory().setItem(1,new ItemStack(Items.EMERALD,64));
+                    first.inventory().setItem(2,new ItemStack(Items.GOLD_INGOT,64));
+                    last.inventory().setItem(0,new ItemStack(Items.GOLD_BLOCK,64));
+                    last.inventory().setItem(1,new ItemStack(Items.DIAMOND_BLOCK,64));
+                    last.inventory().setItem(2,new ItemStack(Items.IRON_BLOCK,64));
                     level.setBlockAndUpdate(VAULT_CONTROLLER,bank.getBlockState().setValue(StorageBlock.CHARGE,false));
                     p.teleportTo(VAULT_CONTROLLER.getX()+.5,VAULT_CONTROLLER.getY()-1,VAULT_CONTROLLER.getZ()-4.5); p.setYRot(0); p.setXRot(12);
                     return null;
@@ -250,7 +259,9 @@ public final class BankStorageClientSmoke {
                 if(!pending.isDone()) return; pending.join();
                 mc.player.setYRot(0); mc.player.setXRot(12);
                 var bank=(StorageBlockEntity)mc.level.getBlockEntity(VAULT_CONTROLLER);
-                if(bank.getOpenNess(1)>0) return;
+                if(bank.getOpenNess(1)>0 || bank.vaultDisplay().countItem(Items.DIAMOND_BLOCK)!=64) return;
+                require(bank.vaultDisplay().countItem(Items.DIAMOND)==64 && bank.vaultDisplay().countItem(Items.EMERALD)==64,
+                        "World display aggregates actual member inventories into bounded piles");
                 require(bank.vaultFormed(),"Client receives the assembled multiblock state");
                 var manager=mc.getModelManager();
                 for(var part:java.util.List.of("vault_body","vault_door","vault_cog","vault_hinge_lower","vault_hinge_upper","vault_hinge_mounts")) {
@@ -270,12 +281,18 @@ public final class BankStorageClientSmoke {
                 if(bank.getOpenNess(1)<1) return;
                 if(!Files.exists(Path.of(System.getProperty(OUTPUT),"vault-open-world.png"))) { worldCapture="vault-open-world"; return; }
                 if(ticks<60) return;
-                pending=server.submit(()->{server.getPlayerList().getPlayer(uuid).closeContainer(); return null;}); next();
+                pending=server.submit(()->{
+                    var vault=(StorageBlockEntity)server.getPlayerList().getPlayer(uuid).serverLevel().getBlockEntity(VAULT_CONTROLLER);
+                    vault.group().getFirst().inventory().setItem(1,ItemStack.EMPTY);
+                    server.getPlayerList().getPlayer(uuid).closeContainer(); return null;
+                }); next();
             }
             case 18 -> {
                 if(!pending.isDone()) return; pending.join();
                 var bank=(StorageBlockEntity)mc.level.getBlockEntity(VAULT_CONTROLLER);
                 if(bank.getOpenNess(1)>0) return;
+                if(bank.vaultDisplay().countItem(Items.EMERALD)!=0) return;
+                require(bank.vaultDisplay().countItem(Items.GOLD_BLOCK)==64,"withdrawals remove only their corresponding pile");
                 worldCapture="vault-closed-after-viewer";
                 pending=server.submit(()->{
                     var p=server.getPlayerList().getPlayer(uuid); var level=p.serverLevel(); var vault=(StorageBlockEntity)level.getBlockEntity(VAULT_CONTROLLER);

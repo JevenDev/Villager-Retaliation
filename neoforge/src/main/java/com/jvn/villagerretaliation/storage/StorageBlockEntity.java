@@ -36,6 +36,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     public int fuse=-1;
     private final SimpleContainer local;
     private boolean loading;
+    private SimpleContainer vaultDisplay=new SimpleContainer(9);
     boolean creativeBreak;
     private float vaultOpenness, previousVaultOpenness;
     private boolean vaultDoorOpen;
@@ -95,6 +96,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         var tag=new CompoundTag();
         tag.putInt("Fuse",fuse);
         if(controller()) tag.putBoolean("DoorOpen",openersCounter.getOpenerCount()>0);
+        if(controller() && !safe()) tag.put("VaultDisplay",StorageInventoryCodec.save(collectVaultDisplay(),provider));
         return tag;
     }
     @Override public void handleUpdateTag(CompoundTag tag,HolderLookup.Provider provider) {
@@ -102,6 +104,36 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         if(controller()) {
             doorController.shouldBeOpen(tag.getBoolean("DoorOpen"));
             vaultDoorOpen=tag.getBoolean("DoorOpen");
+            if(!safe()) StorageInventoryCodec.load(vaultDisplay,tag.getList("VaultDisplay",Tag.TAG_COMPOUND),provider);
+        }
+    }
+    @Override public void onDataPacket(net.minecraft.network.Connection connection,net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket packet,HolderLookup.Provider provider) {
+        handleUpdateTag(packet.getTag(),provider);
+    }
+    public Container vaultDisplay() { return vaultDisplay; }
+    private SimpleContainer collectVaultDisplay() {
+        var display=new SimpleContainer(9);
+        if(!vaultFormed()) return display;
+        for(var member:group()) {
+            var inventory=member.inventory();
+            for(int slot=0;slot<inventory.getContainerSize();slot++) {
+                var stack=inventory.getItem(slot);
+                if(stack.isEmpty()) continue;
+                for(int pile=0;pile<display.getContainerSize();pile++) {
+                    var shown=display.getItem(pile);
+                    if(shown.isEmpty()) { display.setItem(pile,stack.copyWithCount(Math.min(64,stack.getCount()))); break; }
+                    if(ItemStack.isSameItemSameComponents(shown,stack)) { shown.setCount(Math.min(64,shown.getCount()+stack.getCount())); break; }
+                }
+            }
+        }
+        return display;
+    }
+    private void syncVaultDisplay() {
+        var display=collectVaultDisplay();
+        for(int pile=0;pile<display.getContainerSize();pile++) if(!ItemStack.matches(display.getItem(pile),vaultDisplay.getItem(pile))) {
+            vaultDisplay=display;
+            level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);
+            return;
         }
     }
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
@@ -209,6 +241,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
             ((ServerLevel)level).sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,pos.getX()+.5,pos.getY()+.5,pos.getZ()+.5,1,0,0,0,0);
             level.playSound(null,pos,net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),net.minecraft.sounds.SoundSource.BLOCKS,1,1);
         }
+        if(bank.controller() && !bank.safe() && level.getGameTime()%5==0) bank.syncVaultDisplay();
         if(level.getGameTime()%20==0) {
             VaultConnections.repairMembership(bank);
             BankTreasury.reconcile(bank);
