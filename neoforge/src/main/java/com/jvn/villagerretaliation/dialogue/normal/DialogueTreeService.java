@@ -62,7 +62,7 @@ public final class DialogueTreeService {
         }
 
         List<DialogueOptionDefinition> options = node.responses().stream()
-                .filter(response -> response.matches(context))
+                .filter(response -> response.matches(context) || response.choice().showUnavailable())
                 .sorted(Comparator.comparingInt(DialogueTreeDefinition.Response::priority).reversed()
                         .thenComparingInt(DialogueTreeDefinition.Response::order)
                         .thenComparing(DialogueTreeDefinition.Response::id))

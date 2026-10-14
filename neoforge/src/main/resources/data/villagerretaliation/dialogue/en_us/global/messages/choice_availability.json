@@ -1,0 +1,5 @@
+{
+  "id": "dialogue.choice.unavailable",
+  "key": "dialogue.choice.unavailable",
+  "text": "This response's requirements are not currently met."
+}

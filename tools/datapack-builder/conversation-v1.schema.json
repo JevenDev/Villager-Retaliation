@@ -1932,6 +1932,13 @@
         },
         "unavailable": {
           "$ref": "#/$defs/localized_reference"
+        },
+        "unavailable_behavior": {
+          "type": "string",
+          "enum": [
+            "hide",
+            "disable"
+          ]
         }
       },
       "oneOf": [

@@ -176,14 +176,15 @@ public final class ForcedDialogueRuntime<S extends ForcedDialogueRuntime.Session
         return definition.options().stream()
                 .filter(option -> session == null || optionPolicy.test(session, option))
                 .filter(option -> session == null || !session.disabledOptionIds().contains(option.id()))
-                .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
-                .filter(option -> optionConditionsMatch(level, villager, player, option))
+                .filter(option -> optionMatches(level, villager, player, option) || option.choice().showUnavailable())
                 .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
                 .map(option -> DialogueOptionDefinition.simple(
                         option.id(),
                         forcedOptionLabel(option, level, player, session),
                         DialogueRequestType.QUESTION,
-                        option.order()))
+                        option.order()).withChoice(option.choice(), optionMatches(level, villager, player, option),
+                                optionMatches(level, villager, player, option) ? "" : option.choice().reason(
+                                        VillagerInteractionService.createDialogueContext(level, player, villager))))
                 .toList();
     }
 

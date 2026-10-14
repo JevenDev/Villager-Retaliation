@@ -542,7 +542,7 @@ const dialogueTreeEntryKeys = new Set([
   "order"
 ]);
 const dialogueTreeNodeKeys = new Set(["id", "lines", "text", "exchanges", "camera", "metadata", "actions", "conditions", "responses", "end"]);
-const dialogueTreeResponseKeys = new Set(["id", "label", "metadata", "next", "request", "lines", "text", "exchanges", "camera", "actions", "conditions", "end", "order"]);
+const dialogueTreeResponseKeys = new Set(["unavailable_behavior", "unavailable", "label_key", "text_key", "variants", "usage", "priority", "id", "label", "metadata", "next", "request", "lines", "text", "exchanges", "camera", "actions", "conditions", "end", "order"]);
 const dialogueRequestTypes = new Set([
   "greeting",
   "question",
@@ -4783,6 +4783,7 @@ function checkDialogueTreeNodeFields(file, node, location) {
 }
 
 function checkDialogueTreeResponseFields(file, response, location) {
+  checkChoiceAvailability(file, response, location);
   checkDialogueExchanges(file, response, location);
   checkOptionalString(file, response, location, "id");
   checkOptionalString(file, response, location, "label");
@@ -5692,7 +5693,19 @@ function checkDialogueMetadataField(file, entry, location, key) {
   }
 }
 
+function checkChoiceAvailability(file, entry, location) {
+  if (entry.unavailable_behavior !== undefined && !["hide", "disable"].includes(entry.unavailable_behavior))
+    errors.push(`${relative(file)}: ${location}.unavailable_behavior must be hide or disable.`);
+  if (entry.unavailable !== undefined) {
+    const value = entry.unavailable;
+    if (typeof value !== "string" && !(value && typeof value === "object" && !Array.isArray(value)
+        && Object.keys(value).length === 1 && typeof value.key === "string" && value.key.trim()))
+      errors.push(`${relative(file)}: ${location}.unavailable must be text or a localized reference.`);
+  }
+}
+
 function checkConditions(file, entry, location, defaultQuestId = "") {
+  checkChoiceAvailability(file, entry, location);
   if (!Object.hasOwn(entry, "conditions")) {
     return;
   }

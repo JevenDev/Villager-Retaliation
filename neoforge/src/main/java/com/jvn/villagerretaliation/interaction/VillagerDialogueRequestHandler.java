@@ -96,7 +96,7 @@ public final class VillagerDialogueRequestHandler {
         DialogueOptionDefinition dialogueOption = (forcedTree
                 ? DialogueTreeService.activeOptions(context).orElse(List.of()).stream().filter(option -> option.id().equals(optionId)).findFirst()
                 : VillagerDialogueResources.dialogueOption(context, optionId)).orElse(null);
-        if (dialogueOption == null) {
+        if (dialogueOption == null || !dialogueOption.available()) {
             String unknown = VillagerDialogueResources.message(context, "interaction.unknown_dialogue_option")
                     .orElse("interaction.unknown_dialogue_option");
             VillagerInteractionService.sendPersonalVillagerChat(player, villager, unknown,

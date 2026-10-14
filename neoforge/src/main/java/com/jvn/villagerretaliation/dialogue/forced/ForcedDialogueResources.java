@@ -69,7 +69,7 @@ public final class ForcedDialogueResources {
             "options", "leave_option", "leave_options");
     private static final Set<String> ENTRY_KEYS = ROOT_KEYS;
     private static final Set<String> OPTION_KEYS = Set.of(
-            "id", "label", "label_key", "message_prefix", "text_prefix", "response", "responses", "response_key", "response_keys", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
+            "unavailable_behavior", "unavailable", "id", "label", "label_key", "message_prefix", "text_prefix", "response", "responses", "response_key", "response_keys", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items",
             "conditions", "exchanges", "camera",
             "follow_up", "requires_high_knowledge", "requires_high_guts", "requires_high_proficiency", "requires_high_kindness", "requires_high_charm",
@@ -790,7 +790,8 @@ public final class ForcedDialogueResources {
                 readSocialAttributeCondition(option),
                 DialogueCondition.readList(location, context, option, defaultQuestId),
                 readFollowUp(option, defaultQuestId, messagePrefix),
-                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(option), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(option)
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(option), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(option),
+                com.jvn.villagerretaliation.dialogue.DialogueChoice.read(option, com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN)
         );
     }
 
@@ -1328,7 +1329,28 @@ public final class ForcedDialogueResources {
             List<DialogueCondition> conditions,
             ForcedDialogueFollowUp followUp,
             List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera,
+        com.jvn.villagerretaliation.dialogue.DialogueChoice choice
+) {
+    public ForcedDialogueOption(String id,
+            LocalizedText label,
+            List<LocalizedText> responses,
+            int reputationDelta,
+            boolean aggro,
+            double aggroChance,
+            boolean endConversation,
+            int order,
+            ForcedDialogueStolenItemReturn stolenItemReturn,
+            ForcedDialogueItemPayment itemPayment,
+            VillagerReputationCondition reputationCondition,
+            SocialAttributeCondition socialAttributeCondition,
+            List<DialogueCondition> conditions,
+            ForcedDialogueFollowUp followUp,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
             com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera) {
+        this(id, label, responses, reputationDelta, aggro, aggroChance, endConversation, order, stolenItemReturn, itemPayment, reputationCondition, socialAttributeCondition, conditions, followUp, exchanges, camera, com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN);
+    }
+
         public ForcedDialogueOption(String id, LocalizedText label, List<LocalizedText> responses, int reputationDelta, boolean aggro, double aggroChance, boolean endConversation, int order, ForcedDialogueStolenItemReturn stolenItemReturn, ForcedDialogueItemPayment itemPayment, VillagerReputationCondition reputationCondition, SocialAttributeCondition socialAttributeCondition, List<DialogueCondition> conditions, ForcedDialogueFollowUp followUp, List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges) {
             this(id, label, responses, reputationDelta, aggro, aggroChance, endConversation, order, stolenItemReturn, itemPayment, reputationCondition, socialAttributeCondition, conditions, followUp, exchanges, null);
         }

@@ -22,6 +22,42 @@ public final class DialogueTreeValidation {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one entry.");
             return null;
         }
+        var entryIds = new java.util.HashSet<String>();
+        for (var entry : tree.entries()) {
+            if (!entryIds.add(entry.id())) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "duplicate entry id: " + entry.id());
+                return null;
+            }
+        }
+        for (var node : tree.nodes().values()) {
+            var responseIds = new java.util.HashSet<String>();
+            for (var response : node.responses()) {
+                if (!responseIds.add(response.id()) || (!response.next().isBlank() && !tree.nodes().containsKey(response.next()))) {
+                    DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree node " + node.id(),
+                            "duplicate response or unknown target: " + response.id() + " -> " + response.next());
+                    return null;
+                }
+                if (response.end() && !response.next().isBlank())
+                    DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree response " + response.id(),
+                            "next is ignored because end=true closes the conversation");
+            }
+            if (node.end() && !node.responses().isEmpty())
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree node " + node.id(),
+                        "responses are unreachable because end=true closes the conversation");
+        }
+        var reachable = new java.util.HashSet<String>();
+        var pending = new java.util.ArrayDeque<String>();
+        tree.entries().forEach(entry -> pending.add(entry.start()));
+        while (!pending.isEmpty()) {
+            var id = pending.removeFirst();
+            if (!reachable.add(id)) continue;
+            var node = tree.nodes().get(id);
+            if (node != null && !node.end()) node.responses().stream()
+                    .filter(response -> !response.end() && !response.next().isBlank())
+                    .forEach(response -> pending.add(response.next()));
+        }
+        for (var id : tree.nodes().keySet()) if (!reachable.contains(id))
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree node " + id, "node is unreachable");
         List<DialogueTreeDefinition.Entry> entries = tree.entries().stream().filter(entry -> {
             if (!networkSafeOption(location, "dialogue tree entry \"" + entry.id() + "\"",
                     DialogueTreeService.entryOptionId(tree.id(), entry.id()), entry.label())) return false;

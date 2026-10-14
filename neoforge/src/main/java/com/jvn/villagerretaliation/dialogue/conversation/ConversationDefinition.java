@@ -84,7 +84,14 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
     public enum SpeakerKind { ROLE, PLAYER, NARRATOR }
 
     public record Response(String id, String labelKey, List<DialogueCondition> conditions, List<Effect> effects,
+            String next, String check, String pointer, String unavailableKey,
+        boolean showUnavailable
+) {
+    public Response(String id, String labelKey, List<DialogueCondition> conditions, List<Effect> effects,
             String next, String check, String pointer, String unavailableKey) {
+        this(id, labelKey, conditions, effects, next, check, pointer, unavailableKey, true);
+    }
+
         public Response(String id, String labelKey, List<DialogueCondition> conditions, List<Effect> effects,
                 String next, String check, String pointer) {
             this(id, labelKey, conditions, effects, next, check, pointer, "");

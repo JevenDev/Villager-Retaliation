@@ -112,7 +112,9 @@ public final class ConversationCompiler {
                 put(responses, responseId, new ConversationDefinition.Response(responseId, text(response, "label", location),
                         conditions(response, location), effects(resolvedResponse, location),
                         string(response, "next"), string(response, "check"), location,
-                        response.has("unavailable") ? text(response, "unavailable", location) : ""), location);
+                        response.has("unavailable") ? text(response, "unavailable", location) : "",
+                        com.jvn.villagerretaliation.dialogue.DialogueChoice.read(response,
+                                com.jvn.villagerretaliation.dialogue.DialogueChoice.DISABLED).showUnavailable()), location);
             }
             put(nodes, key, new ConversationDefinition.Node(key, new ArrayList<>(exchanges.values()), effects(resolved, pointer),
                     responses, string(value, "next"), string(value, "outcome"), pointer), pointer);

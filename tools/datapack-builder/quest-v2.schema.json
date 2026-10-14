@@ -4284,6 +4284,23 @@
         "label_key": {
           "type": "string"
         },
+        "unavailable": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "unavailable_behavior": {
+          "type": "string",
+          "enum": [
+            "hide",
+            "disable"
+          ]
+        },
         "text": {
           "oneOf": [
             {

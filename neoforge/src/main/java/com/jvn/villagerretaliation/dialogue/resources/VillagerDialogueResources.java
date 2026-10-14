@@ -444,7 +444,9 @@ public final class VillagerDialogueResources {
         }
 
         List<DialogueOptionDefinition> options = new ArrayList<>(load(context.level().getServer(), context.locale()).options().stream()
-                .filter(option -> option.matches(context, disposition))
+                .filter(option -> option.matches(context, disposition) || option.choice().showUnavailable())
+                .map(option -> option.withChoice(option.choice(), option.matches(context, disposition),
+                        option.matches(context, disposition) ? "" : option.choice().reason(context)))
                 .sorted(Comparator.comparingInt(DialogueOptionDefinition::priority).reversed()
                         .thenComparingInt(DialogueOptionDefinition::order)
                         .thenComparing(DialogueOptionDefinition::id))
@@ -1109,7 +1111,8 @@ public final class VillagerDialogueResources {
                     requiresActiveSpecialOrders,
                     DatapackJsonReader.readInt(entry, "priority", 0),
                     order
-            ), options, optionSources);
+            ).withChoice(com.jvn.villagerretaliation.dialogue.DialogueChoice.read(entry,
+                    com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN), true, ""), options, optionSources);
             index++;
         }
     }

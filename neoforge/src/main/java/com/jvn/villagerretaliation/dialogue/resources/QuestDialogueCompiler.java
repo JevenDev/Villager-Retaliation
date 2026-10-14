@@ -288,7 +288,8 @@ public final class QuestDialogueCompiler {
                     DatapackJsonReader.readBoolean(response.data(), "end", false),
                     DatapackJsonReader.readInt(response.data(), "order", index),
                     DatapackJsonReader.readInt(response.data(), "priority", 0),
-                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(response.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(response.data())));
+                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(response.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(response.data()),
+                    com.jvn.villagerretaliation.dialogue.DialogueChoice.read(response.data(), com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN)));
         }
         return List.copyOf(result);
     }

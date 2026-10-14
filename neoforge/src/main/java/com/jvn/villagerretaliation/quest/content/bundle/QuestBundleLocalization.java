@@ -206,6 +206,7 @@ public final class QuestBundleLocalization {
         for (int index = 0; index < responses.size(); index++) {
             JsonObject response = object(responses.get(index));
             playerField(response, "label", path + "/" + index + "/label", prefix, references, errors);
+            playerField(response, "unavailable", path + "/" + index + "/unavailable", prefix, references, errors);
             playerField(response, "text", path + "/" + index + "/text", prefix, references, errors);
         }
     }

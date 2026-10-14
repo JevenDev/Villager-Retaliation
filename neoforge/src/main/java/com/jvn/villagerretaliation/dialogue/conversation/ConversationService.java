@@ -204,6 +204,7 @@ public final class ConversationService {
                 boolean authorized = controller != null && member(controller, session) && canControl(controller, session) && near(controller, character);
                 var context = authorized ? VillagerInteractionService.createDialogueContext(controller.serverLevel(), controller, character) : null;
                 for (var response : definition.nodes().get(session.node).responses().values()) {
+                    if (authorized && !response.showUnavailable() && !conditions(context, response.conditions())) continue;
                     responses.add(new Response(response.id(),
                             com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
                                     text(player, response.labelKey()), session.replacements),
@@ -211,7 +212,7 @@ public final class ConversationService {
                             !authorized ? "An authorized controller must be present."
                                     : conditions(context, response.conditions()) ? ""
                                     : response.unavailableKey().isEmpty()
-                                            ? com.jvn.villagerretaliation.dialogue.DialogueAvailability.reason(context, response.conditions())
+                                            ? com.jvn.villagerretaliation.dialogue.DialogueChoice.DISABLED.reason(context)
                                             : text(player, response.unavailableKey())));
                 }
             }

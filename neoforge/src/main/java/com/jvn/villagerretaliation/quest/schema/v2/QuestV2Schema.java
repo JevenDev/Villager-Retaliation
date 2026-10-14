@@ -503,6 +503,8 @@ public final class QuestV2Schema {
         properties.add("id", idString());
         properties.add("label", localizedText());
         properties.add("label_key", string());
+        properties.add("unavailable", localizedText());
+        properties.add("unavailable_behavior", com.jvn.villagerretaliation.dialogue.DialogueChoice.behaviorSchema());
         properties.add("text", localizedText());
         properties.add("text_key", string());
         properties.add("lines", localizedLines());

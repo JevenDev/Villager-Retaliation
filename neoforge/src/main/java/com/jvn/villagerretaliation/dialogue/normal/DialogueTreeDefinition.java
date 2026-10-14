@@ -205,8 +205,27 @@ public record DialogueTreeDefinition(
             int order,
             int priority,
             List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
-            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera
-    ) {
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera,
+        com.jvn.villagerretaliation.dialogue.DialogueChoice choice
+) {
+    public Response(String id,
+            String label,
+            String labelKey,
+            DialogueEntryMetadata metadata,
+            String next,
+            DialogueRequestType requestType,
+            List<String> lines,
+            List<DialogueTextVariant> textVariants,
+            List<VillagerActionDefinition> actions,
+            List<DialogueCondition> conditions,
+            boolean end,
+            int order,
+            int priority,
+            List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera) {
+        this(id, label, labelKey, metadata, next, requestType, lines, textVariants, actions, conditions, end, order, priority, exchanges, camera, com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN);
+    }
+
         public Response(String id, String label, String labelKey, DialogueEntryMetadata metadata, String next,
                 DialogueRequestType requestType, List<String> lines, List<DialogueTextVariant> textVariants,
                 List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, boolean end, int order,
@@ -278,7 +297,8 @@ public record DialogueTreeDefinition(
                     false,
                     this.priority,
                     this.order
-            );
+            ).withChoice(this.choice, context == null || matches(context),
+                    context == null || matches(context) ? "" : this.choice.reason(context));
         }
 
         public String selectLine(net.minecraft.util.RandomSource random) {

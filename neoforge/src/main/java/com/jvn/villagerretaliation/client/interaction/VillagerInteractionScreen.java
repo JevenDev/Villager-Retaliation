@@ -2550,6 +2550,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addDialogueOption(DialogueOptionDefinition option) {
+        if (!option.available()) {
+            this.options.add(new DialogueOption(option.label(), NO_ACTION, true, false, false, option.unavailableReason()));
+            return;
+        }
         addDialogueOption(option.label(), option.id(), option.metadata().tags().contains(QUEST_OFFER_HINT_TAG));
     }
 

@@ -325,7 +325,10 @@ public final class DialogueTreeResources {
             if (child.getValue().isJsonObject()) {
                 DialogueTreeDefinition.Node node = readNode(
                         location, child.getKey(), child.getValue().getAsJsonObject(), defaultQuestId, treeId);
-                nodes.put(node.id(), node);
+                if (nodes.putIfAbsent(node.id(), node) != null) {
+                    DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "duplicate node id: " + node.id());
+                    return Map.of();
+                }
             }
         }
         return Map.copyOf(nodes);
@@ -418,7 +421,8 @@ public final class DialogueTreeResources {
                         DatapackJsonReader.readBoolean(response, "end", false),
                         DatapackJsonReader.readInt(response, "order", index),
                         DatapackJsonReader.readInt(response, "priority", 0),
-                        DialogueExchange.read(response), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(response)
+                        DialogueExchange.read(response), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(response),
+                        com.jvn.villagerretaliation.dialogue.DialogueChoice.read(response, com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN)
                 ));
             }
             index++;
