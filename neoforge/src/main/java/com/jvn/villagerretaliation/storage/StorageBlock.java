@@ -37,7 +37,9 @@ public final class StorageBlock extends BaseEntityBlock {
     @Override public BlockEntity newBlockEntity(BlockPos pos,BlockState state) { return new StorageBlockEntity(pos,state); }
     @Override protected RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,BlockState state,BlockEntityType<T> type) {
-        return level.isClientSide?null:createTickerHelper(type,StorageRegistry.ENTITY.get(),StorageBlockEntity::tick);
+        return level.isClientSide
+                ?kind==2?createTickerHelper(type,StorageRegistry.ENTITY.get(),StorageBlockEntity::doorAnimateTick):null
+                :createTickerHelper(type,StorageRegistry.ENTITY.get(),StorageBlockEntity::tick);
     }
     @Override public void setPlacedBy(Level level,BlockPos pos,BlockState state,LivingEntity entity,ItemStack stack) {
         if(level.isClientSide || !(level.getBlockEntity(pos) instanceof StorageBlockEntity bank)) return;
@@ -47,7 +49,7 @@ public final class StorageBlock extends BaseEntityBlock {
         VaultConnections.merge(bank); bank.refreshProtection();
     }
     @Override protected void tick(BlockState state,ServerLevel level,BlockPos pos,RandomSource random) {
-        if(level.getBlockEntity(pos) instanceof StorageBlockEntity bank) { VaultConnections.repairMembership(bank); bank.refreshProtection(); }
+        if(level.getBlockEntity(pos) instanceof StorageBlockEntity bank) { bank.recheckOpen(); VaultConnections.repairMembership(bank); bank.refreshProtection(); }
     }
     @Override protected ItemInteractionResult useItemOn(ItemStack stack,BlockState state,Level level,BlockPos pos,Player player,InteractionHand hand,BlockHitResult hit) {
         if(level.isClientSide) return ItemInteractionResult.SUCCESS;

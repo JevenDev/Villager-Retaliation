@@ -9,13 +9,19 @@ import net.minecraft.world.*;
 import net.minecraft.world.entity.player.*;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestLidController;
+import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
+import net.minecraft.world.level.block.entity.LidBlockEntity;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.wrapper.InvWrapper;
 import com.jvn.villagerretaliation.settlement.BankTreasury;
 
-public final class StorageBlockEntity extends BlockEntity implements MenuProvider {
+public final class StorageBlockEntity extends BlockEntity implements MenuProvider, LidBlockEntity {
     public static final int COOLDOWN_TICKS=6000;
     List<BlockPos> members;
     public UUID identity=UUID.randomUUID();
@@ -30,11 +36,53 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     public int fuse=-1;
     private final SimpleContainer local;
     private boolean loading;
+    private final ChestLidController doorController=new ChestLidController();
+    private final ContainerOpenersCounter openersCounter=new ContainerOpenersCounter() {
+        @Override protected void onOpen(Level level,BlockPos pos,BlockState state) {
+            level.playSound(null,pos,SoundEvents.IRON_DOOR_OPEN,SoundSource.BLOCKS,0.5F,0.9F+level.random.nextFloat()*0.1F);
+        }
+        @Override protected void onClose(Level level,BlockPos pos,BlockState state) {
+            level.playSound(null,pos,SoundEvents.IRON_DOOR_CLOSE,SoundSource.BLOCKS,0.5F,0.9F+level.random.nextFloat()*0.1F);
+        }
+        @Override protected void openerCountChanged(Level level,BlockPos pos,BlockState state,int oldCount,int openCount) {
+            level.blockEvent(pos,state.getBlock(),1,openCount);
+        }
+        @Override protected boolean isOwnContainer(Player player) {
+            return player.containerMenu instanceof StorageMenu menu && menu.isContainer(StorageBlockEntity.this);
+        }
+    };
     boolean formed;
     public StorageBlockEntity(BlockPos pos,BlockState state) {
         super(StorageRegistry.ENTITY.get(),pos,state);
         members=List.of(pos.immutable());
         local=new SimpleContainer(safe()?54:27) { @Override public void setChanged() { if(!loading) StorageBlockEntity.this.setChanged(); } };
+    }
+    public static void doorAnimateTick(Level level,BlockPos pos,BlockState state,StorageBlockEntity bank) {
+        bank.doorController.tickLid();
+    }
+    public void startOpen(Player player) {
+        if(safe() && !isRemoved() && !player.isSpectator() && level!=null && !level.isClientSide)
+            openersCounter.incrementOpeners(player,level,worldPosition,getBlockState());
+    }
+    public void stopOpen(Player player) {
+        if(safe() && !isRemoved() && !player.isSpectator() && level!=null && !level.isClientSide)
+            openersCounter.decrementOpeners(player,level,worldPosition,getBlockState());
+    }
+    public void recheckOpen() {
+        if(safe() && !isRemoved()) openersCounter.recheckOpeners(level,worldPosition,getBlockState());
+    }
+    @Override public boolean triggerEvent(int id,int value) {
+        if(safe() && id==1) { doorController.shouldBeOpen(value>0); return true; }
+        return super.triggerEvent(id,value);
+    }
+    @Override public float getOpenNess(float partialTick) { return doorController.getOpenness(partialTick); }
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+        var tag=new CompoundTag();
+        if(safe()) tag.putBoolean("DoorOpen",openersCounter.getOpenerCount()>0);
+        return tag;
+    }
+    @Override public void handleUpdateTag(CompoundTag tag,HolderLookup.Provider provider) {
+        if(safe()) doorController.shouldBeOpen(tag.getBoolean("DoorOpen"));
     }
     public boolean safe() { return ((StorageBlock)getBlockState().getBlock()).kind==2; }
     public boolean controller() { return ((StorageBlock)getBlockState().getBlock()).kind!=0; }

@@ -8,6 +8,8 @@ import com.jvn.villagerretaliation.client.renderer.VillagerFishingHookRenderer;
 import com.jvn.villagerretaliation.client.renderer.VillagerRetaliationVillagerRenderer;
 import com.jvn.villagerretaliation.client.renderer.PaymentBoxRenderer;
 import com.jvn.villagerretaliation.client.renderer.SellBoxRenderer;
+import com.jvn.villagerretaliation.client.renderer.SafeRenderer;
+import com.jvn.villagerretaliation.storage.StorageRegistry;
 import com.jvn.villagerretaliation.client.renderer.VillagerRetaliationWanderingTraderRenderer;
 import com.jvn.villagerretaliation.entity.VillagerRetaliationEntityTypes;
 import net.minecraft.world.entity.EntityType;
@@ -23,6 +25,7 @@ public final class VillagerRetaliationClientRenderers {
         event.registerEntityRenderer(VillagerRetaliationEntityTypes.VILLAGER_FISHING_HOOK.get(), VillagerFishingHookRenderer::new);
         event.registerBlockEntityRenderer(VillagerRetaliationBlockEntityTypes.PAYMENT_BOX.get(), PaymentBoxRenderer::new);
         event.registerBlockEntityRenderer(VillagerRetaliationBlockEntityTypes.SELL_BOX.get(), SellBoxRenderer::new);
+        event.registerBlockEntityRenderer(StorageRegistry.ENTITY.get(), SafeRenderer::new);
     }
 
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {

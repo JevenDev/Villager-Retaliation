@@ -22,6 +22,7 @@ public final class StorageMenu extends AbstractContainerMenu {
         else { int offset=0; for(var b:members) { addBankSlots(b.inventory(),offset); offset+=b.inventory().getContainerSize(); } }
         for(int row=0;row<3;row++) for(int col=0;col<9;col++) addSlot(new Slot(player,col+row*9+9,8+col*18,140+row*18));
         for(int col=0;col<9;col++) addSlot(new Slot(player,col,8+col*18,198));
+        if(origin!=null) origin.startOpen(player.player);
     }
     private void addBankSlots(Container inventory,int offset) {
         for(int i=0;i<inventory.getContainerSize();i++) {
@@ -49,6 +50,11 @@ public final class StorageMenu extends AbstractContainerMenu {
         if(!moveItemStackTo(stack,index<capacity?capacity:0,index<capacity?slots.size():capacity,index<capacity)) return ItemStack.EMPTY;
         if(stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY); else slot.setChanged();
         slot.onTake(player,stack); return before;
+    }
+    public boolean isContainer(StorageBlockEntity bank) { return origin==bank; }
+    @Override public void removed(Player player) {
+        super.removed(player);
+        if(origin!=null) origin.stopOpen(player);
     }
     public int pages() { return (capacity+53)/54; }
 }

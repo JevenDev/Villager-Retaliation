@@ -1,0 +1,75 @@
+{
+  "parent": "villagerretaliation:block/safe",
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        4
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            4.0,
+            8.0,
+            5.0,
+            12.0
+          ],
+          "texture": "#safe"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            8.0,
+            4.0,
+            12.0
+          ],
+          "texture": "#safe"
+        },
+        "west": {
+          "uv": [
+            4.0,
+            12.0,
+            5.0,
+            16.0
+          ],
+          "texture": "#safe"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            12.0,
+            4.0,
+            16.0
+          ],
+          "texture": "#safe"
+        },
+        "up": {
+          "uv": [
+            5.0,
+            8.0,
+            6.0,
+            12.0
+          ],
+          "texture": "#safe",
+          "rotation": 90
+        },
+        "down": {
+          "uv": [
+            5.0,
+            12.0,
+            6.0,
+            16.0
+          ],
+          "texture": "#safe",
+          "rotation": 270
+        }
+      }
+    }
+  ]
+}

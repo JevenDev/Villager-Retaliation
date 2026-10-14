@@ -28,6 +28,40 @@ public final class BankStorageGameTests {
     public static ServerPlayer player(GameTestHelper h,StorageBlockEntity bank) {
         var p=FakePlayerFactory.get(h.getLevel(),new GameProfile(UUID.randomUUID(),"BankTest")); p.setPos(bank.getBlockPos().getCenter()); return p;
     }
+    @GameTest(template="empty") public static void safeDoorTracksAllViewersAndRecoversAbandonedMenus(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get());
+        var first=player(h,bank); var second=player(h,bank); var registries=h.getLevel().registryAccess();
+        h.assertTrue(bank.createMenu(1,first.getInventory(),first)==null,"locked safe refuses a viewer");
+        h.assertFalse(bank.getUpdateTag(registries).getBoolean("DoorOpen"),"denied access leaves door shut");
+        bank.unlocked=true;
+        var firstMenu=(StorageMenu)bank.createMenu(1,first.getInventory(),first); first.containerMenu=firstMenu;
+        var secondMenu=(StorageMenu)bank.createMenu(2,second.getInventory(),second); second.containerMenu=secondMenu;
+        h.assertTrue(bank.getUpdateTag(registries).getBoolean("DoorOpen"),"successful menu opens the door");
+        firstMenu.removed(first); first.containerMenu=first.inventoryMenu;
+        h.assertTrue(bank.getUpdateTag(registries).getBoolean("DoorOpen"),"second viewer keeps the door open");
+        secondMenu.removed(second); second.containerMenu=second.inventoryMenu;
+        h.assertFalse(bank.getUpdateTag(registries).getBoolean("DoorOpen"),"last viewer closes the door");
+        first.containerMenu=new StorageMenu(3,first.getInventory(),bank);
+        bank.recheckOpen();
+        h.assertFalse(bank.getUpdateTag(registries).getBoolean("DoorOpen"),"viewer absent from the level cannot leave door stuck open");
+        first.containerMenu=first.inventoryMenu; h.succeed();
+    }
+    @GameTest(template="empty") public static void safeDoorAnimationInterpolatesAndChunkSyncPreservesInventory(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get());
+        bank.inventory().setItem(53,new ItemStack(Items.DIAMOND,7)); var identity=bank.identity;
+        var update=new net.minecraft.nbt.CompoundTag(); update.putBoolean("DoorOpen",true);
+        bank.handleUpdateTag(update,h.getLevel().registryAccess());
+        StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertTrue(bank.getOpenNess(1)>0 && bank.getOpenNess(1)<1,"opening advances gradually");
+        h.assertTrue(bank.getOpenNess(0.5F)>bank.getOpenNess(0) && bank.getOpenNess(0.5F)<bank.getOpenNess(1),"partial ticks interpolate the swing");
+        for(int i=0;i<10;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getOpenNess(1),1F,"door reaches fully open");
+        bank.triggerEvent(1,0);
+        for(int i=0;i<11;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getOpenNess(1),0F,"door returns fully shut");
+        h.assertValueEqual(bank.identity,identity,"visual update preserves safe identity");
+        h.assertValueEqual(bank.inventory().getItem(53).getCount(),7,"visual update preserves stored items"); h.succeed();
+    }
     @GameTest(template="empty") public static void commandAndBuilderPlacementsAutomaticallyForm(GameTestHelper h) {
         var start=h.absolutePos(new BlockPos(1,2,1));
         for(int y=0;y<3;y++) for(int z=0;z<2;z++) for(int x=0;x<2;x++)

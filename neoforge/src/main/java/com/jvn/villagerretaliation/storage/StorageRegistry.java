@@ -30,7 +30,10 @@ public final class StorageRegistry {
     public static final DeferredHolder<RecipeSerializer<?>,RecipeSerializer<KeyCopyRecipe>> COPYING=RECIPES.register("key_copying",()->new SimpleCraftingRecipeSerializer<>(KeyCopyRecipe::new));
     public static final DeferredHolder<RecipeSerializer<?>,RecipeSerializer<KeySmeltingRecipe>> SMELTING=RECIPES.register("key_smelting",()->new SimpleCookingSerializer<>(KeySmeltingRecipe::new,200));
     private static DeferredHolder<Block,StorageBlock> block(String name,int kind) {
-        var block=BLOCKS.register(name,()->new StorageBlock(BlockBehaviour.Properties.of().strength(50,3600000).requiresCorrectToolForDrops().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK),kind));
+        var block=BLOCKS.register(name,()->{
+            var properties=BlockBehaviour.Properties.of().strength(50,3600000).requiresCorrectToolForDrops().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK);
+            return new StorageBlock(kind==2?properties.noOcclusion():properties,kind);
+        });
         ITEMS.register(name,()->new BlockItem(block.get(),new Item.Properties().stacksTo(1)));
         return block;
     }
