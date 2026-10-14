@@ -62,4 +62,22 @@ public final class BankTreasuryGameTests {
         h.assertValueEqual(reload.economy().balance(),CurrencyAmount.of(11,1),"stolen funds are not recreated on restart");
         h.succeed();
     }
+    @GameTest(template="empty") public static void vaultReassemblyRetainsTreasuryRegistration(GameTestHelper h) {
+        var bank=BankStorageGameTests.vault(h,new BlockPos(2,3,1),net.minecraft.core.Direction.NORTH);
+        var leader=BankStorageGameTests.player(h,bank); bank.issue(leader);
+        var registry=VillageAllegianceRegistrySavedData.get(h.getLevel());
+        var id=registry.create(h.getLevel().getGameTime(),h.getLevel().dimension().location(),bank.getBlockPos(),"");
+        var town=SettlementSavedData.get(h.getLevel()).establish(registry,id,leader.getUUID(),bank.getBlockPos(),h.getLevel().getGameTime()).orElseThrow();
+        bank.inventory().setItem(0,new ItemStack(Items.EMERALD,13));
+        h.assertTrue(BankTreasury.register(leader,bank),"complete vault registers all member stocks");
+        var removed=bank.group().getFirst().getBlockPos(); h.getLevel().destroyBlock(removed,true);
+        h.assertFalse(bank.vaultFormed(),"missing member disables treasury access");
+        h.assertFalse(bank.allowed(leader),"incomplete treasury cannot open");
+        h.assertFalse(BankTreasury.register(leader,bank),"incomplete treasury cannot register");
+        h.getLevel().setBlockAndUpdate(removed,StorageRegistry.VAULT.get().defaultBlockState());
+        VaultConnections.merge(bank);
+        h.assertTrue(bank.vaultFormed() && bank.allowed(leader),"restored cube retains its leader and key");
+        h.assertValueEqual(bank.treasury,town.id().value(),"registration survives reassembly");
+        h.assertValueEqual(town.economy().balance(),CurrencyAmount.of(13,1),"reassembly never creates or discards funds"); h.succeed();
+    }
 }

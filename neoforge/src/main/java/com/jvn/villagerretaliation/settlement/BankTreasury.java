@@ -72,7 +72,7 @@ public final class BankTreasury {
     private static ServerLevel levelOf(StorageBlockEntity bank) { return (ServerLevel)bank.getLevel(); }
     static boolean register(ServerLevel level,SettlementRecord town,StorageBlockEntity bank) {
         var members=bank.group();
-        if(SettlementSavedData.get(level).readOnly() || members.isEmpty() || members.stream().anyMatch(member -> !town.contains(member.getBlockPos()) || owner(member)!=null && owner(member)!=town)) return false;
+        if(!bank.safe() && !bank.vaultFormed() || SettlementSavedData.get(level).readOnly() || members.isEmpty() || members.stream().anyMatch(member -> !town.contains(member.getBlockPos()) || owner(member)!=null && owner(member)!=town)) return false;
         var account=town.economy().bank; account.bind(level.getServer(),level.registryAccess());
         if(members.stream().anyMatch(member->account.stocks.containsKey(member.identity) && !account.stocks.get(member.identity).position.equals(member.getBlockPos()))) return false;
         if(account.stocks.size()+members.stream().filter(member->!account.stocks.containsKey(member.identity)).count()>512) return false;
@@ -173,7 +173,7 @@ public final class BankTreasury {
         private boolean available(Stock stock) {
             if(server==null) return false;
             for(var level:server.getAllLevels()) if(level.hasChunkAt(stock.position) && level.getBlockEntity(stock.position) instanceof StorageBlockEntity bank
-                    && bank.inventory()==stock.inventory && !bank.group().isEmpty()) return true;
+                    && bank.inventory()==stock.inventory && !bank.group().isEmpty() && (bank.safe() || bank.vaultFormed())) return true;
             return false;
         }
         CurrencyAmount deposit(CurrencyAmount amount) { return deposit(amount,false); }

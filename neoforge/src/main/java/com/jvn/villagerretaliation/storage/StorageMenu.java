@@ -11,18 +11,18 @@ import net.minecraft.world.item.ItemStack;
 public final class StorageMenu extends AbstractContainerMenu {
     public final int capacity;
     public int page;
-    private final StorageBlockEntity origin;
+    private final StorageBlockEntity origin, opener;
     private final List<StorageBlockEntity> members;
     private final List<Container> inventories;
     public StorageMenu(int id,Inventory player,RegistryFriendlyByteBuf data) { this(id,player,null,Math.max(27,Math.min(729,data.readVarInt()))); }
     public StorageMenu(int id,Inventory player,StorageBlockEntity origin) { this(id,player,origin,origin.group().stream().mapToInt(b->b.inventory().getContainerSize()).sum()); }
     private StorageMenu(int id,Inventory player,StorageBlockEntity origin,int size) {
-        super(StorageRegistry.MENU.get(),id); this.origin=origin; this.owner=player.player; members=origin==null?List.of():origin.group(); capacity=size; inventories=members.stream().map(StorageBlockEntity::inventory).toList();
+        super(StorageRegistry.MENU.get(),id); this.origin=origin; this.opener=origin==null?null:origin.lock(); this.owner=player.player; members=origin==null?List.of():origin.group(); capacity=size; inventories=members.stream().map(StorageBlockEntity::inventory).toList();
         if(origin==null) addBankSlots(new SimpleContainer(size),0);
         else { int offset=0; for(var b:members) { addBankSlots(b.inventory(),offset); offset+=b.inventory().getContainerSize(); } }
         for(int row=0;row<3;row++) for(int col=0;col<9;col++) addSlot(new Slot(player,col+row*9+9,8+col*18,140+row*18));
         for(int col=0;col<9;col++) addSlot(new Slot(player,col,8+col*18,198));
-        if(origin!=null) origin.startOpen(player.player);
+        if(opener!=null) opener.startOpen(player.player);
     }
     private void addBankSlots(Container inventory,int offset) {
         for(int i=0;i<inventory.getContainerSize();i++) {
@@ -51,10 +51,10 @@ public final class StorageMenu extends AbstractContainerMenu {
         if(stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY); else slot.setChanged();
         slot.onTake(player,stack); return before;
     }
-    public boolean isContainer(StorageBlockEntity bank) { return origin==bank; }
+    public boolean isContainer(StorageBlockEntity bank) { return opener==bank; }
     @Override public void removed(Player player) {
         super.removed(player);
-        if(origin!=null) origin.stopOpen(player);
+        if(opener!=null) opener.stopOpen(player);
     }
     public int pages() { return (capacity+53)/54; }
 }

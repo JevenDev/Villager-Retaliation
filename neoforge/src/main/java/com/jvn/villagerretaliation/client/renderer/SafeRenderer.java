@@ -28,9 +28,11 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
             model("lock_damage_1"), model("lock_damage_2"), model("lock_damage_3")
     };
     private final BlockRenderDispatcher blockRenderer;
+    private final VaultRenderer vaultRenderer;
 
     public SafeRenderer(BlockEntityRendererProvider.Context context) {
         this.blockRenderer = context.getBlockRenderDispatcher();
+        this.vaultRenderer = new VaultRenderer(context);
     }
 
     private static ModelResourceLocation model(String name) {
@@ -38,6 +40,7 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
     }
 
     public static void registerModels(ModelEvent.RegisterAdditional event) {
+        VaultRenderer.registerModels(event);
         event.register(DOOR);
         event.register(HANDLE);
         event.register(HANDLE_MOUNT);
@@ -74,18 +77,15 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
             MultiBufferSource buffer,
             int light,
             int overlay) {
-        if (!bank.safe() && !bank.getBlockState().getValue(StorageBlock.CHARGE)) return;
+        if (!bank.safe()) {
+            vaultRenderer.render(bank, partialTick, poses, buffer, light, overlay);
+            return;
+        }
         BlockState state = bank.getBlockState();
         poses.pushPose();
         poses.translate(0.5F, 0.5F, 0.5F);
         poses.mulPose(Axis.YP.rotationDegrees(180 - state.getValue(StorageBlock.FACING).toYRot()));
         poses.translate(-0.5F, -0.5F, -0.5F);
-
-        if (!bank.safe()) {
-            renderCharge(bank, poses, buffer, light);
-            poses.popPose();
-            return;
-        }
 
         float openness = bank.getOpenNess(partialTick);
         float breach = bank.getBreachProgress(partialTick);
@@ -126,7 +126,7 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
 
     @Override
     public AABB getRenderBoundingBox(StorageBlockEntity bank) {
-        return new AABB(bank.getBlockPos()).inflate(1, 0.25, 1);
+        return new AABB(bank.getBlockPos()).inflate(bank.safe()?1:4, bank.safe()?0.25:2, bank.safe()?1:4);
     }
 
     public static boolean chargeFlashes(int fuse) {

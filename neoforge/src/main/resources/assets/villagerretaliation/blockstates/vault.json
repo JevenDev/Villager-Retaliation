@@ -1,80 +1,23 @@
 {
-  "multipart": [
-    {
-      "when": {
-        "facing": "north"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/vault",
-        "y": 0
-      }
+  "variants": {
+    "formed=true": {
+      "model": "villagerretaliation:block/vault_formed"
     },
-    {
-      "when": {
-        "facing": "north",
-        "charge": "true"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/mounted_charge",
-        "y": 0
-      }
+    "formed=false,facing=north": {
+      "model": "villagerretaliation:block/vault",
+      "y": 0
     },
-    {
-      "when": {
-        "facing": "east"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/vault",
-        "y": 90
-      }
+    "formed=false,facing=east": {
+      "model": "villagerretaliation:block/vault",
+      "y": 90
     },
-    {
-      "when": {
-        "facing": "east",
-        "charge": "true"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/mounted_charge",
-        "y": 90
-      }
+    "formed=false,facing=south": {
+      "model": "villagerretaliation:block/vault",
+      "y": 180
     },
-    {
-      "when": {
-        "facing": "south"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/vault",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "facing": "south",
-        "charge": "true"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/mounted_charge",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "facing": "west"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/vault",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "facing": "west",
-        "charge": "true"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/mounted_charge",
-        "y": 270
-      }
+    "formed=false,facing=west": {
+      "model": "villagerretaliation:block/vault",
+      "y": 270
     }
-  ]
+  }
 }

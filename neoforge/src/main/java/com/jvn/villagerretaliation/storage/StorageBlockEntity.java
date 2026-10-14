@@ -37,6 +37,8 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     private final SimpleContainer local;
     private boolean loading;
     boolean creativeBreak;
+    private float vaultOpenness, previousVaultOpenness;
+    private boolean vaultDoorOpen;
     private final ChestLidController doorController=new ChestLidController();
     private final ChestLidController breachController=new ChestLidController();
     private final ContainerOpenersCounter openersCounter=new ContainerOpenersCounter() {
@@ -60,43 +62,52 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         local=new SimpleContainer(safe()?54:27) { @Override public void setChanged() { if(!loading) StorageBlockEntity.this.setChanged(); } };
     }
     public static void clientTick(Level level,BlockPos pos,BlockState state,StorageBlockEntity bank) {
-        if(bank.safe()) doorAnimateTick(level,pos,state,bank);
+        if(bank.controller()) doorAnimateTick(level,pos,state,bank);
         if(!state.getValue(StorageBlock.CHARGE)) bank.fuse=-1;
         else if(bank.fuse>0) bank.fuse--;
     }
     public static void doorAnimateTick(Level level,BlockPos pos,BlockState state,StorageBlockEntity bank) {
         bank.doorController.tickLid();
-        bank.breachController.shouldBeOpen(state.getValue(StorageBlock.DAMAGE)>0);
+        bank.previousVaultOpenness=bank.vaultOpenness;
+        bank.vaultOpenness=net.minecraft.util.Mth.clamp(bank.vaultOpenness+(bank.vaultDoorOpen?1F:-1F)/32,0,1);
+        bank.breachController.shouldBeOpen(state.getValue(StorageBlock.DAMAGE)>=bank.maxDamage());
         bank.breachController.tickLid();
     }
     public void startOpen(Player player) {
-        if(safe() && !isRemoved() && !player.isSpectator() && level!=null && !level.isClientSide)
+        if(controller() && !isRemoved() && !player.isSpectator() && level!=null && !level.isClientSide)
             openersCounter.incrementOpeners(player,level,worldPosition,getBlockState());
     }
     public void stopOpen(Player player) {
-        if(safe() && !isRemoved() && !player.isSpectator() && level!=null && !level.isClientSide)
+        if(controller() && !isRemoved() && !player.isSpectator() && level!=null && !level.isClientSide)
             openersCounter.decrementOpeners(player,level,worldPosition,getBlockState());
     }
     public void recheckOpen() {
-        if(safe() && !isRemoved()) openersCounter.recheckOpeners(level,worldPosition,getBlockState());
+        if(controller() && !isRemoved()) openersCounter.recheckOpeners(level,worldPosition,getBlockState());
     }
     @Override public boolean triggerEvent(int id,int value) {
         if(controller() && id==2) { if(level!=null && level.isClientSide) fuse=value; return true; }
-        if(safe() && id==1) { doorController.shouldBeOpen(value>0); return true; }
+        if(controller() && id==1) { doorController.shouldBeOpen(value>0); vaultDoorOpen=value>0; return true; }
         return super.triggerEvent(id,value);
     }
-    @Override public float getOpenNess(float partialTick) { return doorController.getOpenness(partialTick); }
+    @Override public float getOpenNess(float partialTick) { return safe()?doorController.getOpenness(partialTick):net.minecraft.util.Mth.lerp(partialTick,previousVaultOpenness,vaultOpenness); }
     public float getBreachProgress(float partialTick) { return breachController.getOpenness(partialTick); }
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         var tag=new CompoundTag();
         tag.putInt("Fuse",fuse);
-        if(safe()) tag.putBoolean("DoorOpen",openersCounter.getOpenerCount()>0);
+        if(controller()) tag.putBoolean("DoorOpen",openersCounter.getOpenerCount()>0);
         return tag;
     }
     @Override public void handleUpdateTag(CompoundTag tag,HolderLookup.Provider provider) {
         fuse=tag.contains("Fuse")?tag.getInt("Fuse"):-1;
-        if(safe()) doorController.shouldBeOpen(tag.getBoolean("DoorOpen"));
+        if(controller()) {
+            doorController.shouldBeOpen(tag.getBoolean("DoorOpen"));
+            vaultDoorOpen=tag.getBoolean("DoorOpen");
+        }
     }
+    @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+    public boolean vaultFormed() { return !safe() && getBlockState().getValue(StorageBlock.FORMED) && (level==null || level.isClientSide || members.size()==27); }
     public boolean safe() { return ((StorageBlock)getBlockState().getBlock()).kind==2; }
     public boolean controller() { return ((StorageBlock)getBlockState().getBlock()).kind!=0; }
     public int maxDamage() { return safe()?1:3; }
@@ -114,12 +125,16 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     }
     public void assign(List<BlockPos> positions) {
         members=List.copyOf(positions); formed=true; setChanged();
-        if(level!=null) level.invalidateCapabilities(worldPosition);
+        if(level!=null) {
+            if(!safe() && getBlockState().getValue(StorageBlock.FORMED)!=(positions.size()==27))
+                level.setBlock(worldPosition,getBlockState().setValue(StorageBlock.FORMED,positions.size()==27),3);
+            level.invalidateCapabilities(worldPosition);
+        }
     }
     public void reconcileTreasury() { BankTreasury.reconcile(this); refreshProtection(); }
     public boolean allowed(Player player) {
         if(level==null || level.isClientSide || player==null || player.isSpectator() || !player.isAlive() || isRemoved()
-                || player.distanceToSqr(worldPosition.getCenter())>64 || group().isEmpty()
+                || player.distanceToSqr(worldPosition.getCenter())>64 || group().isEmpty() || !safe() && !vaultFormed()
                 || group().stream().anyMatch(b->b.inventory().getContainerSize()!=(b.safe()?54:27))) return false;
         var lock=lock();
         if(lock==null || lock.breached()) return true;
@@ -127,7 +142,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         return !lock.locked() || StorageKeys.carries(player,lock.identity);
     }
     public boolean publicAutomation() {
-        if(level==null || level.isClientSide || isRemoved() || group().isEmpty()) return false;
+        if(level==null || level.isClientSide || isRemoved() || group().isEmpty() || !safe() && !vaultFormed()) return false;
         var lock=lock();
         // A registered treasury also requires a leader for normal withdrawals; hoppers have no leader.
         return lock==null || !lock.locked();
@@ -205,7 +220,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     @Override public void onLoad() {
         super.onLoad();
         if(!level.isClientSide) level.scheduleTick(worldPosition,getBlockState().getBlock(),1);
-        else if(safe() && getBlockState().getValue(StorageBlock.DAMAGE)>0) {
+        else if(controller() && getBlockState().getValue(StorageBlock.DAMAGE)>=maxDamage()) {
             breachController.shouldBeOpen(true);
             for(int i=0;i<11;i++) breachController.tickLid();
         }
@@ -214,7 +229,9 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player) { return allowed(player)?new StorageMenu(id,inventory,this):null; }
     public void open(ServerPlayer player) {
         if(allowed(player)) player.openMenu(this,buffer->buffer.writeVarInt(group().stream().mapToInt(b->b.inventory().getContainerSize()).sum()));
-        else player.displayClientMessage(Component.literal("Locked, unavailable, or reserved for the village leader."),true);
+        else player.displayClientMessage(Component.literal(!safe() && !vaultFormed()
+                ?"Build a 3 x 3 x 3 vault with one controller in the center of its front face."
+                :"Locked, unavailable, or reserved for the village leader."),true);
     }
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider provider) {
         super.saveAdditional(tag,provider);

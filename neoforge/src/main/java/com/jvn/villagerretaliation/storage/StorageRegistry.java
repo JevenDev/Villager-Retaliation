@@ -32,7 +32,7 @@ public final class StorageRegistry {
     private static DeferredHolder<Block,StorageBlock> block(String name,int kind) {
         var block=BLOCKS.register(name,()->{
             var properties=BlockBehaviour.Properties.of().strength(50,3600000).requiresCorrectToolForDrops().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK);
-            return new StorageBlock(kind==2?properties.noOcclusion():properties,kind);
+            return new StorageBlock(properties.noOcclusion(),kind);
         });
         ITEMS.register(name,()->new BlockItem(block.get(),new Item.Properties().stacksTo(1)));
         return block;

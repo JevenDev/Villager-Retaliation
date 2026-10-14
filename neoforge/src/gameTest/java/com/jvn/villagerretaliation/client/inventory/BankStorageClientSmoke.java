@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.inventory;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.storage.*;
 import com.jvn.villagerretaliation.client.renderer.SafeRenderer;
+import com.jvn.villagerretaliation.client.renderer.VaultRenderer;
 import java.nio.file.*;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.Util;
@@ -29,6 +30,7 @@ public final class BankStorageClientSmoke {
     private static final float[][] chargeBrightness=new float[2][2];
     private static CompletableFuture<?> pending;
     private static final BlockPos CENTER=new BlockPos(1024,-60,1024);
+    private static final BlockPos VAULT_CONTROLLER=CENTER.offset(1,1,0);
     private BankStorageClientSmoke() { }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         if(System.getProperty(OUTPUT)==null || phase==99) return;
@@ -47,16 +49,16 @@ public final class BankStorageClientSmoke {
                         level.setBlockAndUpdate(pos,pos.getY()==CENTER.getY()-1?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState());
                     p.teleportTo(CENTER.getX()+1.5,CENTER.getY(),CENTER.getZ()-3); p.setYRot(0); p.setXRot(15);
                     for(int y=0;y<3;y++) for(int z=0;z<3;z++) for(int x=0;x<3;x++) {
-                        var pos=CENTER.offset(x,y,z); var block=x+y+z==0?StorageRegistry.CONTROLLER.get():StorageRegistry.VAULT.get();
+                        var pos=CENTER.offset(x,y,z); var block=x==1 && y==1 && z==0?StorageRegistry.CONTROLLER.get():StorageRegistry.VAULT.get();
                         level.setBlockAndUpdate(pos,block.defaultBlockState());
                         VaultConnections.merge((StorageBlockEntity)level.getBlockEntity(pos));
                     }
-                    var bank=(StorageBlockEntity)level.getBlockEntity(CENTER); bank.issue(p);
+                    var bank=(StorageBlockEntity)level.getBlockEntity(VAULT_CONTROLLER); bank.issue(p);
                     int index=0;
                     for(var member:bank.group()) for(int i=0;i<27;i++,index++) member.inventory().setItem(i,new ItemStack(index%2==0?Items.COPPER_INGOT:Items.IRON_INGOT,index%64+1));
                     var last=bank.group().getLast(); last.inventory().setItem(26,new ItemStack(Items.DIAMOND,31));
                     level.setBlockAndUpdate(CENTER.east(5),StorageRegistry.SAFE.get().defaultBlockState().setValue(StorageBlock.CHARGE,true));
-                    level.setBlockAndUpdate(CENTER,bank.getBlockState().setValue(StorageBlock.CHARGE,true));
+                    level.setBlockAndUpdate(VAULT_CONTROLLER,bank.getBlockState().setValue(StorageBlock.CHARGE,true));
                     bank.open(p); return null;
                 }); next();
             }
@@ -205,7 +207,9 @@ public final class BankStorageClientSmoke {
                     p.teleportTo(CENTER.getX()-2.5,CENTER.getY(),CENTER.getZ()-3); p.setYRot(0); p.setXRot(18);
                     for(int i=0;i<2;i++) {
                         var pos=CENTER.west(4-i*2);
-                        level.setBlockAndUpdate(pos,(i==0?StorageRegistry.CONTROLLER.get():StorageRegistry.SAFE.get()).defaultBlockState().setValue(StorageBlock.CHARGE,true));
+                        if(i==0) buildVault(level,pos);
+                        else level.setBlockAndUpdate(pos,StorageRegistry.SAFE.get().defaultBlockState());
+                        level.setBlockAndUpdate(pos,level.getBlockState(pos).setValue(StorageBlock.CHARGE,true));
                         var charge=(StorageBlockEntity)level.getBlockEntity(pos);
                         p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,new ItemStack(i==0?Items.FLINT_AND_STEEL:Items.FIRE_CHARGE));
                         var hit=new net.minecraft.world.phys.BlockHitResult(pos.getCenter(),net.minecraft.core.Direction.NORTH,pos,false);
@@ -230,7 +234,80 @@ public final class BankStorageClientSmoke {
                     require(chargeBrightness[i][1]>chargeBrightness[i][0]+30,"Mounted charge visibly brightens during its white flash");
                 }
                 require(primedSounds==2,"Safe and vault each deliver one native TNT priming sound");
-                try { Files.writeString(Path.of(System.getProperty(OUTPUT),"result.txt"),"Bank storage native smoke passed\n729 slots, native transfers and scrollbar, key revocation, combined body/door/handle atlas, 54 safe slots without scrollbar, multi-page vault keeps scrollbar, slow 20 degree grip turn, synchronized opening and closing, key revocation closes safe, mounted pressure wave forces door open with an outward kick and overshoot, breached door remains open, damaged chunk load pose, stored contents preserved, repair state restores normal pose, safe and vault fuse synchronization, native priming sound, white flash frames, lit chunk loading.\n"); }
+                next();
+            }
+            case 15 -> {
+                pending=server.submit(()->{
+                    var p=server.getPlayerList().getPlayer(uuid); var level=p.serverLevel(); p.closeContainer();
+                    var bank=(StorageBlockEntity)level.getBlockEntity(VAULT_CONTROLLER);
+                    bank.unlocked=true; bank.changedLock(); bank.inventory().setItem(26,new ItemStack(Items.DIAMOND,5));
+                    level.setBlockAndUpdate(VAULT_CONTROLLER,bank.getBlockState().setValue(StorageBlock.CHARGE,false));
+                    p.teleportTo(VAULT_CONTROLLER.getX()+.5,VAULT_CONTROLLER.getY()-1,VAULT_CONTROLLER.getZ()-4.5); p.setYRot(0); p.setXRot(12);
+                    return null;
+                }); next();
+            }
+            case 16 -> {
+                if(!pending.isDone()) return; pending.join();
+                mc.player.setYRot(0); mc.player.setXRot(12);
+                var bank=(StorageBlockEntity)mc.level.getBlockEntity(VAULT_CONTROLLER);
+                if(bank.getOpenNess(1)>0) return;
+                require(bank.vaultFormed(),"Client receives the assembled multiblock state");
+                var manager=mc.getModelManager();
+                for(var part:java.util.List.of("vault_body","vault_door","vault_cog","vault_hinge_lower","vault_hinge_upper","vault_hinge_mounts")) {
+                    var model=manager.getModel(net.minecraft.client.resources.model.ModelResourceLocation.standalone(VillagerRetaliation.id("block/"+part)));
+                    require(model!=manager.getMissingModel(),part+" bakes successfully");
+                    var quads=model.getQuads(null,null,net.minecraft.util.RandomSource.create());
+                    require(!quads.isEmpty() && quads.stream().allMatch(q->q.getSprite().contents().name().equals(VillagerRetaliation.id("block/vault"))),part+" uses the corrected atlas");
+                }
+                require(VaultRenderer.doorAngle(.125F,0)==0 && VaultRenderer.cogAngle(.125F)<0,"Cog turns before the vault door swings");
+                require(VaultRenderer.doorAngle(1,0)==-100 && VaultRenderer.cogAngle(1)==-45,"Vault reaches authored door and cog rotations");
+                worldCapture="vault-closed-world";
+                pending=server.submit(()->{var p=server.getPlayerList().getPlayer(uuid); ((StorageBlockEntity)p.serverLevel().getBlockEntity(VAULT_CONTROLLER)).open(p); return null;}); next();
+            }
+            case 17 -> {
+                if(!pending.isDone() || !(mc.screen instanceof StorageScreen)) return; pending.join();
+                var bank=(StorageBlockEntity)mc.level.getBlockEntity(VAULT_CONTROLLER);
+                if(bank.getOpenNess(1)<1) return;
+                if(!Files.exists(Path.of(System.getProperty(OUTPUT),"vault-open-world.png"))) { worldCapture="vault-open-world"; return; }
+                if(ticks<60) return;
+                pending=server.submit(()->{server.getPlayerList().getPlayer(uuid).closeContainer(); return null;}); next();
+            }
+            case 18 -> {
+                if(!pending.isDone()) return; pending.join();
+                var bank=(StorageBlockEntity)mc.level.getBlockEntity(VAULT_CONTROLLER);
+                if(bank.getOpenNess(1)>0) return;
+                worldCapture="vault-closed-after-viewer";
+                pending=server.submit(()->{
+                    var p=server.getPlayerList().getPlayer(uuid); var level=p.serverLevel(); var vault=(StorageBlockEntity)level.getBlockEntity(VAULT_CONTROLLER);
+                    vault.hit(); vault.hit();
+                    require(!vault.breached(),"Two charges damage the vault without breaching it");
+                    level.setBlockAndUpdate(VAULT_CONTROLLER,vault.getBlockState().setValue(StorageBlock.CHARGE,true));
+                    p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,new ItemStack(Items.FLINT_AND_STEEL));
+                    var hit=new net.minecraft.world.phys.BlockHitResult(VAULT_CONTROLLER.getCenter(),net.minecraft.core.Direction.NORTH,VAULT_CONTROLLER,false);
+                    p.gameMode.useItemOn(p,level,p.getMainHandItem(),net.minecraft.world.InteractionHand.MAIN_HAND,hit); return null;
+                }); next();
+            }
+            case 19 -> {
+                if(!pending.isDone()) return; pending.join();
+                var bank=(StorageBlockEntity)mc.level.getBlockEntity(VAULT_CONTROLLER);
+                if(bank.getBlockState().getValue(StorageBlock.DAMAGE)<3 || bank.getBreachProgress(1)<1) return;
+                require(VaultRenderer.doorAngle(0,1)==-115,"Third charge leaves the vault door hanging open");
+                if(!Files.exists(Path.of(System.getProperty(OUTPUT),"vault-breached-world.png"))) { worldCapture="vault-breached-world"; return; }
+                if(ticks<150) return;
+                var loaded=new StorageBlockEntity(bank.getBlockPos(),bank.getBlockState()); loaded.setLevel(mc.level); loaded.onLoad();
+                require(loaded.getBreachProgress(0)==1,"Previously breached vault loads into the damaged pose");
+                pending=server.submit(()->{
+                    var vault=(StorageBlockEntity)server.getPlayerList().getPlayer(uuid).serverLevel().getBlockEntity(VAULT_CONTROLLER);
+                    require(vault.group().size()==27 && vault.inventory().getItem(26).getCount()==5,"Breach preserves structure and contents");
+                    vault.repairAfter=vault.now(); require(vault.repair(),"Vault repairs after cooldown"); return null;
+                }); next();
+            }
+            case 20 -> {
+                if(!pending.isDone()) return; pending.join();
+                var bank=(StorageBlockEntity)mc.level.getBlockEntity(VAULT_CONTROLLER);
+                if(bank.getBreachProgress(1)>0) return;
+                if(!Files.exists(Path.of(System.getProperty(OUTPUT),"vault-repaired-world.png"))) { worldCapture="vault-repaired-world"; return; }
+                try { Files.writeString(Path.of(System.getProperty(OUTPUT),"result.txt"),"Bank storage native smoke passed\n729 slots, native transfers and scrollbar, key revocation, combined body/door/handle atlas, 54 safe slots without scrollbar, multi-page vault keeps scrollbar, slow 20 degree grip turn, synchronized opening and closing, key revocation closes safe, mounted pressure wave forces door open with an outward kick and overshoot, breached door remains open, damaged chunk load pose, stored contents preserved, repair state restores normal pose, safe and vault fuse synchronization, native priming sound, white flash frames, lit chunk loading, fixed 3x3x3 vault, corrected atlas model baking, synchronized vault door and cog, last viewer closes vault, three-charge vault breach, damaged vault chunk pose, preserved contents and repair.\n"); }
                 catch(java.io.IOException e) { throw new java.io.UncheckedIOException(e); }
                 phase=99; mc.stop();
             }
@@ -254,6 +331,12 @@ public final class BankStorageClientSmoke {
                 chargeFrames[i][frame]=true;
             }
         }
+        if(phase==17 && mc.level.getBlockEntity(VAULT_CONTROLLER) instanceof StorageBlockEntity bank) {
+            String name=bank.getOpenNess(1)<.25F?"vault-cog-turn":"vault-door-opening";
+            if(bank.getOpenNess(1)>0 && bank.getOpenNess(1)<1 && !Files.exists(Path.of(System.getProperty(OUTPUT),name+".png"))) capture(name);
+        }
+        if(phase==19 && mc.level.getBlockEntity(VAULT_CONTROLLER) instanceof StorageBlockEntity bank
+                && bank.getBreachProgress(1)>0 && bank.getBreachProgress(1)<1 && !Files.exists(Path.of(System.getProperty(OUTPUT),"vault-blast-opening.png"))) capture("vault-blast-opening");
         if(worldCapture!=null) { capture(worldCapture); worldCapture=null; }
     }
     @SubscribeEvent public static void sound(net.neoforged.neoforge.client.event.sound.PlaySoundEvent event) {
@@ -271,6 +354,12 @@ public final class BankStorageClientSmoke {
             chargeBrightness[index][frame]=brightness/(256F*3);
             image.writeToFile(Path.of(System.getProperty(OUTPUT),(index==0?"vault":"safe")+(frame==1?"-fuse-white.png":"-fuse-textured.png")));
         } catch(java.io.IOException e) { throw new java.io.UncheckedIOException(e); }
+    }
+    private static void buildVault(net.minecraft.server.level.ServerLevel level,BlockPos controller) {
+        var center=controller.south();
+        for(var pos:BlockPos.betweenClosed(center.offset(-1,-1,-1),center.offset(1,1,1)))
+            level.setBlockAndUpdate(pos,(pos.equals(controller)?StorageRegistry.CONTROLLER.get():StorageRegistry.VAULT.get()).defaultBlockState());
+        VaultConnections.merge((StorageBlockEntity)level.getBlockEntity(controller));
     }
     private static void next() { phase++; ticks=0; }
     private static void require(boolean ok,String message) { if(!ok) throw new IllegalStateException(message); }

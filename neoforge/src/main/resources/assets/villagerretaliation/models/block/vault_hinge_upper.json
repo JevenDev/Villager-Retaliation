@@ -1,0 +1,76 @@
+{
+  "textures": {
+    "particle": "#vault",
+    "vault": "villagerretaliation:block/vault"
+  },
+  "elements": [
+    {
+      "from": [
+        28.0,
+        17.0,
+        -15.0
+      ],
+      "to": [
+        32.0,
+        29.0,
+        -11.0
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            10.5625,
+            8.375,
+            10.8125,
+            9.125
+          ],
+          "texture": "#vault"
+        },
+        "west": {
+          "uv": [
+            11.0,
+            8.375,
+            11.25,
+            9.125
+          ],
+          "texture": "#vault"
+        },
+        "up": {
+          "uv": [
+            11.6875,
+            8.375,
+            11.9375,
+            8.625
+          ],
+          "texture": "#vault"
+        },
+        "down": {
+          "uv": [
+            12.125,
+            8.625,
+            12.375,
+            8.875
+          ],
+          "texture": "#vault"
+        },
+        "south": {
+          "uv": [
+            12.5625,
+            8.375,
+            12.8125,
+            9.125
+          ],
+          "texture": "#vault"
+        },
+        "north": {
+          "uv": [
+            13.0,
+            8.375,
+            13.25,
+            9.125
+          ],
+          "texture": "#vault"
+        }
+      }
+    }
+  ]
+}

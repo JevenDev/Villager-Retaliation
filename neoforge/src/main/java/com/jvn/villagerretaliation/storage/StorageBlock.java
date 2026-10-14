@@ -24,15 +24,15 @@ import com.jvn.villagerretaliation.settlement.BankTreasury;
 
 public final class StorageBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING=BlockStateProperties.HORIZONTAL_FACING;
-    public static final BooleanProperty PROTECTED=BooleanProperty.create("protected"), CHARGE=BooleanProperty.create("charge");
+    public static final BooleanProperty PROTECTED=BooleanProperty.create("protected"), CHARGE=BooleanProperty.create("charge"), FORMED=BooleanProperty.create("formed");
     public static final IntegerProperty DAMAGE=IntegerProperty.create("damage",0,3);
     final int kind;
     public StorageBlock(Properties properties,int kind) {
         super(properties); this.kind=kind;
-        registerDefaultState(stateDefinition.any().setValue(FACING,Direction.NORTH).setValue(PROTECTED,kind!=0).setValue(CHARGE,false).setValue(DAMAGE,0));
+        registerDefaultState(stateDefinition.any().setValue(FACING,Direction.NORTH).setValue(PROTECTED,kind!=0).setValue(CHARGE,false).setValue(DAMAGE,0).setValue(FORMED,false));
     }
     @Override protected MapCodec<? extends BaseEntityBlock> codec() { return simpleCodec(p->new StorageBlock(p,kind)); }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState> builder) { builder.add(FACING,PROTECTED,CHARGE,DAMAGE); }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState> builder) { builder.add(FACING,PROTECTED,CHARGE,DAMAGE,FORMED); }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) { return defaultBlockState().setValue(FACING,context.getHorizontalDirection().getOpposite()); }
     @Override public BlockEntity newBlockEntity(BlockPos pos,BlockState state) { return new StorageBlockEntity(pos,state); }
     @Override protected RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
@@ -56,6 +56,14 @@ public final class StorageBlock extends BaseEntityBlock {
         if(!(level.getBlockEntity(pos) instanceof StorageBlockEntity bank) || !(player instanceof ServerPlayer server)) return ItemInteractionResult.FAIL;
         bank.issue(player);
         if(removeCharge(bank,player)) return ItemInteractionResult.SUCCESS;
+        if(!bank.safe() && !bank.vaultFormed()) {
+            VaultConnections.merge(bank);
+            if(!bank.vaultFormed()) {
+                player.displayClientMessage(net.minecraft.network.chat.Component.literal("Build a 3 x 3 x 3 vault with one controller in the center of its front face."),true);
+                return ItemInteractionResult.SUCCESS;
+            }
+            state=bank.getBlockState();
+        }
         if(bank.controller() && hit.getDirection()==state.getValue(FACING)) {
             if(bank.breached() && (stack.is(Items.TNT) || stack.is(Items.FLINT_AND_STEEL) || stack.is(Items.FIRE_CHARGE))) {
                 player.displayClientMessage(net.minecraft.network.chat.Component.literal("Already breached. Repair the lock before attaching another charge."),true);

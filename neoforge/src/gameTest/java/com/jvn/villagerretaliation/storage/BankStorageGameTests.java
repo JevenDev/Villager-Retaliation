@@ -22,8 +22,19 @@ import net.neoforged.neoforge.gametest.*;
 @PrefixGameTestTemplate(false)
 public final class BankStorageGameTests {
     public static StorageBlockEntity place(GameTestHelper h,BlockPos relative,Block block) {
+        if(block==StorageRegistry.CONTROLLER.get()) return vault(h,relative,Direction.NORTH);
+        return placeRaw(h,relative,block);
+    }
+    private static StorageBlockEntity placeRaw(GameTestHelper h,BlockPos relative,Block block) {
         var pos=h.absolutePos(relative); h.getLevel().setBlockAndUpdate(pos,block.defaultBlockState());
         var bank=(StorageBlockEntity)h.getLevel().getBlockEntity(pos); VaultConnections.merge(bank); return bank;
+    }
+    public static StorageBlockEntity vault(GameTestHelper h,BlockPos relative,Direction facing) {
+        var controller=h.absolutePos(relative); var center=controller.relative(facing.getOpposite());
+        for(var pos:BlockPos.betweenClosed(center.offset(-1,-1,-1),center.offset(1,1,1)))
+            h.getLevel().setBlockAndUpdate(pos,(pos.equals(controller)?StorageRegistry.CONTROLLER.get():StorageRegistry.VAULT.get())
+                    .defaultBlockState().setValue(StorageBlock.FACING,facing));
+        var bank=(StorageBlockEntity)h.getLevel().getBlockEntity(controller); VaultConnections.merge(bank); return bank;
     }
     public static ServerPlayer player(GameTestHelper h,StorageBlockEntity bank) {
         var p=FakePlayerFactory.get(h.getLevel(),new GameProfile(UUID.randomUUID(),"BankTest")); p.setPos(bank.getBlockPos().getCenter()); return p;
@@ -87,16 +98,15 @@ public final class BankStorageGameTests {
     }
     @GameTest(template="empty") public static void commandAndBuilderPlacementsAutomaticallyForm(GameTestHelper h) {
         var start=h.absolutePos(new BlockPos(1,2,1));
-        for(int y=0;y<3;y++) for(int z=0;z<2;z++) for(int x=0;x<2;x++)
-            h.getLevel().setBlockAndUpdate(start.offset(x,y,z),StorageRegistry.VAULT.get().defaultBlockState());
+        for(int y=0;y<3;y++) for(int z=0;z<3;z++) for(int x=0;x<3;x++)
+            h.getLevel().setBlockAndUpdate(start.offset(x,y,z),(x==1 && y==1 && z==0?StorageRegistry.CONTROLLER.get():StorageRegistry.VAULT.get()).defaultBlockState());
         h.runAfterDelay(3,()->{
             var bank=(StorageBlockEntity)h.getLevel().getBlockEntity(start);
-            h.assertValueEqual(bank.group().size(),12,"2 by 2 by 3 command/builder placement reforms without a player hook"); h.succeed();
+            h.assertValueEqual(bank.group().size(),27,"full command/builder placement forms without a player hook"); h.succeed();
         });
     }
     @GameTest(template="empty") public static void rectangularCapacityAndBounds(GameTestHelper h) {
-        StorageBlockEntity bank=null;
-        for(int y=0;y<3;y++) for(int z=0;z<3;z++) for(int x=0;x<3;x++) bank=place(h,new BlockPos(1+x,2+y,1+z),x+y+z==0?StorageRegistry.CONTROLLER.get():StorageRegistry.VAULT.get());
+        var bank=vault(h,new BlockPos(2,3,1),Direction.NORTH);
         h.assertValueEqual(bank.group().size(),27,"full cube has 27 blocks");
         h.assertValueEqual(bank.group().stream().mapToInt(b->b.inventory().getContainerSize()).sum(),729,"controller contributes 27 slots");
         var extra=place(h,new BlockPos(4,2,1),StorageRegistry.VAULT.get());
@@ -104,21 +114,21 @@ public final class BankStorageGameTests {
         h.assertValueEqual(bank.group().size(),27,"full cube remains stable"); h.succeed();
     }
     @GameTest(template="empty") public static void controlledNeighborsNeverMerge(GameTestHelper h) {
-        var a=place(h,new BlockPos(1,2,1),StorageRegistry.CONTROLLER.get());
-        var b=place(h,new BlockPos(2,2,1),StorageRegistry.CONTROLLER.get());
+        var a=placeRaw(h,new BlockPos(1,2,1),StorageRegistry.CONTROLLER.get());
+        var b=placeRaw(h,new BlockPos(2,2,1),StorageRegistry.CONTROLLER.get());
         a.inventory().setItem(0,new ItemStack(Items.DIAMOND,2)); b.inventory().setItem(0,new ItemStack(Items.GOLD_INGOT,3));
         h.assertValueEqual(a.group().size(),1,"touching controllers stay separate");
         h.assertTrue(!a.identity.equals(b.identity),"independent keys");
         var p=player(h,b); a.issue(p); h.assertFalse(b.allowed(p),"neighbor key never opens second vault"); h.succeed();
     }
     @GameTest(template="empty") public static void splitRetainsPerBlockSlotsAndDropsOnlyRemovedMember(GameTestHelper h) {
-        var a=place(h,new BlockPos(1,2,1),StorageRegistry.CONTROLLER.get());
-        var b=place(h,new BlockPos(2,2,1),StorageRegistry.VAULT.get());
-        var c=place(h,new BlockPos(3,2,1),StorageRegistry.VAULT.get());
+        var a=vault(h,new BlockPos(2,3,1),Direction.NORTH);
+        var b=(StorageBlockEntity)h.getLevel().getBlockEntity(h.absolutePos(new BlockPos(1,2,1)));
+        var c=(StorageBlockEntity)h.getLevel().getBlockEntity(h.absolutePos(new BlockPos(3,4,3)));
         a.inventory().setItem(26,new ItemStack(Items.DIAMOND,2)); b.inventory().setItem(13,new ItemStack(Items.GOLD_INGOT,3)); c.inventory().setItem(26,new ItemStack(Items.EMERALD,4));
         h.getLevel().destroyBlock(b.getBlockPos(),true);
         h.assertValueEqual(a.group().size(),1,"controller side reforms"); h.assertValueEqual(c.group().size(),1,"detached side reforms");
-        h.assertTrue(c.allowed(player(h,c)),"controllerless side opens");
+        h.assertFalse(c.allowed(player(h,c)),"incomplete vault cannot open");
         h.assertValueEqual(a.inventory().getItem(26).getCount(),2,"first block unchanged"); h.assertValueEqual(c.inventory().getItem(26).getCount(),4,"last block unchanged");
         int gold=h.getLevel().getEntitiesOfClass(ItemEntity.class,new AABB(b.getBlockPos()).inflate(2)).stream().filter(e->e.getItem().is(Items.GOLD_INGOT)).mapToInt(e->e.getItem().getCount()).sum();
         h.assertValueEqual(gold,3,"only middle contents are dropped once"); h.succeed();
@@ -202,22 +212,21 @@ public final class BankStorageGameTests {
     }
     @GameTest(template="empty") public static void breachRepairCooldownAndCachedAutomation(GameTestHelper h) {
         var lock=place(h,new BlockPos(1,2,1),StorageRegistry.CONTROLLER.get()); var member=place(h,new BlockPos(2,2,1),StorageRegistry.VAULT.get());
-        member.inventory().setItem(0,new ItemStack(Items.DIAMOND,5)); var handle=member.automation();
-        h.assertTrue(handle.extractItem(27,1,false).isEmpty(),"locked cached capability refuses");
+        member.inventory().setItem(0,new ItemStack(Items.DIAMOND,5)); var handle=member.automation(); int slot=member.group().indexOf(member)*27;
+        h.assertTrue(handle.extractItem(slot,1,false).isEmpty(),"locked cached capability refuses");
         lock.hit(); h.assertFalse(lock.breached(),"first charge damages"); long deadline=lock.repairAfter;
         lock.hit(); h.assertFalse(lock.breached(),"second charge heavily damages"); lock.hit();
         h.assertTrue(lock.breached(),"third charge breaches"); h.assertFalse(lock.repair(),"cooldown rejects repair");
-        h.assertValueEqual(handle.extractItem(27,1,false).getCount(),1,"same cached handle sees breach");
+        h.assertValueEqual(handle.extractItem(slot,1,false).getCount(),1,"same cached handle sees breach");
         h.assertTrue(member.getBlockState().getValue(StorageBlock.PROTECTED),"breached member retains slow mining during cooldown");
         var saved=lock.saveWithoutMetadata(h.getLevel().registryAccess()); lock.loadWithComponents(saved,h.getLevel().registryAccess());
         h.assertTrue(lock.repairAfter>=deadline && lock.cooling(),"save/reload retains server-time deadline");
         lock.repairAfter=lock.now(); h.assertTrue(lock.repair(),"repair after expiry");
-        h.assertTrue(lock.locked(),"first repair restores same lock"); h.assertTrue(handle.extractItem(27,1,false).isEmpty(),"cached handle revoked after repair");
+        h.assertTrue(lock.locked(),"first repair restores same lock"); h.assertTrue(handle.extractItem(slot,1,false).isEmpty(),"cached handle revoked after repair");
         h.assertTrue(lock.repair() && lock.repair(),"remaining repairs consecutive"); h.assertValueEqual(lock.damage,0,"fully repaired"); h.succeed();
     }
     @GameTest(template="empty") public static void slot729ShiftClickAndStaleMenus(GameTestHelper h) {
-        StorageBlockEntity bank=null;
-        for(int y=0;y<3;y++) for(int z=0;z<3;z++) for(int x=0;x<3;x++) bank=place(h,new BlockPos(1+x,2+y,1+z),StorageRegistry.VAULT.get());
+        var bank=vault(h,new BlockPos(2,3,1),Direction.NORTH); bank.unlocked=true; bank.changedLock();
         var p=player(h,bank); var menu=new StorageMenu(1,p.getInventory(),bank);
         menu.slots.get(728).set(new ItemStack(Items.DIAMOND,19));
         menu.clicked(728,0,ClickType.QUICK_MOVE,p);
@@ -231,7 +240,7 @@ public final class BankStorageGameTests {
         var lock=place(h,new BlockPos(1,2,1),StorageRegistry.CONTROLLER.get()); var member=place(h,new BlockPos(2,2,1),StorageRegistry.VAULT.get());
         lock.hit(); member.inventory().setItem(24,new ItemStack(Items.APPLE,17));
         h.getLevel().destroyBlock(lock.getBlockPos(),true);
-        h.assertTrue(member.lock()==null,"removed lock not inherited"); h.assertTrue(member.publicAutomation(),"controllerless automation opens");
+        h.assertTrue(member.lock()==null,"removed lock not inherited"); h.assertFalse(member.publicAutomation(),"incomplete vault automation stays closed");
         h.assertTrue(member.getBlockState().getValue(StorageBlock.PROTECTED),"detached world blocks retain the previous mining deadline without retaining a lock");
         member.miningAfter=member.now(); member.refreshProtection();
         h.assertFalse(member.getBlockState().getValue(StorageBlock.PROTECTED),"transient mining protection expires");
@@ -302,12 +311,13 @@ public final class BankStorageGameTests {
                     p.getInventory().setItem(9,p.getMainHandItem()); p.setItemInHand(InteractionHand.MAIN_HAND,ItemStack.EMPTY);
                     p.setItemInHand(InteractionHand.OFF_HAND,new ItemStack(Items.STICK));
                 }
+                var backState=h.getLevel().getBlockState(bank.getBlockPos().south());
                 p.setShiftKeyDown(true); p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,back);
                 h.assertFalse(bank.getBlockState().getValue(StorageBlock.CHARGE),"shift click removes mounted TNT from any face");
                 h.assertValueEqual(p.getInventory().countItem(Items.TNT),2,"exactly one consumed TNT is returned");
                 h.assertValueEqual(bank.fuse,-1,"removal leaves no active fuse");
                 h.assertTrue(p.containerMenu==p.inventoryMenu,"removing TNT does not open storage");
-                h.assertTrue(h.getLevel().getBlockState(bank.getBlockPos().south()).isAir(),"held TNT is not placed beside storage while sneaking");
+                h.assertValueEqual(h.getLevel().getBlockState(bank.getBlockPos().south()),backState,"held TNT does not replace the block behind storage while sneaking");
                 if(!emptyHand) { p.getInventory().setItem(10,p.getMainHandItem()); p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.STICK)); }
                 p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,back);
                 h.assertValueEqual(p.getInventory().countItem(Items.TNT),2,"repeat click cannot refund TNT twice");
@@ -390,5 +400,94 @@ public final class BankStorageGameTests {
         VaultConnections.repairMembership(bank); h.assertValueEqual(bank.members.size(),2,"unloaded membership is not discarded");
         bank.members=old;
         h.assertValueEqual(bank.inventory().getItem(20).getCount(),7,"returning member retains every item"); h.succeed();
+    }
+    @GameTest(template="empty") public static void fixedVaultFormsOnEveryHorizontalFace(GameTestHelper h) {
+        int index=0;
+        for(var facing:Direction.Plane.HORIZONTAL) {
+            var bank=vault(h,new BlockPos(2+index++*6,3,5),facing);
+            h.assertTrue(bank.vaultFormed(),"controller facing "+facing+" forms the cube behind its door");
+            h.assertValueEqual(bank.group().size(),27,"exactly 27 members");
+            h.assertTrue(bank.group().stream().allMatch(StorageBlockEntity::vaultFormed),"all member models are replaced together");
+        }
+        h.succeed();
+    }
+    @GameTest(template="empty") public static void incompleteAndMisplacedControllersCannotOpen(GameTestHelper h) {
+        var start=h.absolutePos(new BlockPos(1,2,1));
+        for(int y=0;y<3;y++) for(int z=0;z<3;z++) for(int x=0;x<3;x++)
+            h.getLevel().setBlockAndUpdate(start.offset(x,y,z),StorageRegistry.VAULT.get().defaultBlockState());
+        var corner=placeRaw(h,new BlockPos(1,2,1),StorageRegistry.CONTROLLER.get());
+        corner.unlocked=true;
+        h.assertFalse(corner.vaultFormed(),"corner controller cannot form a vault");
+        h.assertFalse(corner.allowed(player(h,corner)),"incomplete controller cannot open even unlocked");
+        h.assertFalse(corner.publicAutomation(),"incomplete cube rejects hoppers");
+        h.getLevel().setBlockAndUpdate(corner.getBlockPos(),StorageRegistry.VAULT.get().defaultBlockState());
+        var center=placeRaw(h,new BlockPos(2,3,1),StorageRegistry.CONTROLLER.get());
+        h.assertTrue(center.vaultFormed(),"centered controller completes existing cube");
+        var removed=center.group().getFirst();
+        h.getLevel().destroyBlock(removed.getBlockPos(),true);
+        h.assertFalse(center.vaultFormed(),"missing member immediately disassembles the model");
+        h.assertFalse(center.allowed(player(h,center)),"missing member closes menus");
+        h.getLevel().setBlockAndUpdate(removed.getBlockPos(),StorageRegistry.VAULT.get().defaultBlockState());
+        VaultConnections.merge((StorageBlockEntity)h.getLevel().getBlockEntity(removed.getBlockPos()));
+        h.assertTrue(center.vaultFormed(),"replacement member reforms the same vault"); h.succeed();
+    }
+    @GameTest(template="empty") public static void oldRectanglesRetainContentsAndKeysDuringMigration(GameTestHelper h) {
+        var controller=placeRaw(h,new BlockPos(2,3,1),StorageRegistry.CONTROLLER.get());
+        var member=placeRaw(h,new BlockPos(3,3,1),StorageRegistry.VAULT.get());
+        var identity=controller.identity;
+        controller.inventory().setItem(26,new ItemStack(Items.DIAMOND,9));
+        member.inventory().setItem(13,new ItemStack(Items.GOLD_INGOT,7));
+        var old=List.of(controller.getBlockPos(),member.getBlockPos()); controller.assign(old); member.assign(old);
+        var registries=h.getLevel().registryAccess();
+        controller.loadWithComponents(controller.saveWithoutMetadata(registries),registries);
+        member.loadWithComponents(member.saveWithoutMetadata(registries),registries);
+        VaultConnections.repairMembership(controller);
+        h.assertValueEqual(controller.group().size(),1,"legacy rectangle becomes an incomplete vault");
+        for(var pos:VaultConnections.positions(controller)) if(VaultConnections.at(h.getLevel(),pos)==null)
+            h.getLevel().setBlockAndUpdate(pos,StorageRegistry.VAULT.get().defaultBlockState());
+        VaultConnections.merge(controller);
+        h.assertTrue(controller.vaultFormed(),"legacy blocks form after completing the cube");
+        h.assertValueEqual(controller.identity,identity,"original key identity remains authoritative");
+        h.assertValueEqual(controller.inventory().getItem(26).getCount(),9,"controller slot preserved");
+        h.assertValueEqual(member.inventory().getItem(13).getCount(),7,"member slot preserved"); h.succeed();
+    }
+    @GameTest(template="empty") public static void memberViewersAnimateOneVaultController(GameTestHelper h) {
+        var bank=vault(h,new BlockPos(2,3,1),Direction.NORTH); bank.unlocked=true; bank.changedLock();
+        var member=bank.group().getFirst(); var viewer=player(h,member);
+        var menu=(StorageMenu)member.createMenu(1,viewer.getInventory(),viewer); viewer.containerMenu=menu;
+        var registries=h.getLevel().registryAccess();
+        h.assertTrue(bank.getUpdateTag(registries).getBoolean("DoorOpen"),"member menu opens the controller door");
+        h.assertTrue(menu.isContainer(bank),"controller tracks member viewers");
+        bank.handleUpdateTag(bank.getUpdateTag(registries),registries);
+        for(int i=0;i<8;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getOpenNess(1),0.25F,"cog gets the first quarter of the 32 tick animation");
+        for(int i=0;i<24;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getOpenNess(1),1F,"vault finishes opening after 1.6 seconds");
+        menu.removed(viewer); viewer.containerMenu=viewer.inventoryMenu;
+        h.assertFalse(bank.getUpdateTag(registries).getBoolean("DoorOpen"),"last viewer closes the controller");
+        bank.triggerEvent(1,0);
+        for(int i=0;i<32;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getOpenNess(1),0F,"vault returns fully closed"); h.succeed();
+    }
+    @GameTest(template="empty") public static void thirdChargeForcesVaultOpenAndRepairRestoresIt(GameTestHelper h) {
+        var bank=vault(h,new BlockPos(2,3,1),Direction.NORTH);
+        bank.inventory().setItem(26,new ItemStack(Items.DIAMOND,11)); var identity=bank.identity;
+        for(int stage=1;stage<=3;stage++) {
+            bank.fuse=1;
+            h.getLevel().setBlockAndUpdate(bank.getBlockPos(),bank.getBlockState().setValue(StorageBlock.CHARGE,true));
+            StorageBlockEntity.tick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+            for(int i=0;i<11;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+            h.assertValueEqual(bank.getBreachProgress(1),stage==3?1F:0F,"only a breached vault hangs open");
+            h.assertTrue(bank.vaultFormed(),"localized blast preserves all structural blocks");
+        }
+        bank.triggerEvent(1,0);
+        StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getBreachProgress(1),1F,"closing a menu cannot close the breached door");
+        bank.repairAfter=bank.now(); h.assertTrue(bank.repair(),"repair after cooldown restores the lock");
+        for(int i=0;i<11;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getBreachProgress(1),0F,"repaired vault leaves breached pose");
+        h.assertTrue(bank.locked(),"repair relocks the vault");
+        h.assertValueEqual(bank.identity,identity,"breach and repair preserve original key");
+        h.assertValueEqual(bank.inventory().getItem(26).getCount(),11,"stored contents survive breach and repair"); h.succeed();
     }
 }

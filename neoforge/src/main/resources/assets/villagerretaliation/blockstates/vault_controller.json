@@ -1,160 +1,23 @@
 {
-  "multipart": [
-    {
-      "when": {
-        "facing": "north"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/vault_controller",
-        "y": 0
-      }
+  "variants": {
+    "formed=true": {
+      "model": "villagerretaliation:block/vault_formed"
     },
-    {
-      "when": {
-        "facing": "north",
-        "damage": "1"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_1",
-        "y": 0
-      }
+    "formed=false,facing=north": {
+      "model": "villagerretaliation:block/vault_controller",
+      "y": 0
     },
-    {
-      "when": {
-        "facing": "north",
-        "damage": "2"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_2",
-        "y": 0
-      }
+    "formed=false,facing=east": {
+      "model": "villagerretaliation:block/vault_controller",
+      "y": 90
     },
-    {
-      "when": {
-        "facing": "north",
-        "damage": "3"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_3",
-        "y": 0
-      }
+    "formed=false,facing=south": {
+      "model": "villagerretaliation:block/vault_controller",
+      "y": 180
     },
-    {
-      "when": {
-        "facing": "east"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/vault_controller",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "facing": "east",
-        "damage": "1"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_1",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "facing": "east",
-        "damage": "2"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_2",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "facing": "east",
-        "damage": "3"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_3",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "facing": "south"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/vault_controller",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "facing": "south",
-        "damage": "1"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_1",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "facing": "south",
-        "damage": "2"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_2",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "facing": "south",
-        "damage": "3"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_3",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "facing": "west"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/vault_controller",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "facing": "west",
-        "damage": "1"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_1",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "facing": "west",
-        "damage": "2"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_2",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "facing": "west",
-        "damage": "3"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/lock_damage_3",
-        "y": 270
-      }
+    "formed=false,facing=west": {
+      "model": "villagerretaliation:block/vault_controller",
+      "y": 270
     }
-  ]
+  }
 }
