@@ -62,6 +62,29 @@ public final class BankStorageGameTests {
         h.assertValueEqual(bank.identity,identity,"visual update preserves safe identity");
         h.assertValueEqual(bank.inventory().getItem(53).getCount(),7,"visual update preserves stored items"); h.succeed();
     }
+    @GameTest(template="empty") public static void mountedChargeLeavesSafeBreachedUntilRepair(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get());
+        bank.inventory().setItem(53,new ItemStack(Items.DIAMOND,4)); var identity=bank.identity;
+        h.getLevel().setBlockAndUpdate(bank.getBlockPos(),bank.getBlockState().setValue(StorageBlock.CHARGE,true));
+        bank.fuse=1; StorageBlockEntity.tick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertTrue(h.getLevel().getBlockState(bank.getBlockPos()).is(StorageRegistry.SAFE.get()),"charge leaves safe and door in place");
+        h.assertTrue(bank.breached() && bank.getBlockState().getValue(StorageBlock.DAMAGE)==1,"charge synchronizes breached block state");
+        h.assertFalse(bank.getBlockState().getValue(StorageBlock.CHARGE),"detonated charge is removed");
+        for(int i=0;i<11;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getBreachProgress(1),1F,"breached pose reaches fully open without a viewer");
+        bank.triggerEvent(1,0);
+        for(int i=0;i<11;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getBreachProgress(1),1F,"closing a menu cannot close a breached door");
+        var saved=bank.saveWithoutMetadata(h.getLevel().registryAccess()); bank.loadWithComponents(saved,h.getLevel().registryAccess());
+        h.assertTrue(bank.breached(),"breach survives save and reload");
+        h.assertFalse(bank.repair(),"visual damage does not bypass repair cooldown");
+        bank.repairAfter=bank.now(); h.assertTrue(bank.repair(),"repair succeeds after cooldown");
+        for(int i=0;i<11;i++) StorageBlockEntity.doorAnimateTick(h.getLevel(),bank.getBlockPos(),bank.getBlockState(),bank);
+        h.assertValueEqual(bank.getBreachProgress(1),0F,"repair restores intact pose");
+        h.assertTrue(bank.locked(),"repair restores the safe lock");
+        h.assertValueEqual(bank.inventory().getItem(53).getCount(),4,"blast and repair preserve stored items");
+        h.assertValueEqual(bank.identity,identity,"blast and repair preserve the key identity"); h.succeed();
+    }
     @GameTest(template="empty") public static void commandAndBuilderPlacementsAutomaticallyForm(GameTestHelper h) {
         var start=h.absolutePos(new BlockPos(1,2,1));
         for(int y=0;y<3;y++) for(int z=0;z<2;z++) for(int x=0;x<2;x++)

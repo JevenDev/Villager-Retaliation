@@ -20,6 +20,7 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
     private static final ModelResourceLocation DOOR = model("safe_door");
     private static final ModelResourceLocation HANDLE = model("safe_handle");
     private static final ModelResourceLocation HANDLE_MOUNT = model("safe_handle_mount");
+    private static final ModelResourceLocation HINGE = model("safe_hinge");
     private static final ModelResourceLocation CHARGE = model("mounted_charge");
     private static final ModelResourceLocation[] DAMAGE = {
             model("lock_damage_1"), model("lock_damage_2"), model("lock_damage_3")
@@ -38,6 +39,7 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
         event.register(DOOR);
         event.register(HANDLE);
         event.register(HANDLE_MOUNT);
+        event.register(HINGE);
         event.register(CHARGE);
         for (var model : DAMAGE) event.register(model);
     }
@@ -45,6 +47,16 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
     public static float doorAngle(float openness) {
         float closed = 1 - Mth.clamp((openness - 0.25F) / 0.75F, 0, 1);
         return -90 * (1 - closed * closed * closed);
+    }
+
+    public static float doorAngle(float openness, float breachProgress) {
+        float intact = 1 - breachProgress;
+        float blast = 1 - intact * intact * intact * intact;
+        return Mth.lerp(blast, doorAngle(openness), -115);
+    }
+
+    public static float blastImpulse(float progress) {
+        return 4 * progress * (1 - progress);
     }
 
     public static float handleAngle(float openness) {
@@ -68,30 +80,60 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
         poses.translate(-0.5F, -0.5F, -0.5F);
 
         float openness = bank.getOpenNess(partialTick);
+        float breach = bank.getBreachProgress(partialTick);
+        float sag = breach * breach;
+        float impulse = state.getValue(StorageBlock.DAMAGE) > 0 ? blastImpulse(breach) : 0;
+        if (breach > 0) renderLooseHinges(poses, buffer, light, overlay, sag);
+        poses.translate(0, 0, -impulse / 8);
         // blockbench hinge [4, 8, 0] after turning the model's front north
         poses.translate(1, 0.5F, 0.25F);
-        poses.mulPose(Axis.YP.rotationDegrees(doorAngle(openness)));
+        poses.mulPose(Axis.YP.rotationDegrees(doorAngle(openness, breach) - 25 * impulse));
         poses.translate(-1, -0.5F, -0.25F);
+        // a breached door hangs from its upper hinge instead of its center
+        poses.translate(1, 0.75F, 0.25F);
+        poses.mulPose(Axis.ZP.rotationDegrees(6 * sag));
+        poses.translate(-1, -0.75F - sag / 32, -0.25F);
 
         renderModel(DOOR, poses, buffer, light, overlay);
         if (state.getValue(StorageBlock.CHARGE)) renderModel(CHARGE, poses, buffer, light, overlay);
         int damage = state.getValue(StorageBlock.DAMAGE);
         if (damage > 0) renderModel(DAMAGE[damage - 1], poses, buffer, light, overlay);
 
+        poses.pushPose();
+        poses.translate(4.5F / 16, 10.0F / 16 - sag / 64, -0.5F / 16 - sag / 32);
+        poses.mulPose(Axis.XP.rotationDegrees(12 * sag));
+        poses.mulPose(Axis.ZP.rotationDegrees(-8 * sag));
+        poses.translate(-4.5F / 16, -10.0F / 16, 0.5F / 16);
         renderModel(HANDLE_MOUNT, poses, buffer, light, overlay);
         // inherit the door swing before turning only the grip at its attachment point
         poses.pushPose();
         poses.translate(4.5F / 16, 6.0F / 16, -0.5F / 16);
-        poses.mulPose(Axis.ZP.rotationDegrees(handleAngle(openness)));
+        poses.mulPose(Axis.ZP.rotationDegrees(handleAngle(Math.max(openness, breach))));
         poses.translate(-4.5F / 16, -6.0F / 16, 0.5F / 16);
         renderModel(HANDLE, poses, buffer, light, overlay);
+        poses.popPose();
         poses.popPose();
         poses.popPose();
     }
 
     @Override
     public AABB getRenderBoundingBox(StorageBlockEntity bank) {
-        return new AABB(bank.getBlockPos()).inflate(1, 0, 1);
+        return new AABB(bank.getBlockPos()).inflate(1, 0.25, 1);
+    }
+
+    private void renderLooseHinges(PoseStack poses, MultiBufferSource buffer, int light, int overlay, float sag) {
+        poses.pushPose();
+        poses.translate(1 + sag / 32, 0.75F, 0.25F);
+        poses.mulPose(Axis.YP.rotationDegrees(-45 * sag));
+        renderModel(HINGE, poses, buffer, light, overlay);
+        poses.popPose();
+
+        poses.pushPose();
+        poses.translate(1 + sag / 16, 0.25F - sag / 16, 0.25F - sag / 32);
+        poses.mulPose(Axis.ZP.rotationDegrees(16 * sag));
+        poses.mulPose(Axis.XP.rotationDegrees(10 * sag));
+        renderModel(HINGE, poses, buffer, light, overlay);
+        poses.popPose();
     }
 
     private void renderModel(

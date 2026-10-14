@@ -38,6 +38,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     private boolean loading;
     boolean creativeBreak;
     private final ChestLidController doorController=new ChestLidController();
+    private final ChestLidController breachController=new ChestLidController();
     private final ContainerOpenersCounter openersCounter=new ContainerOpenersCounter() {
         @Override protected void onOpen(Level level,BlockPos pos,BlockState state) {
             level.playSound(null,pos,SoundEvents.IRON_DOOR_OPEN,SoundSource.BLOCKS,0.5F,0.9F+level.random.nextFloat()*0.1F);
@@ -60,6 +61,8 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     }
     public static void doorAnimateTick(Level level,BlockPos pos,BlockState state,StorageBlockEntity bank) {
         bank.doorController.tickLid();
+        bank.breachController.shouldBeOpen(state.getValue(StorageBlock.DAMAGE)>0);
+        bank.breachController.tickLid();
     }
     public void startOpen(Player player) {
         if(safe() && !isRemoved() && !player.isSpectator() && level!=null && !level.isClientSide)
@@ -77,6 +80,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         return super.triggerEvent(id,value);
     }
     @Override public float getOpenNess(float partialTick) { return doorController.getOpenness(partialTick); }
+    public float getBreachProgress(float partialTick) { return breachController.getOpenness(partialTick); }
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         var tag=new CompoundTag();
         if(safe()) tag.putBoolean("DoorOpen",openersCounter.getOpenerCount()>0);
@@ -190,7 +194,14 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         }
         if(bank.fuse>=0) bank.setChanged();
     }
-    @Override public void onLoad() { super.onLoad(); if(!level.isClientSide) level.scheduleTick(worldPosition,getBlockState().getBlock(),1); }
+    @Override public void onLoad() {
+        super.onLoad();
+        if(!level.isClientSide) level.scheduleTick(worldPosition,getBlockState().getBlock(),1);
+        else if(safe() && getBlockState().getValue(StorageBlock.DAMAGE)>0) {
+            breachController.shouldBeOpen(true);
+            for(int i=0;i<11;i++) breachController.tickLid();
+        }
+    }
     @Override public Component getDisplayName() { return Component.translatable("container.villagerretaliation.bank_storage"); }
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player) { return allowed(player)?new StorageMenu(id,inventory,this):null; }
     public void open(ServerPlayer player) {

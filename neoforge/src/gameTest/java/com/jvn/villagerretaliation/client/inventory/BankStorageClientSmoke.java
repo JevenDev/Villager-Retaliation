@@ -160,7 +160,41 @@ public final class BankStorageClientSmoke {
             case 11 -> {
                 if(!pending.isDone() || mc.screen!=null || ((StorageBlockEntity)mc.level.getBlockEntity(CENTER.east(5))).getOpenNess(1)>0) return;
                 pending.join(); capture("safe-closed-after-key-removal");
-                try { Files.writeString(Path.of(System.getProperty(OUTPUT),"result.txt"),"Bank storage native smoke passed\n729 slots, native transfers and scrollbar, key revocation, combined body/door/handle atlas, 54 safe slots, horizontal grip turns 20 degrees slowly with fixed mounting block and stem, synchronized opening and closing, safe closes after key removal.\n"); }
+                pending=server.submit(()->{
+                    var p=server.getPlayerList().getPlayer(uuid); var level=p.serverLevel();
+                    var bank=(StorageBlockEntity)level.getBlockEntity(CENTER.east(5));
+                    bank.inventory().setItem(53,new ItemStack(Items.DIAMOND,5));
+                    level.setBlockAndUpdate(bank.getBlockPos(),bank.getBlockState().setValue(StorageBlock.CHARGE,true)); bank.fuse=1;
+                    p.setYRot(35); p.setXRot(20); p.teleportTo(CENTER.getX()+7.8,CENTER.getY(),CENTER.getZ()-2.8);
+                    return null;
+                }); next();
+            }
+            case 12 -> {
+                if(!pending.isDone()) return; pending.join();
+                var bank=(StorageBlockEntity)mc.level.getBlockEntity(CENTER.east(5));
+                if(bank.getBlockState().getValue(StorageBlock.DAMAGE)!=1 || bank.getBreachProgress(1)<1) return;
+                require(mc.screen==null && bank.getOpenNess(1)==0,"Breached safe stays open without an inventory viewer");
+                require(SafeRenderer.doorAngle(0,1)==-115 && SafeRenderer.doorAngle(0,0.1F)<-30,"Blast flings the door past its normal opening angle");
+                require(SafeRenderer.blastImpulse(0)==0 && SafeRenderer.blastImpulse(0.5F)==1 && SafeRenderer.blastImpulse(1)==0,"Outward blast kick settles without closing the breached door");
+                require(SafeRenderer.doorAngle(0,0.5F)-25*SafeRenderer.blastImpulse(0.5F)<-130,"Pressure wave makes the door overshoot before settling");
+                if(!Files.exists(Path.of(System.getProperty(OUTPUT),"safe-breached-world.png"))) { worldCapture="safe-breached-world"; return; }
+                if(ticks<100) return;
+                var loaded=new StorageBlockEntity(bank.getBlockPos(),bank.getBlockState()); loaded.setLevel(mc.level); loaded.onLoad();
+                require(loaded.getBreachProgress(0)==1,"Previously breached safe loads directly into its damaged pose");
+                loaded.setBlockState(loaded.getBlockState().setValue(StorageBlock.DAMAGE,0));
+                for(int i=0;i<11;i++) StorageBlockEntity.doorAnimateTick(mc.level,loaded.getBlockPos(),loaded.getBlockState(),loaded);
+                require(loaded.getBreachProgress(1)==0,"Repair state restores the intact pose");
+                pending=server.submit(()->{
+                    var p=server.getPlayerList().getPlayer(uuid); var safe=(StorageBlockEntity)p.serverLevel().getBlockEntity(CENTER.east(5));
+                    require(safe.inventory().getItem(53).getCount()==5 && safe.breached(),"Explosion preserves safe contents and remains breached"); return null;
+                }); next();
+            }
+            case 13 -> {
+                if(!pending.isDone()) return; pending.join();
+                var bank=(StorageBlockEntity)mc.level.getBlockEntity(CENTER.east(5));
+                require(bank.getBlockState().getValue(StorageBlock.DAMAGE)==1 && bank.getBreachProgress(1)==1,"Exploded door remains open until explicitly repaired");
+                capture("safe-breached-held-open");
+                try { Files.writeString(Path.of(System.getProperty(OUTPUT),"result.txt"),"Bank storage native smoke passed\n729 slots, native transfers and scrollbar, key revocation, combined body/door/handle atlas, 54 safe slots, slow 20 degree grip turn, synchronized opening and closing, key revocation closes safe, mounted pressure wave forces door open with an outward kick and overshoot, breached door remains open, damaged chunk load pose, stored contents preserved, repair state restores normal pose.\n"); }
                 catch(java.io.IOException e) { throw new java.io.UncheckedIOException(e); }
                 phase=99; mc.stop();
             }
@@ -172,6 +206,9 @@ public final class BankStorageClientSmoke {
         if(phase>=7 && phase<=8 && mc.screen instanceof StorageScreen && mc.level.getBlockEntity(CENTER.east(5)) instanceof StorageBlockEntity bank
                 && bank.getOpenNess(1)>0 && bank.getOpenNess(1)<0.25F
                 && !Files.exists(Path.of(System.getProperty(OUTPUT),"safe-handle-pressed.png"))) capture("safe-handle-pressed");
+        if(phase==12 && mc.level.getBlockEntity(CENTER.east(5)) instanceof StorageBlockEntity bank
+                && bank.getBreachProgress(1)>0 && bank.getBreachProgress(1)<1
+                && !Files.exists(Path.of(System.getProperty(OUTPUT),"safe-blast-opening.png"))) capture("safe-blast-opening");
         if(worldCapture!=null) { capture(worldCapture); worldCapture=null; }
     }
     private static void next() { phase++; ticks=0; }
