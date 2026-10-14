@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue.normal;
 
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
@@ -41,6 +42,20 @@ public final class DialogueTreeService {
         return RESPONSE_OPTION_PREFIX + treeId + ":" + responseId;
     }
 
+    public static List<String> explainChoices(DialogueContext context) {
+        var session = sessions(context).get(key(context));
+        if (session == null) return List.of();
+        var tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), session.treeId()).orElse(null);
+        var node = tree == null ? null : tree.nodes().get(session.nodeId());
+        if (node == null) return List.of("Saved dialogue node is unavailable");
+        return node.responses().stream().map(response -> {
+            boolean available = response.matches(context);
+            String state = available ? "available" : response.choice().showUnavailable() ? "disabled" : "hidden";
+            return "Choice " + response.id() + ": " + state + (available ? "" : ", " + response.choice().reason(context))
+                    + ", conditions=" + response.conditions().stream().map(condition -> DialogueCondition.trace(context, condition)).toList();
+        }).toList();
+    }
+
     public static Optional<List<DialogueOptionDefinition>> activeOptions(DialogueContext context) {
         if (!sessions(context).diagnostic(key(context)).isBlank() || SceneContinuationService.hasPendingDialogue(context)) return Optional.of(List.of());
         SessionKey key = key(context);
@@ -68,7 +83,8 @@ public final class DialogueTreeService {
                         .thenComparing(DialogueTreeDefinition.Response::id))
                 .map(response -> response.toOption(context, tree.id(), tree.metadata()))
                 .toList();
-        return options.isEmpty() ? Optional.empty() : Optional.of(options);
+        return options.isEmpty() || VillagerConversationService.isForced(context.player(), context.villager())
+                && options.stream().noneMatch(DialogueOptionDefinition::available) ? Optional.empty() : Optional.of(options);
     }
 
     public static Optional<VillagerDialogueService.DialogueResult> handleDialogueOption(
@@ -286,6 +302,7 @@ public final class DialogueTreeService {
         }
         if (resume.forced()) {
             List<DialogueOptionDefinition> options = activeOptions(context).orElse(List.of());
+            if (options.stream().noneMatch(DialogueOptionDefinition::available)) options = List.of();
             if (options.isEmpty()) {
                 if (result.exchanges().isEmpty() && !result.text().isBlank())
                     VillagerInteractionService.sendVillagerNotice(context.player(), context.villager(), result.text());

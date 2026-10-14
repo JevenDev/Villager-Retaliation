@@ -1,0 +1,36 @@
+{
+  "id": "dialogue_example:linear",
+  "entries": [
+    {
+      "id": "greet",
+      "label": "Say hello",
+      "start": "greet"
+    }
+  ],
+  "nodes": {
+    "greet": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "player"
+          },
+          "text": "Good morning."
+        },
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": "Good to see you."
+        },
+        {
+          "speaker": {
+            "type": "narrator"
+          },
+          "text": "The villager smiles."
+        }
+      ],
+      "end": true
+    }
+  }
+}

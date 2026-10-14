@@ -69,21 +69,33 @@ async function jsonFiles(directory) {
     : entry.name.endsWith(".json") ? [path.join(directory, entry.name)] : []))).flat();
 }
 
-export async function validateContextDirectory(dataDirectory = builtInData) {
+export async function validateContextDirectory(dataDirectory = builtInData, selectedFiles = null) {
   const schema = JSON.parse(await readFile(path.join(root, "tools/datapack-builder/quest-v2.schema.json"), "utf8"));
   const effective = new Map();
   const parseErrors = [];
+  async function load(directory, file) {
+    const relative = path.relative(directory, file).replaceAll("\\", "/");
+    try {
+      effective.set(relative, [file, JSON.parse(await readFile(file, "utf8"))]);
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      parseErrors.push(file + ": invalid JSON: " + error.message);
+    }
+  }
   for (const directory of dataDirectory === builtInData ? [builtInData] : [builtInData, dataDirectory]) {
-    for (const file of await jsonFiles(directory)) {
-      const relative = path.relative(directory, file).replaceAll("\\", "/");
-      if (!/^[^/]+\/(dialogue_contexts|dialogue|dialogue_trees|forced_dialogue|quests)\//.test(relative)) continue;
-      if (directory === builtInData && dataDirectory !== builtInData && !relative.includes("/dialogue_contexts/")) continue;
-      try {
-        effective.set(relative, [file, JSON.parse(await readFile(file, "utf8"))]);
-      } catch (error) {
-        if (!(error instanceof SyntaxError)) throw error;
-        parseErrors.push(file + ": invalid JSON: " + error.message);
-      }
+    const namespaces = await readdir(directory, { withFileTypes: true });
+    for (const namespace of namespaces.filter(entry => entry.isDirectory())) {
+      for (const file of await jsonFiles(path.join(directory, namespace.name, "dialogue_contexts")))
+        await load(directory, file);
+    }
+  }
+  if (selectedFiles) {
+    for (const file of selectedFiles) await load(dataDirectory, file);
+  } else {
+    for (const file of await jsonFiles(dataDirectory)) {
+      const relative = path.relative(dataDirectory, file).replaceAll("\\", "/");
+      if (/^[^/]+\/(dialogue|dialogue_trees|forced_dialogue|quests)\//.test(relative))
+        await load(dataDirectory, file);
     }
   }
   return [...parseErrors, ...validateContextDocuments([...effective.values()], schema)];

@@ -1,0 +1,18 @@
+{
+  "id": "dialogue_example:needs_help",
+  "conditions": [
+    {
+      "type": "any",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:injured_speaker"
+        },
+        {
+          "type": "context",
+          "id": "villagerretaliation:critically_injured_player"
+        }
+      ]
+    }
+  ]
+}

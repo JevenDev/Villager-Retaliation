@@ -2381,6 +2381,8 @@ public final class VillagerRetaliationCommands {
                 optionId == null ? "" : optionId,
                 recentDialogueIds);
         sendDialogueExplanation(source, villager, requestType, optionId, explanation);
+        com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.explainChoices(dialogueContext, optionId).stream().limit(32)
+                .forEach(line -> source.sendSuccess(() -> Component.literal(line), false));
         return Math.max(1, explanation.candidates().size());
     }
 

@@ -2711,7 +2711,7 @@ public final class ForcedDialogueService {
         Optional<VillagerDialogueService.DialogueResult> result = entry.dialogue();
         if (result.isEmpty()) return entry.outcome();
         List<DialogueOptionDefinition> options = DialogueTreeService.activeOptions(context).orElse(List.of());
-        if (options.isEmpty()) {
+        if (options.stream().noneMatch(DialogueOptionDefinition::available)) {
             String text = result.get().text();
             if (!result.get().exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(player, villager, result.get().exchanges());
             else if (!text.isBlank()) VillagerInteractionService.sendVillagerNotice(player, villager, text);

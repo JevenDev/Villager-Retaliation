@@ -1,0 +1,131 @@
+{
+  "id": "dialogue_example:roadside_help",
+  "display": {
+    "title": "Roadside Help"
+  },
+  "metadata": {
+    "topic": "roadside_help",
+    "tags": [
+      "tone.concerned",
+      "example.branching"
+    ]
+  },
+  "entries": [
+    {
+      "id": "ask",
+      "label": "Ask about the road",
+      "request": "story",
+      "start": "start"
+    }
+  ],
+  "nodes": {
+    "start": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": "The road has been difficult lately."
+        },
+        {
+          "speaker": {
+            "type": "player"
+          },
+          "text": "What happened?"
+        }
+      ],
+      "responses": [
+        {
+          "id": "road",
+          "label": "Ask about the damage",
+          "next": "road",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": "How bad is the damage?"
+            }
+          ]
+        },
+        {
+          "id": "help",
+          "label": "Offer help",
+          "unavailable_behavior": "disable",
+          "unavailable": {
+            "key": "dialogue_example.help_unavailable"
+          },
+          "conditions": [
+            {
+              "type": "context",
+              "id": "dialogue_example:needs_help"
+            }
+          ],
+          "next": "help",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": "Someone here looks hurt. Can I help?"
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "label": "Goodbye",
+          "end": true
+        }
+      ]
+    },
+    "road": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": "A fallen tree blocks the bridge."
+        }
+      ],
+      "responses": [
+        {
+          "id": "continue",
+          "label": "Understood",
+          "next": "finish"
+        }
+      ]
+    },
+    "help": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": "Let us find somewhere safe first."
+        }
+      ],
+      "responses": [
+        {
+          "id": "continue",
+          "label": "Agreed",
+          "next": "finish"
+        }
+      ]
+    },
+    "finish": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": "Travel carefully."
+        }
+      ],
+      "end": true
+    }
+  }
+}

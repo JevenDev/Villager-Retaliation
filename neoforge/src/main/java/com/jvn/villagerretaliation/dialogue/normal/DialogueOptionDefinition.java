@@ -66,7 +66,8 @@ public record DialogueOptionDefinition(
         boolean requiresActiveSpecialOrders,
         int priority,
         int order,
-        com.jvn.villagerretaliation.dialogue.DialogueChoice choice, boolean available, String unavailableReason
+        com.jvn.villagerretaliation.dialogue.DialogueChoice choice, boolean available, String unavailableReason,
+        java.util.UUID selectionToken
 ) {
     public DialogueOptionDefinition(String id,
         ResourceLocation source,
@@ -121,12 +122,130 @@ public record DialogueOptionDefinition(
         List<DialogueCondition> conditions,
         boolean requiresActiveSpecialOrders,
         int priority,
+        int order,
+        com.jvn.villagerretaliation.dialogue.DialogueChoice choice, boolean available, String unavailableReason) {
+        this(
+            id, source, metadata, questAction, treeReference, label, requestType, showForAdults, showForBabies,
+            professions, dispositions, equipmentCondition, playerItemCondition, reputationCondition, itemPayment,
+            forceCameraTowardsVillager, requiresUnreportedCartographerMapDiscovery,
+            requiresUnreportedStoryHintDiscovery, requiresUnreportedCombatSurvivalReport, requiresUnreportedGearReport,
+            requiresUnreportedRecruitmentFollowup, requiresUnreportedCuredRecognition, requiresRecentVillageEvent,
+            requiresUnreportedGiftAdviceResult, requiresUnapologizedRememberedHarm, requiresUnreportedVillageDefense,
+            requiresRaidVictoryAcknowledgement, requiresShareableStory, requiresKnownFamily, requiresKnownParent,
+            requiresKnownSibling, requiresKnownSpouse, requiresKnownChild, requiresKnownGrandparent,
+            requiresKnownGrandchild, requiresKnownDescendant, requiresKnownAuntUncle, requiresKnownCousin,
+            requiresKnownNieceNephew, requiresKnownExtendedFamily, requiresKnownDeceasedFamily,
+            requiresKnownRelationship, requiresKnownCurrentRelationship, requiresKnownPastRelationship,
+            requiresKnownCrush, requiresKnownDatingPartner, requiresKnownFiance, requiresKnownRomanticSpouse,
+            requiresKnownSeparatedPartner, requiresKnownWidowedPartner, conditions, requiresActiveSpecialOrders,
+            priority, order, choice, available, unavailableReason, java.util.UUID.randomUUID());
+    }
+
+    public DialogueOptionDefinition withSelectionToken(java.util.UUID token) {
+        return new DialogueOptionDefinition(
+            id, source, metadata, questAction, treeReference, label, requestType, showForAdults, showForBabies,
+            professions, dispositions, equipmentCondition, playerItemCondition, reputationCondition, itemPayment,
+            forceCameraTowardsVillager, requiresUnreportedCartographerMapDiscovery,
+            requiresUnreportedStoryHintDiscovery, requiresUnreportedCombatSurvivalReport, requiresUnreportedGearReport,
+            requiresUnreportedRecruitmentFollowup, requiresUnreportedCuredRecognition, requiresRecentVillageEvent,
+            requiresUnreportedGiftAdviceResult, requiresUnapologizedRememberedHarm, requiresUnreportedVillageDefense,
+            requiresRaidVictoryAcknowledgement, requiresShareableStory, requiresKnownFamily, requiresKnownParent,
+            requiresKnownSibling, requiresKnownSpouse, requiresKnownChild, requiresKnownGrandparent,
+            requiresKnownGrandchild, requiresKnownDescendant, requiresKnownAuntUncle, requiresKnownCousin,
+            requiresKnownNieceNephew, requiresKnownExtendedFamily, requiresKnownDeceasedFamily,
+            requiresKnownRelationship, requiresKnownCurrentRelationship, requiresKnownPastRelationship,
+            requiresKnownCrush, requiresKnownDatingPartner, requiresKnownFiance, requiresKnownRomanticSpouse,
+            requiresKnownSeparatedPartner, requiresKnownWidowedPartner, conditions, requiresActiveSpecialOrders,
+            priority, order, choice, available, unavailableReason, token);
+    }
+
+    public DialogueOptionDefinition(String id,
+        ResourceLocation source,
+        DialogueEntryMetadata metadata,
+        DialogueQuestAction questAction,
+        DialogueTreeReference treeReference,
+        String label,
+        DialogueRequestType requestType,
+        boolean showForAdults,
+        boolean showForBabies,
+        Set<VillagerProfession> professions,
+        Set<DialogueDisposition> dispositions,
+        VillagerEquipmentCondition equipmentCondition,
+        VillagerPlayerItemCondition playerItemCondition,
+        VillagerReputationCondition reputationCondition,
+        DialogueItemPayment itemPayment,
+        boolean forceCameraTowardsVillager,
+        boolean requiresUnreportedCartographerMapDiscovery,
+        boolean requiresUnreportedStoryHintDiscovery,
+        boolean requiresUnreportedCombatSurvivalReport,
+        boolean requiresUnreportedGearReport,
+        boolean requiresUnreportedRecruitmentFollowup,
+        boolean requiresUnreportedCuredRecognition,
+        boolean requiresRecentVillageEvent,
+        boolean requiresUnreportedGiftAdviceResult,
+        boolean requiresUnapologizedRememberedHarm,
+        boolean requiresUnreportedVillageDefense,
+        boolean requiresRaidVictoryAcknowledgement,
+        boolean requiresShareableStory,
+        boolean requiresKnownFamily,
+        boolean requiresKnownParent,
+        boolean requiresKnownSibling,
+        boolean requiresKnownSpouse,
+        boolean requiresKnownChild,
+        boolean requiresKnownGrandparent,
+        boolean requiresKnownGrandchild,
+        boolean requiresKnownDescendant,
+        boolean requiresKnownAuntUncle,
+        boolean requiresKnownCousin,
+        boolean requiresKnownNieceNephew,
+        boolean requiresKnownExtendedFamily,
+        boolean requiresKnownDeceasedFamily,
+        boolean requiresKnownRelationship,
+        boolean requiresKnownCurrentRelationship,
+        boolean requiresKnownPastRelationship,
+        boolean requiresKnownCrush,
+        boolean requiresKnownDatingPartner,
+        boolean requiresKnownFiance,
+        boolean requiresKnownRomanticSpouse,
+        boolean requiresKnownSeparatedPartner,
+        boolean requiresKnownWidowedPartner,
+        List<DialogueCondition> conditions,
+        boolean requiresActiveSpecialOrders,
+        int priority,
         int order) {
-        this(id, source, metadata, questAction, treeReference, label, requestType, showForAdults, showForBabies, professions, dispositions, equipmentCondition, playerItemCondition, reputationCondition, itemPayment, forceCameraTowardsVillager, requiresUnreportedCartographerMapDiscovery, requiresUnreportedStoryHintDiscovery, requiresUnreportedCombatSurvivalReport, requiresUnreportedGearReport, requiresUnreportedRecruitmentFollowup, requiresUnreportedCuredRecognition, requiresRecentVillageEvent, requiresUnreportedGiftAdviceResult, requiresUnapologizedRememberedHarm, requiresUnreportedVillageDefense, requiresRaidVictoryAcknowledgement, requiresShareableStory, requiresKnownFamily, requiresKnownParent, requiresKnownSibling, requiresKnownSpouse, requiresKnownChild, requiresKnownGrandparent, requiresKnownGrandchild, requiresKnownDescendant, requiresKnownAuntUncle, requiresKnownCousin, requiresKnownNieceNephew, requiresKnownExtendedFamily, requiresKnownDeceasedFamily, requiresKnownRelationship, requiresKnownCurrentRelationship, requiresKnownPastRelationship, requiresKnownCrush, requiresKnownDatingPartner, requiresKnownFiance, requiresKnownRomanticSpouse, requiresKnownSeparatedPartner, requiresKnownWidowedPartner, conditions, requiresActiveSpecialOrders, priority, order, com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN, true, "");
+        this(
+            id, source, metadata, questAction, treeReference, label, requestType, showForAdults, showForBabies,
+            professions, dispositions, equipmentCondition, playerItemCondition, reputationCondition, itemPayment,
+            forceCameraTowardsVillager, requiresUnreportedCartographerMapDiscovery,
+            requiresUnreportedStoryHintDiscovery, requiresUnreportedCombatSurvivalReport, requiresUnreportedGearReport,
+            requiresUnreportedRecruitmentFollowup, requiresUnreportedCuredRecognition, requiresRecentVillageEvent,
+            requiresUnreportedGiftAdviceResult, requiresUnapologizedRememberedHarm, requiresUnreportedVillageDefense,
+            requiresRaidVictoryAcknowledgement, requiresShareableStory, requiresKnownFamily, requiresKnownParent,
+            requiresKnownSibling, requiresKnownSpouse, requiresKnownChild, requiresKnownGrandparent,
+            requiresKnownGrandchild, requiresKnownDescendant, requiresKnownAuntUncle, requiresKnownCousin,
+            requiresKnownNieceNephew, requiresKnownExtendedFamily, requiresKnownDeceasedFamily,
+            requiresKnownRelationship, requiresKnownCurrentRelationship, requiresKnownPastRelationship,
+            requiresKnownCrush, requiresKnownDatingPartner, requiresKnownFiance, requiresKnownRomanticSpouse,
+            requiresKnownSeparatedPartner, requiresKnownWidowedPartner, conditions, requiresActiveSpecialOrders,
+            priority, order, com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN, true, "");
     }
 
     public DialogueOptionDefinition withChoice(com.jvn.villagerretaliation.dialogue.DialogueChoice choice, boolean available, String reason) {
-        return new DialogueOptionDefinition(id, source, metadata, questAction, treeReference, label, requestType, showForAdults, showForBabies, professions, dispositions, equipmentCondition, playerItemCondition, reputationCondition, itemPayment, forceCameraTowardsVillager, requiresUnreportedCartographerMapDiscovery, requiresUnreportedStoryHintDiscovery, requiresUnreportedCombatSurvivalReport, requiresUnreportedGearReport, requiresUnreportedRecruitmentFollowup, requiresUnreportedCuredRecognition, requiresRecentVillageEvent, requiresUnreportedGiftAdviceResult, requiresUnapologizedRememberedHarm, requiresUnreportedVillageDefense, requiresRaidVictoryAcknowledgement, requiresShareableStory, requiresKnownFamily, requiresKnownParent, requiresKnownSibling, requiresKnownSpouse, requiresKnownChild, requiresKnownGrandparent, requiresKnownGrandchild, requiresKnownDescendant, requiresKnownAuntUncle, requiresKnownCousin, requiresKnownNieceNephew, requiresKnownExtendedFamily, requiresKnownDeceasedFamily, requiresKnownRelationship, requiresKnownCurrentRelationship, requiresKnownPastRelationship, requiresKnownCrush, requiresKnownDatingPartner, requiresKnownFiance, requiresKnownRomanticSpouse, requiresKnownSeparatedPartner, requiresKnownWidowedPartner, conditions, requiresActiveSpecialOrders, priority, order, choice, available, reason);
+        return new DialogueOptionDefinition(
+            id, source, metadata, questAction, treeReference, label, requestType, showForAdults, showForBabies,
+            professions, dispositions, equipmentCondition, playerItemCondition, reputationCondition, itemPayment,
+            forceCameraTowardsVillager, requiresUnreportedCartographerMapDiscovery,
+            requiresUnreportedStoryHintDiscovery, requiresUnreportedCombatSurvivalReport, requiresUnreportedGearReport,
+            requiresUnreportedRecruitmentFollowup, requiresUnreportedCuredRecognition, requiresRecentVillageEvent,
+            requiresUnreportedGiftAdviceResult, requiresUnapologizedRememberedHarm, requiresUnreportedVillageDefense,
+            requiresRaidVictoryAcknowledgement, requiresShareableStory, requiresKnownFamily, requiresKnownParent,
+            requiresKnownSibling, requiresKnownSpouse, requiresKnownChild, requiresKnownGrandparent,
+            requiresKnownGrandchild, requiresKnownDescendant, requiresKnownAuntUncle, requiresKnownCousin,
+            requiresKnownNieceNephew, requiresKnownExtendedFamily, requiresKnownDeceasedFamily,
+            requiresKnownRelationship, requiresKnownCurrentRelationship, requiresKnownPastRelationship,
+            requiresKnownCrush, requiresKnownDatingPartner, requiresKnownFiance, requiresKnownRomanticSpouse,
+            requiresKnownSeparatedPartner, requiresKnownWidowedPartner, conditions, requiresActiveSpecialOrders,
+            priority, order, choice, available, reason, selectionToken);
     }
 
     public static final int MAX_NETWORK_ID_LENGTH = 128;

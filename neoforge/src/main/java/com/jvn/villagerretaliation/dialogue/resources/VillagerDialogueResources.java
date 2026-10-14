@@ -67,7 +67,7 @@ public final class VillagerDialogueResources {
             "options", "lines", "messages", "openings", "closings", "pacify", "metadata",
             "notifications", "entries", "preferences", "rewards", "payments");
     private static final Set<String> OPTION_KEYS = Set.of(
-            "id", "remove", "label", "type", "request", "priority", "order", "professions", "dispositions",
+            "unavailable_behavior", "unavailable", "id", "remove", "label", "type", "request", "priority", "order", "professions", "dispositions",
             "metadata",
             "quest_action",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
@@ -458,6 +458,21 @@ public final class VillagerDialogueResources {
                 .thenComparingInt(DialogueOptionDefinition::order)
                 .thenComparing(DialogueOptionDefinition::id));
         return List.copyOf(options);
+    }
+
+    public static List<String> explainChoices(DialogueContext context, String optionId) {
+        var tree = DialogueTreeService.explainChoices(context);
+        if (!tree.isEmpty()) return tree;
+        var disposition = VillagerDialogueService.moodFor(context);
+        return load(context.level().getServer(), context.locale()).options().stream()
+                .filter(option -> optionId == null || optionId.isBlank() || option.id().equals(optionId))
+                .map(option -> {
+                    boolean available = option.matches(context, disposition);
+                    String state = available ? "available" : option.choice().showUnavailable() ? "disabled" : "hidden";
+                    return "Choice " + option.id() + ": " + state
+                            + (available ? "" : ", " + option.choice().reason(context))
+                            + ", conditions=" + option.conditions().stream().map(condition -> DialogueCondition.trace(context, condition)).toList();
+                }).toList();
     }
 
     public static Optional<DialogueOptionDefinition> dialogueOption(DialogueContext context, String optionId) {

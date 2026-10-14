@@ -3470,6 +3470,12 @@ public final class VillagerInteractionService {
     }
 
     private static void trySendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+        if (payload instanceof VillagerDialogueResponsePayload response) {
+            var options = com.jvn.villagerretaliation.interaction.DialogueChoiceRequests.publish(
+                    player, response.entityId(), response.dialogueOptions());
+            payload = new VillagerDialogueResponsePayload(response.entityId(), response.reputation(), response.reputationLevel(),
+                    response.mood(), response.primaryMood(), response.forceCameraTowardsVillager(), options, response.giftPreferences());
+        }
         try {
             PacketDistributor.sendToPlayer(player, payload);
         } catch (UnsupportedOperationException ignored) {

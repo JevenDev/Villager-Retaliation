@@ -32,6 +32,7 @@ final class DialogueOptionPayloadCodec {
             buffer.writeEnum(option.requestType());
             buffer.writeBoolean(option.forceCameraTowardsVillager());
             buffer.writeVarInt(option.order());
+            buffer.writeUUID(option.selectionToken());
             buffer.writeBoolean(option.available());
             buffer.writeUtf(DialogueOptionDefinition.networkSafeLabel(option.unavailableReason()), 128);
             writeStringList(buffer, option.metadata().tags().stream().toList());
@@ -47,6 +48,7 @@ final class DialogueOptionPayloadCodec {
             DialogueRequestType requestType = buffer.readEnum(DialogueRequestType.class);
             boolean forceCameraTowardsVillager = buffer.readBoolean();
             int order = buffer.readVarInt();
+            var selectionToken = buffer.readUUID();
             boolean available = buffer.readBoolean();
             String reason = buffer.readUtf(128);
             DialogueEntryMetadata metadata = new DialogueEntryMetadata(
@@ -65,7 +67,7 @@ final class DialogueOptionPayloadCodec {
                     forceCameraTowardsVillager,
                     order,
                     metadata);
-            options.add(option.withChoice(com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN, available, reason));
+            options.add(option.withChoice(com.jvn.villagerretaliation.dialogue.DialogueChoice.HIDDEN, available, reason).withSelectionToken(selectionToken));
         }
         return List.copyOf(options);
     }

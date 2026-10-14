@@ -484,12 +484,8 @@ public final class VillagerReputationNetworking {
                 VillagerDialogueRequestPayload.TYPE,
                 VillagerDialogueRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
-                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleDialogueRequest(
-                            player,
-                            payload.entityId(),
-                            payload.optionId(),
-                            payload.greetingRequestId()
-                    )))
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.interaction.DialogueChoiceRequests.handle(player, payload)))
         );
         network.playToServer(
                 VillagerMouseEasterEggPayload.TYPE,

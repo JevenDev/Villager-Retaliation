@@ -37,7 +37,9 @@ public final class DialogueContextResources {
         for (String root : List.of("dialogue", "dialogue_trees", "forced_dialogue", "quests")) {
             for (var entry : manager.listResources(root, id -> id.getPath().endsWith(".json")).entrySet()) {
                 try (var reader = entry.getValue().openAsReader()) {
-                    validateReferences(JsonParser.parseReader(reader), compiled, entry.getKey().toString());
+                    var value = JsonParser.parseReader(reader);
+                    validateReferences(value, compiled, entry.getKey().toString());
+                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.warnMarkup(entry.getKey(), value, "", false);
                 } catch (IOException | com.google.gson.JsonParseException | IllegalStateException exception) {
                     com.jvn.villagerretaliation.util.DatapackDiagnostics.warnSkippedFile(entry.getKey(), "dialogue context references", exception);
                 }

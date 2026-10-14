@@ -121,10 +121,14 @@ public final class PairedGreetClientSmoke {
                 phaseStarted = now; phase = 4;
             }
         } else if (phase == 4 && minecraft.screen instanceof VillagerInteractionScreen screen && now - phaseStarted > 6000) {
-            require(field(screen, "villagerDialogueText").equals(PLAYER), "legacy manual exchange does not auto-advance");
+            require(field(screen, "villagerDialogueText").equals(PLAYER), "legacy manual exchange does not auto-advance, actual text: " + field(screen, "villagerDialogueText"));
             require(options(screen).size() == 1 && options(screen).getFirst().toLowerCase(java.util.Locale.ROOT).contains("continue"), "legacy Continue option is unchanged");
             clickDialogue(screen);
             require(field(screen, "villagerDialogueText").equals(NPC), "clicking revealed manual text advances the exchange");
+            require(options(screen).size() == 1 && options(screen).getFirst().toLowerCase(java.util.Locale.ROOT).contains("continue"),
+                    "choices stay behind the final exchange until its text finishes");
+            clickDialogue(screen);
+            require(field(screen, "villagerDialogueText").equals(NPC), "skipping the final exchange does not select a choice");
             screen.acceptVillagerDialogue("Replacement notice.", List.of());
             require(!((DialogueExchangeAutoAdvance) field(screen, "automaticDialogue")).active(), "replacement notice cancels automatic state");
             require(((java.util.Collection<?>) field(screen, "dialogueExchanges")).isEmpty(), "replacement notice discards stale queued NPC speech");
@@ -187,11 +191,33 @@ public final class PairedGreetClientSmoke {
             require((float) invoke(screen, "dialogueOptionsTransitionProgress") == 1.0F, "option entrance finishes");
             require(field(screen, "outgoingDialogueOptions") == null, "departed option snapshot is released");
             capture("paired-menu-restored");
+            lockedChoicePresentation(screen);
             minecraft.setScreen(null);
             try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Paired Greet client smoke passed: actual typewriter, readable holds, exact sequence, animated menu restoration, stable ordinary reply options, click reveal and advance, automatic continuation after clicks, manual Continue, replacement and Back cancellation.\n"); }
             catch (java.io.IOException exception) { throw new java.io.UncheckedIOException(exception); }
             phase = 99; minecraft.stop();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void lockedChoicePresentation(VillagerInteractionScreen screen) {
+        var definitions = (List<com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition>) field(screen, "dialogueOptions");
+        var original = List.copyOf(definitions);
+        definitions.clear();
+        definitions.add(com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition.simple("locked", "Offer help",
+                com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType.STORY, 0)
+                .withChoice(com.jvn.villagerretaliation.dialogue.DialogueChoice.DISABLED, false, "First earn my trust."));
+        invoke(screen, "rebuildOptions");
+        var choice = ((List<?>) field(screen, "options")).stream()
+                .filter(option -> field(option, "label").equals("Offer help")).findFirst().orElseThrow();
+        require((boolean) field(choice, "locked"), "unavailable choices render locked");
+        require(field(choice, "reason").equals("First earn my trust."), "locked choices retain their localized explanation");
+        ((Runnable) field(choice, "action")).run();
+        require(!((PairedGreetingRequestState) field(screen, "greetingRequest")).pending(), "locked choices cannot send a request");
+        capture("locked-choice");
+        definitions.clear();
+        definitions.addAll(original);
+        invoke(screen, "rebuildOptions");
     }
 
     private static void ordinaryReplyKeepsOptions(VillagerInteractionScreen screen) {

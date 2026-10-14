@@ -1,0 +1,34 @@
+[
+  {
+    "text": "Plain text and 2 < 5.",
+    "warning": false
+  },
+  {
+    "text": "<bold>Hello</b>",
+    "warning": false
+  },
+  {
+    "text": "<b><i>Hello</i></b>",
+    "warning": false
+  },
+  {
+    "text": "<color:red>Hello</color>",
+    "warning": false
+  },
+  {
+    "text": "<b>Hello",
+    "warning": true
+  },
+  {
+    "text": "<b><i>Hello</b></i>",
+    "warning": true
+  },
+  {
+    "text": "</shake>Hello",
+    "warning": true
+  },
+  {
+    "text": "<shkae>Hello</shkae>",
+    "warning": true
+  }
+]

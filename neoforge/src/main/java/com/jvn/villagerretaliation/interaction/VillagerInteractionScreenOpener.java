@@ -175,6 +175,7 @@ public final class VillagerInteractionScreenOpener {
             boolean clipboardMenu,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions) {
+        dialogueOptions = DialogueChoiceRequests.publish(player, villager.getId(), dialogueOptions);
         DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         VillagerAssignmentSnapshot assignment =
                 HiredVillagerContractService.synchronizeAssignment(level, villager);

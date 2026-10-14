@@ -1,5 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import { validateContextDirectory } from "./dialogue-context-validation.mjs";
+import { inspectDialogueMarkup } from "./dialogue-markup-validation.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateConversation, validateConversationSchema, materializeConversationAction } from "./conversation-validation.mjs";
@@ -528,6 +529,7 @@ const dialogueTreeActionKeys = new Set([
 const dialogueTreeRootKeys = new Set(["id", "replace", "remove", "display", "metadata", "conditions", "entries", "nodes"]);
 const dialogueTreeDisplayKeys = new Set(["title", "description"]);
 const dialogueTreeEntryKeys = new Set([
+  "label_key",
   "id",
   "label",
   "metadata",
@@ -542,7 +544,7 @@ const dialogueTreeEntryKeys = new Set([
   "force_camera_towards_villager",
   "order"
 ]);
-const dialogueTreeNodeKeys = new Set(["id", "lines", "text", "exchanges", "camera", "metadata", "actions", "conditions", "responses", "end"]);
+const dialogueTreeNodeKeys = new Set(["text_key", "variants", "usage", "id", "lines", "text", "exchanges", "camera", "metadata", "actions", "conditions", "responses", "end"]);
 const dialogueTreeResponseKeys = new Set(["unavailable_behavior", "unavailable", "label_key", "text_key", "variants", "usage", "priority", "id", "label", "metadata", "next", "request", "lines", "text", "exchanges", "camera", "actions", "conditions", "end", "order"]);
 const dialogueRequestTypes = new Set([
   "greeting",
@@ -1009,14 +1011,18 @@ if (cli.fileLists.length > 0 || cli.questFiles.length > 0 || cli.skillTradeFiles
   await validateBuiltInData();
 }
 
-const contextRoots = new Set();
+const contextRoots = new Map();
 for (const file of [...cli.questFiles, ...cli.conversationFiles, ...cli.campaignFiles]) {
   const normalized = file.replaceAll("\\", "/");
   const index = normalized.lastIndexOf("/data/");
-  if (index >= 0) contextRoots.add(normalized.slice(0, index + 5));
+  if (index >= 0) {
+    const directory = normalized.slice(0, index + 5);
+    if (!contextRoots.has(directory)) contextRoots.set(directory, []);
+    contextRoots.get(directory).push(file);
+  }
 }
 if (!contextRoots.size) errors.push(...await validateContextDirectory());
-else for (const directory of contextRoots) errors.push(...await validateContextDirectory(directory));
+else for (const [directory, files] of contextRoots) errors.push(...await validateContextDirectory(directory, files));
 validateCrossReferences();
 
 if (errors.length > 0) process.exitCode = 1;
@@ -4805,7 +4811,7 @@ function checkDialogueTreeResponseFields(file, response, location) {
 }
 
 function warnInvisibleDialogueTreeEntry(file, entry, location) {
-  if (entry.label === undefined) {
+  if (entry.label === undefined && entry.label_key === undefined) {
     warnings.push(`${relative(file)}: ${location}.label is missing; dialogue tree entry will not appear as a player option.`);
   }
   if (entry.show_for_adults === false && entry.show_for_babies === false) {
@@ -4814,7 +4820,7 @@ function warnInvisibleDialogueTreeEntry(file, entry, location) {
 }
 
 function warnInvisibleDialogueTreeResponse(file, response, location) {
-  if (response.label === undefined) {
+  if (response.label === undefined && response.label_key === undefined) {
     warnings.push(`${relative(file)}: ${location}.label is missing; dialogue tree response will not appear as an active option.`);
   }
 }
@@ -6350,6 +6356,7 @@ function entriesFor(data) {
 }
 
 function checkPlaceholders(file, value) {
+  warnings.push(...inspectDialogueMarkup(value, relative(file)));
   walkStrings(value, (text) => {
     for (const match of text.matchAll(textTokenPattern)) {
       const token = match[1];

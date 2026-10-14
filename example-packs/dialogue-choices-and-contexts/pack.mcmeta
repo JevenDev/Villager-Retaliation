@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "pack_format": 48,
+    "description": "Dialogue choices, explicit player speech, and reusable contexts"
+  },
+  "villagerretaliation": {
+    "pack_version": "1.0.0-beta.13"
+  }
+}

@@ -25,6 +25,8 @@ const validationScripts = [
   "tools/validate-dialogue-data.mjs",
   "tools/test-built-in-quest-content.mjs",
   "tools/test-quest-v2-tools.mjs",
+  "tools/test-dialogue-contexts.mjs",
+  "tools/test-dialogue-authoring.mjs",
   "tools/test-datapack-builder-schema.mjs",
   "tools/test-quest-builder-model.mjs",
   "tools/test-quest-builder-zip.mjs",

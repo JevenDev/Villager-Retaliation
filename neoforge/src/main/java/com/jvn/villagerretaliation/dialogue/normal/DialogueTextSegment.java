@@ -14,6 +14,46 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         effects = effects == null ? DialogueTextEffects.NONE : effects;
     }
 
+    public static List<String> markupWarnings(String text) {
+        var warnings = new ArrayList<String>();
+        var stack = new ArrayList<String>();
+        var matcher = java.util.regex.Pattern.compile("<(/?)([a-zA-Z_][^<>]*)>").matcher(text);
+        while (matcher.find()) {
+            String raw = matcher.group(2).trim();
+            String tag = normalizeTag(tagName(raw));
+            if (!isKnownClosingTag(tag)) {
+                warnings.add("unknown text tag: " + matcher.group());
+                continue;
+            }
+            String canonical = aliasesFor(tag).getFirst();
+            if (matcher.group(1).isEmpty()) {
+                if (effectsForTag(normalizeTag(raw)) == null) warnings.add("invalid text tag: " + matcher.group());
+                stack.add(canonical);
+            } else if (stack.isEmpty() || !stack.getLast().equals(canonical)) {
+                warnings.add("unmatched closing text tag: " + matcher.group());
+            } else stack.removeLast();
+        }
+        for (String tag : stack) warnings.add("unclosed text tag: " + tag);
+        return List.copyOf(warnings);
+    }
+
+    public static void warnMarkup(net.minecraft.resources.ResourceLocation source, com.google.gson.JsonElement value,
+            String pointer, boolean text) {
+        if (value == null) return;
+        if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString() && text) {
+            for (String warning : markupWarnings(value.getAsString()))
+                com.jvn.villagerretaliation.util.DatapackDiagnostics.warnInvalidDialogueCondition(
+                        source, "dialogue markup", pointer, warning);
+        } else if (value.isJsonArray()) {
+            for (int index = 0; index < value.getAsJsonArray().size(); index++)
+                warnMarkup(source, value.getAsJsonArray().get(index), pointer + "/" + index, text);
+        } else if (value.isJsonObject()) {
+            for (var entry : value.getAsJsonObject().entrySet())
+                warnMarkup(source, entry.getValue(), pointer + "/" + entry.getKey(),
+                        java.util.Set.of("text", "lines", "label", "unavailable", "response", "responses").contains(entry.getKey()));
+        }
+    }
+
     public static List<DialogueTextSegment> plain(String text, DialogueTextEffects baseEffects) {
         if (text == null || text.isEmpty()) {
             return List.of();
