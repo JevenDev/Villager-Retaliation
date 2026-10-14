@@ -59,7 +59,8 @@ public final class BankStorageClientSmoke {
             }
             case 1 -> {
                 if(!pending.isDone() || !(mc.screen instanceof StorageScreen screen)) return; pending.join();
-                require(screen.getMenu().capacity==729,"Native GUI exposes all 729 fixed server slots"); capture("vault-first-page");
+                require(screen.getMenu().capacity==729,"Native GUI exposes all 729 fixed server slots");
+                require(screen.getXSize()==208,"Multi-page vault keeps its scrollbar panel"); capture("vault-first-page");
                 screen.mouseScrolled(5,5,0,-1); require(screen.getMenu().page==1,"Wheel scroll works outside slot area"); next();
             }
             case 2 -> {
@@ -135,6 +136,8 @@ public final class BankStorageClientSmoke {
                 var bank=(StorageBlockEntity)mc.level.getBlockEntity(CENTER.east(5));
                 if(bank.getOpenNess(1)<1) return;
                 require(screen.getMenu().capacity==54,"Safe menu retains all 54 slots");
+                require(screen.getXSize()==176 && screen.getMenu().pages()==1,"Safe uses standard chest width without a scrollbar panel");
+                require(!screen.mouseScrolled(5,5,0,-1) && screen.getMenu().page==0,"Single-page safe ignores page scrolling");
                 if(!Files.exists(Path.of(System.getProperty(OUTPUT),"safe-open-world.png"))) { worldCapture="safe-open-world"; return; }
                 capture("safe-open");
                 mc.player.closeContainer(); next();
@@ -194,7 +197,7 @@ public final class BankStorageClientSmoke {
                 var bank=(StorageBlockEntity)mc.level.getBlockEntity(CENTER.east(5));
                 require(bank.getBlockState().getValue(StorageBlock.DAMAGE)==1 && bank.getBreachProgress(1)==1,"Exploded door remains open until explicitly repaired");
                 capture("safe-breached-held-open");
-                try { Files.writeString(Path.of(System.getProperty(OUTPUT),"result.txt"),"Bank storage native smoke passed\n729 slots, native transfers and scrollbar, key revocation, combined body/door/handle atlas, 54 safe slots, slow 20 degree grip turn, synchronized opening and closing, key revocation closes safe, mounted pressure wave forces door open with an outward kick and overshoot, breached door remains open, damaged chunk load pose, stored contents preserved, repair state restores normal pose.\n"); }
+                try { Files.writeString(Path.of(System.getProperty(OUTPUT),"result.txt"),"Bank storage native smoke passed\n729 slots, native transfers and scrollbar, key revocation, combined body/door/handle atlas, 54 safe slots without scrollbar, multi-page vault keeps scrollbar, slow 20 degree grip turn, synchronized opening and closing, key revocation closes safe, mounted pressure wave forces door open with an outward kick and overshoot, breached door remains open, damaged chunk load pose, stored contents preserved, repair state restores normal pose.\n"); }
                 catch(java.io.IOException e) { throw new java.io.UncheckedIOException(e); }
                 phase=99; mc.stop();
             }
