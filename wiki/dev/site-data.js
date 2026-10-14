@@ -1074,29 +1074,21 @@ window.VR_DEVELOPER_WIKI_DATA = {
       "group": "Quests & Scenes",
       "icon": "milestone",
       "title": "Quest Runtime Roadmap",
-      "description": "Current quest runtime status plus the stabilization and compatibility work planned around beta.13.",
-      "markdown": "# Quest Runtime Roadmap\n\nThe persistent quest scene runtime is already implemented in the beta.13 pre-release. Typed actors, resumable steps, controlled encounters, recovery, and extension descriptors are part of the current development surface. The remaining roadmap is focused on release hardening and long-term compatibility. It does not describe a replacement runtime.\n\n## Current development baseline\n\nThe following work is complete in the beta.13 development branch:\n\n- Typed player, villager, living-entity, encounter-group, and position actors\n- Persistent actor bindings, replacement policies, snapshots, and replacement history\n- Resumable scene steps with stable IDs and durable operation receipts\n- Safe movement, dialogue, waits, branches, quest transitions, and allowlisted action batches\n- Controlled encounters with waves, objectives, allies, rewards, cleanup, and recovery\n- Save migrations, blocked-repair states, operator commands, and audit history\n- Registered actor, step, encounter, provider, objective, action, condition, and trigger descriptors\n- Exported schema metadata used by the runtime and browser authoring tools\n\n## Beta.13 release work\n\nBefore beta.13 leaves pre-release, development will concentrate on these outcomes:\n\n- Keep `villagerretaliation:scene/v1` and `villagerretaliation:encounter/v1` stable for datapack authors\n- Continue regression coverage for reloads, unloaded chunks, offline participants, provider replacement, operator repair, cleanup, and reward delivery\n- Use the built-in quest scenes and encounters as compatibility cases for parser, compiler, persistence, and runtime changes\n- Gate SavedData changes with migration tests so existing readable scene state is preserved\n- Keep diagnostics, exported descriptors, and browser authoring tools aligned with the runtime\n- Fix save-safety and duplicate-side-effect defects before adding another step family\n\n## Compatibility after beta.13\n\nThe first stable release will preserve authored actor aliases, step IDs, encounter member IDs, and operation IDs as persistence-critical data. Compatible additions will remain additive. A change that cannot safely load existing definitions or scene state will use a new schema version instead of silently changing version 1 behavior.\n\nExisting scene instances will continue to fail closed when recovery cannot be proven safe. Operator repair, cancellation, and cleanup will remain explicit actions with audit records.\n\n## Not currently scheduled\n\nThere is no scheduled `scene/v2`, no arbitrary command step, and no replacement for the current state-machine boundary. Unbounded entity searches and forced chunk loading are also outside the plan. New actor types, step types, or encounter systems will be added to this roadmap only after they have an implementation target and a release target.\n\n## Roadmap updates\n\nThis page will change when work is assigned to a release, when compatibility commitments change, or when a planned item ships. Ideas without an implementation target will not be listed as future features.\n",
-      "text": "Quest Runtime Roadmap The persistent quest scene runtime is already implemented in the beta.13 pre release. Typed actors, resumable steps, controlled encounters, recovery, and extension descriptors are part of the current development surface. The remaining roadmap is focused on release hardening and long term compatibility. It does not describe a replacement runtime. Current development baseline The following work is complete in the beta.13 development branch: Typed player, villager, living entity, encounter group, and position actors Persistent actor bindings, replacement policies, snapshots, and replacement history Resumable scene steps with stable IDs and durable operation receipts Safe movement, dialogue, waits, branches, quest transitions, and allowlisted action batches Controlled encounters with waves, objectives, allies, rewards, cleanup, and recovery Save migrations, blocked repair states, operator commands, and audit history Registered actor, step, encounter, provider, objective, action, condition, and trigger descriptors Exported schema metadata used by the runtime and browser authoring tools Beta.13 release work Before beta.13 leaves pre release, development will concentrate on these outcomes: Keep villagerretaliation:scene/v1 and villagerretaliation:encounter/v1 stable for datapack authors Continue regression coverage for reloads, unloaded chunks, offline participants, provider replacement, operator repair, cleanup, and reward delivery Use the built in quest scenes and encounters as compatibility cases for parser, compiler, persistence, and runtime changes Gate SavedData changes with migration tests so existing readable scene state is preserved Keep diagnostics, exported descriptors, and browser authoring tools aligned with the runtime Fix save safety and duplicate side effect defects before adding another step family Compatibility after beta.13 The first stable release will preserve authored actor aliases, step IDs, encounter member IDs, and operation IDs as persistence critical data. Compatible additions will remain additive. A change that cannot safely load existing definitions or scene state will use a new schema version instead of silently changing version 1 behavior. Existing scene instances will continue to fail closed when recovery cannot be proven safe. Operator repair, cancellation, and cleanup will remain explicit actions with audit records. Not currently scheduled There is no scheduled scene/v2, no arbitrary command step, and no replacement for the current state machine boundary. Unbounded entity searches and forced chunk loading are also outside the plan. New actor types, step types, or encounter systems will be added to this roadmap only after they have an implementation target and a release target. Roadmap updates This page will change when work is assigned to a release, when compatibility commitments change, or when a planned item ships. Ideas without an implementation target will not be listed as future features.",
+      "description": "Quest scene runtime capabilities, persistence identifiers, compatibility and limits.",
+      "markdown": "# Quest Runtime Roadmap\n\nThe persistent quest scene runtime supports typed actors, resumable steps, controlled encounters, recovery and extension descriptors.\n\n## Supported features\n\n- Typed player, villager, living-entity, encounter-group and position actors\n- Persistent actor bindings, replacement policies, snapshots and replacement history\n- Resumable scene steps with stable IDs and durable operation receipts\n- Safe movement, dialogue, waits, branches, quest transitions and allowlisted action batches\n- Controlled encounters with waves, objectives, allies, rewards, cleanup and recovery\n- Save migrations, blocked-repair states, operator commands and audit history\n- Registered actor, step, encounter, provider, objective, action, condition and trigger descriptors\n- Exported schema metadata used by the runtime and browser authoring tools\n\n## Compatibility\n\n`villagerretaliation:scene/v1` and `villagerretaliation:encounter/v1` define the authored scene and encounter formats.\n\nActor aliases, step IDs, encounter member IDs and operation IDs are persistence-critical identifiers. Preserve them when updating content used by existing saves. Compatible additions remain additive. Changes that cannot safely load existing definitions or scene state require a new schema version.\n\nScene instances fail closed when recovery cannot be proven safe. Operator repair, cancellation and cleanup are explicit actions with audit records.\n\n## Runtime limits\n\nThe runtime does not provide arbitrary command steps, unbounded entity searches or forced chunk loading.\n",
+      "text": "Quest Runtime Roadmap The persistent quest scene runtime supports typed actors, resumable steps, controlled encounters, recovery and extension descriptors. Supported features Typed player, villager, living entity, encounter group and position actors Persistent actor bindings, replacement policies, snapshots and replacement history Resumable scene steps with stable IDs and durable operation receipts Safe movement, dialogue, waits, branches, quest transitions and allowlisted action batches Controlled encounters with waves, objectives, allies, rewards, cleanup and recovery Save migrations, blocked repair states, operator commands and audit history Registered actor, step, encounter, provider, objective, action, condition and trigger descriptors Exported schema metadata used by the runtime and browser authoring tools Compatibility villagerretaliation:scene/v1 and villagerretaliation:encounter/v1 define the authored scene and encounter formats. Actor aliases, step IDs, encounter member IDs and operation IDs are persistence critical identifiers. Preserve them when updating content used by existing saves. Compatible additions remain additive. Changes that cannot safely load existing definitions or scene state require a new schema version. Scene instances fail closed when recovery cannot be proven safe. Operator repair, cancellation and cleanup are explicit actions with audit records. Runtime limits The runtime does not provide arbitrary command steps, unbounded entity searches or forced chunk loading.",
       "headings": [
         {
           "level": 2,
-          "title": "Current development baseline"
+          "title": "Supported features"
         },
         {
           "level": 2,
-          "title": "Beta.13 release work"
+          "title": "Compatibility"
         },
         {
           "level": 2,
-          "title": "Compatibility after beta.13"
-        },
-        {
-          "level": 2,
-          "title": "Not currently scheduled"
-        },
-        {
-          "level": 2,
-          "title": "Roadmap updates"
+          "title": "Runtime limits"
         }
       ],
       "related": [
@@ -3659,6 +3651,18 @@ window.VR_DEVELOPER_WIKI_DATA = {
       ]
     },
     {
+      "id": "dialogue-choices-and-contexts",
+      "title": "Dialogue Choices And Contexts",
+      "description": "Repository example pack.",
+      "files": [
+        "data/dialogue_example/dialogue/en_us/global/messages/help.json",
+        "data/dialogue_example/dialogue_contexts/needs_help.json",
+        "data/dialogue_example/dialogue_trees/en_us/linear.json",
+        "data/dialogue_example/dialogue_trees/en_us/roadside_help.json",
+        "pack.mcmeta"
+      ]
+    },
+    {
       "id": "dialogue-folder-template",
       "title": "Villager Retaliation Dialogue Folder Template",
       "description": "Villager Retaliation Dialogue Folder Template This beta.13 template gives pack developers a folder first starting point. Every dialogue request has one custom option and one response line with the text example. Replace ids, labels, filters, and text as your pack grows. The templa",
@@ -3773,6 +3777,16 @@ window.VR_DEVELOPER_WIKI_DATA = {
         "data/example/sell_prices/valuable_pickaxes.json",
         "data/villagerretaliation/sell_prices/coal.json",
         "data/villagerretaliation/sell_prices/rotten_flesh.json",
+        "pack.mcmeta"
+      ]
+    },
+    {
+      "id": "settlement-houses",
+      "title": "Complete settlement house templates",
+      "description": "Complete settlement house templates This optional Minecraft 1.21.1 datapack demonstrates Small, Medium and Large complete house registrations using existing vanilla plains templates. Example prices illustrate the syntax and can be adjusted for each pack. Copy this folder into a w",
+      "files": [
+        "README.md",
+        "data/villagerretaliation/builder_structures/zz_settlement_houses.json",
         "pack.mcmeta"
       ]
     },

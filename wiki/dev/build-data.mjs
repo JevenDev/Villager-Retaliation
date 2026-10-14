@@ -26,7 +26,7 @@ const catalog = [
   ["Quests.md", "Quests & Scenes", "scroll-text", "Quest module v2 providers, rotating pools, active caps, payload-aware triggers, objectives, branches, rewards, and diagnostics."],
   ["Dialogue-And-Quests.md", "Quests & Scenes", "workflow", "Choose clean ownership boundaries between quests, dialogue, trees, and forced scenes."],
   ["Quest-Scenes.md", "Quests & Scenes", "clapperboard", "Persistent actors, scene steps, encounters, recovery, scheduling, and extension hooks."],
-  ["Quest-Runtime-Roadmap.md", "Quests & Scenes", "milestone", "Current quest runtime status plus the stabilization and compatibility work planned around beta.13."],
+  ["Quest-Runtime-Roadmap.md", "Quests & Scenes", "milestone", "Quest scene runtime capabilities, persistence identifiers, compatibility and limits."],
   ["Gifts.md", "Economy & Progression", "gift", "Gift preferences, reactions, trust caps, and high-reputation reward rolls."],
   ["Pacification.md", "Economy & Progression", "hand-coins", "Items and profession-specific costs that calm hostile villagers."],
   ["Profession-Loot.md", "Economy & Progression", "package", "Profession-aware drop rules backed by normal Minecraft loot tables."],

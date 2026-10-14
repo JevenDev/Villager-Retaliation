@@ -34,7 +34,7 @@ public final class StorageRegistry {
             var properties=BlockBehaviour.Properties.of().strength(50,3600000).requiresCorrectToolForDrops().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK);
             return new StorageBlock(properties.noOcclusion(),kind);
         });
-        ITEMS.register(name,()->new BlockItem(block.get(),new Item.Properties().stacksTo(1)));
+        ITEMS.register(name,()->new BlockItem(block.get(),new Item.Properties().stacksTo(kind==0?64:1)));
         return block;
     }
     public static void register(IEventBus bus) {

@@ -10,6 +10,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.block.*;
@@ -228,6 +230,31 @@ public final class BankStorageGameTests {
         var next=place(h,new BlockPos(3,2,1),StorageRegistry.SAFE.get());
         next.place(item.get(DataComponents.CUSTOM_DATA).copyTag().getCompound("BankStorage"),h.getLevel().registryAccess());
         h.assertValueEqual(next.inventory().getItem(40).getCount(),32,"filled pickup restores exact assigned slot"); h.succeed();
+    }
+    @GameTest(template="empty") public static void storageRecipesLoadAndCraftCompleteBatches(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get()); var p=player(h,bank);
+        Item[][] ingredients={
+                {Items.AIR,Items.IRON_INGOT,Items.AIR,Items.IRON_INGOT,Items.BARREL,Items.IRON_INGOT,Items.AIR,Items.IRON_INGOT,Items.AIR},
+                {Items.REDSTONE_TORCH,Items.COMPARATOR,Items.REDSTONE_TORCH,Items.IRON_INGOT,Items.BARREL,Items.IRON_INGOT,Items.AIR,Items.IRON_INGOT,Items.AIR},
+                {Items.IRON_NUGGET,Items.IRON_INGOT,Items.IRON_NUGGET,Items.IRON_INGOT,Items.CHEST,Items.IRON_INGOT,Items.IRON_NUGGET,Items.IRON_INGOT,Items.IRON_NUGGET}
+        };
+        Item[] results={StorageRegistry.VAULT.get().asItem(),StorageRegistry.CONTROLLER.get().asItem(),StorageRegistry.SAFE.get().asItem()};
+        int[] counts={4,1,1};
+        for(int recipe=0;recipe<ingredients.length;recipe++) {
+            var menu=new CraftingMenu(recipe+1,p.getInventory(),ContainerLevelAccess.create(h.getLevel(),bank.getBlockPos()));
+            p.containerMenu=menu;
+            for(int slot=0;slot<9;slot++) menu.getSlot(slot+1).set(new ItemStack(ingredients[recipe][slot]));
+            var result=menu.getSlot(0).getItem();
+            h.assertTrue(result.is(results[recipe]),"loaded recipe produces the expected storage block");
+            h.assertValueEqual(result.getCount(),counts[recipe],"recipe yields the complete requested batch");
+            h.assertTrue(result.getCount()<=result.getMaxStackSize(),"crafting result respects its item stack limit");
+            menu.quickMoveStack(p,0);
+            h.assertValueEqual(p.getInventory().countItem(results[recipe]),counts[recipe],"shift crafting transfers the entire batch");
+            for(int slot=1;slot<=9;slot++) h.assertTrue(menu.getSlot(slot).getItem().isEmpty(),"crafting consumes each ingredient once");
+            h.assertTrue(menu.getSlot(0).getItem().isEmpty(),"consumed ingredients cannot produce another batch");
+            menu.removed(p); p.containerMenu=p.inventoryMenu;
+        }
+        h.succeed();
     }
     @GameTest(template="empty") public static void keyRecipeIdentityAndRemainders(GameTestHelper h) {
         UUID id=UUID.randomUUID(); var original=StorageKeys.create(StorageRegistry.KEY.get(),id);
