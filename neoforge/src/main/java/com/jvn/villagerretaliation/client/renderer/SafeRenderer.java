@@ -6,11 +6,13 @@ import com.jvn.villagerretaliation.storage.StorageBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
@@ -72,12 +74,18 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
             MultiBufferSource buffer,
             int light,
             int overlay) {
-        if (!bank.safe()) return;
+        if (!bank.safe() && !bank.getBlockState().getValue(StorageBlock.CHARGE)) return;
         BlockState state = bank.getBlockState();
         poses.pushPose();
         poses.translate(0.5F, 0.5F, 0.5F);
         poses.mulPose(Axis.YP.rotationDegrees(180 - state.getValue(StorageBlock.FACING).toYRot()));
         poses.translate(-0.5F, -0.5F, -0.5F);
+
+        if (!bank.safe()) {
+            renderCharge(bank, poses, buffer, light);
+            poses.popPose();
+            return;
+        }
 
         float openness = bank.getOpenNess(partialTick);
         float breach = bank.getBreachProgress(partialTick);
@@ -95,7 +103,7 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
         poses.translate(-1, -0.75F - sag / 32, -0.25F);
 
         renderModel(DOOR, poses, buffer, light, overlay);
-        if (state.getValue(StorageBlock.CHARGE)) renderModel(CHARGE, poses, buffer, light, overlay);
+        if (state.getValue(StorageBlock.CHARGE)) renderCharge(bank, poses, buffer, light);
         int damage = state.getValue(StorageBlock.DAMAGE);
         if (damage > 0) renderModel(DAMAGE[damage - 1], poses, buffer, light, overlay);
 
@@ -119,6 +127,17 @@ public final class SafeRenderer implements BlockEntityRenderer<StorageBlockEntit
     @Override
     public AABB getRenderBoundingBox(StorageBlockEntity bank) {
         return new AABB(bank.getBlockPos()).inflate(1, 0.25, 1);
+    }
+
+    public static boolean chargeFlashes(int fuse) {
+        return fuse >= 0 && fuse / 5 % 2 == 0;
+    }
+
+    private void renderCharge(StorageBlockEntity bank, PoseStack poses, MultiBufferSource buffer, int light) {
+        int overlay = chargeFlashes(bank.fuse) ? OverlayTexture.pack(OverlayTexture.u(1), 10) : OverlayTexture.NO_OVERLAY;
+        int frontLight = bank.hasLevel() ? LevelRenderer.getLightColor(bank.getLevel(),
+                bank.getBlockPos().relative(bank.getBlockState().getValue(StorageBlock.FACING))) : light;
+        renderModel(CHARGE, poses, buffer, frontLight, overlay);
     }
 
     private void renderLooseHinges(PoseStack poses, MultiBufferSource buffer, int light, int overlay, float sag) {

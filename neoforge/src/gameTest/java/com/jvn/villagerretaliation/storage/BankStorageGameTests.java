@@ -252,6 +252,9 @@ public final class BankStorageGameTests {
             var flint=new ItemStack(Items.FLINT_AND_STEEL); p.setItemInHand(InteractionHand.MAIN_HAND,flint);
             block.useItemOn(flint,bank.getBlockState(),h.getLevel(),pos,p,InteractionHand.MAIN_HAND,front);
             h.assertValueEqual(bank.fuse,80,"ignition starts four second fuse");
+            var sync=bank.getUpdateTag(h.getLevel().registryAccess());
+            h.assertValueEqual(sync.getInt("Fuse"),80,"lit fuse is available to players loading the chunk");
+            h.assertFalse(sync.contains("Items") || sync.contains("Identity"),"fuse synchronization does not expose storage contents or keys");
             for(int tick=0;tick<80;tick++) StorageBlockEntity.tick(h.getLevel(),pos,bank.getBlockState(),bank);
             h.assertValueEqual(bank.damage,stage,"only one controller stage consumed per charge");
             h.assertFalse(bank.getBlockState().getValue(StorageBlock.CHARGE),"charge consumed after detonation");

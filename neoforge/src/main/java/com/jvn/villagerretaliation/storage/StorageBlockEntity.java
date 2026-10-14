@@ -59,6 +59,11 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         members=List.of(pos.immutable());
         local=new SimpleContainer(safe()?54:27) { @Override public void setChanged() { if(!loading) StorageBlockEntity.this.setChanged(); } };
     }
+    public static void clientTick(Level level,BlockPos pos,BlockState state,StorageBlockEntity bank) {
+        if(bank.safe()) doorAnimateTick(level,pos,state,bank);
+        if(!state.getValue(StorageBlock.CHARGE)) bank.fuse=-1;
+        else if(bank.fuse>0) bank.fuse--;
+    }
     public static void doorAnimateTick(Level level,BlockPos pos,BlockState state,StorageBlockEntity bank) {
         bank.doorController.tickLid();
         bank.breachController.shouldBeOpen(state.getValue(StorageBlock.DAMAGE)>0);
@@ -76,6 +81,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
         if(safe() && !isRemoved()) openersCounter.recheckOpeners(level,worldPosition,getBlockState());
     }
     @Override public boolean triggerEvent(int id,int value) {
+        if(controller() && id==2) { if(level!=null && level.isClientSide) fuse=value; return true; }
         if(safe() && id==1) { doorController.shouldBeOpen(value>0); return true; }
         return super.triggerEvent(id,value);
     }
@@ -83,10 +89,12 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     public float getBreachProgress(float partialTick) { return breachController.getOpenness(partialTick); }
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         var tag=new CompoundTag();
+        tag.putInt("Fuse",fuse);
         if(safe()) tag.putBoolean("DoorOpen",openersCounter.getOpenerCount()>0);
         return tag;
     }
     @Override public void handleUpdateTag(CompoundTag tag,HolderLookup.Provider provider) {
+        fuse=tag.contains("Fuse")?tag.getInt("Fuse"):-1;
         if(safe()) doorController.shouldBeOpen(tag.getBoolean("DoorOpen"));
     }
     public boolean safe() { return ((StorageBlock)getBlockState().getBlock()).kind==2; }

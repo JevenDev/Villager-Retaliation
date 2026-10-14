@@ -24,6 +24,9 @@ public final class BankStorageClientSmoke {
     private static long started;
     private static int phase,ticks;
     private static String worldCapture;
+    private static int primedSounds;
+    private static final boolean[][] chargeFrames=new boolean[2][2];
+    private static final float[][] chargeBrightness=new float[2][2];
     private static CompletableFuture<?> pending;
     private static final BlockPos CENTER=new BlockPos(1024,-60,1024);
     private BankStorageClientSmoke() { }
@@ -197,7 +200,37 @@ public final class BankStorageClientSmoke {
                 var bank=(StorageBlockEntity)mc.level.getBlockEntity(CENTER.east(5));
                 require(bank.getBlockState().getValue(StorageBlock.DAMAGE)==1 && bank.getBreachProgress(1)==1,"Exploded door remains open until explicitly repaired");
                 capture("safe-breached-held-open");
-                try { Files.writeString(Path.of(System.getProperty(OUTPUT),"result.txt"),"Bank storage native smoke passed\n729 slots, native transfers and scrollbar, key revocation, combined body/door/handle atlas, 54 safe slots without scrollbar, multi-page vault keeps scrollbar, slow 20 degree grip turn, synchronized opening and closing, key revocation closes safe, mounted pressure wave forces door open with an outward kick and overshoot, breached door remains open, damaged chunk load pose, stored contents preserved, repair state restores normal pose.\n"); }
+                pending=server.submit(()->{
+                    var p=server.getPlayerList().getPlayer(uuid); var level=p.serverLevel();
+                    p.teleportTo(CENTER.getX()-2.5,CENTER.getY(),CENTER.getZ()-3); p.setYRot(0); p.setXRot(18);
+                    for(int i=0;i<2;i++) {
+                        var pos=CENTER.west(4-i*2);
+                        level.setBlockAndUpdate(pos,(i==0?StorageRegistry.CONTROLLER.get():StorageRegistry.SAFE.get()).defaultBlockState().setValue(StorageBlock.CHARGE,true));
+                        var charge=(StorageBlockEntity)level.getBlockEntity(pos);
+                        p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,new ItemStack(i==0?Items.FLINT_AND_STEEL:Items.FIRE_CHARGE));
+                        var hit=new net.minecraft.world.phys.BlockHitResult(pos.getCenter(),net.minecraft.core.Direction.NORTH,pos,false);
+                        p.gameMode.useItemOn(p,level,p.getMainHandItem(),net.minecraft.world.InteractionHand.MAIN_HAND,hit);
+                        require(charge.fuse==80,"Native ignition starts the mounted fuse on safe and vault");
+                        var tag=charge.getUpdateTag(level.registryAccess());
+                        require(tag.getInt("Fuse")==80 && !tag.contains("Items") && !tag.contains("Identity"),"Chunk synchronization includes the fuse without storage data");
+                        var loaded=new StorageBlockEntity(pos,charge.getBlockState()); loaded.handleUpdateTag(tag,level.registryAccess());
+                        require(loaded.fuse==80,"Loading a lit charge restores its remaining countdown");
+                    }
+                    return null;
+                }); next();
+            }
+            case 14 -> {
+                if(!pending.isDone()) return; pending.join();
+                mc.player.setYRot(0); mc.player.setXRot(18);
+                for(int i=0;i<2;i++) {
+                    var bank=(StorageBlockEntity)mc.level.getBlockEntity(CENTER.west(4-i*2));
+                    if(bank==null || bank.getBlockState().getValue(StorageBlock.DAMAGE)==0) return;
+                    require(!bank.getBlockState().getValue(StorageBlock.CHARGE),"Detonation clears the mounted charge");
+                    require(chargeFrames[i][0] && chargeFrames[i][1],"Safe and vault display both white and textured fuse frames");
+                    require(chargeBrightness[i][1]>chargeBrightness[i][0]+30,"Mounted charge visibly brightens during its white flash");
+                }
+                require(primedSounds==2,"Safe and vault each deliver one native TNT priming sound");
+                try { Files.writeString(Path.of(System.getProperty(OUTPUT),"result.txt"),"Bank storage native smoke passed\n729 slots, native transfers and scrollbar, key revocation, combined body/door/handle atlas, 54 safe slots without scrollbar, multi-page vault keeps scrollbar, slow 20 degree grip turn, synchronized opening and closing, key revocation closes safe, mounted pressure wave forces door open with an outward kick and overshoot, breached door remains open, damaged chunk load pose, stored contents preserved, repair state restores normal pose, safe and vault fuse synchronization, native priming sound, white flash frames, lit chunk loading.\n"); }
                 catch(java.io.IOException e) { throw new java.io.UncheckedIOException(e); }
                 phase=99; mc.stop();
             }
@@ -212,7 +245,32 @@ public final class BankStorageClientSmoke {
         if(phase==12 && mc.level.getBlockEntity(CENTER.east(5)) instanceof StorageBlockEntity bank
                 && bank.getBreachProgress(1)>0 && bank.getBreachProgress(1)<1
                 && !Files.exists(Path.of(System.getProperty(OUTPUT),"safe-blast-opening.png"))) capture("safe-blast-opening");
+        if(phase==14 && ticks>=15) for(int i=0;i<2;i++) {
+            if(!(mc.level.getBlockEntity(CENTER.west(4-i*2)) instanceof StorageBlockEntity bank)
+                    || !bank.getBlockState().getValue(StorageBlock.CHARGE) || bank.fuse<0) continue;
+            int frame=SafeRenderer.chargeFlashes(bank.fuse)?1:0;
+            if(!chargeFrames[i][frame]) {
+                captureCharge(i,frame);
+                chargeFrames[i][frame]=true;
+            }
+        }
         if(worldCapture!=null) { capture(worldCapture); worldCapture=null; }
+    }
+    @SubscribeEvent public static void sound(net.neoforged.neoforge.client.event.sound.PlaySoundEvent event) {
+        if(System.getProperty(OUTPUT)!=null && phase==14
+                && event.getOriginalSound().getLocation().equals(net.minecraft.sounds.SoundEvents.TNT_PRIMED.getLocation())) primedSounds++;
+    }
+    private static void captureCharge(int index,int frame) {
+        try(var image=Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())) {
+            int centerX=image.getWidth()*(index==0?5:3)/8, centerY=image.getHeight()*53/100;
+            int brightness=0;
+            for(int y=centerY-8;y<centerY+8;y++) for(int x=centerX-8;x<centerX+8;x++) {
+                int pixel=image.getPixelRGBA(x,y);
+                brightness+=(pixel&255)+((pixel>>8)&255)+((pixel>>16)&255);
+            }
+            chargeBrightness[index][frame]=brightness/(256F*3);
+            image.writeToFile(Path.of(System.getProperty(OUTPUT),(index==0?"vault":"safe")+(frame==1?"-fuse-white.png":"-fuse-textured.png")));
+        } catch(java.io.IOException e) { throw new java.io.UncheckedIOException(e); }
     }
     private static void next() { phase++; ticks=0; }
     private static void require(boolean ok,String message) { if(!ok) throw new IllegalStateException(message); }

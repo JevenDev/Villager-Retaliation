@@ -12,16 +12,6 @@
     {
       "when": {
         "facing": "north",
-        "charge": "true"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/mounted_charge",
-        "y": 0
-      }
-    },
-    {
-      "when": {
-        "facing": "north",
         "damage": "1"
       },
       "apply": {
@@ -55,16 +45,6 @@
       },
       "apply": {
         "model": "villagerretaliation:block/vault_controller",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "facing": "east",
-        "charge": "true"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/mounted_charge",
         "y": 90
       }
     },
@@ -110,16 +90,6 @@
     {
       "when": {
         "facing": "south",
-        "charge": "true"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/mounted_charge",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "facing": "south",
         "damage": "1"
       },
       "apply": {
@@ -153,16 +123,6 @@
       },
       "apply": {
         "model": "villagerretaliation:block/vault_controller",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "facing": "west",
-        "charge": "true"
-      },
-      "apply": {
-        "model": "villagerretaliation:block/mounted_charge",
         "y": 270
       }
     },

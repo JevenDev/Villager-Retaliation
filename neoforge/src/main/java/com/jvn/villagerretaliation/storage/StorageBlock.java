@@ -38,7 +38,7 @@ public final class StorageBlock extends BaseEntityBlock {
     @Override protected RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,BlockState state,BlockEntityType<T> type) {
         return level.isClientSide
-                ?kind==2?createTickerHelper(type,StorageRegistry.ENTITY.get(),StorageBlockEntity::doorAnimateTick):null
+                ?kind==0?null:createTickerHelper(type,StorageRegistry.ENTITY.get(),StorageBlockEntity::clientTick)
                 :createTickerHelper(type,StorageRegistry.ENTITY.get(),StorageBlockEntity::tick);
     }
     @Override public void setPlacedBy(Level level,BlockPos pos,BlockState state,LivingEntity entity,ItemStack stack) {
@@ -66,6 +66,8 @@ public final class StorageBlock extends BaseEntityBlock {
             }
             if((stack.is(Items.FLINT_AND_STEEL)||stack.is(Items.FIRE_CHARGE)) && state.getValue(CHARGE) && bank.fuse<0) {
                 bank.fuse=80; bank.setChanged();
+                level.blockEvent(pos,state.getBlock(),2,bank.fuse);
+                level.playSound(null,pos,net.minecraft.sounds.SoundEvents.TNT_PRIMED,net.minecraft.sounds.SoundSource.BLOCKS,1,1);
                 if(stack.is(Items.FIRE_CHARGE)) stack.consume(1,player);
                 else stack.hurtAndBreak(1,player,LivingEntity.getSlotForHand(hand));
                 return ItemInteractionResult.SUCCESS;
