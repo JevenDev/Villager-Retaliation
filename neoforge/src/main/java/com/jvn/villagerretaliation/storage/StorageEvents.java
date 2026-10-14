@@ -4,10 +4,20 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.common.util.TriState;
 
 @EventBusSubscriber(modid=VillagerRetaliation.MOD_ID)
 public final class StorageEvents {
     private StorageEvents() { }
+    @SubscribeEvent public static void interacting(PlayerInteractEvent.RightClickBlock event) {
+        if(event.getUseBlock().isFalse()) return;
+        var state=event.getLevel().getBlockState(event.getPos());
+        if(event.getEntity().isShiftKeyDown() && state.getBlock() instanceof StorageBlock block && block.kind!=0 && state.getValue(StorageBlock.CHARGE)) {
+            event.setUseBlock(TriState.TRUE);
+            event.setUseItem(TriState.FALSE);
+        }
+    }
     @SubscribeEvent public static void breaking(BlockEvent.BreakEvent event) {
         if(!(event.getLevel().getBlockEntity(event.getPos()) instanceof StorageBlockEntity bank)) return;
         // A missing/unloaded authoritative member cannot be mined into a second independent copy.

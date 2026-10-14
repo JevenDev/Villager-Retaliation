@@ -55,7 +55,12 @@ public final class StorageBlock extends BaseEntityBlock {
         if(level.isClientSide) return ItemInteractionResult.SUCCESS;
         if(!(level.getBlockEntity(pos) instanceof StorageBlockEntity bank) || !(player instanceof ServerPlayer server)) return ItemInteractionResult.FAIL;
         bank.issue(player);
+        if(removeCharge(bank,player)) return ItemInteractionResult.SUCCESS;
         if(bank.controller() && hit.getDirection()==state.getValue(FACING)) {
+            if(bank.breached() && (stack.is(Items.TNT) || stack.is(Items.FLINT_AND_STEEL) || stack.is(Items.FIRE_CHARGE))) {
+                player.displayClientMessage(net.minecraft.network.chat.Component.literal("Already breached. Repair the lock before attaching another charge."),true);
+                return ItemInteractionResult.SUCCESS;
+            }
             if(stack.is(Items.TNT) && !state.getValue(CHARGE) && bank.fuse<0) {
                 level.setBlock(pos,state.setValue(CHARGE,true),3); stack.consume(1,player); bank.setChanged(); return ItemInteractionResult.SUCCESS;
             }
@@ -85,8 +90,20 @@ public final class StorageBlock extends BaseEntityBlock {
         bank.open(server); return ItemInteractionResult.SUCCESS;
     }
     @Override protected InteractionResult useWithoutItem(BlockState state,Level level,BlockPos pos,Player player,BlockHitResult hit) {
-        if(player instanceof ServerPlayer server && level.getBlockEntity(pos) instanceof StorageBlockEntity bank) { bank.issue(player); bank.open(server); }
+        if(player instanceof ServerPlayer server && level.getBlockEntity(pos) instanceof StorageBlockEntity bank) { bank.issue(player); if(!removeCharge(bank,player)) bank.open(server); }
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+    private boolean removeCharge(StorageBlockEntity bank,Player player) {
+        var state=bank.getBlockState();
+        if(!player.isShiftKeyDown() || !bank.controller() || !state.getValue(CHARGE)) return false;
+        if(bank.fuse>=0) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.literal("A charge is burning."),true);
+            return true;
+        }
+        bank.getLevel().setBlock(bank.getBlockPos(),state.setValue(CHARGE,false),3); bank.setChanged();
+        var refund=new ItemStack(Items.TNT);
+        if(!player.getInventory().add(refund)) player.drop(refund,false);
+        return true;
     }
     @Override protected float getDestroyProgress(BlockState state,Player player,BlockGetter level,BlockPos pos) {
         return state.getValue(PROTECTED)?Blocks.REINFORCED_DEEPSLATE.defaultBlockState().getDestroyProgress(player,level,pos):super.getDestroyProgress(state,player,level,pos);

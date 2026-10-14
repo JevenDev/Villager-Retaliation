@@ -259,6 +259,110 @@ public final class BankStorageGameTests {
         }
         h.assertTrue(tnt.isEmpty(),"three physical TNT consumed"); h.succeed();
     }
+    @GameTest(template="empty") public static void breachedStorageRejectsChargesUntilRepaired(GameTestHelper h) {
+        for(int i=0;i<2;i++) {
+            var bank=place(h,new BlockPos(1+i*3,2,1),i==0?StorageRegistry.SAFE.get():StorageRegistry.CONTROLLER.get());
+            var p=player(h,bank); p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+            for(int damage=0;damage<bank.maxDamage();damage++) bank.hit();
+            var front=new net.minecraft.world.phys.BlockHitResult(bank.getBlockPos().getCenter(),Direction.NORTH,bank.getBlockPos(),false);
+            p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.TNT,2));
+            p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+            h.assertFalse(bank.getBlockState().getValue(StorageBlock.CHARGE),"breached storage rejects mounted TNT");
+            h.assertValueEqual(p.getMainHandItem().getCount(),2,"rejected charge consumes no TNT");
+            h.assertTrue(p.containerMenu==p.inventoryMenu,"rejected charge does not open the inventory");
+            h.getLevel().setBlockAndUpdate(bank.getBlockPos(),bank.getBlockState().setValue(StorageBlock.CHARGE,true));
+            p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.FIRE_CHARGE,2));
+            p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+            h.assertValueEqual(bank.fuse,-1,"legacy charge on breached storage cannot be ignited");
+            h.assertValueEqual(p.getMainHandItem().getCount(),2,"rejected ignition consumes no fire charge");
+            p.setShiftKeyDown(true); p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front); p.setShiftKeyDown(false);
+            h.assertFalse(bank.getBlockState().getValue(StorageBlock.CHARGE),"legacy unlit charge can still be recovered");
+            bank.repairAfter=bank.now(); h.assertTrue(bank.repair(),"repair restores charge eligibility");
+            p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.TNT,2));
+            p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+            h.assertTrue(bank.getBlockState().getValue(StorageBlock.CHARGE),"repaired safe or partially damaged vault accepts a charge");
+            h.assertValueEqual(p.getMainHandItem().getCount(),1,"accepted charge consumes one TNT");
+        }
+        h.succeed();
+    }
+    @GameTest(template="empty") public static void shiftClickReturnsUnlitChargesWithHeldOrEmptyHand(GameTestHelper h) {
+        for(int i=0;i<2;i++) {
+            var bank=place(h,new BlockPos(1+i*3,2,1),i==0?StorageRegistry.SAFE.get():StorageRegistry.CONTROLLER.get());
+            var front=new net.minecraft.world.phys.BlockHitResult(bank.getBlockPos().getCenter(),Direction.NORTH,bank.getBlockPos(),false);
+            var back=new net.minecraft.world.phys.BlockHitResult(bank.getBlockPos().getCenter(),Direction.SOUTH,bank.getBlockPos(),false);
+            for(boolean emptyHand:List.of(false,true)) {
+                var p=player(h,bank); p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+                p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.TNT,2));
+                p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+                h.assertTrue(bank.getBlockState().getValue(StorageBlock.CHARGE),"charge is mounted before removal");
+                if(emptyHand) {
+                    p.getInventory().setItem(9,p.getMainHandItem()); p.setItemInHand(InteractionHand.MAIN_HAND,ItemStack.EMPTY);
+                    p.setItemInHand(InteractionHand.OFF_HAND,new ItemStack(Items.STICK));
+                }
+                p.setShiftKeyDown(true); p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,back);
+                h.assertFalse(bank.getBlockState().getValue(StorageBlock.CHARGE),"shift click removes mounted TNT from any face");
+                h.assertValueEqual(p.getInventory().countItem(Items.TNT),2,"exactly one consumed TNT is returned");
+                h.assertValueEqual(bank.fuse,-1,"removal leaves no active fuse");
+                h.assertTrue(p.containerMenu==p.inventoryMenu,"removing TNT does not open storage");
+                h.assertTrue(h.getLevel().getBlockState(bank.getBlockPos().south()).isAir(),"held TNT is not placed beside storage while sneaking");
+                if(!emptyHand) { p.getInventory().setItem(10,p.getMainHandItem()); p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.STICK)); }
+                p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,back);
+                h.assertValueEqual(p.getInventory().countItem(Items.TNT),2,"repeat click cannot refund TNT twice");
+            }
+        }
+        h.succeed();
+    }
+    @GameTest(template="empty") public static void shiftClickCannotRecoverBurningCharges(GameTestHelper h) {
+        for(int i=0;i<2;i++) {
+            var bank=place(h,new BlockPos(1+i*3,2,1),i==0?StorageRegistry.SAFE.get():StorageRegistry.CONTROLLER.get());
+            var p=player(h,bank); p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+            var front=new net.minecraft.world.phys.BlockHitResult(bank.getBlockPos().getCenter(),Direction.NORTH,bank.getBlockPos(),false);
+            p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.TNT));
+            p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+            p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.FIRE_CHARGE,2));
+            p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+            p.setShiftKeyDown(true); p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+            h.assertTrue(bank.getBlockState().getValue(StorageBlock.CHARGE),"burning charge stays attached");
+            h.assertValueEqual(bank.fuse,80,"shift click does not cancel or restart the fuse");
+            h.assertValueEqual(p.getInventory().countItem(Items.TNT),0,"burning TNT is not refunded");
+            h.assertValueEqual(p.getMainHandItem().getCount(),1,"refused removal consumes no held fire charge");
+            p.setItemInHand(InteractionHand.MAIN_HAND,ItemStack.EMPTY);
+            p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+            h.assertValueEqual(bank.fuse,80,"empty hand cannot disarm a burning charge");
+        }
+        h.succeed();
+    }
+    @GameTest(template="empty") public static void chargeRemovalRespectsDeniedBlockInteractions(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get()); var p=player(h,bank);
+        h.getLevel().setBlockAndUpdate(bank.getBlockPos(),bank.getBlockState().setValue(StorageBlock.CHARGE,true));
+        p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.STICK)); p.setShiftKeyDown(true);
+        var front=new net.minecraft.world.phys.BlockHitResult(bank.getBlockPos().getCenter(),Direction.NORTH,bank.getBlockPos(),false);
+        java.util.function.Consumer<net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock> deny=event->{
+            if(event.getEntity()==p && event.getPos().equals(bank.getBlockPos())) {
+                event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
+                event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
+            }
+        };
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGH,deny);
+        try { p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front); }
+        finally { net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(deny); }
+        h.assertTrue(bank.getBlockState().getValue(StorageBlock.CHARGE),"denied interaction cannot remove mounted TNT");
+        h.assertValueEqual(p.getInventory().countItem(Items.TNT),0,"denied interaction grants no refund"); h.succeed();
+    }
+    @GameTest(template="empty") public static void fullInventoryChargeRemovalDropsOneRefund(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.CONTROLLER.get()); var p=player(h,bank);
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        var front=new net.minecraft.world.phys.BlockHitResult(bank.getBlockPos().getCenter(),Direction.NORTH,bank.getBlockPos(),false);
+        p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.TNT));
+        p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+        for(int slot=0;slot<p.getInventory().getContainerSize();slot++) p.getInventory().setItem(slot,new ItemStack(Items.STONE,64));
+        p.setShiftKeyDown(true); p.gameMode.useItemOn(p,h.getLevel(),p.getMainHandItem(),InteractionHand.MAIN_HAND,front);
+        h.assertFalse(bank.getBlockState().getValue(StorageBlock.CHARGE),"full inventory still removes the charge");
+        h.assertValueEqual(p.getInventory().countItem(Items.TNT),0,"full inventory accepts no refund");
+        h.getLevel().destroyBlock(bank.getBlockPos(),true);
+        h.assertValueEqual(h.getLevel().getEntitiesOfClass(ItemEntity.class,new AABB(bank.getBlockPos()).inflate(2)).stream()
+                .filter(e->e.getItem().is(Items.TNT)).mapToInt(e->e.getItem().getCount()).sum(),1,"refund drops once and breaking storage cannot duplicate it"); h.succeed();
+    }
     @GameTest(template="empty") public static void toolSpeedAndCachedCapabilityRespectLockTransitions(GameTestHelper h) {
         var bank=place(h,new BlockPos(1,2,1),StorageRegistry.CONTROLLER.get()); var p=player(h,bank); bank.issue(p);
         p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.IRON_PICKAXE));
