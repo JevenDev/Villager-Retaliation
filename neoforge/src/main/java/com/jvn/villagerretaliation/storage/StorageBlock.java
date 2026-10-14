@@ -91,6 +91,13 @@ public final class StorageBlock extends BaseEntityBlock {
     @Override protected float getDestroyProgress(BlockState state,Player player,BlockGetter level,BlockPos pos) {
         return state.getValue(PROTECTED)?Blocks.REINFORCED_DEEPSLATE.defaultBlockState().getDestroyProgress(player,level,pos):super.getDestroyProgress(state,player,level,pos);
     }
+    @Override public boolean onDestroyedByPlayer(BlockState state,Level level,BlockPos pos,Player player,boolean willHarvest,net.minecraft.world.level.material.FluidState fluid) {
+        if(kind!=2 || level.isClientSide || !(level.getBlockEntity(pos) instanceof StorageBlockEntity bank))
+            return super.onDestroyedByPlayer(state,level,pos,player,willHarvest,fluid);
+        bank.creativeBreak=player.isCreative();
+        try { return super.onDestroyedByPlayer(state,level,pos,player,willHarvest,fluid); }
+        finally { bank.creativeBreak=false; }
+    }
     @Override protected List<ItemStack> getDrops(BlockState state,LootParams.Builder params) {
         if(kind==2) return List.of(); // Safe pickup is emitted once by onRemove, including non-loot removals.
         var stack=new ItemStack(this);
@@ -106,7 +113,7 @@ public final class StorageBlock extends BaseEntityBlock {
         if(!level.isClientSide && level.getBlockEntity(pos) instanceof StorageBlockEntity bank) {
             previous=bank.members;
             if(!bank.safe()) Containers.dropContents(level,pos,bank.inventory());
-            if(bank.safe()) {
+            if(bank.safe() && (!bank.creativeBreak || !bank.inventory().isEmpty())) {
                 var pickup=new ItemStack(this);
                 var tag=new net.minecraft.nbt.CompoundTag(); tag.put("BankStorage",bank.pickup(level.registryAccess()));
                 pickup.set(DataComponents.CUSTOM_DATA,CustomData.of(tag));

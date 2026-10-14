@@ -112,6 +112,36 @@ public final class BankStorageGameTests {
         h.assertFalse(replacement.cooling(),"pickup explicitly clears cooldown"); h.assertTrue(replacement.inventory().getItem(0).isEmpty(),"empty gaps persist");
         h.assertValueEqual(replacement.inventory().getItem(53).getCount(),11,"last safe slot persists"); h.succeed();
     }
+    @GameTest(template="empty") public static void creativeBreakDiscardsEmptySafe(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get()); var p=player(h,bank);
+        p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+        h.assertTrue(p.gameMode.destroyBlock(bank.getBlockPos()),"creative player breaks the empty safe");
+        h.assertTrue(h.getLevel().getBlockState(bank.getBlockPos()).isAir(),"empty safe is removed");
+        h.assertTrue(h.getLevel().getEntitiesOfClass(ItemEntity.class,new AABB(bank.getBlockPos()).inflate(2)).stream()
+                .noneMatch(e->e.getItem().is(StorageRegistry.SAFE.get().asItem())),"empty creative safe drops no safe item"); h.succeed();
+    }
+    @GameTest(template="empty") public static void creativeBreakDropsOneFilledSafe(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get()); var p=player(h,bank);
+        bank.inventory().setItem(53,new ItemStack(Items.DIAMOND,7)); var identity=bank.identity;
+        p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+        h.assertTrue(p.gameMode.destroyBlock(bank.getBlockPos()),"creative player breaks the filled safe");
+        var drops=h.getLevel().getEntitiesOfClass(ItemEntity.class,new AABB(bank.getBlockPos()).inflate(2));
+        var safes=drops.stream().filter(e->e.getItem().is(StorageRegistry.SAFE.get().asItem())).toList();
+        h.assertValueEqual(safes.size(),1,"filled creative safe drops exactly once");
+        h.assertTrue(drops.stream().noneMatch(e->e.getItem().is(Items.DIAMOND)),"safe contents never spill separately");
+        var replacement=place(h,new BlockPos(3,2,1),StorageRegistry.SAFE.get());
+        replacement.place(safes.getFirst().getItem().get(DataComponents.CUSTOM_DATA).copyTag().getCompound("BankStorage"),h.getLevel().registryAccess());
+        h.assertValueEqual(replacement.inventory().getItem(53).getCount(),7,"creative pickup retains the last inventory slot");
+        h.assertValueEqual(replacement.identity,identity,"creative pickup preserves the safe identity"); h.succeed();
+    }
+    @GameTest(template="empty") public static void survivalBreakStillDropsEmptySafe(GameTestHelper h) {
+        var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get()); var p=player(h,bank);
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        p.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.NETHERITE_PICKAXE));
+        h.assertTrue(p.gameMode.destroyBlock(bank.getBlockPos()),"survival player breaks the empty safe with a valid tool");
+        h.assertValueEqual(h.getLevel().getEntitiesOfClass(ItemEntity.class,new AABB(bank.getBlockPos()).inflate(2)).stream()
+                .filter(e->e.getItem().is(StorageRegistry.SAFE.get().asItem())).count(),1L,"empty survival safe still drops once"); h.succeed();
+    }
     @GameTest(template="empty") public static void realSafeBreakDropsOneFilledItem(GameTestHelper h) {
         var bank=place(h,new BlockPos(1,2,1),StorageRegistry.SAFE.get()); bank.inventory().setItem(40,new ItemStack(Items.STONE,32));
         h.getLevel().destroyBlock(bank.getBlockPos(),true);

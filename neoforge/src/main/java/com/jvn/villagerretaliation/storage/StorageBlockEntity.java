@@ -36,6 +36,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     public int fuse=-1;
     private final SimpleContainer local;
     private boolean loading;
+    boolean creativeBreak;
     private final ChestLidController doorController=new ChestLidController();
     private final ContainerOpenersCounter openersCounter=new ContainerOpenersCounter() {
         @Override protected void onOpen(Level level,BlockPos pos,BlockState state) {
