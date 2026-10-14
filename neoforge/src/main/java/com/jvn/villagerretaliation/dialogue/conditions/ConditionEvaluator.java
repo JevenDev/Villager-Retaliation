@@ -26,6 +26,10 @@ public final class ConditionEvaluator {
     public static ConditionOutcome evaluate(ConditionContext context, QuestTriggerContext trigger,
             DialogueCondition condition) {
         if (condition == null) return ConditionOutcome.UNKNOWN;
+        if (condition instanceof DialogueCondition.ContextRule reference) {
+            var rule = com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.rule(reference.id());
+            return rule == null ? ConditionOutcome.UNKNOWN : all(context, trigger, rule.conditions());
+        }
         if (condition instanceof DialogueCondition.Invalid) return ConditionOutcome.UNMET;
         if (condition instanceof DialogueCondition.AllOf all) return all(context, trigger, all.conditions());
         if (condition instanceof DialogueCondition.AnyOf any) {
@@ -52,6 +56,12 @@ public final class ConditionEvaluator {
                 "condition is missing", List.of());
         if (condition instanceof DialogueCondition.Invalid invalid) return new ConditionEvaluationTrace(
                 "invalid", ConditionOutcome.UNMET, invalid.reason(), List.of());
+        if (condition instanceof DialogueCondition.ContextRule reference) {
+            var rule = com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.rule(reference.id());
+            return new ConditionEvaluationTrace("context", evaluate(context, trigger, condition),
+                    reference.id() + (rule == null ? " is unavailable" : " from " + rule.source()),
+                    rule == null ? List.of() : traceAll(context, trigger, rule.conditions()));
+        }
         if (condition instanceof DialogueCondition.Not not) {
             ConditionEvaluationTrace child = trace(context, trigger, not.condition());
             ConditionOutcome outcome = not.condition() instanceof DialogueCondition.Invalid

@@ -256,6 +256,8 @@ public final class VillagerRetaliationEvents {
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
+                com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources::reload);
+        event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
                 com.jvn.villagerretaliation.party.CompanionGrowthService::reload);
         event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
                 com.jvn.villagerretaliation.party.CompanionAmbientResources::reload);

@@ -42,7 +42,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Biome, DialogueCondition.Dimension, DialogueCondition.Advancement,
         DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
         DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time,
-        DialogueCondition.TriggerPayload {
+        DialogueCondition.TriggerPayload, DialogueCondition.ContextRule, DialogueCondition.Health,
+        DialogueCondition.PhysicalState, DialogueCondition.CompanionState {
 
     boolean matches(DialogueContext context);
 
@@ -951,8 +952,46 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         }
     }
 
+    record ContextRule(ResourceLocation id) implements DialogueCondition {
+        @Override public boolean matches(DialogueContext context) { return ConditionRegistry.matches(context, null, this); }
+        @Override public int specificityScore() { return 1; }
+    }
+
+    record Health(String subject, double min, double max) implements DialogueCondition {
+        @Override public boolean matches(DialogueContext context) {
+            var entity = subject.equals("player") ? context.player() : context.villager();
+            return entity != null && DialogueContextConditions.health(entity, this);
+        }
+        @Override public int specificityScore() { return 1; }
+    }
+
+    record PhysicalState(String subject, String state) implements DialogueCondition {
+        @Override public boolean matches(DialogueContext context) {
+            var entity = subject.equals("player") ? context.player() : context.villager();
+            return entity != null && DialogueContextConditions.physicalState(entity, this);
+        }
+        @Override public int specificityScore() { return 1; }
+    }
+
+    record CompanionState(String state) implements DialogueCondition {
+        @Override public boolean matches(DialogueContext context) { return DialogueContextConditions.companion(context, this); }
+        @Override public int specificityScore() { return 1; }
+    }
+
     final class ConditionRegistry {
         private static final List<ConditionTypeRegistration> REGISTRATIONS = List.of(
+                register("context", ContextRule.class, Set.of(), Set.of(),
+                        (location, context, condition, quest) -> DialogueContextConditions.read(location, context, condition, "context"),
+                        DialogueContextConditions.schema("context")),
+                register("health", Health.class, Set.of(), capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE),
+                        (location, context, condition, quest) -> DialogueContextConditions.read(location, context, condition, "health"),
+                        DialogueContextConditions.schema("health")),
+                register("physical_state", PhysicalState.class, Set.of(), capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE),
+                        (location, context, condition, quest) -> DialogueContextConditions.read(location, context, condition, "physical_state"),
+                        DialogueContextConditions.schema("physical_state")),
+                register("companion_state", CompanionState.class, Set.of(), capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE),
+                        (location, context, condition, quest) -> DialogueContextConditions.read(location, context, condition, "companion_state"),
+                        DialogueContextConditions.schema("companion_state")),
                 register(
                         "all",
                         AllOf.class,

@@ -1,4 +1,5 @@
 import { readFile, readdir } from "node:fs/promises";
+import { validateContextDirectory } from "./dialogue-context-validation.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateConversation, validateConversationSchema, materializeConversationAction } from "./conversation-validation.mjs";
@@ -1008,6 +1009,14 @@ if (cli.fileLists.length > 0 || cli.questFiles.length > 0 || cli.skillTradeFiles
   await validateBuiltInData();
 }
 
+const contextRoots = new Set();
+for (const file of [...cli.questFiles, ...cli.conversationFiles, ...cli.campaignFiles]) {
+  const normalized = file.replaceAll("\\", "/");
+  const index = normalized.lastIndexOf("/data/");
+  if (index >= 0) contextRoots.add(normalized.slice(0, index + 5));
+}
+if (!contextRoots.size) errors.push(...await validateContextDirectory());
+else for (const directory of contextRoots) errors.push(...await validateContextDirectory(directory));
 validateCrossReferences();
 
 if (errors.length > 0) process.exitCode = 1;
@@ -5791,6 +5800,8 @@ function checkCondition(file, condition, location, defaultQuestId = "") {
     return;
   }
 
+  if (type === "health" && (condition.min ?? 0) > (condition.max ?? 1))
+    errors.push(`${relative(file)}: ${location} health requires min <= max.`);
   const schema = questV2RegistryIndex.conditions.schemas.get(type);
   const allowedKeys = conditionKeys[type] ?? new Set(["type", ...Object.keys(schema?.properties ?? {})]);
   checkRegisteredFields(file, condition, location, type, "", "conditions");

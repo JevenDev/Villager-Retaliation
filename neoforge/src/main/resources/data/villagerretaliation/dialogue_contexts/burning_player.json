@@ -1,0 +1,10 @@
+{
+  "id": "villagerretaliation:burning_player",
+  "conditions": [
+    {
+      "type": "physical_state",
+      "subject": "player",
+      "state": "burning"
+    }
+  ]
+}

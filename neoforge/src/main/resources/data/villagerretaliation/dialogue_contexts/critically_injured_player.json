@@ -1,0 +1,10 @@
+{
+  "id": "villagerretaliation:critically_injured_player",
+  "conditions": [
+    {
+      "type": "health",
+      "subject": "player",
+      "max": 0.25
+    }
+  ]
+}

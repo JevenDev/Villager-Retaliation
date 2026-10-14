@@ -110,6 +110,20 @@ public final class VillagerConditionAccess implements ConditionLeafAccess {
 
     @Override
     public ConditionOutcome evaluate(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof DialogueCondition.Health health) {
+            var entity = health.subject().equals("player") ? this.player : this.live == null ? null : this.live.villager();
+            return entity == null || entity.isRemoved() ? ConditionOutcome.UNKNOWN
+                    : result(com.jvn.villagerretaliation.dialogue.DialogueContextConditions.health(entity, health));
+        }
+        if (condition instanceof DialogueCondition.PhysicalState state) {
+            var entity = state.subject().equals("player") ? this.player : this.live == null ? null : this.live.villager();
+            return entity == null || entity.isRemoved() ? ConditionOutcome.UNKNOWN
+                    : result(com.jvn.villagerretaliation.dialogue.DialogueContextConditions.physicalState(entity, state));
+        }
+        if (condition instanceof DialogueCondition.CompanionState companion) {
+            return this.live == null || this.player == null || this.live.villager().isRemoved() ? ConditionOutcome.UNKNOWN
+                    : result(com.jvn.villagerretaliation.dialogue.DialogueContextConditions.companion(this.live, companion));
+        }
         if (condition instanceof DialogueCondition.TriggerPayload payload) {
             return this.live == null && !this.playerOnly && trigger == null ? ConditionOutcome.UNKNOWN
                     : result(payload.matches(this.live, trigger));

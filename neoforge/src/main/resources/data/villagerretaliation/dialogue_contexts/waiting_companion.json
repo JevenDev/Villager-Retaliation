@@ -1,0 +1,9 @@
+{
+  "id": "villagerretaliation:waiting_companion",
+  "conditions": [
+    {
+      "type": "companion_state",
+      "state": "waiting"
+    }
+  ]
+}

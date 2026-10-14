@@ -1,0 +1,10 @@
+{
+  "id": "villagerretaliation:injured_speaker",
+  "conditions": [
+    {
+      "type": "health",
+      "subject": "speaker",
+      "max": 0.5
+    }
+  ]
+}

@@ -5,6 +5,133 @@
   "registries": {
     "conditions": [
       {
+        "id": "context",
+        "aliases": [],
+        "capabilities": [],
+        "implementation": "ContextRule",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "type": {
+              "const": "context"
+            }
+          },
+          "required": [
+            "type",
+            "id"
+          ]
+        }
+      },
+      {
+        "id": "health",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ],
+        "implementation": "Health",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "subject": {
+              "enum": [
+                "player",
+                "speaker"
+              ]
+            },
+            "min": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "max": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "type": {
+              "const": "health"
+            }
+          },
+          "required": [
+            "type",
+            "subject"
+          ]
+        }
+      },
+      {
+        "id": "physical_state",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ],
+        "implementation": "PhysicalState",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "subject": {
+              "enum": [
+                "player",
+                "speaker"
+              ]
+            },
+            "state": {
+              "enum": [
+                "burning",
+                "submerged",
+                "riding"
+              ]
+            },
+            "type": {
+              "const": "physical_state"
+            }
+          },
+          "required": [
+            "type",
+            "subject",
+            "state"
+          ]
+        }
+      },
+      {
+        "id": "companion_state",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ],
+        "implementation": "CompanionState",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "enum": [
+                "active",
+                "following",
+                "waiting"
+              ]
+            },
+            "type": {
+              "const": "companion_state"
+            }
+          },
+          "required": [
+            "type",
+            "state"
+          ]
+        }
+      },
+      {
         "id": "all",
         "aliases": [
           "all_of",
@@ -4527,6 +4654,71 @@
         }
       },
       {
+        "id": "villagerretaliation:companion_state",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Companion state",
+        "description": "Built-in Companion state type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "enum": [
+                "active",
+                "following",
+                "waiting"
+              ]
+            },
+            "type": {
+              "const": "companion_state"
+            }
+          },
+          "required": [
+            "type",
+            "state"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:context",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Context",
+        "description": "Built-in Context type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "type": {
+              "const": "context"
+            }
+          },
+          "required": [
+            "type",
+            "id"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:dimension",
         "aliases": [],
         "live_capabilities": [
@@ -4559,6 +4751,50 @@
         "description": "Built-in Family type.",
         "browser_available": true,
         "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:health",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Health",
+        "description": "Built-in Health type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "subject": {
+              "enum": [
+                "player",
+                "speaker"
+              ]
+            },
+            "min": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "max": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "type": {
+              "const": "health"
+            }
+          },
+          "required": [
+            "type",
+            "subject"
+          ],
           "type": "object"
         }
       },
@@ -4645,6 +4881,48 @@
           },
           "required": [
             "condition"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:physical_state",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Physical state",
+        "description": "Built-in Physical state type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "subject": {
+              "enum": [
+                "player",
+                "speaker"
+              ]
+            },
+            "state": {
+              "enum": [
+                "burning",
+                "submerged",
+                "riding"
+              ]
+            },
+            "type": {
+              "const": "physical_state"
+            }
+          },
+          "required": [
+            "type",
+            "subject",
+            "state"
           ],
           "type": "object"
         }
@@ -5358,12 +5636,15 @@
         "campaign_standing",
         "campaign_transaction",
         "choice_selected",
+        "companion_state",
+        "context",
         "dimension",
         "entity_nearby",
         "equipment",
         "event_payload",
         "fact",
         "family",
+        "health",
         "held_item",
         "item",
         "memory",
@@ -5372,6 +5653,7 @@
         "nearby_entity",
         "not",
         "or",
+        "physical_state",
         "player_item",
         "quest",
         "quest_choice_selected",

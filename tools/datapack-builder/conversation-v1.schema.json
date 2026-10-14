@@ -158,12 +158,15 @@
             "campaign_standing",
             "campaign_transaction",
             "choice_selected",
+            "companion_state",
+            "context",
             "dimension",
             "entity_nearby",
             "equipment",
             "event_payload",
             "fact",
             "family",
+            "health",
             "held_item",
             "item",
             "memory",
@@ -172,6 +175,7 @@
             "nearby_entity",
             "not",
             "or",
+            "physical_state",
             "player_item",
             "quest",
             "quest_choice_selected",
@@ -210,6 +214,160 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "context"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "type": {
+                "const": "context"
+              }
+            },
+            "required": [
+              "type",
+              "id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "health"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "subject": {
+                "enum": [
+                  "player",
+                  "speaker"
+                ]
+              },
+              "min": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "max": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": {
+                "const": "health"
+              }
+            },
+            "required": [
+              "type",
+              "subject"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "physical_state"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "subject": {
+                "enum": [
+                  "player",
+                  "speaker"
+                ]
+              },
+              "state": {
+                "enum": [
+                  "burning",
+                  "submerged",
+                  "riding"
+                ]
+              },
+              "type": {
+                "const": "physical_state"
+              }
+            },
+            "required": [
+              "type",
+              "subject",
+              "state"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "companion_state"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "state": {
+                "enum": [
+                  "active",
+                  "following",
+                  "waiting"
+                ]
+              },
+              "type": {
+                "const": "companion_state"
+              }
+            },
+            "required": [
+              "type",
+              "state"
+            ]
+          }
+        },
         {
           "if": {
             "properties": {
