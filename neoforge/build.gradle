@@ -39,6 +39,7 @@ def campaignScenarioPack = rootProject.file(providers.gradleProperty('campaignSc
 def campaignScenarioReports = layout.buildDirectory.dir("campaign-scenario-reports/${System.currentTimeMillis()}")
 def campaignConversationMultiplayerDirectory = layout.buildDirectory.dir("campaign-conversation-multiplayer/${System.currentTimeMillis()}")
 def authoringEditorClientSmokeDirectory = layout.buildDirectory.dir("authoring-editor-client-smoke/${System.currentTimeMillis()}")
+def animationClientSmokeDirectory = layout.buildDirectory.dir("animation-client-smoke/${System.currentTimeMillis()}")
 def pairedGreetClientSmokeDirectory = layout.buildDirectory.dir("paired-greet-client-smoke/${System.currentTimeMillis()}")
 def companionClientSmokeDirectory = layout.buildDirectory.dir("companion-client-smoke/${System.currentTimeMillis()}")
 def dialogueCameraClientSmokeDirectory = layout.buildDirectory.dir("dialogue-camera-client-smoke/${System.currentTimeMillis()}")
@@ -64,6 +65,14 @@ neoForge {
     runs {
         client {
             client()
+        }
+
+        animationClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(animationClientSmokeDirectory)
+            systemProperty 'villagerretaliation.animationClientSmoke', animationClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'AnimationSmoke', '--width', '1600', '--height', '1000'
         }
 
         authoringEditorClientSmoke {
@@ -815,5 +824,39 @@ tasks.named('runBankStorageClientSmoke') {
         def result = new File(bankStorageClientSmokeDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Bank storage native smoke passed'))
             throw new GradleException('Bank storage acceptance did not finish. Inspect ' + bankStorageClientSmokeDirectory.get().asFile)
+    }
+}
+
+tasks.named('runAnimationClientSmoke') {
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Run runGameTestServer first to create animation test world metadata.')
+        copy {
+            from metadata
+            into new File(animationClientSmokeDirectory.get().asFile, 'saves/AnimationSmoke')
+        }
+        def modsDirectory = file(providers.gradleProperty('animationClientSmokeModsDirectory').orElse('run/mods').get())
+        def emf = fileTree(modsDirectory).matching { include 'entity_model_features*.jar', 'entity_texture_features*.jar' }.files
+        if (emf.size() != 2) throw new GradleException('Animation client checks require one EMF and one ETF jar.')
+        copy {
+            from emf
+            into new File(animationClientSmokeDirectory.get().asFile, 'mods')
+        }
+        ['FreshPack': 'fresh.zip', 'BridgePack': 'bridge.zip'].each { property, name ->
+            def pack = rootProject.file(providers.gradleProperty('animationClientSmoke' + property).get())
+            if (!pack.isFile()) throw new GradleException('Missing animation test pack: ' + pack)
+            copy {
+                from pack
+                into new File(animationClientSmokeDirectory.get().asFile, 'resourcepacks')
+                rename { name }
+            }
+        }
+        new File(animationClientSmokeDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:2\nsimulationDistance:2\nguiScale:2\n'
+    }
+    doLast {
+        def result = new File(animationClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Animation client checks passed'))
+            throw new GradleException('Animation client checks did not finish. Inspect ' + animationClientSmokeDirectory.get().asFile)
     }
 }

@@ -38,6 +38,19 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
             }
             return usingItemPose(villager);
         }
+        if (villager.swinging || attackTime > 0.0F) {
+            if (isHoldingCrossbow(villager)) {
+                return VillagerArmPose.CROSSBOW_HOLD;
+            }
+            if (isHoldingBow(villager)) {
+                return VillagerArmPose.HOLDING_ITEM;
+            }
+            return hasCustomHeldItemPose(villager)
+                    ? heldItemPose(villager, attackTime) : VillagerArmPose.MELEE_WEAPON;
+        }
+        if (isSwimming(villager)) {
+            return VillagerArmPose.SWIMMING;
+        }
         VillagerArmPose shieldPose = resolveShieldPose(villager, attackTime);
         if (shieldPose != null) {
             return shieldPose;
@@ -61,9 +74,6 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
         if (isHoldingRangedWeapon(villager)) {
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
-        if (isFreshAnimationsSwimming(villager)) {
-            return VillagerArmPose.SWIMMING;
-        }
         if (hasCustomHeldItemPose(villager)) {
             return heldItemPose(villager, attackTime);
         }
@@ -85,7 +95,8 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
             return true;
         }
 
-        return isInCombat(villager)
+        return villager.isInLava() && isSwimming(villager)
+                || isInCombat(villager)
                 || hasUsableWeapon(villager)
                 || isHoldingChargedCrossbow(villager)
                 || shouldUseCombatModelForHeldItem(villager)
@@ -149,7 +160,7 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
         return villager.isAggressive() || villager.getTarget() != null;
     }
 
-    private static boolean isFreshAnimationsSwimming(AbstractVillager villager) {
-        return !villager.isPassenger() && !villager.onGround() && villager.isInWater();
+    private static boolean isSwimming(AbstractVillager villager) {
+        return !villager.isPassenger() && !villager.onGround() && (villager.isInWaterOrBubble() || villager.isInLava());
     }
 }

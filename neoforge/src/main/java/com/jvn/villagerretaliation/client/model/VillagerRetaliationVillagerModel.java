@@ -33,6 +33,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     private static final float STUDY_BOOK_HEAD_PITCH = 0.55F;
     private static final float STUDY_EMF_MARKER_X = 0.01F;
     private static final float BODY_SWING_EMF_MARKER_X = 0.02F;
+    private static final float ITEM_USE_EMF_MARKER_X = 0.03F;
+    private static final float REPAIR_EMF_MARKER_X = 0.04F;
+    private static final float SLEEP_EMF_MARKER_X = 0.05F;
 
     private final ModelPart root;
     private final ModelPart body;
@@ -127,7 +130,16 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
             return;
         }
 
+        if (villager.isSleeping()) {
+            this.root.x = SLEEP_EMF_MARKER_X;
+            this.setArmLayout(VillagerRenderEquipmentState.hasArmorEquipped(villager)
+                    || this.poseProvider != null && this.poseProvider.shouldRenderHeldItem(villager));
+            this.syncRobe(villager);
+            return;
+        }
+
         if (com.jvn.villagerretaliation.repair.SmithRepairAnimationState.isWorking(villager)) {
+            this.root.x = REPAIR_EMF_MARKER_X;
             this.setArmLayout(true);
             com.jvn.villagerretaliation.client.repair.SmithRepairAnimation.apply(villager, this.head, this.rightArm, this.leftArm, ageInTicks);
             this.syncRobe(villager);
@@ -171,9 +183,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
                     ? VillagerArmPose.NONE
                     : this.poseProvider.getArmPose(villager, this.attackTime);
             if (pose != VillagerArmPose.NONE) {
-                if (requiresBodySwingCompatibilityLock(pose, villager, this.attackTime)) {
-                    this.root.x = BODY_SWING_EMF_MARKER_X;
-                }
+                this.markCompatibilityPose(pose, villager);
                 VillagerPoseAnimator.applyPose(
                         pose,
                         villager,
@@ -215,9 +225,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
             this.dialogueMouthParts.apply(villager, ageInTicks);
             return;
         }
-        if (requiresBodySwingCompatibilityLock(pose, villager, this.attackTime)) {
-            this.root.x = BODY_SWING_EMF_MARKER_X;
-        }
+        this.markCompatibilityPose(pose, villager);
         VillagerPoseAnimator.applyPose(
                 pose, villager, this.body, this.head, this.rightArm, this.leftArm,
                 this.attackTime, limbSwing, ageInTicks);
@@ -297,10 +305,15 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         return clamped * clamped * (3.0F - 2.0F * clamped);
     }
 
-    private static boolean requiresBodySwingCompatibilityLock(
-            VillagerArmPose pose, AbstractVillager villager, float attackTime) {
-        return pose == VillagerArmPose.MELEE_WEAPON
-                || pose == VillagerArmPose.THROWING_ITEM && (villager.swinging || attackTime > 0.0F);
+    private void markCompatibilityPose(VillagerArmPose pose, T villager) {
+        if ((pose == VillagerArmPose.MELEE_WEAPON || pose == VillagerArmPose.THROWING_ITEM)
+                && (villager.swinging || this.attackTime > 0.0F)) {
+            this.root.x = BODY_SWING_EMF_MARKER_X;
+        } else if (pose != VillagerArmPose.NONE && pose != VillagerArmPose.HOLDING_ITEM
+                && pose != VillagerArmPose.MELEE_WEAPON && pose != VillagerArmPose.SWIMMING) {
+            // preserve the head direction used to aim item and weapon poses
+            this.root.x = ITEM_USE_EMF_MARKER_X;
+        }
     }
 
     private void setArmLayout(boolean sideArmsVisible) {
