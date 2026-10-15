@@ -617,6 +617,8 @@ tasks.named('check') {
 
 dependencies {
     implementation "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
+    compileOnly "maven.modrinth:imguimc:A6qH2kAo"
+    compileOnly "io.github.spair:imgui-java-binding:1.92.7.1"
     annotationProcessor "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
     implementation "dev.architectury:architectury-neoforge:${rootProject.architectury_version}"
     compileOnly "dev.emi:emi-neoforge:${rootProject.emi_version}:api"

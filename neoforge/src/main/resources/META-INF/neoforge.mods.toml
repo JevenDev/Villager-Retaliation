@@ -35,6 +35,13 @@ ${neoforge_jei_dependency}
 ${neoforge_rei_dependency}
 
 [[dependencies."${mod_id}"]]
+modId="imguimc"
+type="optional"
+versionRange="[2.0.5,3)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies."${mod_id}"]]
 modId="curios"
 type="optional"
 ordering="AFTER"

@@ -486,6 +486,48 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private float interactionPortraitPitch;
     private long lastInteractionPortraitAnimationMillis = -1L;
 
+    private LocalPresentation localPresentation;
+
+    public static VillagerInteractionScreen localPreview(Entity target, LocalPresentation presentation) {
+        var screen = new VillagerInteractionScreen(
+                target.getId(), target.getName().getString(), "Preview", false, "",
+                false, false, 0, VillagerReputationLevel.NEUTRAL, DialogueDisposition.NEUTRAL,
+                VillagerMood.NEUTRAL, false, false, false, false,
+                0L, true, false, false, false,
+                false, "", 0, false, false,
+                false, false, false, false, false,
+                false, false, false, 0, 0,
+                0, "", "", null, 0,
+                true, List.of(), null, false, false,
+                false, false, false, false, null,
+                false, false, false, List.of(), false,
+                false, false, false, false, List.of(),
+                0, false, false, false, false,
+                false, List.of(), List.of(), null, null,
+                null);
+        screen.localPresentation = java.util.Objects.requireNonNull(presentation);
+        return screen;
+    }
+
+    public interface LocalPresentation {
+        void tick(VillagerInteractionScreen screen);
+        List<LocalOption> options();
+        default List<Entity> cameraSubjects() { return List.of(); }
+        void close();
+        void removed();
+    }
+
+    public record LocalOption(String label, Runnable action, boolean locked) { }
+
+    public void presentLocalLine(com.jvn.villagerretaliation.dialogue.DialogueSpeech speech) {
+        if (localPresentation == null) throw new IllegalStateException("Not a local presentation");
+        if (speech != null) {
+            acceptDialogueExchanges(List.of(speech));
+            this.awaitingExchangeCompletion = false;
+        }
+        rebuildOptionsKeepingListPosition();
+    }
+
     public VillagerInteractionScreen(
             int villagerEntityId,
             String villagerName,
@@ -665,6 +707,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void tick() {
+        if (localPresentation != null) {
+            localPresentation.tick(this);
+            if (this.minecraft == null || this.minecraft.screen != this) return;
+        }
         if (this.closingWithAnimation && animationElapsedMillis() >= INTERACTION_ANIMATION_DURATION_MILLIS) {
             finishClosingAnimation();
             return;
@@ -690,7 +736,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     public boolean matchesVillager(int entityId) {
-        return this.villagerEntityId == entityId;
+        return localPresentation == null && this.villagerEntityId == entityId;
     }
 
     public void updateReputation(
@@ -1228,6 +1274,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             sendToServer(new VillagerConversationEndRequestPayload(this.villagerEntityId));
         }
         super.removed();
+        if (localPresentation != null) localPresentation.removed();
     }
 
     @Override
@@ -1237,10 +1284,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void onClose() {
+        if (localPresentation != null) { localPresentation.close(); return; }
         goBackOrLeaveConversation();
     }
 
     private boolean tryOpenVanillaChat(int keyCode, int scanCode) {
+        if (localPresentation != null) return false;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.options.keyChat.matches(keyCode, scanCode)) {
             openVanillaChat("");
@@ -1408,7 +1457,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         this.options.clear();
         this.optionLayoutVersion++;
-        if (this.automaticDialogue.active()) {
+        if (localPresentation != null) {
+            for (var option : localPresentation.options())
+                this.options.add(DialogueOption.enabled(option.label(), option.action(), option.locked()));
+        } else if (this.automaticDialogue.active()) {
             // Automatic greetings reveal both speakers without adding a Continue choice.
         } else if (!this.dialogueExchanges.isEmpty()) {
             addOption("conversation.continue", this::showNextDialogueExchange);
@@ -3141,6 +3193,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void leaveConversation() {
+        if (localPresentation != null) { localPresentation.close(); return; }
         startClosingAnimation();
     }
 
@@ -3469,7 +3522,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void sendToServer(CustomPacketPayload payload) {
-        PacketDistributor.sendToServer(payload);
+        if (localPresentation == null) PacketDistributor.sendToServer(payload);
     }
 
 
@@ -6597,6 +6650,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         var subjects = new java.util.LinkedHashSet<Entity>();
         subjects.add(minecraft.player);
         if (character != null) subjects.add(character);
+        if (localPresentation != null) subjects.addAll(localPresentation.cameraSubjects());
         var line = campaignPresentationLine();
         if (this.page == DialoguePage.CAMPAIGN_CONVERSATION && !this.forcedDialogue) {
             if (line == null) return this.campaignConversation.session() == null ? null

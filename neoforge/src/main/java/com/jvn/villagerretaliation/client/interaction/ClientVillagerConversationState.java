@@ -19,6 +19,27 @@ public final class ClientVillagerConversationState {
     private ClientVillagerConversationState() {
     }
 
+    public static Snapshot snapshot() {
+        return new Snapshot(Map.copyOf(SPEAKER_LABELS), focusedVillagerEntityId, cameraFocusTicks,
+                cameraReleaseTicks, cameraReleaseTotalTicks, forceCameraTowardsVillager, releaseUsesForcedCameraZoom);
+    }
+
+    public static void restore(Snapshot value) {
+        SPEAKER_LABELS.clear();
+        SPEAKER_LABELS.putAll(value.speakers());
+        focusedVillagerEntityId = value.entityId();
+        cameraFocusTicks = value.focusTicks();
+        cameraReleaseTicks = value.releaseTicks();
+        cameraReleaseTotalTicks = value.releaseTotalTicks();
+        forceCameraTowardsVillager = value.force();
+        releaseUsesForcedCameraZoom = value.releaseZoom();
+    }
+
+    public record Snapshot(Map<Integer, String> speakers, int entityId, int focusTicks, int releaseTicks,
+            int releaseTotalTicks, boolean force, boolean releaseZoom) {
+        public Snapshot { speakers = Map.copyOf(speakers); }
+    }
+
     public static void start(int entityId, boolean forceCamera) {
         focusedVillagerEntityId = entityId;
         cameraFocusTicks = 0;

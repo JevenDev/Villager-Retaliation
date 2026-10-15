@@ -14,6 +14,7 @@ import net.neoforged.neoforge.common.NeoForge;
 @Mod(value = VillagerRetaliation.MOD_ID, dist = Dist.CLIENT)
 public final class VillagerRetaliationClient {
     public VillagerRetaliationClient(IEventBus modEventBus, ModContainer modContainer) {
+        com.jvn.villagerretaliation.authoring.client.AuthoringEditorClient.register(modEventBus);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, (IConfigScreenFactory) VillagerRetaliationClient::createConfigScreen);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
         modEventBus.addListener(VillagerRetaliationClient::registerClientExtensions);
