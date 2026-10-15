@@ -1,0 +1,174 @@
+package com.jvn.villagerretaliation.authoring.client;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
+import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
+import com.jvn.villagerretaliation.authoring.core.DialogueGraph;
+import com.jvn.villagerretaliation.authoring.core.JsonPointers;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+final class EditorGraph {
+    static final float WIDTH = 280;
+    static final float HEADER = 38;
+    static final float ROW = 34;
+
+    private EditorGraph() { }
+
+    record Block(String pointer, String title, String text, DialogueGraph.Edge output) { }
+    record Card(DialogueGraph.Node node, List<Block> blocks) {
+        float height() { return HEADER + blocks.size() * ROW + 34; }
+        float outputY(int index) { return HEADER + index * ROW + ROW / 2; }
+    }
+
+    static List<Card> cards(AuthoringDocument document, Function<JsonElement, String> wording) {
+        List<Card> cards = new ArrayList<>();
+        JsonObject root = document.json();
+        List<DialogueGraph.Edge> outputs = DialogueGraph.outputs(document).stream().distinct().toList();
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (var node : DialogueGraph.nodes(document)) {
+            if (!ids.add(node.id())) throw new IllegalArgumentException("Duplicate node ID: " + node.id());
+            JsonObject value = JsonPointers.get(root, node.pointer()).getAsJsonObject();
+            List<Block> blocks = new ArrayList<>();
+            for (String field : List.of("conditions", "available_when", "availability", "objectives", "on_enter", "entry_actions", "actions", "effects",
+                    "line", "lines", "variants", "exchanges", "scenes", "dialogue", "camera", "rewards", "on_exit", "exit_actions")) {
+                if (!value.has(field)) continue;
+                JsonElement item = value.get(field);
+                if (item.isJsonArray() && item.getAsJsonArray().isEmpty()) continue;
+                String title = switch (field) {
+                    case "conditions", "available_when", "availability" -> "Only if";
+                    case "on_enter", "entry_actions" -> "On entry";
+                    case "on_exit", "exit_actions" -> "On exit";
+                    case "actions", "effects" -> "Do";
+                    case "line", "lines", "variants" -> "Say";
+                    case "exchanges" -> "Conversation";
+                    default -> Character.toUpperCase(field.charAt(0)) + field.substring(1);
+                };
+                if (item.isJsonArray() && List.of("conditions", "actions", "effects", "on_enter", "entry_actions", "on_exit", "exit_actions", "objectives").contains(field)) {
+                    for (int i = 0; i < item.getAsJsonArray().size(); i++) {
+                        JsonElement block = item.getAsJsonArray().get(i);
+                        String summary = block.isJsonObject() ? behaviorLabel(block.getAsJsonObject()) : wording.apply(block);
+                        blocks.add(new Block(node.pointer() + "/" + field + "/" + i, title, summary, null));
+                    }
+                    continue;
+                }
+                String text;
+                if (List.of("line", "lines", "variants", "exchanges").contains(field)) {
+                    if (!field.equals("exchanges") && item.isJsonArray() && item.getAsJsonArray().size() > 1) title = "Say one of";
+                    JsonElement first = item.isJsonArray() ? item.getAsJsonArray().get(0) : item;
+                    text = wording.apply(first);
+                    if (item.isJsonArray() && item.getAsJsonArray().size() > 1) text += " (+" + (item.getAsJsonArray().size() - 1) + ")";
+                } else {
+                    int count = item.isJsonArray() ? item.getAsJsonArray().size() : 1;
+                    text = count + (count == 1 ? " block" : " blocks");
+                    if (item.isJsonArray() && item.getAsJsonArray().get(0).isJsonObject()) {
+                        String type = DialogueGraph.string(item.getAsJsonArray().get(0).getAsJsonObject(), "type");
+                        if (!type.isBlank()) text += " - " + type.replace('_', ' ');
+                    }
+                }
+                blocks.add(new Block(node.pointer() + "/" + field, title, text, null));
+            }
+            String responseField = document.kind() == DefinitionKind.FORCED ? "options" : "responses";
+            var responses = DialogueGraph.array(value, responseField);
+            for (int i = 0; i < responses.size(); i++) {
+                if (!responses.get(i).isJsonObject()) continue;
+                JsonObject response = responses.get(i).getAsJsonObject();
+                String path = node.pointer() + "/" + responseField + "/" + i;
+                String label = wording.apply(response.get("label"));
+                if (response.has("check")) {
+                    blocks.add(new Block(path, "Choice", label, null));
+                    String checkId = DialogueGraph.string(response, "check");
+                    var checks = DialogueGraph.array(root, "checks");
+                    for (int c = 0; c < checks.size(); c++) {
+                        if (!checks.get(c).isJsonObject() || !checkId.equals(DialogueGraph.string(checks.get(c).getAsJsonObject(), "id"))) continue;
+                        String checkPath = "/checks/" + c;
+                        blocks.add(new Block(checkPath, "Check", checkId, null));
+                        for (var edge : outputs) {
+                            if (edge.from().equals(node.id()) && edge.pointer().startsWith(checkPath + "/"))
+                                blocks.add(new Block(path, edge.label().equals("success") ? "Pass" : "Fail", edge.to(), edge));
+                        }
+                    }
+                } else {
+                    var output = outputs.stream().filter(edge -> edge.from().equals(node.id()) && edge.pointer().startsWith(path + "/"))
+                            .findFirst().orElse(null);
+                    blocks.add(new Block(path, output != null && output.to().isEmpty() ? "End choice" : "Choice", label, output));
+                }
+                for (String field : List.of("conditions", "actions", "effects")) {
+                    var behaviors = DialogueGraph.array(response, field);
+                    for (int b = 0; b < behaviors.size(); b++) {
+                        JsonElement behavior = behaviors.get(b);
+                        blocks.add(new Block(path + "/" + field + "/" + b, field.equals("conditions") ? "Choice only if" : "Choice does",
+                                behavior.isJsonObject() ? behaviorLabel(behavior.getAsJsonObject()) : wording.apply(behavior), null));
+                    }
+                }
+            }
+            for (var edge : outputs) {
+                if (edge.from().equals(node.id()) && edge.pointer().startsWith(node.pointer() + "/next"))
+                    blocks.add(new Block(node.pointer(), "Then", edge.to().isEmpty() ? terminalLabel(value) : edge.to(), edge));
+            }
+            if (blocks.stream().noneMatch(block -> block.output() != null))
+                blocks.add(new Block(node.pointer(), "End", terminalLabel(value), null));
+            cards.add(new Card(node, List.copyOf(blocks)));
+        }
+        return List.copyOf(cards);
+    }
+
+    private static String behaviorLabel(JsonObject value) {
+        if (value.has("action") && value.get("action").isJsonObject()) value = value.getAsJsonObject("action");
+        String type = DialogueGraph.string(value, "type").replace('_', ' ');
+        if (type.isBlank()) type = DialogueGraph.string(value, "id");
+        if (value.has("min") && value.get("min").isJsonPrimitive()) return type + " >= " + value.get("min").getAsString();
+        if (value.has("amount") && value.get("amount").isJsonPrimitive()) return type + " " + value.get("amount").getAsString();
+        if (value.has("text") && value.get("text").isJsonPrimitive()) return type + ": " + value.get("text").getAsString();
+        return type.isBlank() ? "Edit block" : type;
+    }
+
+    private static String terminalLabel(JsonObject value) {
+        if (value.has("outcome")) return "Outcome: " + DialogueGraph.string(value, "outcome");
+        if (value.has("next") && value.get("next").isJsonObject()) {
+            JsonObject next = value.getAsJsonObject("next");
+            for (String field : List.of("complete", "fail", "abandon"))
+                if (next.has(field) && next.get(field).isJsonPrimitive() && next.get(field).getAsBoolean())
+                    return Character.toUpperCase(field.charAt(0)) + field.substring(1) + " quest";
+        }
+        return "Finish";
+    }
+
+    static Map<String, float[]> arrange(List<Card> cards) {
+        Map<String, Integer> columns = new LinkedHashMap<>();
+        var queue = new java.util.ArrayDeque<String>();
+        for (var card : cards) if (card.node().entry()) {
+            columns.put(card.node().id(), 0);
+            queue.add(card.node().id());
+        }
+        Map<String, Card> byId = new LinkedHashMap<>();
+        for (var card : cards) byId.put(card.node().id(), card);
+        while (columns.size() < cards.size() || !queue.isEmpty()) {
+            if (queue.isEmpty()) {
+                String id = cards.stream().map(card -> card.node().id()).filter(key -> !columns.containsKey(key)).findFirst().orElseThrow();
+                columns.put(id, 0);
+                queue.add(id);
+            }
+            String id = queue.remove();
+            for (var block : byId.get(id).blocks()) {
+                if (block.output() == null || block.output().to().isEmpty() || !byId.containsKey(block.output().to())
+                        || columns.containsKey(block.output().to())) continue;
+                columns.put(block.output().to(), columns.get(id) + 1);
+                queue.add(block.output().to());
+            }
+        }
+        Map<String, float[]> result = new LinkedHashMap<>();
+        Map<Integer, Float> heights = new LinkedHashMap<>();
+        for (var card : cards) {
+            int column = columns.get(card.node().id());
+            float y = heights.getOrDefault(column, 0f);
+            result.put(card.node().id(), new float[] {column * (WIDTH + 90), y});
+            heights.put(column, y + card.height() + 40);
+        }
+        return result;
+    }
+}

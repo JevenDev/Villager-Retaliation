@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
 import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
+import com.jvn.villagerretaliation.authoring.core.DialogueGraph;
 
 public final class EditorClientChecks {
     private EditorClientChecks() { }
@@ -19,7 +20,13 @@ public final class EditorClientChecks {
         automaticLayoutKeepsUsablePaneWidths();
         plainTextAuthoringPreservesLocalizationAndUndo();
         fieldValidationDoesNotConsumeEdits();
-        return 10;
+        terminalResponsePortsReconnectAndUndo();
+        forcedPortsPreserveNestedOwnership();
+        graphCardsExposeChecksAndEditableBlocks();
+        questPortsReplaceTerminalTransitions();
+        graphArrangementHandlesCyclesAndLargeCards();
+        behaviorBlocksRejectUnsupportedOwners();
+        return 16;
     }
 
     private static void propertyEditsApplyTogether() {
@@ -139,7 +146,7 @@ public final class EditorClientChecks {
             var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(directory);
             workspace.createDocument(DefinitionKind.QUEST, "test:authored_quest");
             var conversation = workspace.createDocument(DefinitionKind.CONVERSATION, "test:wording");
-            com.jvn.villagerretaliation.authoring.core.DialogueGraph.addNode(conversation, "finish");
+            DialogueGraph.addNode(conversation, "finish");
             workspace.addDialogueLine(conversation, "finish");
             var before = conversation.json();
             workspace.addDialogueResponse(conversation, "start", "continue", "Tell me more.", "finish");
@@ -161,6 +168,14 @@ public final class EditorClientChecks {
             var unchanged = conversation.json();
             rejects(() -> workspace.addDialogueResponse(conversation, "start", "bad", "Invalid", "missing"));
             check(conversation.json().equals(unchanged), "invalid destination cannot partially edit a conversation");
+            String effect = EditorBlocks.append(conversation, "/nodes/0", EditorBlocks.Kind.EXPERIENCE);
+            check(effect.equals("/nodes/0/effects/0"), "conversation actions use effect blocks");
+            EditorBlocks.append(conversation, "/nodes/0/responses/0", EditorBlocks.Kind.REPUTATION_GATE);
+            var quest = workspace.documents().stream().filter(candidate -> candidate.kind() == DefinitionKind.QUEST).findFirst().orElseThrow();
+            EditorBlocks.append(quest, "/stages/0", EditorBlocks.Kind.EXPERIENCE);
+            var tree = workspace.createDocument(DefinitionKind.TREE, "test:blocks");
+            EditorBlocks.append(tree, "/nodes/start", EditorBlocks.Kind.MESSAGE);
+            EditorBlocks.append(tree, "/nodes/start", EditorBlocks.Kind.REPUTATION_GATE);
             var errors = workspace.validate().stream().filter(diagnostic ->
                     diagnostic.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
             check(errors.isEmpty(), "normal text authoring produces exportable conversation content: " + errors);
@@ -179,6 +194,137 @@ public final class EditorClientChecks {
         check(edits.pending() && document.json().get("priority").getAsInt() == 1, "preflight preserves draft buffers and source");
         edits.apply(document);
         check(document.json().get("priority").getAsInt() == 7, "validated edits still apply");
+    }
+
+    private static void terminalResponsePortsReconnectAndUndo() {
+        var document = tree();
+        DialogueGraph.addNode(document, "finish");
+        DialogueGraph.addResponse(document, "start", "bye", "Goodbye", "");
+        var output = DialogueGraph.outputs(document).getFirst();
+        check(output.to().isEmpty(), "terminal responses still expose a connection port");
+        DialogueGraph.connect(document, output.pointer(), "finish");
+        var response = document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("responses").get(0).getAsJsonObject();
+        check(!response.has("end") && response.get("next").getAsString().equals("finish"), "reconnect must remove the terminal flag");
+        document.undo();
+        response = document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("responses").get(0).getAsJsonObject();
+        check(response.get("end").getAsBoolean() && !response.has("next"), "undo restores the end branch");
+        JsonObject before = document.json();
+        rejects(() -> DialogueGraph.connect(document, "/priority", "finish"));
+        rejects(() -> DialogueGraph.connect(document, output.pointer(), "missing"));
+        check(document.json().equals(before), "bad ports and destinations cannot mutate unrelated properties");
+    }
+
+    private static void forcedPortsPreserveNestedOwnership() {
+        var document = new AuthoringDocument(DefinitionKind.FORCED, "data/test/forced_dialogue/en_us/ports.json",
+                json("""
+                        {"entries":[{"id":"first","lines":["First"],"options":[{"id":"end","label":"Continue","end_conversation":true}]},
+                                    {"id":"second","lines":["Second"]}]}
+                        """));
+        String port = "/entries/0/options/0/follow_up";
+        DialogueGraph.connect(document, port, "/entries/1");
+        var option = document.json().getAsJsonArray("entries").get(0).getAsJsonObject().getAsJsonArray("options").get(0).getAsJsonObject();
+        check(!option.get("end_conversation").getAsBoolean(), "connected forced options must continue");
+        check(option.getAsJsonObject("follow_up").getAsJsonArray("lines").get(0).getAsString().equals("Second"),
+                "forced links embed the destination");
+        JsonObject before = document.json();
+        rejects(() -> DialogueGraph.connect(document, port, "/entries/0"));
+        check(document.json().equals(before), "forced links reject recursive ancestors atomically");
+        document.undo();
+        check(!document.json().getAsJsonArray("entries").get(0).getAsJsonObject().getAsJsonArray("options").get(0).getAsJsonObject().has("follow_up"),
+                "undo removes the embedded branch");
+    }
+
+    private static void graphCardsExposeChecksAndEditableBlocks() {
+        var document = new AuthoringDocument(DefinitionKind.CONVERSATION, "data/test/quests/_shared/conversations/cards.json",
+                json("""
+                        {"topics":[{"start":"start"}],"nodes":[
+                          {"id":"start","exchanges":[{"text":"Hello"}],"effects":["reward"],
+                           "responses":[{"id":"ask","label":"Try it","check":"roll"}]},
+                          {"id":"yes","outcome":"done"},{"id":"no","outcome":"done"}],
+                         "checks":[{"id":"roll","success":"yes","failure":"no"}]}
+                        """));
+        JsonObject before = document.json();
+        var cards = EditorGraph.cards(document, value -> value == null ? "" : value.toString());
+        var start = cards.getFirst();
+        check(start.blocks().stream().anyMatch(block -> block.title().equals("Do") && block.pointer().equals("/nodes/0/effects/0")),
+                "effects are editable blocks on their node");
+        check(start.blocks().stream().anyMatch(block -> block.title().equals("Choice") && block.pointer().equals("/nodes/0/responses/0")),
+                "choice wording is selectable independently of its check");
+        check(start.blocks().stream().filter(block -> block.output() != null).count() == 2, "checks expose both outcome ports");
+        DialogueGraph.connect(document, "/checks/0/success", "no");
+        check(document.json().getAsJsonArray("checks").get(0).getAsJsonObject().get("failure").getAsString().equals("no"),
+                "reconnecting pass preserves fail");
+        document.undo();
+        check(document.json().equals(before), "viewing cards and undoing a wire preserve the document");
+        DialogueGraph.connect(document, "/nodes/1/next", "no");
+        var yes = document.json().getAsJsonArray("nodes").get(1).getAsJsonObject();
+        check(!yes.has("outcome") && yes.get("next").getAsString().equals("no"), "connecting a finish node replaces its outcome");
+        document.edit("Share check", root -> {
+            var responses = root.getAsJsonArray("nodes").get(0).getAsJsonObject().getAsJsonArray("responses");
+            var duplicate = responses.get(0).getAsJsonObject().deepCopy();
+            duplicate.addProperty("id", "ask_again");
+            responses.add(duplicate);
+        });
+        var shared = EditorGraph.cards(document, value -> value == null ? "" : value.toString()).getFirst();
+        check(shared.blocks().stream().filter(block -> block.output() != null).count() == 4,
+                "shared checks expose exactly two ports for each response");
+    }
+
+    private static void questPortsReplaceTerminalTransitions() {
+        var document = new AuthoringDocument(DefinitionKind.QUEST, "data/test/quests/line/quest/quest.json",
+                json("""
+                        {"entry_stage":"first","stages":[{"id":"first","next":{"complete":true},"objectives":[]},
+                                                       {"id":"second","next":{"fail":true}}]}
+                        """));
+        var cards = EditorGraph.cards(document, value -> value.toString());
+        check(cards.getFirst().blocks().getFirst().text().equals("Complete quest"), "terminal quest result is visible on the output");
+        DialogueGraph.connect(document, "/stages/0/next", "second");
+        check(document.json().getAsJsonArray("stages").get(0).getAsJsonObject().get("next").getAsString().equals("second"),
+                "quest output replaces the terminal transition with a supported stage reference");
+        document.undo();
+        check(document.json().getAsJsonArray("stages").get(0).getAsJsonObject().getAsJsonObject("next").get("complete").getAsBoolean(),
+                "undo restores quest completion");
+    }
+
+    private static void graphArrangementHandlesCyclesAndLargeCards() {
+        var document = tree();
+        DialogueGraph.addNode(document, "second");
+        DialogueGraph.addNode(document, "isolated");
+        DialogueGraph.setEntry(document, "start");
+        DialogueGraph.addResponse(document, "start", "forward", "Go", "second");
+        DialogueGraph.addResponse(document, "second", "back", "Back", "start");
+        for (int i = 0; i < 8; i++) DialogueGraph.addResponse(document, "start", "end_" + i, "Finish", "");
+        var cards = EditorGraph.cards(document, value -> value == null ? "" : value.toString());
+        var positions = EditorGraph.arrange(cards);
+        check(positions.size() == 3, "cyclic and disconnected nodes all receive positions");
+        check(positions.get("second")[0] > positions.get("start")[0], "flow proceeds left to right");
+        var start = cards.stream().filter(card -> card.node().id().equals("start")).findFirst().orElseThrow();
+        check(positions.get("isolated")[1] >= positions.get("start")[1] + start.height() + 40,
+                "variable height cards never overlap in their column");
+        check(EditorGraph.arrange(java.util.List.of()).isEmpty(), "empty graphs need no layout");
+        var duplicates = new AuthoringDocument(DefinitionKind.CONVERSATION, "data/test/quests/_shared/conversations/duplicates.json",
+                json("{\"nodes\":[{\"id\":\"same\",\"outcome\":\"done\"},{\"id\":\"same\",\"outcome\":\"done\"}]}"));
+        rejects(() -> EditorGraph.cards(duplicates, value -> value.toString()));
+    }
+
+    private static void behaviorBlocksRejectUnsupportedOwners() {
+        var document = tree();
+        JsonObject before = document.json();
+        rejects(() -> EditorBlocks.append(document, "/metadata", EditorBlocks.Kind.EXPERIENCE));
+        check(document.json().equals(before), "unsupported block placement cannot edit metadata");
+        String path = EditorBlocks.append(document, "/nodes/start", EditorBlocks.Kind.REPUTATION_GATE);
+        check(path.equals("/nodes/start/conditions/0"), "condition block selects its editable fields");
+        document.undo();
+        check(document.json().equals(before), "block insertion is one undo step");
+        var conversation = new AuthoringDocument(DefinitionKind.CONVERSATION, "data/test/quests/_shared/conversations/blocks.json",
+                json("{\"nodes\":[{\"id\":\"start\",\"outcome\":\"done\"}]}"));
+        check(!EditorBlocks.available(conversation, "/nodes/0").contains(EditorBlocks.Kind.REPUTATION_GATE),
+                "conversation node conditions are not offered where the runtime ignores them");
+        EditorBlocks.append(conversation, "/nodes/0", EditorBlocks.Kind.EXPERIENCE);
+        EditorBlocks.append(conversation, "/nodes/0", EditorBlocks.Kind.REPUTATION);
+        var effects = conversation.json().getAsJsonArray("nodes").get(0).getAsJsonObject().getAsJsonArray("effects");
+        check(!effects.get(0).getAsJsonObject().get("id").equals(effects.get(1).getAsJsonObject().get("id")),
+                "conversation effect IDs remain unique");
     }
 
     private static AuthoringDocument tree() {

@@ -123,6 +123,30 @@ public final class DialogueGraph {
         return List.copyOf(result);
     }
 
+    public static List<Edge> outputs(AuthoringDocument document) {
+        List<Edge> result = new ArrayList<>(edges(document));
+        JsonObject root = document.json();
+        for (Node node : nodes(document)) {
+            JsonObject value = JsonPointers.get(root, node.pointer()).getAsJsonObject();
+            String field = document.kind() == DefinitionKind.FORCED ? "options" : "responses";
+            JsonArray responses = array(value, field);
+            for (int i = 0; i < responses.size(); i++) {
+                if (!responses.get(i).isJsonObject()) continue;
+                JsonObject response = responses.get(i).getAsJsonObject();
+                String destination = document.kind() == DefinitionKind.FORCED ? "follow_up" : "next";
+                if (!response.has(destination) && !response.has("check"))
+                    result.add(new Edge(node.id(), "", node.pointer() + "/" + field + "/" + i + "/" + destination,
+                            text(response.get("label"))));
+            }
+            if (document.kind() == DefinitionKind.QUEST
+                    || document.kind() == DefinitionKind.CONVERSATION && responses.isEmpty()) {
+                if (result.stream().noneMatch(edge -> edge.from().equals(node.id()) && edge.pointer().startsWith(node.pointer() + "/next")))
+                    result.add(new Edge(node.id(), "", node.pointer() + "/next", "Continue"));
+            }
+        }
+        return List.copyOf(result);
+    }
+
     private static void addNext(List<Edge> edges, String from, JsonElement next, String pointer, String label) {
         String target = next.isJsonPrimitive() ? next.getAsString()
                 : next.isJsonObject() ? string(next.getAsJsonObject(), "stage") : "";
@@ -243,11 +267,23 @@ public final class DialogueGraph {
 
     public static void connect(AuthoringDocument document, String edgePointer, String targetId) {
         Node target = find(document, targetId);
+        if (outputs(document).stream().noneMatch(edge -> edge.pointer().equals(edgePointer)))
+            throw new IllegalArgumentException("Select an existing output connection");
         document.edit("Connect branch", root -> {
             if (document.kind() == DefinitionKind.FORCED) {
                 if (isWithin(edgePointer, target.pointer())) throw new IllegalArgumentException("Forced follow-ups cannot contain their own ancestor");
-                JsonPointers.set(root, edgePointer, JsonPointers.get(root, target.pointer()));
-            } else JsonPointers.set(root, edgePointer, new JsonPrimitive(targetId));
+                JsonElement followUp = JsonPointers.get(root, target.pointer()).deepCopy();
+                JsonObject response = JsonPointers.get(root, edgePointer.substring(0, edgePointer.lastIndexOf('/'))).getAsJsonObject();
+                response.add("follow_up", followUp);
+                response.addProperty("end_conversation", false);
+            } else {
+                JsonPointers.set(root, edgePointer, new JsonPrimitive(targetId));
+                if (edgePointer.endsWith("/next")) {
+                    JsonObject owner = JsonPointers.get(root, edgePointer.substring(0, edgePointer.lastIndexOf('/'))).getAsJsonObject();
+                    owner.remove("end");
+                    owner.remove("outcome");
+                }
+            }
         });
     }
 

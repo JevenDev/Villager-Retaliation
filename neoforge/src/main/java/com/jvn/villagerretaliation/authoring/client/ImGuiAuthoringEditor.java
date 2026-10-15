@@ -62,6 +62,9 @@ final class ImGuiAuthoringEditor {
     private boolean showCreate;
     private boolean showResources;
     private boolean showBranch;
+    private boolean fitGraph = true;
+    private boolean wireDragMoved;
+    private boolean nodeDragMoved;
     private String focusPanel = "";
     private final ImString workspacePath = new ImString(4096);
     private final ImString importPath = new ImString(4096);
@@ -144,7 +147,10 @@ final class ImGuiAuthoringEditor {
         if (MC.screen != screen) return;
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
         if (escapeReady && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
-            screen.onClose();
+            if (!selectedEdge.isEmpty()) {
+                selectedEdge = "";
+                wireDragMoved = false;
+            } else screen.onClose();
             return;
         }
         rendering = true;
@@ -282,7 +288,7 @@ final class ImGuiAuthoringEditor {
         String[] hints = {
                 "Your workspace holds drafts. Open an existing folder or create a new one in Content.",
                 "Choose New, pick a format, and give it an ID. Your dialogues stay in the Content list.",
-                "Select a node on the graph. Write its lines in Details, then add a response and choose where it leads.",
+                "Click a Say block to write dialogue. Add a response, then connect its right-hand dot to another node's input dot. Use Arrange nodes to tidy the flow.",
                 "Choose Preview in the top bar, select a nearby villager, then play. Camera and condition controls are optional.",
                 "Save your drafts, then choose Check & export. Fix any errors before exporting to a new datapack folder."
         };
@@ -468,10 +474,10 @@ final class ImGuiAuthoringEditor {
             return;
         }
         List<DialogueGraph.Node> nodes;
-        List<DialogueGraph.Edge> edges;
+        List<EditorGraph.Card> cards;
         try {
             nodes = DialogueGraph.nodes(document);
-            edges = DialogueGraph.edges(document);
+            cards = EditorGraph.cards(document, value -> workspace.resolveText(document, value, "en_us"));
         } catch (IllegalArgumentException | IllegalStateException | ClassCastException
                 | UnsupportedOperationException | IndexOutOfBoundsException exception) {
             ImGui.textWrapped("Repair the definition in Advanced full JSON: " + exception.getMessage());
@@ -497,11 +503,17 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(!selected);
         if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Connect stage" : "Add response")) {
             showBranch = !showBranch;
-            if (nextStage.get().isBlank() && selected) nextStage.set(selectedNode);
+            if (showBranch) nextStage.set("");
         }
         ImGui.endDisabled();
         ImGui.sameLine();
-        if (ImGui.button("Center graph")) { panX = 25; panY = 25; zoom = 1; }
+        if (ImGui.button("Fit graph")) fitGraph = true;
+        ImGui.sameLine();
+        if (ImGui.button("Arrange nodes")) operation(() -> {
+            persistPositions(EditorGraph.arrange(cards));
+            fitGraph = true;
+            refresh();
+        });
         if (selected && ImGui.collapsingHeader("Node actions")) {
             ImGui.textUnformatted("Selected: " + selectedNode);
             input("Copy ID", nodeName);
@@ -518,7 +530,9 @@ final class ImGuiAuthoringEditor {
             if (document.kind() != DefinitionKind.QUEST) input("Player response", responseLabel);
             ImGui.textUnformatted("Leads to");
             ImGui.setNextItemWidth(-1);
-            if (ImGui.beginCombo("##destination", nextStage.get().isEmpty() ? "End conversation" : nextStage.get())) {
+            boolean needsDestination = document.kind() == DefinitionKind.CONVERSATION || document.kind() == DefinitionKind.QUEST;
+            if (ImGui.beginCombo("##destination", nextStage.get().isEmpty()
+                    ? needsDestination ? "Choose a destination" : "End conversation" : nextStage.get())) {
                 if (document.kind() != DefinitionKind.CONVERSATION && document.kind() != DefinitionKind.QUEST
                         && ImGui.selectable("End conversation", nextStage.get().isEmpty())) nextStage.set("");
                 for (var destination : nodes) {
@@ -548,24 +562,55 @@ final class ImGuiAuthoringEditor {
                 showBranch = false;
                 refresh();
             });
+            if (needsDestination && nextStage.get().isBlank()) ImGui.textWrapped("Choose a node above. Add another node first if you need a new destination.");
+            ImGui.beginDisabled(needsDestination && nextStage.get().isBlank());
             if (ImGui.button("Add connection")) operation(() -> {
                 if (document.kind() == DefinitionKind.QUEST) EditorDocumentOperations.nextStage(document, selectedNode, nextStage.get());
                 else workspace.addDialogueResponse(document, selectedNode, nextResponseId(), responseLabel.get(), nextStage.get());
                 showBranch = false;
                 refresh();
             });
+            ImGui.endDisabled();
             ImGui.sameLine();
             if (ImGui.button("Cancel connection")) showBranch = false;
         }
-        ImGui.textWrapped(selectedEdge.isEmpty() ? "Select a node to edit its dialogue. Drag to move, middle-drag to pan, scroll to zoom."
-                : "Choose a destination node to reconnect this response.");
-        if (!selectedEdge.isEmpty() && ImGui.smallButton("Cancel reconnect")) selectedEdge = "";
+        ImGui.textWrapped(selectedEdge.isEmpty()
+                ? "Click a block to edit. Connect a right-hand dot to a left-hand dot. Drag a header to move a node."
+                : "Choose an input dot, or drag the wire to one.");
+        if (!selectedEdge.isEmpty()) {
+            if (ImGui.smallButton("Cancel connection")) selectedEdge = "";
+            boolean responseEdge = selectedEdge.contains("/responses/") || selectedEdge.contains("/options/");
+            if (responseEdge) {
+                ImGui.sameLine();
+                if (ImGui.smallButton("Delete selected response")) operation(() -> {
+                    DialogueGraph.removeResponse(document, selectedEdge);
+                    selectedEdge = "";
+                    refresh();
+                });
+            }
+        }
         float canvasX = ImGui.getCursorScreenPosX();
         float canvasY = ImGui.getCursorScreenPosY();
         float canvasWidth = Math.max(100, ImGui.getContentRegionAvailX());
-        float canvasHeight = Math.max(100, ImGui.getContentRegionAvailY() - 90);
+        float canvasHeight = Math.max(100, ImGui.getContentRegionAvailY());
         ImGui.invisibleButton("graph_canvas", canvasWidth, canvasHeight);
         boolean hover = ImGui.isItemHovered();
+        Map<String, float[]> defaults = EditorGraph.arrange(cards);
+        for (var card : cards) positions.putIfAbsent(card.node().id(), defaults.get(card.node().id()));
+        if (fitGraph && !cards.isEmpty()) {
+            float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+            for (var card : cards) {
+                float[] point = positions.get(card.node().id());
+                minX = Math.min(minX, point[0]);
+                minY = Math.min(minY, point[1]);
+                maxX = Math.max(maxX, point[0] + EditorGraph.WIDTH);
+                maxY = Math.max(maxY, point[1] + card.height());
+            }
+            zoom = Math.clamp(Math.min((canvasWidth - 50) / (maxX - minX), (canvasHeight - 50) / (maxY - minY)), .35f, 1f);
+            panX = 25 - minX * zoom;
+            panY = 25 - minY * zoom;
+            fitGraph = false;
+        }
         if (hover && ImGui.isMouseDragging(2)) {
             panX += ImGui.getIO().getMouseDeltaX();
             panY += ImGui.getIO().getMouseDeltaY();
@@ -578,87 +623,142 @@ final class ImGuiAuthoringEditor {
             panX = mx - (mx - panX) * zoom / oldZoom;
             panY = my - (my - panY) * zoom / oldZoom;
         }
+        if (!selectedEdge.isEmpty() && ImGui.isMouseDragging(0)) wireDragMoved = true;
         ImDrawList draw = ImGui.getWindowDrawList();
         draw.pushClipRect(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, true);
         draw.addRectFilled(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, 0xff242321);
-        for (int i = 0; i < nodes.size(); i++) {
-            var node = nodes.get(i);
-            final int index = i;
-            positions.computeIfAbsent(node.id(), key -> new float[] {(index % 3) * 240, (index / 3) * 110});
+        for (var card : cards) {
+            float[] from = positions.get(card.node().id());
+            for (int i = 0; i < card.blocks().size(); i++) {
+                var edge = card.blocks().get(i).output();
+                if (edge == null) continue;
+                float x1 = canvasX + panX + (from[0] + EditorGraph.WIDTH) * zoom;
+                float y1 = canvasY + panY + (from[1] + card.outputY(i)) * zoom;
+                float[] to = edge.to().isEmpty() ? null : positions.get(edge.to());
+                if (to != null) {
+                    float x2 = canvasX + panX + to[0] * zoom;
+                    float y2 = canvasY + panY + (to[1] + EditorGraph.HEADER / 2) * zoom;
+                    wire(draw, x1, y1, x2, y2, 0xffb2a68c);
+                }
+                if (edge.pointer().equals(selectedEdge))
+                    wire(draw, x1, y1, ImGui.getIO().getMousePosX(), ImGui.getIO().getMousePosY(), 0xff81c9ed);
+            }
         }
-        for (var edge : edges) {
-            float[] from = positions.get(edge.from());
-            float[] to = positions.get(edge.to());
-            if (from == null || to == null) continue;
-            float x1 = canvasX + panX + (from[0] + 185) * zoom;
-            float y1 = canvasY + panY + (from[1] + 30) * zoom;
-            float x2 = canvasX + panX + to[0] * zoom;
-            float y2 = canvasY + panY + (to[1] + 30) * zoom;
-            draw.addBezierCubic(x1, y1, x1 + 60 * zoom, y1, x2 - 60 * zoom, y2, x2, y2,
-                    edge.pointer().equals(selectedEdge) ? 0xff81c9ed : 0xff8d8b79, 2);
-        }
-        for (var node : nodes) {
+        for (var card : cards) {
+            var node = card.node();
             float[] position = positions.get(node.id());
             float x = canvasX + panX + position[0] * zoom;
             float y = canvasY + panY + position[1] * zoom;
-            float w = 185 * zoom;
-            float h = 65 * zoom;
-            draw.addRectFilled(x, y, x + w, y + h, selectedNode.equals(node.id()) ? 0xff65513d : 0xff423c34, 4);
+            float w = EditorGraph.WIDTH * zoom;
+            float h = card.height() * zoom;
+            draw.addRectFilled(x, y, x + w, y + h, 0xff39352f, 4);
+            draw.addRectFilled(x, y, x + w, y + EditorGraph.HEADER * zoom,
+                    selectedNode.equals(node.id()) ? 0xff65513d : 0xff494037, 4);
             draw.addRect(x, y, x + w, y + h, node.entry() ? 0xff9cc6a2 : 0xff78716b, 4);
-            draw.addText(x + 8, y + 7, 0xfff2f0e9, shortText(node.id(), 23));
-            draw.addText(x + 8, y + 28, 0xffcbc7bf, shortText(displayLabel(node.label()), 23));
-            draw.addText(x + 8, y + 47, 0xffb4ab9c, node.entry() ? "ENTRY" : node.terminal() ? "END" : "");
-            boolean overNode = hover && ImGui.isMouseHoveringRect(x, y, x + w, y + h);
-            if (overNode && ImGui.isMouseClicked(0)) {
-                String edge = selectedEdge;
-                operation(() -> {
-                    selectedNode = node.id();
-                    setPointer(node.pointer());
-                    showBranch = false;
-                    if (!edge.isEmpty()) {
+            graphText(draw, x + 12 * zoom, y + 10 * zoom, 0xfff2f0e9,
+                    (node.entry() ? "Start: " : "") + node.id(), EditorGraph.WIDTH - 24);
+            float inputY = y + EditorGraph.HEADER / 2 * zoom;
+            boolean inputHover = hover && ImGui.isMouseHoveringRect(x - 12, inputY - 12, x + 12, inputY + 12);
+            draw.addCircleFilled(x, inputY, 6 * zoom, inputHover ? 0xff81c9ed : 0xffc2bdb4);
+            if (inputHover) {
+                ImGui.setTooltip(selectedEdge.isEmpty() ? "Input: connect a response here" : "Connect to " + node.id());
+                if (!selectedEdge.isEmpty() && (ImGui.isMouseClicked(0) || wireDragMoved && ImGui.isMouseReleased(0))) {
+                    String edge = selectedEdge;
+                    operation(() -> {
                         DialogueGraph.connect(document, edge, node.id());
                         selectedEdge = "";
                         refresh();
-                    } else draggingNode = node.id();
-                });
+                    });
+                }
             }
+            if (!inputHover && hover && ImGui.isMouseHoveringRect(x, y, x + w, y + EditorGraph.HEADER * zoom)
+                    && ImGui.isMouseClicked(0)) operation(() -> {
+                selectedNode = node.id();
+                setPointer(node.pointer());
+                selectedEdge = "";
+                showBranch = false;
+                draggingNode = node.id();
+                nodeDragMoved = false;
+            });
+            for (int i = 0; i < card.blocks().size(); i++) {
+                var block = card.blocks().get(i);
+                float rowY = y + (EditorGraph.HEADER + i * EditorGraph.ROW) * zoom;
+                float centerY = y + card.outputY(i) * zoom;
+                float outputX = x + w;
+                boolean outputHover = block.output() != null && hover
+                        && ImGui.isMouseHoveringRect(outputX - 12, centerY - 12, outputX + 12, centerY + 12);
+                boolean blockHover = !outputHover && hover && ImGui.isMouseHoveringRect(x + 6, rowY, x + w - 6, rowY + EditorGraph.ROW * zoom);
+                draw.addRectFilled(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom,
+                        blockHover ? 0xff514a40 : block.output() != null ? 0xff403c32 : 0xff35322e, 3);
+                graphText(draw, x + 12 * zoom, rowY + 9 * zoom, block.output() == null ? 0xffd9d2c7 : 0xffded8ad,
+                        block.title() + ": " + block.text(), EditorGraph.WIDTH - 34);
+                if (blockHover) {
+                    ImGui.setTooltip(block.title() + ": " + block.text() + "\nClick to edit");
+                    if (ImGui.isMouseClicked(0)) operation(() -> {
+                        selectedNode = node.id();
+                        setPointer(block.pointer());
+                        selectedEdge = "";
+                        showBranch = false;
+                        focusPanel = DETAIL_PANEL;
+                    });
+                }
+                if (block.output() != null) {
+                    boolean active = block.output().pointer().equals(selectedEdge);
+                    draw.addCircleFilled(outputX, centerY, 6 * zoom, active || outputHover ? 0xff81c9ed : 0xffd3c48e);
+                    if (outputHover) {
+                        ImGui.setTooltip(block.text() + "\n" + (block.output().to().isEmpty() ? "Ends here" : "Leads to " + block.output().to())
+                                + "\nClick or drag to an input dot");
+                        if (ImGui.isMouseClicked(0)) operation(() -> {
+                            selectedNode = node.id();
+                            selectedEdge = block.output().pointer();
+                            setPointer(block.pointer());
+                            draggingNode = null;
+                            wireDragMoved = false;
+                        });
+                    }
+                }
+            }
+            float footerY = y + h - 34 * zoom;
+            String footer = document.kind() == DefinitionKind.QUEST ? "Edit stage" : "+ Add response";
+            graphText(draw, x + 12 * zoom, footerY + 9 * zoom, 0xffbdcddd, footer, EditorGraph.WIDTH - 24);
+            if (hover && ImGui.isMouseHoveringRect(x, footerY, x + w, y + h) && ImGui.isMouseClicked(0)) operation(() -> {
+                selectedNode = node.id();
+                setPointer(node.pointer());
+                selectedEdge = "";
+                showBranch = document.kind() != DefinitionKind.QUEST;
+                nextStage.set("");
+                if (!showBranch) focusPanel = DETAIL_PANEL;
+            });
             if (node.id().equals(draggingNode) && ImGui.isMouseDragging(0)) {
+                nodeDragMoved = true;
                 position[0] += ImGui.getIO().getMouseDeltaX() / zoom;
                 position[1] += ImGui.getIO().getMouseDeltaY() / zoom;
             }
         }
         draw.popClipRect();
-        if (draggingNode != null && ImGui.isMouseReleased(0)) {
-            Map<String, float[]> movedPositions = new HashMap<>();
-            positions.forEach((id, position) -> movedPositions.put(id, position.clone()));
-            operation(() -> { persistPositions(movedPositions); refresh(); });
-            draggingNode = null;
-        }
-        if (nodes.stream().anyMatch(node -> node.id().equals(selectedNode))) {
-            for (var edge : edges) {
-                if (!edge.from().equals(selectedNode)) continue;
-                if (ImGui.selectable(displayLabel(edge.label()) + " -> " + edge.to() + "##" + edge.pointer(), edge.pointer().equals(selectedEdge))) {
-                    operation(() -> {
-                        selectedEdge = edge.pointer();
-                        setPointer(edge.pointer());
-                    });
-                }
+        if (ImGui.isMouseReleased(0)) {
+            wireDragMoved = false;
+            if (draggingNode != null) {
+                Map<String, float[]> movedPositions = new HashMap<>();
+                positions.forEach((id, position) -> movedPositions.put(id, position.clone()));
+                if (nodeDragMoved) operation(() -> { persistPositions(movedPositions); refresh(); });
+                draggingNode = null;
             }
         }
-        boolean responseEdge = selectedEdge.contains("/responses/") || selectedEdge.contains("/options/");
-        if (document.kind() == DefinitionKind.QUEST && !selectedEdge.isEmpty() && ImGui.button("End at selected source stage")) operation(() -> {
-            var source = DialogueGraph.edges(document).stream().filter(edge -> edge.pointer().equals(selectedEdge)).findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Select an existing stage connection."));
-            DialogueGraph.setTerminal(document, source.from(), true);
-            selectedEdge = "";
-            refresh();
-        });
-        if (responseEdge && ImGui.button("Remove selected response")) operation(() -> {
-            DialogueGraph.removeResponse(document, selectedEdge);
-            selectedEdge = "";
-            refresh();
-        });
         ImGui.end();
+    }
+
+    private void wire(ImDrawList draw, float x1, float y1, float x2, float y2, int color) {
+        float curve = Math.max(70 * zoom, Math.abs(x2 - x1) * .45f);
+        draw.addBezierCubic(x1, y1, x1 + curve, y1, x2 - curve, y2, x2, y2, color, 2);
+    }
+
+    private void graphText(ImDrawList draw, float x, float y, int color, String text, float width) {
+        String label = text.replace('\n', ' ');
+        int length = label.length();
+        while (length > 0 && ImGui.calcTextSize(length == label.length() ? label : label.substring(0, length) + "...").x > width) length--;
+        if (length < label.length()) label = label.substring(0, length) + "...";
+        draw.addText(ImGui.getFont(), Math.max(6, (int) (ImGui.getFontSize() * zoom)), x, y, color, label);
     }
 
     private String nextNodeId() {
@@ -683,13 +783,6 @@ final class ImGuiAuthoringEditor {
         }
     }
 
-    private String displayLabel(String label) {
-        if (document.kind() != DefinitionKind.CONVERSATION) return label;
-        JsonObject reference = new JsonObject();
-        reference.addProperty("key", label);
-        return workspace.resolveText(document, reference, "en_us");
-    }
-
     private void inspector() {
         panel(DETAIL_PANEL);
         if (document == null) {
@@ -709,7 +802,7 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("File settings")) operation(() -> { selectedNode = ""; setPointer(""); });
         if (!selectedNode.isEmpty() || document.kind() == DefinitionKind.FORCED && pointer.get().isEmpty()) {
             if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
-                    && ImGui.button("Add spoken line")) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
+                    && ImGui.button(document.kind() == DefinitionKind.CONVERSATION ? "Add spoken line" : "Add line variation")) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
         }
         if (hasPendingFields()) {
             if (ImGui.button("Apply field edits")) operation(() -> { });
@@ -717,6 +810,17 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); translatedFields.clear(); fields.clear(); });
         }
         try {
+            var availableBlocks = EditorBlocks.available(document, pointer.get());
+            if (!availableBlocks.isEmpty() && ImGui.beginCombo("##add_block", "Add behavior block...")) {
+                for (var block : availableBlocks) {
+                    if (ImGui.selectable(block.label)) operation(() -> {
+                        String added = EditorBlocks.append(document, pointer.get(), block);
+                        refresh();
+                        setPointer(added);
+                    });
+                }
+                ImGui.endCombo();
+            }
             selectedDetails();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
                 | ClassCastException | UnsupportedOperationException exception) {
@@ -801,8 +905,8 @@ final class ImGuiAuthoringEditor {
             inspectValue(object.get(field), pointer.get() + "/" + escape(field), friendlyLabel(field), 0);
             shown = true;
         }
-        if (!shown) ImGui.textWrapped("This selection has no dialogue yet. Add a line or open More properties.");
-        if (ImGui.collapsingHeader("More properties")) {
+        if (!shown && object.isEmpty()) ImGui.textWrapped("This block is empty. Select the node header to add dialogue or behavior.");
+        if (!shown || ImGui.collapsingHeader("More properties")) {
             for (var entry : object.entrySet()) {
                 if (main.contains(entry.getKey())) continue;
                 inspectValue(entry.getValue(), pointer.get() + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), 0);
@@ -1056,6 +1160,7 @@ final class ImGuiAuthoringEditor {
         }
         if (document != next) EditorCameraPanel.close();
         document = next;
+        fitGraph = true;
         historyDocument = next;
         selectedNode = "";
         selectedEdge = "";
@@ -1094,7 +1199,7 @@ final class ImGuiAuthoringEditor {
         positions.clear();
         if (document != null) {
             JsonElement savedPositions = document.metadata().get("node_positions");
-            if (savedPositions != null && savedPositions.isJsonObject()) {
+            if (document.metadata().has("graph_card_layout") && savedPositions != null && savedPositions.isJsonObject()) {
                 for (var entry : savedPositions.getAsJsonObject().entrySet()) {
                     if (!entry.getValue().isJsonObject()) continue;
                     JsonObject point = entry.getValue().getAsJsonObject();
@@ -1126,6 +1231,7 @@ final class ImGuiAuthoringEditor {
                 values.add(id, point);
             });
             metadata.add("node_positions", values);
+            metadata.addProperty("graph_card_layout", 1);
         });
     }
 
